@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/tucats/ego/errors"
 )
 
 // jwkKey represents one key entry inside a JWKS (JSON Web Key Set) document.
@@ -91,13 +93,13 @@ func refreshJWKS(jwksURL string) error {
 	// The URL comes from the OIDC discovery document, not user input.
 	resp, err := idpClient.Get(jwksURL) //nolint:gosec
 	if err != nil {
-		return fmt.Errorf("fetching JWKS from %s: %w", jwksURL, err)
+		return errors.New(errors.ErrJWKSFetch).Context(fmt.Sprintf("%s: %v", jwksURL, err))
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("JWKS request to %s returned HTTP %d", jwksURL, resp.StatusCode)
+		return errors.New(errors.ErrJWKSHTTPStatus).Context(fmt.Sprintf("%s: HTTP %d", jwksURL, resp.StatusCode))
 	}
 
 	// OAUTH-M4: read the JWKS body through a LimitedReader so that a
@@ -117,24 +119,21 @@ func refreshJWKS(jwksURL string) error {
 
 	body, err := io.ReadAll(lr)
 	if err != nil {
-		return fmt.Errorf("reading JWKS response: %w", err)
+		return errors.New(errors.ErrJWKSRead).Context(fmt.Sprintf("%s: %v", jwksURL, err))
 	}
 
 	// N == 0 means the body was strictly larger than maxJWKSBytes.
 	if lr.N == 0 {
-		return fmt.Errorf(
-			"JWKS response from %s exceeds %d-byte limit — possible misconfiguration or attack",
-			jwksURL, maxJWKSBytes,
-		)
+		return errors.New(errors.ErrJWKSSizeLimit).Context(jwksURL)
 	}
 
 	var doc jwksDocument
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return fmt.Errorf("parsing JWKS document: %w", err)
+		return errors.New(errors.ErrJWKSParse).Context(fmt.Sprintf("%s: %v", jwksURL, err))
 	}
 
 	if len(doc.Keys) == 0 {
-		return fmt.Errorf("JWKS from %s contains no keys", jwksURL)
+		return errors.New(errors.ErrJWKSNoKeys).Context(jwksURL)
 	}
 
 	// Parse each key and collect the ones Ego can use.
@@ -172,7 +171,7 @@ func refreshJWKS(jwksURL string) error {
 	}
 
 	if len(entries) == 0 {
-		return fmt.Errorf("JWKS from %s contains no usable EC or RSA signing keys", jwksURL)
+		return errors.New(errors.ErrJWKSNoKeys).Context(jwksURL)
 	}
 
 	jwksCache.mu.Lock()
@@ -217,7 +216,7 @@ func keyByID(jwksURL, kid string) (any, error) {
 		return key, nil
 	}
 
-	return nil, fmt.Errorf("no JWKS key found for kid %q", kid)
+	return nil, errors.New(errors.ErrJWKSKeyNotFound).Context(kid)
 }
 
 // allKeys returns all currently cached public keys.  Used when a JWT has no kid
@@ -275,18 +274,18 @@ func parseECPublicKey(k jwkKey) (*ecdsa.PublicKey, error) {
 	case "P-521":
 		curve = elliptic.P521()
 	default:
-		return nil, fmt.Errorf("unsupported EC curve %q", k.Crv)
+		return nil, errors.New(errors.ErrJWKSUnsupportedCurve).Context(k.Crv)
 	}
 
 	// base64url decode without padding.
 	xBytes, err := base64.RawURLEncoding.DecodeString(k.X)
 	if err != nil {
-		return nil, fmt.Errorf("decoding EC key x coordinate: %w", err)
+		return nil, errors.New(errors.ErrJWKSKeyDecode).Context("x: " + err.Error())
 	}
 
 	yBytes, err := base64.RawURLEncoding.DecodeString(k.Y)
 	if err != nil {
-		return nil, fmt.Errorf("decoding EC key y coordinate: %w", err)
+		return nil, errors.New(errors.ErrJWKSKeyDecode).Context("y: " + err.Error())
 	}
 
 	pubKey := &ecdsa.PublicKey{
@@ -297,7 +296,7 @@ func parseECPublicKey(k jwkKey) (*ecdsa.PublicKey, error) {
 
 	// Verify the point is actually on the declared curve.
 	if !curve.IsOnCurve(pubKey.X, pubKey.Y) {
-		return nil, fmt.Errorf("EC key point is not on curve %q", k.Crv)
+		return nil, errors.New(errors.ErrJWKSKeyNotOnCurve).Context(k.Crv)
 	}
 
 	return pubKey, nil
@@ -310,12 +309,12 @@ func parseECPublicKey(k jwkKey) (*ecdsa.PublicKey, error) {
 func parseRSAPublicKey(k jwkKey) (*rsa.PublicKey, error) {
 	nBytes, err := base64.RawURLEncoding.DecodeString(k.N)
 	if err != nil {
-		return nil, fmt.Errorf("decoding RSA modulus: %w", err)
+		return nil, errors.New(errors.ErrJWKSKeyDecode).Context("RSA modulus: " + err.Error())
 	}
 
 	eBytes, err := base64.RawURLEncoding.DecodeString(k.E)
 	if err != nil {
-		return nil, fmt.Errorf("decoding RSA exponent: %w", err)
+		return nil, errors.New(errors.ErrJWKSKeyDecode).Context("RSA exponent: " + err.Error())
 	}
 
 	// Convert the exponent byte slice to an integer. The standard exponent
@@ -323,7 +322,7 @@ func parseRSAPublicKey(k jwkKey) (*rsa.PublicKey, error) {
 	eInt := new(big.Int).SetBytes(eBytes)
 
 	if !eInt.IsInt64() || eInt.Int64() <= 0 {
-		return nil, fmt.Errorf("RSA public exponent out of range")
+		return nil, errors.New(errors.ErrJWKSRSAExponentRange)
 	}
 
 	pubKey := &rsa.PublicKey{

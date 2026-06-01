@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/tokens"
 )
 
@@ -254,7 +255,7 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 						"user":    entry.User,
 					})
 
-					return "", nil, fmt.Errorf("JWT has been revoked")
+					return "", nil, errors.New(errors.ErrJWTRevoked)
 				}
 			}
 
@@ -289,7 +290,7 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	user := extractUsername(claims, cfg.UserClaim)
 
 	if user == "" {
-		return "", nil, fmt.Errorf("JWT %q claim is empty or absent", cfg.UserClaim)
+		return "", nil, errors.New(errors.ErrJWTMissingClaim).Context(cfg.UserClaim)
 	}
 
 	// Step 6: Map claims to Ego permissions.

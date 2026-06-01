@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"errors"
-
 	"github.com/tucats/ego/app-cli/ui"
 	egoErrors "github.com/tucats/ego/errors"
 )
@@ -22,7 +20,7 @@ func (r *ResHandle) Create() error {
 	}
 
 	if r.Database == nil {
-		return errors.New("database not open")
+		return egoErrors.ErrDatabaseNotOpen
 	}
 
 	// If there isn't a default primary key, set one now.
@@ -52,7 +50,7 @@ func (r *ResHandle) CreateIf() error {
 	}
 
 	if r.Database == nil {
-		return errors.New("database not open")
+		return egoErrors.ErrDatabaseNotOpen
 	}
 
 	sql := r.doesTableExistSQL()

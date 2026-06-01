@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -324,7 +323,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 
 	method = strings.ToUpper(method)
 	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
-		ui.Panic(fmt.Errorf("attempt to define new route with invalid route method %v", method))
+		ui.Panic(errors.New(errors.ErrInvalidRouteMethod).Context(method))
 	}
 
 	route := &Route{
@@ -363,7 +362,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	// This should never happen and indicates a fatal error if we are defining the same
 	// endpoint and method more than once.
 	if _, found := m.routes[index]; found {
-		ui.Panic(fmt.Errorf("attempt to create new duplicate route definition %v", index))
+		ui.Panic(errors.New(errors.ErrDuplicateRoute).Context(index))
 	}
 
 	m.routes[index] = route

@@ -233,21 +233,21 @@ func storeChallenge(sessionData *webauthn.SessionData) (string, error) {
 func loadChallenge(r *http.Request) (*webauthn.SessionData, error) {
 	cookie, err := r.Cookie(webAuthnChallengeCookie)
 	if err != nil {
-		return nil, fmt.Errorf("missing %s cookie", webAuthnChallengeCookie)
+		return nil, errors.New(errors.ErrWebAuthnMissingCookie).Context(webAuthnChallengeCookie)
 	}
 
 	nonce := cookie.Value
 
 	v, found := caches.Find(caches.WebAuthnChallengeCache, nonce)
 	if !found {
-		return nil, fmt.Errorf("WebAuthn session expired or not found")
+		return nil, errors.New(errors.ErrWebAuthnSessionExpired)
 	}
 
 	caches.Delete(caches.WebAuthnChallengeCache, nonce)
 
 	b, ok := v.([]byte)
 	if !ok {
-		return nil, fmt.Errorf("invalid session data type in cache")
+		return nil, errors.New(errors.ErrWebAuthnSessionInvalid)
 	}
 
 	var sd webauthn.SessionData

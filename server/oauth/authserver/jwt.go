@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // tokenResponse is the JSON body returned from the /oauth2/token endpoint.
@@ -92,7 +93,7 @@ func createAccessToken(cfg asConfig, clientID, subject, audience, scope string) 
 	// the final compact JWT string.
 	signed, err := token.SignedString(signingKey)
 	if err != nil {
-		return "", "", fmt.Errorf("signing access token: %w", err)
+		return "", "", errors.New(errors.ErrOAuthTokenSign).Context(err.Error())
 	}
 
 	ui.Log(ui.ServerLogger, "oauth.as.token.issued", ui.A{
@@ -132,7 +133,7 @@ func createIDToken(cfg asConfig, clientID, subject string) (string, error) {
 
 	signed, err := token.SignedString(signingKey)
 	if err != nil {
-		return "", fmt.Errorf("signing ID token: %w", err)
+		return "", errors.New(errors.ErrOAuthTokenSign).Context(err.Error())
 	}
 
 	return signed, nil
@@ -150,7 +151,7 @@ func parseToken(tokenString string) (*egoClaims, error) {
 		func(t *jwt.Token) (any, error) {
 			// Guard against algorithm substitution attacks — require ES256.
 			if _, ok := t.Method.(*jwt.SigningMethodECDSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+				return nil, errors.New(errors.ErrOAuthSigningMethod).Context(fmt.Sprintf("%v", t.Header["alg"]))
 			}
 
 			// Return the public key so the library can verify the signature.
@@ -163,7 +164,7 @@ func parseToken(tokenString string) (*egoClaims, error) {
 
 	claims, ok := token.Claims.(*egoClaims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("invalid token claims")
+		return nil, errors.New(errors.ErrOAuthInvalidTokenClaims)
 	}
 
 	return claims, nil

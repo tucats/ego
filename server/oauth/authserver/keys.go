@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 )
 
 // signingKey is the EC private key loaded (or generated) at startup. All JWT
@@ -42,12 +43,12 @@ func loadOrGenerateKey(keyFile string) error {
 		// Decode and parse it.
 		block, _ := pem.Decode(pemData)
 		if block == nil {
-			return fmt.Errorf("key file %s contains no PEM block", keyFile)
+			return errors.New(errors.ErrOAuthKeyNoPEM).Context(keyFile)
 		}
 
 		key, parseErr := x509.ParseECPrivateKey(block.Bytes)
 		if parseErr != nil {
-			return fmt.Errorf("parsing EC key from %s: %w", keyFile, parseErr)
+			return errors.New(errors.ErrOAuthKeyParse).Context(fmt.Sprintf("%s: %v", keyFile, parseErr))
 		}
 
 		signingKey = key
@@ -62,13 +63,13 @@ func loadOrGenerateKey(keyFile string) error {
 		//   • The 32-byte coordinates produce a compact JWKS document
 		key, genErr := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if genErr != nil {
-			return fmt.Errorf("generating EC key: %w", genErr)
+			return errors.New(errors.ErrOAuthKeyGenerate).Context(genErr.Error())
 		}
 
 		// Serialize the private key to DER (binary) and then wrap it in PEM.
 		der, marshalErr := x509.MarshalECPrivateKey(key)
 		if marshalErr != nil {
-			return fmt.Errorf("marshaling EC key: %w", marshalErr)
+			return errors.New(errors.ErrOAuthKeyMarshal).Context(marshalErr.Error())
 		}
 
 		pemBytes := pem.EncodeToMemory(&pem.Block{
@@ -79,7 +80,7 @@ func loadOrGenerateKey(keyFile string) error {
 		// Write the PEM file. 0600 means only the owning user can read/write it,
 		// which is appropriate for a private key.
 		if writeErr := os.WriteFile(keyFile, pemBytes, 0600); writeErr != nil {
-			return fmt.Errorf("writing key to %s: %w", keyFile, writeErr)
+			return errors.New(errors.ErrOAuthKeyWrite).Context(fmt.Sprintf("%s: %v", keyFile, writeErr))
 		}
 
 		signingKey = key
@@ -138,7 +139,7 @@ func buildJWKS() error {
 
 	b, err := json.Marshal(keySet)
 	if err != nil {
-		return fmt.Errorf("marshaling JWKS: %w", err)
+		return errors.New(errors.ErrJWKSMarshal).Context(err.Error())
 	}
 
 	jwksJSON = b

@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // maxConsecutiveFailures is the number of back-to-back failed health-check
@@ -109,7 +110,7 @@ func pingPeer(peer defs.ClusterMember) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("node %s returned HTTP %d", peer.NodeID, resp.StatusCode)
+		return errors.New(errors.ErrClusterPeerHTTPStatus).Context(fmt.Sprintf("%s: HTTP %d", peer.NodeID, resp.StatusCode))
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 const (
@@ -38,7 +39,7 @@ func ensureOAuthDir() (string, error) {
 	if os.IsNotExist(err) {
 		// Create the directory with the required permissions.
 		if mkErr := os.MkdirAll(dir, requiredDirMode); mkErr != nil {
-			return dir, fmt.Errorf("creating OAuth2 directory %s: %w", dir, mkErr)
+			return dir, errors.New(errors.ErrOAuthDirCreate).Context(fmt.Sprintf("%s: %v", dir, mkErr))
 		}
 
 		ui.Log(ui.ServerLogger, "oauth.as.dir.created", ui.A{"path": dir})
@@ -47,11 +48,11 @@ func ensureOAuthDir() (string, error) {
 	}
 
 	if err != nil {
-		return dir, fmt.Errorf("accessing OAuth2 directory %s: %w", dir, err)
+		return dir, errors.New(errors.ErrOAuthDirAccess).Context(fmt.Sprintf("%s: %v", dir, err))
 	}
 
 	if !info.IsDir() {
-		return dir, fmt.Errorf("OAuth2 path %s exists but is not a directory", dir)
+		return dir, errors.New(errors.ErrOAuthDirNotDir).Context(dir)
 	}
 
 	// Verify the directory mode and correct it if necessary.
@@ -75,7 +76,7 @@ func ensureFilePermissions(path string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("accessing OAuth2 file %s: %w", path, err)
+		return errors.New(errors.ErrOAuthFileAccess).Context(fmt.Sprintf("%s: %v", path, err))
 	}
 
 	return ensureMode(path, info.Mode().Perm(), requiredFileMode, false)
@@ -103,9 +104,8 @@ func ensureMode(path string, perm, required os.FileMode, isDir bool) error {
 	})
 
 	if chmodErr := os.Chmod(path, required); chmodErr != nil {
-		return fmt.Errorf(
-			"OAuth2 %s %s has insecure permissions %04o and chmod failed: %w",
-			kind, path, perm&0777, chmodErr,
+		return errors.New(errors.ErrOAuthPermissionsInsecure).Context(
+			fmt.Sprintf("%s %s (mode %04o): %v", kind, path, perm&0777, chmodErr),
 		)
 	}
 

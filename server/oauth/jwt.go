@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tucats/ego/errors"
 )
 
 // jwtClaims is the set of standard JWT claims that Ego reads from an external
@@ -107,18 +108,18 @@ func parseAndValidateJWT(jwksURL, tokenStr, issuer, audience string) (*jwtClaims
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, keyfunc, parserOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("validating JWT: %w", err)
+		return nil, errors.New(errors.ErrJWTValidation).Context(err.Error())
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("JWT is invalid")
+		return nil, errors.New(errors.ErrJWTInvalid)
 	}
 
 	// Additional expiry check: even if the library accepted the token, reject
 	// anything with a zero ExpiresAt (should not happen with WithExpirationRequired
 	// but is a belt-and-suspenders guard).
 	if claims.ExpiresAt == nil || claims.ExpiresAt.Before(time.Now()) {
-		return nil, fmt.Errorf("JWT is expired or has no expiration")
+		return nil, errors.New(errors.ErrJWTExpired)
 	}
 
 	return claims, nil
@@ -141,7 +142,7 @@ func selectVerificationKey(jwksURL string, token *jwt.Token) (any, error) {
 	case *jwt.SigningMethodECDSA, *jwt.SigningMethodRSA:
 		// Accepted.
 	default:
-		return nil, fmt.Errorf("unexpected JWT signing method: %v; only EC and RSA are accepted", token.Header["alg"])
+		return nil, errors.New(errors.ErrJWTSigningMethod).Context(fmt.Sprintf("%v", token.Header["alg"]))
 	}
 
 	// Extract the key ID from the token header if present.
@@ -157,14 +158,14 @@ func selectVerificationKey(jwksURL string, token *jwt.Token) (any, error) {
 	keys := allKeys()
 	if len(keys) == 0 {
 		if err := refreshJWKS(jwksURL); err != nil {
-			return nil, fmt.Errorf("JWKS fetch failed and no keys are cached: %w", err)
+			return nil, errors.New(errors.ErrJWKSFetchNoCache).Context(err.Error())
 		}
 
 		keys = allKeys()
 	}
 
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("no JWKS keys available for JWT verification")
+		return nil, errors.New(errors.ErrJWKSNoAvailableKeys)
 	}
 
 	// Return a keyFunc-compatible wrapper that tries each key in turn.

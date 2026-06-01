@@ -204,7 +204,7 @@ func determineIssuer(c *cli.Context) (string, error) {
 		return strings.TrimSuffix(issuer, "/"), nil
 	}
 
-	return "", fmt.Errorf("%s", i18n.T("logon.oauth.no.issuer"))
+	return "", errors.New(fmt.Errorf("%s", i18n.T("logon.oauth.no.issuer")))
 }
 
 // fetchOIDCDiscovery retrieves the OIDC discovery document from
@@ -218,31 +218,31 @@ func fetchOIDCDiscovery(issuer string) (*oauthDiscovery, error) {
 	// The URL is assembled from trusted operator configuration, not user input.
 	resp, err := oauthHTTPClient.Get(discoveryURL) //nolint:gosec
 	if err != nil {
-		return nil, fmt.Errorf("fetching OIDC discovery from %s: %w", discoveryURL, err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryFetch).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading OIDC discovery response: %w", err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryRead).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("OIDC discovery returned HTTP %d from %s", resp.StatusCode, discoveryURL)
+		return nil, errors.New(errors.ErrOIDCDiscoveryHTTPStatus).Context(fmt.Sprintf("%s: HTTP %d", discoveryURL, resp.StatusCode))
 	}
 
 	var doc oauthDiscovery
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return nil, fmt.Errorf("parsing OIDC discovery document: %w", err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryParse).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	if doc.AuthorizationEndpoint == "" {
-		return nil, fmt.Errorf("OIDC discovery document missing authorization_endpoint")
+		return nil, errors.New(errors.ErrOIDCDiscoveryMissingAuth)
 	}
 
 	if doc.TokenEndpoint == "" {
-		return nil, fmt.Errorf("OIDC discovery document missing token_endpoint")
+		return nil, errors.New(errors.ErrOIDCDiscoveryMissingToken)
 	}
 
 	return &doc, nil
@@ -253,7 +253,7 @@ func fetchOIDCDiscovery(issuer string) (*oauthDiscovery, error) {
 func generatePKCE() (verifier, challenge, state string, err error) {
 	raw := make([]byte, 32)
 	if _, err = rand.Read(raw); err != nil {
-		return "", "", "", fmt.Errorf("generating PKCE verifier: %w", err)
+		return "", "", "", errors.New(errors.ErrPKCEVerifierGenerate).Context(err.Error())
 	}
 
 	verifier = base64.RawURLEncoding.EncodeToString(raw)
@@ -263,7 +263,7 @@ func generatePKCE() (verifier, challenge, state string, err error) {
 
 	stateBuf := make([]byte, 16)
 	if _, err = rand.Read(stateBuf); err != nil {
-		return "", "", "", fmt.Errorf("generating state token: %w", err)
+		return "", "", "", errors.New(errors.ErrPKCEStateGenerate).Context(err.Error())
 	}
 
 	state = base64.RawURLEncoding.EncodeToString(stateBuf)
@@ -282,7 +282,7 @@ func generatePKCE() (verifier, challenge, state string, err error) {
 func startCallbackServer(expectedState string) (port int, codeCh <-chan string, stop func(), err error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return 0, nil, nil, fmt.Errorf("starting OAuth2 callback listener: %w", err)
+		return 0, nil, nil, errors.New(errors.ErrOAuthCallbackListener).Context(err.Error())
 	}
 
 	port = ln.Addr().(*net.TCPAddr).Port
@@ -386,7 +386,7 @@ func refreshAccessToken(tokenEndpoint, refreshToken, clientID string) (*oauthTok
 func postTokenRequest(tokenEndpoint string, form url.Values) (*oauthTokenResponse, error) {
 	req, err := http.NewRequest(http.MethodPost, tokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return nil, fmt.Errorf("building token request: %w", err)
+		return nil, errors.New(errors.ErrOAuthTokenRequest).Context(err.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -396,31 +396,31 @@ func postTokenRequest(tokenEndpoint string, form url.Values) (*oauthTokenRespons
 	// endpoint cannot hang the CLI indefinitely (OAUTH-M2).
 	resp, err := oauthHTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("token endpoint POST to %s: %w", tokenEndpoint, err)
+		return nil, errors.New(errors.ErrOAuthTokenPost).Context(fmt.Sprintf("%s: %v", tokenEndpoint, err))
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading token response: %w", err)
+		return nil, errors.New(errors.ErrOAuthTokenRead).Context(err.Error())
 	}
 
 	var tok oauthTokenResponse
 	if err := json.Unmarshal(body, &tok); err != nil {
-		return nil, fmt.Errorf("parsing token response: %w", err)
+		return nil, errors.New(errors.ErrOAuthTokenParse).Context(err.Error())
 	}
 
 	if tok.Error != "" {
-		return nil, fmt.Errorf("token endpoint error %q: %s", tok.Error, tok.ErrorDescription)
+		return nil, errors.New(errors.ErrOAuthTokenError).Context(fmt.Sprintf("%q: %s", tok.Error, tok.ErrorDescription))
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("token endpoint returned HTTP %d", resp.StatusCode)
+		return nil, errors.New(errors.ErrOAuthTokenHTTPStatus).Context(fmt.Sprintf("HTTP %d", resp.StatusCode))
 	}
 
 	if tok.AccessToken == "" {
-		return nil, fmt.Errorf("token response contains no access_token")
+		return nil, errors.New(errors.ErrOAuthTokenNoToken)
 	}
 
 	return &tok, nil

@@ -4,12 +4,12 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/errors"
 )
 
 // PendingAuthorization holds everything the token endpoint needs to know about
@@ -68,7 +68,7 @@ type RefreshTokenData struct {
 func generateCode() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("generating authorization code: %w", err)
+		return "", errors.New(errors.ErrOAuthCodeGenerate).Context(err.Error())
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
@@ -120,7 +120,7 @@ func consumeCode(code string) (PendingAuthorization, bool) {
 func generateRefreshToken(clientID, username string, scopes []string) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("generating refresh token: %w", err)
+		return "", errors.New(errors.ErrOAuthRefreshTokenGenerate).Context(err.Error())
 	}
 
 	token := base64.RawURLEncoding.EncodeToString(b)
@@ -173,7 +173,7 @@ func verifyPKCE(pending PendingAuthorization, codeVerifier string) error {
 
 	if pending.CodeChallengeMethod != "S256" {
 		// We only support S256; if something else snuck in, reject it.
-		return fmt.Errorf("unsupported code_challenge_method: %q", pending.CodeChallengeMethod)
+		return errors.New(errors.ErrOAuthPKCEMethod).Context(pending.CodeChallengeMethod)
 	}
 
 	// Compute S256: BASE64URL(SHA256(ASCII(code_verifier)))
@@ -181,7 +181,7 @@ func verifyPKCE(pending PendingAuthorization, codeVerifier string) error {
 	computed := base64.RawURLEncoding.EncodeToString(h[:])
 
 	if computed != pending.CodeChallenge {
-		return fmt.Errorf("PKCE verification failed")
+		return errors.New(errors.ErrOAuthPKCEFailed)
 	}
 
 	return nil

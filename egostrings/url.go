@@ -1,11 +1,11 @@
 package egostrings
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // These are the URL schemes that Ego ever expects to encounter in connection strings.
@@ -35,7 +35,7 @@ func FindScheme(s string) (string, error) {
 		}
 	}
 
-	err = fmt.Errorf("unsupported URL scheme in %q", s)
+	err = errors.New(errors.ErrUnsupportedURLScheme).Context(s)
 
 	return "", err
 }

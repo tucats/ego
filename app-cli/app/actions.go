@@ -358,7 +358,7 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 		// Is it a new prefix key?
 		if strings.HasPrefix(line, "[") {
 			if !strings.HasSuffix(line, "]") {
-				return fmt.Errorf("%s:%d: Malformed prefix line", filename, lineNumber)
+				return errors.New(errors.ErrMalformedPrefixLine).Context(fmt.Sprintf("%s:%d", filename, lineNumber))
 			}
 
 			prefix = line[1 : len(line)-1]
@@ -369,7 +369,7 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 		// Split the line into the key and the message.
 		i := strings.Index(line, "=")
 		if i < 0 {
-			return fmt.Errorf("%s:%d: Malformed line\n", filename, lineNumber)
+			return errors.New(errors.ErrMalformedLine).Context(fmt.Sprintf("%s:%d", filename, lineNumber))
 		}
 
 		key := line[:i]

@@ -1,5 +1,5 @@
 package resources
 
-import "errors"
+import egoErrors "github.com/tucats/ego/errors"
 
-var ErrDatabaseNotOpen = errors.New("database not open")
+var ErrDatabaseNotOpen = egoErrors.ErrDatabaseNotOpen

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/tucats/ego/errors"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,10 +168,10 @@ func TestDiscoverEndpoints_OversizedBody(t *testing.T) {
 		t.Fatal("discoverEndpoints() should return an error when the response body exceeds the size cap (OAUTH-M4)")
 	}
 
-	// The error message should say "exceeds" so operators know why the
+	// The error should be the OIDC discovery size-limit error so operators know why the
 	// discovery document was rejected.
-	if !strings.Contains(err.Error(), "exceeds") {
-		t.Errorf("error message should contain 'exceeds', got: %v", err)
+	if !errors.Equals(err, errors.ErrOIDCDiscoverySizeLimit) {
+		t.Errorf("error should be ErrOIDCDiscoverySizeLimit, got: %v", err)
 	}
 
 	resetDiscoveryCache()
@@ -199,7 +201,7 @@ func TestDiscoverEndpoints_ExactlyAtLimit(t *testing.T) {
 	}
 
 	// Must NOT be a size-limit error — the body was within the allowed range.
-	if strings.Contains(err.Error(), "exceeds") {
+	if errors.Equals(err, errors.ErrOIDCDiscoverySizeLimit) {
 		t.Errorf("got a size-limit error at exactly the limit — possible off-by-one bug: %v", err)
 	}
 
@@ -228,8 +230,8 @@ func TestRefreshJWKS_OversizedBody(t *testing.T) {
 		t.Fatal("refreshJWKS() should return an error when the response body exceeds the size cap (OAUTH-M4)")
 	}
 
-	if !strings.Contains(err.Error(), "exceeds") {
-		t.Errorf("error message should contain 'exceeds', got: %v", err)
+	if !errors.Equals(err, errors.ErrJWKSSizeLimit) {
+		t.Errorf("error should be ErrJWKSSizeLimit, got: %v", err)
 	}
 
 	resetJWKSCache()
@@ -292,8 +294,8 @@ func TestNewState_EnforcesMaxPendingStates(t *testing.T) {
 		t.Errorf("newState() should fail when stateStore has %d entries (OAUTH-M5)", maxPendingStates)
 	}
 
-	if !strings.Contains(err.Error(), "too many") {
-		t.Errorf("error should mention 'too many', got: %v", err)
+	if !errors.Equals(err, errors.ErrOAuthTooManyFlows) {
+		t.Errorf("error should be ErrOAuthTooManyFlows, got: %v", err)
 	}
 }
 

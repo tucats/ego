@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/tucats/ego/errors"
 )
 
 // discoveryDoc is the subset of the OIDC discovery document that Ego uses.
@@ -81,13 +83,13 @@ func discoverEndpoints(providerURL string) (*discoveryDoc, error) {
 	// (OAUTH-M2).  The URL is admin-supplied configuration, not user input.
 	resp, err := idpClient.Get(discoveryURL) //nolint:gosec
 	if err != nil {
-		return nil, fmt.Errorf("fetching OIDC discovery document from %s: %w", discoveryURL, err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryFetch).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("OIDC discovery request to %s returned HTTP %d", discoveryURL, resp.StatusCode)
+		return nil, errors.New(errors.ErrOIDCDiscoveryHTTPStatus).Context(fmt.Sprintf("%s: HTTP %d", discoveryURL, resp.StatusCode))
 	}
 
 	// OAUTH-M4: read the response body through a LimitedReader so that a
@@ -127,34 +129,31 @@ func discoverEndpoints(providerURL string) (*discoveryDoc, error) {
 
 	body, err := io.ReadAll(lr)
 	if err != nil {
-		return nil, fmt.Errorf("reading OIDC discovery response: %w", err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryRead).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	// N == 0 means all maxDiscoveryBytes+1 quota was consumed, which proves
 	// the actual body was strictly larger than maxDiscoveryBytes.
 	if lr.N == 0 {
-		return nil, fmt.Errorf(
-			"OIDC discovery response from %s exceeds %d-byte limit — possible misconfiguration or attack",
-			discoveryURL, maxDiscoveryBytes,
-		)
+		return nil, errors.New(errors.ErrOIDCDiscoverySizeLimit).Context(discoveryURL)
 	}
 
 	var doc discoveryDoc
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return nil, fmt.Errorf("parsing OIDC discovery document: %w", err)
+		return nil, errors.New(errors.ErrOIDCDiscoveryParse).Context(fmt.Sprintf("%s: %v", discoveryURL, err))
 	}
 
 	// Validate that the essential fields are present.
 	if doc.Issuer == "" {
-		return nil, fmt.Errorf("OIDC discovery document from %s is missing 'issuer'", discoveryURL)
+		return nil, errors.New(errors.ErrOIDCDiscoveryMissingField).Context(discoveryURL + ": issuer")
 	}
 
 	if doc.JWKSUri == "" {
-		return nil, fmt.Errorf("OIDC discovery document from %s is missing 'jwks_uri'", discoveryURL)
+		return nil, errors.New(errors.ErrOIDCDiscoveryMissingField).Context(discoveryURL + ": jwks_uri")
 	}
 
 	if doc.TokenEndpoint == "" {
-		return nil, fmt.Errorf("OIDC discovery document from %s is missing 'token_endpoint'", discoveryURL)
+		return nil, errors.New(errors.ErrOIDCDiscoveryMissingField).Context(discoveryURL + ": token_endpoint")
 	}
 
 	// Store in the cache under a write lock.

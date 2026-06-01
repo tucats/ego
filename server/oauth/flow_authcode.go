@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/tucats/ego/errors"
 )
 
 // AuthorizeURL builds the URL that a browser should be redirected to in order
@@ -28,11 +30,11 @@ import (
 func AuthorizeURL(cfg rsConfig) (redirectURL, state, codeVerifier string, err error) {
 	doc, err := discoverEndpoints(cfg.Provider)
 	if err != nil {
-		return "", "", "", fmt.Errorf("OIDC discovery: %w", err)
+		return "", "", "", err
 	}
 
 	if doc.AuthorizationEndpoint == "" {
-		return "", "", "", fmt.Errorf("OIDC discovery document has no authorization_endpoint")
+		return "", "", "", errors.New(errors.ErrOIDCDiscoveryMissingAuth)
 	}
 
 	// Generate a random PKCE state and code_verifier.
@@ -112,11 +114,11 @@ type tokenExchangeResponse struct {
 func ExchangeCode(cfg rsConfig, code, codeVerifier string) (accessToken, idToken string, err error) {
 	doc, err := discoverEndpoints(cfg.Provider)
 	if err != nil {
-		return "", "", fmt.Errorf("OIDC discovery: %w", err)
+		return "", "", err
 	}
 
 	if doc.TokenEndpoint == "" {
-		return "", "", fmt.Errorf("OIDC discovery document has no token_endpoint")
+		return "", "", errors.New(errors.ErrOIDCDiscoveryMissingToken)
 	}
 
 	// Build the POST body as application/x-www-form-urlencoded.
@@ -134,7 +136,7 @@ func ExchangeCode(cfg rsConfig, code, codeVerifier string) (accessToken, idToken
 
 	req, err := http.NewRequest(http.MethodPost, doc.TokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return "", "", fmt.Errorf("building token exchange request: %w", err)
+		return "", "", errors.New(errors.ErrOAuthTokenRequest).Context(err.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -145,32 +147,32 @@ func ExchangeCode(cfg rsConfig, code, codeVerifier string) (accessToken, idToken
 	// (OAUTH-M2).
 	resp, err := idpClient.Do(req)
 	if err != nil {
-		return "", "", fmt.Errorf("token exchange POST to %s: %w", doc.TokenEndpoint, err)
+		return "", "", errors.New(errors.ErrOAuthTokenPost).Context(fmt.Sprintf("%s: %v", doc.TokenEndpoint, err))
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", fmt.Errorf("reading token exchange response: %w", err)
+		return "", "", errors.New(errors.ErrOAuthTokenRead).Context(err.Error())
 	}
 
 	var result tokenExchangeResponse
 	if err := json.Unmarshal(body, &result); err != nil {
-		return "", "", fmt.Errorf("parsing token exchange response: %w", err)
+		return "", "", errors.New(errors.ErrOAuthTokenParse).Context(err.Error())
 	}
 
 	// The IdP signals errors with HTTP 4xx/5xx AND an "error" field in the body.
 	if result.Error != "" {
-		return "", "", fmt.Errorf("token exchange error %q: %s", result.Error, result.ErrorDescription)
+		return "", "", errors.New(errors.ErrOAuthTokenError).Context(fmt.Sprintf("%q: %s", result.Error, result.ErrorDescription))
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("token exchange returned HTTP %d", resp.StatusCode)
+		return "", "", errors.New(errors.ErrOAuthTokenHTTPStatus).Context(fmt.Sprintf("HTTP %d", resp.StatusCode))
 	}
 
 	if result.AccessToken == "" {
-		return "", "", fmt.Errorf("token exchange response contains no access_token")
+		return "", "", errors.New(errors.ErrOAuthTokenNoToken)
 	}
 
 	return result.AccessToken, result.IDToken, nil

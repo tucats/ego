@@ -573,7 +573,7 @@ func readNotFoundAsset() ([]byte, error) {
 
 	// Confinement check: reject paths that escape the lib root.
 	if !strings.HasPrefix(fn, root+string(filepath.Separator)) {
-		return nil, fmt.Errorf("invalid asset path")
+		return nil, errors.New(errors.ErrInvalidSandboxPath)
 	}
 
 	return os.ReadFile(fn)

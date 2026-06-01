@@ -112,6 +112,8 @@ joesmith
 jsmith
 json
 JSON
+JWKSHTTP
+JWKSRSA
 lasttokenat
 libexec
 libpath

@@ -21,6 +21,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 )
 
@@ -44,32 +45,32 @@ func RegisterRoutes(r *router.Router) error {
 	asGlobalConfig = cfg
 
 	if cfg.Issuer == "" {
-		return fmt.Errorf("ego.server.oauth.as.issuer must be set when OAuth2 AS mode is enabled")
+		return errors.New(errors.ErrOAuthASMissingIssuer)
 	}
 
 	// Step 0: Ensure the OAuth2 working directory exists with the correct (0700)
 	// permissions.  Abort startup if the directory cannot be created or secured —
 	// the private signing key must never be readable by other users on the host.
 	if _, err := ensureOAuthDir(); err != nil {
-		return fmt.Errorf("securing OAuth2 directory: %w", err)
+		return err
 	}
 
 	// Step 1: Load or generate the EC signing key.
 	if err := loadOrGenerateKey(cfg.KeyFile); err != nil {
-		return fmt.Errorf("%s: %w", defs.OAuthASKeyFileSetting, err)
+		return err
 	}
 
 	// Step 2: Load registered clients, then inject the built-in ego-cli public
 	// client if it wasn't already defined in the client file.
 	if err := loadClients(cfg.ClientFile); err != nil {
-		return fmt.Errorf("%s: %w", defs.OAuthASClientFileSetting, err)
+		return err
 	}
 
 	injectBuiltinCLIClient()
 
 	// Step 3: Build the OIDC discovery document now that we know the issuer URL.
 	if err := buildDiscoveryDoc(cfg.Issuer); err != nil {
-		return fmt.Errorf("building OIDC discovery document: %w", err)
+		return errors.New(errors.ErrOAuthDiscoveryBuild).Context(err.Error())
 	}
 
 	// Set the OAuthCodeCache TTL to the configured code expiration.

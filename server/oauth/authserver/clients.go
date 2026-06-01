@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/app-cli/ui"
+	"github.com/tucats/ego/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -81,7 +82,7 @@ func loadClients(clientFile string) error {
 			return nil
 		}
 
-		return fmt.Errorf("reading client file %s: %w", clientFile, err)
+		return errors.New(errors.ErrOAuthClientRead).Context(fmt.Sprintf("%s: %v", clientFile, err))
 	}
 
 	// Client secrets are sensitive; the file must be owner-only.
@@ -92,7 +93,7 @@ func loadClients(clientFile string) error {
 	var loaded []OAuthClient
 
 	if err = json.Unmarshal(data, &loaded); err != nil {
-		return fmt.Errorf("parsing client file %s: %w", clientFile, err)
+		return errors.New(errors.ErrOAuthClientParse).Context(fmt.Sprintf("%s: %v", clientFile, err))
 	}
 
 	// Hash any plaintext secrets so we never keep them in memory.
@@ -100,7 +101,7 @@ func loadClients(clientFile string) error {
 		if loaded[i].ClientSecret != "" && loaded[i].ClientSecretHash == "" {
 			hash, hashErr := bcrypt.GenerateFromPassword([]byte(loaded[i].ClientSecret), bcrypt.DefaultCost)
 			if hashErr != nil {
-				return fmt.Errorf("hashing secret for client %q: %w", loaded[i].ClientID, hashErr)
+				return errors.New(errors.ErrOAuthClientHash).Context(fmt.Sprintf("%s: %v", loaded[i].ClientID, hashErr))
 			}
 
 			loaded[i].ClientSecretHash = string(hash)

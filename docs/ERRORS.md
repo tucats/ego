@@ -6,7 +6,7 @@ function call within an Ego program to generate an instance of this error code.
 
 | Code | Message |
 | :--- | :------ |
-| error.ambiguous.permission | Permission name conflicts with reserved name, or was misspelled |
+| error.ambiguous.permission | permission name conflicts with reserved name, or was misspelled |
 | error.arg.count | incorrect function argument count |
 | error.arg.list | internal error: invalid local function argument list |
 | error.arg.type | incorrect function argument type |
@@ -48,6 +48,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.cli.option | unknown command line option |
 | error.cli.parms | too many parameters on command line |
 | error.cli.subcommand | unexpected parameter or invalid subcommand |
+| error.cluster.no.nodes.started | no cluster nodes were started successfully |
+| error.cluster.peer.http | cluster peer returned an unexpected HTTP status |
 | error.colon | missing ':' |
 | error.column.count | incorrect number of columns |
 | error.column.name | invalid column name |
@@ -59,6 +61,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.constant | invalid constant expression file |
 | error.credentials | invalid credentials |
 | error.credentials.missing | no credentials provided |
+| error.database.not.open | database connection is not open |
 | error.db.closed | database client closed |
 | error.db.column.def | invalid database column definition |
 | error.db.commit | Database commit failed |
@@ -139,10 +142,13 @@ function call within an Ego program to generate an instance of this error code.
 | error.invalid.cache.class | internal error; invalid cache class |
 | error.invalid.cache.item | internal error; invalid cache item type |
 | error.invalid.catch.set | invalid catch set {{index}} |
+| error.invalid.dsn | invalid DSN string |
 | error.invalid.duration | invalid duration string |
 | error.invalid.filter | invalid SQL filter |
+| error.invalid.http.method | invalid HTTP method |
 | error.invalid.named.return.values | Invalid use of named and non-named return values |
 | error.invalid.struct.or.package | invalid structure or package |
+| error.invalid.test.label | Invalid test label string |
 | error.invalid.unwrap | invalid unwrap of non-interface value |
 | error.jaxon.ambiguous | ambiguous query returns multiple values |
 | error.jaxon.array.index | Invalid array index |
@@ -162,6 +168,26 @@ function call within an Ego program to generate an instance of this error code.
 | error.json.invalid.key | invalid or unknown JSON object key |
 | error.json.not.found | element not found |
 | error.json.query | invalid query dot-notation syntax |
+| error.jwks.curve.unsupported | unsupported EC curve in JWKS key |
+| error.jwks.fetch | error fetching JWKS document |
+| error.jwks.fetch.no.cache | JWKS fetch failed and no keys are cached |
+| error.jwks.http | JWKS request returned an unexpected HTTP status |
+| error.jwks.key.curve | EC key point is not on the declared curve |
+| error.jwks.key.decode | error decoding JWKS key coordinate |
+| error.jwks.key.not.found | no JWKS key found for the requested key ID |
+| error.jwks.marshal | error marshaling JWKS document |
+| error.jwks.no.available | no JWKS keys available for JWT verification |
+| error.jwks.no.keys | JWKS document contains no usable signing keys |
+| error.jwks.parse | error parsing JWKS document |
+| error.jwks.read | error reading JWKS response |
+| error.jwks.rsa.exponent | RSA public exponent is out of valid range |
+| error.jwks.size | JWKS response exceeds the maximum allowed size |
+| error.jwt.expired | JWT token is expired or has no expiration claim |
+| error.jwt.invalid | JWT token is invalid |
+| error.jwt.missing.claim | required JWT claim is empty or absent |
+| error.jwt.revoked | JWT token has been revoked |
+| error.jwt.signing.method | unexpected JWT signing method |
+| error.jwt.validation | error validating JWT token |
 | error.keyword.option | invalid option keyword |
 | error.line.number | invalid line number |
 | error.list | invalid list |
@@ -177,6 +203,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.macro.parameter.type | function parameter type must be string |
 | error.macro.return.type | return type must be string |
 | error.macro.signature | invalid macro function signature |
+| error.malformed.line | malformed line in file |
+| error.malformed.prefix.line | malformed section prefix line in file |
 | error.map.key.type | wrong map key type |
 | error.map.value.type | wrong map value type |
 | error.max.debug.sessions | Maximum number of active debug sessions exceeded |
@@ -188,6 +216,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.missing.item | missing item name |
 | error.named.return.values | return values with named return values in function definition |
 | error.native.unknown.field | unknown field or method name for this object type |
+| error.nested.function.scope | nested named function cannot access enclosing function variable |
 | error.nil | nil pointer reference |
 | error.no.database | the server is not configured with a default database connection (use a data source name) |
 | error.no.info | no information for item |
@@ -202,6 +231,64 @@ function call within an Ego program to generate an instance of this error code.
 | error.not.pointer | not a pointer |
 | error.not.service | not running as a service |
 | error.not.type | not a type |
+| error.oauth.as.client.load.failed | failed to load OAuth2 client registry |
+| error.oauth.as.csrf.invalid | invalid or missing CSRF token |
+| error.oauth.as.disabled | OAuth2 Authorization Server is not enabled |
+| error.oauth.as.invalid.client | invalid OAuth2 client credentials |
+| error.oauth.as.invalid.code | authorization code is invalid or expired |
+| error.oauth.as.invalid.grant | unsupported grant type |
+| error.oauth.as.invalid.pkce | PKCE code_verifier does not match code_challenge |
+| error.oauth.as.invalid.redirect | redirect URI is not registered for this client |
+| error.oauth.as.invalid.refresh | refresh token is invalid or expired |
+| error.oauth.as.invalid.scope | requested scope is not permitted for this client |
+| error.oauth.as.key.load.failed | failed to load or generate OAuth2 signing key |
+| error.oauth.as.missing.client_id | missing required parameter: client_id |
+| error.oauth.as.missing.issuer | OAuth2 AS issuer URL must be configured |
+| error.oauth.as.missing.redirect_uri | missing required parameter: redirect_uri |
+| error.oauth.as.missing.response_type | missing required parameter: response_type |
+| error.oauth.as.pkce.required | public clients must use PKCE (code_challenge required) |
+| error.oauth.as.token.revoked.error | token has been revoked |
+| error.oauth.as.unsupported.response_type | response_type must be "code" |
+| error.oauth.callback.listener | error starting OAuth2 callback listener |
+| error.oauth.client.hash | error hashing OAuth2 client secret |
+| error.oauth.client.parse | error parsing OAuth2 client registry file |
+| error.oauth.client.read | error reading OAuth2 client registry file |
+| error.oauth.code.generate | error generating OAuth2 authorization code |
+| error.oauth.dir.access | error accessing OAuth2 directory |
+| error.oauth.dir.create | error creating OAuth2 directory |
+| error.oauth.dir.not.dir | OAuth2 path exists but is not a directory |
+| error.oauth.discovery.build | error building OIDC discovery document |
+| error.oauth.file.access | error accessing OAuth2 file |
+| error.oauth.key.generate | error generating OAuth2 EC signing key |
+| error.oauth.key.marshal | error marshaling OAuth2 EC signing key |
+| error.oauth.key.no.pem | OAuth2 signing key file contains no PEM block |
+| error.oauth.key.parse | error parsing OAuth2 EC signing key |
+| error.oauth.key.write | error writing OAuth2 signing key to file |
+| error.oauth.permissions.insecure | OAuth2 resource has insecure permissions and could not be corrected |
+| error.oauth.pkce.failed | PKCE code verifier does not match code challenge |
+| error.oauth.pkce.method | unsupported PKCE code challenge method |
+| error.oauth.refresh.generate | error generating OAuth2 refresh token |
+| error.oauth.signing.method | unexpected OAuth2 token signing method |
+| error.oauth.state.expired | OAuth2 state parameter has expired |
+| error.oauth.state.invalid | OAuth2 state parameter is unknown or already used |
+| error.oauth.token.claims | OAuth2 token has invalid claims |
+| error.oauth.token.error | OAuth2 token endpoint returned an error |
+| error.oauth.token.http | OAuth2 token endpoint returned an unexpected HTTP status |
+| error.oauth.token.no.access | OAuth2 token response contains no access token |
+| error.oauth.token.parse | error parsing OAuth2 token response |
+| error.oauth.token.post | error sending request to OAuth2 token endpoint |
+| error.oauth.token.read | error reading OAuth2 token response |
+| error.oauth.token.request | error building OAuth2 token request |
+| error.oauth.token.sign | error signing OAuth2 token |
+| error.oauth.too.many.flows | too many pending OAuth2 authorization flows |
+| error.oidc.discovery.fetch | error fetching OIDC discovery document |
+| error.oidc.discovery.field | OIDC discovery document is missing a required field |
+| error.oidc.discovery.http | OIDC discovery request returned an unexpected HTTP status |
+| error.oidc.discovery.no.auth | OIDC discovery document has no authorization endpoint |
+| error.oidc.discovery.no.token | OIDC discovery document has no token endpoint |
+| error.oidc.discovery.parse | error parsing OIDC discovery document |
+| error.oidc.discovery.read | error reading OIDC discovery response |
+| error.oidc.discovery.size | OIDC discovery response exceeds the maximum allowed size |
 | error.opcode.defined | opcode already defined |
 | error.operand | internal error: invalid or missing bytecode operand |
 | error.option.conflict | conflicting options specified |
@@ -213,7 +300,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.package.name | invalid or missing package name |
 | error.package.set | internal error, invalid attempt to store a symbol in a package |
 | error.package.stmt | missing package statement |
+| error.paging.limit.exceeded | limit parameter exceeds the server maximum allowed value |
+| error.paging.limit.invalid | limit parameter must be a positive integer |
+| error.paging.start.invalid | start parameter must be a non-negative integer |
 | error.panic | panic |
+| error.panic.active | panic in progress |
 | error.param.conflict | conflicting parameters specified |
 | error.parens | missing parenthesis |
 | error.parm.count | incorrect number of parameters |
@@ -226,6 +317,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.perm.write | User does not have write permission |
 | error.permission.name | invalid permission name |
 | error.permissions.unavailable | Permissions are not available |
+| error.pkce.state.generate | error generating PKCE state |
+| error.pkce.verifier.generate | error generating PKCE code verifier |
 | error.pointer.type | invalid pointer type |
 | error.print.items | expected items to print not found |
 | error.privilege | no privilege for operation |
@@ -245,6 +338,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.return.void | invalid return value for void function |
 | error.roman.numeral | invalid Roman numeral |
 | error.roman.range | Roman integers must be in range of 1..3999 |
+| error.route.duplicate | duplicate route definition |
+| error.route.method.invalid | invalid route method |
 | error.row.number | invalid row number |
 | error.rune.value | invalid rune value |
 | error.sandbox.path | invalid sandbox path |
@@ -294,6 +389,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.table.permission.invalid | Invalid permission: {{name}} |
 | error.table.permissions.invalid | Invalid permissions list: {{list}} |
 | error.table.processing | table processing |
+| error.table.query.build | error building table metadata query |
 | error.table.query.error | Error executing query: {{err}} |
 | error.table.row.data | Error reading row data: {{err}} |
 | error.table.rowcount.param | Invalid row count parameter: {{value}} |
@@ -334,9 +430,12 @@ function call within an Ego program to generate an instance of this error code.
 | error.type.not.found | no such type |
 | error.type.operation | invalid type for this operation |
 | error.type.spec | invalid type specification |
+| error.unknown.label | unknown loop label |
+| error.unsupported.database | Database driver type not supported |
 | error.unsupported.on.os | command not implemented for this operating system |
 | error.url | invalid URL path specification |
 | error.url.not.found | URL not found |
+| error.url.scheme.unsupported | unsupported URL scheme |
 | error.user.count | incorrect number of users updated by request |
 | error.user.defined | user-supplied error |
 | error.user.hash.failed | Failed to hash password: {{err}} |
@@ -354,3 +453,6 @@ function call within an Ego program to generate an instance of this error code.
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |
 | error.version.parse | Unable to process version number {{v}}; count={{c}}, err={{err}} |
+| error.webauthn.missing.cookie | missing WebAuthn challenge cookie |
+| error.webauthn.session.expired | WebAuthn session has expired or was not found |
+| error.webauthn.session.invalid | invalid WebAuthn session data in cache |

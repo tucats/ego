@@ -9,6 +9,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 )
 
 // BroadcastCacheFlush notifies every active peer in the cluster that a
@@ -88,7 +89,7 @@ func SendCacheFlush(peer defs.ClusterMember, cacheID int) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("peer %s returned HTTP %d", peer.NodeID, resp.StatusCode)
+		return errors.New(errors.ErrClusterPeerHTTPStatus).Context(fmt.Sprintf("%s: HTTP %d", peer.NodeID, resp.StatusCode))
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.flush.sent", ui.A{

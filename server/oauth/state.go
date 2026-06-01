@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/tucats/ego/errors"
 )
 
 // pendingState holds the PKCE parameters associated with an in-flight
@@ -85,12 +87,12 @@ func init() {
 func newState(redirectURI string) (string, string, error) {
 	stateBytes := make([]byte, 32)
 	if _, err := rand.Read(stateBytes); err != nil {
-		return "", "", fmt.Errorf("generating PKCE state: %w", err)
+		return "", "", errors.New(errors.ErrPKCEStateGenerate).Context(err.Error())
 	}
 
 	verifierBytes := make([]byte, 32)
 	if _, err := rand.Read(verifierBytes); err != nil {
-		return "", "", fmt.Errorf("generating PKCE code_verifier: %w", err)
+		return "", "", errors.New(errors.ErrPKCEVerifierGenerate).Context(err.Error())
 	}
 
 	state := base64.RawURLEncoding.EncodeToString(stateBytes)
@@ -111,10 +113,7 @@ func newState(redirectURI string) (string, string, error) {
 	// (Service Unavailable) to the browser — far better than silently
 	// accepting the entry and letting the server run out of memory.
 	if len(stateStore.items) >= maxPendingStates {
-		return "", "", fmt.Errorf(
-			"too many pending OAuth2 flows (%d active); try again shortly",
-			maxPendingStates,
-		)
+		return "", "", errors.New(errors.ErrOAuthTooManyFlows).Context(fmt.Sprintf("%d active", maxPendingStates))
 	}
 
 	stateStore.items[state] = &pendingState{
@@ -139,14 +138,14 @@ func validateState(state string) (*pendingState, error) {
 
 	ps, ok := stateStore.items[state]
 	if !ok {
-		return nil, fmt.Errorf("unknown or already-used OAuth2 state parameter")
+		return nil, errors.New(errors.ErrOAuthStateInvalid)
 	}
 
 	// Always delete the entry — states are strictly single-use.
 	delete(stateStore.items, state)
 
 	if time.Since(ps.CreatedAt) > stateMaxAge {
-		return nil, fmt.Errorf("OAuth2 state parameter has expired (max age %v)", stateMaxAge)
+		return nil, errors.New(errors.ErrOAuthStateExpired).Context(fmt.Sprintf("max age %v", stateMaxAge))
 	}
 
 	return ps, nil

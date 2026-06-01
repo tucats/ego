@@ -3,6 +3,129 @@
 This document describes information a developer needs to know about Ego's
 internal error type.
 
+## Using Ego error types
+
+This section covers how Ego code (written in Go) uses the Ego error type.
+This assumes your code has imported "github.com/tucats/ego/error" as a
+package in your program, such that references to the `errors` package
+refer to the Ego version, not the standard version.
+
+### Returning a defined error
+
+By convention, all defined errors are declared in errors/messages.go and
+are automatically initialized during Ego startup. The error messages use
+a short string key as the error "value". This key is used to look up the
+actual text of the error message in the localization database, such that
+the formatted error is presented in the localized language if it is
+available, else falls back to English if no localized version is found.
+
+_You should never use fmt.Error() in the production code to format
+a message, as those are not inherently localizable using the native Ego
+localization system._
+
+Because error messages are defined in terms of a language-neutral key
+value, it is possible to compare error messages more directly and still
+maintain localized text output.
+
+Here is an example error value return:
+
+```go
+   return errors.ErrUnknownLabel.Context(labelName)
+```
+
+This uses the predefined error `ErrUnknownLabel` which, in English, has the
+text format value of "unknown label". The `Context()` function adds additional
+information to the error -- in this case, the name of the label string that
+was not known. A `Context()` is always optional in an error message, it is
+intended to provide _additional_ information to an error that is otherwise
+complete.
+
+When the `Context()` modifier is used, the message formatting adds a ":" and
+the context value to the message.
+
+```text
+Error: unknown label
+```
+
+becomes
+
+```text
+Error: unknown label: fuzzy
+```
+
+There are a number of modifiers that can be added to any message that are used to
+provide additional information. These are all optional, but are often used by the
+compiler or runtime to give the user more information about where an error was
+encountered.
+
+| Modifier | Description |
+| -------- | ----------- |
+| Clone(err) | Chain a secondary message to this message - documented below |
+| In("where") | Adds a phrase showing what function or source file the error occurred in |
+| At(line,col) | Adds information about the line number and column position where error occurred |
+
+Note that in the Ego implementation itself, both the runtime and compiler systems have functions
+to automatically handle adding `In()` and `At()` information to the message based on current state
+information in the compiler handle or the bytecode context.
+
+### Formatting messages
+
+To convert a message to human-readable text format, just use the standard `Error()` function.
+This function will return a string that contains one or more lines of text with the error and
+any of it's chained or contextual information adorning the message.
+
+### Wrapping messages
+
+The Go standard library uses `fmt.Errorf()` and the "%w" format operator
+to create nested or wrapped messages. The Ego error does not use format
+operators in this way, so there is a different mechanism used to create
+wrapped or nested message -- the `Chain()` function.
+
+If this is the Go code you would write using the standard library:
+
+```go
+err := fmt.Error("Failed to fetch user: %w", userErr)
+```
+
+This is implemented with the `Chain()` operation in Ego. An existing
+error can accept a `Chain()` call which links a nested error to the
+existing error message, as in:
+
+```go
+err := errors.ErrFetchUserError.Chain(errors.New(userErr))
+```
+
+There are several things to note here:
+
+- All Ego errors are defined by a pre-declared variable value, defined in
+  errors/messages.go file. This value contains information used to display
+  a localized string value of the error text when formatted using `Error()`.
+- The above example assumes that userErr was `error` variable that was
+  possibly returned from the standard library or an external package. The
+  use of `errors.New()` takes the opaque error value and rewraps it as
+  an Ego error value. If `userErr` was already an Ego error, the extra
+  use of `New()` does not wrap it again. It is always safe to wrap an
+  error.
+- The `Chain()` function links the error it has as an argument as a nested
+  error, very similar to how the "%w" operator works. When the code
+  attempts to format the value of `err` using the `Error()` function,
+  both messages are printed out, but as a multi-line message. Each
+  error should assume that it _may_ be formatted in isolation, but
+  the use of `Chain()` means that the chain of messages will be
+  formatted as a single string.
+
+So the formatted version of this message might look like:
+
+```text
+Error: unable to fetch user data,
+       file not found: dummy.json
+```
+
+Note that the comma(s) are added to the formatted message by Error() when
+a chained message is found, the "," is not part of the message text itself.
+The second line is the value of the `userErr` variable, possibly returned
+from the standard library.
+
 ## Add a new error
 
 Adding a new error involves several steps:

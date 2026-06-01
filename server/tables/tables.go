@@ -2,7 +2,6 @@ package tables
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -126,7 +125,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		"error":   strings.TrimPrefix(err.Error(), "pq: ")})
 
 	if err == nil {
-		err = fmt.Errorf("unknown error")
+		err = errors.ErrGeneric
 	}
 
 	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
@@ -232,7 +231,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 		"table": name,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error constructing table metadata query; %w", err)
+		return nil, errors.New(errors.ErrTableQueryBuild).Context(err.Error())
 	}
 
 	if db.Provider == defs.SqliteProvider {
@@ -240,7 +239,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 			"table": name,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error constructing table SQLite metadata query; %w", err)
+			return nil, errors.New(errors.ErrTableQueryBuild).Context(err.Error())
 		}
 	}
 
