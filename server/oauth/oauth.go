@@ -49,10 +49,6 @@ type PendingState struct {
 	// CodeVerifier is the PKCE code_verifier that must be sent to the IdP's
 	// token endpoint to prove that the authorization request originated from Ego.
 	CodeVerifier string
-
-	// RedirectURI is the callback URI that was included in the authorization
-	// request and must be re-sent, unchanged, during the token exchange.
-	RedirectURI string
 }
 
 // globalConfig holds the resolved RS configuration populated once by Initialize().
@@ -105,7 +101,6 @@ func ValidateCallbackState(state string) (*PendingState, error) {
 
 	return &PendingState{
 		CodeVerifier: ps.CodeVerifier,
-		RedirectURI:  ps.RedirectURI,
 	}, nil
 }
 

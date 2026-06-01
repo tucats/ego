@@ -21,8 +21,7 @@ func RegisterRoutes(r *router.Router) {
 	// They do not require prior Ego authentication.
 	r.New(defs.ServicesOAuthAuthorizePath, AuthorizeRedirectHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).
-		Authentication(false, false).
-		Parameter("redirect", "string")
+		Authentication(false, false)
 
 	r.New(defs.ServicesOAuthCallbackPath, CallbackHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).

@@ -38,7 +38,7 @@ func AuthorizeURL(cfg rsConfig) (redirectURL, state, codeVerifier string, err er
 	}
 
 	// Generate a random PKCE state and code_verifier.
-	state, codeVerifier, err = newState(cfg.RedirectURI)
+	state, codeVerifier, err = newState()
 	if err != nil {
 		return "", "", "", err
 	}

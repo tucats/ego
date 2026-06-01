@@ -22,10 +22,6 @@ type pendingState struct {
 	// authorization code from using it without the verifier.
 	CodeVerifier string
 
-	// RedirectURI is the callback URL included in the authorization request.
-	// It must be re-sent, unchanged, in the token exchange.
-	RedirectURI string
-
 	// CreatedAt records when this state was generated.  Entries older than
 	// stateMaxAge are rejected by validateState to prevent replay attacks.
 	CreatedAt time.Time
@@ -79,12 +75,8 @@ func init() {
 // as base64url (without padding) — 43-character strings.  This is well above
 // the 128-bit minimum entropy recommended by RFC 7636 §7.1.
 //
-// The redirectURI is stored alongside the state so that the callback handler
-// can verify that the URI was not tampered with between the authorization
-// request and the token exchange.
-//
 // Returns (state, codeVerifier, error).
-func newState(redirectURI string) (string, string, error) {
+func newState() (string, string, error) {
 	stateBytes := make([]byte, 32)
 	if _, err := rand.Read(stateBytes); err != nil {
 		return "", "", errors.New(errors.ErrPKCEStateGenerate).Context(err.Error())
@@ -118,7 +110,6 @@ func newState(redirectURI string) (string, string, error) {
 
 	stateStore.items[state] = &pendingState{
 		CodeVerifier: verifier,
-		RedirectURI:  redirectURI,
 		CreatedAt:    time.Now(),
 	}
 

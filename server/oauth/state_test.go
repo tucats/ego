@@ -11,12 +11,12 @@ import (
 // TestNewStateGeneratesUniqueValues verifies that consecutive calls to newState
 // produce different state and code_verifier strings.
 func TestNewStateGeneratesUniqueValues(t *testing.T) {
-	s1, v1, err1 := newState("https://example.com/cb")
+	s1, v1, err1 := newState()
 	if err1 != nil {
 		t.Fatalf("newState() error: %v", err1)
 	}
 
-	s2, v2, err2 := newState("https://example.com/cb")
+	s2, v2, err2 := newState()
 	if err2 != nil {
 		t.Fatalf("newState() error: %v", err2)
 	}
@@ -33,7 +33,7 @@ func TestNewStateGeneratesUniqueValues(t *testing.T) {
 // TestNewStateBase64URLFormat verifies that the generated state and verifier
 // are valid base64url-encoded strings (no padding characters).
 func TestNewStateBase64URLFormat(t *testing.T) {
-	state, verifier, err := newState("https://example.com/cb")
+	state, verifier, err := newState()
 	if err != nil {
 		t.Fatalf("newState() error: %v", err)
 	}
@@ -62,11 +62,9 @@ func TestNewStateBase64URLFormat(t *testing.T) {
 }
 
 // TestValidateStateSucceeds verifies that a freshly generated state can be
-// validated and that the stored redirect URI is returned correctly.
+// validated and that the stored code_verifier is returned correctly.
 func TestValidateStateSucceeds(t *testing.T) {
-	redirectURI := "https://example.com/oauth/callback"
-
-	state, verifier, err := newState(redirectURI)
+	state, verifier, err := newState()
 	if err != nil {
 		t.Fatalf("newState() error: %v", err)
 	}
@@ -79,15 +77,11 @@ func TestValidateStateSucceeds(t *testing.T) {
 	if ps.CodeVerifier != verifier {
 		t.Errorf("CodeVerifier = %q, want %q", ps.CodeVerifier, verifier)
 	}
-
-	if ps.RedirectURI != redirectURI {
-		t.Errorf("RedirectURI = %q, want %q", ps.RedirectURI, redirectURI)
-	}
 }
 
 // TestValidateStateSingleUse verifies that a state can only be validated once.
 func TestValidateStateSingleUse(t *testing.T) {
-	state, _, err := newState("https://example.com/cb")
+	state, _, err := newState()
 	if err != nil {
 		t.Fatalf("newState() error: %v", err)
 	}
@@ -113,7 +107,7 @@ func TestValidateStateUnknown(t *testing.T) {
 
 // TestValidateStateExpired verifies that a state older than stateMaxAge is rejected.
 func TestValidateStateExpired(t *testing.T) {
-	state, _, err := newState("https://example.com/cb")
+	state, _, err := newState()
 	if err != nil {
 		t.Fatalf("newState() error: %v", err)
 	}
@@ -136,12 +130,12 @@ func TestValidateStateExpired(t *testing.T) {
 // TestPurgeExpiredStates verifies that purgeExpiredStates removes old entries and
 // leaves fresh entries intact.
 func TestPurgeExpiredStates(t *testing.T) {
-	freshState, _, err := newState("https://example.com/cb")
+	freshState, _, err := newState()
 	if err != nil {
 		t.Fatalf("newState() fresh error: %v", err)
 	}
 
-	expiredState, _, err := newState("https://example.com/cb")
+	expiredState, _, err := newState()
 	if err != nil {
 		t.Fatalf("newState() expired error: %v", err)
 	}

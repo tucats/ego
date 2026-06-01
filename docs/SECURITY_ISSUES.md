@@ -2343,6 +2343,47 @@ accepting it, AND pass `ps.RedirectURI` to `ExchangeCode` instead of
 `cfg.RedirectURI` so that the same URI is used consistently across both legs of
 the flow.
 
+**Resolution (June 2026):**
+Five coordinated changes were made:
+
+1. **`server/oauth/rshandlers/authorize_handler.go`** — The `redirect` query
+   parameter override is removed entirely.  `AuthorizeRedirectHandler` now
+   always uses `cfg.RedirectURI` (the server-configured value) and never reads
+   the `redirect` query parameter.  The function-level doc comment was updated
+   to explain why no per-request override is accepted.  The internal error
+   message for `BuildAuthorizeURL` failure was also changed to a generic string
+   (no longer leaks the raw error to the browser — partial fix for OAUTH-L4).
+
+2. **`server/oauth/rshandlers/routes.go`** — The `.Parameter("redirect",
+   "string")` chain call was removed from the `GET /services/admin/oauth/authorize`
+   route registration, so the router no longer declares that parameter as
+   expected input.
+
+3. **`server/oauth/state.go`** — `RedirectURI string` was removed from
+   `pendingState` (the internal struct) and `newState()` no longer accepts a
+   `redirectURI` argument.  The field was dead storage: it was set by
+   `AuthorizeURL` but never read by `CallbackHandler`.
+
+4. **`server/oauth/oauth.go`** — `RedirectURI string` was removed from the
+   exported `PendingState` struct.  `ValidateCallbackState` no longer copies
+   the field.
+
+5. **`server/oauth/flow_authcode.go`** — The `newState(cfg.RedirectURI)` call
+   was updated to `newState()`.
+
+Tests in `server/oauth/rshandlers/authorize_handler_test.go` cover:
+`TestAuthorizeRedirectIgnoresRedirectParam` (primary regression — verifies that
+`?redirect=<attacker-uri>` has no effect on the redirect_uri embedded in the
+authorization URL), `TestAuthorizeRedirectUsesConfiguredURI` (happy path with
+all required PKCE parameters present), `TestAuthorizeRedirectNoProvider` (503
+when provider is not configured), `TestAuthorizeRedirectNoRedirectURI` (500
+when redirect URI is not configured), and
+`TestAuthorizeRedirectTwoCallsProduceDifferentStates` (each flow gets a unique
+PKCE state token).
+
+Existing tests in `server/oauth/state_test.go` and `medium_test.go` were
+updated to match the new `newState()` signature.
+
 ---
 
 ### Medium (OAuth RS — second audit, June 2026)
@@ -2661,7 +2702,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-H2** — `JWTCacheEntry` gained a `JTI string` field; `ValidateJWT` checks `tokens.IsIDBlacklisted(entry.JTI)` on every cache hit, evicts and rejects on a positive match, and stores `JTI: claims.ID` when writing new entries
 - [x] **OAUTH-H3** — `handleAuthorizationCodeGrant` now rejects exchanges where `client.ClientSecretHash == ""` and `pending.CodeChallenge == ""`; new i18n keys `oauth.as.pkce.required` and `oauth.as.pkce.missing` added to all three language files
 - [x] **OAUTH-H4** — All failure re-render paths in `AuthorizePostHandler` route through the new `reRenderWithError` helper, which always generates a fresh CSRF token, replaces the cookie, and populates `loginFormData.CSRFToken`
-- [ ] **OAUTH-H5** — Remove the unvalidated `redirect` query-parameter override from `AuthorizeRedirectHandler`; the feature is both a phishing vector and functionally broken (stored `ps.RedirectURI` is never used in `CallbackHandler`'s token exchange call)
+- [x] **OAUTH-H5** — Removed unvalidated `redirect` query-parameter override from `AuthorizeRedirectHandler` and `.Parameter("redirect")` from route registration; removed dead `RedirectURI` field from `pendingState`/`PendingState` and the `newState()` parameter; tests in `rshandlers/authorize_handler_test.go`
 - [x] **LOGIN-H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [x] **LOGIN-H2** — Upgraded in two stages: (1) MD5 → PBKDF2-SHA256 in `util/crypto.go`; (2) both `util/crypto.go` and `app-cli/settings/crypto.go` upgraded to Argon2id (32 MiB, 2 iterations) with per-encryption random salt and `ÿEG3` magic prefix; all existing ciphertext decrypts transparently via legacy paths
 - [x] **LOGIN-H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON

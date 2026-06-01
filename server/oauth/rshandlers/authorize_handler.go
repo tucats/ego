@@ -12,23 +12,23 @@ import (
 // AuthorizeRedirectHandler processes GET /services/admin/oauth/authorize.
 //
 // This endpoint is a convenience entry point for browser-based clients — for
-// example, an "Sign in with [Your Organization]" button on the Ego dashboard.
-// It performs the first step of the Authorization Code + PKCE flow: building the
-// full IdP authorization URL and redirecting the browser to it.
+// example, a "Sign in with [Your Organization]" button on the Ego dashboard.
+// It performs the first step of the Authorization Code + PKCE flow: building
+// the full IdP authorization URL (using the server-configured redirect URI)
+// and redirecting the browser to it.
 //
-// After the user authenticates with the IdP, the browser is redirected back to
-// /services/admin/oauth/callback (CallbackHandler) with the authorization code.
+// After the user authenticates with the IdP, the browser is redirected back
+// to /services/admin/oauth/callback (CallbackHandler) with the authorization
+// code.
 //
-// An optional "redirect" query parameter overrides the configured
-// ego.server.oauth.redirect.uri for this specific request.  The override URI
-// must be registered with the IdP or the token exchange will fail.
+// The redirect URI used in the authorization request is always the value
+// configured in ego.server.oauth.redirect.uri.  No per-request override is
+// accepted.  Allowing callers to substitute an arbitrary URI would constitute
+// an open-redirect vulnerability (OAUTH-H5), because the IdP would send the
+// user — and the authorization code — to a potentially attacker-controlled
+// address.
 func AuthorizeRedirectHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	cfg := oauth.GetConfig()
-
-	// Optional per-request redirect URI override.
-	if override := r.URL.Query().Get("redirect"); override != "" {
-		cfg.RedirectURI = override
-	}
 
 	if cfg.Provider == "" {
 		return util.ErrorResponse(w, session.ID,
@@ -42,7 +42,7 @@ func AuthorizeRedirectHandler(session *router.Session, w http.ResponseWriter, r 
 			http.StatusInternalServerError)
 	}
 
-	// Build the PKCE authorization URL.
+	// Build the PKCE authorization URL using the server-configured redirect URI.
 	authURL, state, _, err := oauth.BuildAuthorizeURL(cfg)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "oauth.rs.authorize.failed", ui.A{
@@ -51,7 +51,7 @@ func AuthorizeRedirectHandler(session *router.Session, w http.ResponseWriter, r 
 		})
 
 		return util.ErrorResponse(w, session.ID,
-			"failed to build authorization URL: "+err.Error(),
+			"failed to build authorization URL",
 			http.StatusInternalServerError)
 	}
 

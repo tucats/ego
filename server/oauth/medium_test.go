@@ -259,8 +259,6 @@ func TestRefreshJWKS_OversizedBody(t *testing.T) {
 //	the cap without generating real random tokens.  After the test, t.Cleanup
 //	removes every injected key.
 func TestNewState_EnforcesMaxPendingStates(t *testing.T) {
-	const redirect = "https://cap.example.com/cb"
-
 	// Collect the keys we inject so the cleanup can remove exactly them.
 	injected := make([]string, 0, maxPendingStates)
 
@@ -271,8 +269,7 @@ func TestNewState_EnforcesMaxPendingStates(t *testing.T) {
 		key := stateTestKey("cap", i)
 
 		stateStore.items[key] = &pendingState{
-			RedirectURI: redirect,
-			CreatedAt:   time.Now(),
+			CreatedAt: time.Now(),
 		}
 
 		injected = append(injected, key)
@@ -290,7 +287,7 @@ func TestNewState_EnforcesMaxPendingStates(t *testing.T) {
 	})
 
 	// With the store full, newState must return an error.
-	_, _, err := newState(redirect)
+	_, _, err := newState()
 	if err == nil {
 		t.Errorf("newState() should fail when stateStore has %d entries (OAUTH-M5)", maxPendingStates)
 	}
@@ -315,7 +312,7 @@ func TestNewState_BelowCapSucceeds(t *testing.T) {
 			currentCount, maxPendingStates)
 	}
 
-	state, verifier, err := newState("https://below-cap.example.com/cb")
+	state, verifier, err := newState()
 	if err != nil {
 		t.Fatalf("newState() below cap returned unexpected error: %v", err)
 	}
@@ -345,8 +342,6 @@ func TestNewState_BelowCapSucceeds(t *testing.T) {
 // insert, silently exceeding the cap.  This sequential test detects the
 // simpler case; the race detector covers the concurrent case.
 func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
-	const redirect = "https://atomic.example.com/cb"
-
 	injected := make([]string, 0, maxPendingStates)
 
 	stateStore.mu.Lock()
@@ -354,8 +349,7 @@ func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
 		key := stateTestKey("atomic", i)
 
 		stateStore.items[key] = &pendingState{
-			RedirectURI: redirect,
-			CreatedAt:   time.Now(),
+			CreatedAt: time.Now(),
 		}
 
 		injected = append(injected, key)
@@ -371,7 +365,7 @@ func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
 	})
 
 	// Call 1: store is at cap-1.  This should succeed.
-	state1, _, err1 := newState(redirect)
+	state1, _, err1 := newState()
 	if err1 != nil {
 		t.Fatalf("newState() at cap-1 should succeed; got error: %v", err1)
 	}
@@ -379,7 +373,7 @@ func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
 	t.Cleanup(func() { _, _ = validateState(state1) })
 
 	// Call 2: store is now at cap.  This must fail.
-	_, _, err2 := newState(redirect)
+	_, _, err2 := newState()
 	if err2 == nil {
 		t.Error("newState() at cap should fail — the cap check or the atomicity is broken (OAUTH-M5)")
 	}
