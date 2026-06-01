@@ -379,6 +379,136 @@ func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
 	}
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// OAUTH-M6: size-limited token exchange response
+// ─────────────────────────────────────────────────────────────────────────────
+
+// testMaxTokenBodyBytes mirrors the constant defined inside ExchangeCode.
+// It is duplicated here so the production code does not need to export a value
+// that is purely an implementation detail.  Update this constant if the
+// production cap changes.
+const testMaxTokenBodyBytes = 64 << 10 // 64 KiB — must match flow_authcode.go
+
+// TestExchangeCode_OversizedBody verifies that ExchangeCode returns an error
+// when the IdP token endpoint responds with a body larger than the 64 KiB cap
+// (OAUTH-M6).
+//
+// This is the same protection applied to OIDC discovery documents (OAUTH-M4)
+// but for the per-request token exchange path.  A slow or malicious IdP that
+// streams a large response can exhaust server memory; the LimitedReader cap
+// prevents that.
+//
+// Test strategy:
+//   - Spin up a test HTTP server that responds to POST requests with a body of
+//     exactly testMaxTokenBodyBytes+1 bytes (the minimum oversized body).
+//   - Wire the idpClient spy to point at this server so ExchangeCode uses it.
+//   - Confirm that ExchangeCode returns ErrOAuthTokenSizeLimit rather than a
+//     JSON parse error (which would mean the body was accepted and then rejected
+//     for a different reason).
+func TestExchangeCode_OversizedBody(t *testing.T) {
+	resetDiscoveryCache()
+
+	// We need a real discovery document that points the token_endpoint at our
+	// test server, so ExchangeCode reaches the oversized-body handler.
+	var tokenSrv *httptest.Server
+
+	tokenSrv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Serve both the OIDC discovery document and the token endpoint from
+		// the same test server to keep wiring simple.
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/.well-known/openid-configuration"):
+			doc := validDiscoveryDoc("http://" + r.Host)
+			// Override the token_endpoint so ExchangeCode POSTs to our handler.
+			doc["token_endpoint"] = "http://" + r.Host + "/token"
+			body, _ := json.Marshal(doc)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(body)
+
+		case r.URL.Path == "/token":
+			// One byte over the cap — the smallest body that must be rejected.
+			oversized := bytes.Repeat([]byte("x"), testMaxTokenBodyBytes+1)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(oversized)
+
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer tokenSrv.Close()
+
+	cfg := rsConfig{
+		Provider:    tokenSrv.URL,
+		ClientID:    "test-client",
+		RedirectURI: "http://localhost/callback",
+	}
+
+	_, _, err := ExchangeCode(cfg, "test-code", "test-verifier")
+	if err == nil {
+		t.Fatal("ExchangeCode() should return an error when the token response body exceeds the size cap (OAUTH-M6)")
+	}
+
+	// The error must be the size-limit error, not a JSON parse error.  A JSON
+	// parse error would mean the oversized body was accepted and parsed, which
+	// is the bug we are preventing.
+	if !errors.Equals(err, errors.ErrOAuthTokenSizeLimit) {
+		t.Errorf("error should be ErrOAuthTokenSizeLimit, got: %v", err)
+	}
+
+	resetDiscoveryCache()
+}
+
+// TestExchangeCode_ExactlyAtLimit verifies that a token response of exactly
+// testMaxTokenBodyBytes is accepted by the size check (boundary condition).
+//
+// A body at exactly the cap should pass the LimitedReader check and then fail
+// for a different reason (JSON parse error, because the body is not valid JSON).
+// A size-limit error at this boundary would indicate an off-by-one bug.
+func TestExchangeCode_ExactlyAtLimit(t *testing.T) {
+	resetDiscoveryCache()
+
+	var tokenSrv *httptest.Server
+
+	tokenSrv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/.well-known/openid-configuration"):
+			doc := validDiscoveryDoc("http://" + r.Host)
+			// Override the token_endpoint so ExchangeCode POSTs to our handler.
+			doc["token_endpoint"] = "http://" + r.Host + "/token"
+			body, _ := json.Marshal(doc)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(body)
+
+		case r.URL.Path == "/token":
+			// Exactly the cap — should pass the size check, then fail JSON parse.
+			atLimit := bytes.Repeat([]byte("z"), testMaxTokenBodyBytes)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(atLimit)
+
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer tokenSrv.Close()
+
+	cfg := rsConfig{
+		Provider:    tokenSrv.URL,
+		ClientID:    "test-client",
+		RedirectURI: "http://localhost/callback",
+	}
+
+	_, _, err := ExchangeCode(cfg, "test-code", "test-verifier")
+	if err == nil {
+		t.Error("expected a JSON parse error for a non-JSON body at the size limit")
+	}
+
+	// Must NOT be a size-limit error — the body was within the allowed cap.
+	if errors.Equals(err, errors.ErrOAuthTokenSizeLimit) {
+		t.Errorf("got a size-limit error at exactly the cap — possible off-by-one bug: %v", err)
+	}
+
+	resetDiscoveryCache()
+}
+
 // stateTestKey builds a deterministic, human-readable key for test injection.
 // The prefix argument labels the test that created the entry; the index makes
 // each key unique within that test.

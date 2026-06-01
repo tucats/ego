@@ -224,6 +224,7 @@ oauth.token.post=error sending request to OAuth2 token endpoint
 oauth.token.read=error reading OAuth2 token response
 oauth.token.request=error building OAuth2 token request
 oauth.token.sign=error signing OAuth2 token
+oauth.token.size=OAuth2 token exchange response exceeds the maximum allowed size
 oauth.too.many.flows=too many pending OAuth2 authorization flows
 oidc.discovery.fetch=error fetching OIDC discovery document
 oidc.discovery.field=OIDC discovery document is missing a required field

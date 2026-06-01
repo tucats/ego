@@ -2429,6 +2429,22 @@ if lr.N == 0 {
 A real token endpoint response is a small JSON object (access token, expiry,
 scopes) — 64 KiB is many times larger than any legitimate response.
 
+**Resolution (June 2026):**
+`ExchangeCode` in `server/oauth/flow_authcode.go` now wraps `resp.Body` in
+`&io.LimitedReader{R: resp.Body, N: maxTokenBodyBytes + 1}` (where
+`maxTokenBodyBytes = 64 << 10`, 64 KiB) before calling `io.ReadAll`.  Using
+N+1 rather than N avoids an off-by-one: when `lr.N` reaches zero after reading,
+it proves the body is strictly larger than the limit rather than exactly equal
+to it.  A zero `lr.N` after `io.ReadAll` returns causes `ExchangeCode` to
+return the new `ErrOAuthTokenSizeLimit` error so operators can identify why a
+token exchange was rejected.  New error constant `ErrOAuthTokenSizeLimit` added
+to `errors/messages.go` with key `oauth.token.size`; the localized message was
+added to all three language files (`messages_en.txt`, `messages_fr.txt`,
+`messages_es.txt`) in the same alphabetical position as the other
+`oauth.token.*` entries.  Tests `TestExchangeCode_OversizedBody` and
+`TestExchangeCode_ExactlyAtLimit` added to `server/oauth/medium_test.go`;
+they follow the same pattern as the OAUTH-M4 boundary tests.
+
 ---
 
 #### OAUTH-M7 — Every JWT with an unknown `kid` triggers an unconditional JWKS refresh
@@ -2724,7 +2740,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-M3** — `RevokeHandler` in `revoke.go` now calls `validateBasicAuth(r)` instead of two `r.FormValue` calls; accepts Basic Auth header and form fields; backward compatible
 - [x] **OAUTH-M4** — Both `discoverEndpoints` and `refreshJWKS` now use `&io.LimitedReader{N: 1<<20 + 1}` before `io.ReadAll`; `lr.N == 0` after reading indicates an oversized body and returns a descriptive error
 - [x] **OAUTH-M5** — `newState()` checks `len(stateStore.items) >= maxPendingStates` (500) inside the same mutex lock as the insert; `statePurgeInterval = 2 * time.Minute` constant replaces `stateMaxAge` in the purge ticker
-- [ ] **OAUTH-M6** — Wrap `resp.Body` in `io.LimitedReader` (64 KiB) before `io.ReadAll` in `ExchangeCode` (`flow_authcode.go:155`), matching the pattern applied to discovery and JWKS responses by OAUTH-M4
+- [x] **OAUTH-M6** — `ExchangeCode` in `flow_authcode.go` now wraps `resp.Body` in `&io.LimitedReader{N: 64 KiB + 1}` before `io.ReadAll`; `lr.N == 0` after reading returns `ErrOAuthTokenSizeLimit`; new error constant and `oauth.token.size` i18n key added to all three language files; tests in `medium_test.go`
 - [ ] **OAUTH-M7** — Add a `lastMissRefresh` cooldown in `keyByID` (`jwks.go`) so that a fresh-cache unknown-`kid` triggers at most one JWKS refresh per 30-second window, preventing a JWKS storm from tokens with unique fake key IDs
 - [ ] **OAUTH-M8** — Emit a startup warning when `ego.server.oauth.permission.claim` is set to a value other than `"scope"` or `"roles"`, since custom claim names are silently unsupported and all JWT holders fall back to `"ego.logon"`
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.

@@ -225,6 +225,7 @@ oauth.token.post=error al enviar la solicitud al endpoint de token OAuth2
 oauth.token.read=error al leer la respuesta de token OAuth2
 oauth.token.request=error al construir la solicitud de token OAuth2
 oauth.token.sign=error al firmar el token OAuth2
+oauth.token.size=la respuesta de intercambio de token OAuth2 supera el tamaño máximo permitido
 oauth.too.many.flows=demasiados flujos de autorización OAuth2 pendientes
 oidc.discovery.fetch=error al obtener el documento de descubrimiento OIDC
 oidc.discovery.field=el documento de descubrimiento OIDC no tiene un campo requerido

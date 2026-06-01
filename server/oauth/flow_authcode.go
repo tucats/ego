@@ -152,9 +152,35 @@ func ExchangeCode(cfg rsConfig, code, codeVerifier string) (accessToken, idToken
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	// OAUTH-M6: read the token response through a LimitedReader so that a
+	// malicious or compromised IdP token endpoint cannot return an arbitrarily
+	// large body and exhaust server memory.
+	//
+	// Real token endpoint responses are small JSON objects (access token, expiry,
+	// scopes) — typically a few hundred bytes to a few kilobytes at most.  64 KiB
+	// is many times larger than any legitimate response, so legitimate clients
+	// will never be affected by this cap.
+	//
+	// How the size check works (same technique as OAUTH-M4 in discovery.go and
+	// jwks.go):
+	//   - We set N = maxTokenBodyBytes+1 so we can distinguish "exactly at the
+	//     limit" from "over the limit" after io.ReadAll returns.
+	//   - If lr.N == 0 after reading, all maxTokenBodyBytes+1 quota was consumed,
+	//     which proves the body was strictly larger than maxTokenBodyBytes.
+	//   - If lr.N > 0, the body fit within the cap and we proceed normally.
+	const maxTokenBodyBytes = 64 << 10 // 64 KiB
+
+	lr := &io.LimitedReader{R: resp.Body, N: maxTokenBodyBytes + 1}
+
+	body, err := io.ReadAll(lr)
 	if err != nil {
 		return "", "", errors.New(errors.ErrOAuthTokenRead).Context(err.Error())
+	}
+
+	// lr.N == 0 means all maxTokenBodyBytes+1 quota was consumed, proving the
+	// body was strictly larger than the cap.
+	if lr.N == 0 {
+		return "", "", errors.New(errors.ErrOAuthTokenSizeLimit).Context(doc.TokenEndpoint)
 	}
 
 	var result tokenExchangeResponse

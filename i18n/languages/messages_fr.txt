@@ -218,6 +218,7 @@ oauth.token.post=erreur lors de l'envoi de la requête à l'endpoint de jeton OA
 oauth.token.read=erreur lors de la lecture de la réponse de jeton OAuth2
 oauth.token.request=erreur lors de la construction de la requête de jeton OAuth2
 oauth.token.sign=erreur lors de la signature du jeton OAuth2
+oauth.token.size=la réponse d'échange de jeton OAuth2 dépasse la taille maximale autorisée
 oauth.too.many.flows=trop de flux d'autorisation OAuth2 en attente
 oidc.discovery.fetch=erreur lors de la récupération du document de découverte OIDC
 oidc.discovery.field=le document de découverte OIDC manque un champ requis
