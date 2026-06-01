@@ -194,6 +194,7 @@ func TestRevokeHandler_WrongSecret_Rejected(t *testing.T) {
 func TestRevokeHandler_UnknownClient_Rejected(t *testing.T) {
 	// Start with an empty client registry.
 	clients = nil
+
 	t.Cleanup(func() { clients = nil })
 
 	form := url.Values{}
@@ -209,6 +210,7 @@ func TestRevokeHandler_UnknownClient_Rejected(t *testing.T) {
 // rather than panicking or accepting.
 func TestRevokeHandler_MissingClientID_Rejected(t *testing.T) {
 	clients = nil
+	
 	t.Cleanup(func() { clients = nil })
 
 	form := url.Values{}

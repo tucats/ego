@@ -164,7 +164,7 @@ func logonOAuth(c *cli.Context) error {
 	case result := <-codeCh:
 		authCode = result
 	case <-time.After(oauthCallbackTimeout):
-		ui.Say("logon.oauth.timeout", ui.A{})
+		ui.Say("logon.oauth.timeout")
 
 		return errors.New(fmt.Errorf("%s", i18n.T("logon.oauth.timeout")))
 	}

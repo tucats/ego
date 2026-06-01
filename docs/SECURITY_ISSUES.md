@@ -2292,6 +2292,359 @@ than a media-type rejection.
 
 ---
 
+---
+
+### High (OAuth RS — second audit, June 2026)
+
+#### OAUTH-H5 — Unvalidated `redirect` query parameter enables open redirect in RS authorize handler
+
+**Affected file:** `server/oauth/rshandlers/authorize_handler.go:29-31`
+
+```go
+if override := r.URL.Query().Get("redirect"); override != "" {
+    cfg.RedirectURI = override
+}
+```
+
+**Description:**
+`AuthorizeRedirectHandler` accepts an optional `redirect` query parameter and
+substitutes it for the configured `ego.server.oauth.redirect.uri` without any
+server-side validation. The substituted URI is then sent to the IdP as the
+`redirect_uri` parameter of the authorization request.
+
+Two separate problems arise:
+
+1. **Open redirect / phishing.** If the IdP's client registration uses a
+   wildcard, prefix match, or pattern for allowed redirect URIs (common with
+   some providers, or when an operator accidentally registers too broadly), an
+   attacker can supply an arbitrary URI. After the user authenticates with the
+   IdP, the browser is redirected to the attacker-controlled URI. Because PKCE
+   protects the subsequent code exchange, the attacker cannot obtain tokens, but
+   they receive the authorization code in the URL and can display a convincing
+   fake "login successful" page. Even with an exact-match IdP registration, the
+   capability to redirect to any registered URI (including a staging endpoint)
+   is unintended and violates the principle that a server should enforce its own
+   policy, not rely solely on the IdP.
+
+2. **Broken feature — stored redirect URI is silently ignored.** The overridden
+   `RedirectURI` is stored in the PKCE `pendingState` as `ps.RedirectURI`
+   (`state.go:119`). However, `CallbackHandler` retrieves the global config with
+   `oauth.GetConfig()` and calls `ExchangeCodePublic(cfg, code, ps.CodeVerifier)`,
+   which sends `cfg.RedirectURI` (the original configured value) to the IdP token
+   endpoint. The stored `ps.RedirectURI` is never read. As a result, the token
+   exchange always fails with a redirect-URI mismatch error from the IdP, making
+   the override feature entirely inoperative.
+
+**Recommendation:**
+Remove the `redirect` override entirely from `AuthorizeRedirectHandler`. If
+per-request redirect URI overrides are a future requirement, validate the
+supplied URI against a server-side allowlist of permitted redirect URIs before
+accepting it, AND pass `ps.RedirectURI` to `ExchangeCode` instead of
+`cfg.RedirectURI` so that the same URI is used consistently across both legs of
+the flow.
+
+---
+
+### Medium (OAuth RS — second audit, June 2026)
+
+#### OAUTH-M6 — Token exchange response body read without size limit
+
+**Affected file:** `server/oauth/flow_authcode.go:155` — `ExchangeCode()`
+
+```go
+body, err := io.ReadAll(resp.Body)
+```
+
+**Description:**
+`ExchangeCode` reads the IdP token endpoint response with a bare `io.ReadAll`,
+applying no byte limit before the allocation. OAUTH-M4 fixed the same class of
+issue for the OIDC discovery document and JWKS responses, but the token exchange
+response was not updated at the same time.
+
+A malicious or compromised IdP token endpoint (or a network attacker who can
+intercept the server-to-server TLS connection) can return an arbitrarily large
+response body. The `idpClient` timeout (10 s, added by OAUTH-M2) bounds the
+total wall-clock time, but a slowly-streaming attacker can deliver megabytes
+within that window. The full body is allocated as a single byte slice, so a
+large payload causes a memory spike that can be repeated on every user login that
+triggers a token exchange (i.e., every Authorization Code flow completion).
+
+**Recommendation:**
+Apply the same `io.LimitedReader` pattern used in `discoverEndpoints` and
+`refreshJWKS`:
+
+```go
+const maxTokenBodyBytes = 64 << 10  // 64 KiB — generous for any real token response
+lr := &io.LimitedReader{R: resp.Body, N: maxTokenBodyBytes + 1}
+body, err := io.ReadAll(lr)
+if err != nil {
+    return "", "", errors.New(errors.ErrOAuthTokenRead).Context(err.Error())
+}
+if lr.N == 0 {
+    return "", "", errors.New(errors.ErrOAuthTokenSizeLimit).Context(doc.TokenEndpoint)
+}
+```
+
+A real token endpoint response is a small JSON object (access token, expiry,
+scopes) — 64 KiB is many times larger than any legitimate response.
+
+---
+
+#### OAUTH-M7 — Every JWT with an unknown `kid` triggers an unconditional JWKS refresh
+
+**Affected file:** `server/oauth/jwks.go:200-209` — `keyByID()`
+
+```go
+// Try the cache first if it is fresh.
+if len(keys) > 0 && age < ttl {
+    if key := findKeyByID(keys, kid); key != nil {
+        return key, nil
+    }
+}
+
+// Cache miss or stale — refresh and try again.
+if err := refreshJWKS(jwksURL); err != nil { ...
+```
+
+**Description:**
+`keyByID` refreshes the JWKS unconditionally whenever the requested `kid` is not
+found in the local cache, including when the cache is still fresh (`age < ttl`).
+The intent is to handle key rotation gracefully: if the IdP rotates its signing
+key, the first request bearing the new kid triggers a fetch. However, the guard
+condition only prevents a refresh when the same kid is already in the cache; it
+does not prevent repeated refreshes when a novel unknown kid is presented on every
+request.
+
+An attacker who can present Bearer tokens (even syntactically valid ones that
+will ultimately fail signature verification) with a unique, non-existent `kid`
+header on each request forces one JWKS network fetch per request. With many
+concurrent such requests:
+
+- Each `refreshJWKS` call makes a round-trip to the IdP that can last up to
+  10 seconds (the `idpClient` timeout), blocking the handling goroutine.
+- Many concurrent fetches starve the server's goroutine pool.
+- The IdP is hammered with repeated JWKS requests, potentially triggering IdP-
+  side rate limiting that blocks legitimate key lookups from the same server IP.
+
+There is no throttle, cooldown, or minimum inter-refresh interval guarding the
+cache-fresh-but-kid-unknown branch.
+
+**Recommendation:**
+Track the timestamp of the most recent JWKS refresh triggered by a cache miss and
+refuse to refresh more than once per configurable minimum interval (e.g., 30
+seconds) in the cache-is-fresh-but-kid-missing branch. A package-level
+`lastMissRefresh time.Time` protected by a mutex is sufficient:
+
+```go
+var missRefresh struct {
+    mu   sync.Mutex
+    last time.Time
+}
+const minMissRefreshInterval = 30 * time.Second
+
+// Inside keyByID, after the cache-fresh-kid-missing case:
+missRefresh.mu.Lock()
+if time.Since(missRefresh.last) < minMissRefreshInterval {
+    missRefresh.mu.Unlock()
+    return nil, errors.New(errors.ErrJWKSKeyNotFound).Context(kid)
+}
+missRefresh.last = time.Now()
+missRefresh.mu.Unlock()
+// then call refreshJWKS
+```
+
+The key-rotation use case is fully preserved: a genuine rotation will succeed
+on the first unknown-kid request; subsequent requests within the 30-second window
+will see the refreshed cache and find the new key (or correctly fail if the kid
+is genuinely absent).
+
+---
+
+#### OAUTH-M8 — Custom permission claim names silently unsupported; all JWT holders granted minimum "ego.logon"
+
+**Affected file:** `server/oauth/claims.go:96-114` — `extractPermissionTokens()`
+
+```go
+default:
+    // Custom claim names return an empty slice.
+    return []string{}
+```
+
+**Description:**
+`extractPermissionTokens` handles only two claim names: `"scope"` (standard
+OAuth2, space-delimited) and `"roles"` (common IdP extension, string array). Any
+other value for `ego.server.oauth.permission.claim` — including `"groups"`,
+`"authorities"`, `"realm_access.roles"` (Keycloak), or provider-specific names —
+silently returns an empty slice.
+
+The empty slice propagates to `mapClaimsToPermissions`, which finds no matching
+tokens and applies an unconditional fallback:
+
+```go
+if len(permissions) == 0 {
+    permissions = []string{"ego.logon"}
+}
+```
+
+As a result, any operator who configures a custom permission claim name finds:
+
+1. **Users who should be blocked still get logon.** If the intended custom claim
+   would have produced no Ego permissions for certain JWT holders (external
+   accounts, low-privilege IdP users), they silently receive `ego.logon` and can
+   authenticate to the Ego server.
+2. **Elevated permissions are silently dropped.** Users whose custom claim would
+   have mapped to `ego.root` or table-write permissions only receive logon; admin
+   operations fail without a clear error.
+3. **No warning or error is generated.** The misconfiguration is invisible in
+   logs until an operator notices that elevated operations fail for users who
+   should have admin access.
+
+**Recommendation:**
+At startup, when `ego.server.oauth.permission.claim` is set to a value other than
+`"scope"` or `"roles"`, emit a SERVER-level warning (analogous to OAUTH-M1's
+audience warning):
+
+```go
+if cfg.PermissionClaim != "scope" && cfg.PermissionClaim != "roles" {
+    ui.Log(ui.ServerLogger, "oauth.rs.unsupported.permission.claim",
+        ui.A{"claim": cfg.PermissionClaim})
+}
+```
+
+Longer-term, support custom claim lookup by removing the `json:"-"` tag from
+`jwtClaims.AdditionalClaims`, or by switching the claims struct to embed
+`jwt.MapClaims` for the non-registered fields.
+
+---
+
+### Low / Informational (OAuth RS — second audit, June 2026)
+
+#### OAUTH-L3 — `EGO_OAUTH_CLIENT_SECRET` environment variable not cleared after reading
+
+**Affected file:** `server/oauth/config.go:130` — `loadConfig()`
+
+```go
+if envSecret := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); envSecret != "" {
+    clientSecret = envSecret
+}
+```
+
+**Description:**
+The OAuth2 client secret can be supplied via the `EGO_OAUTH_CLIENT_SECRET`
+environment variable. Unlike `EGO_PASSWORD`, which was fixed by LOGIN-L1 to call
+`os.Unsetenv` and emit a visible warning immediately after reading, the OAuth
+client secret is read and stored but the environment variable is never cleared.
+The secret therefore remains accessible to any child process spawned after server
+startup (for example, via Ego's built-in exec functions if `ExecPermittedSetting`
+is enabled) and is visible in `/proc/<pid>/environ` on Linux for the lifetime of
+the server process.
+
+**Recommendation:**
+Clear the environment variable and emit a visible warning immediately after
+reading, matching the pattern from LOGIN-L1:
+
+```go
+if envSecret := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); envSecret != "" {
+    clientSecret = envSecret
+    os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")
+    ui.Log(ui.ServerLogger, "oauth.rs.client.secret.env", ui.A{})
+}
+```
+
+---
+
+#### OAUTH-L4 — Internal error details from token exchange and JWT validation returned to browser clients
+
+**Affected files:**
+
+- `server/oauth/rshandlers/callback.go:55-65` — IdP error branch
+- `server/oauth/rshandlers/callback.go:97-103` — token exchange failure
+- `server/oauth/rshandlers/callback.go:109-111` — JWT validation failure
+
+```go
+return util.ErrorResponse(w, session.ID,
+    "token exchange failed: "+err.Error(), http.StatusBadGateway)
+
+return util.ErrorResponse(w, session.ID,
+    "received JWT is invalid: "+err.Error(), http.StatusBadGateway)
+```
+
+**Description:**
+Three error responses in `CallbackHandler` include verbatim Ego error strings in
+the HTTP response body returned to the browser:
+
+1. **Token exchange failure** — `err.Error()` from `ExchangeCode` can contain
+   the IdP token endpoint URL and the IdP's own error response.
+2. **JWT validation failure** — `err.Error()` from `ValidateJWT` can reveal
+   which specific validation step failed (signature, expiry, issuer, audience,
+   missing claim), aiding an attacker who is probing token validation behavior.
+3. **IdP error** — the raw `error` and `error_description` query parameters
+   from the IdP redirect are concatenated verbatim into the response body
+   (`"IdP authorization error: " + idpError + ": " + desc`). An attacker who
+   can craft a redirect to the callback endpoint with arbitrary query parameters
+   can inject arbitrary text into the response body — and also into the server
+   log (`"desc": desc`), which may corrupt structured log output if the value
+   contains newline characters or JSON control sequences.
+
+**Recommendation:**
+Return a fixed, generic message to the browser for all three failure paths and
+keep full error detail in the AUTH log only:
+
+```go
+ui.Log(ui.AuthLogger, "oauth.rs.callback.exchange.failed", ui.A{
+    "session": session.ID, "error": err.Error(),
+})
+return util.ErrorResponse(w, session.ID,
+    "OAuth2 login failed", http.StatusBadGateway)
+```
+
+For the IdP error branch, sanitize `error_description` (replace newlines and
+non-printable characters) before writing it to the log.
+
+---
+
+#### OAUTH-L5 — Custom `ego.server.oauth.user.claim` values silently fall back to `sub`
+
+**Affected file:** `server/oauth/oauth.go:329-344` — `extractUsername()`
+
+```go
+func extractUsername(claims *jwtClaims, userClaim string) string {
+    switch userClaim {
+    case "sub":   return claims.Subject
+    case "email": ...
+    case "preferred_username": ...
+    }
+    return claims.Subject   // ← silent fallback for any other configured value
+}
+```
+
+**Description:**
+`extractUsername` handles only three well-known claim names (`sub`, `email`,
+`preferred_username`). If an operator sets `ego.server.oauth.user.claim` to any
+other value — for example `"upn"` (Azure AD), `"login"` (GitHub),
+`"unique_name"` (ADFS), or a provider-specific custom claim — the function
+silently returns `claims.Subject` with no warning or error.
+
+Depending on the IdP, `sub` is often an opaque UUID rather than a human-readable
+account name. Consequences include:
+
+- Ego usernames appear as UUIDs in audit logs, making security reviews difficult.
+- Username-based access policies apply to UUIDs rather than the account names
+  the operator intended to control.
+- The misconfiguration is invisible until an operator compares login usernames
+  against expected values.
+
+This is the user-identity analogue of OAUTH-M8 (custom permission claim silently
+ignored).
+
+**Recommendation:**
+Log a startup warning when `ego.server.oauth.user.claim` is set to a value that
+`extractUsername` does not handle. Longer-term, support custom claim lookup by
+populating `AdditionalClaims` from the JWT body (removing its `json:"-"` tag) so
+arbitrary claim names can be read at runtime.
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -2308,6 +2661,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-H2** — `JWTCacheEntry` gained a `JTI string` field; `ValidateJWT` checks `tokens.IsIDBlacklisted(entry.JTI)` on every cache hit, evicts and rejects on a positive match, and stores `JTI: claims.ID` when writing new entries
 - [x] **OAUTH-H3** — `handleAuthorizationCodeGrant` now rejects exchanges where `client.ClientSecretHash == ""` and `pending.CodeChallenge == ""`; new i18n keys `oauth.as.pkce.required` and `oauth.as.pkce.missing` added to all three language files
 - [x] **OAUTH-H4** — All failure re-render paths in `AuthorizePostHandler` route through the new `reRenderWithError` helper, which always generates a fresh CSRF token, replaces the cookie, and populates `loginFormData.CSRFToken`
+- [ ] **OAUTH-H5** — Remove the unvalidated `redirect` query-parameter override from `AuthorizeRedirectHandler`; the feature is both a phishing vector and functionally broken (stored `ps.RedirectURI` is never used in `CallbackHandler`'s token exchange call)
 - [x] **LOGIN-H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [x] **LOGIN-H2** — Upgraded in two stages: (1) MD5 → PBKDF2-SHA256 in `util/crypto.go`; (2) both `util/crypto.go` and `app-cli/settings/crypto.go` upgraded to Argon2id (32 MiB, 2 iterations) with per-encryption random salt and `ÿEG3` magic prefix; all existing ciphertext decrypts transparently via legacy paths
 - [x] **LOGIN-H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON
@@ -2329,6 +2683,9 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-M3** — `RevokeHandler` in `revoke.go` now calls `validateBasicAuth(r)` instead of two `r.FormValue` calls; accepts Basic Auth header and form fields; backward compatible
 - [x] **OAUTH-M4** — Both `discoverEndpoints` and `refreshJWKS` now use `&io.LimitedReader{N: 1<<20 + 1}` before `io.ReadAll`; `lr.N == 0` after reading indicates an oversized body and returns a descriptive error
 - [x] **OAUTH-M5** — `newState()` checks `len(stateStore.items) >= maxPendingStates` (500) inside the same mutex lock as the insert; `statePurgeInterval = 2 * time.Minute` constant replaces `stateMaxAge` in the purge ticker
+- [ ] **OAUTH-M6** — Wrap `resp.Body` in `io.LimitedReader` (64 KiB) before `io.ReadAll` in `ExchangeCode` (`flow_authcode.go:155`), matching the pattern applied to discovery and JWKS responses by OAUTH-M4
+- [ ] **OAUTH-M7** — Add a `lastMissRefresh` cooldown in `keyByID` (`jwks.go`) so that a fresh-cache unknown-`kid` triggers at most one JWKS refresh per 30-second window, preventing a JWKS storm from tokens with unique fake key IDs
+- [ ] **OAUTH-M8** — Emit a startup warning when `ego.server.oauth.permission.claim` is set to a value other than `"scope"` or `"roles"`, since custom claim names are silently unsupported and all JWT holders fall back to `"ego.logon"`
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
 - [x] **LOGIN-M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
@@ -2356,6 +2713,9 @@ Use this checklist to track progress as issues are resolved.
 
 - [x] **OAUTH-L1** — `isSecureRequest` renamed to `IsSecureRequest` (exported) in `router/webauthn.go`; both cookie-set sites in `authorize.go` (`AuthorizeGetHandler` and `reRenderWithError`) now pass `Secure: router.IsSecureRequest(r)`; tests in `low_test.go` and `secure_request_test.go`
 - [x] **OAUTH-L2** — `.AcceptMedia(defs.JSONMediaType)` removed from the `POST /oauth2/token` route in `RegisterRoutes`; no Accept-header constraint is imposed; tests in `low_test.go` confirm the handler processes form-encoded requests without an Accept header
+- [ ] **OAUTH-L3** — Call `os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")` and emit a log warning immediately after reading the env var in `loadConfig` (`config.go`), matching the pattern from LOGIN-L1
+- [ ] **OAUTH-L4** — Return a fixed generic message to the browser for all three failure paths in `CallbackHandler`; keep full error detail in the AUTH log; sanitize `error_description` before logging to prevent log injection
+- [ ] **OAUTH-L5** — Emit a startup warning when `ego.server.oauth.user.claim` is set to a value that `extractUsername` does not handle (`sub`, `email`, `preferred_username` are the only supported values)
 - [x] **LOGIN-L1** — Warning emitted via `ui.Say("logon.password.env")` when `EGO_PASSWORD` is set; env var cleared with `os.Unsetenv()` immediately after reading so child processes do not inherit it
 - [x] **LOGIN-L2** — `ui.Say("rest.tls.insecure")` emitted (always visible) when insecure mode is activated via profile setting (`exchange.go`) or `EGO_INSECURE_CLIENT` env var (`client.go`); REST-log entry added for the Ego-program `verify: false` path (`methods.go`)
 - [x] **LOGIN-L3** — `LogonHandler` now calls `tokens.Unwrap` on the freshly-minted token and uses `t.Expires` directly for `response.Expiration`; the independent duration re-calculation has been removed

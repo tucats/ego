@@ -69,6 +69,7 @@ func TestIdpClientIsUsedForDiscovery(t *testing.T) {
 
 		// validDiscoveryDoc is defined in discovery_test.go (same package).
 		body, _ := json.Marshal(validDiscoveryDoc("http://" + r.Host))
+		
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	}))

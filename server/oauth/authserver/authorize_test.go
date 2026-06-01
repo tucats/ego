@@ -181,7 +181,7 @@ func TestAuthorizePostHandler_LockedAccount(t *testing.T) {
 	if !strings.Contains(strings.ToLower(body), "locked") &&
 		!strings.Contains(strings.ToLower(body), "temporarily") {
 		t.Errorf("lockout message not found in re-rendered body (first 300 chars): %s",
-			body[:min(300, len(body))])
+			body[:minInt(300, len(body))])
 	}
 }
 
@@ -240,9 +240,9 @@ func TestAuthorizePostHandler_LockedAccount_FreshCSRF(t *testing.T) {
 	}
 }
 
-// min returns the smaller of a and b.  Used only for safe body truncation in
+// minInt returns the smaller of a and b.  Used only for safe body truncation in
 // error messages; intentionally simple rather than importing math or slices.
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
