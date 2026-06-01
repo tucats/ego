@@ -106,9 +106,17 @@ func RegisterRoutes(r *router.Router) error {
 	r.New(defs.OAuthAuthorizePath, AuthorizePostHandler, http.MethodPost).
 		Class(router.ServiceRequestCounter)
 
+	// OAUTH-L2: the token endpoint must NOT declare AcceptMedia(JSONMediaType).
+	//
+	// AcceptMedia validates the request's Accept header, so declaring JSON here
+	// caused the router to reject any token request whose Accept header was absent
+	// or set to "application/x-www-form-urlencoded" — which is what RFC 6749
+	// §4.1.3 actually requires clients to send.  Removing AcceptMedia means all
+	// Content-Type and Accept headers are accepted, which is correct: the handler
+	// reads its input via r.ParseForm() and writes its output as JSON regardless
+	// of what the client declares in its Accept header.
 	r.New(defs.OAuthTokenPath, TokenHandler, http.MethodPost).
-		Class(router.ServiceRequestCounter).
-		AcceptMedia(defs.JSONMediaType)
+		Class(router.ServiceRequestCounter)
 
 	r.New(defs.OAuthUserinfoPath, UserinfoHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).

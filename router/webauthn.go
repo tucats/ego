@@ -195,9 +195,21 @@ func challengeCookie(nonce string, maxAge int, secure bool) *http.Cookie {
 	}
 }
 
-// isSecureRequest returns true when the incoming request arrived over TLS or
+// IsSecureRequest returns true when the incoming request arrived over TLS or
 // was forwarded from an HTTPS front-end (X-Forwarded-Proto: https).
-func isSecureRequest(r *http.Request) bool {
+//
+// This helper is used wherever a cookie's Secure attribute must be set
+// conditionally — most notably the WebAuthn challenge cookie and the OAuth2
+// CSRF cookie.  Exporting it allows other packages (e.g., server/oauth/authserver)
+// to apply the same logic without duplicating the check (OAUTH-L1).
+//
+// Why check both r.TLS and X-Forwarded-Proto?
+//
+//   - r.TLS is non-nil when Go's own TLS listener handled the connection.
+//   - X-Forwarded-Proto: https is set by reverse proxies (nginx, AWS ALB, etc.)
+//     that terminate TLS in front of Ego.  In that topology r.TLS is nil even
+//     though the browser connected over HTTPS.
+func IsSecureRequest(r *http.Request) bool {
 	return r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }
 
@@ -413,7 +425,7 @@ func WebAuthnLoginBeginHandler(session *Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	http.SetCookie(w, challengeCookie(nonce, 300, isSecureRequest(r)))
+	http.SetCookie(w, challengeCookie(nonce, 300, IsSecureRequest(r)))
 
 	ui.Log(ui.AuthLogger, "auth.webauthn.login.begin", ui.A{
 		"session": session.ID})
@@ -452,7 +464,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 	}
 
 	// Clear the challenge cookie regardless of outcome.
-	http.SetCookie(w, challengeCookie("", -1, isSecureRequest(r)))
+	http.SetCookie(w, challengeCookie("", -1, IsSecureRequest(r)))
 
 	// userHandler is called by the library to resolve the user from the credential.
 	var foundUser defs.User
@@ -548,7 +560,7 @@ func WebAuthnRegisterBeginHandler(session *Session, w http.ResponseWriter, r *ht
 		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 	}
 
-	http.SetCookie(w, challengeCookie(nonce, 300, isSecureRequest(r)))
+	http.SetCookie(w, challengeCookie(nonce, 300, IsSecureRequest(r)))
 
 	ui.Log(ui.AuthLogger, "auth.webauthn.register.begin", ui.A{
 		"session": session.ID,
@@ -593,7 +605,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 	}
 
 	// Clear the challenge cookie regardless of outcome.
-	http.SetCookie(w, challengeCookie("", -1, isSecureRequest(r)))
+	http.SetCookie(w, challengeCookie("", -1, IsSecureRequest(r)))
 
 	credential, err := wau.FinishRegistration(auth.WebAuthnUserFrom(u), *sessionData, r)
 	if err != nil {

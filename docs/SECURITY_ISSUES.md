@@ -2224,6 +2224,21 @@ http.SetCookie(w, &http.Cookie{
 Apply the same fix to the re-render path in `AuthorizePostHandler` once
 OAUTH-H4 is resolved and a new CSRF token is generated there as well.
 
+**Resolution (May 2026):**
+`isSecureRequest` in `router/webauthn.go` was renamed to `IsSecureRequest`
+(exported) so that the `authserver` package can call it without duplicating the
+logic.  All four internal call sites in `router/webauthn.go` and all three
+references in `router/webauthn_test.go` were updated to use the new name.
+Both cookie-setting locations in `authorize.go` — `AuthorizeGetHandler` and
+`reRenderWithError` — now pass `Secure: router.IsSecureRequest(r)`.  The flag
+is `true` when `r.TLS != nil` (direct TLS) or when the `X-Forwarded-Proto:
+https` header is set (proxy-terminated TLS); it is `false` for plain HTTP so
+development servers are not broken.  Tests in
+`server/oauth/authserver/low_test.go` and
+`server/oauth/authserver/secure_request_test.go` cover: HTTPS sets Secure,
+plain HTTP omits Secure, X-Forwarded-Proto sets Secure, and
+`router.IsSecureRequest` is callable from outside the router package.
+
 ---
 
 #### OAUTH-L2 — AS token endpoint router registration uses JSON content type
@@ -2261,6 +2276,19 @@ r.New(defs.OAuthTokenPath, TokenHandler, http.MethodPost).
     Class(router.ServiceRequestCounter)
     // No AcceptMedia constraint — RFC 6749 requires form-encoded bodies
 ```
+
+**Resolution (May 2026):**
+The `.AcceptMedia(defs.JSONMediaType)` chain call was removed from the
+`POST /oauth2/token` route registration in `RegisterRoutes`
+(`server/oauth/authserver/authserver.go`).  The router now imposes no
+restriction on the Accept header for this endpoint, matching the RFC 6749
+requirement that clients send `application/x-www-form-urlencoded` request
+bodies.  The handler (`TokenHandler`) uses `r.ParseForm()` internally and
+always writes JSON responses, regardless of what the client declares in its
+Accept header.  Tests in `server/oauth/authserver/low_test.go` verify that
+the handler processes form-encoded requests without an Accept header and that
+the error path (unsupported grant type) produces a grant-type error rather
+than a media-type rejection.
 
 ---
 
@@ -2326,8 +2354,8 @@ Use this checklist to track progress as issues are resolved.
 
 ### Low / Informational items
 
-- [ ] **OAUTH-L1** — Set `Secure: isSecureRequest(r)` on the CSRF cookie in `AuthorizeGetHandler` (and in the future `AuthorizePostHandler` failure re-render path); reuse the existing `isSecureRequest` helper from `server/server/webauthn.go`
-- [ ] **OAUTH-L2** — Remove `AcceptMedia(defs.JSONMediaType)` from the `POST /oauth2/token` route registration in `RegisterRoutes`; the handler reads `application/x-www-form-urlencoded` bodies via `r.ParseForm()`
+- [x] **OAUTH-L1** — `isSecureRequest` renamed to `IsSecureRequest` (exported) in `router/webauthn.go`; both cookie-set sites in `authorize.go` (`AuthorizeGetHandler` and `reRenderWithError`) now pass `Secure: router.IsSecureRequest(r)`; tests in `low_test.go` and `secure_request_test.go`
+- [x] **OAUTH-L2** — `.AcceptMedia(defs.JSONMediaType)` removed from the `POST /oauth2/token` route in `RegisterRoutes`; no Accept-header constraint is imposed; tests in `low_test.go` confirm the handler processes form-encoded requests without an Accept header
 - [x] **LOGIN-L1** — Warning emitted via `ui.Say("logon.password.env")` when `EGO_PASSWORD` is set; env var cleared with `os.Unsetenv()` immediately after reading so child processes do not inherit it
 - [x] **LOGIN-L2** — `ui.Say("rest.tls.insecure")` emitted (always visible) when insecure mode is activated via profile setting (`exchange.go`) or `EGO_INSECURE_CLIENT` env var (`client.go`); REST-log entry added for the Ego-program `verify: false` path (`methods.go`)
 - [x] **LOGIN-L3** — `LogonHandler` now calls `tokens.Unwrap` on the freshly-minted token and uses `t.Expires` directly for `response.Expiration`; the independent duration re-calculation has been removed

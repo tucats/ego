@@ -144,16 +144,19 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 			"could not generate CSRF token", http.StatusInternalServerError)
 	}
 
+	// OAUTH-L1: set the Secure flag when the connection is HTTPS so that
+	// browsers enforce the cookie only over encrypted transport.  We detect
+	// HTTPS via router.IsSecureRequest, which checks both r.TLS (direct TLS)
+	// and the X-Forwarded-Proto: https header (TLS terminated by a proxy).
+	// On a plain-HTTP development server the flag is omitted so the form still
+	// functions, matching the behaviour of the WebAuthn challenge cookie.
 	http.SetCookie(w, &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    csrfToken,
 		Path:     "/oauth2/authorize",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		// Not setting Secure here so the cookie also works over HTTP during
-		// development (when --not-secure is used). Production deployments
-		// behind TLS should set this; for now the SameSite=Strict attribute
-		// provides the primary CSRF protection.
+		Secure:   router.IsSecureRequest(r),
 	})
 
 	data := loginFormData{
@@ -202,14 +205,18 @@ func reRenderWithError(
 			"could not generate CSRF token", http.StatusInternalServerError)
 	}
 
-	// Replace the CSRF cookie.  The SameSite=Strict attribute is the primary
-	// CSRF protection; the Secure flag is handled separately (OAUTH-L1).
+	// Replace the CSRF cookie with the same Secure-flag logic as the initial
+	// GET handler: set Secure when the connection is HTTPS, omit on plain HTTP
+	// (OAUTH-L1).  Both the first-load cookie and every re-render cookie must
+	// agree so that a user on HTTPS always gets Secure cookies throughout the
+	// entire authorization flow.
 	http.SetCookie(w, &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    newCSRF,
 		Path:     "/oauth2/authorize",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		Secure:   router.IsSecureRequest(r),
 	})
 
 	data := loginFormData{

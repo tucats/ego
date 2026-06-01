@@ -68,7 +68,7 @@ func TestIsSecureRequest_TLS(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
 	r.TLS = &tls.ConnectionState{}
 
-	if !isSecureRequest(r) {
+	if !IsSecureRequest(r) {
 		t.Error("expected isSecureRequest == true for TLS connection")
 	}
 }
@@ -77,7 +77,7 @@ func TestIsSecureRequest_ForwardedProto(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
 	r.Header.Set("X-Forwarded-Proto", "https")
 
-	if !isSecureRequest(r) {
+	if !IsSecureRequest(r) {
 		t.Error("expected isSecureRequest == true for X-Forwarded-Proto: https")
 	}
 }
@@ -85,7 +85,7 @@ func TestIsSecureRequest_ForwardedProto(t *testing.T) {
 func TestIsSecureRequest_PlainHTTP(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodPost, "/", nil)
 
-	if isSecureRequest(r) {
+	if IsSecureRequest(r) {
 		t.Error("expected isSecureRequest == false for plain HTTP")
 	}
 }

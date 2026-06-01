@@ -67,12 +67,21 @@ is for the English version. The key values are stored in the `[error]`
 section in alphabetical order.
 
 Messages should not be capitalized. The message should also be succinct,
-usually 80 characters long or shorter. Note that the error message may
-include additional information (such as a context value, line number, etc)
-that are automatically added before or after the localized string. As such,
-the localized string should not include terminating punctuation, and any
-message may be formatted with a colon ":" character and more information.
+usually 80 characters long or shorter. Note that when formatted, the error
+message may include additional information (such as a context value, line
+number, etc) that are automatically added before or after the localized
+string. As such, the localized string should not include terminating
+punctuation, and any message may be formatted with a colon ":" character
+and more information.
 
 As a rule, substitution operators (like `{{count}}`) are not used in
 error messages, any supplemental information is in a context value added
 to the Ego error object and formatted after the ":" in the output.
+
+### Build-time warnings
+
+Any new localized string must be added to all messages_*.txt files in the
+i18n/languages directory. If a key is present in one language but not in
+all languages, a warning is generated when tools/build is run. Additionally,
+if a messages is longer than 100 characters (not including substitutions,
+if present), a warning is generated.
