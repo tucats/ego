@@ -190,6 +190,7 @@ oauth.as.missing.response_type=missing required parameter: response_type
 oauth.as.unsupported.response_type=response_type must be "code"
 oauth.as.disabled=OAuth2 Authorization Server is not enabled
 oauth.as.csrf.invalid=invalid or missing CSRF token
+oauth.as.pkce.required=public clients must use PKCE (code_challenge required)
 oauth.as.token.revoked.error=token has been revoked
 auto.import=Unable to auto-import: {{err}}
 bit.shift=invalid bit shift specification
@@ -1188,6 +1189,9 @@ oauth.as.code.issued=OAuth2 authorization code issued; client={{client}}, user={
 oauth.as.code.consumed=OAuth2 authorization code consumed; client={{client}}, user={{user}}
 oauth.as.client.credentials.issued=OAuth2 client credentials token issued; client={{client}}, scope={{scope}}
 oauth.as.authorize.denied=OAuth2 authorization denied; client={{client}}, user={{user}}, reason={{reason}}
+oauth.as.authorize.locked=[{{session}}] OAuth2 AS: authorization rejected for locked account {{user}}; client={{client}}, retry after {{seconds}}s
+oauth.as.pkce.missing=[{{client}}] OAuth2 AS: public client omitted PKCE; code exchange rejected for user {{user}}
+oauth.rs.jwt.revoked=[{{session}}] OAuth2 RS: JWT rejected (revoked); jti={{jti}}, user={{user}}
 oauth.as.dir.created=OAuth2 working directory created: {{path}}
 oauth.as.client.builtin.injected=Registered built-in OAuth2 public client {{client_id}} (ego-cli, RFC 8252)
 oauth.as.permissions.fixing=OAuth2 {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}

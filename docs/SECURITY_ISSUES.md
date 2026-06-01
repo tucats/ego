@@ -1758,6 +1758,18 @@ a 429 response when the account is locked. Call `RecordSuccess(username)` and
 is exactly the pattern in `router/auth.go:272–278` and can be extracted into a
 shared helper so both paths stay in sync.
 
+**Resolution (May 2026):**
+`AuthorizePostHandler` now calls `router.CheckRateLimit(username)` before
+attempting credential validation. A locked account causes the login form to
+re-render with a lockout message (via the new `reRenderWithError` helper) rather
+than proceeding to `validatePassword`. After a failed credential check,
+`router.RecordFailure(session.ID, username)` is called so the counter advances.
+After a successful credential check, `router.RecordSuccess(username)` clears the
+counter. The per-account lockout budget is now shared between the native auth
+path and the OAuth2 form login path.  New log message key
+`oauth.as.authorize.locked` added to all three language files. Tests in
+`server/oauth/authserver/authorize_test.go`.
+
 ---
 
 #### OAUTH-H2 — Revoked JWT tokens bypass the RS validation cache
@@ -1790,7 +1802,16 @@ This is analogous to the cached-token expiry bypass described in LOGIN-M3.
 Store the JTI (`claims.ID`) inside `JWTCacheEntry` and check
 `tokens.IsIDBlacklisted(entry.JTI)` before returning from the cache-hit branch.
 A blacklisted JTI should result in immediate cache eviction and a validation
-error, identical to the behaviour of a post-expiry entry.
+error, identical to the behavior of a post-expiry entry.
+
+**Resolution (May 2026):**
+`JWTCacheEntry` gained a `JTI string` field that stores the JWT ID claim.
+`ValidateJWT` now calls `tokens.IsIDBlacklisted(entry.JTI)` on every cache hit
+before returning. A positive blacklist result evicts the cache entry immediately
+and returns an error; the caller is denied. `ValidateJWT` also stores
+`JTI: claims.ID` when writing new cache entries. New log message key
+`oauth.rs.jwt.revoked` added to all three language files. Tests in
+`server/oauth/oauth_cache_test.go`.
 
 ---
 
@@ -1833,6 +1854,16 @@ if client.ClientSecretHash == "" && pending.CodeChallenge == "" {
 
 For confidential clients, PKCE should be strongly recommended via documentation;
 making it mandatory for all clients is also an option and is the safest default.
+
+**Resolution (May 2026):**
+`handleAuthorizationCodeGrant` in `server/oauth/authserver/token.go` now checks
+`client.ClientSecretHash == "" && pending.CodeChallenge == ""` after validating
+the redirect URI. When both conditions hold (public client, no PKCE in the
+authorization request), the exchange is rejected with 400 and a log entry under
+`oauth.as.pkce.missing`. The `verifyPKCE` function is unchanged — it still
+validates PKCE when a challenge is present. Confidential clients are unaffected.
+New error key `oauth.as.pkce.required` and log key `oauth.as.pkce.missing` added
+to all three language files. Tests in `server/oauth/authserver/token_test.go`.
 
 ---
 
@@ -1890,6 +1921,15 @@ data := loginFormData{ ..., CSRFToken: newCSRF, Error: "Invalid username or pass
 
 This ensures that each form render (whether first-load or after failure) pairs a
 fresh nonce in the cookie with the same nonce embedded in the form.
+
+**Resolution (May 2026):**
+All re-render paths in `AuthorizePostHandler` are now routed through the new
+`reRenderWithError` helper in `server/oauth/authserver/authorize.go`. The helper
+generates a fresh CSRF token via `generateCSRFToken`, replaces the CSRF cookie in
+the response, and populates `loginFormData.CSRFToken` with the new nonce. This
+is called for both the rate-limit lockout path (OAUTH-H1) and the bad-credential
+path, ensuring the form is always submittable after an error. Tests in
+`server/oauth/authserver/authorize_test.go`.
 
 ---
 
@@ -2175,10 +2215,10 @@ Use this checklist to track progress as issues are resolved.
 
 ### High items
 
-- [ ] **OAUTH-H1** — Add `CheckRateLimit` / `RecordFailure` / `RecordSuccess` calls to `AuthorizePostHandler` so the AS login form is protected by the same per-username lockout as the native auth path
-- [ ] **OAUTH-H2** — Check `tokens.IsIDBlacklisted(entry.JTI)` on JWT cache hits in `ValidateJWT`; evict and reject on a positive match; store the JTI in `JWTCacheEntry`
-- [ ] **OAUTH-H3** — Reject authorization code exchanges from public clients (no `ClientSecretHash`) when the stored `pending.CodeChallenge` is empty; require PKCE for all public-client flows
-- [ ] **OAUTH-H4** — Generate a fresh CSRF token in the failure branch of `AuthorizePostHandler`, set a new cookie, and embed the token in the re-rendered `loginFormData`
+- [x] **OAUTH-H1** — `AuthorizePostHandler` now calls `router.CheckRateLimit` / `RecordFailure` / `RecordSuccess`; locked accounts receive a re-rendered form with a lockout message via the new `reRenderWithError` helper; budget shared with the native auth path
+- [x] **OAUTH-H2** — `JWTCacheEntry` gained a `JTI string` field; `ValidateJWT` checks `tokens.IsIDBlacklisted(entry.JTI)` on every cache hit, evicts and rejects on a positive match, and stores `JTI: claims.ID` when writing new entries
+- [x] **OAUTH-H3** — `handleAuthorizationCodeGrant` now rejects exchanges where `client.ClientSecretHash == ""` and `pending.CodeChallenge == ""`; new i18n keys `oauth.as.pkce.required` and `oauth.as.pkce.missing` added to all three language files
+- [x] **OAUTH-H4** — All failure re-render paths in `AuthorizePostHandler` route through the new `reRenderWithError` helper, which always generates a fresh CSRF token, replaces the cookie, and populates `loginFormData.CSRFToken`
 - [x] **LOGIN-H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [x] **LOGIN-H2** — Upgraded in two stages: (1) MD5 → PBKDF2-SHA256 in `util/crypto.go`; (2) both `util/crypto.go` and `app-cli/settings/crypto.go` upgraded to Argon2id (32 MiB, 2 iterations) with per-encryption random salt and `ÿEG3` magic prefix; all existing ciphertext decrypts transparently via legacy paths
 - [x] **LOGIN-H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON

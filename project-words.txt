@@ -73,6 +73,7 @@ egostrings
 Erfc
 Erfcinv
 Erfinv
+Errorf
 Expm1
 Fabs
 Fdvcmxk

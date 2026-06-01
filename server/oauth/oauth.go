@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
+	"github.com/tucats/ego/tokens"
 )
 
 // JWTCacheEntry is stored in caches.OAuthJWTCache, keyed on the raw JWT string.
@@ -15,6 +16,12 @@ import (
 //
 // The Expires field mirrors the JWT "exp" claim so a short-lived token is not
 // returned from the cache after it expires.
+//
+// The JTI field (JWT ID, the "jti" claim) is stored alongside the validated
+// result so the cache-hit path can check the revocation blacklist without
+// re-parsing the JWT.  Without it, a token revoked via POST /oauth2/revoke
+// would continue to authenticate requests for the remainder of the cache TTL
+// (OAUTH-H2).
 type JWTCacheEntry struct {
 	// User is the Ego username extracted from the JWT via the configured
 	// ego.server.oauth.user.claim (default: "sub").
@@ -26,6 +33,12 @@ type JWTCacheEntry struct {
 
 	// Expires is the JWT's expiration time, copied from the "exp" claim.
 	Expires time.Time
+
+	// JTI is the JWT ID claim ("jti").  It is the key used by the token
+	// blacklist; storing it here avoids re-parsing the JWT on every cache hit.
+	// An empty JTI means the token did not carry that claim and blacklist
+	// checking is skipped for this entry.
+	JTI string
 }
 
 // PendingState is the exported view of a stored PKCE state entry, returned by
@@ -203,9 +216,38 @@ func Initialize() error {
 // Returns (username, permissions, error).
 func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	// Step 1: JWT result cache lookup.
+	//
+	// On a cache hit we check three conditions before accepting the result:
+	//   a) The entry type-asserts correctly (guards against a stale interface value).
+	//   b) The JWT has not passed its "exp" timestamp since being cached.
+	//   c) The token's JTI has not been added to the revocation blacklist since
+	//      it was last validated (OAUTH-H2).  Without this check a token revoked
+	//      via POST /oauth2/revoke would be honoured for the remainder of the
+	//      cache TTL, defeating the revocation endpoint entirely.
 	if v, found := caches.Find(caches.OAuthJWTCache, tokenStr); found {
 		entry, ok := v.(*JWTCacheEntry)
 		if ok && time.Now().Before(entry.Expires) {
+			// Check the blacklist even on a cache hit so that a freshly revoked
+			// token is rejected without waiting for the cache entry to age out.
+			// IsIDBlacklisted is cheap: it consults its own in-memory cache
+			// (caches.BlacklistCache) before touching the database.
+			if entry.JTI != "" {
+				if blacklisted, blErr := tokens.IsIDBlacklisted(entry.JTI); blErr == nil && blacklisted {
+					// Evict the stale cache entry immediately so the next request
+					// re-validates from scratch rather than looping through this
+					// blacklist check on every call.
+					caches.Delete(caches.OAuthJWTCache, tokenStr)
+
+					ui.Log(ui.AuthLogger, "oauth.rs.jwt.revoked", ui.A{
+						"session": session,
+						"jti":     entry.JTI,
+						"user":    entry.User,
+					})
+
+					return "", nil, fmt.Errorf("JWT has been revoked")
+				}
+			}
+
 			ui.Log(ui.AuthLogger, "oauth.rs.jwt.cache.hit", ui.A{
 				"session": session,
 				"user":    entry.User,
@@ -244,6 +286,9 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	permissions := mapClaimsToPermissions(claims, cfg.PermissionClaim, cfg.PermissionMap)
 
 	// Step 7: Cache the result.
+	//
+	// Store the JTI alongside the validated result so that subsequent cache hits
+	// can check the revocation blacklist without re-parsing the JWT (OAUTH-H2).
 	var expires time.Time
 
 	if claims.ExpiresAt != nil {
@@ -256,6 +301,7 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 		User:        user,
 		Permissions: permissions,
 		Expires:     expires,
+		JTI:         claims.ID, // "jti" claim — key for blacklist lookups
 	})
 
 	ui.Log(ui.AuthLogger, "oauth.rs.jwt.valid", ui.A{

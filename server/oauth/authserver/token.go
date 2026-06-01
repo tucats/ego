@@ -81,7 +81,34 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
 	}
 
+	// OAUTH-H3: Public clients — those registered without a client_secret_hash —
+	// MUST use PKCE (RFC 9700 §2.1.1, OAuth 2.0 Security Best Current Practice).
+	//
+	// Without PKCE a stolen authorization code is immediately usable by any
+	// party that knows the client_id (which is public by definition for a public
+	// client).  PKCE binds the code to the specific device that initiated the
+	// authorization flow via the code_verifier / code_challenge pair, so only
+	// the original requester can complete the exchange.
+	//
+	// We check pending.CodeChallenge rather than the current request's
+	// code_verifier because the challenge is stored by the AS at authorization
+	// time.  An empty challenge means the client omitted PKCE in the first step;
+	// we must reject the exchange here regardless of what code_verifier (if any)
+	// the client sends now.
+	if client.ClientSecretHash == "" && pending.CodeChallenge == "" {
+		ui.Log(ui.ServerLogger, "oauth.as.pkce.missing", ui.A{
+			"client": clientID,
+			"user":   pending.Username,
+		})
+
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.pkce.required"), http.StatusBadRequest)
+	}
+
 	// Verify PKCE if the authorization request included a code_challenge.
+	// For confidential clients this check is optional (code_challenge may be
+	// empty); for public clients it is mandatory and guaranteed non-empty by
+	// the guard above.
 	if err := verifyPKCE(pending, codeVerifier); err != nil {
 		return util.ErrorResponse(w, session.ID,
 			i18n.T("oauth.as.invalid.pkce"), http.StatusBadRequest)

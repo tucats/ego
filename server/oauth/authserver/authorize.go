@@ -173,11 +173,77 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 	return http.StatusOK
 }
 
+// reRenderWithError re-renders the login form with the given error message and
+// a freshly generated CSRF token.  The old CSRF cookie is replaced so that the
+// user can immediately submit the form again after seeing the error.
+//
+// This helper is the sole exit path for all failure cases inside
+// AuthorizePostHandler that need to keep the user on the login page.  Keeping
+// the regeneration logic in one place avoids the OAUTH-H4 class of bugs where
+// the re-rendered form has an empty csrf_token field and the next submission is
+// permanently rejected.
+//
+// If CSRF token generation fails (an extreme edge case caused by the OS random
+// source being exhausted), the handler returns 500 rather than rendering a form
+// without a CSRF nonce.
+func reRenderWithError(
+	session *router.Session,
+	w http.ResponseWriter,
+	r *http.Request,
+	clientID, redirectURI, scope, state, codeChallenge, codeChallengeMethod, errMsg string,
+) int {
+	// Generate a fresh CSRF nonce for the re-rendered form.  The original nonce
+	// is already consumed by the failed POST, so we must issue a new one;
+	// leaving CSRFToken empty would make every re-rendered form permanently
+	// unsubmittable (OAUTH-H4).
+	newCSRF, csrfErr := generateCSRFToken()
+	if csrfErr != nil {
+		return util.ErrorResponse(w, session.ID,
+			"could not generate CSRF token", http.StatusInternalServerError)
+	}
+
+	// Replace the CSRF cookie.  The SameSite=Strict attribute is the primary
+	// CSRF protection; the Secure flag is handled separately (OAUTH-L1).
+	http.SetCookie(w, &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    newCSRF,
+		Path:     "/oauth2/authorize",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	data := loginFormData{
+		ClientID:            clientID,
+		RedirectURI:         redirectURI,
+		Scope:               scope,
+		State:               state,
+		CodeChallenge:       codeChallenge,
+		CodeChallengeMethod: codeChallengeMethod,
+		CSRFToken:           newCSRF,
+		Error:               errMsg,
+	}
+
+	w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_ = loginFormTemplate.Execute(w, data)
+
+	return http.StatusOK
+}
+
 // AuthorizePostHandler processes the submitted login form for POST /oauth2/authorize.
 //
 // On success it generates an authorization code, stores it in the cache, and
 // redirects the browser to redirect_uri with the code and state appended.
-// On login failure it re-renders the form with an error message.
+//
+// On failure it calls reRenderWithError, which generates a fresh CSRF token
+// before re-rendering the form.  This ensures that a user who mistypes their
+// password can correct it and resubmit without having to restart the entire
+// authorization flow (OAUTH-H4).
+//
+// Rate limiting (OAUTH-H1): before attempting credential validation the handler
+// checks the per-username failure counter used by the native auth path.  A
+// locked account receives the same lockout message that the browser-based form
+// would show, and the failure is recorded so the counter stays accurate.
 func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if err := r.ParseForm(); err != nil {
 		return util.ErrorResponse(w, session.ID,
@@ -221,32 +287,54 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
 	}
 
+	// OAUTH-H1: Check the per-username rate-limit counter before attempting any
+	// credential validation.  The native auth path (router/auth.go) maintains
+	// this counter; by sharing it here, a brute-force attack through the OAuth2
+	// login form consumes the same budget as one through the native logon
+	// endpoint, and vice versa.  The two paths therefore enforce a single,
+	// consistent lockout policy regardless of which front door the attacker uses.
+	if retryAfter := router.CheckRateLimit(username); retryAfter > 0 {
+		ui.Log(ui.AuthLogger, "oauth.as.authorize.locked", ui.A{
+			"session":  session.ID,
+			"client":   clientID,
+			"user":     username,
+			"seconds":  retryAfter,
+		})
+
+		// Re-render the form with a lockout message so the user knows to wait.
+		// We do not return 429 directly here because the authorization endpoint
+		// is browser-facing and a JSON error response is unhelpful; an in-form
+		// message is clearer UX.  The fresh CSRF token ensures the user can
+		// retry once the lockout expires.
+		return reRenderWithError(session, w, r,
+			clientID, redirectURI, scope, state, codeChallenge, codeChallengeMethod,
+			"Account temporarily locked. Please wait before trying again.")
+	}
+
 	// Validate the user's credentials against Ego's user database.
 	if !validatePassword(session.ID, username, password) {
+		// Record the failure so the rate limiter can enforce lockout once the
+		// threshold is reached (OAUTH-H1).
+		router.RecordFailure(session.ID, username)
+
 		ui.Log(ui.ServerLogger, "oauth.as.authorize.denied", ui.A{
 			"client": clientID,
 			"user":   username,
 			"reason": "invalid credentials",
 		})
 
-		// Re-render the form with an error message rather than sending a 401,
-		// which would bypass the browser's normal error display.
-		data := loginFormData{
-			ClientID:            clientID,
-			RedirectURI:         redirectURI,
-			Scope:               scope,
-			State:               state,
-			CodeChallenge:       codeChallenge,
-			CodeChallengeMethod: codeChallengeMethod,
-			Error:               "Invalid username or password.",
-		}
-
-		w.Header().Set(defs.ContentTypeHeader, "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_ = loginFormTemplate.Execute(w, data)
-
-		return http.StatusOK
+		// Re-render the form with a fresh CSRF token (OAUTH-H4) and an error
+		// message.  The old CSRF nonce is replaced so the user can correct their
+		// credentials and resubmit without restarting the authorization flow.
+		return reRenderWithError(session, w, r,
+			clientID, redirectURI, scope, state, codeChallenge, codeChallengeMethod,
+			"Invalid username or password.")
 	}
+
+	// Successful authentication — clear the failure counter so a subsequent
+	// mistake does not carry over the failures from the previous session
+	// (OAUTH-H1, matching the RecordSuccess call in router/auth.go).
+	router.RecordSuccess(username)
 
 	// Compute the intersection of requested scopes and what the user's
 	// permissions entitle them to.

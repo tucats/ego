@@ -184,6 +184,7 @@ oauth.as.missing.response_type=paramètre requis manquant : response_type
 oauth.as.unsupported.response_type=response_type doit être "code"
 oauth.as.disabled=Le serveur d'autorisation OAuth2 n'est pas activé
 oauth.as.csrf.invalid=jeton CSRF invalide ou manquant
+oauth.as.pkce.required=les clients publics doivent utiliser PKCE (code_challenge obligatoire)
 oauth.as.token.revoked.error=le jeton a été révoqué
 auto.import=Impossible d'importer automatiquement : {{err}}
 bit.shift=spécification de décalage de bits invalide
@@ -1165,6 +1166,9 @@ oauth.as.code.issued=Code d'autorisation OAuth2 émis ; client={{client}}, utili
 oauth.as.code.consumed=Code d'autorisation OAuth2 consommé ; client={{client}}, utilisateur={{user}}
 oauth.as.client.credentials.issued=Jeton de crédentiels client OAuth2 émis ; client={{client}}, portée={{scope}}
 oauth.as.authorize.denied=Autorisation OAuth2 refusée ; client={{client}}, utilisateur={{user}}, raison={{reason}}
+oauth.as.authorize.locked=[{{session}}] AS OAuth2 : autorisation refusée pour le compte verrouillé {{user}} ; client={{client}}, réessayer après {{seconds}}s
+oauth.as.pkce.missing=[{{client}}] AS OAuth2 : le client public a omis PKCE ; échange de code rejeté pour l'utilisateur {{user}}
+oauth.rs.jwt.revoked=[{{session}}] RS OAuth2 : JWT rejeté (révoqué) ; jti={{jti}}, utilisateur={{user}}
 oauth.as.dir.created=Répertoire de travail OAuth2 créé : {{path}}
 oauth.as.client.builtin.injected=Client public OAuth2 intégré {{client_id}} enregistré (ego-cli, RFC 8252)
 oauth.as.permissions.fixing=Le {{kind}} OAuth2 {{path}} a les permissions {{have}} ; correction vers {{want}}
