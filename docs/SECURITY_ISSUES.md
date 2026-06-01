@@ -30,7 +30,8 @@ items are grouped together, followed by all high items, etc.
 5. [Assets Server (ASSET)](#asset)
 6. [Profile Encryption (PROFILE)](#profile)
 7. [Dashboard Code Execution (CODE)](#code)
-8. [Remediation Checklist](#checklist)
+8. [OAuth2 Authorization Server and Resource Server (OAUTH)](#oauth)
+9. [Remediation Checklist](#checklist)
 
 ---
 
@@ -1718,6 +1719,450 @@ for execution as before.
 
 ---
 
+## Security Issues — OAuth2 Authorization Server and Resource Server<a name="oauth"></a>
+
+This section records security weaknesses in the OAuth2 Authorization Server (AS)
+implemented in `server/oauth/authserver/` and the OAuth2 Resource Server (RS) client
+implemented in `server/oauth/` and `server/oauth/rshandlers/`. The AS provides
+standard OAuth2/OIDC endpoints; the RS validates JWT Bearer tokens issued by an
+external identity provider and drives the Authorization Code + PKCE login flow.
+Issues are rated using the same severity scale as sections above.
+
+---
+
+### High (OAuth)
+
+#### OAUTH-H1 — No rate limiting on the AS login form endpoint
+
+**Affected file:** `server/oauth/authserver/authorize.go:181` — `AuthorizePostHandler()`
+
+**Description:**
+`AuthorizePostHandler` calls `auth.ValidatePassword` directly without invoking
+the rate-limiting infrastructure (`CheckRateLimit` / `RecordFailure` / `RecordSuccess`)
+that `router/auth.go:Authenticate` uses for the native auth path. An attacker who
+can reach the AS can submit an unlimited number of credential guesses through
+`POST /oauth2/authorize` at full network speed — the per-account lockout added by
+LOGIN-C2 simply does not apply here. Because the handler re-renders the form on
+failure rather than returning 401, automated tools can drive the form POST loop
+without any HTTP-level friction and without triggering the native auth lockout
+counters.
+
+The bcrypt validation that backs `auth.ValidatePassword` is inherently slow
+(~100 ms per attempt), which provides a modest natural throttle, but that
+alone is not adequate protection against distributed attacks.
+
+**Recommendation:**
+Call `CheckRateLimit(username)` before attempting `validatePassword` and return
+a 429 response when the account is locked. Call `RecordSuccess(username)` and
+`RecordFailure(sessionID, username)` after the validation result is known. This
+is exactly the pattern in `router/auth.go:272–278` and can be extracted into a
+shared helper so both paths stay in sync.
+
+---
+
+#### OAUTH-H2 — Revoked JWT tokens bypass the RS validation cache
+
+**Affected file:** `server/oauth/oauth.go:204` — `ValidateJWT()`
+
+```go
+if v, found := caches.Find(caches.OAuthJWTCache, tokenStr); found {
+    entry, ok := v.(*JWTCacheEntry)
+    if ok && time.Now().Before(entry.Expires) {
+        return entry.User, entry.Permissions, nil  // ← no blacklist check
+    }
+```
+
+**Description:**
+When a JWT is found in `caches.OAuthJWTCache`, it is returned as valid after a
+single `time.Now().Before(entry.Expires)` check. The JTI blacklist populated by
+`POST /oauth2/revoke` is never consulted on a cache hit. A token that has been
+explicitly revoked can therefore continue to authenticate all RS requests for up
+to the configured JWKS cache TTL (default 1 hour) after revocation.
+
+By contrast, the AS's own `UserinfoHandler` does perform a blacklist check on
+every request (`tokens.IsIDBlacklisted(claims.ID)`), so the inconsistency is
+not caused by a missing API — the call is simply absent from the hot cache-hit
+path in `ValidateJWT`.
+
+This is analogous to the cached-token expiry bypass described in LOGIN-M3.
+
+**Recommendation:**
+Store the JTI (`claims.ID`) inside `JWTCacheEntry` and check
+`tokens.IsIDBlacklisted(entry.JTI)` before returning from the cache-hit branch.
+A blacklisted JTI should result in immediate cache eviction and a validation
+error, identical to the behaviour of a post-expiry entry.
+
+---
+
+#### OAUTH-H3 — PKCE not required for public clients in the AS authorization flow
+
+**Affected file:** `server/oauth/authserver/codes.go:168` — `verifyPKCE()`
+
+```go
+func verifyPKCE(pending PendingAuthorization, codeVerifier string) error {
+    if pending.CodeChallenge == "" {
+        // No PKCE was used in this authorization request — nothing to verify.
+        return nil
+    }
+```
+
+**Description:**
+PKCE (RFC 7636) is enforced only when the client chose to include a
+`code_challenge` in the authorization request. Public clients — those registered
+without a `client_secret_hash`, such as the built-in `ego-cli` — can omit PKCE
+entirely. Without PKCE, an attacker who intercepts or steals the authorization
+code (e.g., via a malicious redirect-URI registration at the OS level, or log
+exposure) can exchange it for tokens at the token endpoint without possessing the
+original code_verifier.
+
+RFC 9700 (OAuth 2.0 Security Best Current Practice) §2.1.1 mandates that all
+public clients use PKCE. PKCE is also strongly recommended for confidential
+clients. Accepting a code from a public client without PKCE removes this
+protection entirely.
+
+**Recommendation:**
+If the client is public (`ClientSecretHash == ""`), `handleAuthorizationCodeGrant`
+must reject the exchange when `pending.CodeChallenge == ""`:
+
+```go
+if client.ClientSecretHash == "" && pending.CodeChallenge == "" {
+    return util.ErrorResponse(w, session.ID,
+        i18n.T("oauth.as.pkce.required"), http.StatusBadRequest)
+}
+```
+
+For confidential clients, PKCE should be strongly recommended via documentation;
+making it mandatory for all clients is also an option and is the safest default.
+
+---
+
+#### OAUTH-H4 — CSRF token not regenerated when login form is re-rendered on failure
+
+**Affected file:** `server/oauth/authserver/authorize.go:233` — `AuthorizePostHandler()`
+
+```go
+data := loginFormData{
+    ClientID:            clientID,
+    RedirectURI:         redirectURI,
+    Scope:               scope,
+    State:               state,
+    CodeChallenge:       codeChallenge,
+    CodeChallengeMethod: codeChallengeMethod,
+    Error:               "Invalid username or password.",
+    // CSRFToken is zero-value ("") — the field is not set
+}
+```
+
+**Description:**
+When credential validation fails, `AuthorizePostHandler` re-renders the login form
+with an error message but does not generate a new CSRF token. The `CSRFToken`
+field of `loginFormData` is left at its zero value, producing an empty
+`<input type="hidden" name="csrf_token" value="">` in the re-rendered HTML.
+
+The CSRF cookie set during the original GET still holds the original random
+token. When the user corrects their credentials and submits the re-rendered form,
+the POST handler compares the cookie value (non-empty) against the form value
+(`""`) — they do not match — and returns 403 Forbidden. The user cannot retry
+without navigating back and restarting the entire authorization flow from scratch,
+which is not indicated anywhere in the error UI.
+
+Two consequences follow:
+
+1. **Correctness / usability:** Any password mistake permanently breaks the in-
+   progress login session. The user must restart the full browser-based flow.
+2. **Security:** Because the CSRF re-render path does not set a new CSRF cookie,
+   an automated attacker who drives the GET → POST loop would also need to restart
+   the GET after every failed attempt — providing a minor additional friction but
+   not a meaningful security control.
+
+**Recommendation:**
+In the failure branch, generate a fresh CSRF token, set a new cookie, and include
+the token in `loginFormData`:
+
+```go
+newCSRF, _ := generateCSRFToken()
+http.SetCookie(w, &http.Cookie{
+    Name: csrfCookieName, Value: newCSRF,
+    Path: "/oauth2/authorize", HttpOnly: true, SameSite: http.SameSiteStrictMode,
+})
+data := loginFormData{ ..., CSRFToken: newCSRF, Error: "Invalid username or password." }
+```
+
+This ensures that each form render (whether first-load or after failure) pairs a
+fresh nonce in the cookie with the same nonce embedded in the form.
+
+---
+
+### Medium (OAuth)
+
+#### OAUTH-M1 — Audience validation skipped by default
+
+**Affected file:** `server/oauth/jwt.go:86` — `parseAndValidateJWT()`
+
+```go
+if audience != "" {
+    parserOpts = append(parserOpts, jwt.WithAudience(audience))
+}
+```
+
+**Description:**
+When `ego.server.oauth.audience` is not set (the default), `cfg.Audience` is an
+empty string and audience validation is entirely skipped. A JWT issued for any
+other resource server by the same IdP — including a test or staging environment —
+will be accepted as valid by the production Ego RS. Per RFC 9700 §2.8, "Resource
+servers MUST validate the audience claim" because it is the principal mechanism
+that prevents token confusion attacks across services sharing the same IdP.
+
+**Recommendation:**
+Document `ego.server.oauth.audience` as a **required** setting in any production
+deployment. Add a startup warning (analogous to `WEBAUTH-M2`) when
+`ego.server.oauth.provider` is set but `ego.server.oauth.audience` is empty:
+
+```go
+if cfg.Provider != "" && cfg.Audience == "" {
+    ui.Log(ui.ServerLogger, "oauth.rs.no.audience", ui.A{})
+}
+```
+
+Optionally, refuse to start in `resource-server` or `hybrid` mode unless the
+audience is configured, treating it the same way as a missing issuer.
+
+---
+
+#### OAUTH-M2 — No timeout on outbound IdP HTTP calls
+
+**Affected files:**
+
+- `server/oauth/discovery.go:79` — `discoverEndpoints()`: `http.Get(discoveryURL)`
+- `server/oauth/jwks.go:89` — `refreshJWKS()`: `http.Get(jwksURL)`
+- `server/oauth/flow_authcode.go:143` — `ExchangeCode()`: `http.DefaultClient.Do(req)`
+- `app-cli/app/logon_oauth.go:201` — `fetchOIDCDiscovery()`: `http.Get(discoveryURL)`
+- `app-cli/app/logon_oauth.go:374` — `postTokenRequest()`: `http.DefaultClient.Do(req)`
+
+**Description:**
+All outbound HTTP calls to the identity provider (discovery, JWKS fetch, and token
+exchange) use either `http.Get` or `http.DefaultClient.Do`, neither of which sets a
+deadline. If the IdP is slow or unresponsive, each goroutine handling an inbound
+request blocks indefinitely on the outbound call. A network partition, an
+overloaded IdP, or a deliberate slowdown by a malicious upstream server can
+exhaust all available server goroutines — effectively causing a DoS of the Ego
+server without any involvement of the attacker's client.
+
+This is analogous to the Slowloris vulnerability described in HTTP-H2, but for
+outbound connections rather than inbound ones.
+
+**Recommendation:**
+Replace `http.DefaultClient` with a client that carries a context deadline derived
+from the inbound request, or use a package-level client with a bounded timeout:
+
+```go
+var idpClient = &http.Client{Timeout: 10 * time.Second}
+```
+
+Apply this to `discoverEndpoints`, `refreshJWKS`, `ExchangeCode`, and the CLI's
+`postTokenRequest`. The discovery and JWKS fetches happen at startup and on cache
+miss; 10–30 seconds is a reasonable wall-clock limit. The token exchange happens
+per-request; 10 seconds matches common IdP SLAs.
+
+---
+
+#### OAUTH-M3 — Revocation endpoint ignores HTTP Basic Auth for client authentication
+
+**Affected file:** `server/oauth/authserver/revoke.go:31` — `RevokeHandler()`
+
+```go
+clientID := r.FormValue("client_id")
+clientSecret := r.FormValue("client_secret")
+```
+
+**Description:**
+The AS token endpoint (`handleAuthorizationCodeGrant`, `handleClientCredentialsGrant`,
+`handleRefreshTokenGrant`) uses `validateBasicAuth(r)`, which prefers the HTTP
+`Authorization: Basic` header and falls back to form-encoded `client_id` /
+`client_secret` fields. This matches RFC 6749 §2.3.1.
+
+The revocation endpoint (`POST /oauth2/revoke`) reads credentials only from form
+values, completely ignoring any `Authorization: Basic` header. RFC 7009 §2.1
+requires the revocation endpoint to use the same client authentication mechanism
+as the token endpoint. Confidential clients that prefer Basic Auth cannot
+authenticate at the revocation endpoint and will receive a 401 error even when
+supplying valid credentials.
+
+**Recommendation:**
+Replace the two `r.FormValue` calls with a call to the existing `validateBasicAuth`
+helper:
+
+```go
+clientID, clientSecret := validateBasicAuth(r)
+```
+
+This is a one-line fix that brings the revocation endpoint into alignment with
+the token endpoint and RFC 7009.
+
+---
+
+#### OAUTH-M4 — OIDC discovery and JWKS responses read without a size limit
+
+**Affected files:**
+
+- `server/oauth/discovery.go:86` — `discoverEndpoints()`: `io.ReadAll(resp.Body)`
+- `server/oauth/jwks.go:99` — `refreshJWKS()`: `io.ReadAll(resp.Body)`
+
+**Description:**
+Both functions read the IdP's HTTP response body into memory with a bare
+`io.ReadAll`, applying no size limit before the allocation. A malicious or
+compromised IdP, or a network attacker who can intercept the outbound TLS
+connection (e.g., via a CA compromise), can return an arbitrarily large response
+body. The full response is allocated into a single byte slice, so even a
+moderately large payload (tens of megabytes) causes a visible memory spike;
+gigabyte payloads can exhaust heap and crash the server.
+
+Discovery documents and JWKS responses are inherently small — a few kilobytes at
+most for any realistic deployment. A generous limit of 1 MiB is far more than
+any legitimate document requires.
+
+**Recommendation:**
+Wrap the response body with `http.MaxBytesReader` (or `io.LimitReader`) before
+reading:
+
+```go
+body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1 MiB cap
+```
+
+A response that exceeds the limit should be treated as an error and logged so the
+operator can investigate.
+
+---
+
+#### OAUTH-M5 — RS PKCE state store has no maximum size
+
+**Affected file:** `server/oauth/state.go:75` — `newState()`
+
+```go
+stateStore.items[state] = &pendingState{ ... }
+```
+
+**Description:**
+The `stateStore.items` map that holds pending PKCE states has no upper bound on
+the number of entries. Every call to `GET /services/admin/oauth/authorize`
+(or, transitively, to `AuthorizeRedirectHandler`) inserts a new entry. The
+background goroutine in `Initialize()` purges entries older than 10 minutes every
+10 minutes, but a flood of requests between purge cycles can fill the map beyond
+what a single purge pass can evict. In the worst case an attacker can call the
+authorize endpoint in a tight loop to exhaust memory, since each entry is created
+without any per-IP or global cap.
+
+This is analogous to the unbounded WebAuthn challenge cache issue described in
+WEBAUTH-M1.
+
+**Recommendation:**
+Add a global cap on the number of pending state entries and enforce a per-IP rate
+limit on calls to `AuthorizeRedirectHandler`. A cap of 500 concurrent pending
+states is generous for normal usage:
+
+```go
+const maxPendingStates = 500
+
+stateStore.mu.Lock()
+if len(stateStore.items) >= maxPendingStates {
+    stateStore.mu.Unlock()
+    return "", "", fmt.Errorf("too many pending OAuth2 flows")
+}
+stateStore.items[state] = &pendingState{ ... }
+stateStore.mu.Unlock()
+```
+
+Additionally, move the `purgeExpiredStates()` ticker to run more frequently
+(e.g., every 2 minutes instead of 10) so the cap is only reached under genuine
+sustained load.
+
+---
+
+### Low / Informational (OAuth)
+
+#### OAUTH-L1 — CSRF cookie missing `Secure` flag on AS authorize handler
+
+**Affected file:** `server/oauth/authserver/authorize.go:147` — `AuthorizeGetHandler()`
+
+```go
+http.SetCookie(w, &http.Cookie{
+    Name:     csrfCookieName,
+    Value:    csrfToken,
+    Path:     "/oauth2/authorize",
+    HttpOnly: true,
+    SameSite: http.SameSiteStrictMode,
+    // Secure is not set
+})
+```
+
+**Description:**
+The CSRF cookie used to protect the AS login form is `HttpOnly` and
+`SameSite: Strict`, but the `Secure` attribute is not set. In any configuration
+where the Ego AS accepts plain HTTP connections (before HTTPS redirect, or in
+development), the CSRF nonce can be transmitted in cleartext. A network observer
+can capture the cookie and the form nonce, enabling CSRF attacks against users on
+unencrypted connections.
+
+This is the same issue as WEBAUTH-L1, which was already resolved for the WebAuthn
+challenge cookie. The `isSecureRequest(r)` helper added there can be reused here.
+
+**Recommendation:**
+Set the `Secure` attribute conditionally using `isSecureRequest(r)`:
+
+```go
+http.SetCookie(w, &http.Cookie{
+    Name:     csrfCookieName,
+    Value:    csrfToken,
+    Path:     "/oauth2/authorize",
+    HttpOnly: true,
+    SameSite: http.SameSiteStrictMode,
+    Secure:   isSecureRequest(r),
+})
+```
+
+Apply the same fix to the re-render path in `AuthorizePostHandler` once
+OAUTH-H4 is resolved and a new CSRF token is generated there as well.
+
+---
+
+#### OAUTH-L2 — AS token endpoint router registration uses JSON content type
+
+**Affected file:** `server/oauth/authserver/authserver.go:109` — `RegisterRoutes()`
+
+```go
+r.New(defs.OAuthTokenPath, TokenHandler, http.MethodPost).
+    Class(router.ServiceRequestCounter).
+    AcceptMedia(defs.JSONMediaType)
+```
+
+**Description:**
+The token endpoint (`POST /oauth2/token`) is registered in the router with
+`AcceptMedia(defs.JSONMediaType)` (i.e., `application/json`). However, RFC 6749
+§4.1.3 and §4.4.2 require clients to send token requests as
+`application/x-www-form-urlencoded`. The handler already uses `r.ParseForm()` to
+read the request body, which is consistent with form encoding, not JSON.
+
+A strictly compliant OAuth2 client library that sets
+`Content-Type: application/x-www-form-urlencoded` (as required) may be rejected
+by the Ego router before `TokenHandler` is ever called, if the router enforces
+the declared `AcceptMedia` type. The `Authorization Code` flow from the CLI is
+unaffected in practice because the CLI's `postTokenRequest` sets
+`Content-Type: application/x-www-form-urlencoded` and the router may be lenient
+in practice, but third-party clients that rely on strict content-type enforcement
+(e.g., `application/json`) on the wrong side of the mismatch will fail.
+
+**Recommendation:**
+Remove the `AcceptMedia(defs.JSONMediaType)` chain call from the token endpoint
+registration, or replace it with the correct media type:
+
+```go
+r.New(defs.OAuthTokenPath, TokenHandler, http.MethodPost).
+    Class(router.ServiceRequestCounter)
+    // No AcceptMedia constraint — RFC 6749 requires form-encoded bodies
+```
+
+---
+
 ## Remediation Checklist<a name="checklist"></a>
 
 Use this checklist to track progress as issues are resolved.
@@ -1730,6 +2175,10 @@ Use this checklist to track progress as issues are resolved.
 
 ### High items
 
+- [ ] **OAUTH-H1** — Add `CheckRateLimit` / `RecordFailure` / `RecordSuccess` calls to `AuthorizePostHandler` so the AS login form is protected by the same per-username lockout as the native auth path
+- [ ] **OAUTH-H2** — Check `tokens.IsIDBlacklisted(entry.JTI)` on JWT cache hits in `ValidateJWT`; evict and reject on a positive match; store the JTI in `JWTCacheEntry`
+- [ ] **OAUTH-H3** — Reject authorization code exchanges from public clients (no `ClientSecretHash`) when the stored `pending.CodeChallenge` is empty; require PKCE for all public-client flows
+- [ ] **OAUTH-H4** — Generate a fresh CSRF token in the failure branch of `AuthorizePostHandler`, set a new cookie, and embed the token in the re-rendered `loginFormData`
 - [x] **LOGIN-H1** — Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`
 - [x] **LOGIN-H2** — Upgraded in two stages: (1) MD5 → PBKDF2-SHA256 in `util/crypto.go`; (2) both `util/crypto.go` and `app-cli/settings/crypto.go` upgraded to Argon2id (32 MiB, 2 iterations) with per-encryption random salt and `ÿEG3` magic prefix; all existing ciphertext decrypts transparently via legacy paths
 - [x] **LOGIN-H3** — Token key already stored in AES-256-GCM encrypted sidecar file by settings infrastructure; not in plaintext profile JSON
@@ -1746,6 +2195,11 @@ Use this checklist to track progress as issues are resolved.
 
 ### Medium items
 
+- [ ] **OAUTH-M1** — Add a startup warning when `ego.server.oauth.provider` is set but `ego.server.oauth.audience` is empty; document `ego.server.oauth.audience` as required for production
+- [ ] **OAUTH-M2** — Replace `http.DefaultClient` with a package-level `&http.Client{Timeout: 10 * time.Second}` in `discoverEndpoints`, `refreshJWKS`, `ExchangeCode`, and the CLI's `postTokenRequest`
+- [ ] **OAUTH-M3** — Replace the two `r.FormValue` calls in `RevokeHandler` with a call to the existing `validateBasicAuth(r)` helper to support HTTP Basic Auth at the revocation endpoint
+- [ ] **OAUTH-M4** — Wrap `resp.Body` in `io.LimitReader(resp.Body, 1<<20)` before `io.ReadAll` in both `discoverEndpoints` and `refreshJWKS`; treat an exceeded limit as a fatal error
+- [ ] **OAUTH-M5** — Add a global cap (e.g., 500 entries) to `newState()` and return an error when the cap is reached; shorten the purge ticker interval from 10 minutes to 2 minutes
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
 - [x] **LOGIN-M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
@@ -1771,6 +2225,8 @@ Use this checklist to track progress as issues are resolved.
 
 ### Low / Informational items
 
+- [ ] **OAUTH-L1** — Set `Secure: isSecureRequest(r)` on the CSRF cookie in `AuthorizeGetHandler` (and in the future `AuthorizePostHandler` failure re-render path); reuse the existing `isSecureRequest` helper from `server/server/webauthn.go`
+- [ ] **OAUTH-L2** — Remove `AcceptMedia(defs.JSONMediaType)` from the `POST /oauth2/token` route registration in `RegisterRoutes`; the handler reads `application/x-www-form-urlencoded` bodies via `r.ParseForm()`
 - [x] **LOGIN-L1** — Warning emitted via `ui.Say("logon.password.env")` when `EGO_PASSWORD` is set; env var cleared with `os.Unsetenv()` immediately after reading so child processes do not inherit it
 - [x] **LOGIN-L2** — `ui.Say("rest.tls.insecure")` emitted (always visible) when insecure mode is activated via profile setting (`exchange.go`) or `EGO_INSECURE_CLIENT` env var (`client.go`); REST-log entry added for the Ego-program `verify: false` path (`methods.go`)
 - [x] **LOGIN-L3** — `LogonHandler` now calls `tokens.Unwrap` on the freshly-minted token and uses `t.Expires` directly for `response.Expiration`; the independent duration re-calculation has been removed
