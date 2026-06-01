@@ -214,3 +214,98 @@ func TestExtractPermissionTokens(t *testing.T) {
 		})
 	}
 }
+
+// TestIsKnownPermissionClaim verifies that IsKnownPermissionClaim returns true
+// only for the two natively-supported claim names ("scope" and "roles"), and
+// false for everything else (OAUTH-M8).
+//
+// The return value of IsKnownPermissionClaim drives the startup warning emitted
+// in commands/server.go: when it returns false, the operator is warned that
+// ego.server.oauth.permission.claim is set to a name that extractPermissionTokens
+// cannot read, so JWT holders will silently receive only the minimum ego.logon
+// permission regardless of what the token actually carries.
+func TestIsKnownPermissionClaim(t *testing.T) {
+	tests := []struct {
+		claim string
+		want  bool
+	}{
+		// The two natively supported names.
+		{"scope", true},
+		{"roles", true},
+
+		// Everything else — these are all real claim names used by various IdPs
+		// that Ego currently cannot read.
+		{"groups", false},
+		{"authorities", false},
+		{"realm_access.roles", false},
+		{"custom_claim", false},
+		{"", false},
+
+		// Near-misses — case differences must not match.
+		{"Scope", false},
+		{"SCOPE", false},
+		{"Roles", false},
+		{"ROLES", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.claim, func(t *testing.T) {
+			got := IsKnownPermissionClaim(tt.claim)
+			if got != tt.want {
+				t.Errorf("IsKnownPermissionClaim(%q) = %v, want %v", tt.claim, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestIsKnownPermissionClaim_FallbackBehavior verifies the end-to-end consequence
+// of an unsupported claim name: mapClaimsToPermissions falls back to "ego.logon"
+// for all JWT holders, even when the token carries scopes that would normally map
+// to elevated permissions (OAUTH-M8).
+//
+// This test demonstrates WHY the startup warning matters — the silent fallback
+// can either grant access to users who should be blocked (if the IdP issues no
+// meaningful scopes anyway) or silently drop elevated permissions that were
+// intended (if the IdP puts them in a claim name Ego does not read).
+func TestIsKnownPermissionClaim_FallbackBehavior(t *testing.T) {
+	claims := &jwtClaims{
+		// The token carries ego:admin in the "scope" claim and "ego:admin" in
+		// a hypothetical "groups" claim.  In a correct configuration (scope),
+		// the user would receive ego.root.  With the wrong claim name, they
+		// only receive ego.logon.
+		Scope: "openid ego:admin",
+		Roles: []string{"ego:admin"},
+	}
+
+	// When the permission claim is a known name, elevated permission is granted.
+	permsWithScope := mapClaimsToPermissions(claims, "scope", nil)
+
+	foundRootFromScope := false
+	for _, p := range permsWithScope {
+		if p == "ego.root" {
+			foundRootFromScope = true
+		}
+	}
+
+	if !foundRootFromScope {
+		t.Errorf("scope claim: expected ego.root in permissions, got %v", permsWithScope)
+	}
+
+	// When the permission claim is an unsupported name, only ego.logon is granted
+	// regardless of the token's actual content.
+	permsWithCustom := mapClaimsToPermissions(claims, "groups", nil)
+
+	if len(permsWithCustom) != 1 || permsWithCustom[0] != "ego.logon" {
+		t.Errorf("unsupported claim %q: expected [ego.logon], got %v", "groups", permsWithCustom)
+	}
+
+	// Confirm that IsKnownPermissionClaim correctly identifies "scope" as known
+	// and "groups" as unknown, matching the runtime behavior shown above.
+	if !IsKnownPermissionClaim("scope") {
+		t.Error("IsKnownPermissionClaim(\"scope\") should return true")
+	}
+
+	if IsKnownPermissionClaim("groups") {
+		t.Error("IsKnownPermissionClaim(\"groups\") should return false")
+	}
+}

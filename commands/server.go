@@ -745,6 +745,11 @@ func defineNativeAdminHandlers(r *router.Router) {
 		if err := oauth.Initialize(); err != nil {
 			ui.Log(ui.ServerLogger, "oauth.rs.init.failed", ui.A{"error": err.Error()})
 		} else {
+			// GetConfig() is safe to call after Initialize() has succeeded; it returns
+			// a snapshot of the fully-resolved configuration without holding any locks.
+			// We call it once here and reuse the result for all subsequent startup checks.
+			oauthCfg := oauth.GetConfig()
+
 			// OAUTH-M1: Warn when the audience claim is not configured.
 			//
 			// The "aud" (audience) claim in a JWT identifies which Resource Server the
@@ -757,12 +762,32 @@ func defineNativeAdminHandlers(r *router.Router) {
 			// We cannot enforce this at runtime without risking false rejections on
 			// misconfigured but otherwise working deployments, so we emit a visible
 			// warning at startup so operators know the gap exists.
-			//
-			// GetConfig() is safe to call after Initialize() has succeeded; it returns
-			// a snapshot of the fully-resolved configuration without holding any locks.
-			if oauth.GetConfig().Audience == "" {
+			if oauthCfg.Audience == "" {
 				ui.Log(ui.ServerLogger, "oauth.rs.no.audience", ui.A{
-					"provider": oauth.GetConfig().Provider,
+					"provider": oauthCfg.Provider,
+				})
+			}
+
+			// OAUTH-M8: Warn when the permission claim name is not natively supported.
+			//
+			// extractPermissionTokens (in server/oauth/claims.go) reads JWT claims to
+			// derive Ego permissions.  It handles only "scope" (RFC 6749 space-delimited
+			// string) and "roles" (string array used by some IdPs).  Any other value of
+			// ego.server.oauth.permission.claim silently returns no tokens, which causes
+			// every verified JWT holder to receive only the minimum "ego.logon" permission
+			// — regardless of what scopes or roles the token actually carries.
+			//
+			// This can create two silent problems:
+			//   1. Users who should be blocked still get logon access.
+			//   2. Users who should have elevated permissions (ego.root, ego.code, etc.)
+			//      only receive ego.logon, making admin operations fail without explanation.
+			//
+			// IsKnownPermissionClaim returns false for any claim name other than "scope"
+			// or "roles".  We warn here so the misconfiguration appears in the server log
+			// and the dashboard Log tab at startup, where operators will see it.
+			if !oauth.IsKnownPermissionClaim(oauthCfg.PermissionClaim) {
+				ui.Log(ui.ServerLogger, "oauth.rs.unsupported.permission.claim", ui.A{
+					"claim": oauthCfg.PermissionClaim,
 				})
 			}
 

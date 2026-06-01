@@ -87,12 +87,32 @@ func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissio
 	return permissions
 }
 
+// IsKnownPermissionClaim reports whether claim is one of the names that
+// extractPermissionTokens handles natively.
+//
+// The two currently supported names are:
+//   - "scope" — the standard OAuth2 space-delimited scope string (RFC 6749).
+//   - "roles" — a string-array claim used by providers such as Keycloak.
+//
+// Any other name silently produces an empty token list, causing every verified
+// JWT holder to fall back to the minimum "ego.logon" permission.  This function
+// is called at server startup to warn operators when ego.server.oauth.permission.claim
+// is set to a value that will not be read (OAUTH-M8).
+func IsKnownPermissionClaim(claim string) bool {
+	return claim == "scope" || claim == "roles"
+}
+
 // extractPermissionTokens reads the appropriate field from the JWT claims and
 // returns a flat slice of individual permission-token strings.
 //
-// The "scope" claim is space-separated (RFC 6749); the "roles" claim is a JSON
-// array stored as []string.  Any other claim name is treated as space-separated.
-// The "email" and "preferred_username" claims are never used as permission tokens.
+// Only two claim names are natively supported:
+//   - "scope" (RFC 6749) — space-delimited string, e.g. "openid ego:admin".
+//   - "roles" — flat string array used by some IdPs (e.g., Keycloak).
+//
+// Any other claim name returns an empty slice.  The caller (mapClaimsToPermissions)
+// then applies the minimum-logon fallback.  Use IsKnownPermissionClaim at startup
+// to detect and warn about unsupported claim names before they silently affect
+// permission assignment.
 func extractPermissionTokens(claims *jwtClaims, permissionClaim string) []string {
 	switch permissionClaim {
 	case "scope":
@@ -104,11 +124,13 @@ func extractPermissionTokens(claims *jwtClaims, permissionClaim string) []string
 		return claims.Roles
 
 	default:
-		// For any other claim name, look it up in the raw RegisteredClaims extra
-		// space.  Since jwtClaims embeds RegisteredClaims (not MapClaims), we handle
-		// a limited set of well-known custom claim names here.  Providers that use
-		// truly custom claim names should set ego.server.oauth.permission.claim to
-		// "scope" and configure their IdP to include the ego:* scopes.
+		// jwtClaims embeds jwt.RegisteredClaims (not jwt.MapClaims), so provider-
+		// specific custom claim names cannot be read at runtime.  Operators who
+		// need a custom claim should configure their IdP to map it to the standard
+		// "scope" field with ego:* values, or open a feature request.
+		//
+		// A startup warning is emitted by commands/server.go (OAUTH-M8) when this
+		// branch would be taken, so the misconfiguration is visible in the log.
 		return []string{}
 	}
 }

@@ -2603,6 +2603,39 @@ Longer-term, support custom claim lookup by removing the `json:"-"` tag from
 `jwtClaims.AdditionalClaims`, or by switching the claims struct to embed
 `jwt.MapClaims` for the non-registered fields.
 
+**Resolution (June 2026):**
+Three coordinated changes implement the startup warning:
+
+1. **`IsKnownPermissionClaim(claim string) bool`** — new exported function added
+   to `server/oauth/claims.go`.  Returns `true` only for `"scope"` and `"roles"`,
+   the two names that `extractPermissionTokens` handles natively.  Any other value
+   returns `false`.  The function is exported so `commands/server.go` can call it
+   without duplicating the constant set.
+
+2. **Startup warning in `commands/server.go`** — immediately after the existing
+   OAUTH-M1 audience check (inside the `oauth.Initialize()` success branch), the
+   code now calls `oauth.IsKnownPermissionClaim(oauthCfg.PermissionClaim)`.  When
+   it returns `false`, `ui.Log(ui.ServerLogger, "oauth.rs.unsupported.permission.claim", ...)`
+   emits a SERVER-level log entry that is always visible in the server log and the
+   dashboard Log tab.  The server starts normally — a hard refusal would break
+   existing deployments that discovered the misconfiguration after the fact.
+   The `GetConfig()` call was refactored to use a single `oauthCfg` local variable
+   shared between the M1 and M8 checks.
+
+3. **Log message key `oauth.rs.unsupported.permission.claim`** — added to all
+   three language files (`messages_en.txt`, `messages_fr.txt`, `messages_es.txt`)
+   in the alphabetical position after `oauth.rs.no.audience`, carrying a `{{claim}}`
+   substitution argument so the operator can see exactly which claim name is
+   misconfigured.
+
+The `extractPermissionTokens` function and its default branch are unchanged;
+this fix is purely observational (warn early, fail gracefully at runtime).
+Tests `TestIsKnownPermissionClaim` (11 cases covering the two supported names,
+six unsupported names, and four case-variant near-misses) and
+`TestIsKnownPermissionClaim_FallbackBehavior` (end-to-end demonstration that an
+unsupported claim silently degrades to `ego.logon`) added to
+`server/oauth/claims_test.go`.
+
 ---
 
 ### Low / Informational (OAuth RS — second audit, June 2026)
@@ -2773,7 +2806,7 @@ Use this checklist to track progress as issues are resolved.
 - [x] **OAUTH-M5** — `newState()` checks `len(stateStore.items) >= maxPendingStates` (500) inside the same mutex lock as the insert; `statePurgeInterval = 2 * time.Minute` constant replaces `stateMaxAge` in the purge ticker
 - [x] **OAUTH-M6** — `ExchangeCode` in `flow_authcode.go` now wraps `resp.Body` in `&io.LimitedReader{N: 64 KiB + 1}` before `io.ReadAll`; `lr.N == 0` after reading returns `ErrOAuthTokenSizeLimit`; new error constant and `oauth.token.size` i18n key added to all three language files; tests in `medium_test.go`
 - [x] **OAUTH-M7** — `missRefresh` struct + `minMissRefreshInterval` (30 s) added to `jwks.go`; `keyByID` sets `freshCacheMiss` when the cache is fresh but the kid is absent, then gates the refresh through `missRefresh.mu` — within the window it returns `ErrJWKSKeyNotFound` with no network call; stale/empty caches bypass the cooldown; five tests in `medium_test.go`
-- [ ] **OAUTH-M8** — Emit a startup warning when `ego.server.oauth.permission.claim` is set to a value other than `"scope"` or `"roles"`, since custom claim names are silently unsupported and all JWT holders fall back to `"ego.logon"`
+- [x] **OAUTH-M8** — `IsKnownPermissionClaim()` exported from `claims.go`; `commands/server.go` calls it after `Initialize()` and emits `oauth.rs.unsupported.permission.claim` SERVER-log warning when the configured claim is not `"scope"` or `"roles"`; i18n key added to all three language files; 13 tests in `claims_test.go`
 - [x] **LOGIN-M1** — HTTP fallback removed from `resolveServerName`; unqualified names only try HTTPS. Explicit `http://` scheme still accepted as the user's deliberate choice.
 - [x] **LOGIN-M2** — Removed `strings.TrimSpace` from password handling; prompt loop now uses `pass == ""` so spaces-only passwords are accepted as-is
 - [x] **LOGIN-M3** — Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the token cache at revocation time.
