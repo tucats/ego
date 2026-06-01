@@ -106,8 +106,10 @@ func configureRS(t *testing.T, providerURL, redirectURI string) {
 // their authorization codes — to an arbitrary URI.  After the fix the parameter
 // is silently ignored and the server-configured URI is always used.
 func TestAuthorizeRedirectIgnoresRedirectParam(t *testing.T) {
-	const configuredURI = "https://configured.example.com/callback"
-	const attackerURI = "https://evil.example.com/steal"
+	const (
+		configuredURI = "https://configured.example.com/callback"
+		attackerURI   = "https://evil.example.com/steal"
+	)
 
 	configureRS(t, oidcSrv.URL, configuredURI)
 

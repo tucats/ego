@@ -281,6 +281,7 @@ func TestIsKnownPermissionClaim_FallbackBehavior(t *testing.T) {
 	permsWithScope := mapClaimsToPermissions(claims, "scope", nil)
 
 	foundRootFromScope := false
+	
 	for _, p := range permsWithScope {
 		if p == "ego.root" {
 			foundRootFromScope = true

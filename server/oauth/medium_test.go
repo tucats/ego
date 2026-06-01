@@ -425,12 +425,14 @@ func TestExchangeCode_OversizedBody(t *testing.T) {
 			// Override the token_endpoint so ExchangeCode POSTs to our handler.
 			doc["token_endpoint"] = "http://" + r.Host + "/token"
 			body, _ := json.Marshal(doc)
+
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(body)
 
 		case r.URL.Path == "/token":
 			// One byte over the cap — the smallest body that must be rejected.
 			oversized := bytes.Repeat([]byte("x"), testMaxTokenBodyBytes+1)
+
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(oversized)
 
@@ -479,12 +481,14 @@ func TestExchangeCode_ExactlyAtLimit(t *testing.T) {
 			// Override the token_endpoint so ExchangeCode POSTs to our handler.
 			doc["token_endpoint"] = "http://" + r.Host + "/token"
 			body, _ := json.Marshal(doc)
+
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(body)
 
 		case r.URL.Path == "/token":
 			// Exactly the cap — should pass the size check, then fail JSON parse.
 			atLimit := bytes.Repeat([]byte("z"), testMaxTokenBodyBytes)
+
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(atLimit)
 
@@ -540,6 +544,7 @@ func buildJWKSServer(t *testing.T, kid string) (*httptest.Server, *int) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fetchCount++
+		
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(body)
 	}))
