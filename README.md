@@ -215,20 +215,6 @@ referenced in the relevant sections of the [Language](docs/LANGUAGE.MD), [Server
 This defaults to `false`. When set to `true`, it allows extensions to the language to be
 used in programs. Examples include the `print` statement and the `exit` statement.
 
-### ego.compiler.import
-
-This defaults to `false`. If set to `true`, it directs the Ego command line to automatically
-import all the builtin packages so they are available for use without having to specify an
-explicit `import` statement. Note this only imports the packages that have builtin functions,
-so user-created packages will still need to be explicitly imported.
-
-### ego.compiler.normalized
-
-This defaults to `false`, which means that names in _Ego_ are case-sensitive. By default,
-a symbol `Tom` is not considered the same as `tom`. When set to `true`,
-symbol names (variables, packages, functions) are not case-sensitive. For example, when set to
-'true', referencing `fmt.Println` is the same as `fmt.printLN`.
-
 ### ego.compiler.types
 
 This defaults to `dynamic` which means that a variable can take on different types during the
