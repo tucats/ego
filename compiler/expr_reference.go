@@ -13,7 +13,7 @@ import (
 //   - .member         — struct/map field access  (dot notation)
 //   - [index]         — array or map index, or a slice [start:end]
 //   - (args)          — method/function call on the result
-//   - {field: value}  — struct initialiser attached to the atom
+//   - {field: value}  — struct initializer attached to the atom
 //
 // Each suffix is compiled into bytecode instructions that the runtime will
 // execute in sequence, producing the final value on the evaluation stack.
@@ -30,7 +30,7 @@ func (c *Compiler) reference() error {
 		op := c.t.Peek(1)
 
 		switch {
-		// "{" after an expression can mean a struct initialiser, e.g. MyType{x:1}.
+		// "{" after an expression can mean a struct initializer, e.g. MyType{x:1}.
 		// This is forbidden inside a switch conditional to avoid ambiguity with the
 		// switch block's own "{".
 		case op.Is(tokenizer.DataBeginToken):
@@ -104,8 +104,8 @@ func (c *Compiler) reference() error {
 //     This emits a Member instruction. When "(" follows (a method call), a
 //     SetThis instruction is emitted first so the runtime knows the receiver.
 //
-//  3. Package type initialiser: pkg.Type{field:val} — when a member access is
-//     immediately followed by a struct initialiser block, the generated code
+//  3. Package type initializer: pkg.Type{field:val} — when a member access is
+//     immediately followed by a struct initializer block, the generated code
 //     creates a new struct of the referenced package type.
 func (c *Compiler) compileDotReference() error {
 	c.t.Advance(1)
@@ -134,13 +134,13 @@ func (c *Compiler) compileDotReference() error {
 	// Emit the Member instruction to dereference the field.
 	c.b.Emit(bytecode.Member, lastName)
 
-	// Special case: "pkg.Type{}" is an empty struct initialisation.
+	// Special case: "pkg.Type{}" is an empty struct initialization.
 	if c.t.IsNext(tokenizer.EmptyInitializerToken) {
 		c.b.Emit(bytecode.Load, "$new")
 		c.b.Emit(bytecode.Swap)
 		c.b.Emit(bytecode.Call, 1)
 	} else {
-		// "pkg.Type{field:val}" is a struct initialisation with field values.
+		// "pkg.Type{field:val}" is a struct initialization with field values.
 		// We need to push a marker before the type value so the Struct bytecode
 		// can find the boundary on the stack.
 		if c.t.Peek(1).Is(tokenizer.DataBeginToken) && c.t.Peek(2).IsIdentifier() && c.t.Peek(3).Is(tokenizer.ColonToken) {

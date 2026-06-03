@@ -47,8 +47,6 @@ func (r ResHandle) createTableSQL() string {
 
 		if column.Nullable {
 			// NULL is the correct SQL keyword for an explicitly nullable column.
-			// The invalid keyword "nullable" previously used here is not recognized
-			// by either PostgreSQL or SQLite.
 			sql.WriteString(" NULL")
 		}
 

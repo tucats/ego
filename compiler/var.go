@@ -18,7 +18,7 @@ import (
 //	    name2 Type = value
 //	)
 //
-// The parenthesised list form is recognised by an opening "(" immediately after
+// The parenthesised list form is recognized by an opening "(" immediately after
 // "var". Each declaration inside the list is terminated by a ";".
 //
 // For every declared name, a SymbolCreate instruction is emitted to allocate the
@@ -201,7 +201,7 @@ func varInitializer(c *Compiler, kind *data.Type, names []string, model any) err
 //	var c pkg.Color     // Color is exported from package pkg
 //
 // For each name in the list, a call to the special "$new" function is emitted,
-// passing the type value as the argument. This allocates a properly initialised
+// passing the type value as the argument. This allocates a properly initialized
 // instance of the type and stores it in the newly created symbol.
 func (c *Compiler) varUserType(names []string) error {
 	var pkgName tokenizer.Token

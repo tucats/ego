@@ -149,7 +149,7 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 	// HTTPS via router.IsSecureRequest, which checks both r.TLS (direct TLS)
 	// and the X-Forwarded-Proto: https header (TLS terminated by a proxy).
 	// On a plain-HTTP development server the flag is omitted so the form still
-	// functions, matching the behaviour of the WebAuthn challenge cookie.
+	// functions, matching the behavior of the WebAuthn challenge cookie.
 	http.SetCookie(w, &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    csrfToken,
@@ -198,7 +198,7 @@ func reRenderWithError(
 	// Generate a fresh CSRF nonce for the re-rendered form.  The original nonce
 	// is already consumed by the failed POST, so we must issue a new one;
 	// leaving CSRFToken empty would make every re-rendered form permanently
-	// unsubmittable (OAUTH-H4).
+	// un-submittable (OAUTH-H4).
 	newCSRF, csrfErr := generateCSRFToken()
 	if csrfErr != nil {
 		return util.ErrorResponse(w, session.ID,

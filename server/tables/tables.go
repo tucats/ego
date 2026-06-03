@@ -71,7 +71,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		// Create the user schema in the database if it does not yet exist.
 		// SQLite has no schema concept, so this step is skipped for SQLite.
-		// For an unrecognised provider the helper returns false and writes an
+		// For an unrecognized provider the helper returns false and writes an
 		// error response; we stop here in that case.
 		switch db.Provider {
 		case defs.SqliteProvider:
@@ -188,7 +188,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		// in that schema is added.  Fall through to the creation logic below.
 
 	default:
-		// An unrecognised provider cannot proceed.  Write an error response and signal
+		// An unrecognized provider cannot proceed.  Write an error response and signal
 		// failure to the caller so it stops further processing.
 		util.ErrorResponse(w, sessionID,
 			errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
@@ -399,7 +399,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 				}
 
 			default:
-				// An unrecognised provider reached column introspection.
+				// An unrecognized provider reached column introspection.
 				// The metadata query selection above should already have returned an error
 				// for an unknown provider, so this branch is not reachable in normal
 				// operation.  If it is reached, stop immediately with a clear error.

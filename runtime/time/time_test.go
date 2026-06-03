@@ -14,7 +14,7 @@
 //     Ego runtime dispatch.
 //
 // Tests in this file exercise the Ego-implemented wrappers — not the native
-// pass-throughs, which are covered by Go's own standard-library tests.
+// pass-through calls, which are covered by Go's own standard-library tests.
 package time
 
 import (
@@ -153,7 +153,7 @@ func TestParseDuration_DaysWithSpaces(t *testing.T) {
 }
 
 func TestParseDuration_InvalidUnit(t *testing.T) {
-	// "q" is not a recognised duration unit; the parser must return an error.
+	// "q" is not a recognized duration unit; the parser must return an error.
 	// Because there is no "d" in the string, time.ParseDuration handles this
 	// and returns its own error.
 	result, err := parseDuration(nil, data.NewList("3q"))
@@ -478,7 +478,7 @@ func TestParse_ValidISO8601DateTime(t *testing.T) {
 }
 
 func TestParse_USLongDateFormat(t *testing.T) {
-	// dateparse.ParseAny recognises US-style "January 2, 2006" layouts.
+	// dateparse.ParseAny recognizes US-style "January 2, 2006" layouts.
 	result, err := Parse(nil, data.NewList("January 15, 2024"))
 	if err != nil {
 		t.Fatalf("Parse(\"January 15, 2024\") unexpected error: %v", err)
@@ -517,7 +517,7 @@ func TestParse_InvalidDateString(t *testing.T) {
 }
 
 func TestParse_EmptyString(t *testing.T) {
-	// An empty string has no recognisable date layout.
+	// An empty string has no recognizable date layout.
 	_, err := Parse(nil, data.NewList(""))
 	if err == nil {
 		t.Fatal("expected error for empty string, got nil")

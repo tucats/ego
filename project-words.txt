@@ -13,12 +13,14 @@ appserver
 araddon
 argcheck
 Argcount
+ASIC
 Asinh
 Atanh
 Atoi
 attname
 attnum
 attrelid
+autofocus
 autoimport
 autoparse
 backquote
@@ -56,6 +58,7 @@ dateparse
 datestamp
 davecgh
 dbname
+dbogus
 dbpass
 dbuser
 dddde
@@ -237,6 +240,7 @@ tablename
 Tabnine
 Tanh
 termgen
+testapp
 testcount
 thecurrent
 thisandthat
@@ -276,4 +280,5 @@ XOXO
 XVCJ
 xyzzy
 zipgo
+zorp
 دانش

@@ -103,7 +103,7 @@ func parseDurationWithDays(durationString string) (days int, hours int, mins int
 			mSeen = false
 
 		default:
-			// Any character that is not a recognised unit letter flushes a pending
+			// Any character that is not a recognized unit letter flushes a pending
 			// minute value. For example, after "30m" a digit starts the next unit's
 			// number, and a space separates units without consuming either.
 			if mSeen {

@@ -59,7 +59,7 @@ const (
 //
 //	[4-byte magic ÿEG3][16-byte salt][12-byte nonce][AES-GCM ciphertext+tag]
 //
-// Decrypt automatically recognises v3, v2 (PBKDF2-SHA256, magic ÿEGO), and
+// Decrypt automatically recognizes v3, v2 (PBKDF2-SHA256, magic ÿEGO), and
 // the legacy MD5 format, so existing ciphertext continues to decrypt correctly.
 func Encrypt(data, password string) (string, error) {
 	b, err := encrypt([]byte(data), password)

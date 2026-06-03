@@ -119,7 +119,7 @@ func ColumnList(columnsParameter string) string {
 // schema-qualified and is returned as-is (with each part individually quoted).
 //
 // The function cannot return an error because it is called in many contexts where
-// only a string is expected.  If an unrecognised provider is supplied, the function
+// only a string is expected.  If an unrecognized provider is supplied, the function
 // falls back to the PostgreSQL schema-qualified form (the safer choice, as a wrong
 // schema name produces a clear database error rather than a silent wrong result).
 // Higher-level handlers that have an error return path should validate the provider
@@ -260,7 +260,7 @@ func SortList(u *url.URL) string {
 // are stored as UTC RFC 3339 strings.
 //
 // The function cannot return an error because it is invoked deep in DDL-generation code
-// where only a string is expected.  If an unrecognised provider is supplied the native
+// where only a string is expected.  If an unrecognized provider is supplied the native
 // type name is returned unchanged, which preserves caller intent without panicking.
 // Higher-level handlers that have an error return path should validate the provider before
 // calling this function.

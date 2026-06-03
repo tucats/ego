@@ -67,7 +67,7 @@ func (c *Compiler) typeDeclaration() (any, error) {
 //   - primitive type keywords (int, string, bool, …)
 //   - user-defined type names registered in c.types
 //
-// Returns UndefinedType (not an error) when no type token is recognised, so
+// Returns UndefinedType (not an error) when no type token is recognized, so
 // the caller can fall back to other parsing strategies such as user type lookup.
 func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 	if c.flags.extensionsEnabled && c.t.Peek(1).Is(tokenizer.TypeToken) {

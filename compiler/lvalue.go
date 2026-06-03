@@ -11,7 +11,7 @@ import (
 // current position looks like the left-hand side of an assignment statement.
 // This is used in ambiguous situations — for example, inside an "if" or "for"
 // preamble where the compiler cannot tell yet whether it is looking at an
-// initialiser assignment or a plain expression.
+// initializer assignment or a plain expression.
 //
 // The check is heuristic: it saves the current token position, scans up to
 // 100 tokens forward looking for one of the assignment operators (:=, =, <-,
@@ -289,7 +289,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	return bc, nil
 }
 
-// patchStore finalises the store operation at the end of an lvalue bytecode
+// patchStore finalizes the store operation at the end of an lvalue bytecode
 // buffer. When the last emitted instruction is a LoadIndex with no operand —
 // meaning the previous suffix was an array/map subscript — it is replaced
 // in-place with StoreIndex, which writes the value back to the element.

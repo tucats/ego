@@ -13,7 +13,7 @@ import (
 // position so that the row width stays consistent with the column count.
 //
 // The initial maxWidth for the new column is set to the rune count of its
-// heading (matching the behaviour of New()), so the heading is never
+// heading (matching the behavior of New()), so the heading is never
 // truncated in text output even before any row data is added.
 func (t *Table) AddColumn(heading string) error {
 	if len(heading) == 0 {

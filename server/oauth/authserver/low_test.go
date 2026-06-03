@@ -112,7 +112,7 @@ func TestAuthorizeGetHandler_SecureCookie_HTTPS(t *testing.T) {
 //
 //	Setting Secure on a plain-HTTP server would make the browser silently discard
 //	the cookie, breaking the login form entirely in development environments that
-//	run without TLS.  The correct behaviour is to omit Secure on plain HTTP and
+//	run without TLS.  The correct behavior is to omit Secure on plain HTTP and
 //	rely on SameSite=Strict as the remaining CSRF protection.
 func TestAuthorizeGetHandler_SecureCookie_PlainHTTP(t *testing.T) {
 	setupL1Client(t)

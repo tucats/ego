@@ -88,7 +88,7 @@ func TestValidateJWT_CacheHit_BlacklistedJTI(t *testing.T) {
 // cached JWT entry whose JTI has NOT been revoked, returning the cached
 // user and permissions without re-parsing the JWT (OAUTH-H2 positive path).
 //
-// This test ensures the fix does not regress the normal cache-hit behaviour.
+// This test ensures the fix does not regress the normal cache-hit behavior.
 func TestValidateJWT_CacheHit_NotBlacklisted(t *testing.T) {
 	// Configure an empty blacklist database (nothing will be blacklisted).
 	dir := t.TempDir()
@@ -176,7 +176,7 @@ func TestValidateJWT_CacheHit_NoJTI(t *testing.T) {
 
 // TestValidateJWT_CacheHit_ExpiredEntry verifies that an expired cache entry
 // is evicted rather than returned, forcing a full re-validation on the next
-// call.  This is pre-existing behaviour preserved by the OAUTH-H2 change.
+// call.  This is pre-existing behavior preserved by the OAUTH-H2 change.
 func TestValidateJWT_CacheHit_ExpiredEntry(t *testing.T) {
 	const fakeToken4 = "x.y.z"
 

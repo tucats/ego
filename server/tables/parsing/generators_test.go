@@ -9,6 +9,9 @@ import (
 	"github.com/tucats/ego/defs"
 )
 
+// Test time string value used for validating timestamp handling in generators.
+const arbitraryTimeString = "2024-06-15T12:00:00Z"
+
 func TestFormUpdateQuery(t *testing.T) {
 	type args struct {
 		urlString string
@@ -303,7 +306,7 @@ func TestFormSelectorDeleteQuery(t *testing.T) {
 }
 
 // TestCoerceToColumnType_TimeTypes verifies that CoerceToColumnType correctly converts
-// date/time values for all recognised column type name variants.
+// date/time values for all recognized column type name variants.
 //
 // The function must:
 //   - Parse RFC 3339 strings into time.Time for "timestamp", "time", "date", and their aliases.
@@ -318,7 +321,7 @@ func TestCoerceToColumnType_TimeTypes(t *testing.T) {
 
 	// refRFC3339 is the RFC 3339 string representation of ref, which is what a
 	// REST client typically sends in a JSON payload.
-	refRFC3339 := "2024-06-15T12:00:00Z"
+	refRFC3339 := arbitraryTimeString
 
 	tests := []struct {
 		name       string
@@ -348,7 +351,7 @@ func TestCoerceToColumnType_TimeTypes(t *testing.T) {
 			wantZero:   true,
 		},
 
-		// --- "timestamptz" (raw PostgreSQL type name that may appear before normalisation) ---
+		// --- "timestamptz" (raw PostgreSQL type name that may appear before normalization) ---
 		{
 			name:       "timestamptz column: RFC 3339 string",
 			columnType: "timestamptz",
@@ -433,7 +436,7 @@ func TestCoerceToColumnType_TimeTypes(t *testing.T) {
 		}
 
 		if tt.wantTime {
-			// Expect a time.Time equal to ref (after UTC normalisation).
+			// Expect a time.Time equal to ref (after UTC normalization).
 			gotTime, ok := got.(time.Time)
 			if !ok {
 				t.Errorf("%s: expected time.Time, got %T (%v)", tt.name, got, got)
@@ -497,13 +500,13 @@ func TestBindTimeValue(t *testing.T) {
 			name:     "SQLite: time.Time is formatted as UTC RFC 3339 string",
 			input:    ref,
 			provider: defs.SqliteProvider,
-			wantStr:  "2024-06-15T12:00:00Z",
+			wantStr:  arbitraryTimeString,
 		},
 		{
-			name:     "SQLite deprecated alias: same behaviour as sqlite",
+			name:     "SQLite deprecated alias: same behavior as sqlite",
 			input:    ref,
 			provider: defs.DeprecatedSqliteProvider,
-			wantStr:  "2024-06-15T12:00:00Z",
+			wantStr:  arbitraryTimeString,
 		},
 		{
 			name:     "PostgreSQL: time.Time is passed through as-is",
@@ -547,7 +550,7 @@ func TestBindTimeValue(t *testing.T) {
 			gotTime, ok := got.(time.Time)
 			if !ok {
 				t.Errorf("%s: expected time.Time, got %T (%v)", tt.name, got, got)
-				
+
 				continue
 			}
 
@@ -572,7 +575,7 @@ func TestBindTimeValue(t *testing.T) {
 // binds it directly to a TIMESTAMP WITH TIME ZONE column).
 func TestFormInsertQuery_TimeColumns(t *testing.T) {
 	// The reference time as an RFC 3339 string — this is what a REST client sends.
-	inputStr := "2024-06-15T12:00:00Z"
+	inputStr := arbitraryTimeString
 
 	// The expected time.Time after parsing.
 	expectedTime := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
@@ -599,7 +602,7 @@ func TestFormInsertQuery_TimeColumns(t *testing.T) {
 	sqliteStr, ok := sqliteValues[0].(string)
 	if !ok {
 		t.Errorf("SQLite: expected string value, got %T (%v)", sqliteValues[0], sqliteValues[0])
-	} else if sqliteStr != "2024-06-15T12:00:00Z" {
+	} else if sqliteStr != arbitraryTimeString {
 		t.Errorf("SQLite: expected RFC 3339 string %q, got %q", "2024-06-15T12:00:00Z", sqliteStr)
 	}
 

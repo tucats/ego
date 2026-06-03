@@ -217,19 +217,28 @@ func (t *Table) renderPagelet(pageRows [][]string, widths []int, fittingColumns 
 	if t.showHeadings && len(t.names) > 0 {
 		// Render the column-name header row.
 		headerLine := t.renderRow(t.names, widths, fittingColumns)
-		result.WriteString(indent + headerLine + "\n")
+
+		result.WriteString(indent)
+		result.WriteString(headerLine)
+		result.WriteString("\n")
 
 		// Render the underline row (e.g., "======  ======") if requested.
 		if t.showUnderlines {
 			underline := t.renderUnderline(widths, fittingColumns)
-			result.WriteString(indent + underline + "\n")
+
+			result.WriteString(indent)
+			result.WriteString(underline)
+			result.WriteString("\n")
 		}
 	}
 
 	// Render each data row.
 	for _, row := range pageRows {
 		line := t.renderRow(row, widths, fittingColumns)
-		result.WriteString(indent + line + "\n")
+
+		result.WriteString(indent)
+		result.WriteString(line)
+		result.WriteString("\n")
 	}
 
 	return result.String()

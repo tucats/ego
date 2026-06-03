@@ -98,7 +98,7 @@ func TokenListHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	// Convert the internal BlackListItem slice into the API-facing
 	// defs.BlacklistedToken slice.  dateparse.ParseAny is a third-party
-	// function that recognises many common date formats; the blank identifier _
+	// function that recognizes many common date formats; the blank identifier _
 	// discards any parse error because a zero time.Time is an acceptable
 	// fallback for a display-only field.
 	allItems := []defs.BlacklistedToken{}

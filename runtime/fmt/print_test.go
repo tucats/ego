@@ -140,7 +140,7 @@ func Test_stringPrintFormat(t *testing.T) {
 }
 
 // Test_stringPrintFormat_emptyArgs verifies that an empty argument list returns
-// int(0) rather than a string, matching the behaviour documented in the source.
+// int(0) rather than a string, matching the behavior documented in the source.
 func Test_stringPrintFormat_emptyArgs(t *testing.T) {
 	s := newTestSymbols()
 	got, err := stringPrintFormat(s, data.NewList())
