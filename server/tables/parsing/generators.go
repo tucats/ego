@@ -101,12 +101,18 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 		}
 
 		if v, ok := items[key]; ok && v == nil {
+			// Explicit null — bind nil so the database stores NULL.
 			values[filterCount] = nil
 		} else {
+			// Step 1: convert the raw value to the correct Go type for this column.
 			v, err := CoerceToColumnType(key, items[key], columns)
 			if err != nil {
 				return "", nil, err
 			}
+
+			// Step 2: format any time.Time value for the target provider.
+			// (RFC 3339 string for SQLite, native time.Time for PostgreSQL.)
+			v = bindTimeValue(v, provider)
 
 			values[filterCount] = v
 		}
@@ -160,6 +166,16 @@ func writeSpaceString(b *strings.Builder, s string) {
 	b.WriteString(s)
 }
 
+// FormInsertQuery builds a parameterized SQL INSERT statement for the named table and
+// returns the query string together with the ordered slice of parameter values that must
+// be passed to db.Exec.
+//
+// The function performs two transformations on each value:
+//  1. CoerceToColumnType converts the raw Go value (typically decoded from JSON, so often
+//     a string or float64) into the Go type expected by the database driver.
+//  2. bindTimeValue converts any resulting time.Time to the correct driver representation:
+//     an RFC 3339 string for SQLite (TEXT column) or a native time.Time for PostgreSQL
+//     (TIMESTAMP WITH TIME ZONE column).
 func FormInsertQuery(table string, user string, provider string, columns []defs.DBColumn, items map[string]any) (string, []any, error) {
 	var (
 		err    error
@@ -175,6 +191,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	keys := util.InterfaceMapKeys(items)
 	values := make([]any, len(items))
 
+	// Write the column-name list: INSERT INTO "table"("col1","col2",...)
 	for i, key := range keys {
 		if i == 0 {
 			result.WriteRune('(')
@@ -187,14 +204,21 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 
 	result.WriteString(") VALUES (")
 
+	// Build the placeholder list ($1,$2,...) and populate the values slice.
 	for i, key := range keys {
 		v := items[key]
 
 		if v != nil {
+			// Step 1: convert the raw value to the proper Go type for this column
+			// (e.g. parse "2006-01-02T15:04:05Z" into time.Time for a timestamp column).
 			v, err = CoerceToColumnType(key, v, columns)
 			if err != nil {
 				return "", nil, err
 			}
+
+			// Step 2: format any time.Time value in the way the target provider expects
+			// (RFC 3339 string for SQLite, native time.Time for PostgreSQL).
+			v = bindTimeValue(v, provider)
 		}
 
 		values[i] = v
@@ -211,20 +235,32 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 	return result.String(), values, err
 }
 
-// For a given column name and value, and the metadata for the columns, ensure that the
-// value is of the correct type based on the column. If the value cannot be converted,
-// return an error.
+// CoerceToColumnType looks up the named column in the columns slice and converts the
+// supplied value v to the Go type that matches the column's declared SQL type.  This
+// ensures that the correct driver-level type is bound to each placeholder ($1, $2, …)
+// when the query is eventually executed.
+//
+// For most scalar types the conversion is straightforward (string, int, float64, bool).
+// For date/time types the logic is slightly more involved; see the inline comments.
+//
+// Returns the (possibly converted) value and any conversion error.  Returns
+// errors.ErrInvalidColumnName if key is not found in the columns list (the row ID
+// pseudo-column is exempt from this check).
 func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error) {
 	var (
 		err   error
 		found bool
 	)
 
-	// Based on the column type, convert the value as needed.
+	// Walk the column list looking for a column whose name matches key.
 	for _, column := range columns {
 		if column.Name == key {
+			// Lower-case the column type so the comparisons below are case-insensitive.
+			// The type names in DBColumn.Type are normalized in getColumnInfo(), but we
+			// guard here too so this function stays safe to call with un-normalized metadata.
 			switch strings.ToLower(column.Type) {
 			case "char", "string", "nullstring":
+				// Plain string — just ensure the Go type is string.
 				v = data.String(v)
 
 			case "float", "double", "float64", "nullfloat64":
@@ -263,10 +299,35 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 					return nil, err
 				}
 
-			case "date", "datetime":
+			// Time-related columns.  All variants of the column type name (portable
+			// lowercase names produced by getColumnInfo, plus raw driver names that might
+			// appear in non-normalized metadata) are collapsed into one case.
+			//
+			// Three sub-cases:
+			//  1. nil   — produce a zero time.Time{} so the caller sees a typed zero value
+			//             rather than an untyped nil.  Note: FormInsertQuery / FormUpdateQuery
+			//             guard against nil before calling here, so this branch is mainly a
+			//             safety net for other call sites.
+			//  2. time.Time — the value is already the correct Go type (e.g. returned
+			//             directly by the PostgreSQL driver on a SELECT).  Pass it through
+			//             unchanged.
+			//  3. anything else — treat it as a string and parse it with dateparse.ParseAny,
+			//             which accepts RFC 3339, RFC 822, common US/ISO date formats, etc.
+			//             This is the path taken when a JSON string such as
+			//             "2006-01-02T15:04:05Z" arrives from a REST client.
+			case "timestamp", "timestamptz", "timestamp with time zone",
+				"time", "time with time zone",
+				"date", "datetime":
 				if v == nil {
+					// Produce a typed zero value rather than leaving v as untyped nil.
 					v = time.Time{}
+				} else if _, isTime := v.(time.Time); isTime {
+					// The PostgreSQL driver (lib/pq) decodes TIMESTAMP WITH TIME ZONE
+					// columns as native Go time.Time values.  Nothing to do here.
+					break
 				} else {
+					// Parse a string representation.  dateparse.ParseAny handles a wide
+					// variety of formats so callers are not locked into RFC 3339.
 					v, err = dateparse.ParseAny(data.String(v))
 					if err != nil {
 						return nil, errors.New(err)
@@ -285,6 +346,51 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	}
 
 	return v, nil
+}
+
+// bindTimeValue converts a time.Time to the appropriate Go value for the target
+// database provider before it is placed into the SQL parameter slice.
+//
+// Provider-specific behavior:
+//   - SQLite: stores all date/time values as RFC 3339 strings (TEXT affinity).
+//     We format to UTC RFC 3339 so the stored text is unambiguous and can be
+//     round-tripped by dateparse.ParseAny on the read path.
+//   - PostgreSQL: the lib/pq driver accepts a native time.Time directly for
+//     TIMESTAMP WITH TIME ZONE, TIME, and DATE columns.
+//
+// If v is not a time.Time the function returns v unchanged, making it safe to
+// call unconditionally after CoerceToColumnType.
+//
+// The function cannot return an error because it is an inner helper called for
+// every value in an INSERT/UPDATE parameter list.  If an unrecognized provider is
+// supplied the time.Time is passed through as-is, which is the safest fallback
+// (most drivers accept native time.Time).  The calling handler should have
+// validated the provider before reaching this point.
+//
+// To add a new provider: add a case in the switch below.
+func bindTimeValue(v any, provider string) any {
+	t, ok := v.(time.Time)
+	if !ok {
+		// Not a time value — nothing to convert.
+		return v
+	}
+
+	switch {
+	case strings.EqualFold(provider, defs.SqliteProvider) ||
+		strings.EqualFold(provider, defs.DeprecatedSqliteProvider):
+		// SQLite stores dates/times as TEXT.  Format as UTC RFC 3339 so the stored
+		// string is consistent and parses back cleanly via dateparse.ParseAny.
+		return t.UTC().Format(time.RFC3339)
+
+	case strings.EqualFold(provider, defs.PostgresProvider):
+		// lib/pq binds time.Time natively to TIMESTAMP WITH TIME ZONE / DATE / TIME.
+		return t
+
+	default:
+		// Unknown provider — pass the time.Time value through unchanged.
+		// Most SQL drivers accept time.Time via the driver.Value interface.
+		return t
+	}
 }
 
 func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string, useRowID bool) (string, error) {
@@ -311,19 +417,29 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		return "", errors.ErrInvalidURL
 	}
 
-	// Get the table name. If it doesn't already have a schema part, then assign
-	// the username as the schema.
+	// Resolve the table name to the form expected by the target provider.
+	// SQLite has no schema concept, so the name is used as-is.
+	// PostgreSQL qualifies it with the user/schema name.
+	// To support a new provider: add a case and produce the appropriate fully-qualified name.
 	table := data.String(tableItem)
 	wasFullyQualified := false
 
-	if provider != defs.SqliteProvider {
+	switch provider {
+	case defs.SqliteProvider, defs.DeprecatedSqliteProvider:
+		// SQLite: no schema qualification needed; use the plain (unquoted) table name.
+
+	case defs.PostgresProvider:
 		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))
-		// This is a multipart name. You must be an administrator to do this
+		// Multi-part names (schema.table) require admin privileges when the schema
+		// is not the current user's own schema.
 		if !wasFullyQualified && !hasAdminPrivileges {
 			util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
 
 			return "", errors.ErrNoPrivilegeForOperation
 		}
+
+	default:
+		return "", errors.ErrUnsupportedDatabase.Context(provider)
 	}
 
 	result.WriteString("CREATE TABLE ")

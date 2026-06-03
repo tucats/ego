@@ -651,3 +651,114 @@ The following table summarizes the quoting conventions relevant to this codebase
 ---
 
 *Document written May 2026 based on audit of Ego commit `74f21a22` and surrounding history. DB-15 through DB-17 added after end-to-end PostgreSQL API testing with `tools/apitest/tests-pg/`. Issues are labeled DB-1 through DB-17 for discussion tracking.*
+
+---
+
+## 8. Native Date and Time Types
+
+Ego supports `timestamp`, `time`, and `date` as first-class column types in tables accessed via the `/dsns` endpoint family.  This section describes how these types are stored, read back, and exchanged with REST clients, and documents the implementation changes made in June 2026.
+
+### 8.1 Summary
+
+| Provider | DDL column type | Storage format | On read |
+| -------- | -------------- | -------------- | ------- |
+| SQLite | `TIMESTAMP` / `TIME` / `DATE` | RFC 3339 string (TEXT affinity) | Parsed to `time.Time` by `dateparse.ParseAny` |
+| PostgreSQL | `TIMESTAMP WITH TIME ZONE` / `TIME` / `DATE` | Native database time type | Decoded directly to `time.Time` by `lib/pq` |
+
+REST clients send and receive time values as RFC 3339 strings in JSON (e.g. `"2006-01-02T15:04:05Z"`).  Go's standard `json.Marshal` produces this format automatically from `time.Time` values.  Incoming values from clients are accepted in any format that `github.com/araddon/dateparse.ParseAny` can parse (RFC 3339, RFC 822, ISO 8601, many common US/European formats).
+
+### 8.2 SQLite Behavior
+
+SQLite has no built-in date/time column type.  The Ego server uses the following approach to preserve semantic type information without changing the physical storage format:
+
+1. **DDL declaration** (`server/tables/parsing/parsing.go`, `MapColumnType`): time columns are declared with their semantic names rather than the generic `TEXT`:
+
+ | Ego type | SQLite DDL |
+ | ---------- | --------- |
+ | `timestamp` | `TIMESTAMP` |
+ | `time` | `TIME` |
+ | `date` | `DATE` |
+
+   SQLite's type-affinity rules treat `TIMESTAMP`, `TIME`, and `DATE` as TEXT affinity, so the engine stores a text string.  The key benefit is that the declared type name is preserved in the schema metadata and can be recovered via `PRAGMA table_info`.
+
+2. **Schema introspection** (`server/tables/tables.go`, `getColumnInfo`): when the SQLite driver reports a column type name from `DatabaseTypeName()`, the normalization block maps it to a portable lowercase name:
+
+ | Driver-reported name | Normalized to |
+ | -------------------- | ------------ |
+ | `TIMESTAMP`, `TIMESTAMPTZ`, `DATETIME` | `"timestamp"` |
+ | `TIME` | `"time"` |
+ | `DATE` | `"date"` |
+
+   This portable name is stored in `DBColumn.Type` and returned to REST clients in the table-describe response.
+
+3. **Write path** (`server/tables/parsing/generators.go`, `FormInsertQuery` / `FormUpdateQuery`): an incoming RFC 3339 string is parsed to `time.Time` by `CoerceToColumnType`, then formatted back to a UTC RFC 3339 string by `bindTimeValue` before being bound to the SQL parameter.  This ensures a consistent, unambiguous format in the TEXT column.
+
+4. **Read path** (`server/tables/parsing/generators.go`, `CoerceToColumnType`): the string stored in the TEXT column is parsed by `dateparse.ParseAny` and returned as `time.Time`.  Go's JSON encoder then serializes it to RFC 3339 in the HTTP response.
+
+### 8.3 PostgreSQL Behavior
+
+PostgreSQL has native date/time types.  The `MapColumnType` function maps Ego column types to standard PostgreSQL DDL names:
+
+| Ego type | PostgreSQL DDL |
+| ---------- | ------------- |
+| `timestamp` | `TIMESTAMP WITH TIME ZONE` |
+| `time` | `TIME` |
+| `date` | `DATE` |
+
+The `lib/pq` driver decodes `TIMESTAMP WITH TIME ZONE` and `DATE` columns directly to native Go `time.Time` values on `rows.Scan`.  `CoerceToColumnType` recognizes that the value is already a `time.Time` and passes it through unchanged.  `bindTimeValue` also passes `time.Time` through unchanged for PostgreSQL.
+
+Schema introspection in `getColumnInfo` normalizes PostgreSQL-specific driver type names to the portable names used across the codebase:
+
+| lib/pq-reported name | Normalized to |
+| -------------------- | ------------ |
+| `"Time"` (Go reflect name), `TIMESTAMPTZ`, `TIMESTAMP WITH TIME ZONE`, `TIMESTAMP`, `DATETIME` | `"timestamp"` |
+| `TIME`, `TIME WITH TIME ZONE` | `"time"` |
+| `DATE` | `"date"` |
+
+### 8.4 Wire Format (REST API)
+
+Time values are always transmitted as JSON strings.  A client creating a table with a `timestamp` column, inserting a row, and reading it back will see the same RFC 3339 string throughout:
+
+```text
+# Create table
+PUT /dsns/{dsn}/tables/events
+[{"name":"event_time","type":"timestamp",...}]
+
+# Insert row
+PUT /dsns/{dsn}/tables/events/rows
+[{"event_time":"2024-06-15T12:00:00Z"}]
+
+# Read row
+GET /dsns/{dsn}/tables/events/rows
+→ {"rows":[{"event_time":"2024-06-15T12:00:00Z",...}],...}
+```
+
+Clients are not limited to RFC 3339 on input — `dateparse.ParseAny` accepts many common formats.  The server always returns RFC 3339 (the Go JSON default for `time.Time`).
+
+### 8.5 Implementation Files
+
+| File | What changed |
+| ---- | ------------ |
+| `server/tables/parsing/parsing.go` | `MapColumnType`: SQLite time types now use semantic DDL names (`TIMESTAMP`, `TIME`, `DATE`) instead of `TEXT` |
+| `server/tables/tables.go` | `getColumnInfo`: normalizes driver-specific time type names to portable lowercase names for both SQLite and PostgreSQL |
+| `server/tables/parsing/generators.go` | `CoerceToColumnType`: expanded to handle all time type name variants and added `time.Time` passthrough; new `bindTimeValue` helper formats the final bound value per provider |
+| `server/tables/parsing/generators.go` | `FormInsertQuery`, `FormUpdateQuery`: call `bindTimeValue` after `CoerceToColumnType` to finalize the SQL parameter value |
+| `server/tables/rows.go` | Removed the incorrect single-quote wrapping block that placed `'...'` quote characters inside the stored string |
+
+### 8.6 Migration Note for SQLite
+
+Tables created before June 2026 have `timestamp`/`time`/`date` columns declared as `TEXT`.  The `getColumnInfo` normalization switch does not cover `"TEXT"` as a time type, so these columns continue to be reported as type `"string"` (unchanged behavior).  If any rows were written by the old (buggy) code they may contain embedded single-quote characters in those columns.
+
+To upgrade an existing table, recreate it:
+
+```text
+DELETE /dsns/{dsn}/tables/{tablename}
+PUT    /dsns/{dsn}/tables/{tablename}   (with the column definitions)
+PUT    /dsns/{dsn}/tables/{tablename}/rows  (re-insert cleaned data)
+```
+
+PostgreSQL tables are unaffected: `TIMESTAMP WITH TIME ZONE` was already the correct DDL type, and the read path already worked correctly.  Rows written by the old write path (which embedded single-quote chars) may need to be corrected manually.
+
+### 8.7 Scope
+
+This feature applies exclusively to user tables accessed via the `/dsns/{dsn}/tables/…` and `/tables/…` endpoint families.  The system database (users, credentials, cluster membership, configuration) is not affected — its tables are managed by the `resources/` framework, which stores server-internal timestamps as `TEXT` and does not expose them through the date/time conversion pipeline described here.

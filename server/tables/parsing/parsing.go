@@ -108,18 +108,46 @@ func ColumnList(columnsParameter string) string {
 	return result.String()
 }
 
+// FullName returns the fully-qualified SQL table name for the given provider,
+// user (schema), and unqualified table name.
+//
+// SQLite has no schema concept: all tables share a single flat namespace, so
+// only the quoted table name is returned.  PostgreSQL uses the user name as the
+// schema prefix (e.g. "alice"."orders").
+//
+// If the table name already contains a "." separator it is treated as already
+// schema-qualified and is returned as-is (with each part individually quoted).
+//
+// The function cannot return an error because it is called in many contexts where
+// only a string is expected.  If an unrecognised provider is supplied, the function
+// falls back to the PostgreSQL schema-qualified form (the safer choice, as a wrong
+// schema name produces a clear database error rather than a silent wrong result).
+// Higher-level handlers that have an error return path should validate the provider
+// before calling this function.
+//
+// To add support for a new provider: add a case in the switch below and produce the
+// appropriate fully-qualified name.
 func FullName(provider, user, table string) (string, bool) {
 	wasFullyQualified := true
 	user = StripQuotes(user)
 	table = StripQuotes(table)
 
 	if dot := strings.Index(table, "."); dot < 0 {
-		// If we need to build a fully-qualified name, don't do it if we are
-		// using sqlite3. Otherwise, use the username to build a fully qualified
-		// name.
-		if strings.EqualFold(provider, defs.SqliteProvider) {
+		// The table name has no dot separator, so we may need to add a schema prefix.
+		switch {
+		case strings.EqualFold(provider, defs.SqliteProvider) ||
+			strings.EqualFold(provider, defs.DeprecatedSqliteProvider):
+			// SQLite: no schema prefix; just quote the table name.
 			table = egostrings.SQLIdentifier(table)
-		} else {
+
+		case strings.EqualFold(provider, defs.PostgresProvider):
+			// PostgreSQL: prefix the table name with the user/schema name.
+			table = egostrings.SQLIdentifier(user) + "." + egostrings.SQLIdentifier(table)
+
+		default:
+			// Unknown provider — fall back to PostgreSQL-style schema qualification.
+			// The caller is responsible for rejecting unsupported providers before
+			// reaching here when a strict error is required.
 			table = egostrings.SQLIdentifier(user) + "." + egostrings.SQLIdentifier(table)
 		}
 
@@ -218,14 +246,36 @@ func SortList(u *url.URL) string {
 	return result.String()
 }
 
-// MapColumnType converts native Ego type names into the equivalent SQL DDL type names
-// for the given database provider. SQLite and PostgreSQL use different type names for
-// some common types, so the mapping is provider-specific.
+// MapColumnType converts a portable Ego column type name into the SQL DDL type string
+// appropriate for the target database provider.
+//
+// Each provider uses different type names: SQLite uses "TEXT", "INTEGER", and "REAL"
+// affinity names, while PostgreSQL has richer type vocabulary ("CHAR VARYING",
+// "DOUBLE PRECISION", "TIMESTAMP WITH TIME ZONE", etc.).
+//
+// For date/time types on SQLite: SQLite does not have a native date/time type, but we
+// declare columns with their semantic names (TIMESTAMP, TIME, DATE) rather than TEXT.
+// SQLite applies TEXT affinity to these names at the storage level, but preserving the
+// declared name allows schema introspection to recover the semantic type.  Actual values
+// are stored as UTC RFC 3339 strings.
+//
+// The function cannot return an error because it is invoked deep in DDL-generation code
+// where only a string is expected.  If an unrecognised provider is supplied the native
+// type name is returned unchanged, which preserves caller intent without panicking.
+// Higher-level handlers that have an error return path should validate the provider before
+// calling this function.
+//
+// To add a new provider: add a case in the switch below with a type-name map for that
+// provider's DDL vocabulary.
 func MapColumnType(native, provider string) string {
 	var types map[string]string
 
-	if strings.EqualFold(provider, defs.SqliteProvider) || strings.EqualFold(provider, defs.DeprecatedSqliteProvider) {
-		// SQLite type affinity rules: TEXT, INTEGER, REAL, BLOB, NUMERIC
+	switch {
+	case strings.EqualFold(provider, defs.SqliteProvider) ||
+		strings.EqualFold(provider, defs.DeprecatedSqliteProvider):
+		// SQLite type affinity rules: TEXT, INTEGER, REAL, BLOB, NUMERIC.
+		// TIMESTAMP, TIME, and DATE are stored as TEXT affinity; the semantic names are
+		// preserved so schema introspection can recover them via getColumnInfo().
 		types = map[string]string{
 			data.StringTypeName: "TEXT",
 			data.Int32TypeName:  "INTEGER",
@@ -234,12 +284,13 @@ func MapColumnType(native, provider string) string {
 			"boolean":           "INTEGER",
 			"float32":           "REAL",
 			"float64":           "REAL",
-			"timestamp":         "TEXT", // SQLite has no TIMESTAMP WITH TIME ZONE; store as ISO-8601 text
-			"time":              "TEXT",
-			"date":              "TEXT",
+			"timestamp":         "TIMESTAMP", // RFC 3339 text; semantic name retained for introspection
+			"time":              "TIME",       // RFC 3339 text; semantic name retained for introspection
+			"date":              "DATE",       // RFC 3339 text; semantic name retained for introspection
 		}
-	} else {
-		// PostgreSQL type names
+
+	case strings.EqualFold(provider, defs.PostgresProvider):
+		// PostgreSQL DDL type names.
 		types = map[string]string{
 			data.StringTypeName: "CHAR VARYING",
 			data.Int32TypeName:  "INTEGER",
@@ -252,6 +303,12 @@ func MapColumnType(native, provider string) string {
 			"time":              "TIME",
 			"date":              "DATE",
 		}
+
+	default:
+		// Unknown provider — return the native type name unchanged rather than
+		// silently producing a wrong DDL type.  Callers that can propagate errors
+		// should have validated the provider before reaching here.
+		return strings.ToLower(native)
 	}
 
 	native = strings.ToLower(native)

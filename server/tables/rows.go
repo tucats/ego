@@ -298,7 +298,9 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		for _, column := range columns {
 			nullable := column.Nullable.Specified && column.Nullable.Value
 
-			v, ok := row[column.Name]
+			// We only need the presence flag here; the value itself is passed through
+			// to the query builder (FormInsertQuery) which handles type coercion.
+			_, ok := row[column.Name]
 			if !ok && !nullable && partialInsertError {
 				expectedList := make([]string, 0)
 				for _, k := range columns {
@@ -323,17 +325,6 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 					assumedNull = append(assumedNull, column.Name)
 				}
-			}
-
-			// If it's one of the date/time values, make sure it is wrapped in single quotes.
-			if parsing.KeywordMatch(column.Type, "time", "date", "timestamp") {
-				text := strings.TrimPrefix(strings.TrimSuffix(data.String(v), "\""), "\"")
-				row[column.Name] = "'" + strings.TrimPrefix(strings.TrimSuffix(text, "'"), "'") + "'"
-				ui.Log(ui.TableLogger, "table.update.column", ui.A{
-					"session": session.ID,
-					"column":  column.Name,
-					"from":    v,
-					"to":      row[column.Name]})
 			}
 		}
 

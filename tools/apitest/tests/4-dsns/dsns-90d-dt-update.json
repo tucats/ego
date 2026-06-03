@@ -1,0 +1,41 @@
+{
+    "description": "update timestamp column with new RFC 3339 value",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events/rows",
+        "parameters": {
+            "filter": "EQ(title,\"conference\")"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "event_time": "2024-06-15T18:30:00Z"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row updated",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

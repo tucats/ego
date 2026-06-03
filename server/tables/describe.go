@@ -37,8 +37,8 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// credentials for the database. Otherwise, the session user information is used to connect.
 	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		sqlite := strings.EqualFold(db.Provider, defs.SqliteProvider) || strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider)
-		if sqlite {
+		// normalize the deprecated "sqlite3" alias to the canonical "sqlite" name.
+		if strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider) {
 			db.Provider = defs.SqliteProvider
 		}
 
@@ -53,26 +53,33 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 		// Get the table metadata. We don't do this for sqlite3.
 		var columns []defs.DBColumn
 
-		// Determine which columns must have unique values and which cannot be null values. These are
-		// database attribute of each column. This is not supported for sqlite3.
+		// Retrieve per-column uniqueness and nullability constraints using the
+		// provider-appropriate metadata query.  Each provider exposes this
+		// information through a different system catalogue interface.
+		// To add a new provider: implement getXxxColumnMetadata and add a case here.
 		var (
 			httpStatus      int
 			uniqueColumns   map[string]bool
 			nullableColumns map[string]bool
 		)
 
-		if !sqlite {
-			// Form the query for determining the unique columns for a given table.
+		switch db.Provider {
+		case defs.PostgresProvider:
 			uniqueColumns, nullableColumns, httpStatus = getPostgresColumnMetadata(db, tableName, session, w)
 			if httpStatus > 200 {
 				return httpStatus
 			}
-		} else {
-			// Form the query for determining the unique columns for a given table.
+
+		case defs.SqliteProvider:
 			uniqueColumns, nullableColumns, httpStatus = getSqliteColumnMetadata(db, tableName, session, w)
 			if httpStatus > 200 {
 				return httpStatus
 			}
+
+		default:
+			return util.ErrorResponse(w, session.ID,
+				errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+				http.StatusBadRequest)
 		}
 
 		// Get standard column names and type info. This is done regardless of the database

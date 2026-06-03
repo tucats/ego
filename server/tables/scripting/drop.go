@@ -36,15 +36,23 @@ func doDrop(sessionID int, user string, db *database.Database, task defs.TXOpera
 		return http.StatusBadRequest, errors.ErrTaskDropUnsupported.Context("columns")
 	}
 
-	// Build the table name: schema-qualified for non-SQLite providers; plain
-	// quoted identifier for SQLite (which has no user-as-schema convention).
-	// The table name must be embedded in the SQL directly — DDL statements do
-	// not support positional parameter substitution for identifiers.
+	// Resolve the table name for the DROP TABLE statement.
+	// DDL statements do not support positional parameter substitution for
+	// identifiers, so the table name is embedded directly in the SQL string.
+	// To add a new provider: add a case with the appropriate name-resolution logic.
 	var table string
-	if db.Provider != defs.SqliteProvider {
-		table, _ = parsing.FullName(db.Provider, user, task.Table)
-	} else {
+
+	switch db.Provider {
+	case defs.SqliteProvider:
+		// SQLite: no schema prefix; just quote the table name.
 		table = "\"" + task.Table + "\""
+
+	case defs.PostgresProvider:
+		// PostgreSQL: use the schema-qualified name.
+		table, _ = parsing.FullName(db.Provider, user, task.Table)
+
+	default:
+		return http.StatusBadRequest, errors.ErrUnsupportedDatabase.Context(db.Provider)
 	}
 
 	_, err := db.Exec("DROP TABLE " + table)

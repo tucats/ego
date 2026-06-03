@@ -241,6 +241,7 @@ testcount
 thecurrent
 thisandthat
 timestamp
+TIMESTAMPTZ
 tinyint
 Titov
 TOCTOU

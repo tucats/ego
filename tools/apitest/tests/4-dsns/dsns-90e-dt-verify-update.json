@@ -1,0 +1,48 @@
+{
+    "description": "read back updated event row - verify new timestamp value",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events/rows",
+        "parameters": {
+            "filter": "EQ(title,\"conference\")"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row returned",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "event_time updated to 18:30",
+            "query": "rows.0.event_time",
+            "value": "2024-06-15T18:30:00Z"
+        },
+        {
+            "name": "event_date unchanged",
+            "query": "rows.0.event_date",
+            "value": "2024-06-15T00:00:00Z"
+        }
+    ]
+}

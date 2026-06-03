@@ -1,0 +1,53 @@
+{
+    "description": "read back event row - verify time values round-trip as RFC 3339",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events/rows",
+        "parameters": {
+            "filter": "EQ(title,\"conference\")"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row returned",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "title matches",
+            "query": "rows.0.title",
+            "value": "conference"
+        },
+        {
+            "name": "event_time round-trips as RFC 3339",
+            "query": "rows.0.event_time",
+            "value": "2024-06-15T12:00:00Z"
+        },
+        {
+            "name": "event_date round-trips as RFC 3339",
+            "query": "rows.0.event_date",
+            "value": "2024-06-15T00:00:00Z"
+        }
+    ]
+}

@@ -1,0 +1,42 @@
+{
+    "description": "insert row with RFC 3339 timestamp and date values",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "title":      "conference",
+                "event_time": "2024-06-15T12:00:00Z",
+                "event_date": "2024-06-15T00:00:00Z"
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

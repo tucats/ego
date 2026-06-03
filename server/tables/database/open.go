@@ -103,19 +103,42 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 
 	scheme, err := egostrings.FindScheme(conStr)
 	if err == nil {
-		if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
-			// modernc.org/sqlite registers as "sqlite"; strip the scheme prefix
-			// to obtain a bare file path before opening.
+		// normalize provider aliases and apply any provider-specific connection setup.
+		// To add a new provider: add a case for its scheme(s) and any required setup
+		// (connection string rewriting, driver registration, post-open PRAGMAs, etc.).
+		switch scheme {
+		case defs.DeprecatedSqliteProvider, defs.SqliteProvider:
+			// modernc.org/sqlite registers as "sqlite"; strip the scheme prefix to
+			// obtain a bare filesystem path, then normalize the alias.
 			conStr = strings.TrimPrefix(conStr, scheme+"://")
 			scheme = defs.SqliteProvider
+
+		case defs.PostgresProvider:
+			// lib/pq uses the connection string as-is; no rewriting needed.
+
+		default:
+			// The scheme from the DSN connection string does not correspond to any
+			// provider known to this server.  Fail here rather than passing an
+			// unrecognized driver name to sql.Open.
+			return db, errors.ErrUnsupportedDatabase.Context(scheme)
 		}
 
 		db.Handle, err = sql.Open(scheme, conStr)
 		db.Provider = scheme
 
-		if err == nil && scheme == defs.SqliteProvider {
-			db.Handle.Exec("PRAGMA journal_mode=WAL;")
-			db.Handle.Exec("PRAGMA busy_timeout=5000;")
+		// Apply post-open setup that is specific to each provider.
+		if err == nil {
+			switch scheme {
+			case defs.SqliteProvider:
+				// Enable Write-Ahead Logging for better concurrent read performance,
+				// and set a busy timeout so writers do not fail immediately when the
+				// database is locked by another writer.
+				db.Handle.Exec("PRAGMA journal_mode=WAL;")
+				db.Handle.Exec("PRAGMA busy_timeout=5000;")
+
+				// PostgreSQL: no post-open PRAGMA-style configuration needed.
+			case defs.PostgresProvider:
+			}
 		}
 	}
 

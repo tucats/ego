@@ -3,6 +3,8 @@ package parsing
 import (
 	"net/url"
 	"testing"
+
+	"github.com/tucats/ego/defs"
 )
 
 func Test_formWhereClause(t *testing.T) {
@@ -361,3 +363,90 @@ func Test_formCondition(t *testing.T) {
 		})
 	}
 }
+
+// TestMapColumnType_TimeTypes verifies that MapColumnType emits the correct DDL type
+// string for date/time columns on both SQLite and PostgreSQL.
+//
+// For SQLite we expect the semantic names TIMESTAMP, TIME, and DATE rather than the
+// generic TEXT.  SQLite treats these as TEXT affinity at the storage level, but declaring
+// them with their semantic names allows schema introspection to recover the original intent
+// so that CoerceToColumnType can convert values back to time.Time on the read path.
+//
+// For PostgreSQL we expect the full standard DDL names used by lib/pq.
+func TestMapColumnType_TimeTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		nativeType string // Ego / portable type name supplied by the caller
+		provider string
+		wantDDL  string  // expected SQL DDL type string
+	}{
+		// --- SQLite: semantic names preserved ---
+		{
+			name:       "SQLite timestamp -> TIMESTAMP",
+			nativeType: "timestamp",
+			provider:   defs.SqliteProvider,
+			wantDDL:    "TIMESTAMP",
+		},
+		{
+			name:       "SQLite time -> TIME",
+			nativeType: "time",
+			provider:   defs.SqliteProvider,
+			wantDDL:    "TIME",
+		},
+		{
+			name:       "SQLite date -> DATE",
+			nativeType: "date",
+			provider:   defs.SqliteProvider,
+			wantDDL:    "DATE",
+		},
+		{
+			name:       "SQLite deprecated alias: timestamp -> TIMESTAMP",
+			nativeType: "timestamp",
+			provider:   defs.DeprecatedSqliteProvider,
+			wantDDL:    "TIMESTAMP",
+		},
+
+		// --- PostgreSQL: full DDL type names ---
+		{
+			name:       "PostgreSQL timestamp -> TIMESTAMP WITH TIME ZONE",
+			nativeType: "timestamp",
+			provider:   defs.PostgresProvider,
+			wantDDL:    "TIMESTAMP WITH TIME ZONE",
+		},
+		{
+			name:       "PostgreSQL time -> TIME",
+			nativeType: "time",
+			provider:   defs.PostgresProvider,
+			wantDDL:    "TIME",
+		},
+		{
+			name:       "PostgreSQL date -> DATE",
+			nativeType: "date",
+			provider:   defs.PostgresProvider,
+			wantDDL:    "DATE",
+		},
+
+		// --- Non-time types must be unaffected ---
+		{
+			name:       "SQLite string still maps to TEXT",
+			nativeType: "string",
+			provider:   defs.SqliteProvider,
+			wantDDL:    "TEXT",
+		},
+		{
+			name:       "PostgreSQL string still maps to CHAR VARYING",
+			nativeType: "string",
+			provider:   defs.PostgresProvider,
+			wantDDL:    "CHAR VARYING",
+		},
+	}
+
+	for _, tt := range tests {
+		got := MapColumnType(tt.nativeType, tt.provider)
+		if got != tt.wantDDL {
+			t.Errorf("%s: MapColumnType(%q, %q) = %q, want %q",
+				tt.name, tt.nativeType, tt.provider, got, tt.wantDDL)
+		}
+	}
+}
+

@@ -1,0 +1,60 @@
+{
+    "description": "describe events table - verify timestamp and date column types",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["columns+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "column count: 3",
+            "query": "count",
+            "value": "3"
+        },
+        {
+            "name": "column 0 name: title",
+            "query": "columns.0.name",
+            "value": "title"
+        },
+        {
+            "name": "column 1 name: event_time",
+            "query": "columns.1.name",
+            "value": "event_time"
+        },
+        {
+            "name": "column 1 type: timestamp",
+            "query": "columns.1.type",
+            "value": "timestamp"
+        },
+        {
+            "name": "column 2 name: event_date",
+            "query": "columns.2.name",
+            "value": "event_date"
+        },
+        {
+            "name": "column 2 type: date",
+            "query": "columns.2.type",
+            "value": "date"
+        }
+    ]
+}

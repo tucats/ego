@@ -49,13 +49,22 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
-	// For SQLite, tables are stored without schema qualification. For all other
-	// providers, fully qualify with the user schema for the UPDATE statement.
+	// Resolve the table name for the UPDATE statement.
+	// SQLite has no schema concept; PostgreSQL requires schema qualification.
+	// To add a new provider: add a case with the appropriate name-resolution logic.
 	var tableName string
-	if db.Provider != defs.SqliteProvider {
-		tableName, _ = parsing.FullName(db.Provider, user, task.Table)
-	} else {
+
+	switch db.Provider {
+	case defs.SqliteProvider:
+		// SQLite: no schema prefix; use the plain table name.
 		tableName = task.Table
+
+	case defs.PostgresProvider:
+		// PostgreSQL: use the user/schema-qualified name.
+		tableName, _ = parsing.FullName(db.Provider, user, task.Table)
+
+	default:
+		return 0, http.StatusBadRequest, errors.ErrUnsupportedDatabase.Context(db.Provider)
 	}
 
 	validColumns, err := getColumnInfo(db, user, task.Table)

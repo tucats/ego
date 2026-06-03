@@ -27,17 +27,25 @@ import (
 func getColumnInfo(db *database.Database, user string, tableName string) ([]defs.DBColumn, error) {
 	columns := make([]defs.DBColumn, 0)
 
-	// For SQLite, tables are stored without schema qualification. Use the
-	// simpler single-placeholder query and the unqualified table name.
-	// For all other providers, qualify with the user schema via FullName.
+	// Choose the metadata query template and resolve the table name for the provider.
+	// Each provider uses a different system catalogue query, and SQLite does not
+	// use schema-qualified table names.
+	// To add a new provider: implement a catalogue query and add a case here.
 	var name, query string
 
-	if db.Provider != defs.SqliteProvider {
-		name, _ = parsing.FullName(db.Provider, user, tableName)
-		query = tableMetadataQuery
-	} else {
+	switch db.Provider {
+	case defs.SqliteProvider:
+		// SQLite: use the unqualified table name and the SQLite-specific metadata query.
 		name = tableName
 		query = tableMetadataSQLiteQuery
+
+	case defs.PostgresProvider:
+		// PostgreSQL: qualify the table name with the user schema.
+		name, _ = parsing.FullName(db.Provider, user, tableName)
+		query = tableMetadataQuery
+
+	default:
+		return nil, errors.ErrUnsupportedDatabase.Context(db.Provider)
 	}
 
 	q, err := parsing.QueryParameters(query, map[string]string{

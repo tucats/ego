@@ -69,12 +69,23 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			return http.StatusOK
 		}
 
-		// If the provider isn't SQLite, create a schema in the database for the current user if it
-		// does not already exist.
-		if db.Provider != defs.SqliteProvider {
+		// Create the user schema in the database if it does not yet exist.
+		// SQLite has no schema concept, so this step is skipped for SQLite.
+		// For an unrecognised provider the helper returns false and writes an
+		// error response; we stop here in that case.
+		switch db.Provider {
+		case defs.SqliteProvider:
+			// SQLite: all tables share one flat namespace — no schema creation needed.
+
+		case defs.PostgresProvider:
 			if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
 				return http.StatusOK
 			}
+
+		default:
+			return util.ErrorResponse(w, sessionID,
+				errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+				http.StatusBadRequest)
 		}
 
 		// Execute the SQL that creates the table. Also write to the log when SQLLogger is active.
@@ -158,14 +169,32 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, sessionID int) ([]
 	return columns, 0
 }
 
-// Verify that the schema exists for this user, and create it if not found. This is required for
-// databases like Postgres that require explicit schema creation.
+// createSchemaIfNeeded ensures the user's schema exists in the database before creating
+// a table.  This is only meaningful for providers that support named schemas.
+//
+// Returns true when the schema is confirmed to exist (or was created), false when the
+// operation failed.  On failure the function writes an HTTP error response to w.
+//
+// To add support for a new provider: implement any required schema-creation DDL and add
+// a case in the switch below.
 func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Database, user string, tableName string) bool {
-	// SQLite has no schema concept — every table lives in the same namespace.
-	// Return immediately so we do not attempt to run a PostgreSQL-specific DDL
-	// statement against an SQLite connection.
-	if db.Provider == defs.SqliteProvider {
+	switch db.Provider {
+	case defs.SqliteProvider:
+		// SQLite has no schema concept — every table lives in the same flat namespace.
 		return true
+
+	case defs.PostgresProvider:
+		// PostgreSQL requires the schema to be created explicitly before the first table
+		// in that schema is added.  Fall through to the creation logic below.
+
+	default:
+		// An unrecognised provider cannot proceed.  Write an error response and signal
+		// failure to the caller so it stops further processing.
+		util.ErrorResponse(w, sessionID,
+			errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+			http.StatusBadRequest)
+
+		return false
 	}
 
 	// Default schema is the current user. However, if the table name is a two-part name, use the first part
@@ -227,20 +256,27 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 		}
 	}
 
-	q, err := parsing.QueryParameters(tableMetadataQuery, map[string]string{
+	// Choose the metadata query for the target provider.
+	// Each provider exposes column type information via a different catalogue interface.
+	// To add a new provider: define a query template and add a case here.
+	var metadataQueryTemplate string
+
+	switch db.Provider {
+	case defs.SqliteProvider:
+		metadataQueryTemplate = tableSQLiteMetadataQuery
+
+	case defs.PostgresProvider:
+		metadataQueryTemplate = tableMetadataQuery
+
+	default:
+		return nil, errors.ErrUnsupportedDatabase.Context(db.Provider)
+	}
+
+	q, err := parsing.QueryParameters(metadataQueryTemplate, map[string]string{
 		"table": name,
 	})
 	if err != nil {
 		return nil, errors.New(errors.ErrTableQueryBuild).Context(err.Error())
-	}
-
-	if db.Provider == defs.SqliteProvider {
-		q, err = parsing.QueryParameters(tableSQLiteMetadataQuery, map[string]string{
-			"table": name,
-		})
-		if err != nil {
-			return nil, errors.New(errors.ErrTableQueryBuild).Context(err.Error())
-		}
 	}
 
 	rows, err := db.Query(q)
@@ -275,9 +311,17 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 			nullable, _ := typeInfo.Nullable()
 			specified := true
 
-			// SQLite has some funky names, so handle them here. This list is
-			// surely incomplete, so add as we find more issues.
-			if db.Provider == defs.SqliteProvider {
+			// Normalize provider-specific type name strings into the portable names that the
+			// rest of the server uses (e.g. "timestamp", "string", "int").  Each database
+			// driver reports column type names differently; we map them here so that all
+			// downstream code can work with a single, consistent vocabulary.
+			// To add a new provider: add a case with the driver's type name mapping.
+			switch db.Provider {
+			case defs.SqliteProvider:
+				// The modernc SQLite driver reports column type names in upper-case and uses
+				// several non-standard names.  Map every known variant to the portable form.
+				// SQLite also does not support nullable column metadata via the Go sql
+				// interface, so we override those fields to safe defaults.
 				switch typeName {
 				case "INT":
 					typeName = "int"
@@ -288,22 +332,22 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 
 				case "INT32":
 					typeName = "int32"
-					size = 4 
+					size = 4
 
 				case "INT16":
 					typeName = "int16"
-					size = 2 
+					size = 2
 
 				case "BYTE":
 					typeName = "byte"
-					size = 1 
-					
+					size = 1
+
 				case "FLOAT":
 					typeName = "float64"
 					size = 8
 
 				case "STRING":
-					typeName = "string" 
+					typeName = "string"
 
 				case "NullInt64":
 					typeName = "int64"
@@ -312,12 +356,54 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 				case "NullFloat64":
 					typeName = "float64"
 					size = 8
+
 				case "NullString":
 					typeName = "string"
+
+				// Time-related columns: MapColumnType now declares these with their semantic
+				// names (TIMESTAMP, TIME, DATE) rather than TEXT, so the driver echoes those
+				// names back during schema introspection.  Normalize all known variants
+				// (including TIMESTAMPTZ and DATETIME which may appear in imported schemas)
+				// to lowercase portable names so that CoerceToColumnType can recognize them.
+				case "TIMESTAMP", "TIMESTAMPTZ", "DATETIME":
+					typeName = "timestamp"
+
+				case "TIME":
+					typeName = "time"
+
+				case "DATE":
+					typeName = "date"
 				}
 
 				nullable = false
 				specified = false
+
+			case defs.PostgresProvider:
+				// PostgreSQL normalization.  The lib/pq driver returns either the Go reflect
+				// type name (from ScanType().Name()) or the PostgreSQL-dialect DDL name (from
+				// DatabaseTypeName()).  In practice, ScanType().Name() for TIMESTAMP WITH TIME
+				// ZONE columns returns "Time" (the Go type name), while DatabaseTypeName()
+				// returns "TIMESTAMPTZ".  We normalize both to the portable lowercase names.
+				switch typeName {
+				case "Time", "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE",
+					"TIMESTAMP", "DATETIME":
+					// "Time" is what Go's reflect package returns for time.Time; the others
+					// are raw PostgreSQL DDL type names from DatabaseTypeName().
+					typeName = "timestamp"
+
+				case "TIME", "TIME WITH TIME ZONE":
+					typeName = "time"
+
+				case "DATE":
+					typeName = "date"
+				}
+
+			default:
+				// An unrecognised provider reached column introspection.
+				// The metadata query selection above should already have returned an error
+				// for an unknown provider, so this branch is not reachable in normal
+				// operation.  If it is reached, stop immediately with a clear error.
+				return nil, errors.ErrUnsupportedDatabase.Context(db.Provider)
 			}
 
 			columns = append(columns, defs.DBColumn{
@@ -361,18 +447,30 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 		}
 
-		// If there was a DSN and the provider is SQLite, we are not using the default table
-		// so we do not need the aggregated schema.table version of the table name. Use a
-		// schema-free template so the table name is properly quoted but no schema prefix
-		// is added. For PostgreSQL, the schema-qualified query built above is correct.
-		if dsnName != "" && db.Provider == defs.SqliteProvider {
-			tableName = table
-			q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
-				"table": tableName,
-			})
+		// When dropping a table via a DSN, the correct DROP TABLE syntax depends on
+		// the provider.  SQLite has no schema concept, so the table name must not be
+		// schema-qualified.  PostgreSQL keeps the schema-qualified name built earlier.
+		// To add a new provider: add a case with the appropriate DROP TABLE template.
+		if dsnName != "" {
+			switch db.Provider {
+			case defs.SqliteProvider:
+				// DSN-backed SQLite table: strip the schema prefix so the DROP succeeds.
+				tableName = table
+				q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
+					"table": tableName,
+				})
 
-			if err != nil {
-				return util.ErrorResponse(w, sessionID, i18n.T("error.db.operation"), http.StatusInternalServerError)
+				if err != nil {
+					return util.ErrorResponse(w, sessionID, i18n.T("error.db.operation"), http.StatusInternalServerError)
+				}
+
+			case defs.PostgresProvider:
+				// PostgreSQL with a DSN: the schema-qualified query built above is correct.
+
+			default:
+				return util.ErrorResponse(w, sessionID,
+					errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+					http.StatusBadRequest)
 			}
 		}
 

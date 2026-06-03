@@ -1,0 +1,53 @@
+{
+    "description": "create table with timestamp and date columns",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "name": "title",
+                "type": "string",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique":   { "specified": false, "value": false }
+            },
+            {
+                "name": "event_time",
+                "type": "timestamp",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique":   { "specified": false, "value": false }
+            },
+            {
+                "name": "event_date",
+                "type": "date",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique":   { "specified": false, "value": false }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

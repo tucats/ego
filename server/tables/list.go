@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
@@ -66,16 +67,28 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 
 	schema := session.User
 
-	// Build query and parameters. For PostgreSQL the schema is passed as a
-	// positional parameter ($1) to avoid string interpolation. SQLite uses a
-	// separate query that requires no parameter.
+	// Build query and parameters based on the database provider.
+	// Each provider uses a different system catalogue and parameter style.
+	// Adding support for a new provider: add a case here with the appropriate
+	// catalogue query and parameter slice.
 	q := tablesListQuery
 	params := []any{schema}
 
-	if db.Provider == defs.SqliteProvider {
+	switch db.Provider {
+	case defs.SqliteProvider:
+		// SQLite exposes table names via sqlite_schema; no schema concept, no parameter.
 		q = "select name from sqlite_schema where (type='table' or type='view') "
 		params = nil
 		schema = ""
+
+	case defs.PostgresProvider:
+		// PostgreSQL: tablesListQuery already uses $1 for the schema name.
+		// params and schema are already set to the correct values above.
+
+	default:
+		// A provider other than the two known types has been configured.
+		// Return an error now rather than silently producing wrong results.
+		return errors.ErrUnsupportedDatabase.Context(db.Provider), http.StatusBadRequest
 	}
 
 	if paging := parsing.PagingClauses(r.URL); paging != "" {
@@ -142,10 +155,21 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 			continue
 		}
 
-		// See how many columns are in this table. Must be a fully-qualified name.
-		columnQuery := "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
-		if db.Provider == defs.SqliteProvider {
+		// Build the zero-row query used to count columns.
+		// PostgreSQL requires a schema-qualified name; SQLite uses plain table names.
+		var columnQuery string
+
+		switch db.Provider {
+		case defs.SqliteProvider:
 			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
+
+		case defs.PostgresProvider:
+			columnQuery = "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
+
+		default:
+			err = errors.ErrUnsupportedDatabase.Context(db.Provider)
+
+			return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusBadRequest)
 		}
 
 		tableInfo, err := db.Query(columnQuery)
@@ -177,22 +201,28 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 		rowCount := 0
 
 		if includeRowCounts {
-			q, err := parsing.QueryParameters(rowCountQuery, map[string]string{
+			// Select the row-count query template for this provider.
+			var rowCountTemplate string
+
+			switch db.Provider {
+			case defs.SqliteProvider:
+				rowCountTemplate = rowCountSQLiteQuery
+
+			case defs.PostgresProvider:
+				rowCountTemplate = rowCountQuery
+
+			default:
+				err = errors.ErrUnsupportedDatabase.Context(db.Provider)
+				
+				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusBadRequest)
+			}
+
+			q, err := parsing.QueryParameters(rowCountTemplate, map[string]string{
 				"schema": db.Session.User,
 				"table":  name,
 			})
 			if err != nil {
 				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
-			}
-
-			if db.Provider == defs.SqliteProvider {
-				q, err = parsing.QueryParameters(rowCountSQLiteQuery, map[string]string{
-					"schema": db.Session.User,
-					"table":  name,
-				})
-				if err != nil {
-					return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
-				}
 			}
 
 			result, e2 := db.Query(q)
