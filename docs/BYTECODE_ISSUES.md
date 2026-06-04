@@ -10,6 +10,76 @@ Entries are added as tests discover them — the tests themselves contain
 
 ---
 
+## Testing Infrastructure
+
+The comprehensive bytecode unit-test suite is built on shared helpers in
+`bytecode/testhelpers_test.go`.  All bytecode instruction tests in this
+package use these helpers instead of constructing their own contexts.
+
+### `testContext` builder
+
+Create a fresh context for each test with `newTestContext(t)`, then chain
+"with" methods to set up initial state before calling the instruction under
+test:
+
+| Method | Effect |
+| :----- | :----- |
+| `withStack(items...)` | Push items onto the stack left-to-right; last item ends up on top |
+| `withSymbol(name, value)` | Create and initialize a named variable in the local symbol table |
+| `withArgList(args...)` | Store a `*data.Array` as `__args` (defs.ArgumentListVariable) |
+| `withTypeStrictness(level)` | Set strict / relaxed / dynamic type enforcement |
+| `withExtensions(bool)` | Enable or disable Ego language extensions |
+| `withBytecodeSize(n)` | Set `bc.nextAddress` so addresses 0..n are valid branch targets |
+
+### Assertion helpers
+
+After calling the instruction under test, verify outcomes with these methods:
+
+| Method | What it checks |
+| :----- | :------------- |
+| `assertNoError(err)` | Fails if err is non-nil |
+| `assertError(err, want)` | Compares error keys via `errors.Equals`; context suffixes are ignored |
+| `assertTopStack(want)` | Pops the stack top and compares with `reflect.DeepEqual` |
+| `assertSymbolValue(name, want)` | Reads the named symbol and compares with `reflect.DeepEqual` |
+| `assertStackEmpty()` | Fails if `stackPointer != 0` |
+| `assertProgramCounter(want)` | Fails if `ctx.programCounter != want` |
+
+### Key facts for test authors
+
+- **`interface{}` wrapping**: values stored via `data.InterfaceType` are
+  wrapped in `data.Interface{Value: v, BaseType: data.TypeOf(v)}`.  Assert
+  the wrapped form, not the raw value.
+- **Error key comparison**: `assertError` uses `errors.Equals` on the i18n
+  key, so `.Context(...)` suffixes added by `runtimeError` are ignored.
+- **Stack discipline**: instructions that temporarily push a value must leave
+  the stack clean on success.  Use `assertStackEmpty()` to verify.
+- **Branch addresses**: `branchByteCode` and the conditional variants validate
+  operands against `bc.nextAddress` (not `len(instructions)`).  Call
+  `withBytecodeSize(n)` to widen the valid window before testing branches.
+- **`__args` type**: `withArgList` stores
+  `data.NewArrayFromInterfaces(data.InterfaceType, ...)`.  Storing anything
+  other than a `*data.Array` there triggers `ErrInvalidArgumentList`.
+
+### Test file naming convention
+
+Each source file `bytecode/xxx.go` gets a corresponding test file
+`bytecode/xxx_test.go`.  Test functions follow the pattern:
+
+```text
+Test_xxxByteCode_ScenarioDescription
+```
+
+Tests use flat (non-table) style so each case is independently named and
+runnable with `-run`.  Sections inside a test file are separated by banner
+comments and group related code paths together.
+
+The shared helper infrastructure lives in the `testContext` type defined in
+the `bytecode` package test files.  When adding tests for a new instruction,
+read that source first — it is the single source of truth for how to create
+a context, push stack items, and assert outcomes.
+
+---
+
 ## BRANCH-1 — Stack mutated before address validation in conditional branches
 
 **Affected instructions:** `branchFalseByteCode`, `branchTrueByteCode`  
@@ -404,72 +474,71 @@ The existing tests were updated:
   to verify the previously dead clone path is now reachable and that the
   resulting scope carries `IsClone() == true`.
 
----
+## CALL-6 — `SetBreakOnReturn` reads the wrong stack slot (off-by-one)
 
-## Testing Infrastructure
+**Affected function:** `SetBreakOnReturn`  
+**File:** `bytecode/callframe.go`  
+**Risk:** Medium — the debugger "step out / break on return" feature was
+silently non-functional; it logged an error but never set the flag  
+**Discovered by:** `Test_SetBreakOnReturn_SetsBreakOnReturnFlag`,
+`Test_SetBreakOnReturn_FrameAtFPMinusOne`  
+**Status: RESOLVED**
 
-The comprehensive bytecode unit-test suite is built on shared helpers in
-`bytecode/testhelpers_test.go`.  All bytecode instruction tests in this
-package use these helpers instead of constructing their own contexts.
+### CALL-6: Frame-pointer convention
 
-### `testContext` builder
-
-Create a fresh context for each test with `newTestContext(t)`, then chain
-"with" methods to set up initial state before calling the instruction under
-test:
-
-| Method | Effect |
-| :----- | :----- |
-| `withStack(items...)` | Push items onto the stack left-to-right; last item ends up on top |
-| `withSymbol(name, value)` | Create and initialize a named variable in the local symbol table |
-| `withArgList(args...)` | Store a `*data.Array` as `__args` (defs.ArgumentListVariable) |
-| `withTypeStrictness(level)` | Set strict / relaxed / dynamic type enforcement |
-| `withExtensions(bool)` | Enable or disable Ego language extensions |
-| `withBytecodeSize(n)` | Set `bc.nextAddress` so addresses 0..n are valid branch targets |
-
-### Assertion helpers
-
-After calling the instruction under test, verify outcomes with these methods:
-
-| Method | What it checks |
-| :----- | :------------- |
-| `assertNoError(err)` | Fails if err is non-nil |
-| `assertError(err, want)` | Compares error keys via `errors.Equals`; context suffixes are ignored |
-| `assertTopStack(want)` | Pops the stack top and compares with `reflect.DeepEqual` |
-| `assertSymbolValue(name, want)` | Reads the named symbol and compares with `reflect.DeepEqual` |
-| `assertStackEmpty()` | Fails if `stackPointer != 0` |
-| `assertProgramCounter(want)` | Fails if `ctx.programCounter != want` |
-
-### Key facts for test authors
-
-- **`interface{}` wrapping**: values stored via `data.InterfaceType` are
-  wrapped in `data.Interface{Value: v, BaseType: data.TypeOf(v)}`.  Assert
-  the wrapped form, not the raw value.
-- **Error key comparison**: `assertError` uses `errors.Equals` on the i18n
-  key, so `.Context(...)` suffixes added by `runtimeError` are ignored.
-- **Stack discipline**: instructions that temporarily push a value must leave
-  the stack clean on success.  Use `assertStackEmpty()` to verify.
-- **Branch addresses**: `branchByteCode` and the conditional variants validate
-  operands against `bc.nextAddress` (not `len(instructions)`).  Call
-  `withBytecodeSize(n)` to widen the valid window before testing branches.
-- **`__args` type**: `withArgList` stores
-  `data.NewArrayFromInterfaces(data.InterfaceType, ...)`.  Storing anything
-  other than a `*data.Array` there triggers `ErrInvalidArgumentList`.
-
-### Test file naming convention
-
-Each source file `bytecode/xxx.go` gets a corresponding test file
-`bytecode/xxx_test.go`.  Test functions follow the pattern:
+After `callFramePushWithTable` the runtime stack layout is:
 
 ```text
-Test_xxxByteCode_ScenarioDescription
+index:  ... | old_sp      | old_sp+1 ...
+             | *CallFrame  | [callee locals / return values]
+             | fp - 1      |
 ```
 
-Tests use flat (non-table) style so each case is independently named and
-runnable with `-run`.  Sections inside a test file are separated by banner
-comments and group related code paths together.
+`c.framePointer` is set to `old_sp + 1` — one slot **past** the frame.  All
+frame-reading code (`callFramePop`, `FormatFrames`, `GetFrame`) uses
+`stack[framePointer-1]` to reach the `*CallFrame`.
 
-The shared helper infrastructure lives in the `testContext` type defined in
-the `bytecode` package test files.  When adding tests for a new instruction,
-read that source first — it is the single source of truth for how to create
-a context, push stack items, and assert outcomes.
+### CALL-6: Original behavior
+
+`SetBreakOnReturn` used `stack[framePointer]` (without the `-1`):
+
+```go
+callFrameValue := c.stack[c.framePointer]   // ← one slot too high
+if callFrame, ok := callFrameValue.(*CallFrame); ok {
+    callFrame.breakOnReturn = true
+    c.stack[c.framePointer] = callFrame     // ← one slot too high
+} else {
+    ui.Log(...)   // always reached — type assertion always failed
+}
+```
+
+When the callee had no local data on its stack, `stack[framePointer]` was nil.
+The type assertion `nil.(*CallFrame)` failed silently, the `else` branch logged
+an error, and `breakOnReturn` was **never set**.  The debugger's "step out"
+command therefore had no effect.
+
+### CALL-6: Fix
+
+Both accesses changed from `c.framePointer` to `c.framePointer-1`, matching
+the convention used everywhere else in the file:
+
+```go
+callFrameValue := c.stack[c.framePointer-1]   // was: c.framePointer
+if callFrame, ok := callFrameValue.(*CallFrame); ok {
+    callFrame.breakOnReturn = true
+    c.stack[c.framePointer-1] = callFrame     // was: c.framePointer
+} else {
+    ui.Log(...)
+}
+```
+
+A comment was also added to `SetBreakOnReturn` explaining the frame-pointer
+convention so the same mistake is not repeated.
+
+`Test_SetBreakOnReturn_SetsBreakOnReturnFlag` confirms that
+`ctx.breakOnReturn` is `true` after `SetBreakOnReturn()` + `callFramePop()`.
+`Test_SetBreakOnReturn_FrameAtFPMinusOne` confirms the slot layout invariant.
+All 869 Ego-language integration tests continue to pass.
+
+After the fix, `Test_SetBreakOnReturn_CurrentlyFailsDueToOffByOne` must be
+updated to assert `ctx.breakOnReturn == true`.

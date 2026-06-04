@@ -268,14 +268,21 @@ func immutableValue(v any) bool {
 	return false
 }
 
+// SetBreakOnReturn marks the current call frame so the debugger will halt
+// execution when the active function returns.  It is called by the debugger
+// "step out" (finish) command.
+//
+// Frame-pointer convention: after callFramePush / callFramePushWithTable the
+// *CallFrame is stored at stack[framePointer-1], not stack[framePointer].
+// Both accesses below must use framePointer-1 (CALL-6 fix).
 func (c *Context) SetBreakOnReturn() {
-	callFrameValue := c.stack[c.framePointer]
+	callFrameValue := c.stack[c.framePointer-1]
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
 		ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
 			"thread": c.threadID})
 
 		callFrame.breakOnReturn = true
-		c.stack[c.framePointer] = callFrame
+		c.stack[c.framePointer-1] = callFrame
 	} else {
 		ui.Log(ui.SymbolLogger, "symbols.breakreturn.error", ui.A{
 			"thread": c.threadID})
