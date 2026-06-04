@@ -842,6 +842,73 @@ func Test_validateFunctionArguments_StrictTyping_Fail(t *testing.T) {
 	tc.assertError(err, errors.ErrArgumentType)
 }
 
+// Test_validateFunctionArguments_NoTypeEnforcement_IgnoresTypeMismatch
+// verifies that in NoTypeEnforcement (dynamic) mode, validateFunctionArguments
+// does NOT call validateStrictParameterTyping, so a type mismatch between
+// argument and declared parameter is silently accepted.
+//
+// This is the default mode for production Ego programs.  The check is gated:
+//
+//	if c.typeStrictness == defs.StrictTypeEnforcement && dp.Declaration != nil {
+//	    err := validateStrictParameterTyping(...)
+//	}
+//
+// When typeStrictness is NoTypeEnforcement the gate is false and no error is
+// returned even though the argument is a string where an int is declared.
+func Test_validateFunctionArguments_NoTypeEnforcement_IgnoresTypeMismatch(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.NoTypeEnforcement)
+	dp := data.Function{Declaration: makeDecl(1, false, data.Range{})}
+
+	// String argument for an int parameter — mismatch that strict mode would reject.
+	_, err := validateFunctionArguments(tc.ctx, dp, 1, []any{"wrong-type"}, false)
+
+	// In dynamic mode the type check is skipped; only the count is checked.
+	tc.assertNoError(err)
+}
+
+// Test_validateFunctionArguments_RelaxedTypeEnforcement_IgnoresTypeMismatch
+// verifies that RelaxedTypeEnforcement also skips validateStrictParameterTyping.
+// Relaxed mode allows numeric widening (e.g. int32 for int64) but the gate in
+// validateFunctionArguments is strictly defs.StrictTypeEnforcement, so anything
+// other than strict — including relaxed — bypasses per-parameter type checking.
+func Test_validateFunctionArguments_RelaxedTypeEnforcement_IgnoresTypeMismatch(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+	dp := data.Function{Declaration: makeDecl(1, false, data.Range{})}
+
+	// String argument for an int parameter — would be rejected in strict mode.
+	_, err := validateFunctionArguments(tc.ctx, dp, 1, []any{"wrong-type"}, false)
+
+	tc.assertNoError(err)
+}
+
+// Test_validateFunctionArguments_StrictMode_RightCountWrongType verifies that
+// strict mode checks both count AND type: the right number of arguments still
+// fails when any argument's type mismatches its declaration.
+func Test_validateFunctionArguments_StrictMode_RightCountWrongType(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement)
+
+	// Two-parameter function: (a int, b int).
+	dp := data.Function{Declaration: makeDecl(2, false, data.Range{})}
+
+	// Correct count (2) but second arg is the wrong type.
+	_, err := validateFunctionArguments(tc.ctx, dp, 2, []any{1, "bad"}, false)
+
+	tc.assertError(err, errors.ErrArgumentType)
+}
+
+// Test_validateFunctionArguments_StrictMode_AllTypesMatch verifies that
+// providing the exact declared types for all parameters succeeds in strict mode.
+func Test_validateFunctionArguments_StrictMode_AllTypesMatch(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement)
+
+	// Two-parameter function: (a int, b int).
+	dp := data.Function{Declaration: makeDecl(2, false, data.Range{})}
+
+	_, err := validateFunctionArguments(tc.ctx, dp, 2, []any{1, 2}, false)
+
+	tc.assertNoError(err)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 8: checkForTupleOnStack
 // ─────────────────────────────────────────────────────────────────────────────

@@ -446,3 +446,96 @@ func Test_argByteCode_ExistingStackUntouched(t *testing.T) {
 	tc.assertTopStack("top")
 	tc.assertTopStack("bottom")
 }
+
+// ─── Section 10: Strict vs dynamic type-checking mode ────────────────────────
+//
+// argByteCode validates the argument type when a 3-element operand supplies a
+// target type.  The validation uses requiredTypeByteCode, whose behavior is
+// governed by the context's typeStrictness setting:
+//
+//   - StrictTypeEnforcement: the argument must already be the declared type;
+//     a mismatch returns ErrTypeMismatch.
+//   - RelaxedTypeEnforcement / NoTypeEnforcement (default): coercions are
+//     permitted, so an int argument can satisfy a float64 parameter, etc.
+//
+// All tests in the previous sections run with the default NoTypeEnforcement
+// (newTestContext does not set TypeCheckingVariable).  The tests below
+// explicitly exercise both strict and dynamic modes to ensure each path
+// through requiredTypeByteCode is covered.
+
+// Test_argByteCode_StrictMode_MatchingType_Passes verifies that in strict mode
+// an argument whose type exactly matches the declared parameter type is
+// accepted without error and stored correctly.
+func Test_argByteCode_StrictMode_MatchingType_Passes(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withArgList(42) // int arg for int parameter — exact match
+
+	err := argByteCode(tc.ctx, data.NewList(0, "n", data.IntType))
+
+	tc.assertNoError(err)
+	tc.assertSymbolValue("n", 42)
+}
+
+// Test_argByteCode_StrictMode_MismatchedType_Fails verifies that in strict
+// mode an argument of the wrong type returns ErrArgumentType.  Strict mode
+// does not attempt coercion; the concrete types must match exactly.
+//
+// Implementation note: the error originates in strictConformanceCheck
+// (bytecode/types.go) which returns ErrArgumentType — not ErrTypeMismatch —
+// when the actual type does not satisfy the declared parameter type.
+// argByteCode then wraps it with the argument position as context.
+func Test_argByteCode_StrictMode_MismatchedType_Fails(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withArgList("hello") // string arg for int parameter — type mismatch
+
+	err := argByteCode(tc.ctx, data.NewList(0, "n", data.IntType))
+
+	tc.assertError(err, errors.ErrArgumentType)
+}
+
+// Test_argByteCode_StrictMode_StringMatchesStringType verifies that a string
+// argument passes a StringType annotation in strict mode.
+func Test_argByteCode_StrictMode_StringMatchesStringType(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withArgList("hello")
+
+	err := argByteCode(tc.ctx, data.NewList(0, "s", data.StringType))
+
+	tc.assertNoError(err)
+	tc.assertSymbolValue("s", "hello")
+}
+
+// Test_argByteCode_DynamicMode_CoercesIntToFloat64 verifies that the default
+// NoTypeEnforcement mode allows numeric coercion: an int argument is
+// successfully coerced to float64 when that is the declared type.
+func Test_argByteCode_DynamicMode_CoercesIntToFloat64(t *testing.T) {
+	// newTestContext uses NoTypeEnforcement by default — no call to
+	// withTypeStrictness is needed, but we include it explicitly here so
+	// the test is self-documenting about which mode it is testing.
+	tc := newTestContext(t).
+		withTypeStrictness(defs.NoTypeEnforcement).
+		withArgList(3)
+
+	err := argByteCode(tc.ctx, data.NewList(0, "f", data.Float64Type))
+
+	tc.assertNoError(err)
+	tc.assertSymbolValue("f", float64(3))
+}
+
+// Test_argByteCode_RelaxedMode_CoercesIntToFloat64 verifies that
+// RelaxedTypeEnforcement also allows numeric widening coercions, consistent
+// with the documented behaviour that relaxed mode permits integer↔float
+// conversions.
+func Test_argByteCode_RelaxedMode_CoercesIntToFloat64(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.RelaxedTypeEnforcement).
+		withArgList(5)
+
+	err := argByteCode(tc.ctx, data.NewList(0, "f", data.Float64Type))
+
+	tc.assertNoError(err)
+	tc.assertSymbolValue("f", float64(5))
+}
