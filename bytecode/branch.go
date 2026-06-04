@@ -11,7 +11,7 @@ import (
 // method so that the three fixes below live in one place rather than being
 // duplicated across branchByteCode, branchFalseByteCode, and branchTrueByteCode.
 //
-// The three problems it fixes (see bytecode/ISSUES.md):
+// The three problems it fixes (see docs/BYTECODE_ISSUES.md):
 //
 //   - BRANCH-2: data.Int(nil) returns (0, nil), so a nil operand was silently
 //     accepted as "branch to address 0".  This masked compiler bugs where a
@@ -85,7 +85,7 @@ func branchByteCode(c *Context, i any) error {
 // value must be a native Go bool.  Any other type returns ErrConditionalBool.
 // In relaxed and dynamic modes any value that data.Bool can convert is accepted.
 //
-// Order of operations (important for stack safety — see bytecode/ISSUES.md BRANCH-1):
+// Order of operations (important for stack safety — see docs/BYTECODE_ISSUES.md BRANCH-1):
 //
 //  1. Validate the branch address (no stack side effects).
 //  2. Pop TOS — only reached when the address is known valid.
@@ -149,7 +149,7 @@ func branchFalseByteCode(c *Context, i any) error {
 // branchFalseByteCode: all semantics are identical except the branch fires
 // when the condition evaluates to true rather than false.
 //
-// Order of operations (see bytecode/ISSUES.md BRANCH-1):
+// Order of operations (see docs/BYTECODE_ISSUES.md BRANCH-1):
 //
 //  1. Validate the branch address (no stack side effects).
 //  2. Pop TOS — only reached when the address is known valid.

@@ -23,7 +23,7 @@ package bytecode
 //     unit-test boundaries (validateArgCount, validateStrictParameterTyping,
 //     checkForTupleOnStack, localCallByteCode).
 //  3. Stack invariants – correct consumption and production of stack items.
-//  4. Known bugs confirmed by ISSUES.md entries.
+//  4. Known bugs confirmed by docs/BYTECODE_ISSUES.md entries.
 //
 // # Stack layout convention for callByteCode tests
 //
