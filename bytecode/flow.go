@@ -197,16 +197,27 @@ func (c *Context) traceLine(location string, text string) {
 	}
 }
 
-// See if the top of the "this" stack is a package, and if so return
-// it's symbol table. The stack is not modified.
+// getPackageSymbols returns the symbol table embedded in the package that is
+// the current method receiver, or nil if the receiver stack is empty or the
+// top receiver is not a *data.Package.
+//
+// The receiver stack stores this{name, value} structs.  GetPackageSymbolTable
+// expects a *data.Package, so we must pass the unwrapped value field, not the
+// this struct itself.  Passing the struct directly (the original bug, CALL-5)
+// caused the type assertion inside GetPackageSymbolTable to always fail,
+// making the package-method clone path in callBytecodeFunction permanently
+// unreachable.
 func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 	if len(c.receiverStack) == 0 {
 		return nil
 	}
 
-	this := c.receiverStack[len(c.receiverStack)-1]
+	// Extract the receiver's concrete value.  this.value is the *data.Package
+	// (or whatever other type the receiver holds); the outer this struct is
+	// the bookkeeping wrapper and must not be passed to GetPackageSymbolTable.
+	receiver := c.receiverStack[len(c.receiverStack)-1]
 
-	table := symbols.GetPackageSymbolTable(this)
+	table := symbols.GetPackageSymbolTable(receiver.value)
 	if table != nil && !c.inPackageSymbolTable(table.Package()) {
 		ui.Log(ui.TraceLogger, "trace.package.symbols", ui.A{
 			"thread":  c.threadID,

@@ -281,3 +281,195 @@ function is not sandboxed, so no privilege check is needed.
 
 `Test_callRuntimeFunction_NilDefinition_SandboxedNoPanic` confirms that calling
 a bare runtime function with `sandboxedIO = true` no longer panics.
+
+---
+
+## CALL-4 — `parentTable` nil guard is dead code for non-literal named functions
+
+**Affected function:** `callBytecodeFunction`  
+**File:** `bytecode/callBytecodeFunction.go`  
+**Risk:** Low — no crash occurs; the behavior is correct despite the dead guard  
+**Discovered by:** `Test_callBytecodeFunction_NilFindNextScope_StillSucceeds`  
+**Status: RESOLVED**
+
+### CALL-4: Original behavior
+
+`callBytecodeFunction` guarded `parentTable` against nil inside the
+`functionSymbols == nil` block using a raw, uninitialized struct literal:
+
+```go
+if parentTable == nil {
+    parentTable = &symbols.SymbolTable{Name: "<none>"}  // raw struct — nil maps/values
+}
+```
+
+The guard was never meaningful: for the `callFramePush` path `parentTable`
+was not consumed, and for the captured-scope path `capturedScope != nil`
+guaranteed `parentTable` was already non-nil.  Meanwhile the package-method
+path (`functionSymbols != nil`) had no guard at all, so `Clone(nil)` could
+be called when `FindNextScope` returned nil from a root context.
+
+### CALL-4: Fix
+
+The entire `getPackageSymbols()` call and the associated `functionSymbols`
+branch were removed from `callBytecodeFunction` (see the broader CALL-4/CALL-5
+investigation note below).  The dead nil guard and the raw struct literal
+disappeared with the code they guarded.
+
+The log statement is now safe by computing `parentName` conditionally:
+
+```go
+parentName := "<none>"
+if parentTable != nil {
+    parentName = parentTable.Name
+}
+```
+
+`Test_callBytecodeFunction_NilFindNextScope_StillSucceeds` confirms that a
+named function call succeeds from a root-level context (nil `FindNextScope`).
+
+### CALL-4 / CALL-5: Combined investigation note
+
+Fixing CALL-5 (making `getPackageSymbols()` correctly return the package's
+embedded symbol table) exposed a deeper issue: the `functionSymbols != nil`
+clone path in `callBytecodeFunction` broke global scope access.
+
+When a package function is called as `math.Factor(n)`, the compiler emits
+`SetThis` which pushes `math` onto the receiver stack.  After the CALL-5
+fix, `getPackageSymbols()` returned the math package's embedded symbol table.
+`callBytecodeFunction` then cloned that table and used it as the function's
+scope.  The clone only contained the math package's own symbols — not the
+global package registry — so any reference inside `Factor` to another package
+(e.g. `math.Sqrt`) failed with "unknown identifier".
+
+The root cause: `SetThis` pushes the receiver for ALL member calls, including
+plain package-function calls (`math.Floor(x)`) where `callNative` does NOT
+pop the receiver (it only calls `popThis()` when `dp.Declaration.Type != nil`).
+The receiver stack therefore retains stale package objects, and any subsequent
+`*ByteCode` call with a non-empty receiver stack would incorrectly take the
+clone path.
+
+The fix: the `getPackageSymbols()` call was removed from `callBytecodeFunction`
+entirely.  Compiled Ego functions always use `callFramePush` which creates a
+fresh boundary scope as a child of `c.symbols`, giving the function access to
+the full scope chain including the global package registry.  The existing
+`updatePackageFromLocalSymbols` mechanism in `callFramePop` already handles
+writing modified package-level symbols back to the package on return — no
+clone path is needed.
+
+---
+
+## CALL-5 — `getPackageSymbols` passes the `this` struct instead of `this.value` to `GetPackageSymbolTable`
+
+**Affected function:** `getPackageSymbols`  
+**File:** `bytecode/flow.go`  
+**Risk:** Medium — the package-method cloning path in `callBytecodeFunction`
+is permanently unreachable; package method calls silently fall back to the
+generic `callFramePush` path  
+**Discovered by:** `Test_getPackageSymbols_PackageReceiver_ReturnsSymbolTable`  
+**Status: RESOLVED**
+
+### CALL-5: Original behavior
+
+`getPackageSymbols` passed the raw `this` struct (the bookkeeping wrapper) to
+`GetPackageSymbolTable` instead of the unwrapped `receiver.value` field:
+
+```go
+this := c.receiverStack[len(c.receiverStack)-1]
+table := symbols.GetPackageSymbolTable(this)   // ← was: this (the wrapper struct)
+```
+
+`c.receiverStack` stores `this{name string, value any}` structs.
+`GetPackageSymbolTable` type-asserts its argument to `*data.Package`.  The
+assertion on a `this` struct always failed, `nil` was returned, and
+`callBytecodeFunction` always took the plain `callFramePush` branch.  The
+package-method clone path was permanently dead.
+
+### CALL-5: Fix
+
+One word changed in `flow.go`: the `this` local variable was renamed to
+`receiver` (for clarity) and `receiver.value` is now passed:
+
+```go
+receiver := c.receiverStack[len(c.receiverStack)-1]
+table := symbols.GetPackageSymbolTable(receiver.value)
+```
+
+The existing tests were updated:
+
+- `Test_getPackageSymbols_PackageReceiver_CurrentlyReturnsNil` was renamed to
+  `Test_getPackageSymbols_PackageReceiver_ReturnsSymbolTable` and now asserts
+  a non-nil result with the expected table name `"package math"`.
+- `Test_callBytecodeFunction_PackageMethod_ClonesPackageSymbolTable` was added
+  to verify the previously dead clone path is now reachable and that the
+  resulting scope carries `IsClone() == true`.
+
+---
+
+## Testing Infrastructure
+
+The comprehensive bytecode unit-test suite is built on shared helpers in
+`bytecode/testhelpers_test.go`.  All bytecode instruction tests in this
+package use these helpers instead of constructing their own contexts.
+
+### `testContext` builder
+
+Create a fresh context for each test with `newTestContext(t)`, then chain
+"with" methods to set up initial state before calling the instruction under
+test:
+
+| Method | Effect |
+| :----- | :----- |
+| `withStack(items...)` | Push items onto the stack left-to-right; last item ends up on top |
+| `withSymbol(name, value)` | Create and initialize a named variable in the local symbol table |
+| `withArgList(args...)` | Store a `*data.Array` as `__args` (defs.ArgumentListVariable) |
+| `withTypeStrictness(level)` | Set strict / relaxed / dynamic type enforcement |
+| `withExtensions(bool)` | Enable or disable Ego language extensions |
+| `withBytecodeSize(n)` | Set `bc.nextAddress` so addresses 0..n are valid branch targets |
+
+### Assertion helpers
+
+After calling the instruction under test, verify outcomes with these methods:
+
+| Method | What it checks |
+| :----- | :------------- |
+| `assertNoError(err)` | Fails if err is non-nil |
+| `assertError(err, want)` | Compares error keys via `errors.Equals`; context suffixes are ignored |
+| `assertTopStack(want)` | Pops the stack top and compares with `reflect.DeepEqual` |
+| `assertSymbolValue(name, want)` | Reads the named symbol and compares with `reflect.DeepEqual` |
+| `assertStackEmpty()` | Fails if `stackPointer != 0` |
+| `assertProgramCounter(want)` | Fails if `ctx.programCounter != want` |
+
+### Key facts for test authors
+
+- **`interface{}` wrapping**: values stored via `data.InterfaceType` are
+  wrapped in `data.Interface{Value: v, BaseType: data.TypeOf(v)}`.  Assert
+  the wrapped form, not the raw value.
+- **Error key comparison**: `assertError` uses `errors.Equals` on the i18n
+  key, so `.Context(...)` suffixes added by `runtimeError` are ignored.
+- **Stack discipline**: instructions that temporarily push a value must leave
+  the stack clean on success.  Use `assertStackEmpty()` to verify.
+- **Branch addresses**: `branchByteCode` and the conditional variants validate
+  operands against `bc.nextAddress` (not `len(instructions)`).  Call
+  `withBytecodeSize(n)` to widen the valid window before testing branches.
+- **`__args` type**: `withArgList` stores
+  `data.NewArrayFromInterfaces(data.InterfaceType, ...)`.  Storing anything
+  other than a `*data.Array` there triggers `ErrInvalidArgumentList`.
+
+### Test file naming convention
+
+Each source file `bytecode/xxx.go` gets a corresponding test file
+`bytecode/xxx_test.go`.  Test functions follow the pattern:
+
+```text
+Test_xxxByteCode_ScenarioDescription
+```
+
+Tests use flat (non-table) style so each case is independently named and
+runnable with `-run`.  Sections inside a test file are separated by banner
+comments and group related code paths together.
+
+The shared helper infrastructure lives in the `testContext` type defined in
+the `bytecode` package test files.  When adding tests for a new instruction,
+read that source first — it is the single source of truth for how to create
+a context, push stack items, and assert outcomes.

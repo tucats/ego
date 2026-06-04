@@ -242,6 +242,7 @@ Tanh
 termgen
 testapp
 testcount
+testhelpers
 thecurrent
 thisandthat
 timestamp
