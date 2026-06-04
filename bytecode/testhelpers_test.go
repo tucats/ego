@@ -171,6 +171,20 @@ func (tc *testContext) withExtensions(enabled bool) *testContext {
 	return tc
 }
 
+// withBytecodeSize sets the ByteCode's nextAddress field, which defines the
+// upper bound for valid branch targets.  The branch instructions reject any
+// destination address greater than nextAddress, so tests that need to branch
+// to a non-zero address must call this first.
+//
+// Example: tc.withBytecodeSize(10) makes addresses 0..10 valid targets.
+//
+// Returns tc so calls can be chained.
+func (tc *testContext) withBytecodeSize(size int) *testContext {
+	tc.ctx.bc.nextAddress = size
+
+	return tc
+}
+
 // ─── Assertion helpers ───────────────────────────────────────────────────────
 
 // assertNoError fails the test if err is non-nil.  Use this when the bytecode
@@ -267,5 +281,20 @@ func (tc *testContext) assertStackEmpty() {
 
 	if tc.ctx.stackPointer != 0 {
 		tc.t.Errorf("assertStackEmpty: expected empty stack, but stackPointer = %d", tc.ctx.stackPointer)
+	}
+}
+
+// assertProgramCounter fails the test if the context's program counter does
+// not equal want.  Use this to verify that a branch instruction either
+// updated the PC (branch taken) or left it unchanged (branch not taken).
+//
+// When calling a bytecode function directly (not through Run), the PC starts
+// at 0.  A taken branch sets it to the target address; a not-taken branch
+// leaves it at 0.
+func (tc *testContext) assertProgramCounter(want int) {
+	tc.t.Helper()
+
+	if tc.ctx.programCounter != want {
+		tc.t.Errorf("assertProgramCounter: got %d, want %d", tc.ctx.programCounter, want)
 	}
 }
