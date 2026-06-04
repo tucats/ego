@@ -594,3 +594,103 @@ if function.Kind() == data.StructKind || ... {
 
 `Test_callTypeCast_Duration_EmptyArgs` and `Test_callTypeCast_Month_EmptyArgs`
 now assert `ErrArgumentCount` and an empty stack rather than catching a panic.
+
+---
+
+## CALL-8 — `makeNativeArrayArgument` missing `Int64Kind` and `Float32Kind` for `*data.Array` conversion
+
+**Affected function:** `makeNativeArrayArgument`  
+**File:** `bytecode/callNative.go`  
+**Risk:** Low — passing a `*data.Array` of int64 or float32 elements to a
+native function expecting `[]int64` or `[]float32` silently returned
+`ErrInvalidType` instead of converting correctly  
+**Discovered by:** `Test_makeNativeArrayArgument_Int64Kind`,
+`Test_makeNativeArrayArgument_Float32Kind`  
+**Status: RESOLVED**
+
+### CALL-8: Original behavior
+
+`makeNativeArrayArgument` converts a `*data.Array` to the equivalent native
+Go slice so it can be passed to a Go function via reflection.  The switch on
+element kind handled: `IntKind`, `Int16Kind`, `UInt16Kind`, `Int32Kind`,
+`BoolKind`, `ByteKind`, `Float64Kind`, and `StringKind`.
+
+Two kinds were absent: `Int64Kind` and `Float32Kind`.  A `*data.Array` of
+int64 or float32 elements fell through to the `default` case and returned
+`ErrInvalidType`.  The asymmetry was visible because native `[]int64` and
+`[]float32` slices were already handled by direct pass-through, and
+`convertFromNativeArray` already converted `[]int64` and `[]float32` back to
+`*data.Array` on the return path.
+
+### CALL-8: Fix
+
+Two new cases were added to the switch, each with a clear comment explaining
+why they were previously absent:
+
+```go
+case data.Float32Kind:
+    // Added by CALL-8 fix — was missing despite []float32 pass-through above.
+    arrayArgument := make([]float32, arg.Len())
+    for i := 0; i < arg.Len(); i++ {
+        v, _ := arg.Get(i)
+        arrayArgument[i], err = data.Float32(v)
+        ...
+    }
+
+case data.Int64Kind:
+    // Added by CALL-8 fix — mirrors the existing []int64 return-path support.
+    arrayArgument := make([]int64, arg.Len())
+    ...
+```
+
+`Test_makeNativeArrayArgument_Int64Kind` and
+`Test_makeNativeArrayArgument_Float32Kind` now assert that the conversion
+succeeds and produces the expected concrete slice type.
+
+---
+
+## CALL-9 — `CallWithReceiver` panics when method name is not found on receiver
+
+**Affected function:** `CallWithReceiver`  
+**File:** `bytecode/callNative.go`  
+**Risk:** Medium — an invalid method name in compiled Ego code caused an
+unrecoverable runtime panic instead of a clean error  
+**Discovered by:** `Test_CallWithReceiver_UnknownMethod`  
+**Status: RESOLVED**
+
+### CALL-9: Original behavior
+
+For non-struct, non-pointer receivers, `CallWithReceiver` used reflection to
+look up the method by name and call it without checking whether the lookup
+succeeded:
+
+```go
+m = ax.MethodByName(methodName)
+results := m.Call(argList)   // ← panicked if m was a zero Value
+```
+
+`MethodByName` returns a zero `reflect.Value` when the method does not exist
+on the type.  Calling `.Call()` on a zero `reflect.Value` caused an
+unrecoverable panic:
+
+```text
+panic: reflect: call of reflect.Value.Call on zero Value
+```
+
+### CALL-9: Fix
+
+An `m.IsValid()` guard was inserted between the lookup and the call, with a
+comment explaining the zero-Value risk:
+
+```go
+m = ax.MethodByName(methodName)
+// Guard: MethodByName returns a zero reflect.Value when the method
+// does not exist.  Without this check, m.Call() panics (CALL-9 fix).
+if !m.IsValid() {
+    return nil, errors.ErrNoFunctionReceiver.Context(methodName)
+}
+results := m.Call(argList)
+```
+
+`Test_CallWithReceiver_UnknownMethod` now asserts that no panic occurs and
+that a non-nil error is returned.

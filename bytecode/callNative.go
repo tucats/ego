@@ -303,6 +303,24 @@ func makeNativeArrayArgument(functionArgument any, argumentIndex int) (any, erro
 	case data.ByteKind:
 		return arg.GetBytes(), nil
 
+	case data.Float32Kind:
+		// Convert each element of the Ego array to a native float32.
+		// This case was absent before the CALL-8 fix, which meant that
+		// *data.Array values of float32 elements fell through to the default
+		// and returned ErrInvalidType even though native []float32 slices were
+		// already handled as a direct pass-through at the top of this function.
+		arrayArgument := make([]float32, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			if arrayArgument[arrayIndex], err = data.Float32(v); err != nil {
+				return nil, err
+			}
+		}
+
+		return arrayArgument, nil
+
 	case data.Float64Kind:
 		arrayArgument := make([]float64, arg.Len())
 
@@ -310,6 +328,23 @@ func makeNativeArrayArgument(functionArgument any, argumentIndex int) (any, erro
 			v, _ := arg.Get(arrayIndex)
 
 			if arrayArgument[arrayIndex], err = data.Float64(v); err != nil {
+				return nil, err
+			}
+		}
+
+		return arrayArgument, nil
+
+	case data.Int64Kind:
+		// Convert each element of the Ego array to a native int64.
+		// Like Float32Kind above, this case was absent before the CALL-8 fix.
+		// The omission created an asymmetry: convertFromNativeArray (the return
+		// direction) already handled []int64, but the argument direction did not.
+		arrayArgument := make([]int64, arg.Len())
+
+		for arrayIndex := 0; arrayIndex < arg.Len(); arrayIndex++ {
+			v, _ := arg.Get(arrayIndex)
+
+			if arrayArgument[arrayIndex], err = data.Int64(v); err != nil {
 				return nil, err
 			}
 		}
@@ -486,10 +521,20 @@ func convertFromNativeArray(result any, c *Context) error {
 	}
 }
 
-// CallWithReceiver takes a receiver, a method name, and optional arguments, and formulates
-// a call to the method function on the receiver. The result of the call is returned.
+// CallWithReceiver looks up methodName on receiver and calls it with args,
+// returning the result(s).
+//
+// Three receiver shapes are handled:
+//
+//  1. *data.Struct — looks up the method in the Ego type system.  If the
+//     struct wraps a native Go value (stored under data.NativeFieldName) the
+//     call is forwarded to that native value instead.
+//
+//  2. *any — transparently dereferences the pointer and recurses.
+//
+//  3. Any other Go value — uses the reflect package to locate and call the
+//     method by name.
 func CallWithReceiver(receiver any, methodName string, args ...any) (any, error) {
-	// Unwrap the reciter
 	switch actual := receiver.(type) {
 	case *data.Struct:
 		native, ok := actual.Get(data.NativeFieldName)
@@ -512,6 +557,7 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 		return CallWithReceiver(*actual, methodName, args...)
 
 	default:
+		// Build the reflect argument list.
 		argList := make([]reflect.Value, len(args))
 		for i, arg := range args {
 			argList[i] = reflect.ValueOf(arg)
@@ -523,6 +569,15 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 		default:
 			ax := reflect.ValueOf(unwrapped)
 			m = ax.MethodByName(methodName)
+		}
+
+		// Guard: MethodByName returns a zero reflect.Value when the method
+		// does not exist on the receiver type.  Without this check, calling
+		// m.Call() on a zero Value panics with an unrecoverable runtime error.
+		// Returning a clean error here lets the caller report a useful message
+		// instead of crashing the entire program (CALL-9 fix).
+		if !m.IsValid() {
+			return nil, errors.ErrNoFunctionReceiver.Context(methodName)
 		}
 
 		results := m.Call(argList)
