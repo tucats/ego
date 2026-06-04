@@ -207,13 +207,33 @@ func validateFunctionArguments(c *Context, dp data.Function, argc int, args []an
 	return fullSymbolVisibility, nil
 }
 
+// validateStrictParameterTyping checks each argument against the declared
+// parameter type when the context is operating with StrictTypeEnforcement.
+//
+// Argument classification (by index n relative to len(parms)):
+//
+//   - n < len(parms): a declared non-variadic parameter slot — apply the
+//     regular type check unless the parameter or argument is an interface type,
+//     or the parameter is declared as a function type (any callable matches).
+//
+//   - n >= len(parms), variadic, len(parms) > 0: an extra argument supplied
+//     beyond the last declared parameter.  Validate against the last declared
+//     parameter's type unless it is an interface / interface-slice / pointer-to-
+//     interface (all of which accept any value).  Using >= rather than the
+//     original > ensures the argument at exactly index len(parms) — the first
+//     extra variadic arg — is validated.  The prior > condition created a
+//     blind spot at that index (CALL-2 fix).
 func validateStrictParameterTyping(args []any, dp data.Function, c *Context) error {
 	for n, arg := range args {
 		parms := dp.Declaration.Parameters
 
-		if dp.Declaration.Variadic && n > len(parms) {
+		// Extra variadic arguments — at or beyond the last declared parameter.
+		// The len(parms) > 0 guard prevents an index-out-of-bounds panic for the
+		// pathological case of a variadic function with no declared parameters.
+		if dp.Declaration.Variadic && len(parms) > 0 && n >= len(parms) {
 			lastType := dp.Declaration.Parameters[len(parms)-1].Type
 
+			// Interface-typed last parameter accepts any value; skip the check.
 			if lastType.IsInterface() || lastType.IsType(data.ArrayType(data.InterfaceType)) || lastType.IsType(data.PointerType(data.InterfaceType)) {
 				continue
 			}
@@ -221,16 +241,20 @@ func validateStrictParameterTyping(args []any, dp data.Function, c *Context) err
 			if !data.TypeOf(arg).IsType(lastType) {
 				return c.runtimeError(errors.ErrArgumentType).Context(fmt.Sprintf("argument %d: %s", n+1, data.TypeOf(arg).String()))
 			}
+
+			continue
 		}
 
+		// Declared parameter slot: standard type check.
 		if n < len(parms) {
+			// Any callable value satisfies a function-typed parameter.
 			if parms[n].Type.Kind() == data.FunctionKind {
-				k := data.TypeOf(arg).Kind()
-				if k == data.FunctionKind {
+				if data.TypeOf(arg).Kind() == data.FunctionKind {
 					continue
 				}
 			}
 
+			// Interface parameters or interface-slice parameters accept any value.
 			if parms[n].Type.IsInterface() {
 				continue
 			}
@@ -239,6 +263,8 @@ func validateStrictParameterTyping(args []any, dp data.Function, c *Context) err
 				continue
 			}
 
+			// An argument that is already an Interface wrapper was typed at a
+			// prior call boundary; skip re-checking its inner type here.
 			if data.TypeOf(arg).IsInterface() {
 				continue
 			}
@@ -252,36 +278,60 @@ func validateStrictParameterTyping(args []any, dp data.Function, c *Context) err
 	return nil
 }
 
-// Determine if the argument count is valid. If it doesn't match the default argument count,
-// determine if the function is variadic.
+// validateArgCount reports whether the supplied argument count (argc) is valid
+// for a call to dp.  argumentCount is the number of formally declared parameters
+// (zero when dp.Declaration is nil).
+//
+// The logic has three distinct paths, all guarded by "argumentCount != argc":
+//
+//  1. Non-variadic with an explicit ArgCount range (ArgCount[1] > 0):
+//     enforce [ArgCount[0], ArgCount[1]] and return immediately.
+//
+//  2. Non-variadic with the default ArgCount ([0, 0]):
+//     when extensions are disabled, the exact count is required.
+//     When extensions are enabled, the function is trusted to validate
+//     its own argument list — return nil.
+//
+//  3. Variadic or nil Declaration:
+//     require at least argumentCount-1 arguments (the last formal parameter
+//     may receive zero values in the variadic position).
+//
+// The original code placed all non-variadic cases inside a single block that
+// ended with an unconditional "return nil", making cases 2 and 3 dead code
+// for any non-nil non-variadic declaration (CALL-1 fix).
 func validateArgCount(argumentCount int, argc int, extensions bool, dp data.Function, c *Context) error {
-	if argumentCount != argc {
-		// If a variable argument count range was specified, is the argc within the allowed range?
-		if dp.Declaration != nil && !dp.Declaration.Variadic && len(dp.Declaration.ArgCount) == 2 {
-			minArgc := dp.Declaration.ArgCount[0]
-			maxArgc := dp.Declaration.ArgCount[1]
+	if argumentCount == argc {
+		return nil
+	}
 
-			if minArgc >= 0 && maxArgc > 0 && (argc < minArgc || argc > maxArgc) {
+	if dp.Declaration != nil && !dp.Declaration.Variadic {
+		minArgc := dp.Declaration.ArgCount[0]
+		maxArgc := dp.Declaration.ArgCount[1]
+
+		if maxArgc > 0 {
+			// An explicit [min, max] range is active.  Validate and return
+			// immediately; the range fully specifies the valid argument window.
+			if argc < minArgc || argc > maxArgc {
 				return c.runtimeError(errors.ErrArgumentCount).Context(argc)
 			}
 
 			return nil
 		}
 
-		// If extensions are disabled and this function doesn't isn't variadic, return an error.
-		// Note that if extensions are enabled, we don't require this and leave it up to the
-		// function to determine the validity of the argument count.
-		if !extensions && dp.Declaration != nil && !dp.Declaration.Variadic {
+		// ArgCount is the zero value [0, 0]: no explicit range was set.
+		// When extensions are disabled, the exact declared count is required.
+		// When extensions are enabled, allow the function to handle the count.
+		if !extensions {
 			return c.runtimeError(errors.ErrArgumentCount)
 		}
 
-		// If it is variadic, then we must have at least as many formal arguments as the function
-		// definition. The last function argument can have zero or more elements.
-		if dp.Declaration == nil || dp.Declaration.Variadic {
-			if argc < argumentCount-1 {
-				return c.runtimeError(errors.ErrArgumentCount).Context(argc)
-			}
-		}
+		return nil
+	}
+
+	// Variadic function or nil Declaration: require at least argumentCount-1
+	// arguments so the non-variadic formal parameters are satisfied.
+	if argc < argumentCount-1 {
+		return c.runtimeError(errors.ErrArgumentCount).Context(argc)
 	}
 
 	return nil

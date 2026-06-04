@@ -63,8 +63,13 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 		args = append(args, c)
 	}
 
-	// Verify we are not sandboxed, else this wouldn't be permitted
-	if c.sandboxedIO.Load() && savedDefinition.Sandboxed {
+	// Verify we are not sandboxed, else this wouldn't be permitted.
+	// The nil guard on savedDefinition is required because a bare
+	// func(*symbols.SymbolTable, data.List)(any,error) pushed directly onto the
+	// stack (not wrapped in data.Function) arrives here with savedDefinition==nil.
+	// Without the guard, accessing savedDefinition.Sandboxed would panic whenever
+	// the context is sandboxed (CALL-3 fix).
+	if c.sandboxedIO.Load() && savedDefinition != nil && savedDefinition.Sandboxed {
 		return errors.ErrNoPrivilegeForOperation.Context(savedDefinition.Declaration.Name + "()")
 	}
 
