@@ -36,7 +36,7 @@ package bytecode
 //
 // If a new bytecode instruction requires setup or assertions that are not
 // yet covered here, add new "with" or "assert" methods to testContext.
-// Keep each method focused on one concern and document its behaviour.
+// Keep each method focused on one concern and document its behavior.
 
 import (
 	"reflect"
@@ -48,7 +48,7 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
-// testContext is the central test-harness type.  It holds a fully initialised
+// testContext is the central test-harness type.  It holds a fully initialized
 // *Context (the real runtime type used by bytecode instructions) together with
 // a reference to the *testing.T used to report failures.
 //
@@ -109,7 +109,7 @@ func (tc *testContext) withStack(items ...any) *testContext {
 	return tc
 }
 
-// withSymbol creates and initialises a named variable in the local symbol
+// withSymbol creates and initializes a named variable in the local symbol
 // table.  The variable is created first (so it exists) and then set to the
 // supplied value.  This simulates what the compiler emits when declaring a
 // local variable before a function body runs.

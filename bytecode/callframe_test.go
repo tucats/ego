@@ -237,7 +237,7 @@ func Test_callFramePush_ResetsDeferStack(t *testing.T) {
 }
 
 // Test_callFramePush_StepOverClearsSingleStep verifies the debugger "step over"
-// behaviour: if singleStep=true AND stepOver=true before the call, singleStep
+// behavior: if singleStep=true AND stepOver=true before the call, singleStep
 // is cleared so the callee runs at full speed.
 func Test_callFramePush_StepOverClearsSingleStep(t *testing.T) {
 	tc := newTestContext(t)

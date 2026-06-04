@@ -110,6 +110,7 @@ func Test_callBytecodeFunction_StoresArgsInSymbolTable(t *testing.T) {
 		got, err := arr.Get(i)
 		if err != nil {
 			t.Errorf("arr.Get(%d) error: %v", i, err)
+			
 			continue
 		}
 

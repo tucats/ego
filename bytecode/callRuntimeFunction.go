@@ -131,7 +131,10 @@ func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *C
 	return false, nil
 }
 
-// Synthesize a definition object using the saved object definition. Correct min and max arg counts appropriately.
+// synthesizeDefinition builds a *builtins.FunctionDefinition from a
+// *data.Function (the savedDefinition).  It is called when the global
+// builtins.FunctionDictionary has no entry for the function pointer, so we
+// derive min/max arg counts from the declaration metadata instead.
 func synthesizeDefinition(definition *builtins.FunctionDefinition, name string, savedDefinition *data.Function) *builtins.FunctionDefinition {
 	definition = &builtins.FunctionDefinition{
 		Name:        name,
@@ -140,14 +143,31 @@ func synthesizeDefinition(definition *builtins.FunctionDefinition, name string, 
 
 	if !savedDefinition.Declaration.Variadic {
 		if savedDefinition.Declaration.ArgCount[0] == 0 && savedDefinition.Declaration.ArgCount[1] == 0 {
+			// No explicit range: the exact parameter count is required.
 			definition.MinArgCount = len(definition.Declaration.Parameters)
 			definition.MaxArgCount = len(definition.Declaration.Parameters)
 		} else {
+			// An explicit [min, max] range overrides the parameter count.
 			definition.MinArgCount = savedDefinition.Declaration.ArgCount[0]
 			definition.MaxArgCount = savedDefinition.Declaration.ArgCount[1]
 		}
 	} else {
-		definition.MinArgCount = len(savedDefinition.Declaration.Parameters) - 1
+		// Variadic function: the last parameter absorbs zero or more extra
+		// arguments, so the minimum is the number of non-variadic parameters
+		// (i.e. len - 1).
+		//
+		// CALL-10 fix: clamp to zero.  Before this fix the formula
+		// len(Parameters)-1 yielded -1 when Parameters was empty, which
+		// represented "minimum 0 arguments" correctly by accident (because
+		// len(args) < -1 is never true) but was semantically wrong.  A
+		// pure-variadic function with no declared parameters requires at least
+		// zero arguments, so MinArgCount must be 0, not -1.
+		minCount := len(savedDefinition.Declaration.Parameters) - 1
+		if minCount < 0 {
+			minCount = 0
+		}
+
+		definition.MinArgCount = minCount
 		definition.MaxArgCount = 99999
 	}
 

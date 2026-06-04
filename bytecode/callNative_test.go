@@ -797,6 +797,7 @@ func Test_convertFromNative_ArrayReturnType(t *testing.T) {
 	tc.assertNoError(err)
 
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("expected *data.Array, got %T", v)
@@ -820,6 +821,7 @@ func Test_convertFromNativeArray_SliceInt(t *testing.T) {
 	tc.assertNoError(err)
 
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok || arr.Len() != 3 {
 		t.Fatalf("expected *data.Array[3], got %T %v", v, v)
@@ -835,6 +837,7 @@ func Test_convertFromNativeArray_SliceString(t *testing.T) {
 	tc.assertNoError(err)
 
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok || arr.Len() != 2 {
 		t.Fatalf("expected *data.Array[2], got %T", v)
@@ -849,6 +852,7 @@ func Test_convertFromNativeArray_SliceBool(t *testing.T) {
 
 	tc.assertNoError(err)
 	v, _ := tc.ctx.Pop()
+
 	_, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("expected *data.Array, got %T", v)
@@ -863,6 +867,7 @@ func Test_convertFromNativeArray_SliceFloat64(t *testing.T) {
 
 	tc.assertNoError(err)
 	v, _ := tc.ctx.Pop()
+
 	_, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("expected *data.Array, got %T", v)
@@ -877,6 +882,7 @@ func Test_convertFromNativeArray_SliceInt64(t *testing.T) {
 
 	tc.assertNoError(err)
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok || !arr.Type().IsType(data.Int64Type) {
 		t.Fatalf("expected *data.Array(Int64Type), got %T type=%v", v, arr.Type())
@@ -891,6 +897,7 @@ func Test_convertFromNativeArray_SliceFloat32(t *testing.T) {
 
 	tc.assertNoError(err)
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok || !arr.Type().IsType(data.Float32Type) {
 		t.Fatalf("expected *data.Array(Float32Type), got %T type=%v", v, arr.Type())
@@ -904,6 +911,7 @@ func Test_convertFromNativeArray_UnknownType(t *testing.T) {
 
 	// complex128 is not a handled type.
 	type mySpecialType struct{ v int }
+
 	result := []mySpecialType{{1}, {2}}
 
 	err := convertFromNativeArray(result, tc.ctx)
@@ -1016,7 +1024,9 @@ func Test_CallWithReceiver_ValidMethod(t *testing.T) {
 // pointer-to-interface) correctly dereferences before calling the method.
 func Test_CallWithReceiver_PointerReceiver(t *testing.T) {
 	knownDate := time.Date(2024, time.June, 15, 0, 0, 0, 0, time.UTC)
+	
 	var iface any = knownDate
+
 	ptr := &iface // *any wrapping time.Time
 
 	result, err := CallWithReceiver(ptr, "Year")

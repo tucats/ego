@@ -104,6 +104,7 @@ HMAC
 hostnames
 idempotently
 idtrack
+iface
 indisunique
 indkey
 indrelid
@@ -276,6 +277,7 @@ viniculum
 webauth
 webauthn
 wrappered
+writeback
 xhtcs
 XLII
 XOXO
