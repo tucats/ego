@@ -61,7 +61,13 @@ func willCatchByteCode(c *Context, i any) error {
 
 	switch i := i.(type) {
 	case int:
-		if i > len(catchSets) {
+		// Validate the catch-set index.  Valid values are:
+		//   0            – allErrorsCatchSet (catch everything)
+		//   1 .. len     – a named predefined catch set
+		// Negative values slipped past the original `i > len(catchSets)` guard
+		// and caused a runtime panic via catchSets[i-1] with a negative index
+		// (TRYCATCH-1 fix).  The guard now rejects both out-of-range directions.
+		if i < 0 || i > len(catchSets) {
 			return c.runtimeError(errors.ErrInternalCompiler).Context(i18n.E("invalid.catch.set",
 				map[string]any{"index": i}))
 		}

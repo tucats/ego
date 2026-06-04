@@ -24,7 +24,7 @@ package bytecode
 //
 // The call sequence is:
 //  1. Look up the function in builtins.FunctionDictionary by pointer equality.
-//  2. If not found but a savedDefinition is provided, synthesise a definition.
+//  2. If not found but a savedDefinition is provided, synthesize a definition.
 //  3. Validate the argument count against the definition's min/max.
 //  4. Build a fresh child symbol table for the function to use as its scope.
 //  5. If a "this" receiver is on the context's receiver stack, inject it.
@@ -55,16 +55,11 @@ import (
 
 // runtimeFnReturning42 is a simple runtime function that ignores its arguments
 // and returns the integer 42 wrapped in a data.List.  It is used by tests that
-// only care about successful dispatch and result-pushing behaviour.
+// only care about successful dispatch and result-pushing behavior.
 func runtimeFnReturning42(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(42, nil), nil
 }
 
-// runtimeFnReturningError is a runtime function that returns a non-nil error
-// (and no value) wrapped in a data.List.
-func runtimeFnReturningError(s *symbols.SymbolTable, args data.List) (any, error) {
-	return data.NewList(nil, errors.ErrAssert), nil
-}
 
 // runtimeFnEchoFirstArg returns its first argument as the sole result item.
 // Tests use this to confirm that arguments are correctly forwarded into the
@@ -111,7 +106,7 @@ func runtimeFnGoError(s *symbols.SymbolTable, args data.List) (any, error) {
 
 // savedDecl builds a *data.Function (savedDefinition) with a given number of
 // plain integer parameters and optional variadic/ArgCount settings.  This is
-// used when testing the synthesiseDefinition and arg-count-check paths.
+// used when testing the synthesizeDefinition and arg-count-check paths.
 func savedDecl(paramCount int, variadic bool, argCount data.Range) *data.Function {
 	params := make([]data.Parameter, paramCount)
 	for i := range params {
