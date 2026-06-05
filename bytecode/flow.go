@@ -97,16 +97,33 @@ func panicByteCode(c *Context, i any) error {
 	return errors.ErrPanic.Context(panicMessage)
 }
 
-// moduleBytecode sets the current context module name to the argument.
+// moduleByteCode sets the current context module name to the operand.
+//
+// The operand may be:
+//   - a plain string: sets c.module to that string.
+//   - a []any{moduleName, *tokenizer.Tokenizer}: sets c.module and stores the
+//     tokenizer on the context so the debugger and trace output can read source
+//     lines from it.
+//
+// FLOW-2: The original code accessed array[1] unconditionally.  If the
+// compiler ever emits a one-element array operand (e.g. when the source has
+// no tokenizer), this would panic with "index out of range".  The len check
+// below makes the tokenizer slot optional so a one-element array is handled
+// safely.
 func moduleByteCode(c *Context, i any) error {
 	if array, ok := i.([]any); ok {
 		c.module = data.String(array[0])
-		if t, ok := array[1].(*tokenizer.Tokenizer); ok {
-			c.tokenizer = t
 
-			// While we're here, let's ensure the tokenizer isn't holding
-			// on to resources unnecessarily now that we executing this bytecode.
-			t.Close()
+		// Only look for the tokenizer when a second element is actually present.
+		// A one-element array sets the module name and leaves c.tokenizer unchanged.
+		if len(array) > 1 {
+			if t, ok := array[1].(*tokenizer.Tokenizer); ok {
+				c.tokenizer = t
+
+				// Release any resources the tokenizer was holding while parsing;
+				// we no longer need random-access into the token stream.
+				t.Close()
+			}
 		}
 	} else {
 		c.module = data.String(i)
@@ -132,15 +149,25 @@ func atLineByteCode(c *Context, i any) error {
 		defer c.mux.Unlock()
 	}
 
-	// Get the info from the argument. The argument can be just an integer
-	// value, or it can be a list with an integer line number and a string
-	// containing the text of the line from the tokenizer.
+	// Get the info from the argument.  The operand may be:
+	//   - a plain integer: the line number only.
+	//   - []any{lineNumber, sourceText}: line number and the original source text
+	//     of that line (used by the trace output to print the source alongside the
+	//     execution).
+	//
+	// FLOW-2: The original code accessed array[1] unconditionally.  A
+	// one-element array operand would panic with "index out of range".
+	// The len check makes the source-text slot optional so single-element
+	// arrays are handled safely.
 	if array, ok := i.([]any); ok {
 		if line, err = data.Int(array[0]); err != nil {
 			return err
 		}
 
-		text = data.String(array[1])
+		// Only read the source text when a second element is present.
+		if len(array) > 1 {
+			text = data.String(array[1])
+		}
 	} else {
 		if line, err = data.Int(i); err != nil {
 			return err

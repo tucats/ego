@@ -1561,3 +1561,181 @@ explicitly, so the absence of the case is documented:
 `Test_equalByteCode_NilNilHandledByGuard` and
 `Test_equalByteCode_NilOneNilHandledByGuard` confirm that nil comparisons
 still produce the correct bool results after the dead code was removed.
+
+---
+
+## FLOW-1 — `Test_branchFalseByteCode` called `branchTrueByteCode` for its invalid-address sub-case
+
+**Affected test:** `Test_branchFalseByteCode` in `bytecode/flow_test.go`  
+**File:** `bytecode/flow_test.go`  
+**Risk:** Low — `branchFalseByteCode`'s address-validation path was not tested
+by the legacy test; the gap was covered by `branch_test.go`  
+**Discovered by:** code review of `flow_test.go` during the flow-test audit  
+**Status: RESOLVED**
+
+### FLOW-1: Original behavior
+
+The third sub-case in `Test_branchFalseByteCode` was intended to verify that
+an out-of-range address is rejected:
+
+```go
+// Test if target is invalid
+_ = ctx.push(true)
+e = branchTrueByteCode(ctx, 20)   // ← wrong function: should be branchFalseByteCode
+if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
+    t.Errorf("branchFalseByteCode unexpected error %v", e)   // message still says False
+}
+```
+
+The call targets `branchTrueByteCode` rather than `branchFalseByteCode`.  The
+error message in the `t.Errorf` even refers to `branchFalseByteCode`, showing
+the intent was clear — but the wrong function was called.  As a result,
+`branchFalseByteCode`'s `validateBranchAddress` path for too-large addresses
+was never exercised by this test (though it was covered by the later
+`Test_branchFalseByteCode_InvalidAddress_TooLarge` in `branch_test.go`).
+
+### FLOW-1: Fix
+
+The call was corrected to target `branchFalseByteCode`:
+
+```go
+// Sub-case 3: target address is out of range → ErrInvalidBytecodeAddress.
+// FLOW-1 fix: the original code mistakenly called branchTrueByteCode here.
+_ = ctx.push(true)
+e = branchFalseByteCode(ctx, 20)   // 20 > nextAddress(5) → invalid
+if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
+    t.Errorf("branchFalseByteCode sub-case 3 unexpected error %v", e)
+}
+```
+
+---
+
+## FLOW-2 — `moduleByteCode` and `atLineByteCode` access `array[1]` without a bounds check
+
+**Affected functions:** `moduleByteCode`, `atLineByteCode`  
+**File:** `bytecode/flow.go`  
+**Risk:** Low — a one-element array operand panics with "index out of range";
+the compiler always emits two-element arrays for these opcodes  
+**Discovered by:** code review of `flow.go` during the flow-test audit  
+**Status: RESOLVED**
+
+### FLOW-2: Original behavior
+
+Both functions accepted a `[]any` array operand but accessed `array[1]`
+unconditionally:
+
+```go
+// moduleByteCode (original):
+if array, ok := i.([]any); ok {
+    c.module = data.String(array[0])
+    if t, ok := array[1].(*tokenizer.Tokenizer); ok {   // ← no len check → panic
+        c.tokenizer = t
+        t.Close()
+    }
+}
+
+// atLineByteCode (original):
+if array, ok := i.([]any); ok {
+    if line, err = data.Int(array[0]); err != nil {
+        return err
+    }
+    text = data.String(array[1])   // ← no len check → panic
+}
+```
+
+If the compiler ever emits a one-element array for either opcode (e.g., when
+the tokenizer is unavailable at compile time), `array[1]` panics at runtime
+with "index out of range [1] with length 1".
+
+### FLOW-2: Fix
+
+A `len(array) > 1` guard was added before each `array[1]` access in both
+functions, and the function-level comments were updated to document the
+optional-slot contract:
+
+```go
+// moduleByteCode (fixed):
+if array, ok := i.([]any); ok {
+    c.module = data.String(array[0])
+    // Only look for the tokenizer when a second element is actually present.
+    if len(array) > 1 {
+        if t, ok := array[1].(*tokenizer.Tokenizer); ok {
+            c.tokenizer = t
+            t.Close()
+        }
+    }
+}
+
+// atLineByteCode (fixed):
+if array, ok := i.([]any); ok {
+    if line, err = data.Int(array[0]); err != nil {
+        return err
+    }
+    // Only read the source text when a second element is present.
+    if len(array) > 1 {
+        text = data.String(array[1])
+    }
+}
+```
+
+Regression tests confirm both functions handle a single-element array
+without panicking and still set the primary field correctly:
+
+- `Test_moduleByteCode_SingleElementArray` — module name set, no panic
+- `Test_atLineByteCode_SingleElementArray` — line number set, source stays ""
+
+---
+
+## FLOW-3 — Pre-helper tests in `flow_test.go` used raw `&Context{}` struct literals
+
+**Affected tests:** `Test_stopByteCode`, `Test_panicByteCode`, `Test_typeCast`,
+`Test_localCallAndReturnByteCode`, `Test_branchFalseByteCode`,
+`Test_branchTrueByteCode`  
+**File:** `bytecode/flow_test.go`  
+**Risk:** Low — the tests passed but bypassed the initialization that
+`NewContext` performs, which could mask future bugs in that path  
+**Discovered by:** code review of `flow_test.go` during the flow-test audit  
+**Status: RESOLVED**
+
+### FLOW-3: Original behavior
+
+Six tests constructed a `*Context` with a raw struct literal, skipping
+`NewContext`:
+
+```go
+ctx := &Context{
+    stack:          make([]any, 5),
+    stackPointer:   0,
+    symbols:        symbols.NewSymbolTable("cast test"),
+    programCounter: 1,
+    bc:             &ByteCode{instructions: make([]instruction, 5), nextAddress: 5},
+}
+ctx.running.Store(true)
+```
+
+The `newTestContext(t)` helper (from `testhelpers_test.go`, mandated by
+`CLAUDE.md`) creates a properly initialized context via `NewContext` with a
+two-level root→local symbol table.  The raw literal bypasses that, which can
+mask bugs in `NewContext` or in code that relies on the full initialization.
+
+### FLOW-3: Fix
+
+All six tests were rewritten to use `newTestContext` and the "with" builder
+chain.  Key conversion notes:
+
+- **`Test_stopByteCode`**: Trivial — `stopByteCode` only uses `c.running`.
+  The companion `Test_stopByteCode_WithNewContext` was removed (it became
+  redundant once the original was converted).
+- **`Test_panicByteCode`** → **`Test_panicByteCode_OperandMode`**: The original
+  test pre-loaded a stack item that was never consumed (the operand was always
+  non-nil).  The converted test uses an empty stack to make the intent clear.
+- **`Test_typeCast`** → **`Test_typeCast_IntToString` + `Test_typeCast_BoolToString`**:
+  Split into two flat tests; `newTestContext` supplies the symbol table and
+  bytecode that `callByteCode` needs.
+- **`Test_localCallAndReturnByteCode`**: Uses `withBytecodeSize(5)` for the
+  `localCallByteCode(ctx, 5)` call.  The saved-table-name assertion was updated
+  from `"local call test"` (the old manual name) to `"test local"` (the name
+  that `newTestContext` assigns to its local symbol table).
+- **`Test_branchFalseByteCode`** and **`Test_branchTrueByteCode`**: Both use
+  `withBytecodeSize(5)` and a shared `tc` across the three sub-cases so that
+  the program-counter carry-over from sub-case 1 to sub-case 2 is preserved.
