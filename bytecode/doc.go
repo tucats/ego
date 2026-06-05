@@ -1,105 +1,307 @@
-// Package bytecode contains a byte code interpreter.
+// Package bytecode contains a bytecode interpreter for the Ego scripting language.
 //
-// A ByteCode object can be created by native Go code, or by using the
-// compiler package. Bytecode consists of a stream of pseudo-instructions
-// (bytecodes). The bytecode does not inherently have a symbol table, as
-// all symbolic names are expressed as strings in the code to be bound to
-// storage only during execution.
+// # Overview
 //
-// The package also allows for creating a Context object that encapsulates the
-// runtime status of the execution of a ByteCode object. There can be many
-// different Context objects pointing to the same Bytecode, which allows for
-// sharing of the pseudo-instruction stream (such as in threads). Each Context
-// contains the state of one execution of the code, which includes a symbol
-// table, data stack, and other execution state information.
+// The package has two main abstractions: ByteCode (an instruction stream) and Context
+// (the runtime state for one execution of a stream). A single ByteCode object may be
+// shared by many Context objects simultaneously, which is how Ego goroutines execute
+// the same function body concurrently without interfering with each other's state.
 //
-// Bytecode is executed until an error occurs, in which time the context.Run()
-// operation returns with an error. If the code exits, it returns the special
-// errors.Exit return code. If the code runs to the start of a new line of
-// source (based on information stored in the bytecode) and the debugger is
-// enabled, the context returns errors.Debugger and the caller should invoke
-// the debugger package before resuming execution.
+// # Instruction format
 //
-// The bytecode has a number of instructions that support managing the Ego
-// language semantics.
+// Every instruction is a simple two-field struct:
 //
-//   - The symbol table is used to store all values. Symbol tables can be
-//     marked as shared, which means they operation in a thread-safe fashion
-//     and can be shared between go routines, server handlers, etc. Symbols can
-//     only be written after they are created. A symbol can be created with no
-//     type, and takes on the type of the first value stored.
+//	type instruction struct {
+//	    Operation Opcode  // integer opcode constant (Stop, Push, Load, ...)
+//	    Operand   any     // optional per-instruction data; nil when not needed
+//	}
 //
-//   - Symbol tables can be chained together (that is, any symbol table can have
-//     one parent, and any symbol table can be the parent to many other tables).
-//     This is used to implement scope. New symbols are always created in the
-//     current table (local scope). Storing into existing symbols search the
-//     symbol table tree to find the symbol, only stopping when a table marked
-//     as "top-of-scope" is found. When a symbol table scope completes (such as
-//     at the end of the execution of a block in Ego), the symbol table is
-//     deleted which results in discarding any variables created in that local
-//     scope.
+// Operands are typed at the point of emission. For example, Push carries the literal
+// value to push (an int, string, bool, *data.Array, *ByteCode, etc.), while Load
+// carries a string symbol name. Branch-class instructions carry an integer bytecode
+// address as their operand; the emitter patches these after forward-jump targets are
+// resolved. Instructions whose opcode value is >= BranchInstructions are branch-class
+// instructions and always have an integer operand.
 //
-//   - Type safety is imposed at runtime. This means the degree of type checking
-//     can be dynamically changed during the execution of the code. In strict
-//     mode, storage into an object is only permitted for objects of the same
-//     type. In relaxed mode, type conversions are permitted to ensure the value
-//     is converted to the stored type if possible. Dynamic means the type of the
-//     storage is changed to match the type of the value stored.
+// # ByteCode object
 //
-//   - Error trapping (try/catch) are implemented by a stack in the Context that is
-//     added to when the try statement begins, and is discarded after the code for the
-//     catch block is executed. The stack includes information about the class of errors
-//     that the block will handle (this is really "all errors" or "math errors", the
-//     latter of which support the ? optional operation).
+// A ByteCode object holds:
+//   - A name (usually the source file or function name).
+//   - The instruction slice, grown in increments as instructions are emitted.
+//   - An optional *data.Declaration describing the function's parameter and return types.
+//   - A capturedScope *symbols.SymbolTable used by function literals (closures) to
+//     retain access to variables from the enclosing scope after that scope is popped.
+//   - Housekeeping flags: sealed (trimmed to exact size), optimized (peephole pass done),
+//     literal (this is a function literal / closure).
 //
-//   - Bytecode has the ability to call other functions from the current context. These
-//     can be other bytecode streams, in which case a new subordinate context is created
-//     to support executing that function (this prevents the function from being able
-//     to access symbol table values other than the root/global symbol table). They can
-//     also be Type designations, in which case this becomes a proxy for calling an
-//     internal built-in function called "$cast()". Finally, they can be "native"
-//     functions, which are functions implemented with Ego as native Go code. The
-//     native function has access to the symbol table tree, and returns a value (or
-//     tuple of values) and a runtime error, if any.
+// Emit the next instruction with:
 //
-//   - There are bytecode instructions for creating, storing, and deleting symbol
-//     values. There are instructions for creating any complex type supported by the
-//     "data" package, such as Arrays, Maps, and Structs. There are instructions for
-//     accessing members of those complex types by index value, key value, or field
-//     name. There are instructions for managing flow-of-control, including branching
-//     within the bytecode stream or calling functions in the same or another stream.
+//	b.Emit(opcode)
+//	b.Emit(opcode, operand)
 //
-// Here is a trivial example of generating bytecode and executing it.
+// The ByteCode grows its underlying slice automatically. Call b.Seal() to trim it to
+// the exact instruction count (done automatically before execution). The peephole
+// optimizer (Optimize) runs once per ByteCode and folds constant expressions, removes
+// redundant Push/Drop pairs, etc.
 //
-//	// Create a ByteCode object and write some instructions into it.
-//	   b := bytecode.New("sample program")
-//	   b.Emit(bytecode.Load, "strings")
-//	   b.Emit(bytecode.Member, "Left")
-//	   b.Emit{bytecode.Push, "fruitcake")
-//	   b.Emit(bytecode.Push, 5)
-//	   b.Emit(bytecode.Call, 2)
-//	   b.Emit(bytecode.Stop)
+// # Context object
 //
-//	// Make a symbol table, so we can call the function library.
-//	   s := symbols.NewSymbolTable("sample program")
-//	   functions.AddBuiltins(s)
+// A Context holds the complete runtime state for one execution:
 //
-//	// Make a runtime context for this bytecode, and then run it.
-//	// The context has the symbol table and bytecode attached to it.
-//	   c := bytecode.NewContext(s, b)
-//	   err := c.Run()
+//	programCounter int          // index of the next instruction to execute
+//	stackPointer   int          // index of the next free stack slot
+//	framePointer   int          // stack index just above the current call frame
+//	stack          []any        // operand/data stack (grows dynamically)
+//	symbols        *symbols.SymbolTable  // current (innermost) symbol table
+//	bc             *ByteCode    // bytecode being executed
+//	tryStack        []tryInfo   // stack of active try/catch handlers
+//	rangeStack     []*rangeDef  // stack of active for-range loop states
+//	deferStack     []deferStatement  // deferred calls for the current function
+//	receiverStack  []this       // receiver ("this") saved across nested calls
+//	timerStack     []time.Time  // instrumentation timer stack
+//	typeStrictness int          // NoTypeEnforcement / Relaxed / Strict
+//	running        atomic.Bool  // false stops the run loop
+//	interrupted    atomic.Bool  // set by SIGINT handler
+//	panicActive    bool         // true while panic() is unwinding
+//	panicValue     any          // value passed to panic()
+//	panicContext   *Context     // points back to panicking parent (for recover())
+//	debugging/singleStep/stepOver/breakOnReturn  // debugger flags
+//	tracing        bool         // print each instruction as it executes
+//	extensions     bool         // Ego language extensions enabled
+//	sandboxedIO/sandboxedExec   // I/O and subprocess restrictions
+//	output         io.Writer    // destination for Print/Say output (default os.Stdout)
+//	captureBuffer  *strings.Builder // non-nil when output is being captured
 //
-//	// Retrieve the last value and extract a string
-//	   v, err := b.Pop()
-//	   fmt.Printf("The result is %s\n", data.GetString(v))
+// Create a context with:
 //
-// This creates a new bytecode stream, and then adds instructions to it. These
-// instructions would nominally be added by the compiler when using _Ego_. The
-// `Emit()` function emits an instruction with optional opcodes.
+//	ctx := bytecode.NewContext(symbolTable, byteCodeObject)
 //
-// The generated bytecode puts arguments to a function on a stack, and then
-// calls the function. The result is left on the stack, and can be popped off
-// after execution completes. The result (which is always an abstract
-// any) is then converted to a string and printed.
+// NewContext inherits the type-strictness setting and extension flag from the symbol
+// table's root, initializes the stack to initialStackSize slots, and registers a SIGINT
+// handler. The symbol table is used as the initial scope; all subsequent PushScope /
+// PopScope operations nest child tables off of it.
+//
+// # The run loop
+//
+// Context.Run() calls RunFromAddress(0). RunFromAddress:
+//
+//  1. Spawns a goroutine that watches for SIGINT and sets c.interrupted.
+//  2. Loops while c.running is true and programCounter < len(instructions).
+//  3. Increments programCounter (pre-advance), then calls dispatchTable[opcode](c, operand).
+//  4. Wraps the returned error through handleCatch (try/catch resolution).
+//  5. On ErrPanicActive: calls c.unwindPanic() to walk deferred functions looking
+//     for a recover() call; resumes if recovered, or terminates with ErrStop.
+//  6. On ErrPanic (from the Panic opcode / @fail): prints the call-frame trace
+//     and converts to ErrStop.
+//  7. Any other non-nil error terminates the loop and is returned to the caller.
+//
+// Stop execution early by emitting a Stop instruction (sets running=false via
+// stopByteCode) or by returning errors.ErrStop from any instruction handler.
+//
+// # Dispatch table
+//
+// initializeDispatch() (called lazily by NewContext) builds a slice indexed by opcode
+// constant and filled with function pointers:
+//
+//	type opcodeHandler func(c *Context, i any) error
+//
+// Every instruction is implemented as a free function with exactly this signature and
+// registered in dispatchTable. The naming convention is <lowerCamelCaseName>ByteCode,
+// for example pushByteCode, loadByteCode, storeByteCode.
+//
+// If an opcode has no registered handler (dispatchTable entry is nil), the run loop
+// silently skips it — this is intentional for NoOperation and unimplemented placeholders.
+//
+// # Stack mechanics
+//
+// The stack is a []any slice that grows by growStackBy (50) slots on demand.
+// stackPointer always points to the next free slot (the slot above the top item).
+// Push increments stackPointer; Pop decrements it and nils the vacated slot so
+// the Go GC can reclaim unreachable values.
+//
+// StackMarkers are sentinel values pushed into the normal stack flow to delimit
+// logical regions. They carry a label string and optional payload values. Common
+// markers used by the interpreter:
+//   - "try"      — pushed at the start of a try{} block; DropToMarker unwinds to it
+//     when an exception is caught inside a nested call.
+//   - "results"  — pushed by callRuntimeFunction before pushing multi-value returns;
+//     DropToMarker uses it to discard unchecked return values.
+//
+// isStackMarker(v, optionalLabel...) returns true if v is a StackMarker (or a
+// *CallFrame, which acts as an implicit marker during unwinding). When a label is
+// given, the check is also constrained to that label.
+//
+// DropToMarker (dropToMarkerByteCode) pops items until a matching marker is found,
+// optionally surfacing abandoned error values when throwUncheckedErrors is set.
+//
+// # Call frames and function calls
+//
+// When Call or LocalCall executes a bytecode function, callFramePush saves the
+// current context state as a *CallFrame onto the stack, then switches context
+// fields (bc, symbols, programCounter, framePointer, deferStack) to the callee.
+// The frame stores: caller's PC, frame pointer, symbol table pointer, bytecode
+// pointer, module/line/name, receiver stack, defer stack, singleStep flag, and
+// tryDepth (length of c.tryStack at call time — used by panic unwinding to
+// discard dangling try entries).
+//
+// callFramePop reverses the process: it splices any items stacked above the frame
+// pointer back onto the stack (multi-return values), or pushes c.result (single
+// return value set via the result/resultSet fields).
+//
+// All Ego function calls — whether to compiled bytecode, native Go wrappers, or
+// cast functions — funnel through the Call opcode, which dispatches to one of:
+//   - callBytecodeFunction  — for *ByteCode values
+//   - callRuntimeFunction   — for native wrapper functions (func(s, args) (any,error))
+//   - callNative            — for IsNative pass-through functions using reflection
+//   - callCastFunction      — for type-cast calls ("T(v)")
+//
+// # Symbol table management
+//
+// The bytecode interpreter owns the symbol table lifecycle within a Context:
+//   - PushScope (pushScopeByteCode) creates a new child table and makes it current.
+//   - PopScope (popScopeByteCode) pops back to the parent, discarding the child.
+//   - SymbolCreate, SymbolDelete, SymbolOptCreate manage individual symbols.
+//   - Store respects type strictness (see checkType), while StoreAlways bypasses it.
+//   - StoreGlobal writes to the root of the symbol table chain.
+//
+// Symbol tables can be marked as a "boundary" — a stop-search boundary used by
+// function calls so that local variables of the caller are not visible to the
+// callee (except through the global root). The fullSymbolScope flag overrides
+// boundaries, used only by the debugger and a few runtime introspection helpers.
+//
+// # Type strictness
+//
+// Three modes controlled by c.typeStrictness (mirrors defs.*TypeEnforcement):
+//   - NoTypeEnforcement (dynamic): any value may be stored in any symbol; the symbol
+//     takes on the type of the stored value.
+//   - RelaxedTypeEnforcement: integer↔integer and float↔float coercions are allowed;
+//     storing a completely different type is an error.
+//   - StrictTypeEnforcement: types must match exactly; numeric literals (Immutable
+//     wrappers) are coerced to the target numeric type when widths are compatible, but
+//     otherwise a type mismatch is a runtime error.
+//
+// The StaticTyping opcode (staticTypingByteCode) changes the mode at runtime, which
+// is how some runtime packages temporarily relax checking when they need to work
+// type-independently.
+//
+// # Error handling
+//
+// ## runtimeError
+//
+// Instruction handlers call c.runtimeError(err, context...) to produce an *errors.Error
+// annotated with the current module name and source line. This is returned from the
+// handler function and processed by the run loop.
+//
+// ## try/catch (TryInfo stack)
+//
+// The Try opcode pushes a tryInfo onto c.tryStack; the operand is the bytecode address
+// of the catch block. TryPop and TryFlush remove entries. WillCatch optionally narrows
+// which errors the block handles (for selective catch or the ? optional operator).
+//
+// handleCatch, called on every instruction return, checks whether the current error
+// can be caught:
+//  1. If the tryStack is non-empty and running is true (not a fatal error), it checks
+//     the error against the catches list (or accepts any error if the list is empty).
+//  2. It unwinds the stack — including popping any *CallFrame objects encountered —
+//     until it finds the "try" StackMarker that was pushed at try{} entry.
+//  3. It redirects programCounter to the catch block address and stores the error in
+//     the __error symbol.
+//  4. Returns nil, suppressing further error propagation.
+//
+// ## Panic / Signal / UserPanic distinction
+//
+//   - Signal (signalByteCode): wraps its operand (or the stack top) as an *errors.Error
+//     and returns it normally — fully catchable by try/catch. Used by the @error directive.
+//   - Panic (panicByteCode): sets c.running = false and returns errors.ErrPanic —
+//     NOT caught by try/catch; prints call frames and stops execution. Used by @fail.
+//   - UserPanic (userPanicByteCode): sets c.panicActive = true and returns
+//     errors.ErrPanicActive. This bypasses try/catch (handleCatch passes it through)
+//     and triggers c.unwindPanic() in the run loop, which walks up the call-frame
+//     stack executing deferred functions. A deferred recover() call clears panicActive
+//     and returns nil from unwindPanic, allowing execution to resume in the caller.
+//     If nothing recovers, unwindPanic prints a fatal message and returns errors.ErrStop.
+//
+// ## IfError
+//
+// The IfError opcode checks whether the top-of-stack value is an error. This is used
+// after multi-return calls to surface errors that would otherwise be silently ignored
+// as stacked values.
+//
+// # Deferred functions
+//
+// The Defer opcode (deferByteCode) records a deferStatement on c.deferStack (LIFO).
+// Each entry captures the function target, arguments, receiver stack, and symbol table
+// pointer at defer time.
+//
+// RunDefers (runDefersByteCode) executes all deferred functions in LIFO order at
+// function return time (compiled by the function body block epilog, just before
+// PopScope+Return). Each deferred function runs in a fresh child Context with its
+// captured symbol table, so it can still access variables from the function's scope.
+//
+// Critical invariant: RunDefers must be emitted exactly once per function. A second
+// emission causes deferred functions to execute twice, producing bugs like
+// "sync: negative WaitGroup counter" and "close of closed channel".
+//
+// # Goroutines
+//
+// The Go opcode (goByteCode) starts an Ego goroutine. It clones the current symbol
+// table (to prevent data races), creates a new Context for the callee's ByteCode, and
+// launches it with go ctx.Run(). Errors from the goroutine are stored in the parent
+// context's goErr field and reported when the parent finishes.
+//
+// # Closures
+//
+// When Push emits a *ByteCode marked as a literal (IsLiteral() == true), it clones the
+// ByteCode and captures the current symbol table into clone.capturedScope. This keeps
+// the enclosing scope alive even after PopScope removes it from the active chain, giving
+// the closure continued access to its defining environment.
+//
+// # Output capture and sandboxing
+//
+// By default, Print and Say write to c.output, which is initialized to os.Stdout.
+// EnableConsoleOutput(false) redirects output to an internal strings.Builder accessible
+// via GetOutput(). This is used by the server and test harness to capture program output
+// without writing to the console.
+//
+// Sandboxed contexts (Sandboxed(true)) restrict file I/O to a configured path and
+// block subprocess execution. The sandbox state is stored both in atomic bools on the
+// Context and in the symbol table (defs.SandboxedIOSymbolName / SandboxedExecSymbolName)
+// so runtime functions can read it without a direct Context reference.
+//
+// # Adding a new opcode
+//
+// Four steps are required:
+//  1. Add the new constant to the iota block in opcodes.go. If the operand is a
+//     bytecode address, add it in the "branch instructions" section (after BranchInstructions).
+//  2. Add a human-readable name to the opcodeNames map in the same file.
+//  3. Register the handler in initializeDispatch().
+//  4. Implement the handler as a package-level function with the signature:
+//
+//	func myOpByteCode(c *Context, i any) error
+//
+// # Minimal usage example
+//
+//	// Build a bytecode stream.
+//	b := bytecode.New("example")
+//	b.Emit(bytecode.Load, "strings")   // push the "strings" package
+//	b.Emit(bytecode.Member, "Left")    // push the "Left" field of that package
+//	b.Emit(bytecode.Push, "fruitcake")
+//	b.Emit(bytecode.Push, 5)
+//	b.Emit(bytecode.Call, 2)           // call with 2 arguments
+//	b.Emit(bytecode.Stop)
+//
+//	// Create a symbol table with built-in packages loaded.
+//	s := symbols.NewSymbolTable("example")
+//	functions.AddBuiltins(s)
+//
+//	// Run.
+//	ctx := bytecode.NewContext(s, b)
+//	if err := ctx.Run(); err != nil {
+//	    log.Fatal(err)
+//	}
+//
+//	// Retrieve the result left on the stack.
+//	v, _ := ctx.Pop()
+//	fmt.Println(data.GetString(v))  // "fruit"
 
 package bytecode
