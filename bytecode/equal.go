@@ -16,13 +16,17 @@ import (
 //	stack+0    - The item to be compared
 //	stack+1    - The item to compare to
 //
-// The top two values are popped from the stack,
-// and a type-specific test for equality is done.
-// If the values are equal, then true is pushed
-// back on the stack, else false.
+// The top two values are popped from the stack and a type-specific equality
+// test is performed.  The boolean result is pushed back onto the stack.
+//
+// Nil handling is resolved by two guards before the type switch runs:
+//   - both nil  → push true
+//   - one nil   → push false
+//
+// These two guards also mean that by the time the type switch executes, v1
+// is guaranteed to be non-nil.  There is therefore no `case nil:` branch in
+// the switch — such a branch would be unreachable dead code (EQUAL-3).
 func equalByteCode(c *Context, i any) error {
-	var err error
-
 	// Get the two terms to compare. These are found either in the operand as an
 	// array of values or on the stack.
 	v1, v2, err := getComparisonTerms(c, i)
@@ -35,7 +39,8 @@ func equalByteCode(c *Context, i any) error {
 		return c.push(true)
 	}
 
-	// Otherwise, if either one is nil, there is no match
+	// If exactly one side is nil there is no match.  After this guard, v1 is
+	// guaranteed to be non-nil for the rest of the function.
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.push(false)
 	}
@@ -59,13 +64,6 @@ func equalByteCode(c *Context, i any) error {
 
 	case *data.Type:
 		return equalTypes(v2, c, actual)
-
-	case nil:
-		if err, ok := v2.(error); ok {
-			result = errors.Nil(err)
-		} else {
-			result = (v2 == nil)
-		}
 
 	case *errors.Error:
 		result = actual.Equal(v2)
@@ -166,80 +164,138 @@ func genericEqualCompare(c *Context, v1 any, v2 any) error {
 	return c.push(result)
 }
 
-// Compare the v2 value with the actual type. Because deep equal testing cannot
-// be used, we attempt to format the types as strings and compare the strings.
+// equalTypes compares a *data.Type (v1) against either another *data.Type or a
+// string that names a type, pushing a boolean result onto the stack.
+//
+// Deep-equal cannot be used on type objects because their internal pointers
+// differ even when the types are semantically identical.  String comparison of
+// the canonical type name is used instead.
+//
+// v2 may be:
+//   - a string      → compare against actual.String()
+//   - a *data.Type  → compare actual.String() against v.String()
+//   - anything else → return ErrNotAType via c.runtimeError (EQUAL-1 fix)
+//
+// EQUAL-1: The original code returned errors.ErrNotAType.Context(v2) directly,
+// bypassing c.runtimeError.  That left the error without the module name or
+// source-line annotation that every other runtime error in this package carries.
+// Fixed: use c.runtimeError so the error is consistently decorated.
 func equalTypes(v2 any, c *Context, actual *data.Type) error {
 	if v, ok := v2.(string); ok {
 		return c.push(actual.String() == v)
 	} else if v, ok := v2.(*data.Type); ok {
-		t1 := actual.String()
-		t2 := v.String()
-
-		return c.push(t1 == t2)
+		return c.push(actual.String() == v.String())
 	}
 
-	return errors.ErrNotAType.Context(v2)
+	// v2 is not a type descriptor or a type-name string.  Return an error
+	// decorated with the current module/line so callers can locate the fault.
+	return c.runtimeError(errors.ErrNotAType, v2)
 }
 
-// Get the two values to compare. The values can be on the stack, or one of
-// the values can be part of the argument list. If either is a constant value,
-// silently coerce the types to match so strict typing works with constant
-// values.
+// getComparisonTerms reads the two operands for any comparison instruction.
+//
+// # Operand sources
+//
+// The right-hand operand (v2) can come from two places:
+//   - Stack mode (i == nil or i is not a []any{oneValue}): v2 is popped from
+//     the execution stack, then v1 is popped.
+//   - Operand mode (i is []any{oneValue}): v2 is read from the single element
+//     of the instruction operand slice; v1 is still popped from the stack.
+//     The compiler uses this mode when the right-hand side is a compile-time
+//     constant that has been folded into the instruction itself.
+//
+// # Immutable (constant) unwrapping
+//
+// Values pushed by the Constant opcode are wrapped in data.Immutable{Value: v}
+// to distinguish compile-time constants from ordinary stack values.  This
+// function strips that wrapper before returning, setting v1Constant or
+// v2Constant so the coercion step below knows which side was a constant.
+//
+// # Constant coercion
+//
+// When at least one operand was a compile-time constant and both operands are
+// numeric, the lower-rank type is coerced to match the higher-rank type.  This
+// allows comparisons like `myInt32 == 5` to work in strict mode: the literal 5
+// is an int, but it gets coerced to int32 to match the variable.
+//
+// EQUAL-2: The original code returned data.Coerce's error directly without
+// wrapping in c.runtimeError, leaving the error without module/line info.
+// Fixed: any coerce failure is now passed through c.runtimeError so it carries
+// the same location annotation as all other errors in this package.
+// In practice data.Coerce never fails for two valid numeric values; the
+// c.runtimeError wrap is purely defensive.
 func getComparisonTerms(c *Context, i any) (any, any, error) {
 	var (
-		err        error
 		v1         any
 		v2         any
 		v1Constant bool
 		v2Constant bool
 	)
 
+	// Determine where v2 comes from: the instruction operand or the stack.
 	if array, ok := i.([]any); ok && len(array) == 1 {
+		// Operand mode: the compiler folded v2 directly into the instruction.
 		v2 = array[0]
 		if constant, ok := v2.(data.Immutable); ok {
 			v2 = constant.Value
 			v2Constant = true
 		}
 	} else {
+		// Stack mode: pop v2 from the top of the stack.
+		var err error
+
 		v2, err = c.PopWithoutUnwrapping()
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if c, ok := v2.(data.Immutable); ok {
+		if constant, ok := v2.(data.Immutable); ok {
 			v2Constant = true
-			v2 = c.Value
+			v2 = constant.Value
 		}
 	}
 
-	v1, err = c.PopWithoutUnwrapping()
+	// v1 is always popped from the stack regardless of where v2 came from.
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if c, ok := v1.(data.Immutable); ok {
+	if constant, ok := v1.(data.Immutable); ok {
 		v1Constant = true
-		v1 = c.Value
+		v1 = constant.Value
 	}
-	// If either value is a stack marker, then this is an error, typically
-	// because a function returned a void value and didn't leave anything on
-	// the stack.
+
+	// A StackMarker in either operand position means a sub-expression returned
+	// void (no value).  That is a runtime error, not a comparison.
 	if isStackMarker(v1) || isStackMarker(v2) {
 		return nil, nil, c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
-	// If either argument was a constant value, and both v1 and v2 are numeric,
-	// we silently coerce the values to match.
+	// If either argument was a compile-time constant and both sides are numeric,
+	// coerce the lower-rank type to the higher-rank type so that comparisons
+	// such as `myFloat64 == 3` (where 3 is an int constant) work correctly in
+	// all type-strictness modes.
 	if (v2Constant || v1Constant) && data.IsNumeric(v1) && data.IsNumeric(v2) {
 		k1 := data.KindOf(v1)
 		k2 := data.KindOf(v2)
 
+		var coerceErr error
+
 		if k1 > k2 {
-			v2, err = data.Coerce(v2, v1)
+			v2, coerceErr = data.Coerce(v2, v1)
 		} else {
-			v1, err = data.Coerce(v1, v2)
+			v1, coerceErr = data.Coerce(v1, v2)
+		}
+
+		// EQUAL-2 fix: decorate any coerce error with module/line info.
+		// data.Coerce never fails for two valid numeric values in practice,
+		// but wrapping here is consistent with all other error returns in
+		// this package.
+		if coerceErr != nil {
+			return nil, nil, c.runtimeError(coerceErr)
 		}
 	}
 
-	return v1, v2, err
+	return v1, v2, nil
 }

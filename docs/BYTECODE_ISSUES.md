@@ -1389,3 +1389,175 @@ are aware of this guard and adjust it if needed.
 
 `Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture` asserts the
 current (zero-capture) behavior as a regression anchor.
+
+---
+
+## EQUAL-1 — `equalTypes` returns an undecorated error (no module or line info)
+
+**Affected function:** `equalTypes`  
+**File:** `bytecode/equal.go`  
+**Risk:** Low — error messages lack the source location that other runtime errors
+include; debuggability is slightly reduced  
+**Discovered by:** `Test_equalTypes_TypeVsNonType`  
+**Status: RESOLVED**
+
+### EQUAL-1: Original behavior
+
+When `equalTypes` received a v2 value that was neither a `string` nor a
+`*data.Type`, it returned an error directly without location annotation:
+
+```go
+return errors.ErrNotAType.Context(v2)   // ← no c.runtimeError wrap
+```
+
+Every other error path in `equal.go` and the rest of the bytecode package
+uses `c.runtimeError(...)`, which annotates the error with the current
+module name and source line before returning it.  The direct `return` in
+`equalTypes` bypassed that annotation, so an error in a catch block or stack
+trace showed only the message key, not where in the Ego program the bad
+comparison occurred.
+
+### EQUAL-1: Fix
+
+The return statement was changed to pass the error through `c.runtimeError`,
+which attaches the current module name (via `e.In(c.module)`) and source line
+(via `e.At(c.GetLine(), 0)`) before returning:
+
+```go
+// Before:
+return errors.ErrNotAType.Context(v2)
+
+// After:
+return c.runtimeError(errors.ErrNotAType, v2)
+```
+
+`c.runtimeError` accepts variadic context values and calls `.Context(v2)` on
+the annotated error internally, so the v2 value still appears in the message.
+
+`Test_equalTypes_TypeVsNonType_ErrorIsDecorated` confirms that after the fix,
+`HasIn()` returns `true` on the error when the context has a non-empty module
+name.
+
+---
+
+## EQUAL-2 — `getComparisonTerms` returns raw coerce error (no location info)
+
+**Affected function:** `getComparisonTerms`  
+**File:** `bytecode/equal.go`  
+**Risk:** Low — coercion errors during constant-folding lack source location;
+in practice `data.Coerce` never fails for two valid numeric values  
+**Discovered by:** code review during `equal_test.go` development  
+**Status: RESOLVED**
+
+### EQUAL-2: Original behavior
+
+The constant-coercion block returned the error from `data.Coerce` directly,
+and the shared `err` variable meant the coerce error was also used for the
+stack-pop operations above it:
+
+```go
+var err error   // shared with pop calls above
+...
+if k1 > k2 {
+    v2, err = data.Coerce(v2, v1)
+} else {
+    v1, err = data.Coerce(v1, v2)
+}
+return v1, v2, err   // ← raw error, no c.runtimeError wrap
+```
+
+The `return v1, v2, err` at the end of the function leaked the raw
+`data.Coerce` error to callers without module or line annotation, inconsistent
+with all other error returns in the package.
+
+### EQUAL-2: Fix
+
+The coerce block was restructured to use a local `coerceErr` variable (not
+shared with the pop-error path), explicitly test for failure, and wrap via
+`c.runtimeError`:
+
+```go
+var coerceErr error
+
+if k1 > k2 {
+    v2, coerceErr = data.Coerce(v2, v1)
+} else {
+    v1, coerceErr = data.Coerce(v1, v2)
+}
+
+if coerceErr != nil {
+    return nil, nil, c.runtimeError(coerceErr)
+}
+```
+
+The final `return` was also changed from `return v1, v2, err` to
+`return v1, v2, nil` — removing the vestigial use of `err` at that point in
+the function, which could never be non-nil after the earlier explicit error
+checks.
+
+The coerce success path is exercised by
+`Test_equalByteCode_ImmutableCoercion_PromotesConstantToFloat64` and
+`Test_equalByteCode_ImmutableCoercion_PromotesConstantToInt32`.  A direct test
+of the error wrap is not feasible because `data.Coerce` never returns an error
+for two valid numeric values; the fix is defensive.
+
+---
+
+## EQUAL-3 — `case nil:` branch in `equalByteCode`'s switch is dead code
+
+**Affected function:** `equalByteCode`  
+**File:** `bytecode/equal.go`  
+**Risk:** None — the code is unreachable and has no runtime effect  
+**Discovered by:** `Test_equalByteCode_NilNilHandledByGuard`,
+`Test_equalByteCode_NilOneNilHandledByGuard`  
+**Status: RESOLVED**
+
+### EQUAL-3: Original behavior
+
+`equalByteCode` contained two nil guards that ran before the type switch:
+
+```go
+if data.IsNil(v1) && data.IsNil(v2) {
+    return c.push(true)
+}
+if data.IsNil(v1) || data.IsNil(v2) {
+    return c.push(false)
+}
+```
+
+`data.IsNil(nil)` returns `true` for a pure Go nil interface value, and
+`getComparisonTerms` unwraps any `data.Immutable{Value: nil}` to a bare `nil`
+before the guards run.  As a result, by the time the
+`switch actual := v1.(type)` statement executed, `v1` was guaranteed to be
+non-nil — and the switch contained:
+
+```go
+case nil:
+    if err, ok := v2.(error); ok {
+        result = errors.Nil(err)
+    } else {
+        result = (v2 == nil)
+    }
+```
+
+This branch could never be reached.
+
+### EQUAL-3: Fix
+
+The `case nil:` branch was removed from the type switch.  The function-level
+comment on `equalByteCode` was updated to explain the nil-guard invariant
+explicitly, so the absence of the case is documented:
+
+```go
+// Nil handling is resolved by two guards before the type switch runs:
+//   - both nil  → push true
+//   - one nil   → push false
+//
+// These two guards also mean that by the time the type switch executes, v1
+// is guaranteed to be non-nil.  There is therefore no `case nil:` branch in
+// the switch — such a branch would be unreachable dead code (EQUAL-3).
+```
+
+`Test_equalByteCode_NilNilHandledByGuard` and
+`Test_equalByteCode_NilOneNilHandledByGuard` confirm that nil comparisons
+still produce the correct bool results after the dead code was removed.
