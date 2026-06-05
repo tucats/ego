@@ -56,6 +56,9 @@ func greaterThanByteCode(c *Context, i any) error {
 		}
 
 		// Based on the now-normalized types, do the comparison.
+		// int8 is included in the signed case (COMPARE-3 fix); it was
+		// previously absent, causing int8 > int8 to fall through to the
+		// default error case.
 		switch v1.(type) {
 		case uint16, uint32, uint, uint64:
 			x1, err := data.UInt64(v1)
@@ -70,7 +73,7 @@ func greaterThanByteCode(c *Context, i any) error {
 
 			result = x1 > x2
 
-		case byte, int16, int32, int, int64:
+		case byte, int8, int16, int32, int, int64:
 			x1, err := data.Int64(v1)
 			if err != nil {
 				return c.runtimeError(err)

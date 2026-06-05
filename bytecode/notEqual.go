@@ -61,14 +61,28 @@ func notEqualByteCode(c *Context, i any) error {
 	case error:
 		result = !reflect.DeepEqual(v1, v2)
 
-	case data.Map:
+	// COMPARE-2 fix: the original cases used value types (data.Map, data.Array,
+	// data.Struct) which can never match because Ego always stores these as
+	// pointers (*data.Map, *data.Array, *data.Struct).  The value-type cases
+	// caused every composite != comparison to silently return false (equal).
+	// The pointer-type cases below mirror the pattern used in equalByteCode.
+	case *data.Map:
 		result = !reflect.DeepEqual(v1, v2)
 
-	case data.Array:
-		result = !reflect.DeepEqual(v1, v2)
+	case *data.Array:
+		if array, ok := v2.(*data.Array); ok {
+			result = !actual.DeepEqual(array)
+		} else {
+			result = true // different types are always not equal
+		}
 
-	case data.Struct:
-		result = !reflect.DeepEqual(v1, v2)
+	case *data.Struct:
+		str, ok := v2.(*data.Struct)
+		if !ok {
+			result = true // different types are always not equal
+		} else {
+			result = !reflect.DeepEqual(actual, str)
+		}
 
 	default:
 		// If type checking is set to strict, the types must match exactly.

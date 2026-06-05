@@ -864,3 +864,140 @@ concrete type and the type assertion succeeds.
 
 `Test_coerceByteCode_ToUInt` now asserts a clean `nil` error and `uint(10)`
 on the stack rather than catching a panic.
+
+---
+
+## COMPARE-1 — `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests
+
+**Affected operators:** `!=`, `>=`  
+**File:** `bytecode/compare_test.go`  
+**Risk:** Low — untested paths; the absence of tests allowed the COMPARE-2 and
+COMPARE-3 bugs to go undetected  
+**Discovered by:** audit of `compare_test.go`  
+**Status: RESOLVED**
+
+### COMPARE-1: Description
+
+The original `compare_test.go` contained a single `TestComparisons` table-driven
+function that covered `==`, `<`, `>`, and `<=`.  `notEqualByteCode` (`!=`) and
+`greaterThanOrEqualByteCode` (`>=`) had zero test cases.
+
+Additionally, the original tests used raw `Context{}` struct literals with direct
+`ctx.stack[0]` index reads, bypassing the `newTestContext` / `withStack` helpers
+established in all other bytecode test files.
+
+### COMPARE-1: Fix
+
+`compare_test.go` was rewritten with 79 flat test functions following the
+established helper pattern.  All six comparison operators are now covered across
+the full set of scalar types, composite types, nil values, strict/dynamic mode,
+and unsigned integers.
+
+---
+
+## COMPARE-2 — `notEqualByteCode` uses value types instead of pointer types for composite cases
+
+**Affected function:** `notEqualByteCode`  
+**File:** `bytecode/notEqual.go`  
+**Risk:** Medium — comparing two `*data.Map`, `*data.Array`, or `*data.Struct`
+values with `!=` silently returns `false` (equal) even when the values differ  
+**Discovered by:** `Test_notEqualByteCode_MapNotEqual_CurrentlyBroken`,
+`Test_notEqualByteCode_ArrayNotEqualValues_CurrentlyBroken`  
+**Status: OPEN**
+
+### COMPARE-2: Description
+
+The switch statement in `notEqualByteCode` has:
+
+```go
+case data.Map:      // ← value type; *data.Map never matches
+    result = !reflect.DeepEqual(v1, v2)
+
+case data.Array:    // ← value type; *data.Array never matches
+    result = !reflect.DeepEqual(v1, v2)
+
+case data.Struct:   // ← value type; *data.Struct never matches
+    result = !reflect.DeepEqual(v1, v2)
+```
+
+Ego always represents maps, arrays, and structs as pointer values (`*data.Map`,
+`*data.Array`, `*data.Struct`).  The value-type cases never match, so the values
+fall through to the `default:` branch.  The default branch normalizes the values
+as scalars (which changes nothing for composite types) and then falls through an
+inner switch with no matching case, leaving `result` at its zero value (`false`).
+
+Compare with `equalByteCode`, which correctly uses `*data.Map`, `*data.Array`,
+and `*data.Struct`.
+
+### COMPARE-2: Suggested fix
+
+Replace the three value-type cases with pointer types:
+
+```go
+case *data.Map:
+    result = !reflect.DeepEqual(v1, v2)
+
+case *data.Array:
+    if array, ok := v2.(*data.Array); ok {
+        result = !actual.DeepEqual(array)
+    }
+
+case *data.Struct:
+    str, ok := v2.(*data.Struct)
+    result = !ok || !reflect.DeepEqual(actual, str)
+```
+
+After the fix, invert the bug-documentation assertions in
+`Test_notEqualByteCode_MapNotEqual_CurrentlyBroken` and
+`Test_notEqualByteCode_ArrayNotEqualValues_CurrentlyBroken`.
+
+---
+
+## COMPARE-3 — `int8` missing from signed-integer case in four ordering functions
+
+**Affected functions:** `lessThanByteCode`, `greaterThanByteCode`,
+`lessThanOrEqualByteCode`, `greaterThanOrEqualByteCode`  
+**Files:** `bytecode/` — one source file per operator  
+**Risk:** Low — ordering comparisons on `int8` values return `ErrInvalidType`
+instead of a boolean result  
+**Discovered by:** `Test_lessThanByteCode_Int8`,
+`Test_greaterThanByteCode_Int8`,
+`Test_lessThanOrEqualByteCode_Int8`,
+`Test_greaterThanOrEqualByteCode_Int8`  
+**Status: RESOLVED**
+
+### COMPARE-3: Description
+
+Every ordering function had an inner switch that handled signed integers via
+`int64`-based comparison:
+
+```go
+// lessThanByteCode (identical pattern in >, <=, >=):
+case byte, int32, int16, int, int64:   // ← int8 was missing
+    x1, err := data.Int64(v1)
+    x2, err := data.Int64(v2)
+    result = x1 < x2
+```
+
+`int8` was absent.  After normalization two `int8` values remained `int8`, the
+inner switch found no match, and the `default` case returned `ErrInvalidType`.
+
+Compare with `genericEqualCompare` (inside `equalByteCode`) which correctly
+listed `int8`:
+
+```go
+case byte, int8, int16, int32, int, int64:   // int8 present ✓
+```
+
+And `notEqualByteCode` which also included `int8` in its inner switch.
+
+### COMPARE-3: Fix
+
+`int8` was added to the signed-integer case in all four functions:
+
+```go
+case byte, int8, int32, int16, int, int64:
+```
+
+The four `_CurrentlyBroken` tests were renamed (dropping the suffix) and
+updated to assert `nil` error and the correct boolean result.
