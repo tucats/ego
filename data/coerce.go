@@ -89,8 +89,12 @@ func Coerce(value any, model any) (any, error) {
 	case uint64:
 		return coerceUInt64(value)
 
+	// COERCE-2 fix: the previous code called coerceUInt64 here, which returns
+	// uint64.  data.UInt() then asserted b.(uint) on that uint64, causing a
+	// panic.  The dedicated coerceUInt helper returns uint so the assertion in
+	// data.UInt() succeeds.
 	case uint:
-		return coerceUInt64(value)
+		return coerceUInt(value)
 
 	case int:
 		return coerceToInt(value)
@@ -1031,6 +1035,89 @@ func coerceUInt64(v any) (any, error) {
 		}
 
 		return coerceUInt64(intValue)
+	}
+
+	return nil, errors.ErrInvalidInteger.Context(v)
+}
+
+// coerceUInt converts any scalar value to the native Go uint type.
+// It mirrors coerceUInt64 in structure but returns uint rather than uint64,
+// so that the type assertion in data.UInt() — which expects uint — succeeds
+// without panicking (COERCE-2 fix).
+func coerceUInt(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return uint(0), nil
+
+	case bool:
+		if value {
+			return uint(1), nil
+		}
+
+		return uint(0), nil
+
+	case int8:
+		return uint(value), nil
+
+	case int16:
+		return uint(value), nil
+
+	case uint16:
+		return uint(value), nil
+
+	case int:
+		return uint(value), nil
+
+	case int64:
+		return uint(value), nil
+
+	case int32:
+		return uint(value), nil
+
+	case uint:
+		return value, nil
+
+	case uint32:
+		return uint(value), nil
+
+	case uint64:
+		return uint(value), nil
+
+	case byte:
+		return uint(value), nil
+
+	case float32:
+		u64, err := coerceFloat64ToUInt64(float64(value))
+		if err != nil {
+			return uint(0), err
+		}
+
+		return uint(u64), nil
+
+	case float64:
+		u64, err := coerceFloat64ToUInt64(value)
+		if err != nil {
+			return uint(0), err
+		}
+
+		return uint(u64), nil
+
+	case string:
+		if value == "" {
+			return uint(0), nil
+		}
+
+		intValue, err := egostrings.Atoi(value)
+		if err != nil {
+			return nil, errors.ErrInvalidInteger.Context(value)
+		}
+
+		u64, err := coerceUInt(intValue)
+		if err != nil {
+			return uint(0), err
+		}
+
+		return u64, nil
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)

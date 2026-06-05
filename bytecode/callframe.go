@@ -340,7 +340,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 // invalid, the result is zero values.
 func (c *Context) GetFrame(maxDepth int) (module string, line int, tableName string) {
 	if c == nil {
-		return "<none>", 0, "<none>"
+		return none, 0, none
 	}
 
 	framePointer := c.framePointer

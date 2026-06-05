@@ -48,6 +48,10 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+const (
+	callerName = "caller"
+	callerModule = "callerMod"
+)
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1: CallFrame.String()
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,7 +145,7 @@ func Test_callFramePush_SavesPC(t *testing.T) {
 // pointer is captured and restored across the push/pop cycle.
 func Test_callFramePush_SavesBytecode(t *testing.T) {
 	tc := newTestContext(t)
-	callerBC := &ByteCode{name: "caller"}
+	callerBC := &ByteCode{name: callerName}
 	tc.ctx.bc = callerBC
 
 	calleeBC := &ByteCode{name: "callee"}
@@ -294,10 +298,10 @@ func Test_callFramePop_RestoresAllContextFields(t *testing.T) {
 	tc := newTestContext(t)
 
 	// Set distinctive caller-state values in the context.
-	callerBC := &ByteCode{name: "caller"}
+	callerBC := &ByteCode{name: callerName}
 	tc.ctx.bc = callerBC
 	tc.ctx.programCounter = 77
-	tc.ctx.module = "callerMod"
+	tc.ctx.module = callerModule
 	tc.ctx.line = 12
 	tc.ctx.pkg = "callerPkg"
 	tc.ctx.blockDepth = 3
@@ -324,7 +328,7 @@ func Test_callFramePop_RestoresAllContextFields(t *testing.T) {
 		want any
 	}{
 		{"programCounter", tc.ctx.programCounter, 77},
-		{"module", tc.ctx.module, "callerMod"},
+		{"module", tc.ctx.module, callerModule},
 		{"line", tc.ctx.line, 12},
 		{"pkg", tc.ctx.pkg, "callerPkg"},
 		{"blockDepth", tc.ctx.blockDepth, 3},
@@ -645,7 +649,7 @@ func Test_FormatFrames_NoCallFrames(t *testing.T) {
 // call originated.
 func Test_FormatFrames_ShowsCallerAfterPush(t *testing.T) {
 	tc := newTestContext(t)
-	tc.ctx.module = "caller"
+	tc.ctx.module = callerName
 	tc.ctx.line = 20
 
 	tc.ctx.callFramePush("callee", &ByteCode{name: "callee"}, 0, false)
@@ -720,7 +724,7 @@ func Test_GetFrame_Depth0_ReturnsCurrentContext(t *testing.T) {
 // the push (the caller's location), not the current execution point.
 func Test_GetFrame_Depth1_ReturnsSavedFrame(t *testing.T) {
 	tc := newTestContext(t)
-	tc.ctx.module = "callerMod"
+	tc.ctx.module = callerModule
 	tc.ctx.line = 99
 
 	// The push saves the current module/line into the CallFrame.
@@ -732,8 +736,8 @@ func Test_GetFrame_Depth1_ReturnsSavedFrame(t *testing.T) {
 
 	module, line, _ := tc.ctx.GetFrame(1)
 
-	if module != "callerMod" {
-		t.Errorf("depth 1 module: got %q, want %q", module, "callerMod")
+	if module != callerModule {
+		t.Errorf("depth 1 module: got %q, want %q", module, callerModule)
 	}
 
 	if line != 99 {

@@ -85,6 +85,7 @@ Fdvcmxk
 fernwood
 fileptr
 formatlog
+frobozz
 Fudd
 funcs
 GCCPU
@@ -284,5 +285,6 @@ XOXO
 XVCJ
 xyzzy
 zipgo
+zork
 zorp
 دانش

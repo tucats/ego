@@ -207,6 +207,19 @@ func requireMatch(c *Context, t *data.Type, v any) error {
 	return c.runtimeError(errors.ErrTypeMismatch).Context(vt.String() + ", " + t.String())
 }
 
+// NeedsCoerce reports whether the compiler should emit a Coerce instruction
+// for the given target type after whatever was just compiled.
+//
+// The decision is based on the most recently emitted instruction:
+//
+//   - If it was a Push whose operand is ALREADY the target type, the value is
+//     already correct and no Coerce is needed → return false.
+//   - If it was a Push whose operand is a DIFFERENT type, the runtime will
+//     need to convert it → return true (COERCE-1 fix: previously this returned
+//     false, meaning the Coerce was silently skipped for non-matching Push
+//     operands such as int literals in a []float64 array).
+//   - If the last instruction was anything other than Push (a computed value
+//     whose type is not statically known), conservatively emit Coerce → true.
 func (b ByteCode) NeedsCoerce(kind *data.Type) bool {
 	// If there are no instructions before this, no coerce is appropriate.
 	pos := b.Mark()
@@ -220,7 +233,10 @@ func (b ByteCode) NeedsCoerce(kind *data.Type) bool {
 	}
 
 	if i.Operation == Push {
-		return data.IsType(i.Operand, kind)
+		// Coerce is only needed when the pushed value does NOT already match
+		// the target type.  If it already matches, emitting Coerce would be a
+		// redundant no-op at runtime.
+		return !data.IsType(i.Operand, kind)
 	}
 
 	return true

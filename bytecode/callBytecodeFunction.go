@@ -7,6 +7,8 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+const none = "<none>"
+
 // callBytecodeFunction sets up a new execution frame for a compiled Ego
 // function stored as a *ByteCode.  It is called from callByteCode whenever
 // the function pointer on the stack resolves to a *ByteCode value.
@@ -77,8 +79,8 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 	// Log the scope transition.  parentTable may be nil when a named function
 	// is called from a root-level context (FindNextScope returns nil);
 	// callFramePush still uses c.symbols as the parent in that case, so
-	// "<none>" accurately describes the absent enclosing scope.
-	parentName := "<none>"
+	// none accurately describes the absent enclosing scope.
+	parentName := none
 	if parentTable != nil {
 		parentName = parentTable.Name
 	}
