@@ -434,10 +434,12 @@ func (c *Context) SetExtensions(b bool) *Context {
 }
 
 // SetDebug turns debugging mode on or off for the current
-// context.
+// context. singleStep is set to the same value as b so that
+// enabling the debugger always starts in step mode and disabling
+// it clears step mode (CONTEXT-2 fix).
 func (c *Context) SetDebug(b bool) *Context {
 	c.debugging = b
-	c.singleStep = true
+	c.singleStep = b
 
 	return c
 }
@@ -589,7 +591,11 @@ func (c *Context) SetStepOver(b bool) *Context {
 // GetModuleName returns the name of the current module (typically
 // the function name or program name).
 func (c *Context) GetModuleName() string {
-	return c.bc.name
+	if c.bc != nil {
+		return c.bc.name
+	}
+
+	return defs.Main
 }
 
 // PopValue removes the top-most item from the stack and returns it.

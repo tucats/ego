@@ -1001,3 +1001,104 @@ case byte, int8, int32, int16, int, int64:
 
 The four `_CurrentlyBroken` tests were renamed (dropping the suffix) and
 updated to assert `nil` error and the correct boolean result.
+
+---
+
+## CONTEXT-1 — `GetModuleName` panics with a nil pointer dereference when `bc` is nil
+
+**Affected function:** `GetModuleName`  
+**File:** `bytecode/context.go`  
+**Risk:** Low — any caller that creates a context with a nil `ByteCode` and then
+calls `GetModuleName` panics  
+**Discovered by:** `Test_Context_GetModuleName_NilBytecode`  
+**Status: RESOLVED**
+
+### CONTEXT-1: Description
+
+`GetName` and `GetModuleName` both return the bytecode object's name, but they
+differed in nil safety:
+
+```go
+// GetName — nil-safe:
+func (c *Context) GetName() string {
+    if c.bc != nil {
+        return c.bc.name
+    }
+    return defs.Main
+}
+
+// GetModuleName — NOT nil-safe (CONTEXT-1 bug):
+func (c *Context) GetModuleName() string {
+    return c.bc.name   // ← panics when c.bc == nil
+}
+```
+
+`NewContext` accepts a nil `ByteCode` argument (it sets `c.bc = nil` in that
+case).  Any caller that subsequently invoked `GetModuleName` on such a context
+received an unrecoverable nil pointer dereference panic.
+
+### CONTEXT-1: Fix
+
+A nil guard identical to the one in `GetName` was added to `GetModuleName`:
+
+```go
+func (c *Context) GetModuleName() string {
+    if c.bc != nil {
+        return c.bc.name
+    }
+    return defs.Main
+}
+```
+
+`Test_Context_GetModuleName_NilBytecode` confirms the function returns
+`defs.Main` rather than panicking when the context has no bytecode object.
+
+---
+
+## CONTEXT-2 — `SetDebug` unconditionally sets `singleStep = true` regardless of argument
+
+**Affected function:** `SetDebug`  
+**File:** `bytecode/context.go`  
+**Risk:** Low — no runtime correctness impact (singleStep has no effect when
+`debugging` is false), but semantically unexpected and masks explicit calls
+to `SetSingleStep(false)`  
+**Discovered by:** `Test_Context_SetDebug_False_ClearsBothFlags`  
+**Status: RESOLVED**
+
+### CONTEXT-2: Description
+
+`SetDebug(b)` set `c.debugging = b` but always assigned `c.singleStep = true`,
+regardless of `b`:
+
+```go
+func (c *Context) SetDebug(b bool) *Context {
+    c.debugging = b
+    c.singleStep = true   // ← unconditional; was the bug
+    return c
+}
+```
+
+Calling `SetDebug(false)` left `singleStep` enabled.  If a caller explicitly
+disabled step mode with `SetSingleStep(false)` and then called `SetDebug(false)`
+(e.g., to temporarily pause the debugger), `singleStep` was silently reset to
+`true`.  Re-enabling debugging with `SetDebug(true)` would always start in step
+mode, making it impossible to re-enter the debugger in run-free (non-step) mode
+without an explicit `SetSingleStep(false)` call immediately afterward.
+
+### CONTEXT-2: Fix
+
+`singleStep` is now assigned the same value as `b`, mirroring the pattern of
+every other boolean setter in the file:
+
+```go
+func (c *Context) SetDebug(b bool) *Context {
+    c.debugging = b
+    c.singleStep = b   // enable step mode when debugging on; clear when off
+    return c
+}
+```
+
+`Test_Context_SetDebug_True_SetsBothFlags` confirms that `SetDebug(true)` sets
+both `debugging` and `singleStep` to `true`.
+`Test_Context_SetDebug_False_ClearsBothFlags` confirms that `SetDebug(false)`
+clears both fields.
