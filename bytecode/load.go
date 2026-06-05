@@ -21,9 +21,11 @@ func loadByteCode(c *Context, i any) error {
 	return c.push(data.UnwrapConstant(v))
 }
 
-// explodeByteCode implements Explode. This accepts a struct on the top of
-// the stack, and creates local variables for each of the members of the
-// struct by their name.
+// explodeByteCode implements Explode. This accepts a *data.Map on the top of
+// the stack, and creates local variables for each of the key-value pairs in
+// the map.  The map must have string keys; non-string keys are rejected with
+// ErrWrongMapKeyType.  After creating the variables, a bool is pushed
+// indicating whether the map was empty (true = empty, false = had entries).
 func explodeByteCode(c *Context, i any) error {
 	var (
 		err error
@@ -32,7 +34,7 @@ func explodeByteCode(c *Context, i any) error {
 
 	v, err = c.Pop()
 	if err != nil {
-		return err
+		return c.runtimeError(err)
 	}
 
 	if isStackMarker(v) {

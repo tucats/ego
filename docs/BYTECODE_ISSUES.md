@@ -1629,6 +1629,164 @@ still produce the correct bool results after the dead code was removed.
 
 ---
 
+## LOAD-1 — `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration
+
+**Affected function:** `explodeByteCode`  
+**File:** `bytecode/load.go`  
+**Risk:** Low — stack-underflow errors from `explodeByteCode` lacked the
+module name and source line that all other runtime errors carry; correctness
+was not affected  
+**Discovered by:** `Test_explodeByteCode_StackUnderflow` in `bytecode/load_test.go`  
+**Status: RESOLVED**
+
+### LOAD-1: Original behavior
+
+Every error returned by a bytecode instruction function is expected to be
+decorated via `c.runtimeError(err)`, which attaches the current module name
+and source line before returning the error to the caller.  This annotation
+lets the Ego runtime (and the user-facing stack trace) identify exactly where
+in the program the error occurred.
+
+`explodeByteCode` returned the raw error from `c.Pop()` directly:
+
+```go
+// Original (buggy):
+v, err = c.Pop()
+if err != nil {
+    return err   // ← raw; no module/line annotation
+}
+```
+
+When the stack was empty, `c.Pop()` returned `ErrStackUnderflow`.  The error
+reached the caller without any location information, inconsistent with every
+other error path in `explodeByteCode` and the rest of the bytecode package.
+
+This is the same pattern documented in COMPARE-4 for the comparison operators.
+
+### LOAD-1: Fix
+
+The `return err` was changed to `return c.runtimeError(err)`:
+
+```go
+// Fixed:
+v, err = c.Pop()
+if err != nil {
+    return c.runtimeError(err)   // ← decorated with module/line
+}
+```
+
+`Test_explodeByteCode_StackUnderflow` in `bytecode/load_test.go` confirms
+that `ErrStackUnderflow` is returned when the stack is empty and documents
+the expected behavior after the fix.
+
+---
+
+## LOAD-2 — `explodeByteCode` doc comment incorrectly described the operand as "a struct"
+
+**Affected function:** `explodeByteCode`  
+**File:** `bytecode/load.go`  
+**Risk:** None — documentation only; behavior was correct  
+**Discovered by:** `Test_explodeByteCode_NonMapStruct` in `bytecode/load_test.go`  
+**Status: RESOLVED**
+
+### LOAD-2: Original behavior
+
+The function-level comment on `explodeByteCode` read:
+
+```go
+// explodeByteCode implements Explode. This accepts a struct on the top of
+// the stack, and creates local variables for each of the members of the
+// struct by their name.
+```
+
+The word "struct" is incorrect.  The implementation unconditionally asserts
+the popped value as `*data.Map`:
+
+```go
+if m, ok := v.(*data.Map); ok {
+```
+
+A `*data.Struct` on the stack fails this assertion and falls through to the
+`else` branch, returning `ErrInvalidType`.  The original comment would lead
+a reader to believe that passing a struct to the Explode opcode was valid.
+
+`Test_explodeByteCode_NonMapStruct` was added as a regression anchor: it
+confirms that a `*data.Struct` is rejected with `ErrInvalidType` and documents
+the gap between the comment and the implementation.
+
+### LOAD-2: Fix
+
+The comment was rewritten to describe the actual behavior accurately:
+
+```go
+// explodeByteCode implements Explode. This accepts a *data.Map on the top of
+// the stack, and creates local variables for each of the key-value pairs in
+// the map.  The map must have string keys; non-string keys are rejected with
+// ErrWrongMapKeyType.  After creating the variables, a bool is pushed
+// indicating whether the map was empty (true = empty, false = had entries).
+```
+
+---
+
+## LOAD-3 — `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases
+
+**Affected test:** `Test_explodeByteCode` in `bytecode/data_test.go`  
+**File:** `bytecode/data_test.go`  
+**Risk:** Low — test coverage gap only; the production function was correct  
+**Discovered by:** code review of `data_test.go` during the `load.go` audit  
+**Status: DOCUMENTED**
+
+### LOAD-3: Description
+
+`Test_explodeByteCode` is a table-driven test with four cases:
+
+```text
+1. "simple map explosion"   — no error expected
+2. "wrong map key type"     — error expected
+3. "not a map"              — error expected
+4. "empty stack"            — error expected
+```
+
+The test loop does **not** use `t.Run` subtests.  Instead it calls
+`explodeByteCode` directly and compares errors inline.  When an expected
+error is matched, the code uses a bare `return` statement:
+
+```go
+for _, tt := range tests {
+    // ... setup ...
+    err := explodeByteCode(c, nil)
+    if err != nil {
+        // ...
+        if e1 == e2 {
+            return   // ← exits Test_explodeByteCode entirely!
+        }
+        t.Errorf(...)
+    }
+    // ... check want values ...
+}
+```
+
+When case 2 ("wrong map key type") produces its expected error and `e1 == e2`
+is true, the bare `return` exits `Test_explodeByteCode` rather than just
+skipping the current loop iteration.  Cases 3 and 4 are **never executed**.
+
+The same pattern (`return` inside a `t.Run` closure) is correct and exits
+only the sub-test — but here there is no `t.Run` wrapper, so `return`
+terminates the outer function.
+
+### LOAD-3: Non-fix rationale
+
+The comprehensive new tests in `bytecode/load_test.go` cover the missing
+paths (non-map type, stack underflow, stack marker) using the standard
+`newTestContext` helper pattern, so the coverage gap is now filled.
+
+The original `Test_explodeByteCode` in `data_test.go` is left as-is to avoid
+churn in a file that is outside the scope of this audit.  A future cleanup
+should either add `t.Run` wrappers (making each case a named sub-test) or replace the
+bare `return` with `continue` to let the loop reach cases 3 and 4.
+
+---
+
 ## FLOW-1 — `Test_branchFalseByteCode` called `branchTrueByteCode` for its invalid-address sub-case
 
 **Affected test:** `Test_branchFalseByteCode` in `bytecode/flow_test.go`  
