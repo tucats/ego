@@ -65,8 +65,10 @@ func deferByteCode(c *Context, i any) error {
 	// included receiver values. We need to capture these values and store them
 	// in the defer stack object.
 	if c.deferThisSize > 0 && (c.deferThisSize < len(c.receiverStack)) {
-		// Capture the slice of the this stack since we started the defer.
-		receivers = c.receiverStack[len(c.receiverStack)-c.deferThisSize:]
+		// Capture every receiver added SINCE deferStart — those start at index
+		// deferThisSize.  The previous formula (len-deferThisSize) was wrong
+		// when the number of new receivers differed from deferThisSize (DEFER-1).
+		receivers = c.receiverStack[c.deferThisSize:]
 		c.receiverStack = c.receiverStack[:c.deferThisSize]
 	}
 
