@@ -1102,3 +1102,172 @@ func (c *Context) SetDebug(b bool) *Context {
 both `debugging` and `singleStep` to `true`.
 `Test_Context_SetDebug_False_ClearsBothFlags` confirms that `SetDebug(false)`
 clears both fields.
+
+---
+
+## CREATE-1 — `makeArrayByteCode` called `result.Set` twice per element
+
+**Affected function:** `makeArrayByteCode`  
+**File:** `bytecode/create.go`  
+**Risk:** Low — sets the same array index to the same value twice; harmless but
+wasteful and obscures intent  
+**Discovered by:** code audit during `create_test.go` comprehensive review  
+**Status: RESOLVED**
+
+### CREATE-1: Description
+
+Inside the element-population loop in `makeArrayByteCode`, a copy-paste error
+caused `result.Set(count-i-1, value)` to be called twice in a row:
+
+```go
+if err := result.Set(count-i-1, value); err != nil {
+    return err
+}
+
+if err = result.Set(count-i-1, value); err != nil {   // ← duplicate
+    return err
+}
+```
+
+Both calls write the same index with the same value.  Because array Set is
+idempotent for the same index/value pair, the output was always correct —
+but the second call added unnecessary overhead and the divergent `:=` vs `=`
+in the two `if` initializers silently wrote into different `err` scopes,
+which was confusing.
+
+### CREATE-1: Fix
+
+The second `result.Set` call and its surrounding `if` block were removed.  A
+comment was added to the remaining call explaining the reverse-index formula:
+
+```go
+// result[count-i-1] places each popped element at its correct zero-based index
+// because the compiler pushes elements left-to-right (rightmost element on top).
+if err := result.Set(count-i-1, value); err != nil {
+    return err
+}
+```
+
+---
+
+## CREATE-2 — `addMissingFields` inverted error check skipped coerced-value write-back
+
+**Affected function:** `addMissingFields`  
+**File:** `bytecode/create.go`  
+**Risk:** Medium — when a struct field has a coercible but mismatched type, the
+coerced value was silently discarded and the field retained its original type  
+**Discovered by:** code audit during `create_test.go` comprehensive review  
+**Status: RESOLVED**
+
+### CREATE-2: Description
+
+`addMissingFields` coerces existing field values to the type declared in the
+struct model.  The post-coercion error check was inverted:
+
+```go
+existingValue, err = data.Coerce(existingValue, fieldModel)
+if err == nil {
+    return err   // ← returned nil on SUCCESS, exiting without updating structMap
+}
+
+structMap[fieldName] = existingValue  // ← only reached on FAILURE
+```
+
+When coercion succeeded (`err == nil`):
+
+- The function returned `nil` (no error) before writing the coerced value back.
+- `structMap[fieldName]` retained the original pre-coercion value.
+
+When coercion failed (`err != nil`):
+
+- The function fell through to `structMap[fieldName] = existingValue`,
+  storing the **un-coerced** value.
+
+### CREATE-2: Accessibility constraint
+
+The coercion block is guarded by `ft.Kind() != data.UndefinedKind`.
+`data.Type.Field()` returns `UndefinedType` (kind = `UndefinedKind`) for any
+type that is not a raw `StructKind` — including `TypeDefinition` wrappers
+(kind = `TypeKind`).  The coercion path is therefore only reachable when the
+struct model was created from a raw `data.StructureType`, not from a named
+`data.TypeDefinition`.  The test uses a raw `StructureType` to ensure the path
+is exercised.
+
+### CREATE-2: Fix
+
+The condition was corrected from `err == nil` to `err != nil`:
+
+```go
+existingValue, err = data.Coerce(existingValue, fieldModel)
+if err != nil {
+    return err   // bail out on failure
+}
+
+structMap[fieldName] = existingValue  // reached on success — stores coerced value
+```
+
+`Test_addMissingFields_FieldTypeCoercion_CREATE2` confirms that a `float64`
+value in a field declared as `int` is coerced to `int` and written back.
+`float64` is used rather than `int32` because `data.TypeOf(int32).IsType(IntType)`
+returns `true` in Ego's type system (both are integer kinds), which would bypass
+the coercion block entirely.
+
+---
+
+## CREATE-3 — `makeArrayByteCode` element-pop loop swallowed stack underflow silently
+
+**Affected function:** `makeArrayByteCode`  
+**File:** `bytecode/create.go`  
+**Risk:** Low — a compiler that emits the wrong number of Push instructions
+before MakeArray would produce a silently zeroed array instead of a runtime
+error  
+**Discovered by:** `Test_makeArrayByteCode_ElementStackUnderflow`  
+**Status: RESOLVED**
+
+### CREATE-3: Description
+
+The element-population loop in `makeArrayByteCode` wrapped each `c.Pop()` in an
+`if err == nil` guard:
+
+```go
+for i := 0; i < count; i++ {
+    if value, err := c.Pop(); err == nil {
+        // ... set element ...
+    }
+    // If Pop() failed, the body was silently skipped — no error returned.
+}
+```
+
+When the stack ran out of elements before all `count` slots were filled,
+`c.Pop()` returned `ErrStackUnderflow`.  The `err == nil` condition was false,
+the loop body was skipped, and the unset element retained the zero value of the
+base type.  After the loop the partially-initialized array was pushed and `nil`
+was returned, making the underflow completely invisible.
+
+This was in contrast to `arrayByteCode` (the `Array` opcode), whose element loop
+correctly propagated `Pop` errors immediately.
+
+Note: a `StackMarker` in the element position was **not** affected by this bug —
+`Pop()` returns a `StackMarker` successfully (no error), and
+`coerceConstantArrayInitializer` then detects it with `isStackMarker` and returns
+`ErrFunctionReturnedVoid`.  The silent-skip only affected genuine stack underflow.
+
+### CREATE-3: Fix
+
+The `if err == nil` guard was replaced with an explicit two-statement pop and
+immediate error return, matching the pattern used in `arrayByteCode`:
+
+```go
+for i := 0; i < count; i++ {
+    // Pop the next element value.  Any error (including stack underflow) is
+    // returned immediately — CREATE-3 fix.
+    value, err := c.Pop()
+    if err != nil {
+        return err
+    }
+    // ... set element ...
+}
+```
+
+`Test_makeArrayByteCode_ElementStackUnderflow` now asserts `ErrStackUnderflow`
+when only the base type is on the stack and count=1 requires one element pop.

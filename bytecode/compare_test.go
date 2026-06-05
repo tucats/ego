@@ -401,6 +401,7 @@ func Test_notEqualByteCode_ArrayEqualValues(t *testing.T) {
 func Test_notEqualByteCode_MapNotEqual(t *testing.T) {
 	mapA := data.NewMap(data.StringType, data.IntType)
 	mapB := data.NewMap(data.StringType, data.IntType)
+	
 	mapA.SetAlways("key", 1)
 	mapB.SetAlways("key", 2) // different value
 

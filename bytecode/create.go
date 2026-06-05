@@ -59,27 +59,31 @@ func makeArrayByteCode(c *Context, i any) error {
 	result := data.NewArray(baseType, count)
 
 	for i := 0; i < count; i++ {
-		if value, err := c.Pop(); err == nil {
-			// If we are initializing any integer or float array, we can coerce
-			// value from another integer type if we are in relaxed or dynamic
-			// typing.
-			// If the base type isn't an interface type, then we should try to coerce the
-			// value to the base type.
-			if baseType.Kind() != data.InterfaceKind {
-				value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
-				if err != nil {
-					return err
-				}
-			}
+		// Pop the next element value.  Any error (including stack underflow) is
+		// returned immediately.  The original code used an `if err == nil` guard
+		// here, which silently swallowed Pop errors and produced a zero-filled
+		// element instead of returning ErrStackUnderflow — CREATE-3 fix.
+		value, err := c.Pop()
+		if err != nil {
+			return err
+		}
 
-			// Set the value in the array.
-			if err := result.Set(count-i-1, value); err != nil {
+		// If we are initializing any integer or float array, we can coerce
+		// the value from another integer type if we are in relaxed or dynamic
+		// typing.  For non-interface base types try to coerce to the base type.
+		if baseType.Kind() != data.InterfaceKind {
+			value, err = coerceConstantArrayInitializer(c, baseType, value, isInt, isFloat)
+			if err != nil {
 				return err
 			}
+		}
 
-			if err = result.Set(count-i-1, value); err != nil {
-				return err
-			}
+		// Store the value at its correct zero-based index.  The array is built
+		// in reverse because the compiler pushes elements left-to-right, so the
+		// rightmost element ends up on top of the stack (popped first).
+		// Subtracting from count maps the pop order back to the natural order.
+		if err := result.Set(count-i-1, value); err != nil {
+			return err
 		}
 	}
 
@@ -391,8 +395,14 @@ func addMissingFields(model *data.Struct, structMap map[string]any, c *Context) 
 				if ft.Kind() != data.UndefinedKind {
 					fieldModel := data.InstanceOfType(ft)
 					if fieldModel != nil {
+						// Coerce the existing value to the declared field type.
+						// CREATE-2 fix: the original condition was `err == nil`
+						// which caused the function to return nil (no error) on
+						// success, leaving structMap un-updated with the coerced
+						// value.  The correct check is `err != nil`: bail out on
+						// failure, and fall through to update structMap on success.
 						existingValue, err = data.Coerce(existingValue, fieldModel)
-						if err == nil {
+						if err != nil {
 							return err
 						}
 

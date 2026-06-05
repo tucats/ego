@@ -110,16 +110,18 @@ func Test_argCheckByteCode_SliceOp2_MinEqualsMax(t *testing.T) {
 // Test_argCheckByteCode_SliceOp3_StringName verifies that the 3-element form
 // sets c.module to the supplied function name string.
 func Test_argCheckByteCode_SliceOp3_StringName(t *testing.T) {
+	const funcName = "myFunc"
+
 	tc := newTestContext(t).
 		withArgList("x", "y")
 
-	err := argCheckByteCode(tc.ctx, []any{2, 2, "myFunc"})
+	err := argCheckByteCode(tc.ctx, []any{2, 2, funcName})
 
 	tc.assertNoError(err)
 
 	// The side effect: c.module must be set to the function name.
-	if tc.ctx.module != "myFunc" {
-		t.Errorf("c.module: got %q, want %q", tc.ctx.module, "myFunc")
+	if tc.ctx.module != funcName {
+		t.Errorf("c.module: got %q, want %q", tc.ctx.module, funcName)
 	}
 }
 
@@ -455,7 +457,7 @@ func Test_argCheckByteCode_NegativeMax_ViaSlice(t *testing.T) {
 }
 
 // Test_argCheckByteCode_NegativeMax_ViaIntSlice verifies the same negative-max
-// behaviour via the []int operand form.
+// behavior via the []int operand form.
 func Test_argCheckByteCode_NegativeMax_ViaIntSlice(t *testing.T) {
 	tc := newTestContext(t).
 		withArgList(1, 2, 3)

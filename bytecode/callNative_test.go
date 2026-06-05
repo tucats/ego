@@ -343,6 +343,8 @@ func Test_convertToNative_UInt64(t *testing.T) {
 // Test_convertToNative_MultipleParams verifies that multiple parameters are
 // all converted in a single call.
 func Test_convertToNative_MultipleParams(t *testing.T) {
+	const hello = "hello"
+
 	tc := newTestContext(t)
 	fn := nativeFn(
 		data.Parameter{Name: "n", Type: data.IntType},
@@ -350,12 +352,12 @@ func Test_convertToNative_MultipleParams(t *testing.T) {
 		data.Parameter{Name: "f", Type: data.Float64Type},
 	)
 
-	got, err := convertToNative(tc.ctx, fn, []any{42, "hello", 3.14})
+	got, err := convertToNative(tc.ctx, fn, []any{42, hello, 3.14})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got[0] != 42 || got[1] != "hello" || got[2] != 3.14 {
+	if got[0] != 42 || got[1] != hello || got[2] != 3.14 {
 		t.Errorf("multi-param conversion failed: %v", got)
 	}
 }
@@ -701,13 +703,15 @@ func Test_convertFromNative_ScalarInt(t *testing.T) {
 // Test_convertFromNative_ScalarString verifies that a plain string result is
 // pushed onto the stack.
 func Test_convertFromNative_ScalarString(t *testing.T) {
+		const hello = "hello"
+
 	tc := newTestContext(t)
 	dp := nativeFnReturning(data.StringType)
 
-	err := convertFromNative(tc.ctx, dp, "hello")
+	err := convertFromNative(tc.ctx, dp, hello)
 
 	tc.assertNoError(err)
-	tc.assertTopStack("hello")
+	tc.assertTopStack(hello)
 }
 
 // Test_convertFromNative_TimeDuration verifies that a time.Duration result is
@@ -940,14 +944,16 @@ func Test_CallDirect_SingleReturn(t *testing.T) {
 // Test_CallDirect_StringFunction verifies a string-in, string-out function.
 // strings.TrimSpace("  hello  ") should return "hello".
 func Test_CallDirect_StringFunction(t *testing.T) {
+		const hello = "hello"
+
 	result, err := CallDirect(strings.TrimSpace, "  hello  ")
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result != "hello" {
-		t.Errorf("TrimSpace: got %q, want %q", result, "hello")
+	if result != hello {
+		t.Errorf("TrimSpace: got %q, want %q", result, hello)
 	}
 }
 

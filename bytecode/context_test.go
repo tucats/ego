@@ -259,7 +259,9 @@ func Test_Context_SetGlobal_StoresInRootTable(t *testing.T) {
 	// Root() would traverse past our test table to the package root.
 	root := symbols.NewChildSymbolTable("root", nil)
 	child := symbols.NewChildSymbolTable("child", root)
+	
 	root.SetAlways("globalVar", 0)
+
 	ctx := NewContext(child, New("test"))
 
 	if err := ctx.SetGlobal("globalVar", 99); err != nil {
