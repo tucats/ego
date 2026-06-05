@@ -245,6 +245,7 @@ termgen
 testapp
 testcount
 testhelpers
+Thanor
 thecurrent
 thisandthat
 timestamp

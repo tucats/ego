@@ -26,7 +26,7 @@ func lessThanOrEqualByteCode(c *Context, i any) error {
 	// array of values or on the stack.
 	v1, v2, err := getComparisonTerms(c, i)
 	if err != nil {
-		return err
+		return c.runtimeError(err)
 	}
 
 	if v1 == nil || v2 == nil {
@@ -55,7 +55,7 @@ func lessThanOrEqualByteCode(c *Context, i any) error {
 			// Otherwise, normalize the types to the same type.
 			v1, v2, err = data.Normalize(v1, v2)
 			if err != nil {
-				return err
+				return c.runtimeError(err)
 			}
 		}
 

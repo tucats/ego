@@ -812,3 +812,660 @@ func Test_greaterThanOrEqualByteCode_StrictMode_Match(t *testing.T) {
 	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
 	tc.assertTopStack(true)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 9: Additional notEqualByteCode tests — time, float32, int variants,
+//            uint variants, bool-equal, struct, and stack underflow
+//
+// notEqualByteCode has a richer outer switch than the ordering operators: it
+// handles time.Duration, time.Time, *errors.Error, error, and all composite
+// pointer types before falling through to the generic scalar default.  These
+// tests exercise every branch that was not yet reached by Section 2.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_notEqualByteCode_TimeDurationEqual verifies that two equal time.Duration
+// values return false from != (they are equal, so "not equal" is false).
+//
+// time.Duration is handled by the outer switch's explicit `case time.Duration:`
+// branch, not by the generic scalar path.
+func Test_notEqualByteCode_TimeDurationEqual(t *testing.T) {
+	d := 5 * time.Second
+	tc := newTestContext(t).withStack(d, d)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_TimeDurationNotEqual verifies that two different
+// time.Duration values return true from !=.
+func Test_notEqualByteCode_TimeDurationNotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(time.Second, time.Minute)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_TimeDurationVsNonDuration verifies that comparing a
+// time.Duration on the left with a non-Duration value on the right returns an
+// error.  The `case time.Duration:` branch asserts v2 is also a Duration; when
+// that fails it returns ErrInvalidTypeForOperation.
+func Test_notEqualByteCode_TimeDurationVsNonDuration(t *testing.T) {
+	tc := newTestContext(t).withStack(time.Second, 42)
+
+	// We expect an error, not a boolean result.
+	if err := notEqualByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for time.Duration != int, got nil")
+	}
+}
+
+// Test_notEqualByteCode_TimeTimeEqual verifies that two equal time.Time values
+// return false from !=.
+func Test_notEqualByteCode_TimeTimeEqual(t *testing.T) {
+	ts := time.Date(2024, 6, 1, 12, 0, 0, 0, time.UTC)
+	tc := newTestContext(t).withStack(ts, ts)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_TimeTimeNotEqual verifies that two different time.Time
+// values return true from !=.
+func Test_notEqualByteCode_TimeTimeNotEqual(t *testing.T) {
+	t1 := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	t2 := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	tc := newTestContext(t).withStack(t1, t2)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Float32Equal verifies that two equal float32 values
+// return false from !=.  float32 is handled in the inner switch after the outer
+// switch falls through to `default:`.
+func Test_notEqualByteCode_Float32Equal(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(3.14), float32(3.14))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_Float32NotEqual verifies that different float32 values
+// return true from !=.
+func Test_notEqualByteCode_Float32NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(1.0), float32(2.0))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Int8NotEqual verifies that different int8 values return
+// true from !=.  int8 is handled in the `case byte, int32, int8, int16, int, int64:`
+// branch of the inner switch.
+func Test_notEqualByteCode_Int8NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int8(10), int8(20))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Int16NotEqual verifies int16 inequality.
+func Test_notEqualByteCode_Int16NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int16(100), int16(200))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Int32Equal verifies that equal int32 values return false
+// from !=.
+func Test_notEqualByteCode_Int32Equal(t *testing.T) {
+	tc := newTestContext(t).withStack(int32(500), int32(500))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_Int64NotEqual verifies int64 inequality.
+func Test_notEqualByteCode_Int64NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int64(9999), int64(1000))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Uint16NotEqual verifies uint16 inequality.
+// uint16 is handled in the `case uint16, uint32, uint, uint64:` branch of the
+// inner switch.
+func Test_notEqualByteCode_Uint16NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint16(10), uint16(20))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_Uint32NotEqual verifies uint32 inequality.
+func Test_notEqualByteCode_Uint32NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint32(100), uint32(200))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_BoolEqual verifies that two equal bool values return
+// false from !=.  bool is handled in the inner switch's `case bool:` branch.
+func Test_notEqualByteCode_BoolEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(true, true)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_StructEqual verifies that two *data.Struct values with
+// identical contents return false from !=.  The `case *data.Struct:` branch
+// uses reflect.DeepEqual for comparison (COMPARE-2 fixed this to use pointer
+// types instead of value types).
+func Test_notEqualByteCode_StructEqual(t *testing.T) {
+	// Build two structs with the same type and the same field value.
+	// reflect.DeepEqual compares both the type pointer and the data map, so we
+	// use identical construction sequences to produce equal structs.
+	structType := data.StructureType(data.Field{Name: "x", Type: data.IntType})
+	s1 := data.NewStruct(structType)
+	s1.SetAlways("x", 1)
+	s2 := data.NewStruct(structType)
+	s2.SetAlways("x", 1)
+
+	tc := newTestContext(t).withStack(s1, s2)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	// Same contents → they are equal → != returns false.
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_StructNotEqual verifies that two *data.Struct values
+// with different field contents return true from !=.
+func Test_notEqualByteCode_StructNotEqual(t *testing.T) {
+	structType := data.StructureType(data.Field{Name: "x", Type: data.IntType})
+	s1 := data.NewStruct(structType)
+	s1.SetAlways("x", 1)
+	s2 := data.NewStruct(structType)
+	s2.SetAlways("x", 2) // different value
+
+	tc := newTestContext(t).withStack(s1, s2)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	// Different contents → not equal → != returns true.
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_StackUnderflow verifies that a stack underflow returns
+// an error.  Pushing only one value means the second Pop (for v1) will fail.
+//
+// Before the COMPARE-4 fix, this error was returned raw (without module/line
+// decoration).  After the fix, c.runtimeError wraps it consistently with all
+// other error returns in the comparison operators.
+func Test_notEqualByteCode_StackUnderflow(t *testing.T) {
+	tc := newTestContext(t).withStack(42) // only one item — second pop fails
+
+	tc.assertError(notEqualByteCode(tc.ctx, nil), errors.ErrStackUnderflow)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 10: Additional greaterThanByteCode tests — float32, additional int
+//             and uint variants, composite-type rejection, nil, and underflow
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_greaterThanByteCode_Float32Greater verifies that a larger float32 is
+// reported as greater.  float32 has its own case in the inner switch because
+// float32 and float64 are distinct Go types — they don't mix after Normalize.
+func Test_greaterThanByteCode_Float32Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(9.0), float32(1.0))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_Float32NotGreater verifies that a smaller float32
+// returns false from >.
+func Test_greaterThanByteCode_Float32NotGreater(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(1.0), float32(9.0))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_greaterThanByteCode_Int16Greater verifies int16 greater-than.  int16 is
+// included in the `case byte, int8, int16, int32, int, int64:` branch of the
+// inner switch via data.Int64 conversion.
+func Test_greaterThanByteCode_Int16Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(int16(200), int16(100))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_Int32Greater verifies int32 greater-than.
+func Test_greaterThanByteCode_Int32Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(int32(1000), int32(500))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_Int64Greater verifies int64 greater-than.
+func Test_greaterThanByteCode_Int64Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(int64(9999), int64(1))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_Uint16Greater verifies uint16 greater-than.  uint16
+// is included in the `case uint16, uint32, uint, uint64:` branch and compared
+// via data.UInt64.
+func Test_greaterThanByteCode_Uint16Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(uint16(50), uint16(10))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_Uint32Greater verifies uint32 greater-than.
+func Test_greaterThanByteCode_Uint32Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(uint32(200), uint32(100))
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_StructInvalid verifies that comparing two struct
+// values with > returns an error.  The outer switch matches `*data.Struct` and
+// returns ErrInvalidType before any comparison is attempted.
+func Test_greaterThanByteCode_StructInvalid(t *testing.T) {
+	s := data.NewStructFromMap(map[string]any{"x": 1})
+	tc := newTestContext(t).withStack(s, s)
+
+	if err := greaterThanByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for struct > struct, got nil")
+	}
+}
+
+// Test_greaterThanByteCode_ArrayInvalid verifies that comparing two array values
+// with > returns an error.
+func Test_greaterThanByteCode_ArrayInvalid(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withStack(arr, arr)
+
+	if err := greaterThanByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for array > array, got nil")
+	}
+}
+
+// Test_greaterThanByteCode_NilReturnsFalse verifies that nil > nil returns
+// false.  The nil guard fires before the type switch: when either operand is
+// nil the function pushes false and returns without error.
+func Test_greaterThanByteCode_NilReturnsFalse(t *testing.T) {
+	tc := newTestContext(t).withStack(nil, nil)
+
+	tc.assertNoError(greaterThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_greaterThanByteCode_StackUnderflow verifies ErrStackUnderflow when only
+// one value is on the stack.
+//
+// After the COMPARE-4 fix, the error from getComparisonTerms is now wrapped
+// with c.runtimeError (matching greaterThanByteCode's existing behavior), so
+// all five ordering operators are consistent.
+func Test_greaterThanByteCode_StackUnderflow(t *testing.T) {
+	tc := newTestContext(t).withStack(42)
+
+	tc.assertError(greaterThanByteCode(tc.ctx, nil), errors.ErrStackUnderflow)
+}
+
+// Test_greaterThanByteCode_StrictMode_TypeMismatch verifies that comparing an
+// int with a float64 in strict mode returns ErrTypeMismatch.
+func Test_greaterThanByteCode_StrictMode_TypeMismatch(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withStack(10, float64(3))
+
+	tc.assertError(greaterThanByteCode(tc.ctx, nil), errors.ErrTypeMismatch)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 11: Additional lessThanByteCode tests — int variants, uint variants,
+//             composite-type rejection, underflow, and numeric promotion
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_lessThanByteCode_Int16Less verifies int16 less-than.
+func Test_lessThanByteCode_Int16Less(t *testing.T) {
+	tc := newTestContext(t).withStack(int16(10), int16(20))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanByteCode_Int32Less verifies int32 less-than.
+func Test_lessThanByteCode_Int32Less(t *testing.T) {
+	tc := newTestContext(t).withStack(int32(100), int32(200))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanByteCode_Int64Less verifies int64 less-than.
+func Test_lessThanByteCode_Int64Less(t *testing.T) {
+	tc := newTestContext(t).withStack(int64(1), int64(9999))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanByteCode_Uint16Less verifies uint16 less-than.
+func Test_lessThanByteCode_Uint16Less(t *testing.T) {
+	tc := newTestContext(t).withStack(uint16(5), uint16(10))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanByteCode_Uint64Less verifies uint64 less-than.
+func Test_lessThanByteCode_Uint64Less(t *testing.T) {
+	tc := newTestContext(t).withStack(uint64(1), uint64(1000))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanByteCode_StructInvalid verifies that comparing two struct values
+// with < returns an error.
+func Test_lessThanByteCode_StructInvalid(t *testing.T) {
+	s := data.NewStructFromMap(map[string]any{"x": 1})
+	tc := newTestContext(t).withStack(s, s)
+
+	if err := lessThanByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for struct < struct, got nil")
+	}
+}
+
+// Test_lessThanByteCode_ArrayInvalid verifies that comparing two array values
+// with < returns an error.
+func Test_lessThanByteCode_ArrayInvalid(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withStack(arr, arr)
+
+	if err := lessThanByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for array < array, got nil")
+	}
+}
+
+// Test_lessThanByteCode_StackUnderflow verifies ErrStackUnderflow when fewer
+// than two values are on the stack.
+//
+// Before the COMPARE-4 fix, this error was returned raw from getComparisonTerms
+// without module/line decoration.  After the fix, c.runtimeError is called,
+// making lessThanByteCode consistent with greaterThanByteCode.
+func Test_lessThanByteCode_StackUnderflow(t *testing.T) {
+	tc := newTestContext(t).withStack(42)
+
+	tc.assertError(lessThanByteCode(tc.ctx, nil), errors.ErrStackUnderflow)
+}
+
+// Test_lessThanByteCode_NumericPromotion verifies that in dynamic mode an int
+// and a float64 are promoted to the same type by data.Normalize before
+// comparison.  1 < 2.5 should return true even though the operands have
+// different Go types.
+func Test_lessThanByteCode_NumericPromotion(t *testing.T) {
+	// v1 = int(1), v2 = float64(2.5); Normalize promotes v1 to float64(1.0).
+	tc := newTestContext(t).withStack(1, float64(2.5))
+
+	tc.assertNoError(lessThanByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 12: Additional lessThanOrEqualByteCode tests — int variants, uint
+//             variants, composite rejection, nil, float32, underflow, strict
+//             mode mismatch, and numeric promotion
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_lessThanOrEqualByteCode_Int16LessEqual verifies int16 <=.
+func Test_lessThanOrEqualByteCode_Int16LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int16(10), int16(20))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanOrEqualByteCode_Int32LessEqual verifies int32 <=.
+func Test_lessThanOrEqualByteCode_Int32LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int32(5), int32(5))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true) // equal → still satisfies <=
+}
+
+// Test_lessThanOrEqualByteCode_Int64LessEqual verifies int64 <=.
+func Test_lessThanOrEqualByteCode_Int64LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int64(100), int64(200))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanOrEqualByteCode_Uint32LessEqual verifies uint32 <=.
+// Section 7 tests uint16; this fills the uint32 gap.
+func Test_lessThanOrEqualByteCode_Uint32LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint32(3), uint32(7))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanOrEqualByteCode_Uint64LessEqual verifies uint64 <=.
+func Test_lessThanOrEqualByteCode_Uint64LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint64(50), uint64(50))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanOrEqualByteCode_StructInvalid verifies that comparing two struct
+// values with <= returns an error.
+func Test_lessThanOrEqualByteCode_StructInvalid(t *testing.T) {
+	s := data.NewStructFromMap(map[string]any{"x": 1})
+	tc := newTestContext(t).withStack(s, s)
+
+	if err := lessThanOrEqualByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for struct <= struct, got nil")
+	}
+}
+
+// Test_lessThanOrEqualByteCode_ArrayInvalid verifies that comparing two array
+// values with <= returns an error.
+func Test_lessThanOrEqualByteCode_ArrayInvalid(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withStack(arr, arr)
+
+	if err := lessThanOrEqualByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for array <= array, got nil")
+	}
+}
+
+// Test_lessThanOrEqualByteCode_StackUnderflow verifies ErrStackUnderflow when
+// fewer than two values are on the stack.
+//
+// After the COMPARE-4 fix, the raw error from getComparisonTerms is now wrapped
+// with c.runtimeError, consistent with greaterThanByteCode.
+func Test_lessThanOrEqualByteCode_StackUnderflow(t *testing.T) {
+	tc := newTestContext(t).withStack(42)
+
+	tc.assertError(lessThanOrEqualByteCode(tc.ctx, nil), errors.ErrStackUnderflow)
+}
+
+// Test_lessThanOrEqualByteCode_NilReturnsFalse verifies that nil <= nil returns
+// false.  When either operand is nil the function pushes false immediately
+// without entering the type switch.
+func Test_lessThanOrEqualByteCode_NilReturnsFalse(t *testing.T) {
+	tc := newTestContext(t).withStack(nil, nil)
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_lessThanOrEqualByteCode_Float32LessEqual verifies float32 <=.  float32
+// has its own explicit case in the inner switch.
+func Test_lessThanOrEqualByteCode_Float32LessEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(1.5), float32(2.5))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_lessThanOrEqualByteCode_StrictMode_TypeMismatch verifies that comparing
+// an int with a float64 in strict mode returns ErrTypeMismatch for <=.
+func Test_lessThanOrEqualByteCode_StrictMode_TypeMismatch(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withStack(3, float64(7))
+
+	tc.assertError(lessThanOrEqualByteCode(tc.ctx, nil), errors.ErrTypeMismatch)
+}
+
+// Test_lessThanOrEqualByteCode_NumericPromotion verifies that in dynamic mode
+// an int and float64 are promoted to the same type before comparison.
+// 1 <= 1.0 should return true (int 1 promoted to float64 1.0).
+func Test_lessThanOrEqualByteCode_NumericPromotion(t *testing.T) {
+	tc := newTestContext(t).withStack(1, float64(1.0))
+
+	tc.assertNoError(lessThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 13: Additional greaterThanOrEqualByteCode tests — float32, int
+//             variants, uint variants, composite rejection, nil, underflow,
+//             and strict mode mismatch
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_greaterThanOrEqualByteCode_Float32GreaterEqual verifies float32 >=.
+// float32 has its own case in the inner switch.
+func Test_greaterThanOrEqualByteCode_Float32GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(5.0), float32(5.0))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_Float32Greater verifies float32 >= when the
+// left side is strictly greater.
+func Test_greaterThanOrEqualByteCode_Float32Greater(t *testing.T) {
+	tc := newTestContext(t).withStack(float32(9.0), float32(1.0))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_Int16GreaterEqual verifies int16 >=.
+func Test_greaterThanOrEqualByteCode_Int16GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int16(20), int16(10))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_Int32GreaterEqual verifies int32 >=.
+func Test_greaterThanOrEqualByteCode_Int32GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int32(100), int32(100))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true) // equal also satisfies >=
+}
+
+// Test_greaterThanOrEqualByteCode_Int64GreaterEqual verifies int64 >=.
+func Test_greaterThanOrEqualByteCode_Int64GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(int64(9999), int64(1))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_Uint16GreaterEqual verifies uint16 >=.
+// Section 7 tests uint32; this fills the uint16 gap.
+func Test_greaterThanOrEqualByteCode_Uint16GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint16(10), uint16(5))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_Uint64GreaterEqual verifies uint64 >=.
+func Test_greaterThanOrEqualByteCode_Uint64GreaterEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(uint64(1000), uint64(1000))
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanOrEqualByteCode_StructInvalid verifies that comparing two
+// struct values with >= returns an error.
+func Test_greaterThanOrEqualByteCode_StructInvalid(t *testing.T) {
+	s := data.NewStructFromMap(map[string]any{"x": 1})
+	tc := newTestContext(t).withStack(s, s)
+
+	if err := greaterThanOrEqualByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for struct >= struct, got nil")
+	}
+}
+
+// Test_greaterThanOrEqualByteCode_ArrayInvalid verifies that comparing two
+// array values with >= returns an error.
+func Test_greaterThanOrEqualByteCode_ArrayInvalid(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withStack(arr, arr)
+
+	if err := greaterThanOrEqualByteCode(tc.ctx, nil); err == nil {
+		t.Error("expected error for array >= array, got nil")
+	}
+}
+
+// Test_greaterThanOrEqualByteCode_StackUnderflow verifies ErrStackUnderflow
+// when fewer than two values are on the stack.
+//
+// After the COMPARE-4 fix, the raw error from getComparisonTerms is wrapped
+// with c.runtimeError in greaterThanOrEqualByteCode, consistent with the other
+// five comparison operators.
+func Test_greaterThanOrEqualByteCode_StackUnderflow(t *testing.T) {
+	tc := newTestContext(t).withStack(42)
+
+	tc.assertError(greaterThanOrEqualByteCode(tc.ctx, nil), errors.ErrStackUnderflow)
+}
+
+// Test_greaterThanOrEqualByteCode_NilReturnsFalse verifies that nil >= nil
+// returns false.  The nil guard fires before the type switch and pushes false.
+func Test_greaterThanOrEqualByteCode_NilReturnsFalse(t *testing.T) {
+	tc := newTestContext(t).withStack(nil, nil)
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_greaterThanOrEqualByteCode_StrictMode_TypeMismatch verifies that
+// comparing an int with a float64 in strict mode returns ErrTypeMismatch for >=.
+func Test_greaterThanOrEqualByteCode_StrictMode_TypeMismatch(t *testing.T) {
+	tc := newTestContext(t).
+		withTypeStrictness(defs.StrictTypeEnforcement).
+		withStack(10, float64(3))
+
+	tc.assertError(greaterThanOrEqualByteCode(tc.ctx, nil), errors.ErrTypeMismatch)
+}
+
+// Test_greaterThanOrEqualByteCode_StringGreaterNotEqual verifies string >=
+// where the left side is lexicographically greater (not equal).
+// "z" >= "a" must return true.
+func Test_greaterThanOrEqualByteCode_StringGreaterNotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack("z", "a")
+
+	tc.assertNoError(greaterThanOrEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
