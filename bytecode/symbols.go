@@ -174,6 +174,29 @@ func popScopeByteCode(c *Context, i any) error {
 		c.receiverStack = nil
 		c.blockDepth--
 
+		// RANGE-3 fix: release any range entries that belong to the scope just
+		// popped, even if the for-range loop never ran to exhaustion.
+		//
+		// How this works:
+		//   rangeInitByteCode records r.scopeDepth = c.blockDepth at the moment
+		//   RangeInit executes (after the matching PushScope has already bumped
+		//   blockDepth).  So an entry created inside the scope that was just
+		//   removed will have scopeDepth > the new (decremented) blockDepth.
+		//
+		// Why this matters:
+		//   For-range over a map locks the map readonly during iteration.  When
+		//   a break or return exits the loop early, the RangeNext exhaustion path
+		//   never runs, so the lock is never released.  This cleanup loop fills
+		//   that gap: every PopScope that matches the loop's scope depth calls
+		//   r.release(), which unlocks the map (and does nothing for types that
+		//   have no cleanup).  r.release() is idempotent — if the iterator was
+		//   already exhausted normally and cleanup was already called, the second
+		//   call is a no-op.
+		for len(c.rangeStack) > 0 && c.rangeStack[len(c.rangeStack)-1].scopeDepth > c.blockDepth {
+			c.rangeStack[len(c.rangeStack)-1].release()
+			c.rangeStack = c.rangeStack[:len(c.rangeStack)-1]
+		}
+
 		count--
 	}
 

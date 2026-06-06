@@ -2911,3 +2911,221 @@ if value.Value != i.Operand {
 The `inMap` true-branch now has a single clear code path: if the previously
 captured value matches the current operand, we continue silently; if not, we
 reject the match and short-circuit.
+
+---
+
+## RANGE-1 — `rangeNextInteger` unconditionally calls `c.symbols.Set` without guarding empty or discarded variable names
+
+**Affected function:** `rangeNextInteger`  
+**File:** `bytecode/range.go`  
+**Risk:** High — any for-range loop over an integer where the index variable is
+discarded (`_`) or absent (`""`) fails at runtime with `ErrUnknownSymbol`
+instead of silently skipping the assignment  
+**Discovered by:** `Test_rangeNextInteger_DiscardedIndex_CurrentlyBroken_RANGE1`,
+`Test_rangeNextInteger_EmptyIndexName_CurrentlyBroken_RANGE1`  
+**Status: RESOLVED**
+
+### RANGE-1: Description
+
+Every `rangeNext*` helper except `rangeNextInteger` guards the index-variable
+write with:
+
+```go
+if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+    err = c.symbols.Set(r.indexName, r.index)
+}
+```
+
+`rangeNextInteger` was missing this guard, so discarded or absent index names
+caused `ErrUnknownSymbol` instead of silently skipping the assignment.
+
+### RANGE-1: Fix
+
+Added the same guard to `rangeNextInteger`:
+
+```go
+// Only store the index when the caller declared a real variable for it.
+// Skip when the name is "" (not declared) or "_" (deliberately discarded).
+if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+    err = c.symbols.Set(r.indexName, r.index)
+}
+```
+
+Tests renamed from `_CurrentlyBroken_RANGE1` to `_RANGE1`; both now assert
+`nil` error and verify the full iteration completes successfully.
+
+---
+
+## RANGE-2 — `rangeNextByteCode` default case does not pop the range stack
+
+**Affected function:** `rangeNextByteCode`  
+**File:** `bytecode/range.go`  
+**Risk:** Low — only reachable with a value type that bypassed `rangeInitByteCode`'s
+type guard; in practice this path is not reached by well-formed Ego programs  
+**Discovered by:** `Test_rangeNextByteCode_DefaultCase_LeavesStaleStackEntry_RANGE2`  
+**Status: RESOLVED**
+
+### RANGE-2: Description
+
+The `default` case in `rangeNextByteCode` set `c.programCounter = destination`
+but did not trim `c.rangeStack`, leaving a stale entry that could corrupt an
+outer loop's state on its next `RangeNext` call.
+
+### RANGE-2: Fix
+
+Added the stack trim to the default case, matching every other exhaustion path:
+
+```go
+default:
+    c.programCounter = destination
+    c.rangeStack = c.rangeStack[:stackSize-1]  // added
+```
+
+Test renamed from `_LeavesStaleStackEntry_RANGE2` to `_PopsRangeStack_RANGE2`;
+now asserts `len(tc.ctx.rangeStack) == 0`.
+
+---
+
+## RANGE-3 — Map remains readonly if a for-range loop exits before exhaustion
+
+**Affected functions:** `rangeInitByteCode`, `rangeNextMap`, `popScopeByteCode`  
+**Files:** `bytecode/range.go`, `bytecode/symbols.go`  
+**Risk:** Medium — a map used inside a for-range loop cannot be modified for
+the rest of the function scope if the loop body exits early via `break` or
+`return`  
+**Discovered by:** `Test_rangeNextMap_EarlyExitLeavesMapReadonly_RANGE3`  
+**Status: RESOLVED**
+
+### RANGE-3: Description
+
+`rangeInitByteCode` locked the map readonly at the start of iteration.
+`rangeNextMap` unlocked it only when the iterator was exhausted.  An early
+exit via `break` or `return` bypassed the exhaustion path, leaving the map
+permanently locked within the function scope.
+
+### RANGE-3: Fix
+
+Implemented Option B (PopScope awareness) with three coordinated changes:
+
+**1. `rangeDefinition` — new fields** (`bytecode/range.go`):
+
+```go
+type rangeDefinition struct {
+    ...
+    scopeDepth int    // c.blockDepth at the time RangeInit ran
+    cleanup    func() // called once when this entry is retired
+}
+```
+
+A `release()` method calls cleanup exactly once (nil-clears it after the first
+call to prevent double-release).
+
+**2. `rangeInitByteCode`** — for maps, store a cleanup closure:
+
+```go
+case *data.Map:
+    r.keySet = actual.Keys()
+    actual.SetReadonly(true)
+    r.cleanup = func() { actual.SetReadonly(false) }  // ← new
+```
+
+`r.scopeDepth = c.blockDepth` is set for all value types before pushing.
+
+**3. `rangeNextMap`** — call `r.release()` instead of `actual.SetReadonly(false)`:
+
+```go
+if r.index >= len(r.keySet) {
+    c.programCounter = destination
+    c.rangeStack = c.rangeStack[:stackSize-1]
+    r.release()   // ← was: actual.SetReadonly(false)
+}
+```
+
+**4. `popScopeByteCode`** (`bytecode/symbols.go`) — release range entries
+belonging to the scope just popped:
+
+```go
+c.blockDepth--
+
+// Release range entries whose scope was just popped (RANGE-3 fix).
+for len(c.rangeStack) > 0 && c.rangeStack[len(c.rangeStack)-1].scopeDepth > c.blockDepth {
+    c.rangeStack[len(c.rangeStack)-1].release()
+    c.rangeStack = c.rangeStack[:len(c.rangeStack)-1]
+}
+```
+
+This fires on both `break` (which jumps to the code just before `PopScope`)
+and normal exhaustion (where `release()` is a no-op because cleanup was
+already called by `rangeNextMap`).
+
+Test renamed from `_EarlyExitLeavesMapReadonly_RANGE3` to
+`_EarlyExitReleasesMap_RANGE3`; now asserts the map is writable after
+`popScopeByteCode` is called.
+
+---
+
+## RANGE-4 — `rangeNextByteCode` returns a raw error for the `[]any` case without `c.runtimeError()` decoration
+
+**Affected function:** `rangeNextByteCode`  
+**File:** `bytecode/range.go`  
+**Risk:** Low — the `[]any` case is dead code for well-formed programs; but if
+reached, the error lacks module and source-line information  
+**Discovered by:** `Test_rangeNextByteCode_SliceAnyValue_CurrentlyBroken_RANGE4`  
+**Status: RESOLVED**
+
+### RANGE-4: Description
+
+The `[]any` case returned a raw error without `c.runtimeError()` decoration,
+losing module and source-line context inconsistently with the rest of the package.
+
+### RANGE-4: Fix
+
+```go
+// Before:
+case []any:
+    return errors.ErrInvalidType.Context("[]any")
+
+// After:
+case []any:
+    return c.runtimeError(errors.ErrInvalidType)
+```
+
+The `[]any` branch is retained as a defensive guard (with an updated comment
+explaining it is unreachable in well-formed programs since `rangeInitByteCode`
+already rejects `[]any` values before they can reach the range stack).
+
+Test renamed from `_CurrentlyBroken_RANGE4` to `_RANGE4`.
+
+---
+
+## RANGE-5 — `rangeInitByteCode` appends a stale entry to `rangeStack` even when the type-switch default sets an error
+
+**Affected function:** `rangeInitByteCode`  
+**File:** `bytecode/range.go`  
+**Risk:** Low — only triggered by unsupported value types (already caught by
+the type guard); a try/catch block could observe the stale entry  
+**Discovered by:** `Test_rangeInitByteCode_UnsupportedType`  
+**Status: RESOLVED**
+
+### RANGE-5: Description
+
+After the type-switch, `r.index = 0` and the `rangeStack` append ran
+unconditionally even when the `default` case had already set an error.  A
+`try/catch` block that caught the error and then executed `RangeNext` would
+find the stale entry with an invalid value type.
+
+### RANGE-5: Fix
+
+The `rangeStack` push is now guarded by `if err == nil`, and the RANGE-3
+`scopeDepth` assignment was incorporated into the same block:
+
+```go
+if err == nil {
+    r.index = 0
+    r.scopeDepth = c.blockDepth   // for RANGE-3 cleanup tracking
+    c.rangeStack = append(c.rangeStack, &r)
+}
+```
+
+`Test_rangeInitByteCode_UnsupportedType` now asserts
+`len(tc.ctx.rangeStack) == 0` after an unsupported type error.
