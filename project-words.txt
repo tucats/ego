@@ -235,6 +235,7 @@ stringlist
 subcontext
 subgrammar
 subopt
+subtests
 SYMBOLTABLES
 syms
 symtable

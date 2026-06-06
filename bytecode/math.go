@@ -145,7 +145,10 @@ func negateByteCode(c *Context, i any) error {
 
 	v, err := c.PopWithoutUnwrapping()
 	if err != nil {
-		return err
+		// MATH-11 fix: wrap with c.runtimeError so the error carries the
+		// current module name and source-line position, consistent with every
+		// other error return in the bytecode package.
+		return c.runtimeError(err)
 	}
 
 	isConstant := false
@@ -291,7 +294,9 @@ func notByteCode(c *Context, i any) error {
 	} else {
 		v, err = c.Pop()
 		if err != nil {
-			return err
+			// MATH-11 fix: decorate the error with module/line info so error
+			// messages identify where in the Ego program the underflow occurred.
+			return c.runtimeError(err)
 		}
 	}
 
@@ -308,7 +313,41 @@ func notByteCode(c *Context, i any) error {
 	case bool:
 		return c.push(!value)
 
-	case byte, int8, int32, int16, uint32, uint16, uint, uint64, int, int64:
+	// MATH-9 fix: the original single multi-type case gave the switch variable
+	// 'value' type any.  Comparing any(int64(0)) == 0 is false because the
+	// untyped constant 0 defaults to int in interface comparisons, so the
+	// dynamic types int64 and int differ.  Splitting into individual cases
+	// makes 'value' the concrete type for each case, so value == 0 uses the
+	// correctly-typed zero literal and the comparison is exact.
+
+	case byte:
+		return c.push(value == 0)
+
+	case int8:
+		return c.push(value == 0)
+
+	case int16:
+		return c.push(value == 0)
+
+	case uint16:
+		return c.push(value == 0)
+
+	case int32:
+		return c.push(value == 0)
+
+	case uint32:
+		return c.push(value == 0)
+
+	case int:
+		return c.push(value == 0)
+
+	case uint:
+		return c.push(value == 0)
+
+	case int64:
+		return c.push(value == 0)
+
+	case uint64:
 		return c.push(value == 0)
 
 	case float32:
@@ -323,10 +362,13 @@ func notByteCode(c *Context, i any) error {
 }
 
 // addByteCode bytecode instruction processor. This removes the top two
-// items and adds them together. For boolean values, this is an OR
-// operation. For numeric values, it is arithmetic addition. For
-// strings or arrays, it concatenates the two items. For a struct,
-// it merges the addend into the first struct.
+// items and adds them together. For boolean values, this is an AND (&&)
+// operation — note that multiplyByteCode performs OR (||) for booleans.
+// MATH-10 fix: the previous comment incorrectly said "OR"; the implementation
+// uses && (AND), which is what this comment now reflects.
+// For numeric values, it is arithmetic addition. For strings or arrays, it
+// concatenates the two items. For a struct, it merges the addend into the
+// first struct.
 func addByteCode(c *Context, i any) error {
 	// Get the two values we will operate on. This includes a flag
 	// indicating that one or both of the items are constants, so
@@ -576,7 +618,10 @@ func subtractByteCode(c *Context, i any) error {
 		return c.push(v1.(int16) - v2.(int16))
 
 	case int8:
-		return c.push(int8(v1.(int16)) - int8(v2.(int8)))
+		// MATH-4 fix: original cast v1.(int16) panicked because after
+		// data.Normalize two equal int8 values remain int8 (same kind is
+		// unchanged).  The type assertion int16 on an int8 value fails.
+		return c.push(v1.(int8) - v2.(int8))
 
 	case uint16:
 		return c.push(v1.(uint16) - v2.(uint16))
@@ -639,10 +684,14 @@ func multiplyByteCode(c *Context, i any) error {
 		return c.push(int8(v1.(int8)) * int8(v2.(int8)))
 
 	case int16:
-		return c.push(int16(v1.(int8)) * int16(v2.(int16)))
+		// MATH-2 fix: original cast v1.(int8) panicked because v1 is int16
+		// after data.Normalize leaves two equal-kind values unchanged.
+		return c.push(v1.(int16) * v2.(int16))
 
 	case uint16:
-		return c.push(uint16(v1.(int8)) * uint16(v2.(uint16)))
+		// MATH-3 fix: original cast v1.(int8) panicked; v1 is uint16
+		// after data.Normalize leaves two equal-kind uint16 values unchanged.
+		return c.push(v1.(uint16) * v2.(uint16))
 
 	case uint32:
 		return c.push(v1.(uint32) * v2.(uint32))
@@ -715,7 +764,11 @@ func exponentByteCode(c *Context, i any) error {
 		}
 
 		if vv2 == 0 {
-			return c.push(0)
+			// MATH-1 fix: x^0 == 1 for all non-zero bases.  The previous code
+			// pushed the untyped literal 0 (which becomes int(0)), giving the
+			// mathematically wrong result.  int64(1) matches the type that the
+			// success path pushes after the multiplication loop.
+			return c.push(int64(1))
 		}
 
 		if vv2 == 1 {
@@ -802,14 +855,16 @@ func divideByteCode(c *Context, i any) error {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
-		return c.push(uint16(v1.(int8)) / uint16(v2.(uint16)))
+		// MATH-6 fix: original cast v1.(int8) panicked; v1 is uint16.
+		return c.push(v1.(uint16) / v2.(uint16))
 
 	case int16:
 		if v2.(int16) == 0 {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
-		return c.push(int16(v1.(int8)) / int16(v2.(int16)))
+		// MATH-5 fix: original cast v1.(int8) panicked; v1 is int16.
+		return c.push(v1.(int16) / v2.(int16))
 
 	case uint32:
 		if v2.(uint32) == 0 {
@@ -933,14 +988,16 @@ func moduloByteCode(c *Context, i any) error {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
-		return c.push(int16(v1.(int8)) % int16(v2.(int16)))
+		// MATH-7 fix: original cast v1.(int8) panicked; v1 is int16.
+		return c.push(v1.(int16) % v2.(int16))
 
 	case uint16:
 		if v2.(uint16) == 0 {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
-		return c.push(uint16(v1.(int8)) % uint16(v2.(uint16)))
+		// MATH-8 fix: original cast v1.(int8) panicked; v1 is uint16.
+		return c.push(v1.(uint16) % v2.(uint16))
 
 	case int8:
 		if v2.(int8) == 0 {

@@ -48,6 +48,11 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// nilError is a sentinel string used by older table-driven tests when an
+// expected error value is nil (meaning "no error expected").  It appears in
+// legacy test files that predate the assertNoError/assertError helpers.
+const nilError = "nil error"
+
 // testContext is the central test-harness type.  It holds a fully initialized
 // *Context (the real runtime type used by bytecode instructions) together with
 // a reference to the *testing.T used to report failures.

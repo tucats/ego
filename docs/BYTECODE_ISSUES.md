@@ -1962,3 +1962,408 @@ chain.  Key conversion notes:
 - **`Test_branchFalseByteCode`** and **`Test_branchTrueByteCode`**: Both use
   `withBytecodeSize(5)` and a shared `tc` across the three sub-cases so that
   the program-counter carry-over from sub-case 1 to sub-case 2 is preserved.
+
+---
+
+## MATH-1 — `exponentByteCode` returns 0 for signed integer `x^0` (should return 1)
+
+**Affected function:** `exponentByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** Medium — `x^0` for any signed integer type silently returns 0; the
+correct mathematical result is 1 for all non-zero bases  
+**Discovered by:** `Test_exponentByteCode_SignedInt_PowerZero_CurrentlyBroken_MATH1`  
+**Status: RESOLVED**
+
+### MATH-1: Description
+
+The signed-integer exponentiation path (matching `byte, int8, int16, int32, int,
+int64`) contained an explicit fast-exit for the exponent-zero case:
+
+```go
+if vv2 == 0 {
+    return c.push(0)   // BUG: x^0 should be 1
+}
+```
+
+The unsigned-integer path directly below it handled the same case correctly:
+
+```go
+if vv2 == 0 {
+    return c.push(uint64(1))   // was already correct
+}
+```
+
+### MATH-1: Fix
+
+Changed the signed-integer zero-exponent return to push `int64(1)`, matching the
+type that the multiplication loop returns on success:
+
+```go
+if vv2 == 0 {
+    // MATH-1 fix: x^0 == 1 for all non-zero bases.  The previous code
+    // pushed the untyped literal 0 (which becomes int(0)), giving the
+    // mathematically wrong result.  int64(1) matches the type that the
+    // success path pushes after the multiplication loop.
+    return c.push(int64(1))
+}
+```
+
+`Test_exponentByteCode_SignedInt_PowerZero` now asserts `int64(1)` and confirms
+the correct result.
+
+---
+
+## MATH-2 — `multiplyByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
+
+**Affected function:** `multiplyByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any multiplication of two `int16` values causes an unrecoverable
+runtime panic  
+**Discovered by:** `Test_multiplyByteCode_Int16_MATH2`  
+**Status: RESOLVED**
+
+### MATH-2: Description
+
+After `data.Normalize` leaves two `int16` values unchanged (equal kinds), the
+type switch entered `case int16:`.  The body asserted `v1.(int8)`:
+
+```go
+case int16:
+    return c.push(int16(v1.(int8)) * int16(v2.(int16)))
+                       ↑ BUG: v1 is int16, not int8
+```
+
+### MATH-2: Fix
+
+```go
+case int16:
+    // MATH-2 fix: original cast v1.(int8) panicked because v1 is int16
+    // after data.Normalize leaves two equal-kind values unchanged.
+    return c.push(v1.(int16) * v2.(int16))
+```
+
+`Test_multiplyByteCode_Int16` now asserts `int16(12)` for `3 * 4`.
+
+---
+
+## MATH-3 — `multiplyByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
+
+**Affected function:** `multiplyByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any multiplication of two `uint16` values panics  
+**Discovered by:** `Test_multiplyByteCode_Uint16_MATH3`  
+**Status: RESOLVED**
+
+### MATH-3: Description
+
+Identical root cause as MATH-2 but in the `uint16` case:
+
+```go
+case uint16:
+    return c.push(uint16(v1.(int8)) * uint16(v2.(uint16)))
+                         ↑ BUG: v1 is uint16, not int8
+```
+
+### MATH-3: Fix
+
+```go
+case uint16:
+    // MATH-3 fix: original cast v1.(int8) panicked; v1 is uint16
+    // after data.Normalize leaves two equal-kind uint16 values unchanged.
+    return c.push(v1.(uint16) * v2.(uint16))
+```
+
+`Test_multiplyByteCode_Uint16` now asserts `uint16(12)` for `3 * 4`.
+
+---
+
+## MATH-4 — `subtractByteCode` `case int8:` asserts `v1.(int16)` when v1 is `int8` — panics
+
+**Affected function:** `subtractByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any subtraction of two `int8` values panics  
+**Discovered by:** `Test_subtractByteCode_Int8_MATH4`  
+**Status: RESOLVED**
+
+### MATH-4: Description
+
+When two `int8` values are on the stack, `data.Normalize` left them as `int8`
+(same kind).  The type switch entered `case int8:`, and the body asserted `v1.(int16)`:
+
+```go
+case int8:
+    return c.push(int8(v1.(int16)) - int8(v2.(int8)))
+                      ↑ BUG: v1 is int8, not int16
+```
+
+### MATH-4: Fix
+
+```go
+case int8:
+    // MATH-4 fix: original cast v1.(int16) panicked because after
+    // data.Normalize both values remain int8 (same kind is unchanged).
+    return c.push(v1.(int8) - v2.(int8))
+```
+
+`Test_subtractByteCode_Int8` now asserts `int8(2)` for `5 - 3`.
+
+---
+
+## MATH-5 — `divideByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
+
+**Affected function:** `divideByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any division of two `int16` values panics  
+**Discovered by:** `Test_divideByteCode_Int16_MATH5`  
+**Status: RESOLVED**
+
+### MATH-5: Description
+
+```go
+case int16:
+    ...
+    return c.push(int16(v1.(int8)) / int16(v2.(int16)))
+                         ↑ BUG: v1 is int16, not int8
+```
+
+### MATH-5: Fix
+
+```go
+case int16:
+    if v2.(int16) == 0 {
+        return c.runtimeError(errors.ErrDivisionByZero)
+    }
+    // MATH-5 fix: original cast v1.(int8) panicked; v1 is int16.
+    return c.push(v1.(int16) / v2.(int16))
+```
+
+`Test_divideByteCode_Int16` now asserts `int16(3)` for `9 / 3`.
+
+---
+
+## MATH-6 — `divideByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
+
+**Affected function:** `divideByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any division of two `uint16` values panics  
+**Discovered by:** `Test_divideByteCode_Uint16_MATH6`  
+**Status: RESOLVED**
+
+### MATH-6: Description
+
+```go
+case uint16:
+    ...
+    return c.push(uint16(v1.(int8)) / uint16(v2.(uint16)))
+                          ↑ BUG: v1 is uint16, not int8
+```
+
+### MATH-6: Fix
+
+```go
+case uint16:
+    if v2.(uint16) == 0 {
+        return c.runtimeError(errors.ErrDivisionByZero)
+    }
+    // MATH-6 fix: original cast v1.(int8) panicked; v1 is uint16.
+    return c.push(v1.(uint16) / v2.(uint16))
+```
+
+`Test_divideByteCode_Uint16` now asserts `uint16(3)` for `9 / 3`.
+
+---
+
+## MATH-7 — `moduloByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
+
+**Affected function:** `moduloByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any modulo of two `int16` values panics  
+**Discovered by:** `Test_moduloByteCode_Int16_MATH7`  
+**Status: RESOLVED**
+
+### MATH-7: Description
+
+```go
+case int16:
+    ...
+    return c.push(int16(v1.(int8)) % int16(v2.(int16)))
+                         ↑ BUG: v1 is int16, not int8
+```
+
+### MATH-7: Fix
+
+```go
+case int16:
+    if v2.(int16) == 0 {
+        return c.runtimeError(errors.ErrDivisionByZero)
+    }
+    // MATH-7 fix: original cast v1.(int8) panicked; v1 is int16.
+    return c.push(v1.(int16) % v2.(int16))
+```
+
+`Test_moduloByteCode_Int16` now asserts `int16(1)` for `10 % 3`.
+
+---
+
+## MATH-8 — `moduloByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
+
+**Affected function:** `moduloByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** High — any modulo of two `uint16` values panics  
+**Discovered by:** `Test_moduloByteCode_Uint16_MATH8`  
+**Status: RESOLVED**
+
+### MATH-8: Description
+
+```go
+case uint16:
+    ...
+    return c.push(uint16(v1.(int8)) % uint16(v2.(uint16)))
+                          ↑ BUG: v1 is uint16, not int8
+```
+
+### MATH-8: Fix
+
+```go
+case uint16:
+    if v2.(uint16) == 0 {
+        return c.runtimeError(errors.ErrDivisionByZero)
+    }
+    // MATH-8 fix: original cast v1.(int8) panicked; v1 is uint16.
+    return c.push(v1.(uint16) % v2.(uint16))
+```
+
+`Test_moduloByteCode_Uint16` now asserts `uint16(1)` for `10 % 3`.
+
+---
+
+## MATH-9 — `notByteCode` multi-type case returns wrong result for zero values of non-`int` integer types
+
+**Affected function:** `notByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** Medium — `!byte(0)`, `!int64(0)`, `!int32(0)`, `!int16(0)`, etc. all
+return `false` instead of `true`  
+**Discovered by:** `Test_notByteCode_Int64Zero_CurrentlyBroken_MATH9`,
+`Test_notByteCode_ByteZero_CurrentlyBroken_MATH9`,
+`Test_notByteCode_Int32Zero_CurrentlyBroken_MATH9`  
+**Status: RESOLVED**
+
+### MATH-9: Description
+
+`notByteCode` used a multi-type case to handle all integer types at once:
+
+```go
+case byte, int8, int32, int16, uint32, uint16, uint, uint64, int, int64:
+    return c.push(value == 0)
+```
+
+When multiple types appear in a single `case`, Go types the case variable (`value`)
+as `any` (interface{}).  The comparison `value == 0` compiles as an interface
+comparison where the untyped constant `0` takes its default type `int`.
+
+In Go, two interface values are equal only when both their **dynamic type** and
+**dynamic value** match.  So:
+
+| Stack value | `value == 0` evaluated as | Result |
+| :---------- | :------------------------ | :----- |
+| `int(0)` | `int(0) == int(0)` | `true` ✓ |
+| `int64(0)` | `int64(0) == int(0)` | `false` ✗ |
+| `byte(0)` | `byte(0) == int(0)` | `false` ✗ |
+| `int32(0)` | `int32(0) == int(0)` | `false` ✗ |
+
+Only `int(0)` gave the correct answer.
+
+### MATH-9: Fix
+
+Replaced the single multi-type case with ten individual single-type cases.  In a
+single-type case, the switch variable takes the matched concrete type, so
+`value == 0` uses the correctly-typed zero literal for each width:
+
+```go
+// MATH-9 fix: splitting into individual cases makes 'value' typed,
+// so value == 0 uses the correctly-typed zero literal.
+
+case byte:
+    return c.push(value == 0)   // value is byte; 0 → byte(0)
+
+case int8:
+    return c.push(value == 0)   // value is int8; 0 → int8(0)
+
+case int16:
+    return c.push(value == 0)
+// ... (int32, uint16, uint32, int, uint, int64, uint64 follow the same pattern)
+```
+
+The three `_CurrentlyBroken_MATH9` tests were renamed to drop the suffix and
+updated to assert `true` for zero values of each affected type.
+
+---
+
+## MATH-10 — `addByteCode` function comment incorrectly says "OR" for boolean operands
+
+**Affected function:** `addByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** None — documentation only; the implementation is correct  
+**Discovered by:** `Test_addByteCode_BoolAND_TrueAndTrue`,
+`Test_addByteCode_BoolAND_MixedValues`  
+**Status: RESOLVED**
+
+### MATH-10: Description
+
+The function-level comment on `addByteCode` said "OR" but the implementation
+performs logical AND (`&&`):
+
+```go
+case bool:
+    return c.push(v1.(bool) && v2.(bool))
+```
+
+### MATH-10: Fix
+
+The comment was corrected and a cross-reference to `multiplyByteCode` (which
+performs OR) was added:
+
+```go
+// addByteCode bytecode instruction processor. This removes the top two
+// items and adds them together. For boolean values, this is an AND (&&)
+// operation — note that multiplyByteCode performs OR (||) for booleans.
+// MATH-10 fix: the previous comment incorrectly said "OR"; the implementation
+// uses && (AND), which is what this comment now reflects.
+```
+
+---
+
+## MATH-11 — `notByteCode` and `negateByteCode` return raw (undecorated) errors from `c.Pop()`
+
+**Affected functions:** `notByteCode`, `negateByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** Low — stack-underflow errors from these two functions lack the module
+name and source-line annotation that all other runtime errors carry  
+**Discovered by:** code review during `math_test.go` comprehensive audit  
+**Status: RESOLVED**
+
+### MATH-11: Description
+
+Both `notByteCode` and `negateByteCode` returned raw errors from `c.Pop()` /
+`c.PopWithoutUnwrapping()` without wrapping them in `c.runtimeError(err)`.
+
+### MATH-11: Fix
+
+Both call sites now wrap via `c.runtimeError`, matching the pattern used in all
+other bytecode instruction functions and previously fixed in COMPARE-4 and LOAD-1:
+
+```go
+// notByteCode:
+v, err = c.Pop()
+if err != nil {
+    // MATH-11 fix: decorate the error with module/line info.
+    return c.runtimeError(err)
+}
+
+// negateByteCode:
+v, err := c.PopWithoutUnwrapping()
+if err != nil {
+    // MATH-11 fix: wrap with c.runtimeError to attach source-location info.
+    return c.runtimeError(err)
+}
+```
