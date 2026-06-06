@@ -2568,6 +2568,7 @@ if t, ok := m.(*data.Type); ok {
 ```
 
 The two `_MEMBERS6` tests were renamed and updated:
+
 - `Test_memberByteCode_TypeObject_UnregisteredName_Error` — asserts `ErrUnknownMember`
 - `Test_memberByteCode_TypeObject_RegisteredFunction_OK` — positive case showing a registered function IS returned
 - `Test_memberByteCode_PtrAny_PointingToType_UnregisteredName` — the *any recursive path also now returns `ErrUnknownMember`
@@ -2605,3 +2606,493 @@ case *data.Type:
 
 `Test_memberByteCode_PtrAny_PointingToNilType` (renamed from the `_MEMBERS7`
 form) now asserts `ErrInvalidType`.
+
+---
+
+## OPTIMIZER-1 — Branch-target scan is O(n²): pre-build a target set instead
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Performance — for large bytecode bodies the optimizer is dominated by
+this scan; it is the primary reason optimizer mode 1 (conditional) skips
+short sequences  
+**Status: OPEN**
+
+### OPTIMIZER-1: Description
+
+Inside the main `optimize` loop, for every position `idx` and every
+optimization rule, the code performs a linear scan over **all** instructions
+to check whether any branch instruction targets an address inside the candidate
+pattern window:
+
+```go
+for _, i := range b.instructions {           // O(n)
+    if i.Operation > BranchInstructions {
+        destination, _ := data.Int(i.Operand)
+        if destination >= idx && destination < idx+len(optimization.Pattern) {
+            found = false
+            break
+        }
+    }
+}
+```
+
+With `n` instructions and `m` optimization rules, the total cost is
+**O(n × m × n) = O(n²m)** per call to `optimize`.  For a 1 000-instruction
+body with 20 rules, that is roughly 20 million inner-loop iterations just for
+the branch check, before any pattern matching is attempted.
+
+### OPTIMIZER-1: Proposed fix
+
+Build a `map[int]bool` (or a sorted `[]int` slice) of every branch target
+address **once**, before the outer loop:
+
+```go
+branchTargets := make(map[int]bool)
+for _, i := range b.instructions {
+    if i.Operation > BranchInstructions {
+        if dest, err := data.Int(i.Operand); err == nil {
+            branchTargets[dest] = true
+        }
+    }
+}
+```
+
+Then, inside the optimization loop, replace the linear scan with a range
+check over the pre-built set:
+
+```go
+// O(patternLen) instead of O(n)
+windowBlocked := false
+for offset := 0; offset < len(optimization.Pattern); offset++ {
+    if branchTargets[idx+offset] {
+        windowBlocked = true
+        break
+    }
+}
+if windowBlocked {
+    continue
+}
+```
+
+Because the branch-target set must be rebuilt after each `Patch` call
+(patching adjusts branch targets), the rebuild should happen at the top of
+the outer `idx` loop, not before the `optimizations` loop.  Alternatively,
+`Patch` can maintain an incremental version of the set.
+
+**Expected impact:** reduces branch-check cost from O(n) to O(patternLen) per
+(position, rule) pair — a factor of n/patternLen (roughly 250× for a
+1 000-instruction body with 4-instruction patterns).
+
+---
+
+## OPTIMIZER-2 — `reflect.DeepEqual` for operand comparison is unnecessarily expensive
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Performance — `reflect.DeepEqual` is called for every non-string,
+non-placeholder operand pair; it uses reflection even for simple integers  
+**Status: OPEN**
+
+### OPTIMIZER-2: Description
+
+When comparing a pattern operand against a real instruction operand, the code
+first tries a fast string comparison, then falls through to:
+
+```go
+if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
+    found = true
+    continue
+}
+```
+
+`reflect.DeepEqual` is a general-purpose deep comparison that handles
+arbitrarily nested types via reflection.  For the common case of integer or
+`StackMarker` operands it is far more expensive than a direct type-switch
+comparison, and it is called millions of times in large bodies.
+
+### OPTIMIZER-2: Proposed fix
+
+Replace the `reflect.DeepEqual` call with a type-switch that handles the
+most common operand types directly:
+
+```go
+if operandEqual(sourceInstruction.Operand, i.Operand) {
+    found = true
+    continue
+}
+
+// operandEqual compares two instruction operands without using reflection
+// for common types.
+func operandEqual(a, b any) bool {
+    switch av := a.(type) {
+    case int:
+        bv, ok := b.(int)
+        return ok && av == bv
+    case string:
+        bv, ok := b.(string)
+        return ok && av == bv
+    case bool:
+        bv, ok := b.(bool)
+        return ok && av == bv
+    case StackMarker:
+        bv, ok := b.(StackMarker)
+        return ok && av == bv
+    case nil:
+        return b == nil
+    default:
+        return reflect.DeepEqual(a, b)
+    }
+}
+```
+
+The `default` branch retains `reflect.DeepEqual` as a fallback for types not
+worth enumerating.  This covers the vast majority of real comparisons with
+zero reflection overhead.
+
+---
+
+## OPTIMIZER-3 — No opcode-indexed dispatch: all rules tried at every position
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Performance — redundant work proportional to (number of rules) ×
+(fraction of instructions that cannot start any pattern)  
+**Status: OPEN**
+
+### OPTIMIZER-3: Description
+
+The inner loop tries every enabled optimization rule at every position:
+
+```go
+for _, optimization := range optimizations {   // all 20+ rules
+    // ... expensive branch-check and match ...
+}
+```
+
+Most rules can be ruled out immediately by looking at the opcode of the
+current instruction: a rule whose pattern starts with `AtLine` can never
+match at a position where the current instruction is `Load`.  But the code
+does the full branch-target scan and begins pattern matching before checking
+whether even the first opcode matches.
+
+### OPTIMIZER-3: Proposed fix
+
+Build an opcode-indexed dispatch table once before the main loop:
+
+```go
+// rulesByFirstOpcode maps the first pattern opcode to a list of rule indices.
+rulesByFirstOpcode := make(map[Opcode][]int)
+for i, opt := range optimizations {
+    if !opt.Disable && len(opt.Pattern) > 0 {
+        firstOp := opt.Pattern[0].Operation
+        rulesByFirstOpcode[firstOp] = append(rulesByFirstOpcode[firstOp], i)
+    }
+}
+```
+
+Then in the main loop:
+
+```go
+candidates := rulesByFirstOpcode[b.instructions[idx].Operation]
+for _, ruleIdx := range candidates {
+    optimization := optimizations[ruleIdx]
+    // ... existing match logic ...
+}
+```
+
+This eliminates all branch-check and match work for rules whose first opcode
+does not match the current instruction.  With 20 rules spread across ~15
+distinct first opcodes, the average inner-loop count drops from 20 to ~1–2.
+
+The table must be rebuilt if rules are added at runtime, but since
+`optimizations` is a package-level constant slice, it can be built once
+with `sync.Once` and cached.
+
+---
+
+## OPTIMIZER-4 — Backtracking by `maxPatternSize` instead of the matched pattern size
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Performance — after a small pattern fires, the scanner may revisit
+many instructions that were already checked and could not benefit  
+**Status: OPEN**
+
+### OPTIMIZER-4: Description
+
+After a successful substitution the scanner backs up by `maxPatternSize` (the
+largest pattern width across all rules):
+
+```go
+idx = (idx - maxPatternSize) - 1
+```
+
+`maxPatternSize` is currently 4 (the "Unnecessary stack marker for constant
+store" rule).  Even when a 2-instruction rule fires (e.g., "Sequential AtLine
+opcodes"), the scanner retreats by 4 — potentially re-examining 2 positions
+that were already known to be outside any active pattern.
+
+### OPTIMIZER-4: Proposed fix
+
+Record the matched pattern length at the point of substitution and retreat
+by that amount instead:
+
+```go
+matchedLen := len(optimization.Pattern)
+b.Patch(idx, matchedLen, replacements)
+idx = (idx - matchedLen) - 1   // retreat by matched size, not global max
+if idx < 0 {
+    idx = 0
+}
+```
+
+For correctness, the retreat must be at least 1 (to allow the instruction
+immediately before the match to participate in a new pattern that spans the
+boundary).  The current `maxPatternSize - 1` retreat is a safe upper bound;
+this change reduces it to the minimum necessary.
+
+---
+
+## OPTIMIZER-5 — `Patch` corrupts the instruction array when the replacement is longer than the deleted region
+
+**Affected function:** `Patch`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Latent correctness — no current optimization triggers this; all rules
+shrink or preserve the instruction count  
+**Status: OPEN (latent)**
+
+### OPTIMIZER-5: Description
+
+`Patch` splices replacement instructions into the bytecode using a two-append
+pattern:
+
+```go
+instructions := append(b.instructions[:start], insert...)
+instructions = append(instructions, b.instructions[start+deleteSize:]...)
+```
+
+If `len(insert) > deleteSize`, the first `append` writes `insert` elements
+beyond position `start+deleteSize-1` in the original backing array, **before**
+the second append captures `b.instructions[start+deleteSize:]`.  The tail that
+the second append reads has already been partially overwritten, producing
+corrupted instructions.
+
+This is safe today because every optimization shrinks the bytecode
+(`len(insert) < deleteSize`), but adding a size-expanding rule in the future
+would silently corrupt the instruction array.
+
+### OPTIMIZER-5: Proposed fix
+
+Copy the tail before the first append:
+
+```go
+tail := make([]instruction, len(b.instructions[start+deleteSize:]))
+copy(tail, b.instructions[start+deleteSize:])
+
+instructions := append(b.instructions[:start], insert...)
+instructions = append(instructions, tail...)
+```
+
+Alternatively, build the new slice from scratch:
+
+```go
+newLen := start + len(insert) + (b.nextAddress - (start + deleteSize))
+instructions := make([]instruction, 0, newLen)
+instructions = append(instructions, b.instructions[:start]...)
+instructions = append(instructions, insert...)
+instructions = append(instructions, b.instructions[start+deleteSize:b.nextAddress]...)
+```
+
+The second form is unambiguous and safe regardless of relative sizes.
+
+---
+
+## OPTIMIZER-6 — `continue` after `found=false` in placeholder mismatch should be `break`
+
+**Affected function:** `optimize` (inner pattern-match loop)  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Minor performance — after a mismatch is detected, the inner loop
+wastes time checking additional pattern positions  
+**Status: OPEN**
+
+### OPTIMIZER-6: Description
+
+When a placeholder consistency check fails, the code sets `found = false` and
+uses `continue` to advance to the next element of the inner pattern-matching
+loop:
+
+```go
+} else if i.Operand != sourceInstruction.Operand {
+    found = false
+    continue   // ← should be break
+}
+```
+
+Once `found` is `false` the match is already rejected; checking additional
+pattern instructions serves no purpose.  Using `continue` instead of `break`
+is harmless but wastes iterations.  The same style inconsistency exists: the
+opcode-mismatch and empty-operand checks both correctly use `break`, while
+only this path uses `continue`.
+
+### OPTIMIZER-6: Proposed fix
+
+Change `continue` to `break`:
+
+```go
+} else if i.Operand != sourceInstruction.Operand {
+    found = false
+    break   // short-circuit; no point checking further pattern elements
+}
+```
+
+This also makes the control flow consistent with the other two early-exit
+paths in the same inner loop.
+
+---
+
+## OPTIMIZER-7 — `executeFragment` creates full interpreter context for trivial constant folding
+
+**Affected function:** `executeFragment`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Performance — each constant-fold optimization allocates a ByteCode,
+SymbolTable, and Context object and runs the full interpreter for 2–3
+instructions  
+**Status: OPEN**
+
+### OPTIMIZER-7: Description
+
+Constant folding (rules "Constant addition fold", subtraction, multiplication)
+works by executing the matched instructions as a mini-program:
+
+```go
+fragment := New("code fragment")
+// ... copy instructions ...
+fragment.Emit(Stop)
+s := symbols.NewSymbolTable("fragment")
+c := NewContext(s, fragment)
+c.Run()
+return c.Pop()
+```
+
+For the common case of two integer or float Push instructions followed by an
+arithmetic opcode, the entire computation could be done with a few type
+assertions and a single arithmetic operation — no allocations, no interpreter
+dispatch, no symbol table.
+
+### OPTIMIZER-7: Proposed fix
+
+Add a fast path in `executeFragment` (or replace it for the arithmetic case)
+that directly computes the result for the three constant-fold rules:
+
+```go
+func computeConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
+    switch a := v1.(type) {
+    case int:
+        b, ok := v2.(int)
+        if !ok { return nil, false }
+        switch op {
+        case Add: return a + b, true
+        case Sub: return a - b, true
+        case Mul: return a * b, true
+        }
+    case float64:
+        // ... similar ...
+    }
+    return nil, false
+}
+```
+
+Fall back to `executeFragment` only when the fast path returns `false` (e.g.,
+for string concatenation or other non-arithmetic types).
+
+---
+
+## OPTIMIZER-8 — `data.Int` failure in branch-check scan aborts the entire optimization pass
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** Low correctness concern — malformed bytecode (branch with non-integer
+operand) causes the entire optimization pass to fail instead of simply skipping
+that branch  
+**Status: OPEN**
+
+### OPTIMIZER-8: Description
+
+The branch-target safety check inside the optimization loop:
+
+```go
+destination, err := data.Int(i.Operand)
+if err != nil {
+    return 0, errors.New(err)
+}
+```
+
+aborts `optimize` entirely if any branch instruction in the bytecode has a
+non-integer operand.  In well-formed bytecode this never happens, but it is a
+fragile contract: a compiler bug or a future opcode that reuses the `> BranchInstructions`
+range could cause the optimizer to silently fail for the entire compilation unit.
+
+### OPTIMIZER-8: Proposed fix
+
+Replace the hard abort with a log-and-skip:
+
+```go
+destination, err := data.Int(i.Operand)
+if err != nil {
+    // Malformed branch operand — conservatively treat this address as a
+    // potential target anywhere, so we skip the whole optimization rather
+    // than aborting the pass.
+    found = false
+    break
+}
+```
+
+This way a single malformed instruction prevents only the specific
+(position, rule) pair from being optimized, not the whole pass.
+
+---
+
+## OPTIMIZER-9 — Dead `else if` condition in placeholder consistency check
+
+**Affected function:** `optimize`  
+**File:** `bytecode/optimizer.go`  
+**Risk:** None — code clarity only; the condition is always true for real
+bytecode  
+**Status: OPEN**
+
+### OPTIMIZER-9: Description
+
+The placeholder consistency check contains:
+
+```go
+if value.Value == i.Operand {
+    // values agree — no work to do
+} else if i.Operand != sourceInstruction.Operand {
+    found = false
+    continue
+}
+```
+
+`sourceInstruction.Operand` is a `placeholder{}` struct from the pattern
+definition.  Real instruction operands (strings, integers, StackMarkers, etc.)
+are never `placeholder` structs.  Therefore `i.Operand != sourceInstruction.Operand`
+is **always true** in real bytecode, and the outer `else if` is equivalent to
+a plain `else`.
+
+The intended meaning is simply "if the current operand does not match what we
+captured the first time we saw this placeholder name, reject the match."  The
+dead condition obscures this intent.
+
+### OPTIMIZER-9: Proposed fix
+
+Simplify to a direct negation:
+
+```go
+if value.Value != i.Operand {
+    found = false
+    break   // also change continue to break (see OPTIMIZER-6)
+}
+```
+
+This is cleaner, easier to read, and matches the behavior for all real bytecode.
