@@ -16,6 +16,8 @@ Argcount
 ASIC
 Asinh
 Atanh
+atline
+atlines
 Atoi
 attname
 attnum
@@ -49,6 +51,7 @@ CONTAINSALL
 cooldown
 correlator
 cpus
+createandstore
 createif
 creds
 csec
@@ -191,6 +194,7 @@ piddir
 pidfile
 PKCE
 pmezard
+popscope
 Println
 procs
 QUJD
@@ -230,6 +234,7 @@ Sprintf
 sqldb
 sqluuid
 stackpointer
+storealways
 strconv
 stretchr
 stringlist

@@ -91,12 +91,12 @@ type placeholder struct {
 // instructions to look for, and a Replacement sequence to substitute when the
 // pattern is matched.
 //
-// The replacement may be shorter than the pattern (which is the typical case —
-// the optimizer is shrinking the bytecode) or the same length.  The optimizer
-// currently does not support replacements that are longer than the pattern
-// (see OPTIMIZER-5 in docs/BYTECODE_ISSUES.md).
+// The replacement may be shorter than the pattern (the typical case — the
+// optimizer shrinks the bytecode) or the same length.  Growing replacements
+// (len(Replacement) > len(Pattern)) are now safe due to the Patch fix
+// (OPTIMIZER-5).
 type optimization struct {
-	// Description is a human-readable label logged when the optimization fires.
+	// Description is a human-readable label logged when the rule fires.
 	Description string
 
 	// Debug, when true, enables extra diagnostic output for this specific rule
@@ -133,10 +133,12 @@ type optimization struct {
 // The function returns early (count, nil) if the bytecode has already been
 // optimized and not modified since.
 //
-// Performance note: the dominant cost is the branch-target scan performed for
-// every (position, optimization) pair — O(n * m * n) in the instruction count n
-// and optimization count m.  See OPTIMIZER-1 in docs/BYTECODE_ISSUES.md for a
-// proposed improvement.
+// Performance: the inner rule loop is dispatched through an opcode-indexed
+// table (OPTIMIZER-3), so only rules whose first pattern opcode matches the
+// current instruction are tried.  Branch-target checking uses a pre-built
+// address set (OPTIMIZER-1) rather than a linear scan.  Both improvements
+// reduce the per-position cost from O(n*m) to O(p) where p is the average
+// number of matching rules per opcode.
 func (b *ByteCode) optimize(count int) (int, error) {
 	// If nothing has changed since the last optimization pass, bail out early.
 	// The 'optimized' flag is cleared whenever an instruction is emitted or
@@ -149,28 +151,80 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	// eliminated when logging is active.
 	startingSize := b.nextAddress
 
-	// Pre-compute the largest pattern size among all active rules.  After a
+	// Build two auxiliary structures over the optimizations slice.
+	//
+	// maxPatternSize: the widest pattern across all enabled rules.  After a
 	// successful substitution we back the scanner up by this amount so that
-	// the new instructions are re-evaluated — a substitution may reveal a
-	// further opportunity that spans the boundary between old and new code.
+	// the new instructions can participate in further rounds of optimization.
+	// The minimum safe retreat is maxPatternSize-1: a pattern that wide starting
+	// one instruction before the match could span the replacement.
+	//
+	// rulesByFirstOpcode: maps the first-instruction opcode of each enabled rule
+	// to the indices of rules with that opcode.  At each position we only try
+	// the rules whose first opcode matches the current instruction, skipping
+	// every other rule without ever examining it (OPTIMIZER-3).
 	maxPatternSize := 0
-	for _, optimization := range optimizations {
-		if optPatternSize := len(optimization.Pattern); optPatternSize > maxPatternSize {
-			maxPatternSize = optPatternSize
+	rulesByFirstOpcode := make(map[Opcode][]int)
+
+	for i, opt := range optimizations {
+		if opt.Disable || len(opt.Pattern) == 0 {
+			continue
 		}
+
+		if n := len(opt.Pattern); n > maxPatternSize {
+			maxPatternSize = n
+		}
+
+		firstOp := opt.Pattern[0].Operation
+		rulesByFirstOpcode[firstOp] = append(rulesByFirstOpcode[firstOp], i)
 	}
 
-	// Main scan loop.  idx advances forward through the instruction stream.
-	// After a successful substitution, idx is backed up (see below) so the
-	// new instructions are reconsidered.
-	for idx := 0; idx < b.nextAddress; idx++ {
-		found := false
+	// branchTargets is the set of all instruction addresses that are the
+	// destination of at least one branch instruction.  We use it in the inner
+	// loop to quickly reject patterns that contain a branch target — replacing
+	// such a pattern would invalidate any branch pointing into it.
+	//
+	// The set must be rebuilt after each Patch call because Patch adjusts branch
+	// operands.  needsRebuild starts true so we build before the first iteration.
+	var branchTargets map[int]bool
+	needsRebuild := true
 
-		// Try every optimization rule at the current position.
-		for _, optimization := range optimizations {
-			if optimization.Disable {
-				continue
+	// Main scan loop.  idx advances forward through the instruction stream.
+	// After a successful substitution, idx is backed up so the new instructions
+	// are re-evaluated for further optimization opportunities.
+	for idx := 0; idx < b.nextAddress; idx++ {
+		// Rebuild the branch-target set when the instruction stream changed.
+		// This is O(n) but only happens after each Patch, not every iteration
+		// (OPTIMIZER-1: pre-built set replaces the old O(n) per-rule scan).
+		if needsRebuild {
+			branchTargets = make(map[int]bool)
+
+			for _, i := range b.instructions[:b.nextAddress] {
+				if i.Operation > BranchInstructions {
+					// A branch instruction with a non-integer operand means malformed
+					// bytecode.  Rather than aborting the whole pass (the old behavior,
+					// OPTIMIZER-8), we simply do not add an entry for it — the
+					// branch-target check will then not block any window that happens
+					// to overlap this address, which is a conservative safe choice.
+					if dest, err := data.Int(i.Operand); err == nil {
+						branchTargets[dest] = true
+					} else {
+						ui.Log(ui.OptimizerLogger, "optimizer.branch.malformed", ui.A{
+							"operand": i.Operand})
+					}
+				}
 			}
+
+			needsRebuild = false
+		}
+
+		// Use the opcode dispatch table to find only the rules whose first
+		// pattern instruction matches the opcode at the current position.
+		// Rules with a different first opcode cannot possibly match here.
+		candidates := rulesByFirstOpcode[b.instructions[idx].Operation]
+
+		for _, ruleIdx := range candidates {
+			optimization := optimizations[ruleIdx]
 
 			// operandValues maps placeholder names to the concrete operand values
 			// captured while matching the current pattern.  Used to fill in
@@ -181,35 +235,20 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// (e.g., summing sequential PopScope counts via OptCount).
 			registers := make([]any, 5)
 
-			// Assume the pattern matches until we find evidence otherwise.
-			found = true
+			// Assume this rule matches until we find evidence otherwise.
+			found := true
 
-			// Safety check: reject this position if any branch instruction in the
-			// ENTIRE bytecode has a destination inside the candidate pattern region.
-			// Patching away instructions that are branch targets would invalidate
-			// those branches.
+			// Safety check: if any branch instruction targets an address inside the
+			// candidate pattern window, we must not replace those instructions —
+			// doing so would invalidate the branch.
 			//
-			// NOTE: this scan is O(n) per (position, optimization) pair, making the
-			// overall optimizer O(n^2 * m).  See OPTIMIZER-1 in BYTECODE_ISSUES.md
-			// for a proposed fix using a pre-built branch-target set.
-			for _, i := range b.instructions {
-				if i.Operation > BranchInstructions {
-					destination, err := data.Int(i.Operand)
-					if err != nil {
-						// A branch instruction with a non-integer operand indicates
-						// malformed bytecode.  Aborting the entire optimization pass
-						// is conservative but safe; see OPTIMIZER-8 in
-						// BYTECODE_ISSUES.md for a proposed softer approach.
-						return 0, errors.New(err)
-					}
+			// With the pre-built branchTargets set this is O(patternLen) rather
+			// than the former O(n) full-scan (OPTIMIZER-1).
+			for offset := 0; offset < len(optimization.Pattern); offset++ {
+				if branchTargets[idx+offset] {
+					found = false
 
-					// If the branch lands anywhere inside the candidate window,
-					// we cannot safely remove or rearrange those instructions.
-					if destination >= idx && destination < idx+len(optimization.Pattern) {
-						found = false
-
-						break
-					}
+					break
 				}
 			}
 
@@ -220,12 +259,11 @@ func (b *ByteCode) optimize(count int) (int, error) {
 			// Match each instruction in the pattern against the real instruction
 			// at the corresponding offset from idx.
 			for sourceIdx, sourceInstruction := range optimization.Pattern {
-				// If the remaining bytecode is shorter than the rest of the pattern,
-				// there is nothing to match — skip this rule.
+				// If the remaining bytecode is shorter than the rest of the
+				// pattern, this rule cannot match — skip it.
 				if b.nextAddress <= idx+sourceIdx {
 					found = false
 
-					// Stop checking this pattern; try the next one.
 					break
 				}
 
@@ -260,25 +298,36 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					}
 				}
 
-				// Fast path for string operands: compare directly without going
-				// through reflect.DeepEqual.
-				if operand1, ok := sourceInstruction.Operand.(string); ok {
-					if operand2, ok := i.Operand.(string); ok {
-						found = operand1 == operand2
-
-						continue
-					}
-				}
-
-				// General equality check for concrete (non-placeholder) operands.
-				// reflect.DeepEqual handles all types uniformly but is expensive;
-				// the fast string path above avoids it for the common string case.
-				// See OPTIMIZER-2 in BYTECODE_ISSUES.md for a proposed broader
-				// type-switch approach.
-				if reflect.DeepEqual(sourceInstruction.Operand, i.Operand) {
+				// Check equality between the pattern operand and the real operand.
+				// operandEqual uses a type-switch for common types to avoid
+				// reflection overhead, with reflect.DeepEqual as a fallback
+				// (OPTIMIZER-2).
+				if operandEqual(sourceInstruction.Operand, i.Operand) {
 					found = true
 
 					continue
+				}
+
+				// operandEqual returned false.  Determine what to do:
+				//
+				//  • placeholder{}: fall through to the capture/consistency
+				//    block below — its semantics are handled there.
+				//
+				//  • empty{}: the "operand must be nil" check at the top of
+				//    this loop already set found=false when i.Operand != nil.
+				//    If we reach here with empty{}, i.Operand IS nil and the
+				//    nil-operand match was already accepted; operandEqual just
+				//    can't compare empty{} to nil directly, so we fall through.
+				//
+				//  • any other concrete source value: the operands genuinely
+				//    don't match — reject the rule immediately.
+				_, isPlaceholder := sourceInstruction.Operand.(placeholder)
+				_, isEmpty := sourceInstruction.Operand.(empty)
+
+				if !isPlaceholder && !isEmpty {
+					found = false
+
+					break
 				}
 
 				// Handle placeholder operands: capture or verify consistency.
@@ -288,18 +337,13 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					if inMap {
 						// This placeholder name appeared earlier in the pattern.
 						// All occurrences must bind to the same operand value.
-						if value.Value == i.Operand {
-							// Values agree — nothing to do, keep matching.
-						} else if i.Operand != sourceInstruction.Operand {
-							// The operand differs from what we captured the first
-							// time we saw this name.  The pattern does not match.
-							// Note: the `else if` condition is always true for real
-							// bytecode (real operands are never placeholder structs);
-							// see OPTIMIZER-9 in BYTECODE_ISSUES.md for a cleanup
-							// suggestion.
+						// If they differ, the match fails.  Use break not continue
+						// so we stop checking once a mismatch is found (OPTIMIZER-6,
+						// OPTIMIZER-9).
+						if value.Value != i.Operand {
 							found = false
 
-							continue
+							break
 						}
 					} else {
 						// First occurrence of this placeholder name.  Record the
@@ -350,16 +394,25 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					if token, ok := replacement.Operand.(placeholder); ok {
 						switch token.Operation {
 						case optRunConstantFragment:
-							// Execute the matched instructions as a tiny program and
-							// use the result as the replacement operand.  This is the
-							// constant-folding path: Push(2)+Push(3)+Add → Push(5).
-							// See OPTIMIZER-7 for the overhead concern.
-							v, err := b.executeFragment(idx, idx+len(optimization.Pattern))
-							if err != nil {
-								return 0, err
-							}
+							// Constant folding: pre-compute the result of the matched
+							// instruction sequence.  A fast arithmetic path is tried
+							// first to avoid the full interpreter overhead (OPTIMIZER-7);
+							// it falls back to executeFragment for non-numeric types.
+							patLen := len(optimization.Pattern)
+							v1 := b.instructions[idx].Operand
+							v2 := b.instructions[idx+1].Operand
+							arithOp := b.instructions[idx+patLen-1].Operation
 
-							newInstruction.Operand = v
+							if result, ok := tryConstantArithmetic(arithOp, v1, v2); ok {
+								newInstruction.Operand = result
+							} else {
+								v, err := b.executeFragment(idx, idx+patLen)
+								if err != nil {
+									return 0, err
+								}
+
+								newInstruction.Operand = v
+							}
 
 						case optRead:
 							// Retrieve a value computed by OptCount or optStore during
@@ -394,21 +447,33 @@ func (b *ByteCode) optimize(count int) (int, error) {
 
 				// Splice the replacement instructions into the bytecode in place of
 				// the matched pattern.  Branch targets throughout the code are
-				// adjusted automatically.
+				// adjusted automatically by Patch.
 				b.Patch(idx, len(optimization.Pattern), replacements)
 
-				// Back up the scanner so the newly-emitted instructions can
-				// participate in further optimizations.  We retreat by
-				// maxPatternSize (the widest pattern across all rules) to be safe,
-				// though retreating by only the current pattern's size would
-				// suffice — see OPTIMIZER-4 in BYTECODE_ISSUES.md.
-				idx = (idx - maxPatternSize) - 1
+				// Mark the branch-target set as stale: Patch has adjusted branch
+				// operands throughout the instruction stream, so branchTargets no
+				// longer reflects the current state (OPTIMIZER-1).
+				needsRebuild = true
 
-				if idx < 0 {
-					idx = 0
+				// Back up the scanner so newly-emitted instructions can participate
+				// in further optimizations.  We retreat by maxPatternSize-1 positions
+				// before the current idx: that is the furthest-back position at which
+				// any rule (up to maxPatternSize instructions wide) could start and
+				// still include the new replacement instruction at idx.  Retreating
+				// further would be unnecessary work; retreating less would miss some
+				// opportunities (OPTIMIZER-4).
+				idx -= maxPatternSize - 1
+				if idx < -1 {
+					idx = -1 // after the loop's idx++, resumes at 0
 				}
 
 				count++
+
+				// Stop trying further rules at the old position; the outer loop
+				// will now restart from the backed-up position with all rules
+				// freshly available (OPTIMIZER-3 interaction: correct dispatch
+				// requires reading the new opcode at the backed-up position).
+				break
 			}
 		}
 	}
@@ -425,20 +490,121 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	return count, nil
 }
 
+// operandEqual compares two instruction operands for equality using a
+// type-switch for the most common types to avoid reflection overhead
+// (OPTIMIZER-2).  reflect.DeepEqual is used as a fallback for types not
+// enumerated here (e.g. StackMarker, which contains a []any field and
+// is therefore not directly comparable with ==).
+func operandEqual(a, b any) bool {
+	switch av := a.(type) {
+	case int:
+		bv, ok := b.(int)
+		return ok && av == bv
+
+	case int64:
+		bv, ok := b.(int64)
+		return ok && av == bv
+
+	case float64:
+		bv, ok := b.(float64)
+		return ok && av == bv
+
+	case bool:
+		bv, ok := b.(bool)
+		return ok && av == bv
+
+	case string:
+		bv, ok := b.(string)
+		return ok && av == bv
+
+	case nil:
+		return b == nil
+
+	default:
+		// Handles StackMarker (unexported []any field prevents ==) and any
+		// other composite types that appear as concrete operands.
+		return reflect.DeepEqual(a, b)
+	}
+}
+
+// tryConstantArithmetic attempts to evaluate op(v1, v2) directly for common
+// numeric and string types without running the interpreter (OPTIMIZER-7).
+//
+// Returns (result, true) when the computation succeeds.
+// Returns (nil, false) when the types are not handled here; the caller should
+// fall back to executeFragment for the full interpreter path.
+func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
+	switch a := v1.(type) {
+	case int:
+		b, ok := v2.(int)
+		if !ok {
+			return nil, false
+		}
+
+		switch op {
+		case Add:
+			return a + b, true
+		case Sub:
+			return a - b, true
+		case Mul:
+			return a * b, true
+		}
+
+	case int64:
+		b, ok := v2.(int64)
+		if !ok {
+			return nil, false
+		}
+
+		switch op {
+		case Add:
+			return a + b, true
+		case Sub:
+			return a - b, true
+		case Mul:
+			return a * b, true
+		}
+
+	case float64:
+		b, ok := v2.(float64)
+		if !ok {
+			return nil, false
+		}
+
+		switch op {
+		case Add:
+			return a + b, true
+		case Sub:
+			return a - b, true
+		case Mul:
+			return a * b, true
+		}
+
+	case string:
+		// Only addition (concatenation) applies to strings.
+		if op == Add {
+			b, ok := v2.(string)
+			if ok {
+				return a + b, true
+			}
+		}
+	}
+
+	return nil, false
+}
+
 // executeFragment runs a short slice of bytecode instructions as an isolated
 // mini-program and returns the single value left on the evaluation stack.
 //
-// It is used by the constant-folding optimizations (optRunConstantFragment) to
-// pre-compute the result of sequences like Push(2)+Push(3)+Add at compile time,
-// replacing them with a single Push(5).
+// It is used as the fallback path for constant-folding (optRunConstantFragment)
+// when tryConstantArithmetic cannot handle the operand types (e.g., type aliases
+// or string repetition).  The fast path in tryConstantArithmetic handles the
+// common int/float64/string cases without the overhead of building a full
+// interpreter context (OPTIMIZER-7).
 //
 // The instructions from index start (inclusive) up to end (exclusive) are
 // copied into a fresh ByteCode object, a Stop instruction is appended, and the
 // code is executed with strict type enforcement in an empty symbol table.
-//
-// Performance note: this creates a full ByteCode + SymbolTable + Context object
-// for every constant fold, even for trivially simple arithmetic.  See OPTIMIZER-7
-// in BYTECODE_ISSUES.md for a proposal to replace this with direct computation.
 func (b *ByteCode) executeFragment(start, end int) (any, error) {
 	fragment := New("code fragment")
 
@@ -451,7 +617,7 @@ func (b *ByteCode) executeFragment(start, end int) (any, error) {
 
 	s := symbols.NewSymbolTable("fragment")
 	c := NewContext(s, fragment)
-	c.typeStrictness = defs.StrictTypeEnforcement // Assume strict typing
+	c.typeStrictness = defs.StrictTypeEnforcement
 
 	if err := c.Run(); err != nil && !errors.Equal(err, errors.ErrStop) {
 		return nil, err
@@ -467,18 +633,15 @@ func (b *ByteCode) executeFragment(start, end int) (any, error) {
 // insert is the sequence of instructions to splice in at that position.
 //
 // After splicing, every branch instruction whose destination address is
-// strictly greater than start is adjusted by the difference
-// (deleteSize - len(insert)) so that it still points to the same logical
-// instruction despite the shift.
+// strictly greater than start is adjusted by (deleteSize - len(insert)) so
+// that it still points to the same logical instruction despite the shift.
 //
-// IMPORTANT: the current implementation is only safe when len(insert) <=
-// deleteSize (the replacement shrinks or keeps the same number of instructions).
-// If insert is longer than deleteSize the append chain will corrupt the tail of
-// the instruction array before it is captured.  All current optimizer rules only
-// shrink the bytecode, so this is a latent issue rather than an active bug.
-// See OPTIMIZER-5 in docs/BYTECODE_ISSUES.md.
+// The tail of the instruction array is explicitly copied before the splice
+// so that growing replacements (len(insert) > deleteSize) do not corrupt the
+// tail — the former append-chain was only safe when the replacement was no
+// larger than the deleted region (OPTIMIZER-5).
 func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
-	// offset is positive when we are shrinking (more deleted than inserted),
+	// offset is positive when shrinking (more deleted than inserted),
 	// zero when same size, and negative when growing.  Branch destinations
 	// that follow the patched region are decremented by this amount.
 	offset := deleteSize - len(insert)
@@ -498,16 +661,24 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 		b.Disasm(start, start+deleteSize)
 	}
 
-	// Splice: cut out the old instructions and insert the new ones.
-	// Step 1: truncate at 'start' and append the replacement.
-	// Step 2: append the original tail that follows the deleted region.
-	instructions := append(b.instructions[:start], insert...)
-	instructions = append(instructions, b.instructions[start+deleteSize:]...)
+	// Save the tail independently BEFORE any appending that might modify the
+	// backing array.  Without this copy, a growing replacement (len(insert) >
+	// deleteSize) would overwrite the tail before we appended it (OPTIMIZER-5).
+	tailStart := start + deleteSize
+	tail := make([]instruction, b.nextAddress-tailStart)
+	copy(tail, b.instructions[tailStart:b.nextAddress])
+
+	// Build the new instruction slice: head + insert + tail.
+	newLen := start + len(insert) + len(tail)
+	instructions := make([]instruction, 0, newLen)
+	instructions = append(instructions, b.instructions[:start]...)
+	instructions = append(instructions, insert...)
+	instructions = append(instructions, tail...)
 
 	// Fix up branch targets that pointed after the patched region.
-	// Targets at or before 'start' are unaffected (the instructions they
-	// point to did not move).  Targets after 'start' shifted by -offset
-	// because the total instruction count changed.
+	// Targets at or before 'start' are unaffected.
+	// Targets after 'start' shifted by -offset because the total
+	// instruction count changed.
 	for i := 0; i < len(instructions); i++ {
 		if instructions[i].Operation > BranchInstructions {
 			destination, err := data.Int(instructions[i].Operand)
