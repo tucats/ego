@@ -253,7 +253,9 @@ func Test_loadByteCode_Struct(t *testing.T) {
 	structType := data.StructureType(data.Field{Name: "id", Type: data.IntType})
 	s := data.NewStruct(structType)
 	s.SetAlways("id", 7)
+
 	tc := newTestContext(t)
+	
 	tc.ctx.symbols.SetAlways("record", s)
 
 	err := loadByteCode(tc.ctx, "record")

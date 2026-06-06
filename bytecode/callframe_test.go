@@ -627,10 +627,12 @@ func Test_FormatFrames_NilContext(t *testing.T) {
 // Test_FormatFrames_NoCallFrames verifies the output when there are no saved
 // call frames — the function shows only the current execution point.
 func Test_FormatFrames_NoCallFrames(t *testing.T) {
+	const mainName = "main"
+
 	tc := newTestContext(t)
-	tc.ctx.module = "main"
+	tc.ctx.module = mainName
 	tc.ctx.line = 10
-	tc.ctx.bc = &ByteCode{name: "main"}
+	tc.ctx.bc = &ByteCode{name: mainName}
 
 	got := tc.ctx.FormatFrames(1)
 

@@ -11,7 +11,7 @@ package bytecode
 //   - invokePanicDefers   – like invokeDeferredStatements but wires panicContext for
 //     recover() support
 //
-// # Behavioural overview
+// # behavioral overview
 //
 // Ego's defer mechanism mirrors Go's:
 //
@@ -141,7 +141,7 @@ func Test_deferStartByteCode_IntZeroOperand_TreatedAsFalse(t *testing.T) {
 func Test_deferStartByteCode_EmptyReceiverStack_SetsSizeToZero(t *testing.T) {
 	tc := newTestContext(t)
 
-	// Ensure receiver stack is empty (NewContext initialises it to nil anyway).
+	// Ensure receiver stack is empty (NewContext initializes it to nil anyway).
 	tc.ctx.receiverStack = nil
 
 	err := deferStartByteCode(tc.ctx, false)
@@ -322,12 +322,14 @@ func Test_deferByteCode_MultipleDefersCumulate(t *testing.T) {
 
 	// Register first defer.
 	tc.withStack(fn1)
+
 	if err := deferByteCode(tc.ctx, 0); err != nil {
 		t.Fatalf("first deferByteCode: unexpected error: %v", err)
 	}
 
 	// Register second defer.
 	tc.withStack(fn2)
+
 	if err := deferByteCode(tc.ctx, 0); err != nil {
 		t.Fatalf("second deferByteCode: unexpected error: %v", err)
 	}
@@ -530,8 +532,8 @@ func Test_deferByteCode_ReceiverCapture_MultipleNewReceivers_DEFER1(t *testing.T
 
 	entry := tc.ctx.deferStack[0]
 
-	// CORRECT behaviour: all receivers added SINCE defer-start (R1 and R2).
-	// BUGGY behaviour:   receiverStack[3-1:] = receiverStack[2:] = [R2] only.
+	// CORRECT behavior: all receivers added SINCE defer-start (R1 and R2).
+	// BUGGY behavior:   receiverStack[3-1:] = receiverStack[2:] = [R2] only.
 	wantReceivers := []this{R1, R2}
 
 	if !reflect.DeepEqual(entry.receiverStack, wantReceivers) {
@@ -546,7 +548,7 @@ func Test_deferByteCode_ReceiverCapture_MultipleNewReceivers_DEFER1(t *testing.T
 }
 
 // Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture verifies the
-// behaviour when deferThisSize is 0 (empty receiver stack at defer-start).
+// behavior when deferThisSize is 0 (empty receiver stack at defer-start).
 // The condition `deferThisSize > 0` guards the capture block, so even if new
 // receivers have been pushed, nothing is captured.
 //
@@ -572,7 +574,7 @@ func Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture(t *testing.T
 
 	entry := tc.ctx.deferStack[0]
 
-	// Current behaviour: no receivers captured because deferThisSize == 0.
+	// Current behavior: no receivers captured because deferThisSize == 0.
 	// See DEFER-2 in docs/bytecode_issues.md.
 	if len(entry.receiverStack) != 0 {
 		t.Errorf("DEFER-2: expected 0 captured receivers (deferThisSize=0), got %v",

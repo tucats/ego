@@ -971,7 +971,9 @@ func Test_notEqualByteCode_StructEqual(t *testing.T) {
 	structType := data.StructureType(data.Field{Name: "x", Type: data.IntType})
 	s1 := data.NewStruct(structType)
 	s1.SetAlways("x", 1)
+
 	s2 := data.NewStruct(structType)
+	
 	s2.SetAlways("x", 1)
 
 	tc := newTestContext(t).withStack(s1, s2)
@@ -987,7 +989,9 @@ func Test_notEqualByteCode_StructNotEqual(t *testing.T) {
 	structType := data.StructureType(data.Field{Name: "x", Type: data.IntType})
 	s1 := data.NewStruct(structType)
 	s1.SetAlways("x", 1)
+
 	s2 := data.NewStruct(structType)
+	
 	s2.SetAlways("x", 2) // different value
 
 	tc := newTestContext(t).withStack(s1, s2)

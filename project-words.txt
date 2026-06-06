@@ -65,6 +65,7 @@ dddde
 ddddp
 deepequal
 defaultuser
+Deferreds
 Deployers
 difflib
 disasm

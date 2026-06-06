@@ -2367,3 +2367,241 @@ if err != nil {
     return c.runtimeError(err)
 }
 ```
+
+---
+
+## MEMBERS-1 — `memberByteCode` returns raw errors from `c.Pop()` without `c.runtimeError` decoration
+
+**Affected function:** `memberByteCode`  
+**File:** `bytecode/member.go`  
+**Risk:** Low — stack-underflow errors from the two Pop calls in `memberByteCode`
+lack the module name and source-line annotation that all other runtime errors carry  
+**Discovered by:** `Test_memberByteCode_StackUnderflow_EmptyStack`,
+`Test_memberByteCode_StackUnderflow_OperandButEmptyStack`  
+**Status: RESOLVED**
+
+### MEMBERS-1: Description
+
+`memberByteCode` made two `c.Pop()` calls — one for the member name (when the
+operand is nil) and one for the object.  Both error paths returned the raw error
+without `c.runtimeError()` wrapping, so stack-underflow errors lacked module/line
+info.  This is the same pattern fixed in MATH-11, COMPARE-4, and LOAD-1.
+
+### MEMBERS-1: Fix
+
+Both error paths now use `c.runtimeError()`:
+
+```go
+// name pop — MEMBERS-1 fix:
+v, err = c.Pop()
+if err != nil {
+    return c.runtimeError(err)
+}
+
+// object pop — MEMBERS-1 fix:
+m, err = c.Pop()
+if err != nil {
+    return c.runtimeError(err)
+}
+```
+
+---
+
+## MEMBERS-2 — `getMemberValue` returns raw `ErrFunctionReturnedVoid` when stack marker detected
+
+**Affected function:** `getMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** Low — the error that reaches user code lacks source-location information  
+**Discovered by:** `Test_memberByteCode_StackMarkerAsObject`  
+**Status: RESOLVED**
+
+### MEMBERS-2: Description
+
+When `getMemberValue` detected a `StackMarker` as the object, it returned the
+error bare — inconsistent with all other error paths in the file.
+
+### MEMBERS-2: Fix
+
+```go
+// MEMBERS-2 fix: was returning errors.ErrFunctionReturnedVoid bare.
+if isStackMarker(m) {
+    return nil, c.runtimeError(errors.ErrFunctionReturnedVoid)
+}
+```
+
+---
+
+## MEMBERS-3 — `getStructMemberValue` returns raw errors without `c.runtimeError` decoration
+
+**Affected function:** `getStructMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** Low — struct member-access errors (`ErrUnknownMember`,
+`ErrSymbolNotExported`) lack module/line info  
+**Discovered by:** `Test_memberByteCode_Struct_FieldNotFound_Error`,
+`Test_memberByteCode_Struct_UnexportedField_OtherPackage_Error`  
+**Status: RESOLVED**
+
+### MEMBERS-3: Description
+
+Both error returns in `getStructMemberValue` were bare, so struct member-access
+errors lacked source-location context.
+
+### MEMBERS-3: Fix
+
+Both returns now use `c.runtimeError()`:
+
+```go
+// MEMBERS-3 fix:
+return nil, c.runtimeError(errors.ErrUnknownMember).Context(name)
+return nil, c.runtimeError(errors.ErrSymbolNotExported).Context(name)
+```
+
+---
+
+## MEMBERS-4 — `memberByteCode` doc comment says "second a map" but the function handles many types
+
+**Affected function:** `memberByteCode`  
+**File:** `bytecode/member.go`  
+**Risk:** None — documentation only; the implementation is correct  
+**Discovered by:** code review during `member_test.go` comprehensive audit  
+**Status: RESOLVED**
+
+### MEMBERS-4: Description
+
+The original doc comment read:
+
+```go
+// memberByteCode instruction processor. This pops two values from
+// the stack (the first must be a string and the second a
+// map) and indexes into the map to get the matching value
+// and puts back on the stack.
+```
+
+"The second a map" is incorrect.  The function actually dispatches over
+`*data.Struct`, `*data.Package`, `*data.Map` (only with extensions), `*any`,
+`*data.Type`, and native Go types.  The name also does not have to come from the
+stack — it can come from the instruction operand.
+
+### MEMBERS-4: Fix
+
+The comment was rewritten to accurately describe both name-source paths and all
+supported object types.  See the updated `memberByteCode` doc comment in
+`bytecode/member.go`.
+
+---
+
+## MEMBERS-5 — `getPackageMemberValue` signature includes dead parameters `v any` and `found bool`
+
+**Affected function:** `getPackageMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** None — no correctness impact; the parameters are always zero-valued
+when passed and are immediately overwritten inside the function  
+**Discovered by:** code review during `member_test.go` comprehensive audit  
+**Status: RESOLVED**
+
+### MEMBERS-5: Description
+
+`getPackageMemberValue` had two dead parameters — `v any` and `found bool` — that
+were always passed as zero values and immediately overwritten inside the function.
+
+### MEMBERS-5: Fix
+
+The dead parameters were removed.  New signature:
+
+```go
+// MEMBERS-5 fix: removed dead parameters v any and found bool.
+func getPackageMemberValue(name string, mv *data.Package, c *Context) (any, error)
+```
+
+The single call site in `getMemberValue` was updated accordingly:
+
+```go
+case *data.Package:
+    return getPackageMemberValue(name, mv, c)
+```
+
+The function now declares its own local `v` and `found` variables.
+
+---
+
+## MEMBERS-6 — `getMemberValue` ignores the member name when the object is `*data.Type`
+
+**Affected function:** `getMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** Medium — any named member access on a `*data.Type` value silently
+returns the type's string representation instead of the requested member's value
+or an error  
+**Discovered by:** `Test_memberByteCode_TypeObject_ReturnsTypeName_MEMBERS6`,
+`Test_memberByteCode_TypeObject_IntType_MEMBERS6`  
+**Status: RESOLVED**
+
+### MEMBERS-6: Description
+
+The original `*data.Type` fast path in `getMemberValue` returned `t.String()` for
+every member access, completely ignoring the `name` parameter:
+
+```go
+// Original (buggy):
+if t, ok := m.(*data.Type); ok {
+    v = t.String()
+    return v, nil   // name was never consulted
+}
+```
+
+This meant `someType.NonExistent` succeeded silently and pushed the type name
+string onto the stack rather than returning an error.
+
+### MEMBERS-6: Fix
+
+The fast path now performs a proper member lookup via `t.Function(name)`.  If a
+function is registered on the type under that name it is returned; otherwise
+`ErrUnknownMember` is reported:
+
+```go
+// MEMBERS-6 fix:
+if t, ok := m.(*data.Type); ok {
+    if fn := t.Function(name); fn != nil {
+        return data.UnwrapConstant(fn), nil
+    }
+    return nil, c.runtimeError(errors.ErrUnknownMember).Context(name)
+}
+```
+
+The two `_MEMBERS6` tests were renamed and updated:
+- `Test_memberByteCode_TypeObject_UnregisteredName_Error` — asserts `ErrUnknownMember`
+- `Test_memberByteCode_TypeObject_RegisteredFunction_OK` — positive case showing a registered function IS returned
+- `Test_memberByteCode_PtrAny_PointingToType_UnregisteredName` — the *any recursive path also now returns `ErrUnknownMember`
+
+---
+
+## MEMBERS-7 — `getMemberValue` silently returns `(nil, nil)` for a nil `*data.Type` behind `*any`
+
+**Affected function:** `getMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** Low — the nil `*data.Type` behind a `*any` case is an edge case
+unlikely to appear in well-formed Ego code, but it causes a silent nil push  
+**Discovered by:** `Test_memberByteCode_PtrAny_PointingToNilType_MEMBERS7`  
+**Status: RESOLVED**
+
+### MEMBERS-7: Description
+
+When the value behind a `*any` was a nil `*data.Type`, `BaseType()` returned nil,
+the `bv != nil` guard failed, and no return statement executed.  Control fell
+through to the end of `getMemberValue`, which returned `(nil, nil)`.
+`memberByteCode` then pushed nil onto the stack with no error.
+
+### MEMBERS-7: Fix
+
+An explicit error return was added for the nil-BaseType path:
+
+```go
+case *data.Type:
+    if bv := actual.BaseType(); bv != nil {
+        return getMemberValue(c, bv, name)
+    }
+    // MEMBERS-7 fix: return an error instead of falling through with (nil, nil).
+    return nil, c.runtimeError(errors.ErrInvalidType).Context("nil type")
+```
+
+`Test_memberByteCode_PtrAny_PointingToNilType` (renamed from the `_MEMBERS7`
+form) now asserts `ErrInvalidType`.
