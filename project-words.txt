@@ -270,6 +270,7 @@ unconfigured
 underflows
 unexp
 Unmarshal
+unmarshalled
 unmarshalling
 unparseable
 unsetenv

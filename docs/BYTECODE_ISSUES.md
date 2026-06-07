@@ -8,7 +8,31 @@ level, and the resolution.
 Entries are added as tests discover them — the tests themselves contain
 `// See bytecode/ISSUES.md` comments pointing here.
 
+<a name="toc"></a>
+
+## Table of Contents
+
+- [Testing Infrastructure](#testing-infrastructure)
+- [Branch Instructions](#branch)
+- [Call Instructions](#call)
+- [Try/Catch Instructions](#trycatch)
+- [Coerce and Conversions Instructions](#coerce)
+- [Comparison Instructions](#compare)
+- [Context Management](#context)
+- [Array, Map, Structure Creation](#create)
+- [Defer Management](#defer)
+- [Equality Testing](#equal)
+- [Load Instructions](#load)
+- [Flow Control](#flow)
+- [Math Operations](#math)
+- [Member Access](#members)
+- [Bytecode Optimizer](#optimizer)
+- [Range Loops](#range)
+- [Stack Management](#stack)
+
 ---
+
+<a name="testing-infrastructure"></a>
 
 ## Testing Infrastructure
 
@@ -79,6 +103,8 @@ read that source first — it is the single source of truth for how to create
 a context, push stack items, and assert outcomes.
 
 ---
+
+<a name="branch"></a>
 
 ## BRANCH-1 — Stack mutated before address validation in conditional branches
 
@@ -199,6 +225,8 @@ if address < 0 || address > c.bc.nextAddress {
 ```
 
 ---
+
+<a name="call"></a>
 
 ## CALL-1 — Argument count mismatch silently ignored for non-variadic functions with default ArgCount
 
@@ -747,6 +775,8 @@ why the clamp is needed.
 
 ---
 
+<a name="trycatch"></a>
+
 ## `TRYCATCH-1` — `willCatchByteCode` panics on negative integer operands
 
 **Affected function:** `willCatchByteCode`  
@@ -794,6 +824,8 @@ if i < 0 || i > len(catchSets) {
 returns `ErrInternalCompiler` without panicking.
 
 ---
+
+<a name="coerce"></a>
 
 ## COERCE-1 — `NeedsCoerce` returns the wrong answer when the `Push` operand does not match the target type
 
@@ -866,6 +898,8 @@ concrete type and the type assertion succeeds.
 on the stack rather than catching a panic.
 
 ---
+
+<a name="compare"></a>
 
 ## COMPARE-1 — `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests
 
@@ -1069,6 +1103,8 @@ updated to assert `nil` error and the correct boolean result.
 
 ---
 
+<a name="context"></a>
+
 ## CONTEXT-1 — `GetModuleName` panics with a nil pointer dereference when `bc` is nil
 
 **Affected function:** `GetModuleName`  
@@ -1169,6 +1205,8 @@ both `debugging` and `singleStep` to `true`.
 clears both fields.
 
 ---
+
+<a name="create"></a>
 
 ## CREATE-1 — `makeArrayByteCode` called `result.Set` twice per element
 
@@ -1339,6 +1377,8 @@ when only the base type is on the stack and count=1 requires one element pop.
 
 ---
 
+<a name="defer"></a>
+
 ## DEFER-1 — `deferByteCode` receiver slice captures wrong elements when new count ≠ deferThisSize
 
 **Affected function:** `deferByteCode`  
@@ -1456,6 +1496,8 @@ are aware of this guard and adjust it if needed.
 current (zero-capture) behavior as a regression anchor.
 
 ---
+
+<a name="equal"></a>
 
 ## EQUAL-1 — `equalTypes` returns an undecorated error (no module or line info)
 
@@ -1629,6 +1671,8 @@ still produce the correct bool results after the dead code was removed.
 
 ---
 
+<a name="load"></a>
+
 ## LOAD-1 — `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration
 
 **Affected function:** `explodeByteCode`  
@@ -1786,6 +1830,8 @@ should either add `t.Run` wrappers (making each case a named sub-test) or replac
 bare `return` with `continue` to let the loop reach cases 3 and 4.
 
 ---
+
+<a name="flow"></a>
 
 ## FLOW-1 — `Test_branchFalseByteCode` called `branchTrueByteCode` for its invalid-address sub-case
 
@@ -1964,6 +2010,8 @@ chain.  Key conversion notes:
   the program-counter carry-over from sub-case 1 to sub-case 2 is preserved.
 
 ---
+
+<a name="math"></a>
 
 ## MATH-1 — `exponentByteCode` returns 0 for signed integer `x^0` (should return 1)
 
@@ -2370,6 +2418,8 @@ if err != nil {
 
 ---
 
+<a name="members"></a>
+
 ## MEMBERS-1 — `memberByteCode` returns raw errors from `c.Pop()` without `c.runtimeError` decoration
 
 **Affected function:** `memberByteCode`  
@@ -2608,6 +2658,8 @@ case *data.Type:
 form) now asserts `ErrInvalidType`.
 
 ---
+
+<a name="optimizer"></a>
 
 ## OPTIMIZER-1 — Branch-target scan is O(n²): pre-build a target set instead
 
@@ -2914,6 +2966,8 @@ reject the match and short-circuit.
 
 ---
 
+<a name="range"></a>
+
 ## RANGE-1 — `rangeNextInteger` unconditionally calls `c.symbols.Set` without guarding empty or discarded variable names
 
 **Affected function:** `rangeNextInteger`  
@@ -3131,6 +3185,8 @@ if err == nil {
 `len(tc.ctx.rangeStack) == 0` after an unsupported type error.
 
 ---
+
+<a name="stack"></a>
 
 ## STACK-1 — `copyByteCode` pushes the integer literal `2` instead of the deep copy
 
