@@ -219,9 +219,15 @@ func pushByteCode(c *Context, i any) error {
 	return c.push(i)
 }
 
-// dropByteCode instruction processor drops items from the stack and
-// discards them. By default, one item is dropped, but an integer
-// operand can be specified indicating how many items to drop.
+// dropByteCode instruction processor drops items from the stack and discards
+// them.  By default one item is dropped, but an integer operand can be given
+// to drop that many items at once.
+//
+// STACK-3 fix: the original code returned nil when Pop() reported an underflow,
+// silently accepting an over-drop.  This was inconsistent with every other
+// stack-consuming instruction in the package, which all propagate underflow
+// errors.  The fix returns the error so callers can detect a mismatch between
+// the number of items requested and the number actually present.
 func dropByteCode(c *Context, i any) error {
 	var err error
 
@@ -233,10 +239,11 @@ func dropByteCode(c *Context, i any) error {
 		}
 	}
 
-	for n := 0; n < count; n = n + 1 {
-		_, err := c.Pop()
-		if err != nil {
-			return nil
+	for n := 0; n < count; n++ {
+		if _, err = c.Pop(); err != nil {
+			// Propagate stack underflow rather than silently swallowing it
+			// (STACK-3 fix).
+			return err
 		}
 	}
 
@@ -256,12 +263,17 @@ func dupByteCode(c *Context, i any) error {
 	return nil
 }
 
-// dupByteCode instruction processor reads an item from the stack,
-// without otherwise changing the stack, and then pushes it back
-// on the stack. The argument must be an integer which describes the
-// offset from the top-of-stack. That is, zero means just duplicate
-// the ToS, while 1 means read the second item and make a dup on the
-// stack of that value, etc.
+// readStackByteCode reads an item from the stack without removing any existing
+// items, then pushes a copy of it.  The operand is a non-negative integer offset
+// from the top-of-stack: 0 means the topmost item (same as Dup), 1 means the
+// item one below TOS, and so on.  Negative operands are treated as their
+// absolute value.
+//
+// STACK-2 fix: the original guard was `idx > c.stackPointer`, which failed to
+// catch the case where idx == c.stackPointer (e.g. idx=0 on an empty stack or
+// idx=1 with one item).  In those cases the computed slice index
+// (c.stackPointer-1)-idx went negative, causing a runtime panic.
+// Changed to `idx >= c.stackPointer` so the boundary is correctly rejected.
 func readStackByteCode(c *Context, i any) error {
 	idx, err := data.Int(i)
 	if err != nil {
@@ -272,7 +284,9 @@ func readStackByteCode(c *Context, i any) error {
 		idx = -idx
 	}
 
-	if idx > c.stackPointer {
+	// Guard: idx must be strictly less than stackPointer so that
+	// (c.stackPointer-1)-idx remains a valid non-negative slice index.
+	if idx >= c.stackPointer {
 		return c.runtimeError(errors.ErrStackUnderflow)
 	}
 
@@ -299,23 +313,34 @@ func swapByteCode(c *Context, i any) error {
 	return nil
 }
 
-// copyByteCode instruction processor makes a copy of the topmost
-// object. This is different than duplicating, as it creates a
-// entire deep copy of the object.
+// copyByteCode instruction processor makes a copy of the topmost object.
+// This is different from duplicating: it creates an entirely new value via a
+// JSON round-trip, so the copy and the original share no underlying memory.
+// After this instruction the stack contains [original, deep_copy] with the
+// deep copy on top.
+//
+// STACK-1 fix: the original code pushed the integer literal 2 instead of v2
+// (the unmarshalled copy).  Changed c.push(2) to c.push(v2).
 func copyByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
+	// Keep the original on the stack first.
 	_ = c.push(v)
 
-	// Use JSON as a reflection-based clone operation
+	// JSON round-trip to produce a deep copy that shares no memory with v.
+	// Note: json.Unmarshal always produces float64 for numeric values,
+	// map[string]any for objects, and []any for arrays — the copy may have
+	// a different Go type than the original.
 	var v2 any
 
 	byt, _ := json.Marshal(v)
 	err = json.Unmarshal(byt, &v2)
-	_ = c.push(2)
+
+	// Push the deep copy, not the integer literal 2 (STACK-1 fix).
+	_ = c.push(v2)
 
 	if err != nil {
 		err = errors.New(err)

@@ -3129,3 +3129,117 @@ if err == nil {
 
 `Test_rangeInitByteCode_UnsupportedType` now asserts
 `len(tc.ctx.rangeStack) == 0` after an unsupported type error.
+
+---
+
+## STACK-1 — `copyByteCode` pushes the integer literal `2` instead of the deep copy
+
+**Affected function:** `copyByteCode`  
+**File:** `bytecode/stack.go`  
+**Risk:** High — every call to the Copy opcode produces a wrong stack layout:
+the second stack slot holds the integer `2` rather than a deep copy of the
+original value; any code that reads the copy gets `2` instead of the expected
+duplicate  
+**Discovered by:** `Test_copyByteCode_PushesIntegerTwo_CurrentlyBroken_STACK1`  
+**Status: RESOLVED**
+
+### STACK-1: Description
+
+`copyByteCode` correctly marshalled the original value into `v2` via a JSON
+round-trip but then pushed the integer literal `2` instead of `v2`.
+
+### STACK-1: Fix
+
+Changed `c.push(2)` to `c.push(v2)`:
+
+```go
+byt, _ := json.Marshal(v)
+err = json.Unmarshal(byt, &v2)
+_ = c.push(v2)           // was: c.push(2)
+```
+
+A function-level comment was added noting that `json.Unmarshal` produces
+`float64` for all numeric values, so the copy of an integer has a different
+Go type than the original.
+
+Test renamed from `_PushesIntegerTwo_CurrentlyBroken_STACK1` to
+`_PushesDeepCopy_STACK1`; now asserts `TOS == float64(99)` after copying
+`int(99)`.
+
+---
+
+## STACK-2 — `readStackByteCode` guard uses `>` instead of `>=`, causing panics on boundary indices
+
+**Affected function:** `readStackByteCode`  
+**File:** `bytecode/stack.go`  
+**Risk:** High — two boundary conditions trigger an unrecoverable runtime panic
+(negative slice index) instead of returning `ErrStackUnderflow`  
+**Discovered by:** `Test_readStackByteCode_EmptyStack_CurrentlyBroken_STACK2`,
+`Test_readStackByteCode_IndexBeyondStack_CurrentlyBroken_STACK2`  
+**Status: RESOLVED**
+
+### STACK-2: Description
+
+The guard `idx > c.stackPointer` missed the boundary case where
+`idx == c.stackPointer`, causing `c.stack[(stackPointer-1)-idx]` to compute a
+negative slice index and panic.
+
+### STACK-2: Fix
+
+Changed the guard from `>` to `>=`:
+
+```go
+// was: if idx > c.stackPointer {
+if idx >= c.stackPointer {
+    return c.runtimeError(errors.ErrStackUnderflow)
+}
+```
+
+An expanded function-level comment was added explaining the correctness
+requirement: `idx` must be strictly less than `stackPointer` so the computed
+slice index `(stackPointer-1)-idx` is always non-negative.
+
+Both tests were renamed (dropping `_CurrentlyBroken_`) and updated to assert
+`ErrStackUnderflow` directly rather than catching a recover() panic:
+
+- `Test_readStackByteCode_EmptyStack_STACK2`
+- `Test_readStackByteCode_IndexEqualsStackPointer_STACK2`
+
+---
+
+## STACK-3 — `dropByteCode` silently swallows stack underflow when dropping more items than exist
+
+**Affected function:** `dropByteCode`  
+**File:** `bytecode/stack.go`  
+**Risk:** Low — over-drops are silently accepted; callers that rely on Drop
+removing a precise number of items cannot detect that fewer items were actually
+removed  
+**Discovered by:** `Test_dropByteCode_SilentUnderflow_STACK3`  
+**Status: RESOLVED**
+
+### STACK-3: Description
+
+When the stack ran dry before `count` items had been dropped, `dropByteCode`
+returned `nil` instead of propagating the underflow error, inconsistently with
+every other stack-consuming function in the package.
+
+### STACK-3: Fix
+
+Implemented Option A (strict): `return nil` changed to `return err` inside the
+Pop loop, with an explanatory comment:
+
+```go
+for n := 0; n < count; n++ {
+    if _, err = c.Pop(); err != nil {
+        // Propagate stack underflow rather than silently swallowing it
+        // (STACK-3 fix).
+        return err
+    }
+}
+```
+
+The 869-test Ego integration suite confirmed that no existing program relies on
+the silent over-drop behavior.
+
+Test renamed from `_SilentUnderflow_STACK3` to `_UnderflowReturnsError_STACK3`;
+now asserts `ErrStackUnderflow` rather than logging that nil was returned.
