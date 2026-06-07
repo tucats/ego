@@ -259,7 +259,7 @@ func Test_Context_SetGlobal_StoresInRootTable(t *testing.T) {
 	// Root() would traverse past our test table to the package root.
 	root := symbols.NewChildSymbolTable("root", nil)
 	child := symbols.NewChildSymbolTable("child", root)
-	
+
 	root.SetAlways("globalVar", 0)
 
 	ctx := NewContext(child, New("test"))
@@ -590,10 +590,12 @@ func Test_Context_push_UpdatesMaxStackSize(t *testing.T) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 func Test_Context_unwrapConstant_ImmutableValue(t *testing.T) {
+	const greeting = "hello"
+
 	ctx := NewContext(symbols.NewSymbolTable("test"), New("test"))
 
-	got := ctx.unwrapConstant(data.Immutable{Value: "hello"})
-	if got != "hello" {
+	got := ctx.unwrapConstant(data.Immutable{Value: greeting})
+	if got != greeting {
 		t.Errorf("unwrapConstant(Immutable): got %v, want \"hello\"", got)
 	}
 }

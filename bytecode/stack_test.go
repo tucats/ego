@@ -41,7 +41,7 @@ package bytecode
 // # Testing conventions
 //
 // New tests use the newTestContext helper from testhelpers_test.go so they get
-// a properly initialised Context with symbol tables and bytecode, rather than
+// a properly initialized Context with symbol tables and bytecode, rather than
 // raw &Context{} struct literals.  Flat (non-table-driven) style is used so
 // each scenario is independently runnable with -run.
 
@@ -230,6 +230,7 @@ func Test_NewStackMarker_ValuesStored(t *testing.T) {
 	if len(m.values) != 3 {
 		t.Fatalf("values length = %d, want 3", len(m.values))
 	}
+
 	if m.values[0] != 42 || m.values[1] != true || m.values[2] != "extra" {
 		t.Errorf("values = %v, want [42 true extra]", m.values)
 	}
@@ -239,7 +240,7 @@ func Test_NewStackMarker_ValuesStored(t *testing.T) {
 // Section 2 — isStackMarker (additional coverage)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Test_isStackMarker_CallFrame verifies that a *CallFrame value is recognised
+// Test_isStackMarker_CallFrame verifies that a *CallFrame value is recognized
 // as a stack marker even though it is not a StackMarker struct.
 // Call frames are pushed onto the runtime stack to preserve execution context
 // when a function is called; isStackMarker needs to detect them so that
@@ -247,7 +248,7 @@ func Test_NewStackMarker_ValuesStored(t *testing.T) {
 func Test_isStackMarker_CallFrame(t *testing.T) {
 	frame := &CallFrame{}
 	if !isStackMarker(frame) {
-		t.Error("*CallFrame should be recognised as a stack marker")
+		t.Error("*CallFrame should be recognized as a stack marker")
 	}
 }
 
@@ -260,6 +261,7 @@ func Test_isStackMarker_LabelMatchCaseInsensitive(t *testing.T) {
 	if !isStackMarker(m, "LET") {
 		t.Error("isStackMarker should match label case-insensitively")
 	}
+
 	if !isStackMarker(m, "Let") {
 		t.Error("isStackMarker should match label case-insensitively")
 	}
@@ -281,9 +283,11 @@ func Test_isStackMarker_NoMatchReturnsNil(t *testing.T) {
 	if isStackMarker(nil) {
 		t.Error("nil should not be a stack marker")
 	}
+
 	if isStackMarker(42) {
 		t.Error("integer should not be a stack marker")
 	}
+
 	if isStackMarker("let") {
 		t.Error("string should not be a stack marker")
 	}
@@ -318,6 +322,7 @@ func Test_findMarker_RespectsFramePointer(t *testing.T) {
 		stackPointer: 2,
 		framePointer: 2, // marker is at index 0, below framePointer 2
 	}
+
 	got := findMarker(ctx, "deep")
 	if got != 0 {
 		// 0 means "not found" — which is the expected result here because
@@ -413,7 +418,7 @@ func Test_dropToMarkerByteCode_RespectsFramePointer(t *testing.T) {
 // stackCheckByteCode is used to verify that a function's multiple return values
 // are actually on the stack before the caller tries to read them.
 func Test_stackCheckByteCode_PassWithMarkerPresent(t *testing.T) {
-	// Stack (bottom→top): Marker("results"), "retval1", "retval2"
+	// Stack (bottom→top): Marker("results"), "retral1", "retval2"
 	// Checking for count=2 should succeed because a marker is present.
 	tc := newTestContext(t).withStack(NewStackMarker("results"), "retval1", "retval2")
 	tc.ctx.bc.nextAddress = 10
@@ -539,6 +544,7 @@ func Test_pushByteCode_NonLiteralBytecodeNotCloned(t *testing.T) {
 	}
 
 	v, _ := tc.ctx.Pop()
+
 	pushed, ok := v.(*ByteCode)
 	if !ok {
 		t.Fatalf("expected *ByteCode, got %T", v)
@@ -813,14 +819,14 @@ func Test_swapByteCode_EmptyStackUnderflow(t *testing.T) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Test_copyByteCode_PushesDeepCopy_STACK1 verifies the STACK-1 fix: after
-// copyByteCode runs, TOS is the JSON deep copy of the original value (not the
-// integer literal 2 that the buggy code pushed).
+// copyByteCode runs, TOS is a true deep copy of the original value (not the
+// integer literal 2 that the original buggy code pushed).
 //
 // STACK-1 fix: changed `c.push(2)` to `c.push(v2)`.
 //
-// Important JSON type note: json.Unmarshal always deserialises numbers as
-// float64, so a copy of int(99) becomes float64(99).  The original integer is
-// preserved unchanged below the copy on the stack.
+// Type preservation note: data.Copy preserves the exact Go type of each value,
+// so a copy of int(99) stays int(99).  This is an improvement over the old
+// JSON round-trip, which always produced float64 for any numeric input.
 func Test_copyByteCode_PushesDeepCopy_STACK1(t *testing.T) {
 	tc := newTestContext(t).withStack(99)
 
@@ -829,7 +835,7 @@ func Test_copyByteCode_PushesDeepCopy_STACK1(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// TOS must be the JSON deep copy: float64(99) for an integer source.
+	// TOS must be the deep copy: data.Copy preserves the int type.
 	tos, popErr := tc.ctx.Pop()
 	if popErr != nil {
 		t.Fatalf("Pop failed: %v", popErr)
@@ -839,8 +845,8 @@ func Test_copyByteCode_PushesDeepCopy_STACK1(t *testing.T) {
 		t.Fatal("STACK-1: copyByteCode still pushes integer 2 instead of the deep copy")
 	}
 
-	if tos != float64(99) {
-		t.Errorf("STACK-1: TOS = %v (%T), want float64(99)", tos, tos)
+	if tos != int(99) {
+		t.Errorf("STACK-1: TOS = %v (%T), want int(99)", tos, tos)
 	}
 }
 
@@ -854,7 +860,7 @@ func Test_copyByteCode_OriginalRemainsOnStack(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Discard TOS (the JSON deep copy, float64(77)).
+	// Discard TOS (the deep copy, int(77)).
 	_, _ = tc.ctx.Pop()
 
 	// The original int(77) must still be below.
@@ -901,7 +907,7 @@ func Test_getVarArgsByteCode_NoArgList(t *testing.T) {
 // getVarArgsByteCode pushes a sub-array starting at the given position.
 //
 // Example: args = ["a", "b", "c", "d"], position = 2
-// → pushes ["c", "d"] (everything from index 2 onwards)
+// → pushes ["c", "d"] (everything from index 2 onwards).
 func Test_getVarArgsByteCode_WithArgs(t *testing.T) {
 	// Set up __args = ["a", "b", "c", "d"].
 	tc := newTestContext(t).withArgList("a", "b", "c", "d")
@@ -941,6 +947,7 @@ func Test_getVarArgsByteCode_PositionBeyondArgs(t *testing.T) {
 	}
 
 	v, _ := tc.ctx.Pop()
+
 	arr, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("expected *data.Array, got %T", v)

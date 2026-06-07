@@ -187,6 +187,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 	// The set must be rebuilt after each Patch call because Patch adjusts branch
 	// operands.  needsRebuild starts true so we build before the first iteration.
 	var branchTargets map[int]bool
+
 	needsRebuild := true
 
 	// Main scan loop.  idx advances forward through the instruction stream.
@@ -499,22 +500,27 @@ func operandEqual(a, b any) bool {
 	switch av := a.(type) {
 	case int:
 		bv, ok := b.(int)
+
 		return ok && av == bv
 
 	case int64:
 		bv, ok := b.(int64)
+
 		return ok && av == bv
 
 	case float64:
 		bv, ok := b.(float64)
+
 		return ok && av == bv
 
 	case bool:
 		bv, ok := b.(bool)
+
 		return ok && av == bv
 
 	case string:
 		bv, ok := b.(string)
+		
 		return ok && av == bv
 
 	case nil:

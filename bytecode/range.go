@@ -167,6 +167,7 @@ func rangeInitByteCode(c *Context, i any) error {
 				// for the rest of the function's lifetime.
 				r.keySet = actual.Keys()
 				actual.SetReadonly(true)
+				
 				r.cleanup = func() { actual.SetReadonly(false) }
 
 			case *data.Array:

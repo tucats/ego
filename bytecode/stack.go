@@ -1,7 +1,6 @@
 package bytecode
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -313,40 +312,39 @@ func swapByteCode(c *Context, i any) error {
 	return nil
 }
 
-// copyByteCode instruction processor makes a copy of the topmost object.
-// This is different from duplicating: it creates an entirely new value via a
-// JSON round-trip, so the copy and the original share no underlying memory.
-// After this instruction the stack contains [original, deep_copy] with the
-// deep copy on top.
+// copyByteCode instruction processor makes a fully independent copy of the
+// topmost stack value using data.Copy.  After this instruction the stack
+// contains [original, deep_copy] with the deep copy on top.
+//
+// data.Copy preserves the exact Go type of every element (int stays int,
+// float32 stays float32, etc.) because it copies type-by-type rather than
+// going through a JSON round-trip.  It returns an error for any value whose
+// type is not part of the Ego data model (e.g. a raw native Go struct).
 //
 // STACK-1 fix: the original code pushed the integer literal 2 instead of v2
-// (the unmarshalled copy).  Changed c.push(2) to c.push(v2).
+// (the unmarshalled copy).  That version has now been replaced entirely by
+// the data.Copy call below.
 func copyByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
-	// Keep the original on the stack first.
+	// Keep the original on the stack first so the final layout is
+	// [original (below), copy (top)].
 	_ = c.push(v)
 
-	// JSON round-trip to produce a deep copy that shares no memory with v.
-	// Note: json.Unmarshal always produces float64 for numeric values,
-	// map[string]any for objects, and []any for arrays — the copy may have
-	// a different Go type than the original.
-	var v2 any
-
-	byt, _ := json.Marshal(v)
-	err = json.Unmarshal(byt, &v2)
-
-	// Push the deep copy, not the integer literal 2 (STACK-1 fix).
-	_ = c.push(v2)
-
+	// data.Copy performs a recursive, type-preserving deep copy.  It returns
+	// an error if it encounters a type that cannot be safely copied (e.g. a
+	// native Go struct that lives outside the Ego data model).
+	v2, err := data.Copy(v)
 	if err != nil {
-		err = errors.New(err)
+		return c.runtimeError(err)
 	}
 
-	return err
+	_ = c.push(v2)
+
+	return nil
 }
 
 func getVarArgsByteCode(c *Context, i any) error {

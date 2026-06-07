@@ -154,6 +154,7 @@ MMMCMXCIX
 MMXXIV
 modernc
 myapp
+mymark
 myprogram
 myrole
 mysecret
@@ -207,6 +208,7 @@ regclass
 relname
 relnamespace
 resty
+retval
 romannumeral
 rowcount
 rowcounts
@@ -267,6 +269,7 @@ TOTP
 Trunc
 typehint
 unconfigured
+uncopyable
 underflows
 unexp
 Unmarshal

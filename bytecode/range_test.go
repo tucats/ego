@@ -241,6 +241,7 @@ func Test_rangeInitByteCode_IntegerTypes(t *testing.T) {
 		err := rangeInitByteCode(tc.ctx, []any{"i", ""})
 		if err != nil {
 			t.Errorf("rangeInitByteCode(%T) returned error: %v", v, err)
+
 			continue
 		}
 
@@ -480,7 +481,7 @@ func Test_rangeNextByteCode_DefaultCase_PopsRangeStack_RANGE2(t *testing.T) {
 // Test_rangeNextString_FullIteration verifies a complete for-range loop over a
 // 3-character ASCII string.
 //
-// Expected per-step behaviour:
+// Expected per-step behavior:
 //   step 0: index var = 0 (byte offset), value var = "a", PC unchanged
 //   step 1: index var = 1,               value var = "b", PC unchanged
 //   step 2: index var = 2,               value var = "c", PC unchanged
@@ -491,7 +492,7 @@ func Test_rangeNextString_FullIteration(t *testing.T) {
 		withBytecodeSize(dest+1).
 		withStack("abc")
 
-	// Initialise the range (creates symbols, populates rangeStack).
+	// initialize the range (creates symbols, populates rangeStack).
 	if err := rangeInitByteCode(tc.ctx, []any{"idx", "val"}); err != nil {
 		t.Fatalf("rangeInitByteCode: %v", err)
 	}
@@ -612,6 +613,7 @@ func Test_rangeNextString_MultiByteUTF8(t *testing.T) {
 // 3-element integer array.
 func Test_rangeNextArray_FullIteration(t *testing.T) {
 	const dest = 99
+
 	arr := data.NewArrayFromInterfaces(data.IntType, 10, 20, 30)
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
@@ -654,6 +656,7 @@ func Test_rangeNextArray_FullIteration(t *testing.T) {
 // exhausts immediately.
 func Test_rangeNextArray_EmptyArray(t *testing.T) {
 	const dest = 20
+
 	arr := data.NewArray(data.IntType, 0)
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
@@ -674,6 +677,7 @@ func Test_rangeNextArray_EmptyArray(t *testing.T) {
 // "_", the symbol is not set and no error results.
 func Test_rangeNextArray_DiscardedIndex(t *testing.T) {
 	const dest = 20
+
 	arr := data.NewArrayFromInterfaces(data.IntType, 42)
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
@@ -695,6 +699,7 @@ func Test_rangeNextArray_DiscardedIndex(t *testing.T) {
 // "_", only the index is set.
 func Test_rangeNextArray_DiscardedValue(t *testing.T) {
 	const dest = 20
+
 	arr := data.NewArrayFromInterfaces(data.IntType, 99)
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
@@ -720,6 +725,7 @@ func Test_rangeNextArray_DiscardedValue(t *testing.T) {
 // key/value pairs and checks them as a set.
 func Test_rangeNextMap_FullIteration(t *testing.T) {
 	const dest = 99
+
 	m := data.NewMap(data.StringType, data.IntType)
 	m.Set("x", 10) //nolint:errcheck
 	m.Set("y", 20) //nolint:errcheck
@@ -781,6 +787,7 @@ func Test_rangeNextMap_FullIteration(t *testing.T) {
 // immediately AND clears the readonly lock.
 func Test_rangeNextMap_EmptyMap(t *testing.T) {
 	const dest = 20
+
 	m := data.NewMap(data.StringType, data.IntType)
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
@@ -806,6 +813,7 @@ func Test_rangeNextMap_EmptyMap(t *testing.T) {
 // locked while iteration is in progress (before exhaustion).
 func Test_rangeNextMap_ReadonlyDuringIteration(t *testing.T) {
 	const dest = 99
+
 	m := data.NewMap(data.StringType, data.IntType)
 	m.Set("a", 1) //nolint:errcheck
 
@@ -893,7 +901,9 @@ func Test_rangeNextMap_EarlyExitReleasesMap_RANGE3(t *testing.T) {
 // three values is consumed correctly and then exhausts.
 func Test_rangeNextChannel_FullIteration(t *testing.T) {
 	const dest = 99
+
 	ch := data.NewChannel(3)
+
 	ch.Send(100) //nolint:errcheck
 	ch.Send(200) //nolint:errcheck
 	ch.Send(300) //nolint:errcheck
@@ -940,6 +950,7 @@ func Test_rangeNextChannel_FullIteration(t *testing.T) {
 // that is already closed and empty exhausts immediately.
 func Test_rangeNextChannel_ClosedEmptyChannel(t *testing.T) {
 	const dest = 15
+
 	ch := data.NewChannel(1)
 	ch.Close()
 
@@ -962,6 +973,7 @@ func Test_rangeNextChannel_ClosedEmptyChannel(t *testing.T) {
 // works correctly when both loop variables are discarded ("_").
 func Test_rangeNextChannel_DiscardedVariables(t *testing.T) {
 	const dest = 10
+
 	ch := data.NewChannel(1)
 	ch.Send(42) //nolint:errcheck
 	ch.Close()
@@ -995,6 +1007,7 @@ func Test_rangeNextChannel_DiscardedVariables(t *testing.T) {
 // an integer count of 3 (indices 0, 1, 2).
 func Test_rangeNextInteger_FullIteration(t *testing.T) {
 	const dest = 99
+
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
 		withStack(3)
@@ -1033,6 +1046,7 @@ func Test_rangeNextInteger_FullIteration(t *testing.T) {
 // immediately without executing any iterations.
 func Test_rangeNextInteger_ZeroRange(t *testing.T) {
 	const dest = 20
+
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
 		withStack(0)
@@ -1052,6 +1066,7 @@ func Test_rangeNextInteger_ZeroRange(t *testing.T) {
 // immediately (no iterations).
 func Test_rangeNextInteger_NegativeRange(t *testing.T) {
 	const dest = 20
+
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
 		withStack(-5)
@@ -1081,6 +1096,7 @@ func Test_rangeNextInteger_NegativeRange(t *testing.T) {
 // unconditional Set call was always going to fail for discarded index names.
 func Test_rangeNextInteger_DiscardedIndex_RANGE1(t *testing.T) {
 	const dest = 20
+
 	tc := newTestContext(t).
 		withBytecodeSize(dest+1).
 		withStack(2) // two iterations
@@ -1110,6 +1126,7 @@ func Test_rangeNextInteger_DiscardedIndex_RANGE1(t *testing.T) {
 // iterator should advance silently without attempting any symbol write.
 func Test_rangeNextInteger_EmptyIndexName_RANGE1(t *testing.T) {
 	const dest = 20
+
 	tc := newTestContext(t).withBytecodeSize(dest + 1)
 
 	// Push a range entry with empty index name directly (bypassing
@@ -1143,6 +1160,7 @@ func Test_rangeNextInteger_EmptyIndexName_RANGE1(t *testing.T) {
 // and shrinks correctly, and that each loop's variables are independent.
 func Test_rangeNested(t *testing.T) {
 	const outerDest = 90
+
 	const innerDest = 80
 
 	tc := newTestContext(t).withBytecodeSize(100)

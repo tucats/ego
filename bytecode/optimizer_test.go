@@ -13,7 +13,7 @@ package bytecode
 //                          tests each, verifying that the rule fires on matching bytecode
 //                          and does NOT fire on non-matching bytecode
 //  5. Concrete-operand    — regression tests for the bug where a concrete operand
-//     mismatch            mismatch (e.g. "Store err" vs. pattern "Store _") caused
+//     mismatch            mis-match (e.g. "Store err" vs. pattern "Store _") caused
 //                          the wrong rule to fire (OPTIMIZER-2 bug fix)
 //  6. Branch safety       — optimizer must not collapse a pattern window that contains
 //                          a branch target
@@ -44,10 +44,12 @@ import (
 // mustOptimize calls optimize(0) and fails the test if it returns an error.
 func mustOptimize(t *testing.T, b *ByteCode) int {
 	t.Helper()
+
 	count, err := b.optimize(0)
 	if err != nil {
 		t.Fatalf("optimize returned unexpected error: %v", err)
 	}
+
 	return count
 }
 
@@ -55,9 +57,11 @@ func mustOptimize(t *testing.T, b *ByteCode) int {
 // is out of range.
 func instrAt(t *testing.T, b *ByteCode, addr int) instruction {
 	t.Helper()
+
 	if addr < 0 || addr >= b.nextAddress {
 		t.Fatalf("address %d out of range [0, %d)", addr, b.nextAddress)
 	}
+
 	return b.instructions[addr]
 }
 
@@ -65,6 +69,7 @@ func instrAt(t *testing.T, b *ByteCode, addr int) instruction {
 // instructions.
 func assertSize(t *testing.T, b *ByteCode, n int) {
 	t.Helper()
+
 	if b.nextAddress != n {
 		t.Fatalf("expected %d instructions, got %d", n, b.nextAddress)
 	}
@@ -74,10 +79,12 @@ func assertSize(t *testing.T, b *ByteCode, n int) {
 // and operand.
 func assertInstr(t *testing.T, b *ByteCode, addr int, op Opcode, operand any) {
 	t.Helper()
+
 	i := instrAt(t, b, addr)
 	if i.Operation != op {
 		t.Errorf("addr %d: opcode = %v, want %v", addr, i.Operation, op)
 	}
+
 	if !operandEqual(i.Operand, operand) {
 		t.Errorf("addr %d: operand = %#v, want %#v", addr, i.Operand, operand)
 	}
@@ -90,9 +97,11 @@ func Test_operandEqual_Int(t *testing.T) {
 	if !operandEqual(42, 42) {
 		t.Error("equal ints should return true")
 	}
+
 	if operandEqual(42, 43) {
 		t.Error("unequal ints should return false")
 	}
+
 	if operandEqual(42, int64(42)) {
 		t.Error("int vs int64 should return false (different types)")
 	}
@@ -103,6 +112,7 @@ func Test_operandEqual_Int64(t *testing.T) {
 	if !operandEqual(int64(100), int64(100)) {
 		t.Error("equal int64s should return true")
 	}
+
 	if operandEqual(int64(100), int64(101)) {
 		t.Error("unequal int64s should return false")
 	}
@@ -113,6 +123,7 @@ func Test_operandEqual_Float64(t *testing.T) {
 	if !operandEqual(3.14, 3.14) {
 		t.Error("equal float64s should return true")
 	}
+
 	if operandEqual(3.14, 3.15) {
 		t.Error("unequal float64s should return false")
 	}
@@ -123,6 +134,7 @@ func Test_operandEqual_Bool(t *testing.T) {
 	if !operandEqual(true, true) {
 		t.Error("true == true should return true")
 	}
+
 	if operandEqual(true, false) {
 		t.Error("true == false should return false")
 	}
@@ -133,9 +145,11 @@ func Test_operandEqual_String(t *testing.T) {
 	if !operandEqual("hello", "hello") {
 		t.Error("equal strings should return true")
 	}
+
 	if operandEqual("hello", "world") {
 		t.Error("unequal strings should return false")
 	}
+
 	if operandEqual("_", "err") {
 		t.Error("\"_\" vs \"err\" should return false — this is the regression guard")
 	}
@@ -146,6 +160,7 @@ func Test_operandEqual_Nil(t *testing.T) {
 	if !operandEqual(nil, nil) {
 		t.Error("nil == nil should return true")
 	}
+
 	if operandEqual(nil, 0) {
 		t.Error("nil vs 0 should return false")
 	}
@@ -163,6 +178,7 @@ func Test_operandEqual_StackMarker(t *testing.T) {
 	if !operandEqual(a, b) {
 		t.Error("same-label StackMarkers should be equal")
 	}
+
 	if operandEqual(a, c) {
 		t.Error("different-label StackMarkers should not be equal")
 	}
@@ -176,10 +192,12 @@ func Test_tryConstantArithmetic_Int(t *testing.T) {
 	if !ok || v != 7 {
 		t.Errorf("int add: got (%v, %v), want (7, true)", v, ok)
 	}
+
 	v, ok = tryConstantArithmetic(Sub, 10, 3)
 	if !ok || v != 7 {
 		t.Errorf("int sub: got (%v, %v), want (7, true)", v, ok)
 	}
+
 	v, ok = tryConstantArithmetic(Mul, 3, 4)
 	if !ok || v != 12 {
 		t.Errorf("int mul: got (%v, %v), want (12, true)", v, ok)
@@ -192,6 +210,7 @@ func Test_tryConstantArithmetic_Int64(t *testing.T) {
 	if !ok || v != int64(11) {
 		t.Errorf("int64 add: got (%v, %v), want (11, true)", v, ok)
 	}
+
 	v, ok = tryConstantArithmetic(Mul, int64(7), int64(8))
 	if !ok || v != int64(56) {
 		t.Errorf("int64 mul: got (%v, %v), want (56, true)", v, ok)
@@ -204,6 +223,7 @@ func Test_tryConstantArithmetic_Float64(t *testing.T) {
 	if !ok || v != 4.0 {
 		t.Errorf("float64 add: got (%v, %v), want (4.0, true)", v, ok)
 	}
+
 	v, ok = tryConstantArithmetic(Sub, 5.0, 2.0)
 	if !ok || v != 3.0 {
 		t.Errorf("float64 sub: got (%v, %v), want (3.0, true)", v, ok)
@@ -230,6 +250,7 @@ func Test_tryConstantArithmetic_MixedTypes(t *testing.T) {
 	if ok {
 		t.Error("int + string should return (nil, false)")
 	}
+
 	_, ok = tryConstantArithmetic(Add, "one", 2)
 	if ok {
 		t.Error("string + int should return (nil, false)")
@@ -332,6 +353,7 @@ func Test_Optimize_AssignmentOptimizedAway(t *testing.T) {
 	if count == 0 {
 		t.Error("expected at least one optimization")
 	}
+
 	assertSize(t, b, 0)
 }
 
@@ -371,6 +393,7 @@ func Test_Optimize_StoreToNullVar_NoFire_OtherName(t *testing.T) {
 	if count != 0 {
 		t.Error("Store to null var rule fired on Store \"err\" — regression")
 	}
+
 	assertSize(t, b, 1)
 	assertInstr(t, b, 0, Store, "err")
 }
@@ -396,6 +419,7 @@ func Test_Optimize_CreateNullVar_NoFire_OtherName(t *testing.T) {
 	if count != 0 {
 		t.Error("Create null var rule fired on SymbolOptCreate \"err\" — regression")
 	}
+
 	assertSize(t, b, 1)
 	assertInstr(t, b, 0, SymbolOptCreate, "err")
 }
@@ -414,14 +438,17 @@ func Test_Optimize_ConstantIncrement(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != Increment {
 		t.Fatalf("expected Increment, got %v", i.Operation)
 	}
+
 	arr, ok := i.Operand.([]any)
 	if !ok || len(arr) != 2 {
 		t.Fatalf("Increment operand should be []any{name, step}, got %#v", i.Operand)
 	}
+
 	if arr[0] != "i" || arr[1] != 1 {
 		t.Errorf("Increment operand = %v, want [i 1]", arr)
 	}
@@ -441,6 +468,7 @@ func Test_Optimize_ConstantIncrement_DifferentNames(t *testing.T) {
 	if count != 0 {
 		t.Error("constant increment rule fired despite Load/Store name mismatch")
 	}
+
 	assertSize(t, b, 4)
 }
 
@@ -456,10 +484,12 @@ func Test_Optimize_LessThanConstant(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != LessThan {
 		t.Fatalf("expected LessThan, got %v", i.Operation)
 	}
+
 	arr, ok := i.Operand.([]any)
 	if !ok || len(arr) != 1 || arr[0] != 10 {
 		t.Errorf("LessThan operand = %#v, want []any{10}", i.Operand)
@@ -557,10 +587,12 @@ func Test_Optimize_CollapsePushAndCreateAndStore(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+	
 	i := instrAt(t, b, 0)
 	if i.Operation != CreateAndStore {
 		t.Fatalf("expected CreateAndStore, got %v", i.Operation)
 	}
+
 	arr, ok := i.Operand.([]any)
 	if !ok || len(arr) != 2 || arr[0] != "x" || arr[1] != "hello" {
 		t.Errorf("CreateAndStore operand = %#v, want [x hello]", i.Operand)
@@ -584,6 +616,7 @@ func Test_Optimize_UnnecessaryLetMarker(t *testing.T) {
 	// producing a single CreateAndStore([y, 99]).
 	// So the final result should be 1 instruction.
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != CreateAndStore {
 		t.Fatalf("expected CreateAndStore, got %v", i.Operation)
@@ -602,10 +635,12 @@ func Test_Optimize_SequentialPopScope(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != PopScope {
 		t.Fatalf("expected PopScope, got %v", i.Operation)
 	}
+
 	if i.Operand != 3 {
 		t.Errorf("merged PopScope operand = %v, want 3", i.Operand)
 	}
@@ -621,6 +656,7 @@ func Test_Optimize_SequentialPopScope_NilOperands(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operand != 2 {
 		t.Errorf("merged nil PopScope operand = %v, want 2", i.Operand)
@@ -652,6 +688,7 @@ func Test_Optimize_CreateAndStore_Rule_DifferentNames(t *testing.T) {
 	if count != 0 {
 		t.Error("Create-and-store rule fired despite name mismatch")
 	}
+
 	assertSize(t, b, 2)
 }
 
@@ -680,10 +717,12 @@ func Test_Optimize_ConstantStoreAlways(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != StoreAlways {
 		t.Fatalf("expected StoreAlways, got %v", i.Operation)
 	}
+
 	arr, ok := i.Operand.([]any)
 	if !ok || len(arr) != 2 || arr[0] != "flag" || arr[1] != true {
 		t.Errorf("StoreAlways operand = %#v, want [flag true]", i.Operand)
@@ -778,6 +817,7 @@ func Test_Optimize_ConstantFold_NoFold_LoadInStream(t *testing.T) {
 	if count != 0 {
 		t.Error("constant fold should not fire when Load is in the stream")
 	}
+
 	assertSize(t, b, 3)
 }
 
@@ -793,6 +833,7 @@ func Test_Regression_StoreDoesNotFireOnWrongName(t *testing.T) {
 	names := []string{"gotError", "result", "err", "x", "myVar"}
 	for _, name := range names {
 		b := New("store regression " + name)
+
 		b.Emit(Store, name)
 		b.instructions = b.instructions[:b.nextAddress]
 
@@ -800,6 +841,7 @@ func Test_Regression_StoreDoesNotFireOnWrongName(t *testing.T) {
 		if count != 0 {
 			t.Errorf("Store to null var fired on Store %q — regression", name)
 		}
+
 		if b.nextAddress != 1 || b.instructions[0].Operation != Store {
 			t.Errorf("Store %q was modified by optimizer", name)
 		}
@@ -844,6 +886,7 @@ func Test_Regression_MultiValueAssignment(t *testing.T) {
 		if i.Operation == Drop {
 			t.Errorf("addr %d: Store was incorrectly replaced with Drop", idx)
 		}
+
 		if i.Operation == Store {
 			if i.Operand == "_" {
 				t.Errorf("addr %d: Store was replaced with Store(\"_\")", idx)
@@ -867,12 +910,14 @@ func Test_Regression_TryCatch_GotError(t *testing.T) {
 
 	// Store "gotError" must remain — it must NOT become Drop.
 	found := false
+
 	for idx := 0; idx < b.nextAddress; idx++ {
 		i := b.instructions[idx]
 		if i.Operation == Store && i.Operand == "gotError" {
 			found = true
 		}
 	}
+
 	if !found {
 		t.Error("Store \"gotError\" was removed or replaced — catch-block regression")
 	}
@@ -907,11 +952,13 @@ func Test_Optimize_BranchSafety_NoFireWhenTargetInWindow(t *testing.T) {
 
 	// Verify that both AtLine instructions still exist.
 	atlines := 0
+
 	for i := 0; i < b.nextAddress; i++ {
 		if b.instructions[i].Operation == AtLine {
 			atlines++
 		}
 	}
+
 	if atlines < 2 {
 		t.Errorf("branch safety violated: only %d AtLine instructions remain (expected 2)", atlines)
 	}
@@ -934,11 +981,13 @@ func Test_Optimize_BranchSafety_AllowsNonTargeted(t *testing.T) {
 
 	// Only one AtLine should remain after collapse.
 	atlines := 0
+
 	for i := 0; i < b.nextAddress; i++ {
 		if b.instructions[i].Operation == AtLine {
 			atlines++
 		}
 	}
+
 	if atlines != 1 {
 		t.Errorf("expected 1 AtLine after optimization, got %d", atlines)
 	}
@@ -957,7 +1006,7 @@ func Test_Optimize_BranchSafety_AllowsNonTargeted(t *testing.T) {
 //   4: Push 1
 //
 // After optimization: AtLine 6, Push 0, Branch 3, Push 1
-// (addr 4 → new addr 3 after deleting one instruction)
+// (addr 4 → new addr 3 after deleting one instruction).
 func Test_Optimize_BranchAdjustment_AfterPatch(t *testing.T) {
 	b := New("branch adj")
 	b.Emit(AtLine, 5)  // 0
@@ -972,10 +1021,12 @@ func Test_Optimize_BranchAdjustment_AfterPatch(t *testing.T) {
 	// After: AtLine(6) at 0, Push(0) at 1, Branch at 2, Push(1) at 3.
 	// The branch at the original addr 3 (now addr 2) should point to addr 3.
 	assertSize(t, b, 4)
+
 	branchInstr := instrAt(t, b, 2)
 	if branchInstr.Operation != Branch {
 		t.Fatalf("expected Branch at addr 2, got %v", branchInstr.Operation)
 	}
+
 	if branchInstr.Operand != 3 {
 		t.Errorf("Branch operand = %v, want 3 (adjusted for deleted instruction)", branchInstr.Operand)
 	}
@@ -1011,11 +1062,14 @@ func Test_Optimize_Backtracking_CascadeOpportunity(t *testing.T) {
 	if count < 2 {
 		t.Errorf("expected >= 2 optimizations (cascade), got %d", count)
 	}
+
 	assertSize(t, b, 1)
+
 	i := instrAt(t, b, 0)
 	if i.Operation != CreateAndStore {
 		t.Fatalf("expected CreateAndStore after cascade, got %v", i.Operation)
 	}
+
 	arr, ok := i.Operand.([]any)
 	if !ok || len(arr) != 2 || arr[0] != "x" || arr[1] != 2 {
 		t.Errorf("cascaded CreateAndStore operand = %#v, want [x 2]", i.Operand)
@@ -1059,11 +1113,13 @@ func Test_Seal_AlwaysOptimize(t *testing.T) {
 	b.Seal()
 
 	atlines := 0
+
 	for i := 0; i < b.nextAddress; i++ {
 		if b.instructions[i].Operation == AtLine {
 			atlines++
 		}
 	}
+
 	if atlines != 1 {
 		t.Errorf("Seal with mode=2 did not run optimizer: found %d AtLine instructions, want 1", atlines)
 	}
@@ -1104,6 +1160,7 @@ func Test_Seal_Idempotent(t *testing.T) {
 	sizeAfterFirst := b.nextAddress
 
 	b.Seal() // should be a no-op (already sealed)
+
 	if b.nextAddress != sizeAfterFirst {
 		t.Errorf("second Seal() changed instruction count from %d to %d", sizeAfterFirst, b.nextAddress)
 	}
