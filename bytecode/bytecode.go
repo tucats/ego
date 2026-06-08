@@ -301,18 +301,21 @@ func (b *ByteCode) Seal() *ByteCode {
 		ui.Log(ui.OptimizerLogger, "optimizer.disabled", nil)
 	}
 
-	// What manner of optimization are we talking about?
+	// What manner of optimization are we talking about? Zero means
+	// no optimization, and 1 means conditionally optimize based on the
+	// size of the bytecode and whether it contains loops. Two means
+	// optimize regardless of size or loops.
 	switch useOptimizer {
 	case 0:
 		return b
 
 	case 1: // Conditionally optimize based on bytecode size and looping
-		threshold := 100
+		threshold := 50
 
 		// If the bytecode contains loops, change the threshold to a lower number.
 		for _, i := range b.instructions {
 			if i.Operation == RangeInit || i.Operation == RangeNext {
-				threshold = 50
+				threshold = 25
 
 				break
 			}
