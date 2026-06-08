@@ -155,6 +155,7 @@ MMXXIV
 modernc
 myapp
 mymark
+mypkg
 myprogram
 myrole
 mysecret
@@ -185,6 +186,7 @@ NVARCHAR
 Olafsen
 oldpath
 oldtype
+otherpkg
 otherrole
 pagelet
 pagelets
@@ -256,6 +258,7 @@ termgen
 testapp
 testcount
 testhelpers
+testpkg
 Thanor
 thecurrent
 thisandthat
