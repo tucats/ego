@@ -22,6 +22,12 @@ const initialOpcodeSize = 20
 // initialStackSize is the initial stack size.
 const initialStackSize = 16
 
+// Thresholds for bytecode optimization.
+const (
+	optimizerMinimumSizeThreshold = 25
+	optimizerMaximumSizeThreshold = 50
+)
+
 // firstOptimizerLogMessage is a flag that indicates if this is the first time the
 // optimizer is being invoked, but has been turned off by configuration, and
 // the optimizer log is active. In this case, we put out (once) a message saying
@@ -310,22 +316,31 @@ func (b *ByteCode) Seal() *ByteCode {
 		return b
 
 	case 1: // Conditionally optimize based on bytecode size and looping
-		threshold := 50
+		// If the bytecode is just too small, it's not likely to benefit from optimization.
+		if b.Size() < optimizerMinimumSizeThreshold {
+			return b
+		}
 
-		// If the bytecode contains loops, change the threshold to a lower number.
+		// Okay, maybe it can benefit. Let's see if it contains loops, and if so,
+		// we will lower the threshold for optimization since loops are more likely
+		// to benefit from optimization.
+		threshold := optimizerMaximumSizeThreshold
+
+		// If the bytecode contains loops, change the threshold to the lower threshold.
 		for _, i := range b.instructions {
 			if i.Operation == RangeInit || i.Operation == RangeNext {
-				threshold = 25
+				threshold = optimizerMinimumSizeThreshold
 
 				break
 			}
 		}
 
-		// bytecode just too small to benefit.
+		// Sometimes the bytecode is just too small to benefit.
 		if b.Size() < threshold {
 			return b
 		}
 
+		// Not too small, go for it!
 		fallthrough
 
 	case 2:
