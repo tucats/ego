@@ -15,30 +15,30 @@ import (
 // syntax constructs where a value is not used. It can also be
 // used to discard the result of a function call.
 
-// storeByteCode implements the Store opcode
+// storeByteCode implements the Store opcode, which writes a value from the
+// stack (or from the operand itself) into a named symbol-table variable.
 //
 // Inputs:
 //
-//	   operand    - The name of the variable in which
-//					   the top of stack is stored.
-//	   stack+0    - The item to be "stored" is read
-//	                on the stack.
+//	operand   - Either a plain string holding the variable name, OR a
+//	            []any{name, value} two-element array.  In the two-element
+//	            form the value comes from the array and the stack is NOT
+//	            popped.  In the plain-string form the value is popped from
+//	            the top of the stack.
+//	stack+0   - The value to store (consumed only in the plain-string form).
 //
-// The value to be stored is popped from the stack. The
-// variable name and value are used to do a type check
-// to ensure that the value is compatible if we are in
-// static type mode.
+// Special variable names:
 //
-// Note that if the operand is actually an interface
-// array, then the first item is the name and the second
-// is the value, and the stack is not popped.
+//   - If the name is exactly "_" (defs.DiscardedVariable) the value is
+//     silently discarded and the function returns nil.
+//   - If the name starts with "_" (defs.ReadonlyVariablePrefix) the variable
+//     must already exist in the symbol table and hold symbols.UndefinedValue.
+//     Any other existing value causes ErrReadOnly.  On a successful first
+//     write, the value is wrapped in data.Constant (making it immutable) so
+//     that subsequent loads return a read-only constant.
 //
-// The value is then written to the symbol table.
-//
-// If the variable name begins with "_" then it is
-// considered a read-only variable, so if the stack
-// contains a map then that map is marked with the
-// metadata indicator that it is readonly.
+// The function runs a type compatibility check (c.checkType) before writing,
+// which may return an error in strict or relaxed type-enforcement modes.
 func storeByteCode(c *Context, i any) error {
 	var (
 		value any
@@ -80,8 +80,7 @@ func storeByteCode(c *Context, i any) error {
 		return c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
-	// Get the name. If it is the reserved name "_" it means
-	// to just discard the value.
+	// If the name is exactly "_" (the discard variable), drop the value.
 	if name == defs.DiscardedVariable {
 		return nil
 	}
@@ -93,16 +92,36 @@ func storeByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	// If we are writing to the "_" variable, no action is taken.
-	if strings.HasPrefix(name, defs.DiscardedVariable) {
+	// Variables whose names start with "_" (the readonly prefix) receive
+	// their value wrapped in data.Constant so that subsequent loads see
+	// an immutable value.  The readonly-existence check above already
+	// ensured the variable exists and holds symbols.UndefinedValue, so
+	// this is always the first (and only) write to the variable.
+	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 		return c.set(name, data.Constant(value))
 	}
 
 	return c.set(name, value)
 }
 
-// StoreChan instruction processor. This is used to move
-// data from or two a channel.
+// storeChanByteCode implements the StoreChan opcode, which moves a value
+// between a channel and a plain variable.  The operand (i) is the name of
+// the destination variable in the symbol table.
+//
+// The instruction pops one value from the stack and inspects its type:
+//
+//   - If the stack value is a *data.Channel (sourceChan=true):
+//     Receive one item from the channel and store it in the named variable.
+//     If the named variable does not yet exist, it is created automatically.
+//
+//   - If the named variable is a *data.Channel (destChan=true):
+//     Send the popped stack value to that channel.
+//
+//   - If neither the stack value nor the named variable is a channel,
+//     ErrInvalidChannel is returned.
+//
+// If the destination variable name is "_" (defs.DiscardedVariable) the
+// received value is discarded rather than stored.
 func storeChanByteCode(c *Context, i any) error {
 	// Get the value on the stack, and determine if it is a channel or a datum.
 	v, err := c.Pop()
@@ -129,7 +148,7 @@ func storeChanByteCode(c *Context, i any) error {
 		if sourceChan {
 			err = c.create(variableName)
 		} else {
-			err = c.runtimeError(errors.ErrUnknownIdentifier).Context(x)
+			err = c.runtimeError(errors.ErrUnknownIdentifier).Context(variableName)
 		}
 
 		if err != nil {
@@ -165,8 +184,14 @@ func storeChanByteCode(c *Context, i any) error {
 	return err
 }
 
-// storeGlobalByteCode instruction processor. This function
-// is used to store a value in the global symbol table.
+// storeGlobalByteCode implements the StoreGlobal opcode, which pops a value
+// from the stack and writes it directly into the root (global) symbol table,
+// bypassing any intermediate scopes.
+//
+// If the variable name starts with "_" (defs.ReadonlyVariablePrefix) and the
+// value is a *data.Map, *data.Array, or *data.Struct, the value is first
+// deep-copied and then marked as read-only on the copy, so that global
+// "constant" collections cannot be modified through any reference.
 func storeGlobalByteCode(c *Context, i any) error {
 	value, err := c.Pop()
 	if err != nil {
@@ -180,9 +205,10 @@ func storeGlobalByteCode(c *Context, i any) error {
 	// Get the name and set it in the global table.
 	name := data.String(i)
 
-	// Is this a readonly variable that is a complex native type?
-	// If so, mark it as readonly.
-	if len(name) > 1 && name[0:1] == defs.DiscardedVariable {
+	// If the name starts with "_" (the readonly prefix) and the value is a
+	// complex type, deep-copy it first and mark the copy as read-only so
+	// that the global constant cannot be modified through any reference.
+	if len(name) > 1 && name[0:1] == defs.ReadonlyVariablePrefix {
 		constantValue := data.DeepCopy(value)
 		switch a := constantValue.(type) {
 		case *data.Map:
@@ -203,8 +229,30 @@ func storeGlobalByteCode(c *Context, i any) error {
 	return err
 }
 
-// StoreViaPointer has a name as it's argument. It loads the value,
-// verifies it is a pointer, and stores TOS into that pointer.
+// storeViaPointerByteCode implements the StoreViaPointer opcode.
+//
+// Operand forms:
+//
+//   - Non-nil operand: the operand is a variable name (string).  The
+//     variable must exist in the symbol table and hold a pointer value.
+//     Names that are "" or start with "_" are rejected with ErrInvalidIdentifier
+//     because readonly variables cannot be modified through pointer indirection.
+//   - Nil operand: the pointer itself is popped from the top of the stack.
+//
+// The instruction then pops the value to store from the stack and writes it
+// through the pointer.  Supported pointer types:
+//
+//	*any, *bool, *byte, *int32, *int, *int64, *float64, *float32, *string,
+//	*data.Array, **data.Channel
+//
+// If the destination is a *any pointing to a data.Immutable, or is a
+// *data.Immutable directly, ErrReadOnlyValue is returned.
+//
+// Type coercion for scalar pointer targets (*bool, *byte, *int32, *int,
+// *int64, *float64, *float32, *string):
+//   - NoTypeEnforcement: the stored value is coerced to the target type.
+//   - StrictTypeEnforcement / RelaxedTypeEnforcement: the value must already
+//     be exactly the target type; otherwise ErrInvalidVarType is returned.
 func storeViaPointerByteCode(c *Context, i any) error {
 	var (
 		dest any
@@ -340,7 +388,7 @@ func storeFloat32ViaPointer(c *Context, name string, src any, destinationPointer
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(float32); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -358,7 +406,7 @@ func storeFloat64ViaPointer(c *Context, name string, src any, destinationPointer
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(float64); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -376,7 +424,7 @@ func storeInt64ViaPointer(c *Context, name string, src any, actual *int64) error
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(int64); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -394,7 +442,7 @@ func storeIntViaPointer(c *Context, name string, src any, actual *int) error {
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(int); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -412,7 +460,7 @@ func storeInt32ViaPointer(c *Context, name string, src any, actual *int32) error
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(int32); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -430,7 +478,7 @@ func storeByteViaPointer(c *Context, name string, src any, actual *byte) error {
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(byte); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -448,7 +496,7 @@ func storeBoolViaPointer(c *Context, name string, src any, actual *bool) error {
 		if err != nil {
 			return c.runtimeError(err)
 		}
-	} else if _, ok := d.(string); !ok {
+	} else if _, ok := d.(bool); !ok {
 		return c.runtimeError(errors.ErrInvalidVarType).Context(name)
 	}
 
@@ -457,9 +505,22 @@ func storeBoolViaPointer(c *Context, name string, src any, actual *bool) error {
 	return nil
 }
 
-// storeAlwaysByteCode instruction processor. This function
-// is used to store a value in a symbol table regardless of
-// whether the value is readonly or protected.
+// storeAlwaysByteCode implements the StoreAlways opcode, which writes a
+// value into the symbol table unconditionally — even for variables that
+// are marked read-only or protected.  This is used by the compiler for
+// package-level initializations and other privileged stores.
+//
+// Operand forms (same as storeByteCode):
+//   - []any{name, value}: uses the array's name and value; stack is NOT popped.
+//   - any other value:    operand is the variable name; value is popped from stack.
+//
+// If the variable being stored is an existing *ByteCode function definition
+// and the AllowFunctionRedefinitionSetting is not enabled, ErrFunctionAlreadyExists
+// is returned to prevent accidental function redefinition outside interactive mode.
+//
+// If the name starts with "_" (defs.ReadonlyVariablePrefix) and the value is
+// a *data.Map, *data.Array, or *data.Struct, the object is additionally marked
+// as read-only so it cannot be mutated through any reference.
 func storeAlwaysByteCode(c *Context, i any) error {
 	var (
 		v          any
@@ -498,9 +559,10 @@ func storeAlwaysByteCode(c *Context, i any) error {
 
 	c.setAlways(symbolName, v)
 
-	// Is this a readonly variable that is a structure? If so, mark it
-	// with the embedded readonly flag.
-	if len(symbolName) > 1 && symbolName[0:1] == defs.DiscardedVariable {
+	// If the name starts with "_" (the readonly prefix) and the value is a
+	// *data.Map, *data.Array, or *data.Struct, mark it as read-only so it
+	// cannot be mutated through any reference.
+	if len(symbolName) > 1 && symbolName[0:1] == defs.ReadonlyVariablePrefix {
 		switch a := v.(type) {
 		case *data.Map:
 			a.SetReadonly(true)

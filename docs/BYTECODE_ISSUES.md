@@ -29,6 +29,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Bytecode Optimizer](#optimizer)
 - [Range Loops](#range)
 - [Stack Management](#stack)
+- [Store Instructions](#store)
 
 ---
 
@@ -3299,3 +3300,218 @@ the silent over-drop behavior.
 
 Test renamed from `_SilentUnderflow_STACK3` to `_UnderflowReturnsError_STACK3`;
 now asserts `ErrStackUnderflow` rather than logging that nil was returned.
+
+---
+
+<a name="store"></a>
+
+## STORE-1 — Misleading comment in `storeByteCode` for the readonly-prefix branch
+
+**Affected function:** `storeByteCode`  
+**File:** `bytecode/store.go`  
+**Risk:** None — documentation only; behavior was correct  
+**Discovered by:** comment review during `store_test.go` development  
+**Status: RESOLVED**
+
+### STORE-1: Original behavior
+
+The comment immediately before the `strings.HasPrefix` guard read:
+
+```go
+// If we are writing to the "_" variable, no action is taken.
+if strings.HasPrefix(name, defs.DiscardedVariable) {
+    return c.set(name, data.Constant(value))
+}
+```
+
+This was wrong on two counts:
+
+1. The `name == "_"` (exact discard) case had already been handled and returned
+   `nil` four lines earlier.  The `HasPrefix` guard handles all OTHER names that
+   start with `"_"` (e.g., `"_foo"`, `"_bar"`).
+2. "No action is taken" is the opposite of the actual behavior: the function
+   **does** store the value, wrapping it in `data.Constant` to make it immutable.
+
+### STORE-1: Fix
+
+The comment was rewritten to accurately describe both cases:
+
+```go
+// Variables whose names start with "_" (the readonly prefix) receive
+// their value wrapped in data.Constant so that subsequent loads see
+// an immutable value.  The readonly-existence check above already
+// ensured the variable exists and holds symbols.UndefinedValue, so
+// this is always the first (and only) write to the variable.
+if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
+    return c.set(name, data.Constant(value))
+}
+```
+
+---
+
+## STORE-2 — `defs.DiscardedVariable` used where `defs.ReadonlyVariablePrefix` is intended
+
+**Affected functions:** `storeByteCode`, `storeGlobalByteCode`, `storeAlwaysByteCode`  
+**File:** `bytecode/store.go`  
+**Risk:** None — both constants equal `"_"` so behavior is identical; but the
+wrong constant name obscures intent and could cause confusion if either constant
+is ever changed to a different value  
+**Discovered by:** comment review during `store_test.go` development  
+**Status: RESOLVED**
+
+### STORE-2: Original behavior
+
+Three guards in `store.go` checked whether a variable name started with the
+readonly prefix by comparing against `defs.DiscardedVariable`:
+
+```go
+// storeByteCode (line ~97 before fix):
+if strings.HasPrefix(name, defs.DiscardedVariable) { ... }
+
+// storeGlobalByteCode (line ~185 before fix):
+if len(name) > 1 && name[0:1] == defs.DiscardedVariable { ... }
+
+// storeAlwaysByteCode (line ~503 before fix):
+if len(symbolName) > 1 && symbolName[0:1] == defs.DiscardedVariable { ... }
+```
+
+`defs.DiscardedVariable = "_"` is the blank identifier used to discard values
+(as in `_ = someExpr`).  The guards are checking for the **readonly prefix**,
+which is `defs.ReadonlyVariablePrefix = "_"`.  Both constants happen to be
+`"_"`, so the behavior is correct today — but using the wrong constant
+communicates the wrong intent.
+
+### STORE-2: Fix
+
+All three guards were updated to use `defs.ReadonlyVariablePrefix`:
+
+```go
+// storeByteCode:
+if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) { ... }
+
+// storeGlobalByteCode:
+if len(name) > 1 && name[0:1] == defs.ReadonlyVariablePrefix { ... }
+
+// storeAlwaysByteCode:
+if len(symbolName) > 1 && symbolName[0:1] == defs.ReadonlyVariablePrefix { ... }
+```
+
+---
+
+## STORE-3 — Scalar pointer helpers check `d.(string)` instead of target type in strict/relaxed mode
+
+**Affected functions:** `storeBoolViaPointer`, `storeByteViaPointer`,
+`storeInt32ViaPointer`, `storeIntViaPointer`, `storeInt64ViaPointer`,
+`storeFloat64ViaPointer`, `storeFloat32ViaPointer`  
+**File:** `bytecode/store.go`  
+**Risk:** Medium — in strict or relaxed type-enforcement mode, storing a
+correctly-typed value through its own native pointer returns `ErrInvalidVarType`
+instead of succeeding; storing a string value through a numeric pointer would
+then panic at the type assertion  
+**Discovered by:** `Test_storeViaPointerByteCode_Float32Pointer_StrictMode`  
+**Status: RESOLVED**
+
+### STORE-3: Original behavior
+
+Each scalar pointer helper followed the same copy-paste pattern:
+
+```go
+func storeFloat32ViaPointer(c *Context, name string, src any, destinationPointer *float32) error {
+    var err error
+    d := src
+    if c.typeStrictness > defs.RelaxedTypeEnforcement {
+        // NoTypeEnforcement (2 > 1): coerce to target type — correct.
+        d, err = data.Coerce(src, float32(0))
+        if err != nil { return c.runtimeError(err) }
+    } else if _, ok := d.(string); !ok {   // ← BUG: should be d.(float32)
+        return c.runtimeError(errors.ErrInvalidVarType).Context(name)
+    }
+    *destinationPointer = d.(float32)  // panics if d is a string
+    return nil
+}
+```
+
+The `else` branch checked `d.(string)` regardless of the helper's target type:
+
+| Scenario | Expected | Actual (buggy) |
+| :------- | :------- | :----- |
+| Store `float32(3.14)` through `*float32` in strict mode | success | `ErrInvalidVarType` (float32 ≠ string) |
+| Store `string("3.14")` through `*float32` in strict mode | `ErrInvalidVarType` | panic on `d.(float32)` |
+
+### STORE-3: Fix
+
+The `d.(string)` assertion was replaced with the correct target type in each
+helper:
+
+```go
+// storeFloat32ViaPointer:
+} else if _, ok := d.(float32); !ok { ... }
+
+// storeFloat64ViaPointer:
+} else if _, ok := d.(float64); !ok { ... }
+
+// storeBoolViaPointer:
+} else if _, ok := d.(bool); !ok { ... }
+
+// storeByteViaPointer:
+} else if _, ok := d.(byte); !ok { ... }
+
+// storeInt32ViaPointer:
+} else if _, ok := d.(int32); !ok { ... }
+
+// storeIntViaPointer:
+} else if _, ok := d.(int); !ok { ... }
+
+// storeInt64ViaPointer:
+} else if _, ok := d.(int64); !ok { ... }
+```
+
+The original documentation test was replaced with four targeted tests:
+
+- `Test_storeViaPointerByteCode_Float32Pointer_StrictMode` — float32 accepted in strict mode
+- `Test_storeViaPointerByteCode_Float32Pointer_RelaxedMode` — float32 accepted in relaxed mode
+- `Test_storeViaPointerByteCode_Float32Pointer_StrictMode_WrongType` — float64 rejected in strict mode
+- `Test_storeViaPointerByteCode_BoolPointer_StrictMode` and `_IntPointer_StrictMode` — additional type coverage
+
+---
+
+## STORE-4 — `storeChanByteCode` passes nil (`x`) as error context instead of the variable name
+
+**Affected function:** `storeChanByteCode`  
+**File:** `bytecode/store.go`  
+**Risk:** Low — the error is still returned with the correct error key
+(`ErrUnknownIdentifier`); only the context string in the error message is wrong  
+**Discovered by:** `Test_storeChanByteCode_NonChanDestVarNotFound`  
+**Status: RESOLVED**
+
+### STORE-4: Original behavior
+
+When the stack value is not a channel and the destination variable does not
+exist, `storeChanByteCode` built the error using `x` (the unfound value, which
+is always `nil`):
+
+```go
+x, found := c.get(variableName)
+if !found {
+    if sourceChan {
+        err = c.create(variableName)
+    } else {
+        err = c.runtimeError(errors.ErrUnknownIdentifier).Context(x)  // x is nil
+    }
+}
+```
+
+The error message read `"unknown identifier: <nil>"` instead of
+`"unknown identifier: missing"`.
+
+### STORE-4: Fix
+
+`.Context(x)` was replaced with `.Context(variableName)`:
+
+```go
+err = c.runtimeError(errors.ErrUnknownIdentifier).Context(variableName)
+```
+
+`Test_storeChanByteCode_NonChanDestVarNotFound` was strengthened to assert
+both the error key and that the variable name `"missing"` appears in the
+error message via `strings.Contains`.

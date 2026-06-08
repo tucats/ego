@@ -63,6 +63,18 @@ func (m *Map) ElementType() *Type {
 	return m.elementType
 }
 
+// IsReadonly reports whether the map is currently read-only (immutable counter > 0).
+func (m *Map) IsReadonly() bool {
+	if m == nil {
+		return false
+	}
+
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	return m.immutable > 0
+}
+
 // SetReadonly marks the map as immutable. This is passed in as a boolean
 // value (true means immutable). Internally, this is actually a counting
 // semaphore, so the calls to SetReadonly to set/clear the state must

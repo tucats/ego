@@ -282,6 +282,15 @@ func (s *Struct) SetStrictTypeChecks(b bool) *Struct {
 	return s
 }
 
+// IsReadonly reports whether the struct is currently read-only.
+func (s *Struct) IsReadonly() bool {
+	if s == nil {
+		return false
+	}
+
+	return s.readonly
+}
+
 // SetReadonly marks this structure as readonly.
 func (s *Struct) SetReadonly(b bool) *Struct {
 	if s == nil {

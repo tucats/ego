@@ -272,6 +272,15 @@ func (a *Array) Validate(kind *Type) error {
 	return nil
 }
 
+// IsReadonly reports whether the array is currently read-only (immutable counter != 0).
+func (a *Array) IsReadonly() bool {
+	if a == nil {
+		return false
+	}
+
+	return a.immutable != 0
+}
+
 // SetReadonly sets or clears the flag that marks the array as immutable. When
 // an array is marked as immutable, it cannot be modified (but can be deleted
 // in it's entirety). Note that this function actually uses a semaphore to
