@@ -3487,7 +3487,7 @@ The original documentation test was replaced with four targeted tests:
 ### STORE-4: Original behavior
 
 When the stack value is not a channel and the destination variable does not
-exist, `storeChanByteCode` built the error using `x` (the unfound value, which
+exist, `storeChanByteCode` built the error using `x` (the un-found value, which
 is always `nil`):
 
 ```go

@@ -1,7 +1,8 @@
 package bytecode
 
 // store_test.go — unit tests for storeByteCode, storeChanByteCode,
-// storeGlobalByteCode, storeViaPointerByteCode, and storeAlwaysByteCode.
+// storeGlobalByteCode, storeViaPointerByteCode, storeAlwaysByteCode,
+// and storeBytecodeByteCode.
 //
 // # Functions under test
 //
@@ -39,15 +40,23 @@ package bytecode
 //   - Blocks redefinition of existing *ByteCode functions when
 //     AllowFunctionRedefinitionSetting is not enabled.
 //
+// storeBytecodeByteCode (StoreBytecode opcode):
+//   - Pops a *ByteCode from the stack, assigns the operand string as its name,
+//     and stores it in the symbol table via SetAlways.
+//   - Non-*ByteCode value → ErrInvalidType with the value's type as context.
+//   - StackMarker → ErrFunctionReturnedVoid.
+//   - Empty stack → ErrStackUnderflow (already decorated by Pop).
+//   - NOTE: the compiler never emits this opcode; see STORE-6.
+//
 // # Known issues documented here
 //
-//   - STORE-3: scalar pointer helpers (storeFloat32ViaPointer, etc.) check
-//     d.(string) in their strict/relaxed branch instead of the correct target
-//     type, so storing a native type value in strict mode incorrectly returns
-//     ErrInvalidVarType.  Tests prefixed "_STORE3" document this behavior.
-//   - STORE-4: storeChanByteCode passes x (the unfound nil value) as the error
-//     context instead of variableName.  Test_storeChanByteCode_NonChanDestVarNotFound
-//     documents the current (wrong) error-message output.
+//   - STORE-3 (RESOLVED): scalar pointer helpers checked d.(string) in strict/
+//     relaxed mode instead of the correct target type.
+//   - STORE-4 (RESOLVED): storeChanByteCode used x (nil) as error context.
+//   - STORE-5: nil operand stores ByteCode under empty string key; see
+//     Test_storeBytecodeByteCode_NilOperand_STORE5.
+//   - STORE-6: StoreBytecode opcode is never emitted by the compiler; see
+//     Test_storeBytecodeByteCode_OpcodeIsDeadCode_STORE6.
 //
 // # Test organization
 //
@@ -56,6 +65,7 @@ package bytecode
 // Section 3: storeGlobalByteCode
 // Section 4: storeViaPointerByteCode
 // Section 5: storeAlwaysByteCode
+// Section 6: storeBytecodeByteCode
 //
 // All tests use the newTestContext / withXxx / assertXxx helpers from
 // testhelpers_test.go as required by the project testing standards.

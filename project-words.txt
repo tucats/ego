@@ -164,6 +164,7 @@ nbsp
 newpath
 newsize
 newtype
+newvalue
 nextdepth
 nolint
 nonnull
@@ -171,6 +172,7 @@ nonnullable
 nonunique
 noperms
 nosniff
+nosuchvar
 notnull
 notnullable
 nspname
