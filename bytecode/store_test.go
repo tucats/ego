@@ -169,6 +169,7 @@ func Test_storeByteCode_ReadonlyFirstWrite(t *testing.T) {
 	if err := tc.ctx.create("_answer"); err != nil {
 		t.Fatalf("create _answer: %v", err)
 	}
+
 	tc.withStack(42)
 
 	err := storeByteCode(tc.ctx, "_answer")
@@ -278,6 +279,7 @@ func Test_storeChanByteCode_ReceiveFromChannel(t *testing.T) {
 	if err := tc.ctx.create("result"); err != nil {
 		t.Fatalf("create result: %v", err)
 	}
+
 	tc.withStack(ch)
 
 	err := storeChanByteCode(tc.ctx, "result")
@@ -311,6 +313,7 @@ func Test_storeChanByteCode_SendToChannel(t *testing.T) {
 	if recvErr != nil {
 		t.Fatalf("channel Receive after send: %v", recvErr)
 	}
+
 	if got != 77 {
 		t.Errorf("channel received %v (%T), want 77", got, got)
 	}
@@ -451,6 +454,7 @@ func Test_storeGlobalByteCode_ReadonlyPrefixMap(t *testing.T) {
 	if !found {
 		t.Fatalf("_myMap not found in root symbol table")
 	}
+
 	stored, ok := v.(*data.Map)
 	if !ok {
 		t.Fatalf("_myMap is %T, want *data.Map", v)
@@ -477,10 +481,12 @@ func Test_storeGlobalByteCode_ReadonlyPrefixArray(t *testing.T) {
 	if !found {
 		t.Fatalf("_myArr not found in root symbol table")
 	}
+
 	stored, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("_myArr is %T, want *data.Array", v)
 	}
+
 	if !stored.IsReadonly() {
 		t.Errorf("_myArr in global table was not marked read-only")
 	}
@@ -515,10 +521,12 @@ func Test_storeGlobalByteCode_PlainNameNotMarkedReadonly(t *testing.T) {
 	if !found {
 		t.Fatalf("writableMap not found in root symbol table")
 	}
+
 	stored, ok := v.(*data.Map)
 	if !ok {
 		t.Fatalf("writableMap is %T, want *data.Map", v)
 	}
+
 	if stored.IsReadonly() {
 		t.Errorf("writableMap should NOT be read-only, but it is")
 	}
@@ -575,6 +583,7 @@ func Test_storeViaPointerByteCode_NilOperandPopsPointerFromStack(t *testing.T) {
 
 	tc.assertNoError(err)
 	tc.assertStackEmpty()
+
 	if target != "newvalue" {
 		t.Errorf("*ptr = %v, want %q", target, "newvalue")
 	}
@@ -687,6 +696,7 @@ func Test_storeViaPointerByteCode_BoolPointer_NoEnforcement(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "flag")
 
 	tc.assertNoError(err)
+
 	if !b {
 		t.Errorf("*flag = false, want true")
 	}
@@ -706,6 +716,7 @@ func Test_storeViaPointerByteCode_StringPointer_NoEnforcement(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "sp")
 
 	tc.assertNoError(err)
+
 	if s != "new" {
 		t.Errorf("*sp = %q, want %q", s, "new")
 	}
@@ -726,6 +737,7 @@ func Test_storeViaPointerByteCode_Int64Pointer_NoEnforcement(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "n64")
 
 	tc.assertNoError(err)
+
 	if n != 99 {
 		t.Errorf("*n64 = %d, want 99", n)
 	}
@@ -745,6 +757,7 @@ func Test_storeViaPointerByteCode_Float32Pointer_NoEnforcement(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "fp")
 
 	tc.assertNoError(err)
+
 	if f != float32(3.14) {
 		t.Errorf("*fp = %v, want 3.14", f)
 	}
@@ -770,6 +783,7 @@ func Test_storeViaPointerByteCode_Float32Pointer_StrictMode(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "fp")
 
 	tc.assertNoError(err)
+
 	if f != float32(1.5) {
 		t.Errorf("*fp = %v, want float32(1.5)", f)
 	}
@@ -789,6 +803,7 @@ func Test_storeViaPointerByteCode_Float32Pointer_RelaxedMode(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "fp")
 
 	tc.assertNoError(err)
+
 	if f != float32(2.5) {
 		t.Errorf("*fp = %v, want float32(2.5)", f)
 	}
@@ -828,6 +843,7 @@ func Test_storeViaPointerByteCode_BoolPointer_StrictMode(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "flag")
 
 	tc.assertNoError(err)
+
 	if !b {
 		t.Errorf("*flag = false, want true")
 	}
@@ -847,6 +863,7 @@ func Test_storeViaPointerByteCode_IntPointer_StrictMode(t *testing.T) {
 	err := storeViaPointerByteCode(tc.ctx, "n")
 
 	tc.assertNoError(err)
+	
 	if n != 42 {
 		t.Errorf("*n = %d, want 42", n)
 	}
@@ -933,10 +950,12 @@ func Test_storeAlwaysByteCode_ReadonlyPrefixMap(t *testing.T) {
 	if !found {
 		t.Fatalf("_colorMap not found in symbol table")
 	}
+
 	stored, ok := v.(*data.Map)
 	if !ok {
 		t.Fatalf("_colorMap is %T, want *data.Map", v)
 	}
+
 	if !stored.IsReadonly() {
 		t.Errorf("_colorMap was not marked read-only")
 	}
@@ -960,10 +979,12 @@ func Test_storeAlwaysByteCode_ReadonlyPrefixArray(t *testing.T) {
 	if !found {
 		t.Fatalf("_names not found in symbol table")
 	}
+
 	stored, ok := v.(*data.Array)
 	if !ok {
 		t.Fatalf("_names is %T, want *data.Array", v)
 	}
+
 	if !stored.IsReadonly() {
 		t.Errorf("_names was not marked read-only")
 	}
@@ -985,10 +1006,12 @@ func Test_storeAlwaysByteCode_ReadonlyPrefixStruct(t *testing.T) {
 	if !found {
 		t.Fatalf("_point not found in symbol table")
 	}
+
 	stored, ok := v.(*data.Struct)
 	if !ok {
 		t.Fatalf("_point is %T, want *data.Struct", v)
 	}
+
 	if !stored.IsReadonly() {
 		t.Errorf("_point was not marked read-only")
 	}
