@@ -520,7 +520,7 @@ func operandEqual(a, b any) bool {
 
 	case string:
 		bv, ok := b.(string)
-		
+
 		return ok && av == bv
 
 	case nil:
@@ -540,6 +540,42 @@ func operandEqual(a, b any) bool {
 // Returns (nil, false) when the types are not handled here; the caller should
 // fall back to executeFragment for the full interpreter path.
 func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
+	var err error
+
+	// The operands may be wrapped in a constant instruction; unwrap them to get
+	// the actual values.
+	v1 = data.UnwrapConstant(v1)
+	v2 = data.UnwrapConstant(v2)
+
+	// Handle string concatenation as a special case since it is the only valid
+	// operation on strings.  If the first operand is a string and the operator is
+	// Add, we require the second operand to also be a string and concatenate
+	// them.  For any other operator or if the first operand is a string but the
+	// second is not, we cannot fold this pattern — return false so the caller
+	// will fall back to executeFragment, which can handle more complex cases
+	// like string repetition.
+	if s1, ok := v1.(string); ok {
+		if op == Add {
+			if s2, ok := v2.(string); ok {
+				return s1 + s2, true
+			}
+		}
+
+		return nil, false
+	}
+
+	// For non-string types, we only handle numeric operations here.  If either
+	// operand is not numeric, return false so the caller will fall back to
+	// executeFragment, which can handle more complex cases like type aliases.
+	if !data.IsNumeric(v1) || !data.IsNumeric(v2) {
+		return nil, false
+	}
+
+	v1, v2, err = data.Normalize(v1, v2)
+	if err != nil {
+		return nil, false
+	}
+
 	switch a := v1.(type) {
 	case int:
 		b, ok := v2.(int)
