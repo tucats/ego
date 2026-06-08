@@ -30,6 +30,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Range Loops](#range)
 - [Stack Management](#stack)
 - [Store Instructions](#store)
+- [Struct, Map, Array, Channel Indexing](#structs)
 
 ---
 
@@ -3515,3 +3516,202 @@ err = c.runtimeError(errors.ErrUnknownIdentifier).Context(variableName)
 `Test_storeChanByteCode_NonChanDestVarNotFound` was strengthened to assert
 both the error key and that the variable name `"missing"` appears in the
 error message via `strings.Contains`.
+
+---
+
+<a name="structs"></a>
+
+## STRUCT-1 — Dead code check in `storeInPackage` is unreachable
+
+**Affected function:** `storeInPackage`  
+**File:** `bytecode/structs.go`  
+**Risk:** None — dead code only; behavior is correct  
+**Discovered by:** `Test_storeInPackage_NoDiscardedVariableCheck_STRUCT1`  
+**Status: RESOLVED**
+
+### STRUCT-1: Original behavior
+
+`storeInPackage` contained two consecutive guards on the `name` parameter:
+
+```go
+// Guard 1: reject unexported (lowercase) names.
+if !egostrings.HasCapitalizedName(name) {
+    return c.runtimeError(errors.ErrSymbolNotExported, pkg.Name+"."+name)
+}
+
+// Guard 2 (dead code): reject names starting with "_".
+if name[0:1] == defs.DiscardedVariable {
+    return c.runtimeError(errors.ErrReadOnlyValue, pkg.Name+"."+name)
+}
+```
+
+`egostrings.HasCapitalizedName` returns `true` only when the first Unicode
+character of the name is uppercase (A–Z or Unicode uppercase).  The underscore
+character `_` is **not** uppercase, so any name starting with `_` returned
+`false` from guard 1 and exited with `ErrSymbolNotExported` before reaching
+guard 2.  Guard 2 could therefore never execute.
+
+`defs.DiscardedVariable = "_"`, so the intent of guard 2 was probably to
+catch names like `"_internalHelper"` — but such names were already caught by
+guard 1.
+
+### STRUCT-1: Fix
+
+Guard 2 (the unreachable `name[0:1] == defs.DiscardedVariable` block) was
+removed entirely.  The function now has a single exported-name check followed
+directly by the read-only and constant checks.
+
+```go
+// Must be an exported (capitalized) name.
+if !egostrings.HasCapitalizedName(name) {
+    return c.runtimeError(errors.ErrSymbolNotExported, pkg.Name+"."+name)
+}
+
+// If it's a declared item in the package, is it one of the ones
+// that is readOnly by default?
+if oldItem, found := pkg.Get(name); found { ... }
+```
+
+`Test_storeInPackage_NoDiscardedVariableCheck_STRUCT1` confirms that a name
+like `"_Foo"` is still correctly rejected by the first guard with
+`ErrSymbolNotExported`, and that no `defs` import is required in `structs.go`
+solely for this guard.
+
+---
+
+## STRUCT-2 — `storeIndexByteCode` mutates a struct field before checking package visibility
+
+**Affected function:** `storeIndexByteCode`  
+**File:** `bytecode/structs.go`  
+**Risk:** Medium — an unexported field write from outside the owning package
+modifies the struct in memory and then returns an error, leaving the struct
+in a partially-modified state with no rollback  
+**Discovered by:** `Test_storeIndexByteCode_StructPackageVisibility_STRUCT2`  
+**Status: RESOLVED**
+
+### STRUCT-2: Original behavior
+
+The `*data.Struct` case in `storeIndexByteCode` called `a.Set(key, v)` to
+write the field value and **then** checked whether the field was visible from
+the current package:
+
+```go
+case *data.Struct:
+    key := data.String(index)
+
+    if err = a.Set(key, v); err != nil {   // ← write happened here
+        return c.runtimeError(err)
+    }
+
+    // Visibility check ran AFTER the write — buggy ordering.
+    if pkg := a.PackageName(); pkg != "" && pkg != c.pkg {
+        if !egostrings.HasCapitalizedName(key) {
+            return c.runtimeError(errors.ErrSymbolNotExported).Context(key)
+        }
+    }
+```
+
+When an unexported field from a different package was written, the error was
+correctly returned — but the `a.Set` call had already committed the change.
+Because `*data.Struct` is a pointer type, the modification was visible to all
+callers that held a reference to the same struct.  The same ordering problem
+affected the `*any` wrapping a `*data.Struct` path immediately below it.
+
+### STRUCT-2: Fix
+
+The package visibility check was moved to run **before** `a.Set` in both the
+`*data.Struct` case and the `*any → *data.Struct` case:
+
+```go
+case *data.Struct:
+    key := data.String(index)
+
+    // Check package visibility before modifying the struct.
+    if pkg := a.PackageName(); pkg != "" && pkg != c.pkg {
+        if !egostrings.HasCapitalizedName(key) {
+            return c.runtimeError(errors.ErrSymbolNotExported).Context(key)
+        }
+    }
+
+    if err = a.Set(key, v); err != nil {
+        return c.runtimeError(err)
+    }
+
+    _ = c.push(a)
+```
+
+`Test_storeIndexByteCode_StructPackageVisibility_STRUCT2` now asserts that the
+field retains its original value (`0`) after the rejected write, confirming
+that the struct is not modified before the error is returned.
+
+---
+
+## STRUCT-3 — `flattenByteCode` produces incorrect `argCountDelta` for empty arrays
+
+**Affected function:** `flattenByteCode`  
+**File:** `bytecode/structs.go`  
+**Risk:** Low — the Ego compiler does not appear to spread empty arrays at
+call sites; the bug was latent and required a malformed or hand-crafted
+bytecode sequence to trigger  
+**Discovered by:** `Test_flattenByteCode_EmptyArray_STRUCT3`  
+**Status: RESOLVED**
+
+### STRUCT-3: Original behavior
+
+`flattenByteCode` replaced the top-of-stack array with its individual elements
+and set `c.argCountDelta` to `N-1`, where `N` is the number of elements
+expanded.  The "-1" accounted for the fact that the compiler already counted the
+original array as one argument.
+
+The decrement was guarded by `argCountDelta > 0`:
+
+```go
+// After the expansion loop:
+if c.argCountDelta > 0 {
+    c.argCountDelta--   // net: N-1 for N > 0, but 0 for N = 0 (wrong)
+}
+```
+
+For an **empty** array (`N == 0`), the loop did not execute, `argCountDelta`
+stayed at 0, and the guard prevented the decrement.  The following `Call`
+opcode computed `argc = compiler_count + argCountDelta = 1 + 0 = 1`, but the
+stack had 0 expanded values — causing the call to either underflow the stack
+or pop a stale value as an argument.
+
+### STRUCT-3: Fix
+
+The `if c.argCountDelta > 0` conditional was replaced with an `isArray` flag
+that tracks whether a `*data.Array` or `[]any` was expanded.  The decrement
+now runs unconditionally for any array expansion, including empty arrays:
+
+```go
+isArray := false
+
+if array, ok := v.(*data.Array); ok {
+    isArray = true
+    for idx := 0; idx < array.Len(); idx++ { ... c.argCountDelta++ }
+} else if array, ok := v.([]any); ok {
+    isArray = true
+    for _, vv := range array { ... c.argCountDelta++ }
+} else {
+    _ = c.push(v)   // scalar: no delta adjustment
+}
+
+// Subtract 1 for any array, including empty, to remove the original slot.
+if isArray {
+    c.argCountDelta--
+}
+```
+
+Result for each case:
+
+| Input | Elements pushed | argCountDelta |
+| :---- | :-------------- | :------------ |
+| empty array (N=0) | 0 | 0 − 1 = **−1** ✓ |
+| single-element array (N=1) | 1 | 1 − 1 = 0 ✓ |
+| three-element array (N=3) | 3 | 3 − 1 = 2 ✓ |
+| scalar (not an array) | 1 (unchanged) | 0 ✓ |
+
+`Test_flattenByteCode_EmptyArray_STRUCT3` now asserts `argCountDelta == -1`
+after flattening an empty array, confirming correct behavior.  The full
+869-test Ego integration suite continued to pass after the change.
