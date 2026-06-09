@@ -1,5 +1,34 @@
 package bytecode
 
+// types.go implements bytecode instructions that deal with Ego's runtime type
+// system: inspecting a value's type, asserting a value to a named type,
+// enforcing type-strictness mode, dereferencing pointers, and taking addresses.
+//
+// # Ego's type system in brief
+//
+// Every value in the Ego runtime carries an implicit type.  The data package
+// defines a *data.Type descriptor for each Ego type (int, string, bool, …) and
+// provides helpers like data.TypeOf(v) to determine a value's type at runtime.
+//
+// # Interface wrapping
+//
+// When Ego code uses the interface{} / any keyword, the runtime wraps the
+// concrete value in a data.Interface struct that keeps the value and its type
+// together.  Several instructions here must "unwrap" these structs before
+// inspecting or coercing the contained value.
+//
+// # Type-strictness levels
+//
+// The context carries a typeStrictness field (and the matching symbol-table
+// variable defs.TypeCheckingVariable) that controls how rigidly argument types
+// are checked:
+//
+//	defs.StrictTypeEnforcement  (0) — exact type match required
+//	defs.RelaxedTypeEnforcement (1) — compatible types; some coercions allowed
+//	defs.NoTypeEnforcement      (2) — widest possible coercions allowed
+//
+// Several instructions behave differently depending on this setting.
+
 import (
 	"reflect"
 
@@ -9,8 +38,17 @@ import (
 	"github.com/tucats/ego/tokenizer"
 )
 
-// typeOfByteCode pops the top stack item and replaces it with
-// a value representing it's type.
+// typeOfByteCode is the instruction handler for the TypeOf opcode.
+//
+// It pops one value from the stack and pushes back the *data.Type that
+// describes that value's Ego type.  This is the runtime implementation
+// of Ego's reflect.TypeOf() equivalent.
+//
+// Stack contract:
+//   - Pops:  one value of any type.
+//   - Pushes: one *data.Type.
+//
+// The operand is ignored.
 func typeOfByteCode(c *Context, i any) error {
 	value, err := c.Pop()
 	if err != nil {
@@ -23,10 +61,28 @@ func typeOfByteCode(c *Context, i any) error {
 	return nil
 }
 
-// unwrapByteCode unwraps the top of stack interface and
-// attempts to cast it to the named type. If there is no
-// named type, this just unwraps the value and pushes
-// the type and value back to the stack.
+// unwrapByteCode is the instruction handler for the UnWrap opcode.
+//
+// It pops a value from the stack and, optionally, attempts to assert it to a
+// named target type.  The operand controls the behavior:
+//
+//   - nil operand — "plain unwrap": if the value is wrapped in a data.Interface,
+//     strip the wrapper.  Push the concrete type (*data.Type) and then the
+//     concrete value (two pushes, type on top of stack).
+//
+//   - "type" operand — same as nil; used when the Ego compiler emits an explicit
+//     `.(type)` assertion in a type-switch.
+//
+//   - any other string — named type assertion `value.(TargetType)`.  The target
+//     type is resolved by searching data.TypeDeclarations and then the symbol
+//     table.  On success, pushes the (possibly coerced) value and then a bool
+//     indicating success (bool on top of stack).  On strict-mode failure,
+//     pushes (nil, false).
+//
+// Stack contract for named type assertion:
+//   - Pops:  one value.
+//   - Pushes: (value, bool) — bool on top, so the comma-ok idiom works as
+//     expected: `v, ok := x.(T)` pops ok first, then v.
 func unwrapByteCode(c *Context, i any) error {
 	var (
 		t        *data.Type
@@ -39,6 +95,9 @@ func unwrapByteCode(c *Context, i any) error {
 		return err
 	}
 
+	// If the value is wrapped in a data.Interface (the Ego runtime's typed
+	// interface container), strip the wrapper to expose the concrete value
+	// and its type.
 	if _, ok := value.(data.Interface); ok {
 		value, t = data.UnWrap(value)
 	}
@@ -58,8 +117,9 @@ func unwrapByteCode(c *Context, i any) error {
 
 	targetType := data.String(i)
 
-	// Special case, if the type is "type" it really just means
-	// unwrap it, and there's no action to be done here.
+	// Special case: the operand "type" is the `.(type)` token used inside
+	// type-switch statements.  It means "just unwrap" with no additional
+	// conformance check.
 	if targetType == tokenizer.TypeToken.Spelling() {
 		if t == nil {
 			t = data.TypeOf(value)
@@ -71,6 +131,9 @@ func unwrapByteCode(c *Context, i any) error {
 		return nil
 	}
 
+	// Resolve the target type name.  Look first in the built-in type registry
+	// (data.TypeDeclarations), then fall back to the current symbol table in
+	// case the programmer defined a custom type alias.
 	actualType := data.TypeOf(value)
 
 	for _, td := range data.TypeDeclarations {
@@ -93,8 +156,15 @@ func unwrapByteCode(c *Context, i any) error {
 		return errors.ErrInvalidType.Context(targetType)
 	}
 
-	// If we are not in strict of type checking, just do the conversion
-	// helpfully. If we are in strict type checking, the types must match.
+	// Apply the type assertion.  The behavior depends on the active
+	// type-strictness level.
+	//
+	//   Non-strict: coerce the value to the target type using data.Coerce.
+	//               This allows widening conversions such as int → float64.
+	//
+	//   Strict:     the actual type must already match the target type.
+	//               If it does not, push (nil, false) and return; the caller
+	//               checks the bool to detect the failure.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
 		newValue, err = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
 		if err != nil {
@@ -111,14 +181,28 @@ func unwrapByteCode(c *Context, i any) error {
 		newValue = value
 	}
 
+	// Push result and success indicator.  The bool is pushed last so it is
+	// on top — the Ego comma-ok idiom pops the bool first.
 	_ = c.push(newValue)
 	_ = c.push(newValue != nil)
 
 	return nil
 }
 
-// StaticTypeOpcode implements the StaticType opcode, which
-// sets the static typing flag for the current context.
+// staticTypingByteCode is the instruction handler for the StaticTyping opcode.
+//
+// It pops an integer from the stack and stores it as the context's
+// type-strictness setting.  The valid range is:
+//
+//	0 = defs.StrictTypeEnforcement   — exact type match required
+//	1 = defs.RelaxedTypeEnforcement  — compatible types; some coercions allowed
+//	2 = defs.NoTypeEnforcement       — widest possible coercions
+//
+// The setting is also written to the symbol table under
+// defs.TypeCheckingVariable so that compiled Ego code can read it.
+//
+// This opcode is emitted when the programmer writes a compile-time type-mode
+// directive in Ego source.
 func staticTypingByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err == nil {
@@ -142,6 +226,22 @@ func staticTypingByteCode(c *Context, i any) error {
 	return err
 }
 
+// requiredTypeByteCode is the instruction handler for the RequiredType opcode.
+//
+// It pops a value from the stack, verifies that it conforms to the type
+// described by the operand, and pushes the (possibly coerced) value back.
+//
+// The check is delegated to one of two helper functions based on the active
+// type-strictness level:
+//
+//   - Non-strict: relaxedConformanceCheck — tries to coerce the value.
+//   - Strict:     strictConformanceCheck  — requires an exact type match.
+//
+// On error, the helper returns a non-nil error which is propagated immediately
+// (the value is NOT pushed in that case).
+//
+// The operand `i` can be a *data.Type, a reflect.Type, a string type name, or
+// an integer that represents an expected Go primitive type.
 func requiredTypeByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err == nil {
@@ -166,7 +266,8 @@ func requiredTypeByteCode(c *Context, i any) error {
 			}
 		}
 
-		// If we're doing strict type checking...
+		// Dispatch to the appropriate conformance checker based on the
+		// type-strictness level set in the context.
 		if c.typeStrictness != defs.StrictTypeEnforcement {
 			// Nope, try regular stuff.
 			v, err = relaxedConformanceCheck(c, i, v)
@@ -186,6 +287,16 @@ func requiredTypeByteCode(c *Context, i any) error {
 	return err
 }
 
+// strictConformanceCheck verifies that value v exactly matches the type
+// described by operand i under strict-mode type checking.
+//
+// The operand i may be a *data.Type (the most common case) or an
+// interface{}-typed value that carries type information.  If i is an interface
+// type, a full interface-conformity check is performed (the value's type must
+// implement all of the interface's declared methods).
+//
+// Returns the (possibly identity-coerced) value and nil on success, or
+// (nil, error) if the types do not match.
 func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 	var err error
 
@@ -221,6 +332,9 @@ func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 			return nil, c.runtimeError(errors.ErrArgumentType)
 		}
 
+		// Perform a canonical coercion so the value's Go type precisely
+		// matches the declared Ego type.  For example, if the declared type
+		// is int and the value arrived as int64, coerce it to int.
 		switch t.Kind() {
 		case data.IntKind:
 			v, err = data.Int(v)
@@ -261,6 +375,27 @@ func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 	return v, err
 }
 
+// relaxedConformanceCheck verifies that value v conforms to the type described
+// by operand i under non-strict (relaxed or dynamic) type checking.
+//
+// The operand i is inspected by type-switching through several cases:
+//
+//   - *data.Type with FunctionKind — if v is a *ByteCode whose declaration
+//     conforms to the function type, the value passes.
+//   - *data.Type with InterfaceKind — wrap v in a data.Interface container.
+//   - reflect.Type                 — compare Go reflection types directly.
+//   - string                       — compare the string against reflect.TypeOf(v).String().
+//     A nil v is treated as a mismatch (TYPES-2 fix: the original code called
+//     reflect.TypeOf(nil).String() which panics).
+//   - any integer/bool/float type  — type-switch on i directly (TYPES-3 fix).
+//     The original code extracted i.(int) first, so the subsequent Kind switch
+//     always produced IntKind, making int8/int16/int32/… cases unreachable.
+//     Switching on i.(type) preserves the original Go type so each case is
+//     now reachable.  Non-numeric operands (e.g. *data.Type) hit the default
+//     branch and pass the value through unchanged.
+//
+// Returns the (possibly wrapped) value and nil on success, or (v, error) on
+// type mismatch.
 func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 	var err error
 
@@ -286,52 +421,61 @@ func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 		}
 	} else {
 		if t, ok := i.(string); ok {
-			if t != reflect.TypeOf(v).String() {
+			// TYPES-2 fix: guard against nil before calling reflect.TypeOf(v).String().
+			// reflect.TypeOf(nil) returns nil, and calling .String() on a nil
+			// reflect.Type panics.  A nil value can never match a named type string.
+			if v == nil || t != reflect.TypeOf(v).String() {
 				err = c.runtimeError(errors.ErrArgumentType)
 			}
 		} else {
-			if t, ok := i.(int); ok {
-				switch data.TypeOf(t).Kind() {
-				case data.Int16Kind:
-					_, ok = v.(int16)
+			// TYPES-3 fix: type-switch on i directly rather than extracting
+			// i.(int) first.  The original extraction narrowed every integer
+			// type to plain Go int, so data.TypeOf(t).Kind() always returned
+			// IntKind and all other cases were dead.  Switching on i.(type)
+			// preserves the actual Go type (int16, int32, float32, …) so each
+			// case is now reachable.  Non-integer operand types (e.g. *data.Type
+			// values handled by the block above) fall through to the default
+			// branch, which accepts the value as-is — matching the original
+			// no-op behavior for those operands.
+			var kindOk bool
 
-				case data.UInt16Kind:
-					_, ok = v.(uint16)
+			switch i.(type) {
+			case int:
+				_, kindOk = v.(int)
 
-				case data.Int8Kind:
-					_, ok = v.(int8)
+			case int8:
+				_, kindOk = v.(int8)
 
-				case data.IntKind:
-					_, ok = v.(int)
+			case int16:
+				_, kindOk = v.(int16)
 
-				case data.Int32Kind:
-					_, ok = v.(int32)
+			case int32:
+				_, kindOk = v.(int32)
 
-				case data.Int64Kind:
-					_, ok = v.(int64)
+			case int64:
+				_, kindOk = v.(int64)
 
-				case data.ByteKind:
-					_, ok = v.(byte)
+			case uint16:
+				_, kindOk = v.(uint16)
 
-				case data.BoolKind:
-					_, ok = v.(bool)
+			case byte: // uint8
+				_, kindOk = v.(byte)
 
-				case data.StringKind:
-					_, ok = v.(string)
+			case bool:
+				_, kindOk = v.(bool)
 
-				case data.Float32Kind:
-					_, ok = v.(float32)
+			case float32:
+				_, kindOk = v.(float32)
 
-				case data.Float64Kind:
-					_, ok = v.(float64)
+			case float64:
+				_, kindOk = v.(float64)
 
-				default:
-					ok = true
-				}
+			default:
+				kindOk = true
+			}
 
-				if !ok {
-					err = c.runtimeError(errors.ErrArgumentType)
-				}
+			if !kindOk {
+				err = c.runtimeError(errors.ErrArgumentType)
 			}
 		}
 	}
@@ -339,6 +483,18 @@ func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 	return v, err
 }
 
+// addressOfByteCode is the instruction handler for the AddressOf opcode.
+//
+// It looks up the named symbol in the symbol table, retrieves a pointer to
+// the symbol's value storage slot (a *any), and pushes that pointer onto the
+// stack.  This implements the Ego `&name` address-of operator.
+//
+// Operand: the symbol name as a string.
+//
+// Stack contract:
+//   - Pushes: a *any pointer to the named symbol's storage slot.
+//
+// Returns ErrUnknownIdentifier if the name is not found in the visible scope.
 func addressOfByteCode(c *Context, i any) error {
 	name := data.String(i)
 
@@ -350,9 +506,41 @@ func addressOfByteCode(c *Context, i any) error {
 	return c.push(addr)
 }
 
+// deRefByteCode is the instruction handler for the DeRef opcode.
+//
+// It looks up the named symbol, interprets its value as an Ego pointer (a
+// *any stored inside the symbol's slot), and pushes the value that the
+// pointer points to.  This implements the Ego `*name` dereference operator.
+//
+// Operand: the symbol name as a string.
+//
+// Stack contract:
+//   - Pushes: the dereferenced value.
+//
+// Pointer representation in Ego:
+//
+//	GetAddress("p") returns addr (*any) — pointer to the symbol's value SLOT.
+//	*addr = content                     — the value stored in the slot (must
+//	                                      be *any, the Ego pointer value).
+//	*content = c2                       — dereferences the Ego pointer.
+//	   c2 itself may be another *any    — a doubly-indirect pointer (pointer to
+//	                                      pointer); dereference once more.
+//
+// Nil handling (TYPES-1 fix): the inner pointer `c3` is checked for nil before
+// dereferencing.  A nil inner pointer means the Ego pointer variable was
+// declared but never assigned, and returns ErrNilPointerReference.
+//
+// Error conditions:
+//   - ErrUnknownIdentifier   — symbol not in scope.
+//   - ErrNilPointerReference — the pointer (or its target) is nil.
+//   - ErrNotAPointer         — the symbol does not hold a pointer value.
+//
 func deRefByteCode(c *Context, i any) error {
 	name := data.String(i)
 
+	// Step 1: resolve the symbol to its storage address.
+	// GetAddress returns a *any pointing to the symbol's value slot in the
+	// symbol table's internal storage.
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
 		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
@@ -362,20 +550,31 @@ func deRefByteCode(c *Context, i any) error {
 		return c.runtimeError(errors.ErrNilPointerReference)
 	}
 
+	// Step 2: the symbol's value slot must contain a *any — that is the Ego
+	// pointer value stored in the variable.
 	if content, ok := addr.(*any); ok {
 		if data.IsNil(content) {
 			return c.runtimeError(errors.ErrNilPointerReference)
 		}
 
+		// Step 3: dereference the outer pointer to get the Ego pointer value.
 		c2 := *content
+		// Step 4: the Ego pointer value itself is a *any; dereference it to
+		// reach the pointed-to storage.
 		if c3, ok := c2.(*any); ok {
-			xc3 := *c3
-			if c4, ok := xc3.(data.Immutable); ok {
-				return c.push(c4.Value)
+			// TYPES-1 fix: guard against a nil inner pointer BEFORE dereferencing.
+			// The original check tested `content` (the outer pointer, always
+			// non-nil here) instead of `c3`; a nil `c3` caused `*c3` to panic.
+			if c3 == nil {
+				return c.runtimeError(errors.ErrNilPointerReference)
 			}
 
-			if data.IsNil(content) {
-				return c.runtimeError(errors.ErrNilPointerReference)
+			// Step 5: dereference the inner pointer.  c3 is guaranteed non-nil.
+			xc3 := *c3
+			// Step 6: if the target slot holds an Immutable wrapper (read-only
+			// constant), expose the underlying value.
+			if c4, ok := xc3.(data.Immutable); ok {
+				return c.push(c4.Value)
 			}
 
 			return c.push(*c3)

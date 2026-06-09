@@ -34,6 +34,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Package Instructions](#packages)
 - [Print Instructions](#print)
 - [Return Instruction](#return)
+- [Type Instructions](#types)
 
 ---
 
@@ -4105,3 +4106,196 @@ if isStackMarker(c.result) {   // c.result (field), not c.Result (method)
 `Test_returnByteCode_BoolReturn_EmptyStack_RETURN2` confirms that calling
 Return(true) with an empty callee stack now returns a non-nil error instead of
 silently proceeding.
+
+---
+
+<a name="types"></a>
+
+## Type Instructions
+
+The type-related bytecode instructions live in `bytecode/types.go`.  Tests are
+in `bytecode/types_test.go`.
+
+---
+
+### TYPES-1: Dead nil guard in `deRefByteCode` leaves `*c3` vulnerable to panic
+
+| | |
+| :-- | :-- |
+| **Affected function** | `deRefByteCode` in `bytecode/types.go` |
+| **Risk** | MEDIUM — dereferencing an Ego variable that holds a nil pointer (`*any(nil)`) panics the runtime instead of returning ErrNilPointerReference |
+| **Discovering test** | `Test_deRefByteCode_TypedNilInnerPointer_TYPES1` |
+| **Status** | RESOLVED |
+
+#### TYPES-1: Original behavior
+
+`deRefByteCode` walks two levels of indirection to dereference an Ego pointer
+variable:
+
+```go
+addr     = GetAddress("p")    // *any → symbol's value slot
+content  = addr.(*any)        // outer pointer (always non-nil here)
+c2       = *content           // the Ego pointer value stored in the slot
+c3, ok   = c2.(*any)          // inner pointer (the Ego pointer target)
+*c3                           // final dereference ← potential panic
+```
+
+Inside the `c3` branch there is a nil check meant to guard against `*c3`
+panicking:
+
+```go
+if data.IsNil(content) {           // ← TYPES-1 bug: checks 'content', not 'c3'
+    return c.runtimeError(errors.ErrNilPointerReference)
+}
+return c.push(*c3)
+```
+
+`content` is the outer `*any` pointer, which was already verified non-nil by
+an earlier guard (line ~362).  Because `content` can never be nil at this
+point, the check is dead code and `*c3` is reached unconditionally.
+
+If the symbol holds a **typed nil** `*any` value — for example, an Ego pointer
+variable that has been declared but not assigned — the type assertion
+`c2.(*any)` succeeds with `c3 = nil`.  The dead guard passes (content is non-nil),
+and `*c3` panics.
+
+#### TYPES-1: Fix
+
+The nil guard was moved to before the first dereference and corrected to check
+`c3` (the inner pointer) instead of `content` (the outer pointer):
+
+```go
+if c3, ok := c2.(*any); ok {
+    if c3 == nil {   // ← corrected: was data.IsNil(content)
+        return c.runtimeError(errors.ErrNilPointerReference)
+    }
+    xc3 := *c3      // safe — c3 is guaranteed non-nil
+    ...
+}
+```
+
+`Test_deRefByteCode_TypedNilInnerPointer_TYPES1` stores a typed-nil `*any` in
+a symbol and confirms that `deRefByteCode` returns `ErrNilPointerReference`
+instead of panicking.
+
+---
+
+### TYPES-2: `reflect.TypeOf(v).String()` panics when `v` is nil in `relaxedConformanceCheck`
+
+| | |
+| :-- | :-- |
+| **Affected function** | `relaxedConformanceCheck` in `bytecode/types.go` |
+| **Risk** | LOW — requires the RequiredType operand to be a string and the stack value to be nil simultaneously; uncommon in practice |
+| **Discovering test** | `Test_relaxedConformanceCheck_NilValue_StringOperand_TYPES2` |
+| **Status** | RESOLVED |
+
+#### TYPES-2: Original behavior
+
+In the string-operand branch of `relaxedConformanceCheck`:
+
+```go
+if t, ok := i.(string); ok {
+    if t != reflect.TypeOf(v).String() {  // ← panics when v is nil
+        err = c.runtimeError(errors.ErrArgumentType)
+    }
+}
+```
+
+`reflect.TypeOf(nil)` returns a nil `reflect.Type`.  Calling `.String()` on a
+nil `reflect.Type` panics:
+
+```text
+panic: runtime error: invalid memory address or nil pointer dereference
+```
+
+This is triggered when `requiredTypeByteCode` is called with a string operand
+(a Go type name such as `"int"`) and the top-of-stack value is nil.
+
+#### TYPES-2: Fix
+
+A nil guard was added before the reflect call:
+
+```go
+if t, ok := i.(string); ok {
+    if v == nil || t != reflect.TypeOf(v).String() {  // ← v == nil guard added
+        err = c.runtimeError(errors.ErrArgumentType)
+    }
+}
+```
+
+`Test_relaxedConformanceCheck_NilValue_StringOperand_TYPES2` calls
+`relaxedConformanceCheck` with a string operand and a nil value, confirming
+that an error is returned rather than a panic.
+
+---
+
+### TYPES-3: Int-dispatch switch in `relaxedConformanceCheck` has unreachable cases
+
+| | |
+| :-- | :-- |
+| **Affected function** | `relaxedConformanceCheck` in `bytecode/types.go` |
+| **Risk** | LOW — current behavior is incorrect for non-`int` integer types (e.g., int16) but these cases are never reached, so no observable error is produced |
+| **Discovering test** | `Test_requiredTypeByteCode_Int16Operand_MatchingValue_TYPES3` and `Test_requiredTypeByteCode_Int16Operand_WrongValue_TYPES3` |
+| **Status** | RESOLVED |
+
+#### TYPES-3: Original behavior
+
+The int-operand branch extracts an `int` from the operand and then switches on
+the Ego kind of that value:
+
+```go
+if t, ok := i.(int); ok {
+    switch data.TypeOf(t).Kind() {
+    case data.Int16Kind:
+        _, ok = v.(int16)
+    case data.UInt16Kind:
+        _, ok = v.(uint16)
+    ...
+    case data.IntKind:
+        _, ok = v.(int)
+    ...
+    }
+}
+```
+
+`t` is the result of `i.(int)` — a plain Go `int`.  `data.TypeOf(int(anything))`
+always returns `data.IntType`, whose `.Kind()` is always `data.IntKind`.
+Therefore:
+
+- The `case data.IntKind` branch is the only one ever taken.
+- All other cases (`Int16Kind`, `UInt16Kind`, `Int8Kind`, `Int32Kind`,
+  `Int64Kind`, `Float32Kind`, `Float64Kind`, `ByteKind`, `BoolKind`,
+  `StringKind`) are dead code and can never execute.
+
+The practical consequence is that when `requiredTypeByteCode` receives an int
+operand and a non-`int` value (e.g., `int16(5)`), the check `v.(int)` fails
+and `ErrArgumentType` is returned even if int16 might be a valid match for the
+intended type.
+
+#### TYPES-3: Fix
+
+The `i.(int)` extraction was removed and replaced with a `switch i.(type)` that
+dispatches on the exact Go type of the operand:
+
+```go
+switch i.(type) {
+case int:
+    _, kindOk = v.(int)
+case int16:
+    _, kindOk = v.(int16)
+case uint16:
+    _, kindOk = v.(uint16)
+// … int8, int32, int64, byte, bool, float32, float64 …
+default:
+    kindOk = true   // non-integer operands pass through unchanged
+}
+```
+
+Non-integer operands (such as `*data.Type` values handled by the block above)
+hit the `default` branch, preserving the original pass-through behavior for
+those cases.
+
+`Test_requiredTypeByteCode_Int16Operand_MatchingValue_TYPES3` confirms that an
+`int16(5)` value now passes when `int16(0)` is the operand, and
+`Test_requiredTypeByteCode_Int16Operand_WrongValue_TYPES3` confirms that a
+plain `int` value fails for the same operand.
