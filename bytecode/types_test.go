@@ -529,10 +529,11 @@ func Test_deRefByteCode_NilSymbolValue(t *testing.T) {
 // non-nil) instead of `c3` (the inner pointer), so a nil c3 reached the
 // dereference `*c3` and caused a runtime panic.
 func Test_deRefByteCode_TypedNilInnerPointer_TYPES1(t *testing.T) {
+	var nilInnerPtr *any = nil
+
 	tc := newTestContext(t)
 
 	// Store a typed nil *any (simulating an unassigned Ego pointer variable).
-	var nilInnerPtr *any = nil
 	tc.ctx.symbols.SetAlways("p", nilInnerPtr)
 
 	err := deRefByteCode(tc.ctx, "p")
