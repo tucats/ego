@@ -33,6 +33,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Struct, Map, Array, Channel Indexing](#structs)
 - [Package Instructions](#packages)
 - [Print Instructions](#print)
+- [Return Instruction](#return)
 
 ---
 
@@ -3977,3 +3978,130 @@ case data.Function, *data.Function:
 that a `data.Function` value now produces empty output, and the existing
 `Test_formatValueForPrinting_FunctionPointer_ProducesEmptyString` continues to
 confirm the same for `*data.Function` pointers.
+
+---
+
+<a name="return"></a>
+
+## Return Instruction
+
+The return instruction lives in `bytecode/return.go`.  Tests are in
+`bytecode/return_test.go`.
+
+---
+
+### RETURN-1: `isStackMarker(c.Result)` uses the bound method instead of the field — guard never fires
+
+| | |
+| :-- | :-- |
+| **Affected function** | `returnByteCode` in `bytecode/return.go` |
+| **Risk** | MEDIUM — a StackMarker on the stack where a return value is expected is silently propagated to the caller instead of raising an error |
+| **Discovering test** | `Test_returnByteCode_BoolReturn_StackMarker_ReturnsVoidError_RETURN1` |
+| **Status** | RESOLVED |
+
+#### RETURN-1: Original behavior
+
+In the `bool` branch of `returnByteCode`, after popping the return value, there
+is a guard that is supposed to detect when a StackMarker was returned (which
+means a function that returns void was incorrectly used as an expression):
+
+```go
+c.result, err = c.Pop()
+if isStackMarker(c.Result) {          // ← RETURN-1 bug
+    return c.runtimeError(errors.ErrFunctionReturnedVoid)
+}
+c.resultSet = true
+```
+
+`c.Result` (uppercase `R`) is the **bound method expression** — it evaluates to
+a value of type `func() any`, not the `any` stored in `c.result`.
+
+```text
+c.result   — the unexported field of type any; holds the popped value
+c.Result   — the exported method func (c *Context) Result() any
+c.Result   — WITHOUT parentheses: a bound method of type func() any
+```
+
+`isStackMarker` checks whether its argument is a `StackMarker` struct or a
+`*CallFrame`.  A bound method `func() any` is neither, so `isStackMarker`
+always returns `false`.  The guard is dead code.
+
+When a StackMarker is on the stack:
+
+- It is popped and stored in `c.result` (the field).
+- `c.resultSet` is set to `true`.
+- `callFramePop` re-pushes the StackMarker onto the caller's stack.
+- The caller receives a StackMarker as a "value", which can corrupt subsequent
+  operations.
+
+#### RETURN-1: Fix
+
+Changed `c.Result` (method reference) to `c.result` (field):
+
+```go
+c.result, err = c.Pop()
+if err != nil {                        // RETURN-2 fix applied together
+    return c.runtimeError(err)
+}
+if isStackMarker(c.result) {           // ← corrected (was c.Result)
+    return c.runtimeError(errors.ErrFunctionReturnedVoid)
+}
+```
+
+`Test_returnByteCode_BoolReturn_StackMarker_ReturnsVoidError_RETURN1` confirms
+that pushing a StackMarker and calling Return(true) now returns
+`ErrFunctionReturnedVoid`.
+
+---
+
+### RETURN-2: `err` from `c.Pop()` in the bool branch is silently overwritten
+
+| | |
+| :-- | :-- |
+| **Affected function** | `returnByteCode` in `bytecode/return.go` |
+| **Risk** | LOW — in practice the compiler only generates `Return(true)` when a value is guaranteed to be on the stack, so Pop() should never fail here |
+| **Discovering test** | `Test_returnByteCode_BoolReturn_EmptyStack_RETURN2` |
+| **Status** | RESOLVED |
+
+#### RETURN-2: Original behavior
+
+In the `bool` branch the error from `c.Pop()` is captured in `err` but is never
+checked before the function continues:
+
+```go
+if b, ok := i.(bool); ok && b {
+    c.result, err = c.Pop()  // err set here...
+    if isStackMarker(c.Result) {
+        ...
+    }
+    c.resultSet = true
+}
+// ...
+if c.framePointer > 0 {
+    err = c.callFramePop()  // ...but overwritten here
+}
+```
+
+If `c.Pop()` fails (the stack is unexpectedly empty), the error is silently
+replaced by whatever `callFramePop()` returns.  In the `int(1)` sub-branch the
+same issue exists, though there `err` is at least tested before the secondary
+marker pop.
+
+#### RETURN-2: Fix
+
+An explicit error check was added immediately after the Pop, combined with the
+RETURN-1 correction in one contiguous block:
+
+```go
+c.result, err = c.Pop()
+if err != nil {
+    return c.runtimeError(err)
+}
+if isStackMarker(c.result) {   // c.result (field), not c.Result (method)
+    return c.runtimeError(errors.ErrFunctionReturnedVoid)
+}
+```
+
+`Test_returnByteCode_BoolReturn_EmptyStack_RETURN2` confirms that calling
+Return(true) with an empty callee stack now returns a non-nil error instead of
+silently proceeding.
