@@ -84,10 +84,8 @@ func returnByteCode(c *Context, i any) error {
 		}
 
 		c.resultSet = true
-
 	} else if b, ok := i.(int); ok && b > 0 {
 		// int(N) operand: N named return values (N >= 1).
-
 		if b == 1 {
 			// Single named return: pop the top value and store it.
 			// Named-return functions place a StackMarker *below* the single
@@ -110,7 +108,6 @@ func returnByteCode(c *Context, i any) error {
 			c.result = nil
 			c.resultSet = false
 		}
-
 	} else {
 		// nil operand (or int(0)): void return.
 		//

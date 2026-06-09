@@ -20,7 +20,7 @@ package bytecode
 //               package dictionary or symbol table holds a nil value.
 //               Fixed by nil-guarding before the reflect.TypeOf call.
 //
-// # Test organisation
+// # Test organization
 //
 // Section 1:  IsPackage
 // Section 2:  GetPackage
@@ -643,8 +643,9 @@ func Test_makePackageItemList_UnexportedSymbolTableItemSkipped(t *testing.T) {
 // Test_dumpPackagesByteCode_UnknownPackage verifies that listing an unknown
 // package name returns ErrInvalidPackageName without writing any output.
 func Test_dumpPackagesByteCode_UnknownPackage(t *testing.T) {
-	tc := newTestContext(t)
 	var buf bytes.Buffer
+
+	tc := newTestContext(t)
 
 	tc.ctx.output = &buf
 
@@ -660,10 +661,11 @@ func Test_dumpPackagesByteCode_UnknownPackage(t *testing.T) {
 // Test_dumpPackagesByteCode_KnownPackage verifies that listing a registered
 // package produces non-empty output and no error.
 func Test_dumpPackagesByteCode_KnownPackage(t *testing.T) {
+	var buf bytes.Buffer
+
 	registerTestPackage(t, "testpkg.dump.known")
 
 	tc := newTestContext(t)
-	var buf bytes.Buffer
 
 	tc.ctx.output = &buf
 
@@ -675,8 +677,9 @@ func Test_dumpPackagesByteCode_KnownPackage(t *testing.T) {
 // Test_dumpPackagesByteCode_InvalidOperandType verifies that an unsupported
 // operand type returns ErrInvalidOperand.
 func Test_dumpPackagesByteCode_InvalidOperandType(t *testing.T) {
-	tc := newTestContext(t)
 	var buf bytes.Buffer
+
+	tc := newTestContext(t)
 
 	tc.ctx.output = &buf
 

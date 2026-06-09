@@ -655,7 +655,7 @@ func Test_Context_checkType_DynamicMode_NoCheck(t *testing.T) {
 		t.Fatalf("checkType dynamic mode: unexpected error: %v", err)
 	}
 
-	if got != "hello" {
+	if got != "hello" { //nolint: goconst
 		t.Errorf("checkType dynamic mode: value changed, got %v, want \"hello\"", got)
 	}
 }

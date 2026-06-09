@@ -303,5 +303,4 @@
 //	// Retrieve the result left on the stack.
 //	v, _ := ctx.Pop()
 //	fmt.Println(data.GetString(v))  // "fruit"
-
 package bytecode

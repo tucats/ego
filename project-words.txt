@@ -22,6 +22,7 @@ Atoi
 attname
 attnum
 attrelid
+Atype
 autofocus
 autoimport
 autoparse
@@ -34,6 +35,7 @@ brandenc
 breakreturn
 buildver
 buildvers
+byname
 BYTEA
 bytecode
 bytecodes
@@ -94,8 +96,10 @@ Fudd
 funcs
 GCCPU
 getany
+getbypath
 Getenv
 getthis
+goconst
 gomarkdown
 gopath
 gopkg
@@ -113,8 +117,10 @@ iface
 indisunique
 indkey
 indrelid
+inpkg
 Ints
 Inuse
+ispackage
 Itoa
 Itor
 Jamba
@@ -129,6 +135,7 @@ lasttokenat
 libexec
 libpath
 Linc
+listpath
 loggerid
 LTEQ
 lvalue
@@ -153,6 +160,8 @@ minsize
 MMMCMXCIX
 MMXXIV
 modernc
+Mvar
+myalias
 myapp
 mymark
 mypkg
@@ -167,15 +176,19 @@ newsize
 newtype
 newvalue
 nextdepth
+nilsym
 nolint
 nonnull
 nonnullable
 nonunique
 noperms
 nosniff
+nosuchtype
 nosuchvar
+notcached
 notnull
 notnullable
+notptr
 nspname
 nullbool
 nullfloat
@@ -244,6 +257,7 @@ storealways
 strconv
 stretchr
 stringlist
+strlist
 subcontext
 subgrammar
 subopt
@@ -301,6 +315,7 @@ XLII
 XOXO
 XVCJ
 xyzzy
+Zfunc
 zipgo
 zork
 zorp

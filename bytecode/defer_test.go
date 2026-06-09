@@ -910,7 +910,7 @@ func makeDeferStopFn() *ByteCode {
 // Returns "<nil>" if the pointer is nil.
 func symbolName(s *symbols.SymbolTable) string {
 	if s == nil {
-		return "<nil>"
+		return "<nil>" //nolint: goconst
 	}
 
 	return s.Name
