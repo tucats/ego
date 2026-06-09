@@ -32,9 +32,12 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 		return newTypeName(typeValue)
 	}
 
-	// If it's a channel, just return the value
+	// If it's a channel, create a NEW independent channel with the same capacity.
+	// BUILTIN-NEW-2 fix: the original code returned the existing channel unchanged,
+	// meaning $new(ch) and ch aliased the same underlying channel.  We now use
+	// Cap() to read the buffer size and construct a fresh channel.
 	if typeValue, ok := args.Get(0).(*data.Channel); ok {
-		return typeValue, nil
+		return data.NewChannel(typeValue.Cap()), nil
 	}
 
 	// Some native complex types work using the data package deep
@@ -122,8 +125,15 @@ func newReflectKind(kind reflect.Kind) (any, error) {
 	case reflect.Int32:
 		return int32(0), nil
 
-	case reflect.Int, reflect.Int64:
+	case reflect.Int:
 		return 0, nil
+
+	// BUILTIN-NEW-1 fix: reflect.Int64 previously shared a case with reflect.Int,
+	// causing an untyped integer literal 0 to be returned — Go infers that as int,
+	// not int64.  Callers expecting int64 received the wrong concrete type.
+	// The two cases are now separate so each returns the correct zero value.
+	case reflect.Int64:
+		return int64(0), nil
 
 	case reflect.String:
 		return "", nil

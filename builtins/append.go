@@ -47,6 +47,31 @@ func Append(s *symbols.SymbolTable, args data.List) (any, error) {
 			// We also allow being passed a simple []any in which case it is
 			// dumped into the array without further checking.
 			result = append(result, array...)
+
+			// BUILTIN-APPEND-1 fix: when the first argument is a raw []any slice
+			// the original code left `kind` as data.InterfaceType, so the returned
+			// array was always typed as []interface{} regardless of the element
+			// values.  We now inspect the first element and set `kind` to its
+			// concrete type only when ALL elements share that type — mimicking
+			// the behaviour of the *data.Array branch above.  If the slice is
+			// empty, or elements have mixed types, kind stays as InterfaceType
+			// (which is the correct representation for a heterogeneous array).
+			if len(array) > 0 && kind.IsInterface() {
+				candidate := data.TypeOf(array[0])
+				uniform := true
+
+				for _, elem := range array[1:] {
+					if !data.TypeOf(elem).IsType(candidate) {
+						uniform = false
+
+						break
+					}
+				}
+
+				if uniform {
+					kind = candidate
+				}
+			}
 		} else {
 			// Verify that the item is compatible with the array type. We only do this if
 			// we are in relaxed or strict mode.

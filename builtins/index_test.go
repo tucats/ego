@@ -9,6 +9,48 @@ import (
 	"github.com/tucats/ego/symbols"
 )
 
+// TestIndex_MapFoundReturnsOne verifies that index(map, key) returns 1 (int)
+// when the key exists.
+//
+// BUILTIN-INDEX-1 is resolved: the map case now returns 1 or 0 (int) instead
+// of the raw bool from arg.Get, making the return type uniform with all other
+// index() cases.
+func TestIndex_MapFoundReturnsInt1(t *testing.T) {
+	s := symbols.NewSymbolTable("testing")
+	s.Root().SetAlways(defs.ExtensionsVariable, true)
+	t.Cleanup(func() { s.Root().SetAlways(defs.ExtensionsVariable, false) })
+
+	m := data.NewMapFromMap(map[string]any{"x": 10, "y": 20})
+	args := data.NewList(m, "x")
+
+	got, err := Index(s, args)
+	if err != nil {
+		t.Fatalf("Index(map, found key) error: %v", err)
+	}
+	if got != 1 {
+		t.Errorf("Index(map, found) = %v (%T), want 1 (int)", got, got)
+	}
+}
+
+// TestIndex_MapNotFoundReturnsZero verifies that index(map, key) returns 0
+// when the key does not exist.
+func TestIndex_MapNotFoundReturnsInt0(t *testing.T) {
+	s := symbols.NewSymbolTable("testing")
+	s.Root().SetAlways(defs.ExtensionsVariable, true)
+	t.Cleanup(func() { s.Root().SetAlways(defs.ExtensionsVariable, false) })
+
+	m := data.NewMapFromMap(map[string]any{"x": 10})
+	args := data.NewList(m, "missing")
+
+	got, err := Index(s, args)
+	if err != nil {
+		t.Fatalf("Index(map, missing key) error: %v", err)
+	}
+	if got != 0 {
+		t.Errorf("Index(map, missing) = %v (%T), want 0 (int)", got, got)
+	}
+}
+
 func TestFunctionIndex(t *testing.T) {
 	tests := []struct {
 		name    string

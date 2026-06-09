@@ -39,7 +39,18 @@ func typeOf(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.PointerType(data.InterfaceType), nil
 
 	case func(s *symbols.SymbolTable, args data.List) (any, error):
-		return "<builtin>", nil
+		// BUILTIN-TYPES-1 fix: the original code returned the string "<builtin>",
+		// making typeof(builtinFunc) the only case that does not return a *data.Type.
+		// Callers that compare typeof() results or use them in type-switch statements
+		// received an unexpected string value.
+		//
+		// data.FunctionType() requires a non-nil *data.Function with a Declaration.
+		// We construct a minimal anonymous declaration so the result is a valid
+		// *data.Type of FunctionKind, consistent with the data.Function case below.
+		builtinFn := data.Function{
+			Declaration: &data.Declaration{Name: "<builtin>"},
+		}
+		return data.FunctionType(&builtinFn), nil
 
 	case data.Function:
 		return data.FunctionType(&v), nil

@@ -65,18 +65,31 @@ func Cast(s *symbols.SymbolTable, args data.List) (any, error) {
 			return nil, errors.New(err).In(t.String())
 		}
 
-		if v != nil {
-			return v, nil
-		}
-
-		return nil, errors.ErrInvalidType.Context(data.TypeOf(source).String())
+		// BUILTIN-CAST-2 fix: the original code tested `if v != nil` and
+		// returned ErrInvalidType for a nil result.  However, data.Coerce can
+		// legitimately return (nil, nil) — for example when coercing a nil
+		// interface to a pointer type.  The nil check incorrectly treated a
+		// successful coercion that produced nil as a failure.
+		//
+		// When err == nil the coercion succeeded; return the result (even if nil).
+		return v, nil
 	}
 }
 
 func castToStringValue(t *data.Type, actual string, source any) (any, error) {
 	if t.IsType(data.Int32Type) {
-		if len(actual) == 3 && actual[0] == '\'' && actual[2] == '\'' {
-			return int32(actual[1]), nil
+		// BUILTIN-CAST-1 fix: the original check used len(actual) == 3 and
+		// byte-indexed the string, which only worked for ASCII characters
+		// (single-byte UTF-8 sequences).  A multi-byte character like 'é'
+		// (U+00E9, encoded as two UTF-8 bytes) has len > 3 so the condition
+		// was never true.
+		//
+		// We now convert the string to a []rune slice and check for the
+		// three-element pattern (quote, codepoint, quote).  This correctly
+		// handles any Unicode character, not just ASCII.
+		runes := []rune(actual)
+		if len(runes) == 3 && runes[0] == '\'' && runes[2] == '\'' {
+			return int32(runes[1]), nil
 		}
 	}
 

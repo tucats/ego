@@ -63,7 +63,20 @@ func DeepCopy(source any, depth int) any {
 		return v
 
 	case *data.Struct:
-		return v.Copy()
+		// BUILTIN-COPY-2 fix: v.Copy() is a shallow copy — any field whose value is
+		// itself a pointer (e.g. a nested *data.Array or *data.Map) would share
+		// storage between the original and the copy.  We now do a proper recursive
+		// deep copy by iterating every field and applying DeepCopy to each value.
+		r := v.Copy() // creates a new struct with the same type and field layout
+
+		// FieldNames(false) returns the names of all public fields.
+		// We deep-copy each field value so that nested composites are independent.
+		for _, fieldName := range v.FieldNames(false) {
+			fv, _ := v.Get(fieldName)
+			_ = r.Set(fieldName, DeepCopy(fv, depth-1))
+		}
+
+		return r
 
 	case *data.Array:
 		r := data.NewArray(v.Type(), v.Len())
@@ -71,7 +84,10 @@ func DeepCopy(source any, depth int) any {
 		for i := 0; i < v.Len(); i++ {
 			vv, _ := v.Get(i)
 			vv = DeepCopy(vv, depth-1)
-			_ = v.Set(i, vv)
+			// BUILTIN-COPY-1 fix: write the deep-copied element into RESULT r,
+			// not back into SOURCE v.  The original code had v.Set(i, vv) here,
+			// which populated the source and left r perpetually empty.
+			_ = r.Set(i, vv)
 		}
 
 		return r

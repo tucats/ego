@@ -30,9 +30,18 @@ func Index(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		return nil, errors.ErrInvalidType.Context("[]any")
 
 	case *data.Map:
+		// BUILTIN-INDEX-1 fix: the previous code returned the raw bool from
+		// arg.Get, making index(map, key) return a bool while all other cases
+		// return an int.  The function's declaration says it returns int, and
+		// callers that use the result arithmetically would receive a bool.
+		// We now return 1 (found) or 0 (not found) to match the array and
+		// string cases, and we still propagate any map-lookup error.
 		_, found, err := arg.Get(args.Get(1))
+		if found {
+			return 1, err
+		}
 
-		return found, err
+		return 0, err
 
 	default:
 		v := data.String(args.Get(0))

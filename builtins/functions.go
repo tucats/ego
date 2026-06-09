@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
@@ -57,6 +58,18 @@ type FunctionDefinition struct {
 // Any is a constant that defines that a function can have as many arguments
 // as desired.
 const Any = math.MaxInt32
+
+// functionDictionaryMu guards all reads and writes to FunctionDictionary.
+// BUILTIN-FUNCTIONS-1 fix: FunctionDictionary is a package-level map shared
+// across goroutines.  Without a mutex, concurrent calls to AddFunction (or
+// AddBuiltins from different goroutines) produce a data race detected by
+// Go's race detector.  All exported helpers that iterate or write the map
+// must hold the appropriate lock (RLock for reads, Lock for writes).
+//
+// Note: FunctionDictionary is still an exported variable, so callers that
+// access it directly (without using AddFunction / FindFunction / CallBuiltin)
+// bypass this protection.  Prefer the accessor functions whenever possible.
+var functionDictionaryMu sync.RWMutex
 
 // FunctionDictionary is the dictionary of functions. Each entry in the dictionary
 // indicates the min and max argument counts, the native function address, and
@@ -181,7 +194,12 @@ var FunctionDictionary = map[string]FunctionDefinition{
 					Type: data.IntType,
 				},
 			},
-			Returns: []*data.Type{data.IntType},
+			// BUILTIN-FUNCTIONS-2 fix: make() returns an array or channel, not
+			// an int.  The previous declaration of data.IntType was incorrect and
+			// could cause the compiler or strict-mode type checker to reject valid
+			// assignments from make() calls.  InterfaceType is used here because
+			// the actual return type depends on the first argument at runtime.
+			Returns: []*data.Type{data.InterfaceType},
 		}},
 	"sizeof": {
 		Extension:       true,
@@ -226,15 +244,23 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
-	functionNames := make([]string, 0)
+	// Hold a read lock while we snapshot the keys so that concurrent calls
+	// to AddFunction do not race with this iteration (BUILTIN-FUNCTIONS-1).
+	functionDictionaryMu.RLock()
+	functionNames := make([]string, 0, len(FunctionDictionary))
 	for k := range FunctionDictionary {
 		functionNames = append(functionNames, k)
 	}
+	functionDictionaryMu.RUnlock()
 
 	sort.Strings(functionNames)
 
 	for _, functionName := range functionNames {
+		// Re-acquire the read lock for each lookup so that individual entries
+		// can be added concurrently without holding the lock across the entire loop.
+		functionDictionaryMu.RLock()
 		functionDefinition := FunctionDictionary[functionName]
+		functionDictionaryMu.RUnlock()
 
 		if functionDefinition.Extension && !extensions {
 			continue
@@ -253,6 +279,11 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 func FindFunction(f func(*symbols.SymbolTable, data.List) (any, error)) *FunctionDefinition {
 	sf1 := reflect.ValueOf(f)
 
+	// Hold a read lock for the duration of the linear search so that
+	// concurrent AddFunction calls do not race with the iteration.
+	functionDictionaryMu.RLock()
+	defer functionDictionaryMu.RUnlock()
+
 	for _, d := range FunctionDictionary {
 		if d.FunctionAddress != nil { // Only function entry points have an F value
 			sf2 := reflect.ValueOf(d.FunctionAddress)
@@ -268,6 +299,10 @@ func FindFunction(f func(*symbols.SymbolTable, data.List) (any, error)) *Functio
 // FindName returns the name of a function from the dictionary if one is found.
 func FindName(f func(*symbols.SymbolTable, data.List) (any, error)) string {
 	sf1 := reflect.ValueOf(f)
+
+	// Hold a read lock for the duration of the linear search (BUILTIN-FUNCTIONS-1).
+	functionDictionaryMu.RLock()
+	defer functionDictionaryMu.RUnlock()
 
 	for name, d := range FunctionDictionary {
 		if d.FunctionAddress != nil {
@@ -321,16 +356,10 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 	}
 
 	// Nope, see if it's a builtin or local function.
-	var functionDefinition = FunctionDefinition{}
-
-	found := false
-
-	for fn, d := range FunctionDictionary {
-		if fn == name {
-			functionDefinition = d
-			found = true
-		}
-	}
+	// Hold a read lock while looking up the entry (BUILTIN-FUNCTIONS-1).
+	functionDictionaryMu.RLock()
+	functionDefinition, found := FunctionDictionary[name]
+	functionDictionaryMu.RUnlock()
 
 	if !found {
 		return nil, errors.ErrInvalidFunctionName.Context(name)
@@ -358,12 +387,20 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 // This dictionary is used to resolve Ego function calls by name, and to access the function
 // definition information. This is called once for each function added to the dictionary.
 func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
-	// Make sure not a collision
-	if _, ok := FunctionDictionary[fd.Name]; ok {
+	// Acquire the write lock for the collision check AND the subsequent insert so
+	// that neither operation races with a concurrent read (BUILTIN-FUNCTIONS-1).
+	// The check-then-set pair must be atomic to prevent two goroutines from both
+	// passing the collision check and then writing the same key.
+	functionDictionaryMu.Lock()
+	_, alreadyExists := FunctionDictionary[fd.Name]
+	if !alreadyExists {
+		FunctionDictionary[fd.Name] = fd
+	}
+	functionDictionaryMu.Unlock()
+
+	if alreadyExists {
 		return errors.ErrFunctionAlreadyExists
 	}
-
-	FunctionDictionary[fd.Name] = fd
 
 	// Has the package already been constructed? If so, we need to add this to the package.
 	if pkg, ok := s.Get(fd.Package); ok {

@@ -2,7 +2,6 @@ package builtins
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
@@ -17,14 +16,15 @@ func Length(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	switch arg := args.Get(0).(type) {
-	// For a channel, it's length either zero if it's drained, or bottomless
+	// For a channel, return the number of items currently buffered.
+	// BUILTIN-LENGTH-1 fix: the original code returned math.MaxInt32 for any
+	// non-empty channel, which diverges from Go's len(channel) semantics and
+	// misleads callers that use the result to check queue depth.  We now call
+	// arg.Len() which returns the actual buffered item count (safe to call
+	// concurrently — it delegates to Go's built-in len() on the channel).
+	// A closed-and-drained channel returns 0 naturally via the same path.
 	case *data.Channel:
-		size := int(math.MaxInt32)
-		if arg.IsEmpty() {
-			size = 0
-		}
-
-		return size, nil
+		return arg.Len(), nil
 
 	case *data.Array:
 		return arg.Len(), nil

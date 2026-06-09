@@ -121,6 +121,32 @@ func (c *Channel) IsOpen() bool {
 	return c.isOpen
 }
 
+// Len returns the number of items currently buffered in the channel.
+// This mirrors Go's built-in len(channel) and is used by the Ego len()
+// function to report the actual queue depth rather than a sentinel value.
+// The result is a snapshot — by the time the caller reads it, the channel
+// may have gained or lost items due to concurrent sends or receives.
+func (c *Channel) Len() int {
+	if c == nil {
+		return 0
+	}
+
+	// len() on a Go channel is safe to call without holding a lock.
+	return len(c.channel)
+}
+
+// Cap returns the buffer capacity the channel was created with.
+// This is used by NewInstanceOf (builtins/new.go) to create a new independent
+// channel of the same size when $new(ch) is called.
+func (c *Channel) Cap() int {
+	if c == nil {
+		return 0
+	}
+
+	// c.size is set once at construction and never mutated, so no lock needed.
+	return c.size
+}
+
 // IsEmpty checks to see if a channel has been drained (i.e. it is
 // closed and there are no more items). This is used by the len()
 // function, for example.
