@@ -31,6 +31,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Stack Management](#stack)
 - [Store Instructions](#store)
 - [Struct, Map, Array, Channel Indexing](#structs)
+- [Package Instructions](#packages)
 
 ---
 
@@ -3715,3 +3716,140 @@ Result for each case:
 `Test_flattenByteCode_EmptyArray_STRUCT3` now asserts `argCountDelta == -1`
 after flattening an empty array, confirming correct behavior.  The full
 869-test Ego integration suite continued to pass after the change.
+
+---
+
+<a name="packages"></a>
+
+## PACKAGES-1 — `inPackageByteCode` panics when the symbol table holds a non-package value under the package name
+
+**Affected function:** `inPackageByteCode`  
+**File:** `bytecode/package.go`  
+**Risk:** High — any local variable whose name matches a package name (e.g. a
+loop counter named `math`) causes an unrecoverable nil-pointer panic rather
+than a clean error or graceful fallthrough to the package cache  
+**Discovered by:** `Test_inPackageByteCode_NonPackageInSymbolTable_PACKAGES1`  
+**Status: RESOLVED**
+
+### PACKAGES-1: Original behavior
+
+`inPackageByteCode` searched the scope chain with `GetAnyScope` and, on any
+hit, immediately passed the result to `GetPackageSymbolTable` and called
+`NewChildProxy` on the return value:
+
+```go
+if pkg, found := c.symbols.GetAnyScope(c.pkg); found {
+    c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)
+    // ↑ GetPackageSymbolTable returns nil when pkg is not *data.Package,
+    //   so NewChildProxy is called on a nil *SymbolTable → panic
+    return nil
+}
+```
+
+`GetPackageSymbolTable` type-asserts its argument to `*data.Package` and
+returns `nil` when the assertion fails.  Calling `.NewChildProxy(...)` on a
+nil `*SymbolTable` receiver panics with a nil pointer dereference.
+
+In practice this can be triggered by Ego code that uses a local variable with
+the same name as a package (e.g. `math := 3.14`) and then enters a `package
+math` scope inside the same function.
+
+### PACKAGES-1: Fix
+
+A type assertion was added between the `GetAnyScope` call and the proxy
+creation.  When the found value is not a `*data.Package`, the code falls
+through to the global package-cache lookup instead of panicking:
+
+```go
+if found, ok := c.symbols.GetAnyScope(c.pkg); ok {
+    // Guard: must actually be a *data.Package.  A local variable that
+    // shadows the package name must not cause a panic (PACKAGES-1 fix).
+    if pkg, isPkg := found.(*data.Package); isPkg {
+        c.symbols = symbols.GetPackageSymbolTable(pkg).NewChildProxy(c.symbols)
+        return nil
+    }
+    // Fall through: the shadowing value is not a package; try the cache.
+}
+```
+
+Two tests cover this fix:
+
+- `Test_inPackageByteCode_NonPackageInSymbolTable_PACKAGES1` — confirms that a
+  non-package shadow returns `ErrInvalidPackageName` (no panic) when the cache
+  also has no entry.
+- `Test_inPackageByteCode_NonPackageInSymbolTable_CacheFallback_PACKAGES1` —
+  confirms that when the cache does have the real package the call succeeds
+  despite the shadowing variable.
+
+---
+
+## PACKAGES-2 — `makePackageItemList` panics on nil values in the package dictionary or symbol table
+
+**Affected function:** `makePackageItemList`  
+**File:** `bytecode/package.go`  
+**Risk:** Medium — any package that stores a nil value under an exported key
+causes `dumpPackagesByteCode` to panic, crashing the REPL or any tool that
+lists packages  
+**Discovered by:** `Test_makePackageItemList_NilValueNoPanic_PACKAGES2`,
+`Test_makePackageItemList_NilInSymbolTable_PACKAGES2`  
+**Status: RESOLVED**
+
+### PACKAGES-2: Original behavior
+
+In both loops inside `makePackageItemList`, the `default` branch called
+`reflect.TypeOf(v).String()` without first checking whether `v` was nil:
+
+```go
+// First loop (package dictionary):
+default:
+    r := reflect.TypeOf(v).String()   // ← panics when v is nil
+
+// Second loop (symbol table):
+r := reflect.TypeOf(value).String()   // ← panics when value is nil
+```
+
+`reflect.TypeOf(nil)` returns a nil `reflect.Type`.  Calling `.String()` on a
+nil interface value panics with:
+
+```text
+panic: runtime error: invalid memory address or nil pointer dereference
+```
+
+Nil values can legitimately appear in a package when an Ego program stores
+`nil` in a package-level variable, or when a built-in package registers a
+placeholder entry during initialization.
+
+### PACKAGES-2: Fix
+
+A nil guard was inserted before each `reflect.TypeOf` call.  When the value is
+nil, a descriptive `"3var … = nil"` string is emitted directly instead of
+delegating to reflection:
+
+```go
+// First loop (package dictionary):
+default:
+    if v == nil {
+        item = "3var " + key + " = nil"
+    } else {
+        r := reflect.TypeOf(v).String()
+        ...
+    }
+
+// Second loop (symbol table):
+if value == nil {
+    item = "3var " + name + " = nil"
+} else {
+    r := reflect.TypeOf(value).String()
+    ...
+}
+```
+
+The nil case is classified as a variable (`"3var"`) because a nil value most
+naturally represents an uninitialized variable slot rather than a type,
+constant, or function.
+
+`Test_makePackageItemList_NilValueNoPanic_PACKAGES2` confirms no panic for a
+nil value in the package dictionary, and
+`Test_makePackageItemList_NilInSymbolTable_PACKAGES2` confirms the same for the
+symbol-table path.  Both tests also verify that the nil entry still appears in
+the output list so the item is not silently discarded.
