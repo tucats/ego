@@ -32,6 +32,7 @@ Entries are added as tests discover them — the tests themselves contain
 - [Store Instructions](#store)
 - [Struct, Map, Array, Channel Indexing](#structs)
 - [Package Instructions](#packages)
+- [Print Instructions](#print)
 
 ---
 
@@ -3853,3 +3854,126 @@ nil value in the package dictionary, and
 `Test_makePackageItemList_NilInSymbolTable_PACKAGES2` confirms the same for the
 symbol-table path.  Both tests also verify that the nil entry still appears in
 the output list so the item is not silently discarded.
+
+---
+
+<a name="print"></a>
+
+## Print Instructions
+
+The print-related instructions live in `bytecode/print.go`.  Tests are in
+`bytecode/print_test.go`.
+
+---
+
+### PRINT-1: Unchecked type assertion in `formatValueForPrinting` panics on nil struct-array elements
+
+| | |
+| :-- | :-- |
+| **Affected function** | `formatValueForPrinting` in `bytecode/print.go` |
+| **Risk** | MEDIUM — any Ego program that prints a struct array before all elements are assigned |
+| **Discovering test** | `Test_formatValueForPrinting_ArrayOfStructs` (tests the safe path only; nil path would panic the test binary) |
+| **Status** | RESOLVED |
+
+#### PRINT-1: Original behavior
+
+`formatValueForPrinting` handles `*data.Array` values whose element type is a
+struct kind by iterating over the elements and casting each one to `*data.Struct`:
+
+```go
+for i := 0; i < actualValue.Len(); i++ {
+    rowValue, _ := actualValue.Get(i)
+    row := rowValue.(*data.Struct)   // ← unchecked assertion
+    ...
+}
+```
+
+`data.Array.Get(i)` returns `a.data[i]` directly.  When an array is created
+with `data.NewArray(structType, n)`, the `data` slice is allocated but struct
+elements are **not** initialized — only scalar kinds (bool, int, float, string)
+get zero values.  Struct elements remain `nil`.
+
+Calling `nil.(*data.Struct)` panics at runtime:
+
+```text
+panic: interface conversion: interface is nil, not *data.Struct
+```
+
+#### PRINT-1: Conditions that trigger the panic
+
+1. Ego code creates a struct array with a pre-allocated size but does not
+   assign all elements before printing — e.g., `arr := make([]MyStruct, 3)`
+   followed by partial assignment.
+2. Test code uses `data.NewArray(structType, n)` without populating every slot.
+
+Note: `data.Array.Make` (used by the Ego `make()` built-in) calls
+`InstanceOfType` which correctly initializes struct elements with
+`data.NewStruct(t)`.  Only direct calls to `data.NewArray` leave slots nil.
+
+#### PRINT-1: Fix
+
+A nil guard and a type-ok check were added before the assertion.  Nil elements
+and any non-struct elements are silently skipped, so a partially-initialized
+array simply omits those rows from the output instead of panicking:
+
+```go
+rowValue, _ := actualValue.Get(i)
+if rowValue == nil {
+    continue
+}
+row, ok := rowValue.(*data.Struct)
+if !ok {
+    continue
+}
+```
+
+`Test_formatValueForPrinting_ArrayOfStructs_NilElement_PRINT1` creates a
+three-element struct array with only slots 0 and 2 populated, calls
+`formatValueForPrinting`, and confirms that the output contains the two valid
+rows without panicking.
+
+---
+
+### PRINT-2: `case *data.Function:` in `formatValueForPrinting` is unreachable dead code
+
+| | |
+| :-- | :-- |
+| **Affected function** | `formatValueForPrinting` in `bytecode/print.go` |
+| **Risk** | LOW — current behavior (functions printing their declaration string) is not harmful, but the suppression intent is never fulfilled |
+| **Discovering test** | `Test_formatValueForPrinting_FunctionPointer_ProducesEmptyString` and `Test_formatValueForPrinting_FunctionValue_SuppressedAfterFix_PRINT2` |
+| **Status** | RESOLVED |
+
+#### PRINT-2: Original behavior
+
+`formatValueForPrinting` has an empty case for `*data.Function`:
+
+```go
+case *data.Function:
+    // intentionally empty — s stays ""
+```
+
+The intent is to suppress function values so that `print myFunc` produces no
+output.  However, Ego stores function values on the runtime stack as
+`data.Function` (**value** type, not pointer).  The case only matches
+`*data.Function` (**pointer** type).
+
+Since nothing in the normal execution path ever pushes a `*data.Function`
+pointer onto the stack, this case is dead code.  When a function value IS
+passed to `printByteCode`, it is a `data.Function` value, which falls through
+to the `default` branch and is formatted by `data.FormatUnquoted` as its
+declaration string (e.g., `"myFunc()"`).
+
+#### PRINT-2: Fix
+
+The case was broadened to cover both the value and pointer forms:
+
+```go
+case data.Function, *data.Function:
+    // Function values — both value and pointer — are suppressed.
+    // s stays as "" so nothing is written to the output.
+```
+
+`Test_formatValueForPrinting_FunctionValue_SuppressedAfterFix_PRINT2` confirms
+that a `data.Function` value now produces empty output, and the existing
+`Test_formatValueForPrinting_FunctionPointer_ProducesEmptyString` continues to
+confirm the same for `*data.Function` pointers.
