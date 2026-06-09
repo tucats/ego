@@ -167,12 +167,6 @@ func panicByteCode(c *Context, i any) error {
 //     used by the trace and debugger to print source lines alongside
 //     bytecode execution. After storing it, t.Close() is called to release
 //     any internal buffers that were only needed during parsing.
-//
-// FLOW-2: The original code accessed array[1] unconditionally. If the
-// compiler ever emits a one-element array operand (e.g., when the source has
-// no tokenizer), this would panic with "index out of range". The len check
-// below makes the tokenizer slot optional so a one-element array is handled
-// safely.
 func moduleByteCode(c *Context, i any) error {
 	// Check whether the operand is a []any slice. In Go, []any is a slice
 	// whose elements can each be a different type. The compiler packs the
@@ -223,11 +217,6 @@ func moduleByteCode(c *Context, i any) error {
 //     pause execution and hand control back to the interactive debugger.
 //   - If tracing is active and the line changed, prints the source text
 //     so the developer can follow execution interactively.
-//
-// FLOW-2: The original code accessed array[1] unconditionally. A
-// one-element array operand would panic with "index out of range".
-// The len check makes the source-text slot optional so single-element
-// arrays are handled safely.
 func atLineByteCode(c *Context, i any) error {
 	var (
 		err  error
