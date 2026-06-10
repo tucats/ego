@@ -64,6 +64,22 @@ or Ego is assumed — we'll explain everything from the ground up.
     - [Importing Packages](#101-importing-packages)
     - [Commonly Used Packages](#102-commonly-used-packages)
 
+11. [Using the Debugger](#11-using-the-debugger)
+    - [What Is a Debugger?](#111-what-is-a-debugger)
+    - [Starting the Debugger](#112-starting-the-debugger)
+    - [Your First Debug Session](#113-your-first-debug-session)
+    - [Stepping Through Your Program](#114-stepping-through-your-program)
+    - [Inspecting Variables](#115-inspecting-variables)
+    - [Viewing the Call Stack and Scope](#116-viewing-the-call-stack-and-scope)
+    - [Viewing Source Code](#117-viewing-source-code)
+    - [Evaluating Expressions and Calling Functions](#118-evaluating-expressions-and-calling-functions)
+    - [Changing Variables at Runtime](#119-changing-variables-at-runtime)
+    - [Breakpoints](#1110-breakpoints)
+    - [Conditional Breakpoints](#1111-conditional-breakpoints)
+    - [Saving and Loading Breakpoints](#1112-saving-and-loading-breakpoints)
+    - [A Complete Example](#1113-a-complete-example)
+    - [Quick Reference](#1114-quick-reference)
+
 ---
 
 ## 1. Getting Started
@@ -1746,6 +1762,658 @@ fmt.Println(words)  // [apple, banana, cherry]
 
 ---
 
+---
+
+## 11. Using the Debugger
+
+### 11.1 What Is a Debugger?
+
+When a program does not behave the way you expect, the most common first
+instinct is to add `fmt.Println` calls to print out values and see what is
+happening.  That works, but it has a drawback: you have to guess in advance
+where the problem is, add the print statements, run the program again, and
+then remove the print statements when you are done.
+
+A **debugger** gives you a much better tool.  It lets you:
+
+- **Pause** execution at any line and inspect the program's state.
+- **Step** through the program one line at a time, watching exactly what happens at each step.
+- **Inspect variables** at any point without modifying your source code.
+- **Set breakpoints** so the program runs at full speed and only stops when it reaches a line you care about (or when a condition you specify becomes true).
+- **Change variable values** on the fly to test hypotheses without restarting the program.
+
+Think of the debugger as a "pause button" for your program.  You can stop time,
+look around, and then continue — or step forward just one statement to watch
+exactly what changes.
+
+---
+
+### 11.2 Starting the Debugger
+
+To run a program under the debugger, add the `--debug` flag (short form: `-d`)
+to the `ego run` command:
+
+```shell
+ego run --debug myprogram.ego
+```
+
+Ego compiles the program normally, then starts execution in **single-step
+mode**: it stops before the very first statement and shows you the debugger
+prompt.
+
+> **Tip:** You can combine `--debug` with other `ego run` options such as
+> `--types strict` or `--extensions` — the debugger does not change how the
+> program is compiled or what language features are available.
+
+---
+
+### 11.3 Your First Debug Session
+
+Here is a tiny program to practice with.  Save it as `greeting.ego`:
+
+```go
+import "fmt"
+
+func greet(name string) string {
+    message := "Hello, " + name + "!"
+    return message
+}
+
+result := greet("Alice")
+fmt.Println(result)
+```
+
+Now start it under the debugger:
+
+```text
+$ ego run --debug greeting.ego
+Step to:
+  greeting    1, import "fmt"
+debug>
+```
+
+The line shows:
+
+- **`Step to:`** — you are in single-step mode.
+- **`greeting`** — the module (source file) name.
+- **`1`** — the current line number.
+- **`import "fmt"`** — the source text of that line.
+
+The `debug>` prompt is where you type your commands.
+
+You are not running anything yet — the program is frozen at line 1, waiting
+for your instructions.
+
+---
+
+### 11.4 Stepping Through Your Program
+
+The most fundamental debugger commands move execution forward one step at a
+time.
+
+#### `step` — execute one line
+
+Type `step` (or just press **Enter** — an empty command always means `step`)
+to execute the current line and pause before the next one:
+
+```text
+debug> step
+Step to:
+  greeting    3, func greet(name string) string {
+debug>
+```
+
+Ego executed the `import "fmt"` line and is now paused at the function
+declaration.
+
+#### `step into` — step into a function call
+
+When execution is paused at a line that **calls a function**, `step` (or
+`step into`) follows the call and stops at the first line inside that
+function:
+
+```text
+debug> step into
+Step to:
+  greeting    4, message := "Hello, " + name + "!"
+debug>
+```
+
+Now you are inside `greet`, on the line that builds the message.
+
+#### `step over` — execute a call without entering it
+
+Sometimes you do not want to step through every line of a helper function —
+you just want to run the call as if it were a single step and stop at the next
+line in the current function.  Use `step over`:
+
+```text
+debug> step over
+```
+
+The called function runs to completion and execution pauses at the line after
+the call, back in the original function.
+
+#### `step return` — run to the end of the current function
+
+`step return` runs the rest of the current function and stops as soon as it
+returns to its caller:
+
+```text
+debug> step return
+Step to:
+  greeting    8, result := greet("Alice")
+debug>
+```
+
+Use this when you have accidentally stepped into a long function and just want
+to get back to where you were.
+
+#### `continue` (or `go`) — run at full speed
+
+When you are confident that the program is behaving correctly for a stretch of
+code, type `continue` (or its shorthand `go`) to resume execution at full
+speed.  The program runs without stopping until it either finishes or hits a
+breakpoint:
+
+```text
+debug> continue
+Hello, Alice!
+```
+
+#### `exit` — stop the program
+
+If you want to abandon the debug session entirely without waiting for the
+program to finish, type `exit`:
+
+```text
+debug> exit
+```
+
+The program stops immediately and you return to the shell.
+
+---
+
+### 11.5 Inspecting Variables
+
+The most important thing you do in a debugger is look at the values your
+program is holding.
+
+#### `print` — evaluate and display an expression
+
+The `print` command evaluates any Ego expression in the context of the current
+scope and displays the result.  You can print variables, do arithmetic, call
+functions — anything that would be a valid expression in your program:
+
+```text
+debug> print name
+Alice
+debug> print len(name)
+5
+debug> print name + " Smith"
+Alice Smith
+```
+
+`print` is like a temporary `fmt.Println` that you can type at any point
+without modifying your source code.  The result is discarded after display —
+your program's state is not changed.
+
+#### `show symbols` — dump all variables in scope
+
+To see **all** variables that exist in the current scope at once, use
+`show symbols`:
+
+```text
+debug> show symbols
+name    = "Alice"   (string)
+message = ""        (string)
+```
+
+This shows every variable that your current function (and any enclosing
+scopes) has defined so far, along with its type and current value.  Variables
+that have been declared but not yet assigned usually show their zero value
+(`""` for strings, `0` for integers, `false` for booleans).
+
+---
+
+### 11.6 Viewing the Call Stack and Scope
+
+As your program calls functions, each call is pushed onto a **call stack** — a
+record of which function called which, and from where.
+
+#### `show calls` — display the call stack
+
+`show calls` prints a summary of how you got to where you are:
+
+```text
+debug> show calls
+  greet         greeting.ego line 4
+  (main)        greeting.ego line 8
+```
+
+Read from top to bottom: the top entry is where execution is currently paused
+(`greet`, at line 4).  Below it is the caller (`(main)`, line 8 — the line
+that called `greet`).
+
+You can limit the output to the top *N* frames:
+
+```text
+debug> show calls 3
+```
+
+If you just want to see the very deepest function, `show calls 1` is handy for
+large programs with deep call chains.
+
+#### `show scope` — walk the symbol-table chain
+
+Every function call creates its own private scope for local variables.  When a
+function calls another function, the new scope is nested *inside* the caller's
+scope.  `show scope` walks this chain and tells you how many variables live at
+each level:
+
+```text
+debug> show scope
+Symbol table scope:
+  local:    greet, 2 symbols
+      1:    (main), 1 symbols
+      2:    (root), 14 symbols
+```
+
+The `local` level is the innermost scope (the current function).  Each
+numbered level is an enclosing scope.  The `(root)` level holds globally
+available built-in names.
+
+#### `show line` — reprint the current source line
+
+If you have scrolled the terminal and lost track of where you are, `show line`
+reprints the module name, line number, and source text of the line where
+execution is currently paused:
+
+```text
+debug> show line
+Step to:
+      4, message := "Hello, " + name + "!"
+```
+
+---
+
+### 11.7 Viewing Source Code
+
+#### `show source` — list the program source
+
+`show source` with no arguments prints every line of the current module with
+line numbers, indented to reflect the brace nesting:
+
+```text
+debug> show source
+1     import "fmt"
+2
+3     func greet(name string) string {
+4        message := "Hello, " + name + "!"
+5        return message
+6     }
+7
+8     result := greet("Alice")
+9     fmt.Println(result)
+```
+
+You can restrict the listing to a range of lines by specifying a start line, or
+a start and end line separated by a colon:
+
+```text
+debug> show source 3:6
+3     func greet(name string) string {
+4        message := "Hello, " + name + "!"
+5        return message
+6     }
+```
+
+Knowing the line numbers is important when you want to set breakpoints (see the
+next section).
+
+---
+
+### 11.8 Evaluating Expressions and Calling Functions
+
+#### `print` — any expression
+
+As shown in [section 11.5](#115-inspecting-variables), `print` evaluates an
+expression and shows the result.  There is no limit on complexity:
+
+```text
+debug> print strings.ToUpper(name)
+ALICE
+debug> print result == ""
+true
+```
+
+#### `call` — invoke a function with tracing
+
+`call` is like `print`, but it runs the expression with the trace logger
+active so you can see each bytecode instruction the function executes.  This
+is useful when you suspect a function is doing something unexpected but the
+source is hard to follow:
+
+```text
+debug> call greet("Bob")
+```
+
+Each instruction inside `greet` is logged to the console, and the final
+return value is displayed at the end.
+
+---
+
+### 11.9 Changing Variables at Runtime
+
+#### `set` — assign a new value to a variable
+
+`set` lets you change the value of any variable in the current scope without
+restarting the program.  The syntax mirrors a normal Ego assignment:
+
+```text
+debug> set name = "Bob"
+debug> print name
+Bob
+```
+
+You can use any expression on the right-hand side:
+
+```text
+debug> set message = strings.ToUpper(message)
+debug> print message
+HELLO, ALICE!
+```
+
+This is very useful for testing "what if?" scenarios.  For example, if a bug
+only appears when a value exceeds a certain threshold, you can use `set` to
+put the variable into that state immediately rather than running the program
+many times to reach it naturally.
+
+---
+
+### 11.10 Breakpoints
+
+Stepping through a program one line at a time is great for small programs, but
+for a large program you often know *roughly* where the bug is — you just want
+to run at full speed until you get close to it, and then start stepping.
+**Breakpoints** do exactly that.
+
+A breakpoint is a marker you place on a specific line.  When execution reaches
+that line, the debugger automatically pauses and shows you the prompt, just as
+if you had been stepping through the code.
+
+#### Setting a line breakpoint
+
+```text
+break at 5
+```
+
+This sets a breakpoint at line 5 of the current module (source file).  If your
+program has multiple source files you can qualify the line with the module name:
+
+```text
+break at greeting:5
+```
+
+Now type `continue` (or `go`).  The program runs freely until it reaches line
+5, then stops:
+
+```text
+debug> continue
+Step to:
+  greeting    5, return message
+debug>
+```
+
+#### Removing a line breakpoint
+
+```text
+break clear at 5
+```
+
+This removes the breakpoint at line 5.  Execution will no longer pause there
+automatically.
+
+#### Viewing all breakpoints
+
+```text
+debug> show breaks
+break at greeting:5
+```
+
+`show breaks` lists every breakpoint that is currently set, one per line.  The
+list shows both line breakpoints and conditional breakpoints (described below).
+
+---
+
+### 11.11 Conditional Breakpoints
+
+A **conditional breakpoint** fires only when a specific expression is true.
+This is extremely useful when a bug only appears on, say, the thousandth
+iteration of a loop — you do not want to press Enter a thousand times.
+
+#### Setting a conditional breakpoint
+
+```text
+break when i > 100
+```
+
+The debugger compiles and stores the expression `i > 100`.  On every source
+line, it evaluates that expression against the current program state.  When
+the expression evaluates to `true` for the first time, the debugger pauses
+and shows the prompt.
+
+You can use any Ego expression that returns a boolean:
+
+```text
+break when name == ""
+break when len(items) == 0
+break when total > budget * 1.1
+```
+
+The expression has access to all variables visible at the point where the
+breakpoint fires.
+
+#### Removing a conditional breakpoint
+
+```text
+break clear when i > 100
+```
+
+Supply the exact same expression text that you used when you set the
+breakpoint.
+
+#### How conditional breakpoints behave after firing
+
+Once a conditional breakpoint fires, it will not fire again on the very next
+step — even if the condition is still true.  This prevents the debugger from
+stopping on every subsequent line while the condition remains true.  The
+breakpoint will fire again the next time the condition transitions from `false`
+to `true`.
+
+---
+
+### 11.12 Saving and Loading Breakpoints
+
+If you are debugging a complex program and you have set up many breakpoints, it
+can be tedious to retype them every time you restart the debug session.  You
+can save your breakpoints to a JSON file and reload them later.
+
+#### Saving breakpoints
+
+```text
+debug> break save
+Saving 3 breakpoints
+```
+
+This writes all current breakpoints to `ego-breakpoints.json` in the current
+directory.  To save to a specific file, supply the filename in quotes:
+
+```text
+debug> break save "my-session.json"
+```
+
+#### Loading breakpoints
+
+```text
+debug> break load
+Loaded 3 breakpoints
+```
+
+This reads breakpoints from `ego-breakpoints.json`.  Conditional breakpoint
+expressions are recompiled automatically when they are loaded.  To load from a
+specific file:
+
+```text
+debug> break load "my-session.json"
+```
+
+---
+
+### 11.13 A Complete Example
+
+Here is a slightly longer program that has a deliberate bug.  Save it as
+`divide.ego`:
+
+```go
+import "fmt"
+
+func safeDiv(a, b int) int {
+    if b == 0 {
+        return 0
+    }
+    return a / b
+}
+
+values := []int{10, 5, 0, 4, 2}
+total := 0
+
+for i := 0; i < len(values)-1; i++ {
+    q := safeDiv(values[i], values[i+1])
+    total = total + q
+}
+
+fmt.Println("Total:", total)
+```
+
+The expected result is `10/5 + 5/0 + 0/4 + 4/2 = 2 + 0 + 0 + 2 = 4`, but
+suppose the output is wrong and you want to investigate.
+
+**Step 1 — Start the debugger and set a breakpoint on the loop body:**
+
+```text
+$ ego run --debug divide.ego
+Step to:
+  divide    1, import "fmt"
+debug> break at 13
+Added break at divide:13
+debug> continue
+```
+
+The program runs at full speed.  When it reaches line 13 the first time, the
+debugger pauses:
+
+```text
+Step to:
+  divide   13, for i := 0; i < len(values)-1; i++ {
+debug>
+```
+
+**Step 2 — Inspect the loop variable and step into the function:**
+
+```text
+debug> print i
+0
+debug> print values[i]
+10
+debug> print values[i+1]
+5
+debug> step into
+Step to:
+  divide    4, if b == 0 {
+debug>
+```
+
+You are now inside `safeDiv`.
+
+**Step 3 — Check the arguments:**
+
+```text
+debug> print a
+10
+debug> print b
+5
+debug> step return
+```
+
+The function returns 2 correctly.  Continue stepping through the loop
+iterations.
+
+**Step 4 — Use a conditional breakpoint to catch the interesting case:**
+
+Rather than stepping through every iteration, set a breakpoint that fires
+only when `b` is 0:
+
+```text
+debug> break when b == 0
+Added break when b == 0
+debug> continue
+Break when b == 0
+Step to:
+  divide    4, if b == 0 {
+debug> show symbols
+a = 5   (int)
+b = 0   (int)
+```
+
+Now you can inspect exactly what the function received when `b` is 0 and
+confirm the guard is working.
+
+**Step 5 — Clean up and finish:**
+
+```text
+debug> break clear when b == 0
+debug> break clear at 13
+debug> continue
+Total: 4
+```
+
+---
+
+### 11.14 Quick Reference
+
+The table below lists every debugger command in alphabetical order.
+
+| Command | What it does |
+| :------ | :----------- |
+| `break at [module:]line` | Set a breakpoint at a specific source line |
+| `break clear at [module:]line` | Remove a line breakpoint |
+| `break clear when expression` | Remove a conditional breakpoint |
+| `break load ["file"]` | Load breakpoints from a JSON file (default: `ego-breakpoints.json`) |
+| `break save ["file"]` | Save breakpoints to a JSON file (default: `ego-breakpoints.json`) |
+| `break when expression` | Set a breakpoint that fires when expression is true |
+| `call expression` | Evaluate an expression with trace logging enabled |
+| `continue` (or `go`) | Resume execution at full speed |
+| `exit` | Stop the program and end the debug session |
+| `help` | Display this command reference |
+| `print expression` | Evaluate and print an expression |
+| `set variable = expression` | Assign a new value to a variable |
+| `show breaks` | List all active breakpoints |
+| `show calls [n]` | Show the call stack (optionally limit to top n frames) |
+| `show line` | Reprint the current source line |
+| `show scope` | Display the symbol-table scope chain |
+| `show source [start[:end]]` | List source lines with indentation |
+| `show symbols` | Dump all variables in the current scope |
+| `step` (or Enter) | Execute one source line; step into function calls |
+| `step into` | Execute one source line; descend into function calls |
+| `step over` | Execute one source line; treat function calls as a single step |
+| `step return` | Run until the current function returns |
+
+> **Reminder:** Pressing **Enter** at an empty `debug>` prompt is the same as
+> typing `step`.
+
+---
+
 ## What's Next?
 
 This guide has covered the core of the Ego language. You can now write
@@ -1754,14 +2422,10 @@ and basic error handling.
 
 As you get more comfortable, explore:
 
-- **The `fmt.Sprintf` format verbs** — `%v` prints any value in a default
-  format, which is very handy for debugging.
-- **Goroutines and channels** — Ego supports concurrent programming with the
-  `go` statement and channel operations (`<-`).
-- **The `@extensions` directive** — enables extra features like `try`/`catch`,
-  `print`, and the optional operator (`?a : c`).
-- **The server mode** — Ego can run as a REST server with Ego programs serving
-  as endpoints.
-- **The `LANGUAGE.md` reference** — for a complete description of all built-in
-  packages and their functions.
+- **The `fmt.Sprintf` format verbs** — `%v` prints any value in a default format, which is very handy for debugging.
+- **The interactive debugger** — use `ego run --debug` to step through a misbehaving program one line at a time (see [section 11](#11-using-the-debugger)).
+- **Goroutines and channels** — Ego supports concurrent programming with the `go` statement and channel operations (`<-`).
+- **The `@extensions` directive** — enables extra features like `try`/`catch`, `print`, and the optional operator (`?a : c`).
+- **The server mode** — Ego can run as a REST server with Ego programs serving as endpoints.
+- **The `LANGUAGE.md` reference** — for a complete description of all built-in packages and their functions.
 - **The `SYNTAX.md` reference** — for the formal grammar of the language.
