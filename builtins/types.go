@@ -50,6 +50,7 @@ func typeOf(s *symbols.SymbolTable, args data.List) (any, error) {
 		builtinFn := data.Function{
 			Declaration: &data.Declaration{Name: "<builtin>"},
 		}
+		
 		return data.FunctionType(&builtinFn), nil
 
 	case data.Function:

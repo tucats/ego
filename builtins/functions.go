@@ -248,9 +248,11 @@ func AddBuiltins(symbolTable *symbols.SymbolTable) {
 	// to AddFunction do not race with this iteration (BUILTIN-FUNCTIONS-1).
 	functionDictionaryMu.RLock()
 	functionNames := make([]string, 0, len(FunctionDictionary))
+
 	for k := range FunctionDictionary {
 		functionNames = append(functionNames, k)
 	}
+
 	functionDictionaryMu.RUnlock()
 
 	sort.Strings(functionNames)
@@ -392,10 +394,12 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	// The check-then-set pair must be atomic to prevent two goroutines from both
 	// passing the collision check and then writing the same key.
 	functionDictionaryMu.Lock()
+
 	_, alreadyExists := FunctionDictionary[fd.Name]
 	if !alreadyExists {
 		FunctionDictionary[fd.Name] = fd
 	}
+	
 	functionDictionaryMu.Unlock()
 
 	if alreadyExists {

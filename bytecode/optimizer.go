@@ -620,6 +620,8 @@ func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
 			return a - b, true
 		case Mul:
 			return a * b, true
+		case Div:
+			return a / b, true
 		}
 
 	case string:

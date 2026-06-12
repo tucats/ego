@@ -669,4 +669,27 @@ var optimizations = []optimization{
 			},
 		},
 	},
+	{
+		// Fold two constant pushes joined by a division.
+		Description: "Constant division fold",
+		Pattern: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "v1"},
+			},
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "v2"},
+			},
+			{
+				Operation: Div,
+			},
+		},
+		Replacement: []instruction{
+			{
+				Operation: Push,
+				Operand:   placeholder{Name: "dividend", Operation: optRunConstantFragment},
+			},
+		},
+	},
 }

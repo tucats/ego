@@ -15,7 +15,7 @@ import (
 )
 
 // breakPointType is an integer tag that describes what kind of trigger a
-// breakpoint uses.  It is serialised to JSON when saving breakpoints to a
+// breakpoint uses.  It is serialized to JSON when saving breakpoints to a
 // file, so the underlying numeric values must remain stable.
 type breakPointType int
 
@@ -75,7 +75,7 @@ var breakPoints = []breakPoint{}
 //	break when <expression>         — set a conditional breakpoint
 //	break clear at [module:]line    — remove a line breakpoint
 //	break clear when <expression>   — remove a conditional breakpoint
-//	break save ["filename"]         — serialise breakpoints to JSON
+//	break save ["filename"]         — serialize breakpoints to JSON
 //	break load ["filename"]         — restore breakpoints from JSON
 func breakCommand(t *tokenizer.Tokenizer, sessionContext *session) error {
 	var (
@@ -132,6 +132,7 @@ func breakCommand(t *tokenizer.Tokenizer, sessionContext *session) error {
 				// No colon — "name" is actually the line number token.  Back up so
 				// the next NextText() call reads it again, and use the default module.
 				name = defs.Main
+
 				t.Advance(-1)
 			}
 
@@ -149,7 +150,7 @@ func breakCommand(t *tokenizer.Tokenizer, sessionContext *session) error {
 			clauses++
 
 		case "save":
-			// "break save [filename]" — serialise the current breakpoint list to a
+			// "break save [filename]" — serialize the current breakpoint list to a
 			// JSON file for later restoration with "break load".
 			name := egostrings.Unquote(t.NextText())
 			if name == "" {
@@ -175,7 +176,7 @@ func breakCommand(t *tokenizer.Tokenizer, sessionContext *session) error {
 			// "break load [filename]" — read a previously saved JSON breakpoint
 			// file and install the breakpoints.  BreakValue entries (conditional
 			// breakpoints) must have their expression text recompiled because the
-			// compiled bytecode is not serialised to JSON.
+			// compiled bytecode is not serialized to JSON.
 			name := egostrings.Unquote(t.NextText())
 			if name == "" {
 				name = defaultBreakpointFilename
@@ -318,7 +319,7 @@ func breakAtLine(module string, line int, sessionContext *session) error {
 
 // breakWhen adds a BreakValue breakpoint for the given compiled expression.
 // The text parameter is the original source text of the expression; it is
-// stored so the breakpoint can be serialised and redisplayed.
+// stored so the breakpoint can be serialized and redisplayed.
 func breakWhen(expression *bytecode.ByteCode, text string, sessionContext *session) error {
 	for _, b := range breakPoints {
 		if b.Kind == BreakValue && b.Text == text {
@@ -415,6 +416,7 @@ func evaluationBreakpoint(c *bytecode.Context, sessionContext *session) bool {
 			if err != nil {
 				if errors.Equals(err, errors.ErrStepOver) {
 					err = nil
+
 					ctx.StepOver(true)
 				}
 

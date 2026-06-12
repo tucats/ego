@@ -83,6 +83,7 @@ func Test_FindName_UnknownFunctionReturnsEmpty(t *testing.T) {
 // returns the correct string length.
 func Test_CallBuiltin_LenOnString(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
+
 	got, err := CallBuiltin(s, "len", "hello")
 	if err != nil {
 		t.Fatalf("CallBuiltin(\"len\", \"hello\") error: %v", err)
@@ -93,10 +94,11 @@ func Test_CallBuiltin_LenOnString(t *testing.T) {
 	}
 }
 
-// Test_CallBuiltin_InvalidNameReturnsError verifies that an unrecognised
+// Test_CallBuiltin_InvalidNameReturnsError verifies that an unrecognized
 // function name returns ErrInvalidFunctionName.
 func Test_CallBuiltin_InvalidNameReturnsError(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
+
 	_, err := CallBuiltin(s, "nonexistentFunction")
 	if err == nil {
 		t.Fatal("CallBuiltin(nonexistent) expected error, got nil")

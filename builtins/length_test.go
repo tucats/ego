@@ -161,6 +161,7 @@ func Test_Length_StrictModeRejectsNumericArg(t *testing.T) {
 	s.Root().SetAlways(defs.TypeCheckingVariable, defs.StrictTypeEnforcement) // 0
 
 	args := data.NewList(42)
+
 	_, err := Length(s, args)
 	if err == nil {
 		t.Fatal("Length(int) in strict mode expected error, got nil")
@@ -180,6 +181,7 @@ func Test_Length_RelaxedModeAllowsNumericArg(t *testing.T) {
 
 	// "3.14" has 4 characters.
 	args := data.NewList(3.14)
+	
 	got, err := Length(s, args)
 	if err != nil {
 		t.Fatalf("Length(float64) in relaxed mode error: %v", err)

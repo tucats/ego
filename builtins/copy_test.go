@@ -68,19 +68,19 @@ func Test_DeepCopy_Map(t *testing.T) {
 
 	got := DeepCopy(original, MaxDeepCopyDepth)
 
-	copy, ok := got.(*data.Map)
+	copyMapValue, ok := got.(*data.Map)
 	if !ok {
 		t.Fatalf("DeepCopy(*data.Map) returned %T, want *data.Map", got)
 	}
 
 	// Verify that values were copied.
-	v, _, _ := copy.Get("x")
+	v, _, _ := copyMapValue.Get("x")
 	if v != 10 {
 		t.Errorf("DeepCopy map: copy[\"x\"] = %v, want 10", v)
 	}
 
 	// Verify independence: mutating the copy must not affect the original.
-	_, _ = copy.Set("x", 999)
+	_, _ = copyMapValue.Set("x", 999)
 	origX, _, _ := original.Get("x")
 
 	if origX != 10 {
@@ -115,8 +115,10 @@ func Test_DeepCopy_ArrayCopiesElements(t *testing.T) {
 		v, err := result.Get(i)
 		if err != nil {
 			t.Errorf("DeepCopy array: result.Get(%d) error: %v", i, err)
+
 			continue
 		}
+
 		if v != want {
 			t.Errorf("DeepCopy array: result[%d] = %v, want %v", i, v, want)
 		}
@@ -169,12 +171,13 @@ func Test_DeepCopy_Package(t *testing.T) {
 
 // ---- Unknown types ----
 
-// Test_DeepCopy_UnknownTypeReturnsValue verifies that an unrecognised type
+// Test_DeepCopy_UnknownTypeReturnsValue verifies that an unrecognized type
 // falls through to the default case which returns the value as-is.
-// This mirrors the behaviour for basic Go types not in the switch.
+// This mirrors the behavior for basic Go types not in the switch.
 func Test_DeepCopy_UnknownTypeReturnsValue(t *testing.T) {
 	// A struct not in the switch falls through to the default return.
 	type myStruct struct{ X int }
+
 	src := myStruct{X: 7}
 
 	got := DeepCopy(src, MaxDeepCopyDepth)

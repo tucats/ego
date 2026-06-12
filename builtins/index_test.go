@@ -27,6 +27,7 @@ func TestIndex_MapFoundReturnsInt1(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Index(map, found key) error: %v", err)
 	}
+
 	if got != 1 {
 		t.Errorf("Index(map, found) = %v (%T), want 1 (int)", got, got)
 	}
@@ -46,6 +47,7 @@ func TestIndex_MapNotFoundReturnsInt0(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Index(map, missing key) error: %v", err)
 	}
+	
 	if got != 0 {
 		t.Errorf("Index(map, missing) = %v (%T), want 0 (int)", got, got)
 	}

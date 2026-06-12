@@ -50,6 +50,7 @@ func Delete(s *symbols.SymbolTable, args data.List) (any, error) {
 		// BUILTIN-DELETE-1 fix: replaced the magic integer literal 1 with the
 		// named constant firstArgument so the meaning is clear at the call site.
 		const firstArgument = 1
+		
 		return nil, errors.ErrInvalidType.In("delete").Context(fmt.Sprintf("argument %d: %s", firstArgument, data.TypeOf(v).String()))
 	}
 }

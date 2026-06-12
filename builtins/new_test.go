@@ -24,6 +24,7 @@ func Test_NewReflectKind_Bool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newReflectKind(Bool) error: %v", err)
 	}
+
 	if got != false {
 		t.Errorf("newReflectKind(Bool) = %v, want false", got)
 	}
@@ -35,6 +36,7 @@ func Test_NewReflectKind_Int(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newReflectKind(Int) error: %v", err)
 	}
+
 	if got != 0 {
 		t.Errorf("newReflectKind(Int) = %v, want 0", got)
 	}
@@ -72,6 +74,7 @@ func Test_NewReflectKind_Float32(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newReflectKind(Float32) error: %v", err)
 	}
+
 	if _, ok := got.(float32); !ok {
 		t.Errorf("newReflectKind(Float32) concrete type = %T, want float32", got)
 	}
@@ -83,6 +86,7 @@ func Test_NewReflectKind_Float64(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newReflectKind(Float64) error: %v", err)
 	}
+
 	if _, ok := got.(float64); !ok {
 		t.Errorf("newReflectKind(Float64) concrete type = %T, want float64", got)
 	}
@@ -94,6 +98,7 @@ func Test_NewReflectKind_String(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newReflectKind(String) error: %v", err)
 	}
+
 	if got != "" {
 		t.Errorf("newReflectKind(String) = %v, want empty string", got)
 	}
@@ -107,6 +112,7 @@ func Test_NewReflectKind_UnsupportedKindReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("newReflectKind(Ptr) expected error, got nil")
 	}
+
 	if !errors.Equals(errors.New(err), errors.ErrInvalidType) {
 		t.Errorf("newReflectKind(Ptr) error = %v, want ErrInvalidType", err)
 	}
@@ -120,6 +126,7 @@ func Test_NewTypeName_Int(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newTypeName(\"int\") error: %v", err)
 	}
+
 	if got != 0 {
 		t.Errorf("newTypeName(\"int\") = %v, want 0", got)
 	}
@@ -131,18 +138,20 @@ func Test_NewTypeName_Float64(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newTypeName(\"float64\") error: %v", err)
 	}
+
 	if _, ok := got.(float64); !ok {
 		t.Errorf("newTypeName(\"float64\") concrete type = %T, want float64", got)
 	}
 }
 
-// Test_NewTypeName_UnknownNameReturnsError verifies that an unrecognised type
+// Test_NewTypeName_UnknownNameReturnsError verifies that an unrecognized type
 // name returns ErrInvalidType.
 func Test_NewTypeName_UnknownNameReturnsError(t *testing.T) {
 	_, err := newTypeName("unknownXYZ")
 	if err == nil {
 		t.Fatal("newTypeName(\"unknownXYZ\") expected error, got nil")
 	}
+
 	if !errors.Equals(errors.New(err), errors.ErrInvalidType) {
 		t.Errorf("newTypeName(\"unknownXYZ\") error = %v, want ErrInvalidType", err)
 	}
@@ -160,6 +169,7 @@ func Test_NewInstanceOf_IntegerTypeNumber(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewInstanceOf(reflect.String) error: %v", err)
 	}
+
 	if got != "" {
 		t.Errorf("NewInstanceOf(reflect.String) = %v, want empty string", got)
 	}
@@ -175,6 +185,7 @@ func Test_NewInstanceOf_StringTypeName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewInstanceOf(\"bool\") error: %v", err)
 	}
+
 	if got != false {
 		t.Errorf("NewInstanceOf(\"bool\") = %v, want false", got)
 	}
@@ -190,6 +201,7 @@ func Test_NewInstanceOf_DataTypePointer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewInstanceOf(*data.Type int) error: %v", err)
 	}
+
 	if got == nil {
 		t.Fatal("NewInstanceOf(*data.Type int) returned nil")
 	}
@@ -207,14 +219,14 @@ func Test_NewInstanceOf_ArrayProducesDeepCopy(t *testing.T) {
 		t.Fatalf("NewInstanceOf(*data.Array) error: %v", err)
 	}
 
-	copy, ok := got.(*data.Array)
+	copyArrayValue, ok := got.(*data.Array)
 	if !ok {
 		t.Fatalf("NewInstanceOf(*data.Array) returned %T, want *data.Array", got)
 	}
 
 	// Verify it has the same length as the original.
-	if copy.Len() != arr.Len() {
-		t.Errorf("NewInstanceOf(*data.Array) copy.Len() = %d, want %d", copy.Len(), arr.Len())
+	if copyArrayValue.Len() != arr.Len() {
+		t.Errorf("NewInstanceOf(*data.Array) copy.Len() = %d, want %d", copyArrayValue.Len(), arr.Len())
 	}
 }
 
@@ -266,6 +278,7 @@ func Test_NewInstanceOf_ChannelReturnsNewInstance(t *testing.T) {
 
 	// Sends on the new channel must not affect the original.
 	_ = result.Send("test")
+
 	if ch.Len() != 0 {
 		t.Errorf("Send to new channel affected original (original.Len() = %d, want 0)", ch.Len())
 	}
