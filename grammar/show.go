@@ -217,6 +217,27 @@ var ShowVerbGrammar = []cli.Option{
 		ExpectedParms: 1,
 		MinParams:     1,
 		ParmDesc:      "<dsn-name>",
+		Value: []cli.Option{
+			{
+				LongName:    "metadata",
+				ShortName:   "m",
+				Aliases:     []string{"schema"},
+				Description: "dsns.show.metadata",
+				OptionType:  cli.BooleanType,
+			},
+			{
+				LongName:    "limit",
+				Aliases:     []string{"count"},
+				Description: "limit",
+				OptionType:  cli.IntType,
+			},
+			{
+				LongName:    "start",
+				Aliases:     []string{"offset"},
+				Description: "start",
+				OptionType:  cli.IntType,
+			},
+		},
 	},
 	{
 		LongName:    "log",

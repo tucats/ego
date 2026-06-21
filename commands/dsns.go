@@ -75,12 +75,23 @@ func DSNSAdd(c *cli.Context) error {
 // permission(s). If the DSN has no permissions (i.e., it is unrestricted), a message is
 // printed indicating that anyone can use the DSN.
 //
+// When --metadata is supplied, the function delegates to dsnShowMetadata which calls the
+// @metadata endpoint instead. In that mode the output is a two-level sparse table:
+// one row per column, with the owning table name printed only on the first row for each
+// table so the grouping is visible without repeating the table name on every line.
+//
 // Invoked by:
 //
-//	Traditional: ego dsns show <dsn-name>
-//	Verb:        ego show dsn <dsn-name>
+//	Traditional: ego dsns show <dsn-name> [--metadata]
+//	Verb:        ego show dsn <dsn-name> [--metadata]
 func DSNShow(c *cli.Context) error {
 	name := c.FindGlobal().Parameter(0)
+
+	// When --metadata is set, display the DSN's database schema (table names and
+	// column definitions) rather than the DSN permission list.
+	if c.WasFound("metadata") {
+		return dsnShowMetadata(c, name)
+	}
 
 	dsnResp := defs.DSNResponse{}
 	url := rest.URLBuilder(defs.DSNNamePath, name)
@@ -151,6 +162,101 @@ func DSNShow(c *cli.Context) error {
 			t.Print(ui.OutputFormat)
 		}
 	}
+
+	return nil
+}
+
+// dsnShowMetadata calls GET /dsns/{name}/@metadata and formats the result.
+//
+// In text mode it prints a header line (DSN name, provider, and table count) followed
+// by a three-column sparse table:
+//
+//	Table       Column       Type
+//	----------  -----------  -------
+//	orders      id           int
+//	            amount       float64
+//	products    name         string
+//
+// The table name is printed only on the first row for each group of columns; subsequent
+// rows for the same table leave column 0 blank. This gives a clean "merged cells" visual
+// effect without requiring a dedicated table-grouping renderer.
+//
+// In JSON mode the raw DSNMetadataResponse payload is written directly via c.Output().
+//
+// Paging: ?start and ?limit are forwarded from the matching CLI options so the caller can
+// retrieve a specific window of the full table list.
+func dsnShowMetadata(c *cli.Context, name string) error {
+	resp := defs.DSNMetadataResponse{}
+	url := rest.URLBuilder(defs.DSNMetadataPath, name)
+
+	// Forward any paging options the user specified on the command line.
+	if limit, found := c.Integer("limit"); found {
+		url.Parameter(defs.LimitParameterName, limit)
+	}
+
+	if start, found := c.Integer("start"); found {
+		url.Parameter(defs.StartParameterName, start)
+	}
+
+	err := rest.Exchange(url.String(), http.MethodGet, nil, &resp, defs.TableAgent, defs.DSNMetadataMediaType)
+	if err != nil {
+		return err
+	}
+
+	if resp.Status > http.StatusOK {
+		return errors.Message(resp.Message)
+	}
+
+	// Non-text formats (JSON, etc.) receive the raw endpoint payload so the caller
+	// can process it programmatically.
+	if ui.OutputFormat != ui.TextFormat {
+		return c.Output(resp)
+	}
+
+	// Text format: empty-DSN case.
+	if len(resp.Items) == 0 {
+		ui.Say(i18n.M("dsns.metadata.empty", ui.A{"name": name}))
+
+		return nil
+	}
+
+	// Print a brief header so the user knows which DSN and provider they are
+	// looking at before the table body scrolls past.
+	ui.Say(i18n.M("dsns.metadata.header", ui.A{
+		"name":     name,
+		"provider": resp.Provider,
+		"count":    resp.Count,
+	}))
+	ui.Say(" ")
+
+	// Three-column sparse table: Table / Column / Type.
+	// We use i18n.L() for column headings so they are localized consistently
+	// with other table output in the ego CLI.
+	t, _ := tables.New([]string{i18n.L("Table"), i18n.L("Column"), i18n.L("Type")})
+
+	for _, item := range resp.Items {
+		// An empty-column table still gets one row so the table name appears
+		// in the output, making it clear the table exists but has no columns.
+		if len(item.Fields) == 0 {
+			_ = t.AddRowItems(item.Table, "", "")
+
+			continue
+		}
+
+		for i, field := range item.Fields {
+			// Print the table name only on the first row of each group so
+			// the output reads as a natural hierarchy rather than repeating
+			// the same name on every line.
+			tableLabel := ""
+			if i == 0 {
+				tableLabel = item.Table
+			}
+
+			_ = t.AddRowItems(tableLabel, field.Name, field.Type)
+		}
+	}
+
+	t.Print(ui.OutputFormat)
 
 	return nil
 }
