@@ -97,15 +97,49 @@ func newState() (string, string, error) {
 	stateStore.mu.Lock()
 	defer stateStore.mu.Unlock()
 
-	// If the store is already at its cap, refuse to add more entries.  This
-	// prevents an unauthenticated flood of GET /authorize requests from
-	// consuming unbounded memory.
+	// If the store is at its cap, try reclaiming expired entries before giving up.
 	//
-	// Returning an error here causes AuthorizeRedirectHandler to respond 503
-	// (Service Unavailable) to the browser — far better than silently
-	// accepting the entry and letting the server run out of memory.
+	// L4 — on-demand purge when the store is full:
+	//
+	//   The background goroutine (started in Initialize) sweeps the store every
+	//   statePurgeInterval (2 minutes).  Between sweeps, a user who starts an
+	//   OAuth2 flow and then closes the browser window without completing it
+	//   leaves a "zombie" entry that occupies a slot until the sweep fires.
+	//
+	//   Under a benign traffic pattern this is harmless.  Under an attack, an
+	//   adversary can flood the server with 500 GET /authorize requests, filling
+	//   the store, and then wait for stateMaxAge (10 minutes) to let them expire
+	//   naturally.  During the gap between expiry and the next 2-minute sweep,
+	//   all legitimate new flows are rejected with 503 — a denial-of-service
+	//   window of up to 2 minutes per attack cycle.
+	//
+	//   The fix: when the store is full, perform an immediate inline sweep before
+	//   deciding whether to return an error.  Because we already hold stateStore.mu
+	//   (acquired above), the sweep is safe without an additional lock.  After the
+	//   sweep we re-check the length; if at least one slot was freed, the new entry
+	//   can be inserted without waiting for the background goroutine.
+	//
+	//   This does not affect the attack-prevention property: a determined attacker
+	//   who keeps the store continuously full with fresh (not-yet-expired) entries
+	//   still triggers a 503, as before.  The fix only helps when expired-but-
+	//   unswept entries were blocking legitimate requests.
 	if len(stateStore.items) >= maxPendingStates {
-		return "", "", errors.New(errors.ErrOAuthTooManyFlows).Context(fmt.Sprintf("%d active", maxPendingStates))
+		// Inline sweep: remove any entry whose age exceeds stateMaxAge.
+		// This mirrors purgeExpiredStates() but runs under the lock we already hold.
+		for key, ps := range stateStore.items {
+			if time.Since(ps.CreatedAt) > stateMaxAge {
+				delete(stateStore.items, key)
+			}
+		}
+
+		// Re-check after the sweep.  If expired entries were reclaimed, the count
+		// is now below maxPendingStates and the insert can proceed normally.
+		// If the store is still full (all entries are genuinely in-flight), return
+		// the original error — the cap is serving its intended purpose.
+		if len(stateStore.items) >= maxPendingStates {
+			return "", "", errors.New(errors.ErrOAuthTooManyFlows).Context(
+				fmt.Sprintf("%d active", maxPendingStates))
+		}
 	}
 
 	stateStore.items[state] = &pendingState{

@@ -1288,6 +1288,7 @@ oauth.rs.callback.ok=[{{session}}] OAuth2 RS: callback exchange complete; user={
 oauth.rs.callback.idp.error=[{{session}}] OAuth2 RS: IdP returned error at callback; error={{error}}, desc={{desc}}
 oauth.rs.callback.bad.state=[{{session}}] OAuth2 RS: invalid state parameter at callback; error={{error}}
 oauth.rs.callback.exchange.failed=[{{session}}] OAuth2 RS: authorization code exchange failed; error={{error}}
+oauth.rs.callback.token.failed=[{{session}}] OAuth2 RS: Ego token issuance failed; user={{user}}, error={{error}}
 oauth.rs.authorize.redirect=[{{session}}] OAuth2 RS: redirecting to IdP; provider={{provider}}, state={{state}}
 oauth.rs.authorize.failed=[{{session}}] OAuth2 RS: failed to build authorization URL; error={{error}}
 

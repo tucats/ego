@@ -1265,6 +1265,7 @@ oauth.rs.callback.ok=[{{session}}] RS OAuth2 : échange de rappel terminé ; uti
 oauth.rs.callback.idp.error=[{{session}}] RS OAuth2 : le fournisseur a retourné une erreur ; erreur={{error}}, description={{desc}}
 oauth.rs.callback.bad.state=[{{session}}] RS OAuth2 : paramètre d'état invalide ; erreur={{error}}
 oauth.rs.callback.exchange.failed=[{{session}}] RS OAuth2 : échange du code d'autorisation échoué ; erreur={{error}}
+oauth.rs.callback.token.failed=[{{session}}] RS OAuth2 : émission du jeton Ego échouée ; utilisateur={{user}}, erreur={{error}}
 oauth.rs.authorize.redirect=[{{session}}] RS OAuth2 : redirection vers le fournisseur ; fournisseur={{provider}}, état={{state}}
 oauth.rs.authorize.failed=[{{session}}] RS OAuth2 : impossible de construire l'URL d'autorisation ; erreur={{error}}
 

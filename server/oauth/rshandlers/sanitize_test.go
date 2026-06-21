@@ -72,3 +72,67 @@ func TestSanitizeLogValue(t *testing.T) {
 		})
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// L5: permissionsToData correctness and efficiency
+// ─────────────────────────────────────────────────────────────────────────────
+
+// TestPermissionsToData_Empty verifies that an empty permission slice returns
+// an empty string rather than a leading comma or panic (L5).
+func TestPermissionsToData_Empty(t *testing.T) {
+	got := permissionsToData(nil)
+	if got != "" {
+		t.Errorf("permissionsToData(nil) = %q, want empty string", got)
+	}
+
+	got = permissionsToData([]string{})
+	if got != "" {
+		t.Errorf("permissionsToData([]) = %q, want empty string", got)
+	}
+}
+
+// TestPermissionsToData_Single verifies that a single-element slice produces
+// just the element with no trailing comma (L5).
+func TestPermissionsToData_Single(t *testing.T) {
+	got := permissionsToData([]string{"ego.logon"})
+	if got != "ego.logon" {
+		t.Errorf("permissionsToData([logon]) = %q, want %q", got, "ego.logon")
+	}
+}
+
+// TestPermissionsToData_Multiple verifies the comma-separated format for a
+// typical multi-permission list (L5).
+//
+// Before the L5 fix, permissionsToData used string concatenation in a loop.
+// In Go, string concatenation allocates a new backing array on every +=, so
+// the total memory copied is O(1+2+…+n) = O(n²).  strings.Join performs a
+// single allocation of exactly the right size.
+//
+// The output format must be identical: this test confirms the rewrite is a
+// pure performance improvement with no behavioral change.
+func TestPermissionsToData_Multiple(t *testing.T) {
+	perms := []string{"ego.logon", "ego.tables.read", "ego.root"}
+	want := "ego.logon,ego.tables.read,ego.root"
+
+	got := permissionsToData(perms)
+	if got != want {
+		t.Errorf("permissionsToData(%v) = %q, want %q", perms, got, want)
+	}
+}
+
+// TestPermissionsToData_NoLeadingOrTrailingComma verifies that
+// permissionsToData never produces a string that starts or ends with a comma,
+// which would create an empty field when the result is later split on commas
+// (L5 correctness guard).
+func TestPermissionsToData_NoLeadingOrTrailingComma(t *testing.T) {
+	perms := []string{"ego.logon", "ego.root"}
+	got := permissionsToData(perms)
+
+	if len(got) > 0 && got[0] == ',' {
+		t.Errorf("permissionsToData result starts with comma: %q", got)
+	}
+
+	if len(got) > 0 && got[len(got)-1] == ',' {
+		t.Errorf("permissionsToData result ends with comma: %q", got)
+	}
+}

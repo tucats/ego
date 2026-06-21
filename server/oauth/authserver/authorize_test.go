@@ -66,6 +66,7 @@ func TestAuthorizeGetHandler_PublicClient_WithoutPKCE_Rejected(t *testing.T) {
 		Scopes:       []string{"openid"},
 		// ClientSecretHash intentionally empty — this is a public client.
 	}}
+
 	t.Cleanup(func() { clients = nil })
 
 	req := getAuthorizeRequest(
@@ -101,6 +102,7 @@ func TestAuthorizeGetHandler_PublicClient_WithPKCE_Allowed(t *testing.T) {
 		GrantTypes:   []string{"authorization_code"},
 		Scopes:       []string{"openid"},
 	}}
+	
 	t.Cleanup(func() { clients = nil })
 
 	req := getAuthorizeRequest(

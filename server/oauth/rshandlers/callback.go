@@ -174,8 +174,31 @@ func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			session.ID,
 		)
 		if err != nil {
+			// L3: log the full error server-side but return a generic message to
+			// the browser.
+			//
+			// Why this matters:
+			//
+			//   tokens.New can fail for several internal reasons: the signing key
+			//   may be unavailable, the configured token expiry string may be
+			//   malformed, or the instance ID may not be set.  All of these are
+			//   operator configuration problems, not user errors.  Appending
+			//   err.Error() to the HTTP response body (the pre-fix behavior) leaks
+			//   these internal details — file paths, config key names, key formats
+			//   — to any browser that can trigger this path.
+			//
+			//   The server-side log entry (oauth.rs.callback.token.failed) provides
+			//   the full detail to the operator who needs to diagnose the problem,
+			//   while the browser sees only "OAuth2 login failed", consistent with
+			//   every other error in this handler.
+			ui.Log(ui.ServerLogger, "oauth.rs.callback.token.failed", ui.A{
+				"session": session.ID,
+				"user":    user,
+				"error":   err.Error(),
+			})
+
 			return util.ErrorResponse(w, session.ID,
-				"failed to issue Ego token: "+err.Error(),
+				"OAuth2 login failed",
 				http.StatusInternalServerError)
 		}
 
@@ -207,16 +230,18 @@ func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 // permissionsToData formats a permission slice as a comma-separated string for
 // storage in a token's Data field.
+//
+// L5 — strings.Join instead of manual accumulation:
+//
+//	The previous implementation used `result += ","` + `result += p` inside a
+//	loop.  In Go, strings are immutable: every += allocates a new backing array
+//	and copies all previous bytes into it.  For n permissions the total bytes
+//	copied is O(1 + 2 + … + n) = O(n²).  With a typical set of five or fewer
+//	permissions the difference is negligible, but it is unnecessary complexity.
+//
+//	strings.Join allocates exactly one output string after a single pass to
+//	compute the total length — O(n) time and O(n) space — and is the idiomatic
+//	Go solution.
 func permissionsToData(permissions []string) string {
-	result := ""
-
-	for i, p := range permissions {
-		if i > 0 {
-			result += ","
-		}
-
-		result += p
-	}
-
-	return result
+	return strings.Join(permissions, ",")
 }

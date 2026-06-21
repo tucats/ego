@@ -1272,6 +1272,7 @@ oauth.rs.callback.ok=[{{session}}] RS OAuth2: intercambio de retorno completado;
 oauth.rs.callback.idp.error=[{{session}}] RS OAuth2: el proveedor retornó un error; error={{error}}, descripción={{desc}}
 oauth.rs.callback.bad.state=[{{session}}] RS OAuth2: parámetro de estado inválido; error={{error}}
 oauth.rs.callback.exchange.failed=[{{session}}] RS OAuth2: falló el intercambio del código de autorización; error={{error}}
+oauth.rs.callback.token.failed=[{{session}}] RS OAuth2: fallo al emitir el token Ego; usuario={{user}}, error={{error}}
 oauth.rs.authorize.redirect=[{{session}}] RS OAuth2: redirigiendo al proveedor; proveedor={{provider}}, estado={{state}}
 oauth.rs.authorize.failed=[{{session}}] RS OAuth2: no se pudo construir la URL de autorización; error={{error}}
 

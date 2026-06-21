@@ -385,6 +385,134 @@ func TestNewState_CapIsAtomicCheckAndInsert(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// L4: on-demand purge of expired entries when the store is full
+// ─────────────────────────────────────────────────────────────────────────────
+
+// TestNewState_CapWithAllExpired_Succeeds verifies that when the store is full
+// but every entry has already expired, newState() evicts them inline and
+// inserts the new entry successfully (L4).
+//
+// Scenario:
+//
+//	An attacker flooded the server 500 times 11 minutes ago.  Those flows were
+//	never completed so their entries are still in the map.  All 500 have now
+//	exceeded stateMaxAge (10 minutes).  Before L4, a legitimate user would get
+//	503 until the 2-minute background sweep ran.  After L4, the inline purge
+//	in newState() removes the expired entries and the user proceeds normally.
+func TestNewState_CapWithAllExpired_Succeeds(t *testing.T) {
+	// Fill the store to the cap, then backdate every entry to just past the
+	// expiry window so they are all stale.
+	injected := make([]string, 0, maxPendingStates)
+
+	stateStore.mu.Lock()
+
+	for i := len(stateStore.items); i < maxPendingStates; i++ {
+		key := stateTestKey("l4-expired", i)
+
+		stateStore.items[key] = &pendingState{
+			// CreatedAt is 11 minutes ago — one minute past the 10-minute max age.
+			// This guarantees time.Since(CreatedAt) > stateMaxAge inside newState().
+			CreatedAt: time.Now().Add(-(stateMaxAge + time.Minute)),
+		}
+
+		injected = append(injected, key)
+	}
+
+	stateStore.mu.Unlock()
+
+	// Remove any entries that are NOT consumed by newState, so subsequent tests
+	// start with a known state.  We unconditionally delete all injected keys
+	// because newState's inline purge will have deleted them before inserting
+	// the new entry, but t.Cleanup runs regardless of test outcome.
+	t.Cleanup(func() {
+		stateStore.mu.Lock()
+
+		for _, k := range injected {
+			delete(stateStore.items, k)
+		}
+
+		stateStore.mu.Unlock()
+	})
+
+	// At this point the store has maxPendingStates entries, all expired.
+	// Without L4, newState() would return ErrOAuthTooManyFlows here.
+	// With L4, it purges the expired entries inline and succeeds.
+	state, verifier, err := newState()
+
+	if err != nil {
+		t.Errorf(
+			"L4: newState() returned error when store was full of expired entries: %v\n"+
+				"(before the L4 fix this would always fail with ErrOAuthTooManyFlows "+
+				"when the store was at the cap, even if all entries had expired)",
+			err,
+		)
+
+		return
+	}
+
+	// Clean up the entry we just inserted.
+	t.Cleanup(func() { _, _ = validateState(state) })
+
+	// Sanity-check the returned values.
+	if state == "" {
+		t.Error("L4: newState() returned an empty state string after inline purge")
+	}
+
+	if verifier == "" {
+		t.Error("L4: newState() returned an empty code_verifier after inline purge")
+	}
+}
+
+// TestNewState_CapWithFreshEntries_StillFails verifies that the L4 purge does
+// not accidentally bypass the cap when all entries are genuinely in-flight
+// (not yet expired).
+//
+// The L4 fix must only help when expired entries are blocking legitimate
+// requests.  If all 500 slots hold fresh entries from real users who are
+// actively going through the IdP login flow, newState() must still reject
+// the 501st request — the cap exists to prevent memory exhaustion and must
+// not be silently bypassed.
+func TestNewState_CapWithFreshEntries_StillFails(t *testing.T) {
+	injected := make([]string, 0, maxPendingStates)
+
+	stateStore.mu.Lock()
+
+	for i := len(stateStore.items); i < maxPendingStates; i++ {
+		key := stateTestKey("l4-fresh", i)
+
+		stateStore.items[key] = &pendingState{
+			// CreatedAt is right now — none of these entries will be purged.
+			CreatedAt: time.Now(),
+		}
+
+		injected = append(injected, key)
+	}
+
+	stateStore.mu.Unlock()
+
+	t.Cleanup(func() {
+		stateStore.mu.Lock()
+
+		for _, k := range injected {
+			delete(stateStore.items, k)
+		}
+
+		stateStore.mu.Unlock()
+	})
+
+	// All 500 entries are fresh; the inline purge removes nothing.
+	// newState() must still return an error.
+	_, _, err := newState()
+
+	if err == nil {
+		t.Error(
+			"L4 regression: newState() should still fail when store is full of fresh (non-expired) entries\n" +
+				"(the L4 inline purge must only bypass the cap when there are expired entries to reclaim)",
+		)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OAUTH-M6: size-limited token exchange response
 // ─────────────────────────────────────────────────────────────────────────────
 
