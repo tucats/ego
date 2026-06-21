@@ -1,0 +1,78 @@
+{
+    "description": "GET @metadata?start=2&limit=1; start=2 (1-based) skips the first table and returns the second complete table entry (metrics) with ALL its columns. The start value is echoed back in the response.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/@metadata",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "parameters": {
+            "start": "2",
+            "limit": "1"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["metadata+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status field is 200",
+            "query": "status",
+            "value": "200"
+        },
+        {
+            "name": "start is echoed back as 2",
+            "query": "start",
+            "value": "2"
+        },
+        {
+            "name": "count is 1 (one table returned at offset 2)",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "items array contains exactly 1 table (len via wildcard)",
+            "query": "items.*.table",
+            "op": "len",
+            "value": "1"
+        },
+        {
+            "name": "only table returned is metrics (second in catalog order)",
+            "query": "items.0.table",
+            "value": "metrics"
+        },
+        {
+            "name": "metrics has both its columns despite start+limit paging",
+            "query": "items.0.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "metrics.label field present",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "label"
+        },
+        {
+            "name": "metrics.value field present",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "value"
+        }
+    ]
+}

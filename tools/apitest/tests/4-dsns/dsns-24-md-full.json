@@ -1,0 +1,149 @@
+{
+    "description": "GET @metadata for the test DSN; two tables exist (ages and metrics). Verifies response structure, provider, table names, field names, and a known column type.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/@metadata",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["metadata+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status field is 200",
+            "query": "status",
+            "value": "200"
+        },
+        {
+            "name": "provider is sqlite",
+            "query": "provider",
+            "value": "sqlite"
+        },
+        {
+            "name": "start defaults to 1",
+            "query": "start",
+            "value": "1"
+        },
+        {
+            "name": "count is 2 (two tables)",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "items array contains 2 tables (len via wildcard)",
+            "query": "items.*.table",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "ages table is present (wildcard search)",
+            "query": "items.*.table",
+            "op": "equals",
+            "value": "ages"
+        },
+        {
+            "name": "metrics table is present (wildcard search)",
+            "query": "items.*.table",
+            "op": "equals",
+            "value": "metrics"
+        },
+        {
+            "name": "first item (creation order) is ages",
+            "query": "items.0.table",
+            "value": "ages"
+        },
+        {
+            "name": "second item (creation order) is metrics",
+            "query": "items.1.table",
+            "value": "metrics"
+        },
+        {
+            "name": "ages table has 2 fields (len via wildcard over field names)",
+            "query": "items.0.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "ages table contains an age field (wildcard search)",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "age"
+        },
+        {
+            "name": "ages table contains a name field (wildcard search)",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "name"
+        },
+        {
+            "name": "ages first field is age (table-definition order)",
+            "query": "items.0.fields.0.name",
+            "value": "age"
+        },
+        {
+            "name": "ages.age column type is INTEGER (matches dsns-22 per-table evidence)",
+            "query": "items.0.fields.0.type",
+            "value": "INTEGER"
+        },
+        {
+            "name": "ages.name column has a type",
+            "query": "items.0.fields.1.type",
+            "op": "exists"
+        },
+        {
+            "name": "metrics table has 2 fields (len via wildcard over field names)",
+            "query": "items.1.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "metrics table contains a label field (wildcard search)",
+            "query": "items.1.fields.*.name",
+            "op": "equals",
+            "value": "label"
+        },
+        {
+            "name": "metrics table contains a value field (wildcard search)",
+            "query": "items.1.fields.*.name",
+            "op": "equals",
+            "value": "value"
+        },
+        {
+            "name": "metrics first field is label (table-definition order)",
+            "query": "items.1.fields.0.name",
+            "value": "label"
+        },
+        {
+            "name": "metrics second field is value (table-definition order)",
+            "query": "items.1.fields.1.name",
+            "value": "value"
+        },
+        {
+            "name": "metrics.label column has a type",
+            "query": "items.1.fields.0.type",
+            "op": "exists"
+        },
+        {
+            "name": "metrics.value column has a type",
+            "query": "items.1.fields.1.type",
+            "op": "exists"
+        }
+    ]
+}

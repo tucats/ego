@@ -1,0 +1,51 @@
+{
+    "description": "create metrics table for @metadata endpoint tests; table has two columns: label (string) and value (float64)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/metrics",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "name": "label",
+                "type": "string",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique":   { "specified": false, "value": false }
+            },
+            {
+                "name": "value",
+                "type": "float64",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique":   { "specified": false, "value": false }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status is 200",
+            "query": "status",
+            "value": "200"
+        }
+    ]
+}

@@ -1,0 +1,82 @@
+{
+    "description": "GET @metadata?limit=1; paging counts tables (not rows), so limit=1 returns one complete table entry with ALL its columns. With two tables in the DSN, the first in catalog order (ages) is returned.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/@metadata",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "parameters": {
+            "limit": "1"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["metadata+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status field is 200",
+            "query": "status",
+            "value": "200"
+        },
+        {
+            "name": "provider is sqlite",
+            "query": "provider",
+            "value": "sqlite"
+        },
+        {
+            "name": "start echoed back as 1 (default)",
+            "query": "start",
+            "value": "1"
+        },
+        {
+            "name": "count is 1 (limit=1 applied at table level)",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "items array contains exactly 1 table (len via wildcard)",
+            "query": "items.*.table",
+            "op": "len",
+            "value": "1"
+        },
+        {
+            "name": "only table returned is ages (first in catalog order)",
+            "query": "items.0.table",
+            "value": "ages"
+        },
+        {
+            "name": "ages has both its columns despite limit=1 (limit is per-table, not per-column)",
+            "query": "items.0.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "ages age column present",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "age"
+        },
+        {
+            "name": "ages name column present",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "name"
+        }
+    ]
+}

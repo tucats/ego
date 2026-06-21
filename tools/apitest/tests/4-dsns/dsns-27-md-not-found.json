@@ -1,0 +1,35 @@
+{
+    "description": "GET @metadata for a DSN that does not exist; the server should return 400 with an error+json body. This verifies that the endpoint handles unknown DSN names cleanly rather than panicking or returning a misleading 200.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/no-such-dsn-xyz-{{DSNUUID}}/@metadata",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message is present",
+            "query": "msg",
+            "op": "exists"
+        }
+    ]
+}

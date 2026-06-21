@@ -1,0 +1,35 @@
+{
+    "description": "drop the metrics table created in dsns-23 for @metadata tests; cleans up so the remainder of the dsn test suite sees only the original ages table",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/metrics",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status is 200",
+            "query": "status",
+            "value": "200"
+        }
+    ]
+}
