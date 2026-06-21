@@ -2,6 +2,7 @@ package authserver
 
 import (
 	"crypto/rand"
+	"crypto/subtle" // constant-time comparison for CSRF token (H3)
 	"encoding/hex"
 	"html/template"
 	"net/http"
@@ -270,8 +271,32 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	// Validate the CSRF token: the form value must match the HttpOnly cookie
 	// that was set when the login page was served.  A mismatch means the POST
 	// did not originate from our login form (cross-site request forgery).
+	//
+	// Audit: constant-time comparison:
+	//
+	//   A plain string equality check (==) is NOT constant-time in Go. The
+	//   runtime can short-circuit the comparison as soon as it finds the first
+	//   differing byte, which means requests with a correct prefix return
+	//   slightly faster than requests with a wrong first byte.  An attacker who
+	//   can send thousands of forged POSTs and measure the server response time
+	//   for each can use those timing differences to recover the CSRF nonce one
+	//   byte at a time — a "timing oracle" attack.
+	//
+	//   subtle.ConstantTimeCompare always inspects every byte of both inputs
+	//   before returning, so all comparisons take the same wall-clock time
+	//   regardless of where the values first differ.  This removes the timing
+	//   signal entirely.
+	//
+	//   The attack is harder to mount against an HTTP server than against a
+	//   local process (network jitter adds noise), but it becomes practical with
+	//   enough samples and statistical averaging.  The fix is a one-line change
+	//   that costs nothing and closes the channel permanently.
+	//
+	//   subtle.ConstantTimeCompare returns 1 (not the Go bool true) when the
+	//   byte slices are equal, so the condition reads: "if not equal → reject".
 	csrfCookie, cookieErr := r.Cookie(csrfCookieName)
-	if cookieErr != nil || csrfCookie.Value == "" || csrfCookie.Value != csrfFormToken {
+	if cookieErr != nil || csrfCookie.Value == "" ||
+		subtle.ConstantTimeCompare([]byte(csrfCookie.Value), []byte(csrfFormToken)) != 1 {
 		return util.ErrorResponse(w, session.ID,
 			i18n.T("oauth.as.csrf.invalid"), http.StatusForbidden)
 	}
@@ -343,9 +368,55 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	// (OAUTH-H1, matching the RecordSuccess call in router/auth.go).
 	router.RecordSuccess(username)
 
-	// Compute the intersection of requested scopes and what the user's
-	// permissions entitle them to.
+	// Split the raw scope string into individual tokens before any validation.
+	// splitScope("openid ego:admin") returns ["openid", "ego:admin"].
+	// An empty scope string produces a nil slice, which both checks below handle
+	// correctly (zero-length slice means "no scopes requested").
 	requestedScopes := splitScope(scope)
+
+	// Audit enforce the client's registered scope allowlist.
+	//
+	// Why this check is necessary:
+	//
+	//   Every registered OAuth2 client has a Scopes list that declares the
+	//   maximum set of scopes it is ever permitted to request.  This is an
+	//   administrator-controlled policy: a client registered for
+	//   ["openid","ego:read"] must never obtain "ego:admin" tokens even if the
+	//   authenticated user has root permission.
+	//
+	//   Without this check, intersectScopes (which runs next) only compares
+	//   against the user's Ego permissions.  That is correct from the user's
+	//   perspective but misses the client dimension: a badly-behaved or
+	//   compromised client could request elevated scopes and receive them when a
+	//   privileged user logs in.
+	//
+	// Why we return 400 rather than re-rendering the form:
+	//
+	//   This is a client misconfiguration error, not a user mistake.  The scope
+	//   field comes from a hidden form input populated by the original GET query
+	//   parameter.  A legitimate client never sends a scope it was not
+	//   registered for; if we see one, either the client registration is wrong
+	//   or the hidden field was tampered with.  Re-rendering the login form
+	//   would be confusing (the user cannot fix a registration bug) and
+	//   pointless (the same scope would be submitted again).
+	//
+	// Note: clientAllowsScope returns true when requestedScopes is empty, so
+	// there is no penalty for clients that omit the scope parameter.
+	if len(requestedScopes) > 0 && !clientAllowsScope(client, requestedScopes) {
+		ui.Log(ui.ServerLogger, "oauth.as.authorize.denied", ui.A{
+			"client": clientID,
+			"user":   username,
+			"reason": "client requested scope(s) not in its registered allowlist",
+		})
+
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.scope"), http.StatusBadRequest)
+	}
+
+	// Compute the intersection of the allowlist-validated requested scopes and
+	// what the authenticated user's Ego permissions entitle them to.  This is
+	// the second gate: the client may only obtain scopes it is registered for
+	// AND that the user actually has.
 	grantedScopes := intersectScopes(requestedScopes, auth.GetPermissions(session.ID, username))
 
 	// Generate and store the authorization code.

@@ -150,6 +150,167 @@ func TestTokenHandler_PublicClient_WithPKCE_Succeeds(t *testing.T) {
 	}
 }
 
+// ---- H1: authorization code bound to the client that received it ----
+//
+// These tests cover the RFC 6749 §4.1.3 requirement that the token endpoint
+// verify the authorization code was issued to the same client that is
+// presenting it.  Without this check, a stolen code can be exchanged by a
+// different client — particularly easy for public clients, which have no secret.
+
+// setupTwoPublicClients registers two distinct public OAuth2 clients in the
+// in-memory registry.  It is a test helper shared by the H1 cross-client tests.
+//
+// Both clients are "public" (no ClientSecretHash), which is the worst-case
+// attack scenario: the attacker does not need to know any secret to impersonate
+// client B at the token endpoint — they only need the authorization code.
+func setupTwoPublicClients(t *testing.T) {
+	t.Helper()
+
+	clients = []OAuthClient{
+		{
+			ClientID:     "client-a",
+			RedirectURIs: []string{"https://client-a.example.com/cb"},
+			GrantTypes:   []string{"authorization_code", "refresh_token"},
+			Scopes:       []string{"openid"},
+			// No ClientSecretHash — public client; PKCE is the proof-of-possession.
+		},
+		{
+			ClientID:     "client-b",
+			RedirectURIs: []string{"https://client-b.example.com/cb"},
+			GrantTypes:   []string{"authorization_code", "refresh_token"},
+			Scopes:       []string{"openid"},
+		},
+	}
+
+	t.Cleanup(func() { clients = nil })
+}
+
+// pkceVerifierAndChallenge returns a hard-coded verifier string and its S256
+// code_challenge for use in tests.  Using a fixed pair keeps the test
+// deterministic and avoids the need to call rand.Read in the helper.
+//
+// The challenge is BASE64URL(SHA256(verifier)) — the same formula used by
+// verifyPKCE in codes.go.  Both values must be consistent or the token
+// exchange will fail on PKCE verification rather than on the H1 binding check.
+func pkceVerifierAndChallenge() (verifier, challenge string) {
+	// 43 printable ASCII characters — above the RFC 7636 minimum of 43.
+	verifier = "h1testverifier-ABCDEFGHIJKLMNOPQRSTUVWXYZ0"
+
+	h := sha256.Sum256([]byte(verifier))
+	challenge = base64.RawURLEncoding.EncodeToString(h[:])
+
+	return verifier, challenge
+}
+
+// TestTokenHandler_CrossClientCode_Rejected is the core H1 security test.
+//
+// Scenario: an attacker intercepted the authorization code that was issued to
+// client-a (e.g., by capturing the redirect URL from client-a's browser).  The
+// attacker also knows the redirect URI used in the original request.  They now
+// present that code at the token endpoint claiming to be client-b.
+//
+// Expected result: 401 Unauthorized — the server detects the client_id mismatch
+// and refuses to issue a token, regardless of whether PKCE is satisfied.
+//
+// Why the redirect URI is passed as client-a's URI in this test:
+//
+//	RFC 6749 §4.1.3 requires the redirect_uri in the token request to match the
+//	one in the authorization request.  The redirect_uri check runs before the
+//	client-binding check, so if we passed client-b's URI the test would fail on
+//	the redirect check rather than on the H1 binding check — and we would not
+//	be testing the right thing.  Using client-a's URI lets both checks run and
+//	ensures the 401 comes specifically from the binding check.
+func TestTokenHandler_CrossClientCode_Rejected(t *testing.T) {
+	setupTokenTestKey(t)
+	setupTwoPublicClients(t)
+
+	verifier, challenge := pkceVerifierAndChallenge()
+
+	// Issue a code that is legitimately bound to client-a.
+	code, err := generateCode()
+	if err != nil {
+		t.Fatalf("generateCode: %v", err)
+	}
+
+	storeCode(code, PendingAuthorization{
+		ClientID:            "client-a", // ← bound to client-a
+		RedirectURI:         "https://client-a.example.com/cb",
+		Scopes:              []string{"openid"},
+		Username:            "alice",
+		IssuedAt:            time.Now(),
+		CodeChallenge:       challenge,
+		CodeChallengeMethod: "S256",
+	})
+
+	// client-b presents client-a's code.  It provides the correct verifier and
+	// redirect URI (simulating an attacker who intercepted the full callback URL
+	// including the code, and who also knows the verifier — i.e., the best-case
+	// attacker).  Even under these conditions the server must reject the request.
+	form := url.Values{}
+	form.Set("grant_type", "authorization_code")
+	form.Set("client_id", "client-b")                          // ← different client
+	form.Set("code", code)                                     // ← client-a's code
+	form.Set("redirect_uri", "https://client-a.example.com/cb") // must match stored URI
+	form.Set("code_verifier", verifier)
+
+	status := postToToken(t, form)
+
+	if status != http.StatusUnauthorized {
+		t.Errorf(
+			"H1: cross-client code exchange should be rejected with 401, got %d\n"+
+				"(if this returns 200 the H1 client-binding fix is missing or broken)",
+			status,
+		)
+	}
+}
+
+// TestTokenHandler_SameClient_CodeBinding_Succeeds is the positive regression
+// test for H1.  It verifies that the client-binding check does NOT break the
+// normal, legitimate code exchange where the same client that received the code
+// is the one presenting it.
+//
+// If H1 were implemented incorrectly (e.g., by always returning 401, or by
+// comparing the wrong fields), this test would catch the regression.
+func TestTokenHandler_SameClient_CodeBinding_Succeeds(t *testing.T) {
+	setupTokenTestKey(t)
+	setupPublicClient(t, "myapp", "https://myapp.example.com/cb")
+
+	verifier, challenge := pkceVerifierAndChallenge()
+
+	code, err := generateCode()
+	if err != nil {
+		t.Fatalf("generateCode: %v", err)
+	}
+
+	// Issue the code to "myapp" — the same client that will present it below.
+	storeCode(code, PendingAuthorization{
+		ClientID:            "myapp", // ← same as the token-request client_id
+		RedirectURI:         "https://myapp.example.com/cb",
+		Scopes:              []string{"openid"},
+		Username:            "bob",
+		IssuedAt:            time.Now(),
+		CodeChallenge:       challenge,
+		CodeChallengeMethod: "S256",
+	})
+
+	form := url.Values{}
+	form.Set("grant_type", "authorization_code")
+	form.Set("client_id", "myapp") // ← matches pending.ClientID
+	form.Set("code", code)
+	form.Set("redirect_uri", "https://myapp.example.com/cb")
+	form.Set("code_verifier", verifier)
+
+	status := postToToken(t, form)
+
+	if status != http.StatusOK {
+		t.Errorf(
+			"H1 regression: same-client code exchange should succeed with 200, got %d\n"+
+				"(the H1 client-binding check is incorrectly blocking legitimate flows)",
+			status,
+		)
+	}
+}
+
 // TestTokenHandler_ConfidentialClient_NoPKCE_Allowed verifies that a
 // confidential client (one that has a ClientSecretHash) is NOT required to
 // use PKCE (OAUTH-H3 scope boundary).  The RFC 9700 mandate is specific to

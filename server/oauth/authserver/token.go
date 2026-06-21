@@ -74,6 +74,47 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 			i18n.T("oauth.as.invalid.code"), http.StatusBadRequest)
 	}
 
+	// Audit: RFC 6749 §4.1.3 client binding: verify that the client presenting
+	// the authorization code is the same client that received it.
+	//
+	// Why this check is necessary:
+	//
+	//   An authorization code is issued to a specific client at the moment the
+	//   user authenticates (AuthorizePostHandler stores pending.ClientID).
+	//   Without this check, a different client could present that code at the
+	//   token endpoint and exchange it for tokens — effectively stealing the
+	//   user's session.
+	//
+	//   For public clients the attack is most practical because no client secret
+	//   is needed: any caller who knows the client_id (which is public by
+	//   definition) and has obtained the code (e.g., by intercepting the redirect
+	//   URL) could complete the exchange.  PKCE adds another layer for public
+	//   clients, but relying on PKCE alone without binding the code to its
+	//   rightful client violates the spec and provides weaker guarantees if the
+	//   code is stolen before PKCE verification runs.
+	//
+	//   For confidential clients the attacker must also know the target client's
+	//   secret, which raises the bar — but RFC 6749 still requires the check
+	//   and defense-in-depth demands it.
+	//
+	// Why we return the same 401 as "invalid client credentials" (not a new error):
+	//
+	//   Returning a different status or body for a client-mismatch vs. a bad
+	//   secret would let an attacker enumerate: "is this code issued to client A
+	//   or client B?"  Responding identically in all credential-failure cases
+	//   denies that information.  The server log records the full detail for the
+	//   operator; the client-facing response stays intentionally generic.
+	if pending.ClientID != clientID {
+		ui.Log(ui.ServerLogger, "oauth.as.authorize.denied", ui.A{
+			"client": pending.ClientID,
+			"user":   pending.Username,
+			"reason": "code presented by a different client (client_id mismatch); H1",
+		})
+
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.invalid.client"), http.StatusUnauthorized)
+	}
+
 	// The redirect_uri in the token request must match the one used in the
 	// authorization request (RFC 6749 §4.1.3).
 	if pending.RedirectURI != redirectURI {

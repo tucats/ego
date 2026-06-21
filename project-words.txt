@@ -320,3 +320,6 @@ zipgo
 zork
 zorp
 دانش
+testclient
+locktestapp
+combotestapp
