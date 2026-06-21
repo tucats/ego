@@ -229,12 +229,26 @@ func dsnShowMetadata(c *cli.Context, name string) error {
 	}))
 	ui.Say(" ")
 
+	// Sort the table list alphabetically by table name. The sparse-table layout
+	// (table name on the first row only) means the built-in table-package sort
+	// cannot be used — sorting rows after the fact would destroy the grouping.
+	// We sort the source slices before building the output rows instead.
+	sort.Slice(resp.Items, func(i, j int) bool {
+		return resp.Items[i].Table < resp.Items[j].Table
+	})
+
 	// Three-column sparse table: Table / Column / Type.
 	// We use i18n.L() for column headings so they are localized consistently
 	// with other table output in the ego CLI.
 	t, _ := tables.New([]string{i18n.L("Table"), i18n.L("Column"), i18n.L("Type")})
 
 	for _, item := range resp.Items {
+		// Sort each table's columns alphabetically by column name before
+		// adding rows so the column listing is deterministic and easy to scan.
+		sort.Slice(item.Fields, func(i, j int) bool {
+			return item.Fields[i].Name < item.Fields[j].Name
+		})
+
 		// An empty-column table still gets one row so the table name appears
 		// in the output, making it clear the table exists but has no columns.
 		if len(item.Fields) == 0 {
