@@ -45,6 +45,11 @@ const (
 	TablesNamePath           = TablesPath + "%s"
 	TablesRowsPath           = TablesPath + "{{table}}/rows"
 	TablesSQLPath            = TablesPath + SQLPseudoTable
+	// DSNMetadataPath is the endpoint that returns compact schema metadata for
+	// every table in the named DSN (column names and types). The "@" prefix
+	// follows the same convention as @sql and @permissions pseudo-table names,
+	// distinguishing it from a real table named "metadata".
+	DSNMetadataPath = DSNNamePath + "@metadata"
 	ServicesPath             = "/services/"
 	ServicesDownPath         = ServicesPath + "admin/down/"
 	ServicesLogonPath        = ServicesPath + "admin/logon"
@@ -156,6 +161,10 @@ const (
 	RowCountMediaType             = EgoMediaType + "rowcount+json"
 	TableMetadataMediaType        = EgoMediaType + "columns+json"
 	TablesMediaType               = EgoMediaType + "tables+json"
+	// DSNMetadataMediaType is the Content-Type for the @metadata endpoint response.
+	// It contains a compact summary of every table in a DSN (table names + column
+	// name/type pairs), suitable for schema discovery without per-table requests.
+	DSNMetadataMediaType = EgoMediaType + "metadata+json"
 	ErrorMediaType                = EgoMediaType + "error+json"
 	UserMediaType                 = EgoMediaType + "user+json"
 	DSNMediaType                  = EgoMediaType + "dsn+json"

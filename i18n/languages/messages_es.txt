@@ -526,6 +526,7 @@ table.delete.error=Error al eliminar la tabla de base de datos
 table.delete.query=Error al construir la consulta de eliminación de tabla: {{err}}
 table.insert.error=Error de inserción: {{err}}
 table.insert.payload=Carga útil INSERT inválida: {{err}}
+table.dsn.metadata.error=Error al leer los metadatos del esquema del DSN: {{err}}
 table.metadata.error=Error de metadatos de la tabla de base de datos: {{err}}
 table.name.missing=no se especificó nombre de tabla
 table.no.rows=no se encontraron filas en la carga útil
@@ -807,6 +808,7 @@ server.stopped=Servidor (pid {{pid}}) detenido
 server.stopped.id=Deteniendo servidor {{id}} usando sesión {{session}}
 server.stopped.rest=Servidor detenido
 server.stopping=Servidor deteniéndose, estado {{status}}
+server.dsn.metadata={{count}} {{count|cardinal tabla, tablas}} devueltas del DSN {{dsn}}
 server.table.created=Tabla {{name}} creada con éxito
 server.table.deleted=Tabla {{name}} eliminada con éxito
 subcommand.expected=Subcomando faltante del comando, se esperaba uno de:
@@ -1759,6 +1761,9 @@ symbols.log.symbol={{name|%-16s}} {{type}} = {{value}}
 table.assume.null.columns={{columns|cardinal Columna,Columnas}} {{columns|list}} no proporcionadas en la solicitud; asumiendo valor nulo
 table.unique.columns=Columnas únicas: {{list}}
 table.nullable.columns=Columnas anulables: {{list}}
+table.dsn.metadata.start=Leyendo metadatos del DSN: dsn={{dsn}}, proveedor={{provider}}, inicio={{start}}, límite={{limit}}
+table.dsn.metadata.count=Devolviendo metadatos del DSN para {{count}} {{count|cardinal tabla, tablas}} (inicio={{start}})
+table.dsn.metadata.column.error=No se pudieron leer los metadatos de columnas para la tabla {{table}}: {{error}}
 table.schema.tables=Intentando leer tablas del esquema {{schema}}
 table.schema.count=Leídos {{count}} {{count|cardinal nombre, nombres}} de tabla
 table.deleted.rows=Se eliminaron {{count}} {{count|cardinal fila, filas}}; {{status}}

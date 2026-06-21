@@ -16,6 +16,18 @@ const (
 // AddStaticRoutes accepts an endpoint router, and adds to it the endpoint routes
 // used by the Tables services.
 func AddStaticRoutes(r *router.Router) {
+	// Return compact schema metadata (table names + column name/type) for every
+	// table in the DSN. Paging is supported via ?start= and ?limit=.
+	// This route is registered at the DSN level (/dsns/{dsn}/@metadata), not
+	// inside the tables/ sub-path, so it cannot conflict with any real table name.
+	r.New(defs.DSNMetadataPath, DSNMetadataHandler, http.MethodGet).
+		Authentication(true, false).
+		Permissions(defs.DSNAdminPermission).
+		Parameter(defs.StartParameterName, util.IntParameterType).
+		Parameter(defs.LimitParameterName, util.IntParameterType).
+		AcceptMedia(defs.DSNMetadataMediaType).
+		Class(router.TableRequestCounter)
+
 	// Run a transaction script
 	r.New(defs.TablesPath+"@transaction", scripting.Handler, http.MethodPost).
 		Authentication(true, false).

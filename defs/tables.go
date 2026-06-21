@@ -158,6 +158,59 @@ type DBRowCount struct {
 	Elapsed string `json:"elapsed,omitempty"`
 }
 
+// MetadataField describes a single column returned by the @metadata endpoint.
+// Only the name and type are included here; callers who need nullability,
+// uniqueness, or size constraints can follow up with a per-table GET on
+// /dsns/{dsn}/tables/{table}.
+type MetadataField struct {
+	// The column name as stored in the database catalog.
+	Name string `json:"name"`
+
+	// The portable Ego type name for the column (e.g. "string", "int", "timestamp").
+	Type string `json:"type"`
+}
+
+// TableMetadata describes one table's schema as returned by the @metadata endpoint.
+// It pairs the table name with an ordered list of its columns.
+type TableMetadata struct {
+	// The unqualified table name as it appears in the database catalog.
+	Table string `json:"table"`
+
+	// The ordered list of column descriptors for this table.
+	Fields []MetadataField `json:"fields"`
+}
+
+// DSNMetadataResponse is the JSON body returned by GET /dsns/{dsnname}/@metadata.
+//
+// The endpoint returns a summary of every table (or a paged subset of them) in
+// the named DSN: the table name and, for each table, the column names and types.
+// It is designed for clients that need a quick overview of an entire database
+// without issuing a separate request per table.
+type DSNMetadataResponse struct {
+	// Standard server identification and request metadata.
+	ServerInfo `json:"server"`
+
+	// The database driver / provider name for this DSN (e.g. "postgres", "sqlite").
+	Provider string `json:"provider"`
+
+	// The 1-based index of the first table returned. Mirrors the ?start= query
+	// parameter; defaults to 1 when the parameter is omitted.
+	Start int `json:"start"`
+
+	// The number of items in the Items array (i.e. the number of tables returned
+	// in this page of results).
+	Count int `json:"count"`
+
+	// One entry per table returned by this page of results.
+	Items []TableMetadata `json:"items"`
+
+	// HTTP status code echoed back in the body for client convenience.
+	Status int `json:"status"`
+
+	// Human-readable status message.
+	Message string `json:"msg"`
+}
+
 type PermissionObject struct {
 	// The user for whom these permissions apply.
 	User string `json:"user"`

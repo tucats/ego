@@ -525,6 +525,7 @@ table.delete.error=Database table delete error
 table.delete.query=Error constructing table deletion query: {{err}}
 table.insert.error=Insert error: {{err}}
 table.insert.payload=Invalid INSERT payload: {{err}}
+table.dsn.metadata.error=Error reading DSN schema metadata: {{err}}
 table.metadata.error=Database table metadata error: {{err}}
 table.name.missing=no table name specified
 table.no.rows=no rows found in payload
@@ -814,6 +815,7 @@ server.stopped=Server (pid {{pid}}) stopped
 server.stopped.id=Stopping server {{id}} using session {{session}}
 server.stopped.rest=Server stopped
 server.stopping=Server stopping, status {{status}}
+server.dsn.metadata={{count}} {{count|cardinal table, tables}} returned from DSN {{dsn}}
 server.table.created=Table {{name}} created successfully
 server.table.deleted=Table {{name}} successfully deleted
 subcommand.expected=Subcommand missing from command, expected one of:
@@ -1771,6 +1773,9 @@ symbols.log.symbol={{name|%-16s}} {{type}} = {{value}}
 table.assume.null.columns={{columns|cardinal Column,Columns}} {{columns|list}} not provided in request; assuming null value
 table.unique.columns=Unique columns: {{list}}
 table.nullable.columns=Nullable columns: {{list}}
+table.dsn.metadata.start=Reading DSN metadata: dsn={{dsn}}, provider={{provider}}, start={{start}}, limit={{limit}}
+table.dsn.metadata.count=Returning DSN metadata for {{count}} {{count|cardinal table, tables}} (start={{start}})
+table.dsn.metadata.column.error=Could not read column metadata for table {{table}}: {{error}}
 table.schema.tables=Attempting to read tables from schema {{schema}}
 table.schema.count=Read {{count}} table {{count|cardinal  name, names}}
 table.deleted.rows=Deleted {{count}} {{count|cardinal row, rows}}; {{status}}

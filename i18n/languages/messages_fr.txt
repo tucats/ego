@@ -519,6 +519,7 @@ table.delete.error=Erreur lors de la suppression de la table de base de données
 table.delete.query=Erreur lors de la construction de la requête de suppression de table : {{err}}
 table.insert.error=Erreur d'insertion : {{err}}
 table.insert.payload=Charge utile INSERT invalide : {{err}}
+table.dsn.metadata.error=Erreur lors de la lecture des métadonnées du schéma DSN : {{err}}
 table.metadata.error=Erreur de métadonnées de la table de base de données : {{err}}
 table.name.missing=aucun nom de table spécifié
 table.no.rows=aucune ligne trouvée dans la charge utile
@@ -800,6 +801,7 @@ server.stopped=Serveur (pid {{pid}}) arrêté
 server.stopped.id=Arrêt du serveur {{id}} à l'aide de la session {{session}}
 server.stopped.rest=Serveur arrêté
 server.stopping=Arrêt du serveur en cours, état {{status}}
+server.dsn.metadata={{count}} {{count|cardinal table, tables}} retournée(s) depuis le DSN {{dsn}}
 server.table.created=Table {{name}} créée avec succès
 server.table.deleted=Table {{name}} supprimée avec succès
 subcommand.expected=Sous-commande manquante de la commande, attendu l'un de :
@@ -1752,6 +1754,9 @@ symbols.log.symbol={{name|%-16s}} {{type}} = {{value}}
 table.assume.null.columns={{columns|cardinal Colonne,Colonnes}} {{columns|list}} non fournie(s) dans la requête ; valeur nulle supposée
 table.unique.columns=Colonnes uniques : {{list}}
 table.nullable.columns=Colonnes nullables : {{list}}
+table.dsn.metadata.start=Lecture des métadonnées DSN : dsn={{dsn}}, fournisseur={{provider}}, début={{start}}, limite={{limit}}
+table.dsn.metadata.count=Retour des métadonnées DSN pour {{count}} {{count|cardinal table, tables}} (début={{start}})
+table.dsn.metadata.column.error=Impossible de lire les métadonnées des colonnes pour la table {{table}} : {{error}}
 table.schema.tables=Tentative de lecture des tables depuis le schéma {{schema}}
 table.schema.count={{count}} {{count|cardinal nom, noms}} de table lu(s)
 table.deleted.rows={{count}} {{count|cardinal ligne, lignes}} supprimée(s) ; {{status}}
