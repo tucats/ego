@@ -136,6 +136,36 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 			i18n.T("oauth.as.unsupported.response_type"), http.StatusBadRequest)
 	}
 
+	// M2: public clients must supply a code_challenge at the authorization
+	// step, not just at the token-exchange step.
+	//
+	// Why enforce PKCE here rather than only at the token endpoint?
+	//
+	//   The token endpoint (handleAuthorizationCodeGrant) already enforces
+	//   PKCE for public clients: if pending.CodeChallenge is empty it returns
+	//   400.  But that rejection arrives after the user has already entered
+	//   their credentials, seen a success page, and been redirected back —
+	//   a confusing dead end.
+	//
+	//   Enforcing the requirement here, before the login form is ever shown,
+	//   gives the client developer an immediate, unambiguous error at the
+	//   authorization step where the mistake actually occurred.  It also
+	//   closes a narrow window: without this gate, a public client can obtain
+	//   a valid authorization code (storing it in the AS cache) even though
+	//   that code can never be exchanged.
+	//
+	// How to detect a public client:
+	//
+	//   A client registered without a ClientSecretHash has no shared secret and
+	//   is treated as a public client (RFC 6749 §2.1).  Public clients MUST use
+	//   PKCE (RFC 9700 §2.1.1 / OAuth 2.0 Security BCP).  Confidential clients
+	//   (non-empty ClientSecretHash) may omit PKCE; their shared secret provides
+	//   equivalent proof of identity.
+	if client.ClientSecretHash == "" && codeChallenge == "" {
+		return util.ErrorResponse(w, session.ID,
+			i18n.T("oauth.as.pkce.required"), http.StatusBadRequest)
+	}
+
 	// Generate a CSRF nonce, embed it in the form, and set it as an HttpOnly
 	// cookie. The POST handler validates that both values match before accepting
 	// the form submission, preventing cross-site request forgery attacks.

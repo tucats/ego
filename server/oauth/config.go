@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/tucats/ego/app-cli/settings"
-	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 )
 
@@ -126,27 +125,30 @@ type rsConfig struct {
 // setting.  This allows sensitive credentials to be injected via the environment
 // without appearing in the profile file.
 //
-// OAUTH-L3: when the secret is read from the environment variable, the variable
-// is immediately cleared with os.Unsetenv so child processes (such as Ego programs
-// run via exec functions) cannot inherit it.  A visible SERVER-log warning is also
-// emitted so operators are aware that the credential was supplied via the
-// environment, matching the LOGIN-L1 pattern for EGO_PASSWORD.
+// M1 — deferred env-var clearing:
+//
+//	loadConfig() reads the env var but does NOT call os.Unsetenv.  Clearing is
+//	deferred to Initialize(), which runs exactly once via sync.Once and stores
+//	the result in globalConfig before clearing the variable.
+//
+//	The reason: loadConfig() is called from IsEnabled() and GetConfig() before
+//	Initialize() has run (both functions are documented as "safe to call before
+//	Initialize()").  If loadConfig() cleared EGO_OAUTH_CLIENT_SECRET on the
+//	first such call, the secret would be consumed and discarded — the temporary
+//	rsConfig returned from IsEnabled()/GetConfig() is never stored globally.
+//	When Initialize() then calls loadConfig() a second time, the env var is
+//	already gone and the secret would be silently missing.
+//
+//	By keeping the clear in Initialize(), the env var survives until it is
+//	actually stored, no matter how many times loadConfig() is called first.
 func loadConfig() rsConfig {
 	// Read client secret from environment first, then from settings.
+	// Note: do NOT call os.Unsetenv here — see the M1 note above.
+	// The env var is cleared by Initialize() after globalConfig is set.
 	clientSecret := settings.Get(defs.OAuthClientSecretSetting)
 
 	if envSecret := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); envSecret != "" {
 		clientSecret = envSecret
-
-		// Clear the env var so it is not visible to child processes spawned by
-		// the server (e.g., via exec functions when ExecPermittedSetting is true).
-		// The error return from Unsetenv is best-effort; there is no safe fallback
-		// if the OS refuses to clear the variable.
-		_ = os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")
-
-		// Emit a visible warning so operators know the credential came from the
-		// environment rather than the encrypted profile file.
-		ui.Log(ui.ServerLogger, "oauth.rs.client.secret.env", ui.A{})
 	}
 
 	// Parse the JWKS cache TTL; fall back to the default on any error.

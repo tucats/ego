@@ -127,40 +127,56 @@ func TestLoadConfigTTLParsing(t *testing.T) {
 	}
 }
 
-// TestLoadConfig_EnvVarSecretCleared verifies that loadConfig clears the
-// EGO_OAUTH_CLIENT_SECRET environment variable immediately after reading it
-// (OAUTH-L3).
+// TestLoadConfig_EnvVar_ReadButNotCleared verifies the M1 fix: loadConfig()
+// reads EGO_OAUTH_CLIENT_SECRET into the returned rsConfig but no longer calls
+// os.Unsetenv to clear it.
 //
-// Why this matters: environment variables are visible to every child process the
-// server spawns (for example via Ego's exec built-in when ExecPermittedSetting
-// is enabled) and to any process that can read /proc/<pid>/environ on Linux.
-// Leaving a credential in the environment for the lifetime of the process
-// unnecessarily widens its exposure.
+// Why the behavior changed (M1):
 //
-// Test strategy: set the env var to a known value, call loadConfig(), then
-// verify that (a) the returned rsConfig carries the value, confirming it was
-// read, and (b) os.Getenv returns an empty string, confirming the variable was
-// cleared.
-func TestLoadConfig_EnvVarSecretCleared(t *testing.T) {
-	const testSecret = "test-client-secret-value"
+//	Before the fix, loadConfig() cleared the env var on every call.  Because
+//	IsEnabled() and GetConfig() both call loadConfig(), the first such call would
+//	consume the env var before Initialize() had a chance to store it in
+//	globalConfig.  A subsequent call to loadConfig() inside Initialize() would
+//	then find the env var empty and fall back to the (potentially absent)
+//	settings-file value — silently dropping the operator-supplied secret.
+//
+//	The fix moves the os.Unsetenv call into Initialize(), which runs exactly once
+//	and stores the config before clearing the variable.  loadConfig() now only
+//	reads the env var; Initialize() owns the clear.
+//
+// Test strategy:
+//  1. Set the env var to a known value.
+//  2. Call loadConfig() — the returned config must carry the secret.
+//  3. Verify the env var is STILL set (not cleared by loadConfig).
+//  4. Call loadConfig() a second time — it must STILL return the secret,
+//     proving that the old "first call consumes it" bug is fixed.
+func TestLoadConfig_EnvVar_ReadButNotCleared(t *testing.T) {
+	const testSecret = "m1-test-client-secret"
 
-	// Set the env var and register a cleanup to restore it if something goes
-	// wrong.  t.Cleanup runs even when the test panics, so the env is always
-	// restored for subsequent tests in the same process.
+	// t.Setenv registers an automatic cleanup that restores the original env var
+	// value when the test ends, so we do not need a manual t.Cleanup.
 	t.Setenv("EGO_OAUTH_CLIENT_SECRET", testSecret)
 
-	// Call loadConfig.  This should read the env var, copy it into the config,
-	// and then clear the env var.
-	cfg := loadConfig()
+	// First call.
+	cfg1 := loadConfig()
 
-	// (a) The config must carry the secret value we set.
-	if cfg.ClientSecret != testSecret {
-		t.Errorf("ClientSecret = %q, want %q", cfg.ClientSecret, testSecret)
+	if cfg1.ClientSecret != testSecret {
+		t.Errorf("first loadConfig: ClientSecret = %q, want %q", cfg1.ClientSecret, testSecret)
 	}
 
-	// (b) The env var must have been cleared.
-	if got := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); got != "" {
-		t.Errorf("EGO_OAUTH_CLIENT_SECRET still set to %q after loadConfig(); expected it to be cleared (OAUTH-L3)", got)
+	// M1: the env var must NOT have been cleared by loadConfig.
+	// Before the fix this assertion would have failed (got == "").
+	if got := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); got == "" {
+		t.Error("M1: EGO_OAUTH_CLIENT_SECRET was cleared by loadConfig(); it should only be cleared by Initialize()")
+	}
+
+	// Second call — must still see the secret because the env var is still set.
+	// Before the fix the first call would have consumed the env var, so the
+	// second call returned ClientSecret == "" (the settings fallback).
+	cfg2 := loadConfig()
+
+	if cfg2.ClientSecret != testSecret {
+		t.Errorf("second loadConfig: ClientSecret = %q, want %q — M1 bug: env var was consumed on first call", cfg2.ClientSecret, testSecret)
 	}
 }
 
@@ -176,4 +192,76 @@ func TestLoadConfig_NoEnvVar(t *testing.T) {
 	// In the unit-test environment the settings store is empty, so ClientSecret
 	// should be the empty string (the settings default).
 	_ = cfg // just confirm no panic
+}
+
+// TestGlobalConfig_ConcurrentAccess exercises IsEnabled() and GetConfig() from
+// many goroutines simultaneously.  Run with -race to verify that the M3
+// sync.RWMutex correctly prevents data races on globalConfig.
+//
+// How this test detects the bug (M3):
+//
+//	Before the M3 fix, globalConfig was accessed without any synchronization.
+//	Running this test under the Go race detector ("go test -race ./...") would
+//	report a DATA RACE between the write in globalConfigOnce.Do and the reads in
+//	IsEnabled() / GetConfig().
+//
+//	After the fix, all reads and writes go through globalConfigMu (sync.RWMutex),
+//	which establishes the required happens-before edges and makes the race
+//	detector report clean.
+//
+// What the test checks beyond the race detector:
+//
+//	Because globalConfig starts as the zero value in this test environment
+//	(no Initialize() call, no settings configured), IsEnabled() must return false
+//	and GetConfig().Provider must be empty.  Both are verified to ensure the
+//	mutex logic does not accidentally corrupt the values being read.
+func TestGlobalConfig_ConcurrentAccess(t *testing.T) {
+	// Save and restore globalConfig so this test does not pollute others.
+	globalConfigMu.Lock()
+	saved := globalConfig
+	globalConfig = rsConfig{} // start from zero
+	globalConfigMu.Unlock()
+
+	t.Cleanup(func() {
+		globalConfigMu.Lock()
+		globalConfig = saved
+		globalConfigMu.Unlock()
+	})
+
+	const goroutines = 50
+
+	// done coordinates the goroutine pool: each goroutine decrements done when it
+	// finishes.  The main goroutine waits for all to complete before checking
+	// results.
+	done := make(chan struct{}, goroutines)
+
+	// errors collects any unexpected values observed by the goroutines.
+	errs := make(chan string, goroutines*2)
+
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer func() { done <- struct{}{} }()
+
+			// IsEnabled() should return false: provider is empty in zero config.
+			if IsEnabled() {
+				errs <- "IsEnabled() returned true for zero globalConfig"
+			}
+
+			// GetConfig() should return the zero rsConfig (empty Provider).
+			if cfg := GetConfig(); cfg.Provider != "" {
+				errs <- "GetConfig().Provider is non-empty for zero globalConfig"
+			}
+		}()
+	}
+
+	// Wait for all goroutines to finish.
+	for i := 0; i < goroutines; i++ {
+		<-done
+	}
+
+	close(errs)
+
+	for msg := range errs {
+		t.Error(msg)
+	}
 }

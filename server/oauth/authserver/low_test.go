@@ -51,12 +51,18 @@ func csrfCookieFromResponse(w *httptest.ResponseRecorder) *http.Cookie {
 // Pass https = true to simulate a TLS connection (sets r.TLS), which causes
 // IsSecureRequest to return true and the cookie's Secure attribute to be set.
 func authorizeGetRequest(https bool) *http.Request {
+	// M2: l1testapp is a public client (no ClientSecretHash), so the M2 gate
+	// now requires code_challenge to be present.  We supply a valid S256
+	// challenge so these OAUTH-L1 cookie tests are not blocked by the PKCE
+	// gate — they are testing the Secure attribute, not PKCE enforcement.
 	req := httptest.NewRequest(
 		http.MethodGet,
 		"/oauth2/authorize?client_id=l1testapp"+
 			"&redirect_uri=https://l1.example.com/cb"+
 			"&response_type=code"+
-			"&scope=openid",
+			"&scope=openid"+
+			"&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"+
+			"&code_challenge_method=S256",
 		nil,
 	)
 

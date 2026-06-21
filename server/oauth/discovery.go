@@ -157,7 +157,36 @@ func discoverEndpoints(providerURL string) (*discoveryDoc, error) {
 	}
 
 	// Store in the cache under a write lock.
+	//
+	// M4 — double-checked locking:
+	//
+	//   Between the initial RLock check at the top of this function and this
+	//   write, another goroutine may have raced us to the network and already
+	//   written a fresh document.  Writing unconditionally would:
+	//     (a) discard the other goroutine's result for no gain, and
+	//     (b) cause a brief inconsistency if the provider returned a slightly
+	//         different document in the two concurrent fetches.
+	//
+	//   The re-check under the exclusive write lock closes this window: if the
+	//   cache is now fresh, return the document that was already stored without
+	//   overwriting it.  This is the standard double-checked locking pattern —
+	//   lock, re-read, update only if still needed.
+	//
+	//   We use the pointer of the existing doc (not the one we just fetched) so
+	//   the caller receives the same pointer that is stored in the cache.  This
+	//   keeps all callers consistent even if the two fetches returned slightly
+	//   different byte sequences for the same logical document.
 	discoveryCache.mu.Lock()
+
+	if discoveryCache.doc != nil && time.Since(discoveryCache.fetchedAt) < discoveryTTL {
+		// Another goroutine refreshed the cache while we were fetching.
+		// Return the stored document so all concurrent callers see the same value.
+		existing := discoveryCache.doc
+		discoveryCache.mu.Unlock()
+
+		return existing, nil
+	}
+
 	discoveryCache.doc = &doc
 	discoveryCache.fetchedAt = time.Now()
 	discoveryCache.mu.Unlock()

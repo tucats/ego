@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -52,14 +53,37 @@ type PendingState struct {
 }
 
 // globalConfig holds the resolved RS configuration populated once by Initialize().
-// After initialization it is read-only.
+// All reads and the single write are protected by globalConfigMu.
 var globalConfig rsConfig
+
+// globalConfigMu protects all reads and writes of globalConfig and jwksURL.
+//
+// M3 — why a mutex is necessary:
+//
+//	globalConfig is written once inside globalConfigOnce.Do (which runs in the
+//	main/startup goroutine) and read by every subsequent HTTP request goroutine.
+//	sync.Once provides a happens-before guarantee to OTHER goroutines that also
+//	call Do — but request handler goroutines read globalConfig directly, without
+//	going through Do, so the Once alone is insufficient.
+//
+//	In practice, the HTTP server is started after Initialize() returns, which
+//	establishes a happens-before edge (goroutine creation is a synchronization
+//	point in Go's memory model).  However, IsEnabled() and GetConfig() are
+//	documented as safe to call before Initialize(), meaning they can be called
+//	from any goroutine at any time — including concurrently with the write
+//	inside Initialize().
+//
+//	A sync.RWMutex is the correct, explicit fix: reads take a shared RLock (no
+//	contention between concurrent request handlers), and the single write takes
+//	an exclusive Lock (only during server startup).
+var globalConfigMu sync.RWMutex
 
 // globalConfigOnce ensures Initialize() is executed at most once per process.
 var globalConfigOnce sync.Once
 
 // jwksURL is the JWKS endpoint URL from the OIDC discovery document.
-// Set by Initialize() and used by ValidateJWT() on every request.
+// Set by Initialize() and read by ValidateJWT() on every request.
+// Protected by globalConfigMu alongside globalConfig.
 var jwksURL string
 
 // IsEnabled returns true when the OAuth2 Resource Server role is active.
@@ -67,10 +91,18 @@ var jwksURL string
 //
 // Safe to call before Initialize().
 func IsEnabled() bool {
-	if globalConfig.Provider != "" {
+	// Read globalConfig.Provider under a shared lock so concurrent calls cannot
+	// race with Initialize()'s write.  A read lock allows multiple callers to
+	// run simultaneously without blocking each other.
+	globalConfigMu.RLock()
+	provider := globalConfig.Provider
+	globalConfigMu.RUnlock()
+
+	if provider != "" {
 		return true
 	}
 
+	// globalConfig is not yet set; fall back to reading settings directly.
 	cfg := loadConfig()
 
 	return cfg.Provider != ""
@@ -81,8 +113,16 @@ func IsEnabled() bool {
 // settings directly.  This function is used by the rshandlers sub-package so
 // that handlers do not need to access globalConfig directly.
 func GetConfig() rsConfig {
-	if globalConfig.Provider != "" {
-		return globalConfig
+	// Read the entire struct under a shared lock.  Because rsConfig contains a
+	// map (PermissionMap), we must copy the struct value under the lock rather
+	// than reading Provider and then re-reading the full struct: two separate
+	// lock acquisitions would form a TOCTOU window.
+	globalConfigMu.RLock()
+	cfg := globalConfig
+	globalConfigMu.RUnlock()
+
+	if cfg.Provider != "" {
+		return cfg
 	}
 
 	return loadConfig()
@@ -139,7 +179,26 @@ func Initialize() error {
 	var initErr error
 
 	globalConfigOnce.Do(func() {
+		// M3: hold an exclusive lock while writing globalConfig so any goroutine
+		// that calls IsEnabled() or GetConfig() concurrently sees either the zero
+		// value or the fully initialized struct — never a partial write.
+		globalConfigMu.Lock()
 		globalConfig = cfg
+		globalConfigMu.Unlock()
+
+		// M1: clear EGO_OAUTH_CLIENT_SECRET now that the secret is safely stored
+		// in globalConfig.  We do this here (not in loadConfig) so that the env
+		// var survives any number of loadConfig() calls made before Initialize()
+		// runs — for example, from IsEnabled() or GetConfig().  The variable is
+		// cleared immediately after storage so child processes spawned later cannot
+		// inherit it.
+		if envSecret := os.Getenv("EGO_OAUTH_CLIENT_SECRET"); envSecret != "" {
+			_ = os.Unsetenv("EGO_OAUTH_CLIENT_SECRET")
+
+			// Visible SERVER-level warning so operators know the credential came
+			// from the environment rather than the encrypted profile file.
+			ui.Log(ui.ServerLogger, "oauth.rs.client.secret.env", ui.A{})
+		}
 
 		// Configure the JWKS key cache TTL.
 		setJWKSCacheTTL(cfg.JWKSCacheTTL)
@@ -158,7 +217,11 @@ func Initialize() error {
 			"issuer":   doc.Issuer,
 		})
 
+		// M3: protect the jwksURL write with the same mutex as globalConfig so
+		// ValidateJWT() can read both values atomically under a single RLock.
+		globalConfigMu.Lock()
 		jwksURL = doc.JWKSUri
+		globalConfigMu.Unlock()
 
 		// Pre-warm the JWKS key cache so the first JWT validation does not pay
 		// the latency of an outbound HTTP request.
@@ -266,12 +329,21 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	}
 
 	// Steps 2–4: Parse and validate the JWT.
+	//
+	// M3: read both globalConfig and jwksURL under a single shared lock so we
+	// cannot observe globalConfig from one initialization state and jwksURL from
+	// another (the two writes in Initialize() happen separately but must appear
+	// atomic to the reader).
+	globalConfigMu.RLock()
 	cfg := globalConfig
+	url := jwksURL
+	globalConfigMu.RUnlock()
+
 	if cfg.Provider == "" {
 		cfg = loadConfig()
 	}
 
-	claims, err := parseAndValidateJWT(jwksURL, tokenStr, cfg.Provider, cfg.Audience)
+	claims, err := parseAndValidateJWT(url, tokenStr, cfg.Provider, cfg.Audience)
 	if err != nil {
 		ui.Log(ui.AuthLogger, "oauth.rs.jwt.invalid", ui.A{
 			"session": session,

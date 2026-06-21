@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,6 +12,166 @@ import (
 )
 
 const egoAdminScope = "ego:admin"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// M2: PKCE required at the authorization endpoint for public clients
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Before the M2 fix, AuthorizeGetHandler showed the login form to a public
+// client even when code_challenge was absent.  The error was only reported at
+// the token-exchange step — after the user had already authenticated.  The fix
+// rejects the request immediately at the GET step, giving client developers an
+// early, clear error message.
+
+// getAuthorizeRequest builds a GET /oauth2/authorize request with the given
+// query parameters.  An empty string for codeChallenge simulates a client that
+// omitted PKCE entirely.
+func getAuthorizeRequest(clientID, redirectURI, responseType, codeChallenge string) *http.Request {
+	q := url.Values{}
+	q.Set("client_id", clientID)
+	q.Set("redirect_uri", redirectURI)
+	q.Set("response_type", responseType)
+	q.Set("scope", "openid")
+
+	// Only include code_challenge in the URL when a non-empty value is supplied.
+	// An absent parameter is meaningfully different from an empty one — the GET
+	// handler checks codeChallenge == "" which is the zero value for a missing
+	// query parameter.
+	if codeChallenge != "" {
+		q.Set("code_challenge", codeChallenge)
+		q.Set("code_challenge_method", "S256")
+	}
+
+	return httptest.NewRequest(http.MethodGet,
+		"/oauth2/authorize?"+q.Encode(), nil)
+}
+
+// TestAuthorizeGetHandler_PublicClient_WithoutPKCE_Rejected verifies that a
+// public client (no ClientSecretHash) that omits code_challenge receives 400
+// at the GET authorization step, not at the token-exchange step (M2).
+//
+// Why this matters:
+//
+//	Without the M2 fix the login form is shown, the user authenticates, an
+//	authorization code is issued and stored in the AS cache, and only then the
+//	token endpoint returns 400 — confusing the user and wasting an auth round-
+//	trip.  With the fix, the developer sees a clear "PKCE required" error before
+//	the user ever sees the login page.
+func TestAuthorizeGetHandler_PublicClient_WithoutPKCE_Rejected(t *testing.T) {
+	// Register a public client — no ClientSecretHash.
+	clients = []OAuthClient{{
+		ClientID:     "no-pkce-public",
+		RedirectURIs: []string{"https://nopkce.example.com/cb"},
+		GrantTypes:   []string{"authorization_code"},
+		Scopes:       []string{"openid"},
+		// ClientSecretHash intentionally empty — this is a public client.
+	}}
+	t.Cleanup(func() { clients = nil })
+
+	req := getAuthorizeRequest(
+		"no-pkce-public",
+		"https://nopkce.example.com/cb",
+		"code",
+		"", // ← no code_challenge
+	)
+
+	w := httptest.NewRecorder()
+	status := AuthorizeGetHandler(&router.Session{ID: 20}, w, req)
+
+	// M2: public client without PKCE must be rejected at the GET step.
+	if status != http.StatusBadRequest {
+		t.Errorf(
+			"M2: public client without code_challenge should get 400 at the GET step, got %d\n"+
+				"(if this returns 200, the form was shown — error will only appear at token exchange)",
+			status,
+		)
+	}
+}
+
+// TestAuthorizeGetHandler_PublicClient_WithPKCE_Allowed verifies that a public
+// client that correctly provides code_challenge is permitted to proceed to the
+// login form (M2 positive path).
+//
+// This is the regression guard: the M2 check must reject PKCE-less requests
+// without blocking clients that do use PKCE correctly.
+func TestAuthorizeGetHandler_PublicClient_WithPKCE_Allowed(t *testing.T) {
+	clients = []OAuthClient{{
+		ClientID:     "pkce-public",
+		RedirectURIs: []string{"https://pkce.example.com/cb"},
+		GrantTypes:   []string{"authorization_code"},
+		Scopes:       []string{"openid"},
+	}}
+	t.Cleanup(func() { clients = nil })
+
+	req := getAuthorizeRequest(
+		"pkce-public",
+		"https://pkce.example.com/cb",
+		"code",
+		"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", // a valid S256 challenge
+	)
+
+	w := httptest.NewRecorder()
+	status := AuthorizeGetHandler(&router.Session{ID: 21}, w, req)
+
+	// The handler should show the login form (200 OK).
+	if status != http.StatusOK {
+		t.Errorf(
+			"M2 regression: public client WITH code_challenge should get 200 (login form), got %d",
+			status,
+		)
+	}
+}
+
+// TestAuthorizeGetHandler_ConfidentialClient_WithoutPKCE_Allowed verifies that
+// a confidential client (with ClientSecretHash) is NOT required to provide
+// code_challenge (M2 scope boundary).
+//
+// RFC 9700 §2.1.1 mandates PKCE for public clients only.  The M2 gate checks
+// client.ClientSecretHash == "" to identify public clients; confidential clients
+// skip the check entirely.
+func TestAuthorizeGetHandler_ConfidentialClient_WithoutPKCE_Allowed(t *testing.T) {
+	// Load a confidential client from a file so its secret is properly bcrypt-hashed
+	// by loadClients.  Using a JSON file matches the real server startup path and
+	// ensures ClientSecretHash is populated exactly as it would be in production.
+	dir := t.TempDir()
+	clientJSON := `[{
+		"client_id":     "conf-no-pkce",
+		"client_secret": "s3cr3t",
+		"redirect_uris": ["https://conf.example.com/cb"],
+		"grant_types":   ["authorization_code"],
+		"scopes":        ["openid"]
+	}]`
+
+	clientFile := dir + "/clients.json"
+	if err := os.WriteFile(clientFile, []byte(clientJSON), 0600); err != nil {
+		t.Fatalf("writing client file: %v", err)
+	}
+
+	if err := loadClients(clientFile); err != nil {
+		t.Fatalf("loadClients: %v", err)
+	}
+
+	t.Cleanup(func() { clients = nil })
+
+	req := getAuthorizeRequest(
+		"conf-no-pkce",
+		"https://conf.example.com/cb",
+		"code",
+		"", // ← no code_challenge — allowed for confidential clients
+	)
+
+	w := httptest.NewRecorder()
+	status := AuthorizeGetHandler(&router.Session{ID: 22}, w, req)
+
+	// Confidential client without PKCE must reach the login form (200 OK),
+	// not be rejected by the M2 gate (which only applies to public clients).
+	if status != http.StatusOK {
+		t.Errorf(
+			"M2 scope: confidential client without PKCE should not be rejected; got %d",
+			status,
+		)
+	}
+}
 
 // ---- OAUTH-H4: fresh CSRF token on every re-render ----
 
