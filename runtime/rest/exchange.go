@@ -169,8 +169,12 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 					"body": string(restResponse.Body())})
 
-				// Don't throw the server stopped error as a real error. Anything is an error.
-				if status != http.StatusServiceUnavailable || msg != defs.ServerStoppedMessage {
+				// Don't throw the server stopped error as a real error. A 503 status
+				// always means the server we just hit is shutting down, regardless of
+				// what the (possibly localized) message text says -- comparing against
+				// the English-only defs.ServerStoppedMessage text would break once that
+				// message is localized for a non-English server.
+				if status != http.StatusServiceUnavailable {
 					return errors.Message(data.String(msg))
 				}
 			}
@@ -182,8 +186,9 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 					"found":    "message",
 					"expected": "msg"})
 
-				// Don't throw the server stopped error as a real error. Anything is an error.
-				if status != http.StatusServiceUnavailable || msg != defs.ServerStoppedMessage {
+				// Don't throw the server stopped error as a real error. See the comment
+				// on the identical check above.
+				if status != http.StatusServiceUnavailable {
 					return errors.Message(data.String(msg))
 				}
 			}

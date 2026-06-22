@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
@@ -24,7 +25,7 @@ import (
 //	    Authentication(true, true)
 func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if systemDB == nil {
-		return util.ErrorResponse(w, session.ID, "server is not running in cluster mode", http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.not.running"), http.StatusNotFound)
 	}
 
 	members, err := ListMembers(systemDB)
@@ -68,7 +69,7 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 //	    Authentication(false, false)
 func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) {
-		return util.ErrorResponse(w, session.ID, "invalid or missing cluster token", http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.token.invalid"), http.StatusForbidden)
 	}
 
 	// Decode the cache flush request from the JSON body.
@@ -120,7 +121,7 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 //	    Authentication(false, false)
 func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, "invalid or missing cluster token or admin credentials", http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.shutdown", ui.A{
@@ -152,16 +153,16 @@ func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *h
 //	    Authentication(false, false)
 func ClusterRemoveHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, "invalid or missing cluster token or admin credentials", http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
 	}
 
 	if systemDB == nil {
-		return util.ErrorResponse(w, session.ID, "server is not running in cluster mode", http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.not.running"), http.StatusNotFound)
 	}
 
 	nodeID := r.URL.Query().Get("node_id")
 	if nodeID == "" {
-		return util.ErrorResponse(w, session.ID, "node_id query parameter is required", http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.node.id.required"), http.StatusBadRequest)
 	}
 
 	if err := RemoveMember(systemDB, nodeID); err != nil {

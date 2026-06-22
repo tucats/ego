@@ -129,6 +129,26 @@ type Session struct {
 	// True if the request will accept a TEXT response
 	AcceptsText bool
 
+	// Language is the language this response should be written in, such
+	// as "en", "es", or "fr". It is figured out once, when the Session is
+	// first created, by reading the "Accept-Language" header the client
+	// sent (see negotiateLanguage in serve.go) -- the same standard HTTP
+	// header a web browser sends to ask a website for a page in the
+	// user's preferred language. If the client didn't send that header,
+	// or asked for a language Ego has no translations for, this falls
+	// back to the server's own default language (see i18n.DefaultLanguage).
+	//
+	// Handler code that builds an error message or other user-facing text
+	// should pass this value to i18n.TLang/LLang/MLang/ELang (or to an
+	// *errors.Error's Localize method) instead of using the
+	// language-agnostic i18n.T/L/M/E functions, so that the response comes
+	// back in the language the caller actually asked for. This field is
+	// only set once per request and is never changed afterward, so it is
+	// safe to read from a handler without any extra locking, even though
+	// many requests (each with their own Session and possibly a different
+	// Language) may be in flight on different goroutines at the same time.
+	Language string
+
 	// The body of the request. Nil if no body present
 	Body []byte
 

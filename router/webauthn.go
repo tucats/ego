@@ -165,14 +165,13 @@ const webAuthnChallengeCookie = "webauthn_challenge"
 // response and returns nil on error. The RPID and allowed origin are derived
 // from r when ego.server.webauthn.rpid is not explicitly configured, enabling
 // zero-config local development with Apple passkeys.
-func webAuthnInstance(w http.ResponseWriter, r *http.Request, sessionID int) *webauthn.WebAuthn {
+func webAuthnInstance(w http.ResponseWriter, r *http.Request, session *Session) *webauthn.WebAuthn {
 	wau, err := auth.NewWebAuthnForRequest(r)
 	if err != nil {
-		msg := fmt.Sprintf("WebAuthn not available: %v", err)
 		ui.Log(ui.AuthLogger, "auth.webauthn.config.error", ui.A{
-			"session": sessionID,
+			"session": session.ID,
 			"error":   err})
-		http.Error(w, msg, http.StatusInternalServerError)
+		util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.unavailable", ui.A{"error": err}), http.StatusInternalServerError)
 
 		return nil
 	}
@@ -389,7 +388,7 @@ func passkeyGuard(w http.ResponseWriter, session *Session) int {
 		ui.Log(ui.AuthLogger, "auth.webauthn.disabled", ui.A{
 			"session": session.ID})
 
-		return util.ErrorResponse(w, session.ID, "passkeys not enabled", http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.disabled"), http.StatusNotFound)
 	}
 
 	return 0
@@ -406,7 +405,7 @@ func WebAuthnLoginBeginHandler(session *Session, w http.ResponseWriter, r *http.
 		return status
 	}
 
-	wau := webAuthnInstance(w, r, session.ID)
+	wau := webAuthnInstance(w, r, session)
 	if wau == nil {
 		return http.StatusNotImplemented
 	}
@@ -449,7 +448,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 		return status
 	}
 
-	wau := webAuthnInstance(w, r, session.ID)
+	wau := webAuthnInstance(w, r, session)
 	if wau == nil {
 		return http.StatusNotImplemented
 	}
@@ -486,7 +485,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, "passkey verification failed", http.StatusUnauthorized)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
 	}
 
 	// Reject logins where the authenticator sign counter did not advance — a
@@ -496,7 +495,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"user":    foundUser.Name})
 
-		return util.ErrorResponse(w, session.ID, "passkey verification failed", http.StatusUnauthorized)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
 	}
 
 	// Verify the user has permission to log in.
@@ -506,7 +505,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"user":    foundUser.Name})
 
-		return util.ErrorResponse(w, session.ID, "account not permitted to log in", http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.not.permitted"), http.StatusForbidden)
 	}
 
 	// Persist the updated sign counter back to the user record.
@@ -536,7 +535,7 @@ func WebAuthnRegisterBeginHandler(session *Session, w http.ResponseWriter, r *ht
 		return status
 	}
 
-	wau := webAuthnInstance(w, r, session.ID)
+	wau := webAuthnInstance(w, r, session)
 	if wau == nil {
 		return http.StatusNotImplemented
 	}
@@ -585,7 +584,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 		return status
 	}
 
-	wau := webAuthnInstance(w, r, session.ID)
+	wau := webAuthnInstance(w, r, session)
 	if wau == nil {
 		return http.StatusNotImplemented
 	}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
@@ -20,7 +21,7 @@ import (
 func JWKSHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if jwksJSON == nil {
 		return util.ErrorResponse(w, session.ID,
-			"OAuth2 signing key not initialized", http.StatusServiceUnavailable)
+			i18n.TLang(session.Language, "error.oauth.as.key.not.initialized"), http.StatusServiceUnavailable)
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, "application/json")

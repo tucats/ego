@@ -433,7 +433,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		// Multi-part names (schema.table) require admin privileges when the schema
 		// is not the current user's own schema.
 		if !wasFullyQualified && !hasAdminPrivileges {
-			util.ErrorResponse(w, sessionID, "No privilege to create table in another user's domain", http.StatusForbidden)
+			util.ErrorResponse(w, sessionID, errors.ErrNoPrivilegeForOperation.Error(), http.StatusForbidden)
 
 			return "", errors.ErrNoPrivilegeForOperation
 		}

@@ -107,33 +107,33 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 
 	if clientID == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.missing.client_id"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.missing.client_id"), http.StatusBadRequest)
 	}
 
 	client := findClient(clientID)
 	if client == nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.invalid.client"), http.StatusUnauthorized)
+			i18n.TLang(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	if redirectURI == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.missing.redirect_uri"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.missing.redirect_uri"), http.StatusBadRequest)
 	}
 
 	if !clientAllowsRedirect(client, redirectURI) {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.invalid.redirect"), http.StatusBadRequest)
 	}
 
 	if responseType == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.missing.response_type"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.missing.response_type"), http.StatusBadRequest)
 	}
 
 	if responseType != "code" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.unsupported.response_type"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.unsupported.response_type"), http.StatusBadRequest)
 	}
 
 	// M2: public clients must supply a code_challenge at the authorization
@@ -163,7 +163,7 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 	//   equivalent proof of identity.
 	if client.ClientSecretHash == "" && codeChallenge == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.pkce.required"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.pkce.required"), http.StatusBadRequest)
 	}
 
 	// Generate a CSRF nonce, embed it in the form, and set it as an HttpOnly
@@ -172,7 +172,7 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 	csrfToken, csrfErr := generateCSRFToken()
 	if csrfErr != nil {
 		return util.ErrorResponse(w, session.ID,
-			"could not generate CSRF token", http.StatusInternalServerError)
+			i18n.TLang(session.Language, "error.oauth.as.csrf.generate"), http.StatusInternalServerError)
 	}
 
 	// OAUTH-L1: set the Secure flag when the connection is HTTPS so that
@@ -233,7 +233,7 @@ func reRenderWithError(
 	newCSRF, csrfErr := generateCSRFToken()
 	if csrfErr != nil {
 		return util.ErrorResponse(w, session.ID,
-			"could not generate CSRF token", http.StatusInternalServerError)
+			i18n.TLang(session.Language, "error.oauth.as.csrf.generate"), http.StatusInternalServerError)
 	}
 
 	// Replace the CSRF cookie with the same Secure-flag logic as the initial
@@ -285,7 +285,7 @@ func reRenderWithError(
 func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if err := r.ParseForm(); err != nil {
 		return util.ErrorResponse(w, session.ID,
-			"could not parse form", http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.form.parse"), http.StatusBadRequest)
 	}
 
 	clientID := r.FormValue("client_id")
@@ -328,25 +328,25 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	if cookieErr != nil || csrfCookie.Value == "" ||
 		subtle.ConstantTimeCompare([]byte(csrfCookie.Value), []byte(csrfFormToken)) != 1 {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.csrf.invalid"), http.StatusForbidden)
+			i18n.TLang(session.Language, "error.oauth.as.csrf.invalid"), http.StatusForbidden)
 	}
 
 	// Re-validate client and redirect_uri on every POST.  These fields come from
 	// hidden form inputs and could be tampered with by a malicious user.
 	if clientID == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.missing.client_id"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.missing.client_id"), http.StatusBadRequest)
 	}
 
 	client := findClient(clientID)
 	if client == nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.invalid.client"), http.StatusUnauthorized)
+			i18n.TLang(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	if !clientAllowsRedirect(client, redirectURI) {
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.invalid.redirect"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.invalid.redirect"), http.StatusBadRequest)
 	}
 
 	// OAUTH-H1: Check the per-username rate-limit counter before attempting any
@@ -440,7 +440,7 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 		})
 
 		return util.ErrorResponse(w, session.ID,
-			i18n.T("oauth.as.invalid.scope"), http.StatusBadRequest)
+			i18n.TLang(session.Language, "error.oauth.as.invalid.scope"), http.StatusBadRequest)
 	}
 
 	// Compute the intersection of the allowlist-validated requested scopes and
@@ -453,7 +453,7 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 	code, err := generateCode()
 	if err != nil {
 		return util.ErrorResponse(w, session.ID,
-			"could not generate authorization code", http.StatusInternalServerError)
+			i18n.TLang(session.Language, "error.oauth.as.code.generate"), http.StatusInternalServerError)
 	}
 
 	storeCode(code, PendingAuthorization{

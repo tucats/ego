@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
@@ -109,7 +110,7 @@ func buildDiscoveryDoc(issuer string) error {
 func DiscoveryHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if discoveryDoc == nil {
 		return util.ErrorResponse(w, session.ID,
-			"OAuth2 Authorization Server not initialized", http.StatusServiceUnavailable)
+			i18n.TLang(session.Language, "error.oauth.as.not.initialized"), http.StatusServiceUnavailable)
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)

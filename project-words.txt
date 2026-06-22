@@ -48,6 +48,7 @@ ciphertext
 CLOB
 colname
 columntype
+combotestapp
 conds
 CONTAINSALL
 cooldown
@@ -136,6 +137,7 @@ libexec
 libpath
 Linc
 listpath
+locktestapp
 loggerid
 LTEQ
 lvalue
@@ -261,6 +263,7 @@ strlist
 subcontext
 subgrammar
 subopt
+subtag
 subtests
 SYMBOLTABLES
 syms
@@ -270,6 +273,7 @@ Tabnine
 Tanh
 termgen
 testapp
+testclient
 testcount
 testhelpers
 testpkg
@@ -320,6 +324,3 @@ zipgo
 zork
 zorp
 دانش
-testclient
-locktestapp
-combotestapp

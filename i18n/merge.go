@@ -5,6 +5,14 @@ package i18n
 func MergeLocalization(additions map[string]map[string]string) int {
 	count := mergeLocalizationMap(additions, messages)
 
+	// The merge above may have introduced a language code that wasn't in
+	// the catalog before (for example, if an operator loads a brand-new
+	// "de" German translation file at runtime via --localization-file).
+	// That means any previously cached answer from SupportedLanguages is
+	// potentially stale, so discard it -- the next call will recompute it
+	// from the now-updated messages map.
+	invalidateSupportedLanguagesCache()
+
 	return count
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/cipher"
 	egoRuntimeUtility "github.com/tucats/ego/runtime/util"
 	auth "github.com/tucats/ego/server/auth"
@@ -145,7 +146,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 // indicating the server is down, the router that called this handler will know that
 // the server is to be stopped.
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	return util.ErrorResponse(w, session.ID, defs.ServerStoppedMessage, http.StatusServiceUnavailable)
+	return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.server.stopped"), http.StatusServiceUnavailable)
 }
 
 // LogHandler is the native handler of the endpoint that retrieves log lines
@@ -174,7 +175,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				"status":  http.StatusBadRequest,
 				"error":   err})
 
-			return util.ErrorResponse(w, session.ID, "Invalid tail integer value: "+v[0], http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.tail.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -188,7 +189,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				"status":  http.StatusBadRequest,
 				"error":   err})
 
-			return util.ErrorResponse(w, session.ID, "Invalid session id value: "+v[0], http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.session.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -278,7 +279,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		ui.Log(ui.RestLogger, "auth.bad.media", ui.A{
 			"session": session.ID})
 
-		return util.ErrorResponse(w, session.ID, "unsupported media type", http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.media.unsupported"), http.StatusBadRequest)
 	}
 
 	return status

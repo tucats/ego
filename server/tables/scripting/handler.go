@@ -40,7 +40,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {
-		return util.ErrorResponse(w, session.ID, "transaction request decode error; "+e.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.tx.decode", ui.A{"error": e}), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.TableLogger, "table.tx.count", ui.A{

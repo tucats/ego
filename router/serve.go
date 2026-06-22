@@ -91,11 +91,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		case http.StatusForbidden:
 			msg = "forbidden access to " + r.URL.Path
-			clientMsg = "forbidden"
+			clientMsg = i18n.TLang(negotiateLanguage(r), "error.route.forbidden")
 
 		case http.StatusNotFound:
 			msg = "endpoint " + r.URL.Path + " not found"
-			clientMsg = "not found"
+			clientMsg = i18n.TLang(negotiateLanguage(r), "error.route.not.found")
 
 			// When the request originates from a web browser, serve a helpful HTML
 			// page instead of the machine-readable JSON error body.
@@ -161,6 +161,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Filename:            route.filename,
 			AcceptsJSON:         json,
 			AcceptsText:         text,
+			Language:            negotiateLanguage(r),
 			Redirect:            route.redirect,
 			Validations:         route.Validations(),
 			Router:              m,
@@ -186,7 +187,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// return 429 with a Retry-After header immediately, before any other check.
 		if session.LockedOut {
 			w.Header().Set("Retry-After", strconv.Itoa(session.RetryAfter))
-			util.ErrorResponse(w, session.ID, "too many failed login attempts", http.StatusTooManyRequests)
+			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.rate.limited"), http.StatusTooManyRequests)
 
 			return
 		}
@@ -207,7 +208,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("WWW-Authenticate", realmHeader)
 			}
 
-			util.ErrorResponse(w, session.ID, errors.ErrInvalidCredentials.Error(), status)
+			util.ErrorResponse(w, session.ID, errors.ErrInvalidCredentials.Localize(session.Language), status)
 
 			return
 		}
@@ -252,7 +253,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"media":   route.acceptMediaTypes})
 
 		if err := util.AcceptedMediaType(r, route.acceptMediaTypes); err != nil {
-			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			status = util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	}
 
@@ -262,7 +263,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"media":   route.contentMediaTypes})
 
 		if err := util.ContentMediaType(r, route.contentMediaTypes); err != nil {
-			status = util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			status = util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	}
 
@@ -291,7 +292,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						fmt.Sprintf(`Basic realm=%s, charset="UTF-8"`, strconv.Quote(Realm)))
 				}
 
-				status = util.ErrorResponse(w, session.ID, i18n.T("error.perm.privilege", ui.A{"permission": permission}), sts)
+				status = util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.privilege", ui.A{"permission": permission}), sts)
 			}
 		}
 
@@ -324,9 +325,9 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Validate that the parameters provided are all permitted and of the correct form.
 	if status == http.StatusOK {
 		if err := route.Disallowed(session); err != nil {
-			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			status = util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		} else if err := util.ValidateParameters(r.URL, route.parameters); err != nil {
-			status = util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			status = util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	}
 
@@ -343,7 +344,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"session": session.ID,
 			})
 
-			util.ErrorResponse(w, session.ID, "not authorized", http.StatusUnauthorized)
+			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.unauthenticated"), http.StatusUnauthorized)
 
 			return
 		} else if route.mustBeAdmin && !session.Admin {
@@ -351,7 +352,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"session": session.ID,
 			})
 
-			util.ErrorResponse(w, session.ID, "not authorized", http.StatusForbidden)
+			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.forbidden"), http.StatusForbidden)
 
 			return
 		}
@@ -375,7 +376,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if readErr != nil {
 			var maxBytesErr *http.MaxBytesError
 			if nativeErrors.As(readErr, &maxBytesErr) {
-				util.ErrorResponse(w, session.ID, "request body too large", http.StatusRequestEntityTooLarge)
+				util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.request.too.large"), http.StatusRequestEntityTooLarge)
 
 				return
 			}
@@ -406,7 +407,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// it means all validations passed, so we can move on to the next step.
 
 		if status != http.StatusOK {
-			status = util.ErrorResponse(w, session.ID, last.Error(), status)
+			status = util.ErrorResponse(w, session.ID, errors.Localize(last, session.Language), status)
 		}
 	}
 
@@ -502,7 +503,7 @@ func validatePaging(session *Session, w http.ResponseWriter) int {
 		if vals := session.Parameters["start"]; len(vals) > 0 {
 			n, err := strconv.Atoi(vals[0])
 			if err != nil || n < 0 {
-				return util.ErrorResponse(w, session.ID, i18n.E("paging.start.invalid"), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.ELang(session.Language, "paging.start.invalid"), http.StatusBadRequest)
 			}
 
 			session.Start = n
@@ -513,11 +514,11 @@ func validatePaging(session *Session, w http.ResponseWriter) int {
 		if vals := session.Parameters["limit"]; len(vals) > 0 {
 			n, err := strconv.Atoi(vals[0])
 			if err != nil || n <= 0 {
-				return util.ErrorResponse(w, session.ID, i18n.E("paging.limit.invalid"), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.ELang(session.Language, "paging.limit.invalid"), http.StatusBadRequest)
 			}
 
 			if n > maxLimit {
-				return util.ErrorResponse(w, session.ID, i18n.E("paging.limit.exceeded"), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.ELang(session.Language, "paging.limit.exceeded"), http.StatusBadRequest)
 			}
 
 			session.Limit = n
@@ -542,6 +543,34 @@ func requestWantsBrowserHTML(r *http.Request) bool {
 	}
 
 	return false
+}
+
+// negotiateLanguage figures out which language the response to this
+// request should be written in, based on the standard HTTP
+// "Accept-Language" request header. This is the same header a web browser
+// sends to tell a website "show me this page in French if you can" — for
+// example a header value of "fr-CA,fr;q=0.9,en;q=0.8" means the client
+// would most prefer Canadian French, then any French, then English.
+//
+// i18n.NegotiateLanguage does the actual parsing of that header and
+// matches it against the languages Ego actually has translations for. If
+// the header is missing, empty, or names only languages Ego doesn't
+// support, NegotiateLanguage returns "" — in that case we fall back to
+// i18n.DefaultLanguage(), which is the same language Ego would use for a
+// plain CLI invocation (normally English, unless overridden by the
+// EGO_LANG/LANG environment variables or the --language command line
+// option).
+//
+// The result of this function is stored once on the Session as
+// Session.Language and does not change for the lifetime of the request,
+// so handler code can read session.Language directly without needing to
+// re-parse the header or worry about concurrent modification.
+func negotiateLanguage(r *http.Request) string {
+	if lang := i18n.NegotiateLanguage(r.Header.Get("Accept-Language")); lang != "" {
+		return lang
+	}
+
+	return i18n.DefaultLanguage()
 }
 
 // serveNotFoundPage substitutes the requested path into the notfound.html asset

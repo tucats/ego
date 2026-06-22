@@ -43,12 +43,12 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have delete permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.delete"), http.StatusForbidden)
 		}
 
 		if where, err := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
-				return util.ErrorResponse(w, session.ID, "operation invalid with empty filter", http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.filter.empty"), http.StatusBadRequest)
 			}
 		} else if err != nil {
 			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
@@ -93,7 +93,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			rowCount, _ := rows.RowsAffected()
 
 			if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-				return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
+				return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 			}
 
 			response := defs.DBRowCount{
@@ -164,7 +164,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableWritePermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have write permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.write"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, false)
@@ -229,7 +229,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 		}
 
 		response := defs.DBRowCount{
@@ -510,7 +510,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have read permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.read"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, true)
@@ -738,7 +738,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableUpdatePermission) {
-			return util.ErrorResponse(w, session.ID, "User does not have update permission", http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.update"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, false)
@@ -794,7 +794,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	if err == nil {
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return util.ErrorResponse(w, session.ID, "no matching rows found", http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 		}
 
 		response := defs.DBRowCount{
@@ -930,7 +930,7 @@ func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWri
 		}
 
 		if !found {
-			return util.ErrorResponse(w, session.ID, "invalid COLUMN rest parameter: "+name, http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.column.parameter", ui.A{"name": name}), http.StatusBadRequest)
 		}
 	}
 
