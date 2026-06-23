@@ -29,13 +29,13 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	// The "if u, err := …; err != nil { … } else { … }" pattern is idiomatic
 	// Go: u and err are scoped to this if/else block.
 	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
-		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	} else {
 		// Decode the JSON request body into a new defs.User struct that carries
 		// the fields the caller wants to change.
 		newUser, err := getUserFromBody(r, session)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		// Track whether any actual change was made so we can skip the write
@@ -45,7 +45,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		// Renaming users is not supported — reject the request if the body
 		// specifies a different name than the URL.
 		if newUser.Name != u.Name {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.user.rename.denied"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.rename.denied"), http.StatusBadRequest)
 		}
 
 		// If a new password was provided, hash it and replace the stored hash.
@@ -53,7 +53,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		if newUser.Password != "" {
 			h, err := auth.HashPassword(newUser.Password)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.T("error.user.hash.failed", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.hash.failed", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 			}
 
 			u.Password = h
@@ -78,7 +78,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 				if strings.HasPrefix(perm, "ego.") {
 					// Full "ego.something" form — must match the known list.
 					if !util.InListInsensitive(perm, defs.AllPermissions...) {
-						msg := errors.ErrInvalidPermission.Clone().Context(perm).Error()
+						msg := errors.ErrInvalidPermission.Clone().Context(perm).Localize(session.Language)
 
 						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 					}
@@ -87,7 +87,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 					// known permission, and guide the caller to the right spelling.
 					testPerm := "ego." + strings.ToLower(perm)
 					if util.InListInsensitive(testPerm, defs.AllPermissions...) {
-						msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Error()
+						msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Localize(session.Language)
 
 						return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 					}
@@ -137,7 +137,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		// evicting cached credentials without cause.
 		if changed {
 			if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.T("error.user.update.failed", ui.A{"name": name, "err": err.Error()}), http.StatusNotFound)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.update.failed", ui.A{"name": name, "err": err.Error()}), http.StatusNotFound)
 			}
 		}
 

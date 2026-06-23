@@ -103,7 +103,7 @@ func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		})
 
 	default:
-		return util.ErrorResponse(w, session.ID, i18n.T("error.sort.order.invalid", ui.A{"order": sortBy}), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.sort.order.invalid", ui.A{"order": sortBy}), http.StatusBadRequest)
 	}
 
 	// Set the Content-Type header so the client knows the response body is

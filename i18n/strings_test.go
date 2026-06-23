@@ -115,7 +115,7 @@ func TestTLang(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := TLang(tt.lang, tt.key)
+			got := Text(tt.lang, tt.key)
 			if got != tt.want {
 				t.Errorf("TLang(%q, %q) = %q, want %q", tt.lang, tt.key, got, tt.want)
 			}

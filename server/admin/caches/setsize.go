@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/services"
 	"github.com/tucats/ego/util"
@@ -38,7 +39,7 @@ func SetCacheSizeHandler(session *router.Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Log the raw request body now that we know it was valid.

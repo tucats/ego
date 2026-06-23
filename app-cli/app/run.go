@@ -23,6 +23,14 @@ func runFromContext(context *cli.Context) error {
 	// to the caller's grammar definition.
 	grammar := []cli.Option{
 		{
+			LongName:    "language",
+			Aliases:     []string{"lang"},
+			OptionType:  cli.StringType,
+			Description: "global.language",
+			Action:      LanguageAction,
+			EnvVar:      defs.EgoLangEnv,
+		},
+		{
 			LongName:   "env-config",
 			OptionType: cli.BooleanType,
 			Action:     EnvAction,

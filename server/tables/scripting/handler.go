@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/expressions"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
@@ -40,7 +41,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 	e := json.NewDecoder(r.Body).Decode(&tasks)
 	if e != nil {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.tx.decode", ui.A{"error": e}), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.tx.decode", ui.A{"error": e}), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.TableLogger, "table.tx.count", ui.A{
@@ -120,7 +121,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 		err = db.Begin()
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
 		// Second pass: execute each operation in order.
@@ -235,7 +236,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 					if err != nil {
 						_ = db.Rollback()
 
-						return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+						return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 					}
 
 					// Build a temporary Ego symbol table for the expression evaluator,
@@ -296,7 +297,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 		// All operations succeeded — commit the transaction.
 		if err = db.Commit(); err != nil {
-			return util.ErrorResponse(w, session.ID, "transaction commit error; "+err.Error(), httpStatus)
+			return util.ErrorResponse(w, session.ID, "transaction commit error; "+errors.Localize(err, session.Language), httpStatus)
 		}
 
 		// If the commit succeeded and one or more SQL operations altered the table metadata, flush the

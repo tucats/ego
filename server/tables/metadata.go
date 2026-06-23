@@ -57,16 +57,14 @@ func DSNMetadataHandler(session *router.Session, w http.ResponseWriter, r *http.
 	// enumerating the schema of a DSN they have no business accessing.
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID,
-			i18n.T("error.db.list.error", ui.A{"err": err}),
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.db.list.error", ui.A{"err": err}),
 			http.StatusBadRequest)
 	}
 
 	if db == nil {
 		// GetDatabase should never return (nil, nil), but guard against it so
 		// we get a clear 500 rather than a nil-dereference panic.
-		return util.ErrorResponse(w, session.ID,
-			i18n.T("error.db.nil.pointer"),
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.db.nil.pointer"),
 			http.StatusInternalServerError)
 	}
 
@@ -88,7 +86,7 @@ func DSNMetadataHandler(session *router.Session, w http.ResponseWriter, r *http.
 	// database does the paging work rather than loading all names into memory.
 	tableNames, httpStatus, err := listTableNamesForMetadata(db, session, r)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), httpStatus)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), httpStatus)
 	}
 
 	// For each table name, retrieve its column descriptors. If a table

@@ -142,7 +142,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 	// sure we decrease the active count whenever we leave this routine.
 	waiting, err := waitForTurn(session.ID)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	if waiting {
@@ -204,7 +204,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 	// Copy the body from the request as a string
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	child.Body = string(body)
@@ -219,7 +219,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 			"session": child.SessionID,
 			"error":   err.Error()})
 
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	err = os.WriteFile(requestFileName, b, 0644)
@@ -228,7 +228,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 			"session": session.ID,
 			"error":   err.Error()})
 
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Now, run the child process. This will block until the child process completes.
@@ -265,7 +265,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 
 		w.Header().Add("Content-Type", "application/json")
 
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Determine the filename of the response file, and read it.
@@ -279,7 +279,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 
 		w.Header().Add("Content-Type", "application/json")
 
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Parse the json reply from the child process
@@ -293,7 +293,7 @@ func callChildServices(session *router.Session, w http.ResponseWriter, r *http.R
 
 		w.Header().Add("Content-Type", "application/json")
 
-		return util.ErrorResponse(w, child.SessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, child.SessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Gather the info from the response, and send it back to the calling client.

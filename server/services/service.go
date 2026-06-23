@@ -291,7 +291,7 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 			msg = fmt.Sprintf(", %s", e.GetContext())
 		}
 
-		return util.ErrorResponse(w, session.ID, i18n.T("error.service.aborted", ui.A{"msg": msg}), http.StatusServiceUnavailable)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.service.aborted", ui.A{"msg": msg}), http.StatusServiceUnavailable)
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
@@ -309,7 +309,7 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, i18n.T("error.service.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.service.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
 	// No errors, so let's figure out how to format the response to the calling client.

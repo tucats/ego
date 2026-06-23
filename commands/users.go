@@ -316,9 +316,9 @@ func formatUserCollectionAsText(c *cli.Context, ud defs.UserCollection) error {
 			perms = i18n.L("none")
 		}
 
-		passkeys := i18n.T("true")
+		passkeys := i18n.L("true")
 		if string(u.Passkeys) == "0" {
-			passkeys = i18n.T("false")
+			passkeys = i18n.L("false")
 		}
 
 		if showID {

@@ -31,7 +31,7 @@ func ListTablesHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	if len(v) == 1 {
 		includeRowCounts, err = data.Bool(v[0])
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.table.rowcount.param", ui.A{"value": v[0]}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.rowcount.param", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -48,9 +48,9 @@ func ListTablesHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		}
 	}
 
-	msg := i18n.T("error.db.list.error", ui.A{"err": err})
+	msg := i18n.Text(session.Language, "error.db.list.error", ui.A{"err": err})
 	if err == nil && database == nil {
-		msg = i18n.T("error.db.nil.pointer")
+		msg = i18n.Text(session.Language, "error.db.nil.pointer")
 	}
 
 	return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
@@ -169,7 +169,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 		default:
 			err = errors.ErrUnsupportedDatabase.Context(db.Provider)
 
-			return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusBadRequest)
+			return nil, 0, err, util.ErrorResponse(w, db.Session.ID, errors.Localize(err, db.Session.Language), http.StatusBadRequest)
 		}
 
 		tableInfo, err := db.Query(columnQuery)
@@ -213,8 +213,8 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 
 			default:
 				err = errors.ErrUnsupportedDatabase.Context(db.Provider)
-				
-				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusBadRequest)
+
+				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, errors.Localize(err, db.Session.Language), http.StatusBadRequest)
 			}
 
 			q, err := parsing.QueryParameters(rowCountTemplate, map[string]string{
@@ -222,12 +222,12 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 				"table":  name,
 			})
 			if err != nil {
-				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
+				return nil, 0, err, util.ErrorResponse(w, db.Session.ID, errors.Localize(err, db.Session.Language), http.StatusInternalServerError)
 			}
 
 			result, e2 := db.Query(q)
 			if e2 != nil {
-				return nil, 0, e2, util.ErrorResponse(w, db.Session.ID, e2.Error(), http.StatusInternalServerError)
+				return nil, 0, e2, util.ErrorResponse(w, db.Session.ID, errors.Localize(e2, db.Session.Language), http.StatusInternalServerError)
 			}
 
 			defer result.Close()

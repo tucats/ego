@@ -37,14 +37,14 @@ func TokenRevokeHandler(session *router.Session, w http.ResponseWriter, r *http.
 	// more direct when we only need the raw bytes and do not need streaming.
 	b, err = io.ReadAll(r.Body)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// json.Unmarshal decodes the JSON bytes into ids.  A JSON array of strings
 	// (["id1","id2",...]) maps directly to []string in Go.
 	err = json.Unmarshal(b, &ids)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
@@ -58,7 +58,7 @@ func TokenRevokeHandler(session *router.Session, w http.ResponseWriter, r *http.
 	for _, id := range ids {
 		err = tokens.Blacklist(id)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		ui.Log(ui.AuthLogger, "auth.blacklist.added", ui.A{
@@ -71,7 +71,7 @@ func TokenRevokeHandler(session *router.Session, w http.ResponseWriter, r *http.
 	// supplied arguments.  Here it produces something like "3 tokens revoked."
 	// util.ErrorResponse is used here not because this is an error, but because
 	// it is a convenient way to return a plain text message with HTTP 200 OK.
-	msg := i18n.M("tokens.revoked", ui.A{
+	msg := i18n.MLang(session.Language, "tokens.revoked", ui.A{
 		"count": len(ids),
 	})
 
@@ -93,7 +93,7 @@ func TokenListHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	// date format instead of an opaque string.
 	tokensList, err = tokens.List()
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Convert the internal BlackListItem slice into the API-facing
@@ -170,7 +170,7 @@ func TokenFlushHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	// tokens.Flush deletes expired entries and returns how many were removed.
 	count, err := tokens.Flush()
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// defs.DBRowCount is a generic "rows affected" envelope reused here to
@@ -215,10 +215,10 @@ func TokenDeleteHandler(session *router.Session, w http.ResponseWriter, r *http.
 		// all — we return 404 so the caller can distinguish "not found" from
 		// other failures.
 		if errors.Equals(err, errors.ErrNotFound) {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
 		}
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	ui.Log(ui.AuthLogger, "auth.blacklist.removed", ui.A{

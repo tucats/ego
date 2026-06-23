@@ -49,12 +49,12 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
 		if !session.Admin && Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, i18n.T("error.perm.admin"), http.StatusForbidden)
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
 		}
 
 		// Create an array of column definitions which will receive the JSON payload from the
 		// request.
-		columns, httpStatus := getColumnPayload(r, w, sessionID)
+		columns, httpStatus := getColumnPayload(r, w, session)
 		if httpStatus > 200 {
 			return httpStatus
 		}
@@ -62,7 +62,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		// Generate the SQL string that will create the table.
 		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider, db.HasRowID)
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		if q == "" {
@@ -84,7 +84,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		default:
 			return util.ErrorResponse(w, sessionID,
-				errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+				errors.ErrUnsupportedDatabase.Context(db.Provider).Localize(session.Language),
 				http.StatusBadRequest)
 		}
 
@@ -127,7 +127,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			"query":   q,
 			"error":   err.Error()})
 
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// We got here because we failed to open the database connection.
@@ -139,30 +139,30 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		err = errors.ErrGeneric
 	}
 
-	return util.ErrorResponse(w, sessionID, err.Error(), http.StatusBadRequest)
+	return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 }
 
-func getColumnPayload(r *http.Request, w http.ResponseWriter, sessionID int) ([]defs.DBColumn, int) {
+func getColumnPayload(r *http.Request, w http.ResponseWriter, session *router.Session) ([]defs.DBColumn, int) {
 	columns := []defs.DBColumn{}
 
 	// Read the body of the request and decode the JSON as an array of DBColumn objects.
 	// If the payload has an ill-formed JSON string, return the error.
 	if err := json.NewDecoder(r.Body).Decode(&columns); err != nil {
-		return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.create.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
+		return nil, util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.create.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
 	}
 
 	// Validate the column definitions, which must have a name and valid type.
 	for _, column := range columns {
 		if column.Name == "" {
-			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.column.name.empty"), http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.column.name.empty"), http.StatusBadRequest)
 		}
 
 		if column.Type == "" {
-			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.type.name.empty"), http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.type.name.empty"), http.StatusBadRequest)
 		}
 
 		if !parsing.KeywordMatch(column.Type, defs.TableColumnTypeNames...) {
-			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.table.type.name.invalid", ui.A{"name": column.Type}), http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.type.name.invalid", ui.A{"name": column.Type}), http.StatusBadRequest)
 		}
 	}
 
@@ -191,7 +191,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		// An unrecognized provider cannot proceed.  Write an error response and signal
 		// failure to the caller so it stops further processing.
 		util.ErrorResponse(w, sessionID,
-			errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+			errors.ErrUnsupportedDatabase.Context(db.Provider).Localize(db.Session.Language),
 			http.StatusBadRequest)
 
 		return false
@@ -209,7 +209,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		"schema": schema,
 	})
 	if err != nil {
-		util.ErrorResponse(w, sessionID, i18n.T("error.table.schema.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return false
 	}
@@ -218,7 +218,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 	// payload and return indicating we could not or did not create a schema.
 	result, err := db.Exec(q)
 	if err != nil {
-		util.ErrorResponse(w, sessionID, i18n.T("error.table.schema.create", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.create", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
 		return false
 	}
@@ -437,14 +437,14 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 		tableName, _ := parsing.FullName(db.Provider, user, table)
 
 		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, i18n.T("error.perm.admin"), http.StatusForbidden)
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
 		}
 
 		q, err := parsing.QueryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 		}
 
 		// When dropping a table via a DSN, the correct DROP TABLE syntax depends on
@@ -461,7 +461,7 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 				})
 
 				if err != nil {
-					return util.ErrorResponse(w, sessionID, i18n.T("error.db.operation"), http.StatusInternalServerError)
+					return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.db.operation"), http.StatusInternalServerError)
 				}
 
 			case defs.PostgresProvider:
@@ -469,7 +469,7 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 
 			default:
 				return util.ErrorResponse(w, sessionID,
-					errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+					errors.ErrUnsupportedDatabase.Context(db.Provider).Localize(session.Language),
 					http.StatusBadRequest)
 			}
 		}
@@ -520,7 +520,7 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 	}
 
 	if err == nil && db == nil {
-		return util.ErrorResponse(w, sessionID, i18n.T("error.db.nil.pointer"), http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.db.nil.pointer"), http.StatusInternalServerError)
 	}
 
 	detail := strings.TrimPrefix(err.Error(), "pq: ")
@@ -533,7 +533,7 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 		status = http.StatusNotFound
 	}
 
-	return util.ErrorResponse(w, sessionID, i18n.T("error.table.delete.error"), status)
+	return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.table.delete.error"), status)
 }
 
 func parameterString(r *http.Request) string {

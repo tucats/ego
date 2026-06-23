@@ -85,7 +85,7 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	if expiresList := session.Parameters[defs.ExpiresParameterName]; len(expiresList) > 0 {
 		duration, err := time.ParseDuration(expiresList[0])
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.tx.expiration"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.tx.expiration"), http.StatusBadRequest)
 		}
 
 		expires = time.Now().Add(duration)
@@ -96,7 +96,7 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	defer transactionsLock.Unlock()
 
 	if len(transactions) >= MaxTransactions {
-		return util.ErrorResponse(w, session.ID, i18n.T("error.tx.max"), http.StatusTooManyRequests)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.tx.max"), http.StatusTooManyRequests)
 	}
 
 	// Access the database and table.
@@ -188,7 +188,7 @@ func RollbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	// Get the transaction ID parameter from the request.
 	parameters := session.Parameters[defs.TransactionIDParameterName]
 	if len(parameters) != 1 {
-		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Localize(session.Language), http.StatusBadRequest)
 	}
 
 	// Get the transaction ID from the request parameters.
@@ -200,7 +200,7 @@ func RollbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	tx, ok := transactions[id]
 	if !ok {
-		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Error(), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Localize(session.Language), http.StatusNotFound)
 	}
 
 	tx.db.Rollback()
@@ -226,7 +226,7 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	// Get the transaction ID parameter from the request.
 	parameters := session.Parameters[defs.TransactionIDParameterName]
 	if len(parameters) != 1 {
-		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Localize(session.Language), http.StatusBadRequest)
 	}
 
 	// Get the transaction ID from the request parameters.
@@ -238,7 +238,7 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	tx, ok := transactions[id]
 	if !ok {
-		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Error(), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Localize(session.Language), http.StatusNotFound)
 	}
 
 	// Use the transaction we found to do a commit
@@ -251,7 +251,7 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 			"error":   err.Error(),
 		})
 
-		return util.ErrorResponse(w, session.ID, i18n.T("error.db.commit"), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.db.commit"), http.StatusInternalServerError)
 	}
 
 	ui.Log(ui.TableLogger, "table.tx.rest.commit", ui.A{

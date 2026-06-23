@@ -171,7 +171,7 @@ func webAuthnInstance(w http.ResponseWriter, r *http.Request, session *Session) 
 		ui.Log(ui.AuthLogger, "auth.webauthn.config.error", ui.A{
 			"session": session.ID,
 			"error":   err})
-		util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.unavailable", ui.A{"error": err}), http.StatusInternalServerError)
+		util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.unavailable", ui.A{"error": err}), http.StatusInternalServerError)
 
 		return nil
 	}
@@ -271,7 +271,7 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	tokenStr, ok := v.(string)
@@ -388,7 +388,7 @@ func passkeyGuard(w http.ResponseWriter, session *Session) int {
 		ui.Log(ui.AuthLogger, "auth.webauthn.disabled", ui.A{
 			"session": session.ID})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.disabled"), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.disabled"), http.StatusNotFound)
 	}
 
 	return 0
@@ -416,12 +416,12 @@ func WebAuthnLoginBeginHandler(session *Session, w http.ResponseWriter, r *http.
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	nonce, err := storeChallenge(sessionData)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	http.SetCookie(w, challengeCookie(nonce, 300, IsSecureRequest(r)))
@@ -459,7 +459,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Clear the challenge cookie regardless of outcome.
@@ -485,7 +485,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
 	}
 
 	// Reject logins where the authenticator sign counter did not advance — a
@@ -495,7 +495,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"user":    foundUser.Name})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.verify.failed"), http.StatusUnauthorized)
 	}
 
 	// Verify the user has permission to log in.
@@ -505,7 +505,7 @@ func WebAuthnLoginFinishHandler(session *Session, w http.ResponseWriter, r *http
 			"session": session.ID,
 			"user":    foundUser.Name})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.not.permitted"), http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.not.permitted"), http.StatusForbidden)
 	}
 
 	// Persist the updated sign counter back to the user record.
@@ -542,7 +542,7 @@ func WebAuthnRegisterBeginHandler(session *Session, w http.ResponseWriter, r *ht
 
 	u, err := auth.AuthService.ReadUser(session.ID, session.User, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	options, sessionData, err := wau.BeginRegistration(auth.WebAuthnUserFrom(u))
@@ -551,12 +551,12 @@ func WebAuthnRegisterBeginHandler(session *Session, w http.ResponseWriter, r *ht
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	nonce, err := storeChallenge(sessionData)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	http.SetCookie(w, challengeCookie(nonce, 300, IsSecureRequest(r)))
@@ -591,7 +591,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 
 	u, err := auth.AuthService.ReadUser(session.ID, session.User, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	sessionData, err := loadChallenge(r)
@@ -600,7 +600,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Clear the challenge cookie regardless of outcome.
@@ -613,7 +613,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 			"user":    session.User,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, i18n.T("error.passkey.register.error", ui.A{"err": err.Error()}), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.passkey.register.error", ui.A{"err": err.Error()}), http.StatusBadRequest)
 	}
 
 	// Append the new credential to the existing set and persist.
@@ -622,13 +622,13 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 
 	raw, err := auth.MarshalCredentials(existing)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	u.Passkeys = raw
 
 	if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	_ = auth.AuthService.Flush()
@@ -673,19 +673,19 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 	if !strings.EqualFold(name, session.User) {
 		perms := auth.GetPermissions(session.ID, session.User)
 		if !util.InListInsensitive(defs.RootPermission, perms...) {
-			return util.ErrorResponse(w, session.ID, errors.ErrNoPermission.Error(), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, errors.ErrNoPermission.Localize(session.Language), http.StatusForbidden)
 		}
 	}
 
 	u, err := auth.AuthService.ReadUser(session.ID, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	}
 
 	u.Passkeys = nil
 
 	if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	_ = auth.AuthService.Flush()

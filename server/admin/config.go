@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
 )
@@ -29,7 +30,7 @@ func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	if ui.IsActive(ui.RestLogger) {

@@ -107,7 +107,7 @@ func webAuthnBeginGuard(w http.ResponseWriter, session *Session, r *http.Request
 			"ip":      ip,
 		})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.rate.limited"), http.StatusTooManyRequests)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.rate.limited"), http.StatusTooManyRequests)
 	}
 
 	pending := caches.Size(caches.WebAuthnChallengeCache)
@@ -117,7 +117,7 @@ func webAuthnBeginGuard(w http.ResponseWriter, session *Session, r *http.Request
 			"count":   pending,
 		})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.webauthn.capacity"), http.StatusTooManyRequests)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.webauthn.capacity"), http.StatusTooManyRequests)
 	}
 
 	return 0

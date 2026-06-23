@@ -24,7 +24,7 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	// with 400 Bad Request.
 	userInfo, err := getUserFromBody(r, session)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Create a symbol table scoped to this request. auth.SetUser is an Ego
@@ -52,7 +52,7 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 				// The caller used the full "ego.something" form — check it
 				// exists in defs.AllPermissions.
 				if !util.InListInsensitive(perm, defs.AllPermissions...) {
-					msg := errors.ErrInvalidPermission.Clone().Context(perm).Error()
+					msg := errors.ErrInvalidPermission.Clone().Context(perm).Localize(session.Language)
 
 					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 				}
@@ -62,7 +62,7 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 				// which spelling to use (ambiguous permission error).
 				testPerm := "ego." + strings.ToLower(perm)
 				if util.InListInsensitive(testPerm, defs.AllPermissions...) {
-					msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Error()
+					msg := errors.ErrAmbiguousPermission.Clone().Context(perm).Chain(errors.ErrDidYouMean.Clone().Context(testPerm)).Localize(session.Language)
 
 					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 				}
@@ -109,10 +109,10 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		} else {
 			// SetUser succeeded but the subsequent ReadUser failed — unexpected
 			// server-side error.
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 	} else {
 		// SetUser itself failed — report the auth layer's error message.
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/caches"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
@@ -25,12 +26,12 @@ import (
 //	    Authentication(true, true)
 func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if systemDB == nil {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.not.running"), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.not.running"), http.StatusNotFound)
 	}
 
 	members, err := ListMembers(systemDB)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	response := defs.ClusterStatusResponse{
@@ -69,13 +70,13 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 //	    Authentication(false, false)
 func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.token.invalid"), http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.token.invalid"), http.StatusForbidden)
 	}
 
 	// Decode the cache flush request from the JSON body.
 	var req defs.ClusterFlushRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return util.ErrorResponse(w, session.ID, "invalid request body: "+err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, "invalid request body: "+errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	cacheID := req.CacheID
@@ -121,7 +122,7 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 //	    Authentication(false, false)
 func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.shutdown", ui.A{
@@ -153,20 +154,20 @@ func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *h
 //	    Authentication(false, false)
 func ClusterRemoveHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
 	}
 
 	if systemDB == nil {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.not.running"), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.not.running"), http.StatusNotFound)
 	}
 
 	nodeID := r.URL.Query().Get("node_id")
 	if nodeID == "" {
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.cluster.node.id.required"), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.node.id.required"), http.StatusBadRequest)
 	}
 
 	if err := RemoveMember(systemDB, nodeID); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.evict", ui.A{

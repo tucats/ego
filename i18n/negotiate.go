@@ -194,14 +194,14 @@ func NegotiateLanguage(header string) string {
 				continue
 			}
 
-			parsedQuality, err := strconv.ParseFloat(strings.TrimPrefix(param, qualityPrefix), 64)
-			if err == nil {
-				quality = parsedQuality
-			}
 			// If the quality value doesn't parse as a number, we simply
 			// keep the default of 1.0 rather than rejecting the whole
 			// header — a slightly malformed quality value from a client
 			// shouldn't prevent language negotiation from working at all.
+			parsedQuality, err := strconv.ParseFloat(strings.TrimPrefix(param, qualityPrefix), 64)
+			if err == nil {
+				quality = parsedQuality
+			}
 		}
 
 		// Language tags can include a region, such as "fr-CA" (French as

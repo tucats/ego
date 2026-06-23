@@ -43,15 +43,15 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.delete"), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.delete"), http.StatusForbidden)
 		}
 
 		if where, err := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
-				return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.filter.empty"), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.filter.empty"), http.StatusBadRequest)
 			}
 		} else if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		columns := parsing.ColumnsFromURL(r.URL)
@@ -59,7 +59,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 		q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb, db.Provider)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
@@ -93,7 +93,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			rowCount, _ := rows.RowsAffected()
 
 			if rowCount == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-				return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 			}
 
 			response := defs.DBRowCount{
@@ -118,7 +118,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				"status":  response.Status})
 
 			if localTx {
-				err = db.Commit()
+				_ = db.Commit()
 
 				ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
 					"session": session.ID,
@@ -128,11 +128,11 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return response.Status
 		}
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK
@@ -164,12 +164,12 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableWritePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.write"), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.write"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		buf := new(strings.Builder)
@@ -229,7 +229,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		}
 
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 		}
 
 		response := defs.DBRowCount{
@@ -266,7 +266,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return status
 		}
 
-		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	if err != nil {
@@ -275,7 +275,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			status = http.StatusForbidden
 		}
 
-		return util.ErrorResponse(w, session.ID, insertErrorPrefix+err.Error(), status)
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), status)
 	}
 
 	return http.StatusOK
@@ -336,7 +336,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 		tableName, e := parsing.TableNameFromRequest(r)
 		if e != nil {
-			return 0, util.ErrorResponse(w, session.ID, e.Error(), http.StatusBadRequest)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(e, session.Language), http.StatusBadRequest)
 		}
 
 		// Does the row to be inserted already have a row id, and we are in upsert mode? If
@@ -377,7 +377,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 			q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, selectVerb, db.Provider)
 			if err != nil {
-				return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+				return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 			}
 
 			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
@@ -416,14 +416,14 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		}
 
 		if err != nil {
-			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
 		}
 
 		_, err = db.Exec(q, values...)
 		if err == nil {
 			count++
 		} else {
-			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
 		}
 	}
 
@@ -448,7 +448,7 @@ func getRowSet(rawPayload string, session *router.Session, w http.ResponseWriter
 
 			err = json.Unmarshal([]byte(rawPayload), &item)
 			if err != nil {
-				return defs.DBRowSet{}, util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+err.Error(), http.StatusBadRequest)
+				return defs.DBRowSet{}, util.ErrorResponse(w, session.ID, "Invalid INSERT payload: "+errors.Localize(err, session.Language), http.StatusBadRequest)
 			} else {
 				rowSet.Count = 1
 				rowSet.Rows = make([]map[string]any, 1)
@@ -460,7 +460,7 @@ func getRowSet(rawPayload string, session *router.Session, w http.ResponseWriter
 	// If at this point we have an empty row set, then just bail out now. Return a success
 	// status but an indicator that nothing was done.
 	if len(rowSet.Rows) == 0 {
-		return rowSet, util.ErrorResponse(w, session.ID, errors.ErrTableNoRows.Error(), http.StatusNoContent)
+		return rowSet, util.ErrorResponse(w, session.ID, errors.ErrTableNoRows.Localize(session.Language), http.StatusNoContent)
 	}
 
 	return rowSet, http.StatusOK
@@ -510,12 +510,12 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.read"), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, true)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		selectedColumns := parsing.ColumnsFromURL(r.URL)
@@ -547,7 +547,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 				}
 
 				if !found {
-					return util.ErrorResponse(w, session.ID, errors.ErrInvalidColumnName.Context(name).Error(), http.StatusBadRequest)
+					return util.ErrorResponse(w, session.ID, errors.ErrInvalidColumnName.Context(name).Localize(session.Language), http.StatusBadRequest)
 				}
 			}
 
@@ -574,7 +574,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 
 		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), actualQueryColumns, tableName, session.User, selectVerb, db.Provider)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		if p := strings.Index(queryText, syntaxErrorPrefix); p >= 0 {
@@ -602,7 +602,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		"session": session.ID,
 		"error":   err.Error()})
 
-	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+	return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 }
 
 func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *router.Session, w http.ResponseWriter) error {
@@ -738,7 +738,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
 		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableUpdatePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.update"), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
 		}
 
 		columns, err = getColumnInfo(db, tableName, false)
@@ -794,7 +794,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	if err == nil {
 		if count == 0 && settings.GetBool(defs.TablesServerEmptyRowsetError) {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.row.not.found"), http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 		}
 
 		response := defs.DBRowCount{
@@ -821,7 +821,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			"count":   count,
 			"status":  status})
 	} else {
-		return util.ErrorResponse(w, session.ID, "Error updating table, "+err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, "Error updating table, "+errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK
@@ -860,7 +860,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 
 			_ = db.Rollback()
 
-			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		counts, err := db.Exec(q, values...)
@@ -870,7 +870,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 		} else {
 			_ = db.Rollback()
 
-			return 0, util.ErrorResponse(w, session.ID, err.Error(), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
 		}
 	}
 
@@ -887,7 +887,7 @@ func getExcludeList(r *http.Request, db *database.Database, tableName string, w 
 		// that are excluded.
 		columns, err := getColumnInfo(db, tableName, false)
 		if err != nil {
-			return nil, util.ErrorResponse(w, db.Session.ID, err.Error(), http.StatusInternalServerError)
+			return nil, util.ErrorResponse(w, db.Session.ID, errors.Localize(err, db.Session.Language), http.StatusInternalServerError)
 		}
 
 		for _, column := range columns {
@@ -930,7 +930,7 @@ func validateColumnName(name string, columns []defs.DBColumn, w http.ResponseWri
 		}
 
 		if !found {
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.table.column.parameter", ui.A{"name": name}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.column.parameter", ui.A{"name": name}), http.StatusBadRequest)
 		}
 	}
 
@@ -960,7 +960,7 @@ func getUpdateRows(r *http.Request, session *router.Session, err error, w http.R
 
 		err = json.Unmarshal([]byte(rawPayload), &item)
 		if err != nil {
-			return defs.DBRowSet{}, nil, util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+err.Error(), http.StatusBadRequest)
+			return defs.DBRowSet{}, nil, util.ErrorResponse(w, session.ID, "Invalid UPDATE payload: "+errors.Localize(err, session.Language), http.StatusBadRequest)
 		} else {
 			rowSet.Count = 1
 			rowSet.Rows = make([]map[string]any, 1)

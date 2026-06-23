@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/assets"
 	"github.com/tucats/ego/util"
@@ -16,7 +17,7 @@ func UIHandler(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// Load the dashboard.html asset from the local asset store. We don't care about it's size.
 	uiAsset, _, err := assets.Loader(session.ID, "/assets/dashboard/dashboard.html", assets.StartOfData, assets.EndOfData)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Set the Content-Type header to text/html.
@@ -25,7 +26,7 @@ func UIHandler(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// Write the dashboard.html content to the response writer.
 	_, err = w.Write(uiAsset)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	return http.StatusOK

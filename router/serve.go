@@ -91,11 +91,11 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		case http.StatusForbidden:
 			msg = "forbidden access to " + r.URL.Path
-			clientMsg = i18n.TLang(negotiateLanguage(r), "error.route.forbidden")
+			clientMsg = i18n.Text(negotiateLanguage(r), "error.route.forbidden")
 
 		case http.StatusNotFound:
 			msg = "endpoint " + r.URL.Path + " not found"
-			clientMsg = i18n.TLang(negotiateLanguage(r), "error.route.not.found")
+			clientMsg = i18n.Text(negotiateLanguage(r), "error.route.not.found")
 
 			// When the request originates from a web browser, serve a helpful HTML
 			// page instead of the machine-readable JSON error body.
@@ -187,7 +187,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// return 429 with a Retry-After header immediately, before any other check.
 		if session.LockedOut {
 			w.Header().Set("Retry-After", strconv.Itoa(session.RetryAfter))
-			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.rate.limited"), http.StatusTooManyRequests)
+			util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.auth.rate.limited"), http.StatusTooManyRequests)
 
 			return
 		}
@@ -292,7 +292,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						fmt.Sprintf(`Basic realm=%s, charset="UTF-8"`, strconv.Quote(Realm)))
 				}
 
-				status = util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.perm.privilege", ui.A{"permission": permission}), sts)
+				status = util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": permission}), sts)
 			}
 		}
 
@@ -344,7 +344,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"session": session.ID,
 			})
 
-			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.unauthenticated"), http.StatusUnauthorized)
+			util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.auth.unauthenticated"), http.StatusUnauthorized)
 
 			return
 		} else if route.mustBeAdmin && !session.Admin {
@@ -352,7 +352,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"session": session.ID,
 			})
 
-			util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.auth.forbidden"), http.StatusForbidden)
+			util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.auth.forbidden"), http.StatusForbidden)
 
 			return
 		}
@@ -376,7 +376,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if readErr != nil {
 			var maxBytesErr *http.MaxBytesError
 			if nativeErrors.As(readErr, &maxBytesErr) {
-				util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.request.too.large"), http.StatusRequestEntityTooLarge)
+				util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.request.too.large"), http.StatusRequestEntityTooLarge)
 
 				return
 			}

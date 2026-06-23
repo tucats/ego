@@ -89,6 +89,8 @@ func LanguageAction(c *cli.Context) error {
 		i18n.Language = strings.ToLower(language)[0:2]
 	}
 
+	os.Setenv(defs.EgoLangEnv, i18n.Language)
+
 	return nil
 }
 

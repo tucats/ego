@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/ego/app-cli/settings"
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/oauth"
 	"github.com/tucats/ego/tokens"
@@ -117,7 +118,7 @@ func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			"error":   err.Error(),
 		})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Extract the authorization code.

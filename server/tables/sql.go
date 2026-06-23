@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/dsns"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/server/tables/database"
@@ -40,14 +41,14 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	if b, err := io.ReadAll(r.Body); err == nil && b != nil {
 		body = string(b)
 	} else {
-		return util.ErrorResponse(w, sessionID, i18n.T("error.sql.payload.empty"), http.StatusBadRequest)
+		return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.payload.empty"), http.StatusBadRequest)
 	}
 
 	// The payload can be either a single string, or a sequence of strings in an array.
 	// So try to decode as an array, but if that fails, try as a single string. Note that
 	// we have to re-use the body that was previously read because the r.Body() reader has
 	// been exhausted already.
-	statements, httpStatus := getStatementsFromRequest(body, w, sessionID)
+	statements, httpStatus := getStatementsFromRequest(body, w, session)
 	if httpStatus > http.StatusOK {
 		return httpStatus
 	}
@@ -57,7 +58,7 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	for n, statement := range statements {
 		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
 			if n < len(statements)-1 {
-				return util.ErrorResponse(w, sessionID, i18n.T("error.sql.select.last"), http.StatusBadRequest)
+				return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.select.last"), http.StatusBadRequest)
 			}
 		}
 	}
@@ -65,14 +66,14 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// We always do this under control of a transaction, so set that up now.
 	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	} else {
 		defer db.Close()
 	}
 
 	err = db.Begin()
 	if err != nil {
-		return util.ErrorResponse(w, sessionID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Now execute each statement from the array of strings.
@@ -95,12 +96,12 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 			status = http.StatusConflict
 		}
 
-		return util.ErrorResponse(w, sessionID, i18n.T("error.sql.execute.error", ui.A{"err": filterErrorMessage(err.Error())}), status)
+		return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.execute.error", ui.A{"err": filterErrorMessage(err.Error())}), status)
 	} else {
 		if err = db.Commit(); err != nil {
 			_ = db.Rollback()
 
-			return util.ErrorResponse(w, sessionID, i18n.T("error.sql.commit.error", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.commit.error", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 		} else {
 			// Everything went well including the commit, so if the SQL modified any schemas, now is the time
 			// to flush the schema cache and let it rebuild by re-reading directly from the database.
@@ -132,7 +133,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 
 		if len(tokens) > 0 && tokens[0] == "select" {
 			if err := readRowDataTx(db, statement, startTime, w); err != nil {
-				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.T("error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
+				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.Text(db.Session.Language, "error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
 			}
 		} else {
 			rows, err = db.Exec(statement)
@@ -180,15 +181,16 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 // getStatementsFromRequest tries to parse the request body into an array of SQL statements. The body might be
 // an array of strings, or a single string. In either case, it is returned to the caller as a simple array of strings.
 // If there was an error in handling the request payload, an HTTP error status code is returned.
-func getStatementsFromRequest(body string, w http.ResponseWriter, sessionID int) ([]string, int) {
+func getStatementsFromRequest(body string, w http.ResponseWriter, session *router.Session) ([]string, int) {
 	statements := []string{}
+	sessionID := session.ID
 
 	err := json.Unmarshal([]byte(body), &statements)
 	if err != nil {
 		statement := ""
 
 		if err := json.Unmarshal([]byte(body), &statement); err != nil {
-			return nil, util.ErrorResponse(w, sessionID, i18n.T("error.sql.payload.invalid", ui.A{"err": err.Error()}), http.StatusBadRequest)
+			return nil, util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.payload.invalid", ui.A{"err": err.Error()}), http.StatusBadRequest)
 		}
 
 		// The SQL could be multiple statements separated by a semicolon. If so, we'd need to break the
@@ -288,7 +290,7 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 // handles the following cases so that semicolons inside them are never treated as
 // statement terminators:
 //
-//   - Single-quoted string literals: 'hello world', 'O''Brian' (SQL '' escape)
+//   - Single-quoted string literals: 'hello world', 'O”Brian' (SQL ” escape)
 //   - Double-quoted identifiers:     "my col", "my""col" (SQL "" escape)
 //   - SQL line comments:             -- this is a comment
 //   - SQL block comments:            /* this is a comment */
@@ -316,12 +318,12 @@ func splitSQLStatements(s string) []string {
 	// comment) so that ';' is only recognized as a statement separator when it
 	// appears outside all of those contexts.
 	var (
-		result          []string
-		current         strings.Builder
-		inSingleQuote   bool
-		inDoubleQuote   bool
-		inLineComment   bool
-		inBlockComment  bool
+		result         []string
+		current        strings.Builder
+		inSingleQuote  bool
+		inDoubleQuote  bool
+		inLineComment  bool
+		inBlockComment bool
 	)
 
 	runes := []rune(s)
@@ -384,7 +386,7 @@ func splitSQLStatements(s string) []string {
 		// ── normal context: look for the start of each special form ───────────
 		case ch == '\'':
 			inSingleQuote = true
-			
+
 			current.WriteRune(ch)
 
 		case ch == '"':

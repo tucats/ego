@@ -142,11 +142,11 @@ func RunCodeHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 			status = http.StatusRequestEntityTooLarge
 		}
 
-		return util.ErrorResponse(w, session.ID, err.Error(), status)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
 	}
 
 	if len(req.Code) > maxRunCodeBytes {
-		return util.ErrorResponse(w, session.ID, "code payload too large", http.StatusRequestEntityTooLarge)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.run.too.large"), http.StatusRequestEntityTooLarge)
 	}
 
 	// Validate the caller-supplied session UUID before using it as a map key.
@@ -154,7 +154,7 @@ func RunCodeHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// arbitrary strings (CODE-M3).
 	if req.Session != "" {
 		if _, err := uuid.Parse(req.Session); err != nil {
-			return util.ErrorResponse(w, session.ID, "invalid session id", http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.run.session.invalid"), http.StatusBadRequest)
 		}
 	}
 

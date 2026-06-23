@@ -61,7 +61,7 @@ func GetValidationsHandler(session *router.Session, w http.ResponseWriter, r *ht
 		if !util.InList(method, http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch) {
 			err = errors.ErrInvalidKeyword.Clone().Context(method)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	} else {
 		// Default to POST when no method is specified; most Ego service
@@ -78,7 +78,7 @@ func GetValidationsHandler(session *router.Session, w http.ResponseWriter, r *ht
 		if _, err := url.Parse(path); err != nil {
 			err = errors.ErrInvalidURL.Clone().Context(path)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	}
 
@@ -137,7 +137,7 @@ func GetValidationsHandler(session *router.Session, w http.ResponseWriter, r *ht
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
 	}
 
 	w.Header().Add("Content-Type", defs.ValidationDictionaryMediaType)

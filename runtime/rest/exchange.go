@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -53,6 +54,14 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 
 	// Generate a new RESTY request based on this client.
 	r := client.NewRequest()
+
+	// If there is a language specified, add it to the request header.
+	if lang := os.Getenv(defs.EgoLangEnv); lang != "" {
+		ui.Log(ui.RestLogger, "rest.language", ui.A{
+			"language": lang})
+
+		r.Header.Add("Accept-Language", lang)
+	}
 
 	// Using the optional parameters, validate and add any specific media
 	// request types to the request.

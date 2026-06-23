@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/app-cli/ui"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/router"
 	"github.com/tucats/ego/util"
@@ -39,7 +40,7 @@ func SetLoggingHandler(session *router.Session, w http.ResponseWriter, r *http.R
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Log the raw request body for diagnostic purposes.
@@ -62,7 +63,7 @@ func SetLoggingHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	for loggerName, mode := range loggers.Loggers {
 		logger := ui.LoggerByName(loggerName)
 		if logger < 0 || (logger == ui.ServerLogger && !mode) {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.logger.name.invalid", ui.A{"name": loggerName}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.logger.name.invalid", ui.A{"name": loggerName}), http.StatusBadRequest)
 		}
 
 		// Build a human-readable mode string purely for the log message.
@@ -150,7 +151,7 @@ func PurgeLogHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			// egostrings.Atoi is a locale-aware wrapper around strconv.Atoi.
 			keep, err = egostrings.Atoi(v[0])
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.T("error.logger.keep.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.logger.keep.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 			}
 		}
 	}

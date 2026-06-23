@@ -28,12 +28,12 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 
 	_, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
 	}
 
 	perms, err := egodsns.DSNService.Permissions(session.ID, session.User, name)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	response := defs.DSNPermissionResponse{}
@@ -80,7 +80,7 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// Get the map of all the DSN names.
 	names, err := egodsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Build a sorted list of DSN names for stable output.
@@ -149,7 +149,7 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	dataSourceName, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Craft a response object to send back.
@@ -191,7 +191,7 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 			status = http.StatusNotFound
 		}
 
-		return util.ErrorResponse(w, session.ID, err.Error(), status)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
 	}
 
 	if err := egodsns.DSNService.DeleteDSN(session.ID, session.User, name); err != nil {
@@ -248,7 +248,7 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Minor cleanup/sanity checks to ensure a validly formed name, provider,
@@ -277,7 +277,7 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		if encoded, err := encrypt(dataSourceName.Password); err == nil {
 			dataSourceName.Password = encoded
 		} else {
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	}
 
@@ -290,7 +290,7 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	// Create a new DSN from the payload given.
 	if err := egodsns.DSNService.WriteDSN(session.ID, session.User, dataSourceName); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Craft a response object to send back.
@@ -343,7 +343,7 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 				"session": session.ID,
 				"error":   err.Error()})
 
-			util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}
 		}
@@ -364,7 +364,7 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 		if err != nil {
 			err = errors.New(err).Context(item.DSN + ", " + item.User)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		for _, action := range item.Actions {
@@ -377,7 +377,7 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 			if !util.InList(strings.ToLower(action), defs.AdminPriv, defs.ReadPriv, defs.WritePriv) {
 				err = errors.ErrInvalidPermission.Context(action)
 
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 			}
 		}
 	}
@@ -411,7 +411,7 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 			}
 
 			if err := egodsns.DSNService.GrantDSN(session.ID, item.User, item.DSN, action, grant); err != nil {
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 			}
 		}
 	}

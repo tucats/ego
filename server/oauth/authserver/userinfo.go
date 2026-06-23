@@ -42,7 +42,7 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		w.Header().Set("WWW-Authenticate", `Bearer realm="Ego OAuth2 AS"`)
 
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.missing.bearer"), http.StatusUnauthorized)
+			i18n.Text(session.Language, "error.oauth.as.missing.bearer"), http.StatusUnauthorized)
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -52,7 +52,7 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		w.Header().Set("WWW-Authenticate", `Bearer realm="Ego OAuth2 AS", error="invalid_token"`)
 
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.invalid.code"), http.StatusUnauthorized)
+			i18n.Text(session.Language, "error.oauth.as.invalid.code"), http.StatusUnauthorized)
 	}
 
 	// Reject tokens that have been explicitly revoked via POST /oauth2/revoke.
@@ -63,7 +63,7 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			w.Header().Set("WWW-Authenticate", `Bearer realm="Ego OAuth2 AS", error="invalid_token"`)
 
 			return util.ErrorResponse(w, session.ID,
-				i18n.TLang(session.Language, "error.oauth.as.token.revoked.error"), http.StatusUnauthorized)
+				i18n.Text(session.Language, "error.oauth.as.token.revoked.error"), http.StatusUnauthorized)
 		}
 	}
 
@@ -71,7 +71,7 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	// client_credentials tokens have an empty "sub" and should not reach here.
 	if claims.Subject == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.no.subject"), http.StatusForbidden)
+			i18n.Text(session.Language, "error.oauth.as.no.subject"), http.StatusForbidden)
 	}
 
 	resp := UserinfoResponse{
@@ -90,7 +90,7 @@ func UserinfoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	b, err := json.Marshal(resp)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.userinfo.serialize"), http.StatusInternalServerError)
+			i18n.Text(session.Language, "error.oauth.as.userinfo.serialize"), http.StatusInternalServerError)
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)

@@ -42,7 +42,7 @@ var Language string
 
 // defaultLanguageOnce guards the one-time work of computing a default
 // value for Language from the process environment (see DefaultLanguage
-// below). Using sync.Once here, instead of the simple "if Language == ''"
+// below). Using sync.Once here, instead of the simple "if Language == ”"
 // check this code used before, closes a real data race: without it, two
 // goroutines could both call a translation function for the very first
 // time at nearly the same moment, both see that Language is still empty,
@@ -152,15 +152,15 @@ func T(key string, valueMap ...map[string]any) string {
 	return translate(DefaultLanguage(), key, valueMap...)
 }
 
-// TLang behaves exactly like T, except that it always translates into the
+// Text behaves exactly like T, except that it always translates into the
 // lang passed in by the caller ("en", "fr", "es", and so on) instead of
 // the process default language. It never reads or writes the shared
 // Language variable, so it is safe to call concurrently: for instance,
-// one REST request's handler could call TLang("fr", ...) while, at the
+// one REST request's handler could call Text("fr", ...) while, at the
 // very same moment on a different goroutine, another request's handler
-// calls TLang("es", ...) for a completely different caller — neither call
+// calls Text("es", ...) for a completely different caller — neither call
 // affects the other.
-func TLang(lang, key string, valueMap ...map[string]any) string {
+func Text(lang, key string, valueMap ...map[string]any) string {
 	return translate(lang, key, valueMap...)
 }
 

@@ -1,7 +1,6 @@
 # Localization Audit and Accept-Language Plan
 
-This document is a **plan**, not a changelog. Nothing described here has been
-implemented yet. It has two parts:
+This document started as a **plan**, not a changelog. It has two parts:
 
 1. A design for honoring the client's `Accept-Language` header in the REST
    server, including the thread-safety work needed in the `i18n` package to
@@ -10,7 +9,10 @@ implemented yet. It has two parts:
    localization calls discovered along the way) found during the audit, each
    with a proposed fix.
 
-Review both sections and trim/edit before any implementation work begins.
+**Update:** Parts 1 and 2 have since been implemented. See
+[Resolution Summary](#resolution-summary) at the bottom of this document for
+what was actually done, file by file, and what (if anything) remains open.
+The plan sections below are left as-written for historical context.
 
 ---
 
@@ -273,7 +275,7 @@ be fixed first/separately since it's a one-line-per-site fix with an
 unambiguous correct value.
 
 | # | File:Line | Call | Looked-up key | Problem | Fix |
-|---|-----------|------|---------------|---------|-----|
+| - | --------- | ---- | ------------- | ------- | --- |
 | B1 | `server/oauth/authserver/token.go:45,68,209,263` | `i18n.T("oauth.as.invalid.grant")` | `oauth.as.invalid.grant` | catalog key is `error.oauth.as.invalid.grant` | add `"error."` prefix |
 | B2 | `server/oauth/authserver/token.go:63,115,204,258,275`, `authorize.go:116,344`, `revoke.go:50` | `i18n.T("oauth.as.invalid.client")` | `oauth.as.invalid.client` | catalog key is `error.oauth.as.invalid.client` | add `"error."` prefix |
 | B3 | `server/oauth/authserver/token.go:74`, `userinfo.go:55` | `i18n.T("oauth.as.invalid.code")` | `oauth.as.invalid.code` | catalog key is `error.oauth.as.invalid.code` | add `"error."` prefix |
@@ -298,7 +300,7 @@ catalog entry exists, so the user sees the raw key text in a table column
 header.
 
 | # | File:Line | Call | Proposed catalog entries to add |
-|---|-----------|------|----------------------------------|
+| - | --------- | ---- | -------------------------------- |
 | D1 | `commands/tables.go:1277` | `i18n.L("DSN")` | `label.DSN` = "DSN" / "DSN" / "DSN" (same in all 3 — it's an acronym) |
 | D2 | `commands/users.go:372` | `i18n.L("Password")` | `label.Password` = "Password" / "Contraseña" / "Mot de passe" |
 | D3 | `commands/users.go:373` | `i18n.L("Passkeys")` | `label.Passkeys` = "Passkeys" / "Llaves de acceso" / "Clés d'accès" |
@@ -318,7 +320,7 @@ condition, one localized and one not).
 #### `server/tables/rows.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `rows.go:46` | `"User does not have delete permission"` | `error.perm.delete` (new) | Sibling keys `error.perm.read/write/update` already exist and are used correctly in `server/tables/rowsAbstract.go`; only "delete" is missing. |
 | `rows.go:51` | `"operation invalid with empty filter"` | `error.table.filter.empty` (new) | |
 | `rows.go:96` | `"no matching rows found"` | `error.table.row.not.found` (new) | Same text repeated at `rows.go:232` and `rows.go:797` — one new key, three call sites. |
@@ -332,19 +334,19 @@ condition, one localized and one not).
 #### `server/tables/scripting/handler.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `handler.go:43` | `"transaction request decode error; " + e.Error()` | `error.tx.decode` (new, with `{{error}}` substitution) | |
 
 #### `server/tables/parsing/generators.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `generators.go:436` | `"No privilege to create table in another user's domain"` | **reuse `errors.ErrNoPrivilegeForOperation`** (`error.privilege` = "no privilege for operation") | The very next line already returns `errors.ErrNoPrivilegeForOperation` as the Go error — the literal HTTP response text should just be `errors.ErrNoPrivilegeForOperation.Error()` instead of independently-worded text, for consistency. |
 
 #### `server/cluster/handlers.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `handlers.go:27` | `"server is not running in cluster mode"` | `error.cluster.not.running` (new) | Same text repeated at `handlers.go:159`. |
 | `handlers.go:71` | `"invalid or missing cluster token"` | `error.cluster.token.invalid` (new) | |
 | `handlers.go:123` | `"invalid or missing cluster token or admin credentials"` | `error.cluster.auth.invalid` (new) | Same text repeated at `handlers.go:155`. |
@@ -355,7 +357,7 @@ condition, one localized and one not).
 #### `server/oauth/authserver/` (literal strings, distinct from the broken-key bugs in §2.2)
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `token.go:30-31` | `"could not parse request body"` | `error.oauth.as.body.parse` (new) | Same text at `revoke.go:25-26`. |
 | `token.go:162-163` | `"could not create access token"` | `error.oauth.as.token.create` (new) | Same text at `token.go:229-230` and `token.go:282-283`. |
 | `token.go:321-322` | `"could not serialize token response"` | `error.oauth.as.token.serialize` (new) | |
@@ -371,7 +373,7 @@ condition, one localized and one not).
 #### `server/oauth/rshandlers/` (Resource-Server-side OAuth handlers)
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `authorize_handler.go:34-36` | `"ego.server.oauth.provider is not configured"` | `error.oauth.rs.provider.unconfigured` (new) | This is a server *misconfiguration* message (operator-facing more than end-user-facing); still worth localizing for consistency. |
 | `authorize_handler.go:40-42` | `"ego.server.oauth.redirect.uri must be configured for Authorization Code flow"` | `error.oauth.rs.redirect.unconfigured` (new) | |
 | `authorize_handler.go:53-54` | `"failed to build authorization URL"` | `error.oauth.rs.authorize.build` (new) | |
@@ -382,14 +384,14 @@ condition, one localized and one not).
 #### `server/admin/run.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `run.go:149` | `"code payload too large"` | `error.admin.run.too.large` (new) | |
 | `run.go:157` | `"invalid session id"` | `error.admin.run.session.invalid` (new) | |
 
 #### `router/serve.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `serve.go:93` | `msg = "forbidden access to " + r.URL.Path` (internal log only — `clientMsg` below is what's sent to the client) | — | Not client-facing; internal log text only. No fix needed. |
 | `serve.go:94` | `clientMsg = "forbidden"` | `error.route.forbidden` (new) | |
 | `serve.go:98` | `clientMsg = "not found"` | `error.route.not.found` (new) | |
@@ -401,7 +403,7 @@ condition, one localized and one not).
 #### `router/admin.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `admin.go:148` | `defs.ServerStoppedMessage` (`"Server stopped"`, `defs/rest.go:202`) | **Special case — see note below.** | |
 | `admin.go:177` | `"Invalid tail integer value: " + v[0]` | `error.admin.tail.invalid` (new, with `{{value}}` substitution) | |
 | `admin.go:191` | `"Invalid session id value: " + v[0]` | `error.admin.session.invalid` (new, with `{{value}}` substitution) | |
@@ -423,7 +425,7 @@ localizes the message, not left as a follow-up.
 #### `router/webauthn_limiter.go` / `router/webauthn.go`
 
 | File:Line | Current literal text | Proposed key | Notes |
-|-----------|----------------------|--------------|-------|
+| --------- | -------------------- | ------------ | ----- |
 | `webauthn_limiter.go:109` | `"too many requests"` | `error.webauthn.rate.limited` (new) | |
 | `webauthn_limiter.go:119` | `"server busy"` | `error.webauthn.capacity` (new) | |
 | `webauthn.go:175` | `fmt.Sprintf("WebAuthn not available: %v", err)`, sent via `http.Error()` (bypasses `util.ErrorResponse` entirely — not even JSON-formatted like every other error in this file) | `error.webauthn.unavailable` (new, with `{{error}}` substitution) | Worth fixing the response-format inconsistency (switch to `util.ErrorResponse`) in the same change, since it's the same line. |
@@ -445,3 +447,147 @@ localizes the message, not left as a follow-up.
 None of the above touches CLI free-text output (`fmt.Println`/`ui.Say`
 literal messages) beyond table headers — that was treated as lower priority
 per the task guidance and was not exhaustively audited.
+
+---
+
+## Resolution Summary
+
+This section records what was actually implemented against the plan above,
+across two work sessions. Everything below is a statement of current fact,
+not a proposal — cross-check against the code before relying on a specific
+detail, the way you would for any other changelog entry.
+
+### Part 1 status: Accept-Language Support — done, all four phases
+
+**Phase 0 (foundation):**
+
+- `i18n.TLang` / `LLang` / `MLang` / `ELang` added alongside the existing
+  `T`/`L`/`M`/`E`, sharing a `translate`/`ofTypeLang` implementation that
+  takes `lang` as an explicit parameter instead of reading the global
+  `i18n.Language` (`i18n/strings.go`).
+- `i18n.NegotiateLanguage` and `i18n.SupportedLanguages` added
+  (`i18n/negotiate.go`), with a cached, RWMutex-guarded language list that
+  `i18n.MergeLocalization` invalidates on update (`i18n/merge.go`).
+- `(*errors.Error).Localize(lang)` added alongside `Error()`
+  (`errors/format.go`), sharing an `errorText(lang)` implementation. A
+  package-level `errors.Localize(err, lang)` helper was added for call sites
+  holding a plain `error` interface value rather than a concrete `*Error`.
+- `router.Session.Language` added and populated once per request in
+  `router.ServeHTTP`/`negotiateLanguage` (`router/router.go`,
+  `router/serve.go`), reading `Accept-Language` and falling back to
+  `i18n.DefaultLanguage()`.
+- Tests: `i18n/strings_test.go`, `i18n/negotiate_test.go`,
+  `errors/format_test.go`, `router/serve_test.go`.
+
+**Phase 1 (highest-traffic handlers):** all six files named in the plan's
+1.3 phasing are done — `router/serve.go`, `router/admin.go`,
+`router/webauthn.go` / `webauthn_limiter.go`, `server/tables/rows.go`,
+`server/cluster/handlers.go`, `server/oauth/authserver/*.go`. Each had its
+literal strings replaced with catalog keys and its `session.Language` wired
+through in the same pass, as the plan recommended. The `ServerStoppedMessage`
+special case (§2.4 note under `router/admin.go`) is also done both ways: the
+message is now `i18n.TLang(session.Language, "error.admin.server.stopped")`
+in `router/admin.go`'s `DownHandler`, and `runtime/rest/exchange.go`'s
+shutdown-detection check was changed to key off `status ==
+http.StatusServiceUnavailable` alone, dropping the now-unsafe
+`msg != defs.ServerStoppedMessage` text comparison. (`defs.ServerStoppedMessage`
+itself is now unreferenced outside that one comment — harmless, but a
+candidate for deletion if anyone is doing a cleanup pass.)
+
+**Phase 2 (long tail):** done, well beyond the ~250-call-site estimate in the
+plan. Every `util.ErrorResponse` call site under `server/` and `router/`
+that had a `*router.Session` (or, failing that, a `*database.Database` whose
+`.Session` field could supply one) reachable in scope was migrated from
+`err.Error()` / `i18n.T(...)` to `errors.Localize(err, session.Language)` /
+`i18n.TLang(session.Language, ...)`. This touched, beyond the Phase-1 files:
+`server/tables/{tables,sql,list,describe,security,transactions,rowsAbstract,
+scripting/handler}.go`, `server/admin/{config,logging,run,tokens,ui,
+validation,caches/{get,setsize},users/{create,update}}.go`,
+`server/dsns/handler.go`, `server/services/child.go`. A handful of helper
+functions that previously took a bare `sessionID int` had their signature
+changed to take the `*router.Session` (or use the already-available
+`db.Session`) instead, so the language could be threaded through:
+`getColumnPayload`/`createSchemaIfNeeded` in `server/tables/tables.go`,
+`getStatementsFromRequest` in `server/tables/sql.go`, `webAuthnInstance` in
+`router/webauthn.go`, `writeTokenResponse` in
+`server/oauth/authserver/token.go`.
+
+**Phase 3 (verification):** done. `tools/apitest/tests/7-i18n/` has two new
+tests (`i18n-01-french.json`, `i18n-02-spanish.json`) that request a
+deliberately nonexistent DSN with `Accept-Language: fr` / `es` and assert
+(via `"op": "contains"`, since the response also includes the dynamic DSN
+name) that `msg` contains the French/Spanish text for `error.dsn.not.found`.
+Verified against a locally running server; the full apitest suite (122
+tests, including these 2) passes.
+
+### Part 2 status: Literal Strings and Broken Localization Calls
+
+- **§2.2 (16 broken calls, B1–B16):** all fixed. B1–B13 (the
+  `server/oauth/authserver/` calls missing the `error.` prefix) were fixed
+  as part of the Phase 1 `oauth/authserver` pass. B14 (`i18n.L("error")` →
+  should be `i18n.L("Error")`) was fixed in `errors/format.go`. B15
+  (`i18n.E("function.pointer"...)` → `"function.ptr"`) was fixed in
+  `builtins/functions.go`. B16 (`i18n.T("true"/"false")`, no such keys) was
+  fixed by adding `label.true`/`label.false` to the catalog and switching
+  `commands/users.go` to `i18n.L(...)`.
+- **§2.3 (4 missing dictionary entries, D1–D4):** all fixed. `label.DSN`,
+  `label.Password`, `label.Passkeys`, `label.Scope` were added to all three
+  language files; the call sites in `commands/tables.go`, `commands/users.go`,
+  and `runtime/util/symbols.go` already used the correct key spelling and
+  needed no code change.
+- **§2.4 (literal strings across 9 files):** done for the files explicitly
+  in scope for Phase 1 — `server/tables/rows.go`,
+  `server/tables/scripting/handler.go`, `server/tables/parsing/generators.go`
+  (partially — see gap below), `server/cluster/handlers.go`,
+  `server/oauth/authserver/`, `router/serve.go`, `router/admin.go`,
+  `router/webauthn_limiter.go` / `webauthn.go`. **Not done:**
+  `server/oauth/rshandlers/` (`authorize_handler.go`, `callback.go`) — these
+  literal strings were catalogued in §2.4 but never actually given catalog
+  keys; they still read literal English text today. This is the one real
+  outstanding piece of the original §2.4 inventory.
+
+### Known remaining gaps (be aware before assuming "everything is done")
+
+- **`server/oauth/rshandlers/authorize_handler.go` and `callback.go`**: the
+  11 literal strings listed in §2.4 (`error.oauth.rs.*`) were never added to
+  the catalog. These endpoints currently always return English text
+  regardless of `Accept-Language`.
+- **`server/tables/parsing/generators.go:436`**: still calls
+  `errors.ErrNoPrivilegeForOperation.Error()` (process-default language) —
+  `FormCreateQuery` only has a bare `sessionID int`, not a `*router.Session`,
+  and threading one through risked rippling into a wider signature change.
+  Low traffic (PostgreSQL-only, multi-part-table-name path), unchanged from
+  the plan's original "lower priority" framing.
+- **`server/services/child.go`**: the relayed `response.Message` from a
+  child Ego-service process (line ~310) is left as-is by design — it's the
+  child process's own already-rendered text, not one of our catalog keys, so
+  there is nothing to localize. (The *local* errors in that same function —
+  failures to read the request body, marshal JSON, write the temp file —
+  were converted to use `session.Language`, since `session` is genuinely in
+  scope there.)
+- **A handful of brand-new, never-localized literal strings** were noticed
+  incidentally while doing the Phase 2 sweep, but fixing them was treated as
+  out of scope for this pass (they were never part of the original §2.4
+  inventory, and adding net-new catalog entries for things nobody had
+  flagged felt like scope creep rather than "fixing broken/missing
+  references"). They are, for the record: `router/serve.go` (the default
+  `"invalid URL"` `clientMsg` when status is neither 403/404/405),
+  `router/admin.go` (`"unable to use endpoint without token authentication"`
+  and an `"invalid internal token data type: %s"` `fmt.Sprintf`),
+  `router/webauthn.go` (the same `fmt.Sprintf` pattern),
+  `server/admin/users/delete.go` (`"No username entry for '%s'"` × 2),
+  `server/dsns/handler.go` (four `fmt.Sprintf` messages around DSN
+  create/delete validation), `server/tables/rows.go:321` and
+  `server/tables/scripting/handler.go` (four `fmt.Sprintf` messages each).
+  None of these are reachable from the high-traffic paths; all are
+  candidates for a future, explicitly-scoped literal-string pass.
+- **CLI free-text output** (`fmt.Println`/`ui.Say`) is still unaudited, same
+  as the original plan stated.
+
+### Build/test verification performed
+
+`go build ./...`, `go vet ./...`, `gofmt -l` (clean except three files with
+pre-existing, unrelated formatting issues predating this work —
+`builtins/functions.go`, `server/tables/list.go`, `server/tables/sql.go`),
+`go test ./...` (full suite, all green), and the full `tools/apitest` suite
+(122 tests) against a locally running server, all passed as of this writing.

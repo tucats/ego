@@ -27,7 +27,7 @@ func GetUserHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// the right-hand side, and immediately tests err — all in one statement.
 	if u, err := auth.AuthService.ReadUser(session.ID, name, false); err != nil {
 		// The user was not found — return 404 Not Found.
-		return util.ErrorResponse(w, session.ID, i18n.T("error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	} else {
 		w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 

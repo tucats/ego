@@ -110,7 +110,7 @@ func buildDiscoveryDoc(issuer string) error {
 func DiscoveryHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if discoveryDoc == nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.not.initialized"), http.StatusServiceUnavailable)
+			i18n.Text(session.Language, "error.oauth.as.not.initialized"), http.StatusServiceUnavailable)
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)

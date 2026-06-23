@@ -54,11 +54,13 @@ func TestError_ErrorUsesDefaultLanguage(t *testing.T) {
 	e := Message("perm.read")
 
 	i18n.Language = "es"
+
 	if got, want := e.Error(), "El usuario no tiene permiso de lectura"; got != want {
 		t.Errorf("Error() with Language=es = %q, want %q", got, want)
 	}
 
 	i18n.Language = "fr"
+	
 	if got, want := e.Error(), "L'utilisateur n'a pas les autorisations de lecture"; got != want {
 		t.Errorf("Error() with Language=fr = %q, want %q", got, want)
 	}

@@ -375,7 +375,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 	// Verify it's a built-in function pointer type. If not, this was a bogus call.
 	fn, ok := functionDefinition.FunctionAddress.(func(*symbols.SymbolTable, data.List) (any, error))
 	if !ok {
-		err := errors.Message(i18n.E("function.pointer",
+		err := errors.Message(i18n.E("function.ptr",
 			map[string]any{"ptr": functionDefinition.FunctionAddress}))
 
 		return nil, errors.ErrPanic.Context(err)

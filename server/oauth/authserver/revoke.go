@@ -23,7 +23,7 @@ import (
 func RevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if err := r.ParseForm(); err != nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.body.parse"), http.StatusBadRequest)
+			i18n.Text(session.Language, "error.oauth.as.body.parse"), http.StatusBadRequest)
 	}
 
 	// The client must authenticate itself to revoke a token.
@@ -41,13 +41,13 @@ func RevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	if clientID == "" {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.missing.client_id"), http.StatusBadRequest)
+			i18n.Text(session.Language, "error.oauth.as.missing.client_id"), http.StatusBadRequest)
 	}
 
 	client := findClient(clientID)
 	if client == nil || !validateClientSecret(client, clientSecret) {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
+			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	tokenStr := r.FormValue("token")

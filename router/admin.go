@@ -12,6 +12,7 @@ import (
 	"github.com/tucats/ego/data"
 	"github.com/tucats/ego/defs"
 	"github.com/tucats/ego/egostrings"
+	"github.com/tucats/ego/errors"
 	"github.com/tucats/ego/i18n"
 	"github.com/tucats/ego/runtime/cipher"
 	egoRuntimeUtility "github.com/tucats/ego/runtime/util"
@@ -63,7 +64,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusForbidden)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusForbidden)
 	}
 
 	// Construct a response object to hold the token and server info.
@@ -100,7 +101,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	response.ID = t.TokenID.String()
@@ -146,7 +147,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 // indicating the server is down, the router that called this handler will know that
 // the server is to be stopped.
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.server.stopped"), http.StatusServiceUnavailable)
+	return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.server.stopped"), http.StatusServiceUnavailable)
 }
 
 // LogHandler is the native handler of the endpoint that retrieves log lines
@@ -175,7 +176,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				"status":  http.StatusBadRequest,
 				"error":   err})
 
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.tail.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.tail.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -189,7 +190,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				"status":  http.StatusBadRequest,
 				"error":   err})
 
-			return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.admin.session.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.session.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
 		}
 	}
 
@@ -216,7 +217,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			"status":  http.StatusInternalServerError,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// The response should be an array of strings. Convert this to a native array
@@ -262,7 +263,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				"session": session.ID,
 				"error":   err})
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	} else if session.AcceptsText {
 		w.Header().Set("Content-Type", "text/plain")
@@ -279,7 +280,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		ui.Log(ui.RestLogger, "auth.bad.media", ui.A{
 			"session": session.ID})
 
-		return util.ErrorResponse(w, session.ID, i18n.TLang(session.Language, "error.media.unsupported"), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.media.unsupported"), http.StatusBadRequest)
 	}
 
 	return status
@@ -315,7 +316,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Create an instance of the response object and fill the server info.
@@ -356,7 +357,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	// Add the user permissions array to the response object.
@@ -369,7 +370,7 @@ func AuthenticateHandler(session *Session, w http.ResponseWriter, r *http.Reques
 			"session": session.ID,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
 	minifiedBytes := []byte(egostrings.JSONMinify(string(b)))

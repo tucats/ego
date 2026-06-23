@@ -47,7 +47,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 		// If the current user is not an administrator, see if the user has read permission for this table.
 		// If not, return a 403 Forbidden error.
 		if !session.Admin && Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.perm.read"), http.StatusForbidden)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
 		}
 
 		// Get the table metadata. We don't do this for sqlite3.
@@ -77,8 +77,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 			}
 
 		default:
-			return util.ErrorResponse(w, session.ID,
-				errors.ErrUnsupportedDatabase.Context(db.Provider).Error(),
+			return util.ErrorResponse(w, session.ID, errors.ErrUnsupportedDatabase.Context(db.Provider).Localize(session.Language),
 				http.StatusBadRequest)
 		}
 
@@ -97,7 +96,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 
 	// Something failed, and it's stored in the 'err' variable. Trim off any leading "pq: " prefix
 	// put there for database errors from the Postgresql driver.
-	msg := i18n.T("error.table.metadata.error", ui.A{"err": strings.TrimPrefix(err.Error(), "pq: ")})
+	msg := i18n.Text(session.Language, "error.table.metadata.error", ui.A{"err": strings.TrimPrefix(err.Error(), "pq: ")})
 	status := http.StatusBadRequest
 
 	// If the error is due to a non-existing table, return a 404 status code.
@@ -109,7 +108,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// it means there was an unexpected nil pointer error. Report this to the caller as a
 	// 500 status code.
 	if err == nil && db == nil {
-		msg = i18n.T("error.db.nil.pointer")
+		msg = i18n.Text(session.Language, "error.db.nil.pointer")
 		status = http.StatusInternalServerError
 	}
 
@@ -190,7 +189,7 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 	// positional parameters ($1, $2) to avoid any string-interpolation issues.
 	rows, err := db.Query(uniqueColumnsQuery, schemaName, tableOnly)
 	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
@@ -217,7 +216,7 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 	// Execute the query to get the nullable columns.
 	numberOfRows, err = db.Query(nullableColumnsQuery, schemaName, tableOnly)
 	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	defer numberOfRows.Close()
@@ -266,7 +265,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 	// Execute the query to get the unique columns.
 	rows, err := db.Query(q)
 	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
@@ -298,7 +297,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 		// Execute the query to get the unique columns.
 		rows, err := db.Query(q)
 		if err != nil {
-			return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
 		defer rows.Close()
@@ -329,7 +328,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 	// Execute the query to get the unique columns.
 	rows, err = db.Query(q)
 	if err != nil {
-		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	defer rows.Close()

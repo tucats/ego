@@ -113,7 +113,7 @@ func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Req
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	list, err := pHandle.Read(
@@ -122,7 +122,7 @@ func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Req
 		pHandle.Equals("table", tableName))
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// Construct a response object to hold the requested permissions. Fill it to include the
@@ -211,7 +211,7 @@ func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone()
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	response := defs.AllPermissionResponse{
@@ -223,7 +223,7 @@ func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.
 	if f := parsing.RequestForUser("", r.URL); f != "" {
 		text, err := parsing.SQLEscape(f)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		nameFilter = pHandle.Equals("user", text)
@@ -232,7 +232,7 @@ func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.
 	if dsnName != "" {
 		text, err := parsing.SQLEscape(dsnName)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		dsnFilter = pHandle.Equals("dsn", text)
@@ -245,7 +245,7 @@ func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.
 			"session": session.ID,
 			"error":   err.Error()})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	count := 0
@@ -317,7 +317,7 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone()
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	tableName := data.String(session.URLParts["table"])
@@ -334,7 +334,7 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 		pHandle.Equals("dsn", dsnName))
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	// If there are no permissions existing, let's create a new one. If more than one was found,
@@ -351,12 +351,12 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 
 			err = pHandle.Insert(permObject)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 			}
 		} else {
 			err = errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusNotFound)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
 		}
 	}
 
@@ -365,13 +365,13 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 	permissionsList := []string{}
 
 	if err = json.NewDecoder(r.Body).Decode(&permissionsList); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	sort.Strings(permissionsList)
 
 	if !validPermissions(permissionsList) {
-		return util.ErrorResponse(w, session.ID, i18n.T("error.table.permissions.invalid", ui.A{"list": permissionsList}), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.permissions.invalid", ui.A{"list": permissionsList}), http.StatusBadRequest)
 	}
 
 	// Set the flags in the permission object based on the permission strings. Strip off any +/- prefixes,
@@ -399,13 +399,13 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 		case defs.TableAdminPermission:
 			item.Admin = setting
 		default:
-			return util.ErrorResponse(w, session.ID, i18n.T("error.table.permission.invalid", ui.A{"name": key}), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.permission.invalid", ui.A{"name": key}), http.StatusBadRequest)
 		}
 	}
 
 	err = pHandle.Update(item)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	return ReadPermissions(session, w, r)
@@ -423,7 +423,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone()
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	var nameFilter, dsnFilter, tableFilter *resources.Filter
@@ -431,7 +431,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 	if f := parsing.RequestForUser("", r.URL); f != "" {
 		text, err := parsing.SQLEscape(f)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		nameFilter = pHandle.Equals("name", text)
@@ -444,7 +444,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 	if dsnName != "" {
 		text, err := parsing.SQLEscape(dsnName)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, i18n.T("error.filter.invalid"), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.filter.invalid"), http.StatusBadRequest)
 		}
 
 		dsnFilter = pHandle.Equals("dsn", text)
@@ -457,7 +457,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 			"session": session.ID,
 			"error":   err.Error()})
 
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	count := 0
@@ -474,7 +474,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 				"session": session.ID,
 				"error":   err.Error()})
 
-			return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
 		count = count + 1

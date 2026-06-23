@@ -21,7 +21,7 @@ import (
 func JWKSHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if jwksJSON == nil {
 		return util.ErrorResponse(w, session.ID,
-			i18n.TLang(session.Language, "error.oauth.as.key.not.initialized"), http.StatusServiceUnavailable)
+			i18n.Text(session.Language, "error.oauth.as.key.not.initialized"), http.StatusServiceUnavailable)
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, "application/json")

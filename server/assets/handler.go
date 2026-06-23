@@ -100,14 +100,14 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		if len(ranges) > 0 {
 			start, err = strconv.ParseInt(ranges[0], 10, 64)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.T("error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
 			}
 		}
 
 		if len(ranges) > 1 && ranges[1] != "" {
 			end, err = strconv.ParseInt(ranges[1], 10, 64)
 			if err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.T("error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.asset.range.header", ui.A{"header": h[0]}), http.StatusBadRequest)
 			}
 
 			hasRange = fmt.Sprintf(" range %d-%d;", start, end)
@@ -119,7 +119,7 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	// Sanity check on explicit ranges only.
 	if start < 0 || (end != EndOfData && end < start) {
-		return util.ErrorResponse(w, session.ID, errors.ErrInvalidRange.Context(hasRange).Error(), http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, errors.ErrInvalidRange.Context(hasRange).Localize(session.Language), http.StatusBadRequest)
 	}
 
 	// Always load the full asset so we know the total file size. Range slicing
