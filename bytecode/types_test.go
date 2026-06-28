@@ -20,6 +20,26 @@ package bytecode
 //            v is nil and the operand is a string type name.
 //   TYPES-3: relaxedConformanceCheck — the int-operand switch is dead code for
 //            all cases except IntKind because t = i.(int) is always a plain int.
+//
+// # BUG-03: type assertions always succeed in non-strict mode (FIXED)
+//
+//   The unwrapByteCode handler had separate code paths for strict vs. non-strict
+//   type-strictness levels:
+//
+//     Strict:     check actualType.IsType(newType); push (nil, false) on mismatch.
+//     Non-strict: call data.Coerce unconditionally — any value can be "asserted"
+//                 to any type by silently converting it.
+//
+//   This made the comma-ok idiom useless in the default dynamic mode: every
+//   type assertion returned ok=true, so there was no way to ask "does this
+//   interface value actually hold a T?"  Cast functions (int(), string(), …)
+//   already provide coercion; assertions must validate.
+//
+//   Fix: unwrapByteCode now applies the same type-match check in ALL modes.
+//   A mismatch pushes (nil, false) regardless of the type-strictness level.
+//   The "any" / "interface{}" target type is always a match (every value
+//   satisfies the empty interface).  The fix also normalizes the "any" alias
+//   to "interface{}" so the lookup loop correctly resolves the type.
 
 import (
 	"testing"
@@ -211,6 +231,192 @@ func Test_unwrapByteCode_EmptyStack(t *testing.T) {
 
 	if err == nil {
 		t.Error("unwrapByteCode on empty stack: expected error, got nil")
+	}
+}
+
+// ─── Section 2b: unwrapByteCode — BUG-03 regression tests ────────────────────
+//
+// These tests verify that type assertions correctly validate the actual stored
+// type in ALL type-strictness modes after the BUG-03 fix.
+//
+// Background: before the fix, the non-strict code path called data.Coerce on
+// every assertion, making every assertion succeed by silently converting the
+// value.  The strict path already worked correctly.  The fix unifies both paths:
+// assertions always check actualType.IsType(newType) regardless of the mode.
+
+// Test_unwrapByteCode_BUG03_Relaxed_WrongType is the primary BUG-03 regression
+// test.  In relaxed (non-strict) mode, asserting a string to "int" must push
+// (nil, false) — the same result as strict mode — rather than coercing the
+// string to an int and claiming success.
+func Test_unwrapByteCode_BUG03_Relaxed_WrongType(t *testing.T) {
+	tc := newTestContext(t).withStack("not-an-int").
+		withTypeStrictness(defs.RelaxedTypeEnforcement)
+
+	err := unwrapByteCode(tc.ctx, "int")
+
+	// BUG-03 fix: wrong type in any mode pushes (nil, false), no error returned.
+	// Before the fix this pushed (coerced-int, true).
+	tc.assertNoError(err)
+	tc.assertTopStack(false) // ok = false (WRONG type)
+	tc.assertTopStack(nil)   // value = nil
+	tc.assertStackEmpty()
+}
+
+// Test_unwrapByteCode_BUG03_Dynamic_WrongType verifies the same behavior in
+// dynamic mode (NoTypeEnforcement), which was the default runtime mode and the
+// mode most users encounter.
+func Test_unwrapByteCode_BUG03_Dynamic_WrongType(t *testing.T) {
+	tc := newTestContext(t).withStack("not-an-int").
+		withTypeStrictness(defs.NoTypeEnforcement)
+
+	err := unwrapByteCode(tc.ctx, "int")
+
+	tc.assertNoError(err)
+	tc.assertTopStack(false) // ok = false
+	tc.assertTopStack(nil)   // value = nil
+	tc.assertStackEmpty()
+}
+
+// Test_unwrapByteCode_BUG03_Relaxed_CorrectType verifies that the fix does not
+// break the success path: a genuine int-to-int assertion still returns (42, true)
+// in relaxed mode.
+func Test_unwrapByteCode_BUG03_Relaxed_CorrectType(t *testing.T) {
+	tc := newTestContext(t).withStack(42).
+		withTypeStrictness(defs.RelaxedTypeEnforcement)
+
+	err := unwrapByteCode(tc.ctx, "int")
+
+	tc.assertNoError(err)
+	tc.assertTopStack(true) // ok = true
+	tc.assertTopStack(42)   // value = 42
+	tc.assertStackEmpty()
+}
+
+// Test_unwrapByteCode_BUG03_Dynamic_CorrectType verifies the success path in
+// dynamic mode.
+func Test_unwrapByteCode_BUG03_Dynamic_CorrectType(t *testing.T) {
+	tc := newTestContext(t).withStack(42).
+		withTypeStrictness(defs.NoTypeEnforcement)
+
+	err := unwrapByteCode(tc.ctx, "int")
+
+	tc.assertNoError(err)
+	tc.assertTopStack(true) // ok = true
+	tc.assertTopStack(42)   // value = 42
+	tc.assertStackEmpty()
+}
+
+// Test_unwrapByteCode_BUG03_IntToString verifies that asserting an int to
+// "string" fails (nil, false) in all modes.  Before the fix, data.Coerce would
+// convert 42 to "42" and report success.
+func Test_unwrapByteCode_BUG03_IntToString(t *testing.T) {
+	for _, mode := range []int{defs.StrictTypeEnforcement, defs.RelaxedTypeEnforcement, defs.NoTypeEnforcement} {
+		tc := newTestContext(t).withStack(42).withTypeStrictness(mode)
+
+		err := unwrapByteCode(tc.ctx, "string")
+
+		tc.assertNoError(err)
+		tc.assertTopStack(false)
+		tc.assertTopStack(nil)
+		tc.assertStackEmpty()
+	}
+}
+
+// Test_unwrapByteCode_BUG03_FloatToInt verifies that float64 → int assertion
+// fails.  In non-strict mode, data.Coerce would truncate 3.14 to 3 and report
+// success; after the fix it returns (nil, false) because float64 ≠ int.
+func Test_unwrapByteCode_BUG03_FloatToInt(t *testing.T) {
+	for _, mode := range []int{defs.StrictTypeEnforcement, defs.RelaxedTypeEnforcement, defs.NoTypeEnforcement} {
+		tc := newTestContext(t).withStack(float64(3.14)).withTypeStrictness(mode)
+
+		err := unwrapByteCode(tc.ctx, "int")
+
+		tc.assertNoError(err)
+		tc.assertTopStack(false)
+		tc.assertTopStack(nil)
+		tc.assertStackEmpty()
+	}
+}
+
+// Test_unwrapByteCode_BUG03_AnyAlias verifies that the "any" keyword is
+// correctly recognized as an alias for "interface{}" and that asserting to "any"
+// always succeeds (every value satisfies the empty interface).
+//
+// Before the BUG-03 fix, the type lookup loop compared td.Kind.Name() (which
+// returns "interface{}") against the target string "any", so the lookup failed
+// and unwrapByteCode returned ErrInvalidType.  The fix normalizes "any" to
+// "interface{}" before the loop.
+func Test_unwrapByteCode_BUG03_AnyAlias(t *testing.T) {
+	// An int value asserted to "any" must always succeed.
+	for _, mode := range []int{defs.StrictTypeEnforcement, defs.RelaxedTypeEnforcement, defs.NoTypeEnforcement} {
+		tc := newTestContext(t).withStack(42).withTypeStrictness(mode)
+
+		err := unwrapByteCode(tc.ctx, "any")
+
+		// Must not return ErrInvalidType (the pre-fix behavior).
+		tc.assertNoError(err)
+		tc.assertTopStack(true) // ok = true — any satisfies the empty interface
+		tc.assertTopStack(42)   // value unchanged
+		tc.assertStackEmpty()
+	}
+}
+
+// Test_unwrapByteCode_BUG03_InterfaceAlias verifies that "interface{}" (the
+// canonical spelling of the any type) also always succeeds.
+func Test_unwrapByteCode_BUG03_InterfaceAlias(t *testing.T) {
+	tc := newTestContext(t).withStack(42).
+		withTypeStrictness(defs.NoTypeEnforcement)
+
+	// "interface{}" as a single token would not be valid Ego syntax; the lexer
+	// produces two tokens.  The unwrapByteCode lookup is driven by the compiled
+	// type name, which can be a single string.  We use data.InterfaceTypeName
+	// directly to simulate what a two-token assertion compiles to.
+	err := unwrapByteCode(tc.ctx, data.InterfaceTypeName)
+
+	tc.assertNoError(err)
+	tc.assertTopStack(true)
+	tc.assertTopStack(42)
+	tc.assertStackEmpty()
+}
+
+// Test_unwrapByteCode_BUG03_AllModesConsistent verifies that all three
+// type-strictness modes produce identical results for both the success case
+// (int → int) and the failure case (string → int).  The BUG-03 fix makes
+// non-strict modes behave the same as strict mode.
+func Test_unwrapByteCode_BUG03_AllModesConsistent(t *testing.T) {
+	modes := []struct {
+		name string
+		mode int
+	}{
+		{"strict", defs.StrictTypeEnforcement},
+		{"relaxed", defs.RelaxedTypeEnforcement},
+		{"dynamic", defs.NoTypeEnforcement},
+	}
+
+	for _, m := range modes {
+		// Success case: int value asserted to int.
+		tc := newTestContext(t).withStack(99).withTypeStrictness(m.mode)
+
+		if err := unwrapByteCode(tc.ctx, "int"); err != nil {
+			t.Errorf("mode %s, success case: unexpected error: %v", m.name, err)
+		}
+
+		okVal, _ := tc.ctx.Pop()
+		if b, _ := okVal.(bool); !b {
+			t.Errorf("mode %s, success case: ok = %v, want true", m.name, okVal)
+		}
+
+		// Failure case: string value asserted to int.
+		tc2 := newTestContext(t).withStack("hello").withTypeStrictness(m.mode)
+
+		if err := unwrapByteCode(tc2.ctx, "int"); err != nil {
+			t.Errorf("mode %s, failure case: unexpected error: %v", m.name, err)
+		}
+
+		okVal2, _ := tc2.ctx.Pop()
+		if b, _ := okVal2.(bool); b {
+			t.Errorf("mode %s, failure case: ok = %v, want false", m.name, okVal2)
+		}
 	}
 }
 

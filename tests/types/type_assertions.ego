@@ -1,0 +1,169 @@
+// type_assertions.ego — regression tests for BUG-03: type assertions always
+// succeed in non-strict (dynamic) mode.
+//
+// # Background
+//
+// The Ego expression "x.(T)" is a TYPE ASSERTION, not a coercion.  It asks:
+// "does the interface value x actually hold a value of type T?"  The expected
+// result is:
+//
+//   v, ok := x.(T)  →  ok=true  and v=value  when x holds a T
+//   v, ok := x.(T)  →  ok=false and v=nil    when x holds something else
+//   v := x.(T)      →  succeeds              when x holds a T
+//   v := x.(T)      →  runtime error         when x holds something else
+//
+// Before the BUG-03 fix, the non-strict bytecode path called data.Coerce
+// unconditionally, so EVERY assertion succeeded by silently converting the
+// value.  For example, "v, ok := anyInt.(string)" returned ok=true and v="42"
+// instead of ok=false.  This made the comma-ok idiom useless as a type guard.
+//
+// # Design decision: same behavior in all typing modes
+//
+// Type assertions validate the actual stored type in ALL type-strictness modes
+// (strict, relaxed, and dynamic).  Coercion is already available through
+// explicit cast functions such as int(), string(), and float64().  Allowing
+// assertions to coerce would eliminate the only runtime mechanism for
+// distinguishing "this value IS a string" from "this value CAN BE converted to
+// a string".  The v, ok := x.(T) form is specifically designed to answer the
+// first question without raising an error.
+
+@test "types: type assertion two-value form, correct type"
+{
+    // A plain integer stored in an any-typed variable.
+    var v any = 42
+
+    // Asserting to the correct type must return the value and ok=true.
+    n, ok := v.(int)
+    @assert ok == true
+    @assert n == 42
+}
+
+@test "types: type assertion two-value form, wrong type (BUG-03)"
+{
+    // This is the primary BUG-03 regression.  Before the fix, any assertion
+    // in dynamic mode returned ok=true by coercing the value.
+    var v any = 42
+
+    // Asserting to the wrong type must return nil and ok=false.
+    s, ok := v.(string)
+    @assert ok == false
+    @assert s == nil
+}
+
+@test "types: type assertion two-value form, float to int (BUG-03)"
+{
+    var v any = 3.14
+
+    // float64 is NOT int; assertion must fail.
+    n, ok := v.(int)
+    @assert ok == false
+    @assert n == nil
+}
+
+@test "types: type assertion two-value form, bool to string (BUG-03)"
+{
+    var v any = true
+
+    // bool is NOT string.
+    s, ok := v.(string)
+    @assert ok == false
+    @assert s == nil
+}
+
+@test "types: type assertion single-value form, correct type succeeds"
+{
+    var v any = 99
+    n := v.(int)
+    @assert n == 99
+}
+
+@test "types: type assertion single-value form, wrong type raises error (BUG-03)"
+{
+    // The single-value form is equivalent to Go's panicking assertion: when the
+    // type does not match, a catchable runtime error is raised.
+    var v any = 42
+
+    try {
+        // Before the BUG-03 fix this silently succeeded, returning "42" (string).
+        s := v.(string)
+        @fail "type assertion should have raised an error, got: " + string(s)
+    } catch {
+        // Error is expected and correct; no need to inspect the error value.
+        @pass
+    }
+}
+
+@test "types: type assertion to 'any' always succeeds (BUG-03)"
+{
+    // Asserting to the empty interface (any) always succeeds because every
+    // value satisfies the empty interface.  Before the BUG-03 fix, asserting
+    // to "any" returned ErrInvalidType because the "any" alias was not
+    // recognized in the type lookup loop.
+    var v any = 42
+
+    a, ok := v.(any)
+    @assert ok == true
+    @assert a == 42
+}
+
+@test "types: type assertion with string value correct type"
+{
+    var v any = "hello"
+    s, ok := v.(string)
+    @assert ok == true
+    @assert s == "hello"
+}
+
+@test "types: type assertion with string value wrong type"
+{
+    var v any = "hello"
+    n, ok := v.(int)
+    @assert ok == false
+    @assert n == nil
+}
+
+@test "types: type assertion with bool value correct type"
+{
+    var v any = true
+    b, ok := v.(bool)
+    @assert ok == true
+    @assert b == true
+}
+
+@test "types: type assertion with float64 value correct type"
+{
+    var v any = 1.5
+    f, ok := v.(float64)
+    @assert ok == true
+    @assert f == 1.5
+}
+
+@test "types: multiple sequential assertions, only correct one succeeds (BUG-03)"
+{
+    // Demonstrates the comma-ok idiom working correctly as a runtime type guard.
+    // Before the fix, every branch would appear to succeed (all ok=true).
+    var v any = 42
+
+    isInt := false
+    isString := false
+    isFloat := false
+
+    _, okInt := v.(int)
+    if okInt {
+        isInt = true
+    }
+
+    _, okStr := v.(string)
+    if okStr {
+        isString = true
+    }
+
+    _, okFloat := v.(float64)
+    if okFloat {
+        isFloat = true
+    }
+
+    @assert isInt == true
+    @assert isString == false
+    @assert isFloat == false
+}

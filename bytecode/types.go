@@ -136,6 +136,16 @@ func unwrapByteCode(c *Context, i any) error {
 	// case the programmer defined a custom type alias.
 	actualType := data.TypeOf(value)
 
+	// "any" is a programmer-friendly alias for "interface{}".  The canonical
+	// name stored in data.InterfaceType.Name() is "interface{}", so the lookup
+	// loop below would never match "any" without this normalization.  The other
+	// source-code spellings ("interface {}", "interface{}") are handled by the
+	// TypeDeclarations entries directly because they all map to the same
+	// *data.Type whose Name() is "interface{}".
+	if targetType == "any" {
+		targetType = data.InterfaceTypeName
+	}
+
 	for _, td := range data.TypeDeclarations {
 		if td.Kind.Name() == targetType {
 			newType = td.Kind
@@ -156,28 +166,51 @@ func unwrapByteCode(c *Context, i any) error {
 		return errors.ErrInvalidType.Context(targetType)
 	}
 
-	// Apply the type assertion.  The behavior depends on the active
-	// type-strictness level.
+	// Apply the type assertion.
 	//
-	//   Non-strict: coerce the value to the target type using data.Coerce.
-	//               This allows widening conversions such as int → float64.
+	// A type assertion asks "does this interface value actually hold a value of
+	// type T?"  It is NOT a coercion.  The previous non-strict implementation
+	// called data.Coerce unconditionally, which made every assertion succeed by
+	// silently converting the value — defeating the entire purpose of the
+	// comma-ok idiom.  For example:
 	//
-	//   Strict:     the actual type must already match the target type.
-	//               If it does not, push (nil, false) and return; the caller
-	//               checks the bool to detect the failure.
-	if c.typeStrictness != defs.StrictTypeEnforcement {
-		newValue, err = data.Coerce(value, newType.InstanceOf(newType.BaseType()))
-		if err != nil {
-			return c.runtimeError(err)
-		}
+	//   var v any = 42
+	//   s, ok := v.(string)   // used to give s="42", ok=true  (WRONG)
+	//
+	// The correct result is s=nil, ok=false because v holds an int, not a string.
+	//
+	// Coercion is already available through explicit cast functions (int(),
+	// string(), float64(), …).  Using coercion inside a type assertion makes it
+	// impossible to use the two-value form as a runtime type guard, which is its
+	// primary purpose.
+	//
+	// The same exact-match behavior applies in ALL type-strictness modes
+	// (strict, relaxed, and dynamic):
+	//
+	//   ─ If the target type is an interface (any / interface{}), every value
+	//     passes — any concrete type satisfies the empty interface.
+	//
+	//   ─ Otherwise the actual stored type must match the target type exactly.
+	//     On mismatch, push (nil, false) and return; the compiler arranges for
+	//     an IfError instruction to follow the assertion in the single-value form
+	//     (v := x.(T)), which converts the false into a catchable runtime error
+	//     equivalent to Go's type-assertion panic.
+	if newType.Kind() == data.InterfaceKind {
+		// Asserting to interface{}/any always succeeds regardless of the
+		// concrete type — every value satisfies the empty interface.
+		newValue = value
+	} else if !actualType.IsType(newType) {
+		// The value's actual type does not match the asserted target type.
+		// Push the failure sentinels: nil value and false ok-flag.
+		// The bool is pushed last so it sits on top of the stack; the
+		// compiler-generated IfError instruction (single-value form) or the
+		// store instruction for the ok variable (comma-ok form) pops it first.
+		_ = c.push(nil)
+		_ = c.push(false)
+
+		return nil
 	} else {
-		if !actualType.IsType(newType) {
-			_ = c.push(nil)
-			_ = c.push(false)
-
-			return nil
-		}
-
+		// Type matches: pass the value through unchanged.
 		newValue = value
 	}
 
