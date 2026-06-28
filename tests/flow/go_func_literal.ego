@@ -1,16 +1,98 @@
 @test "flow: function literal as go-routine"
-
 {
     var ch chan
 
     // Launch a thread using the function constant right
     // here, followed by it's arguments.
-
-    go func (c chan, str string)  {
+    go func (c chan, str string) {
         c <- strings.ToLower(str)
     }(ch, "HellO")
 
     // Wait to get the result back from the thread.
     x <- ch
     @assert T.Equal(x, "hello")
+}
+
+// Regression test for BUG-02: anonymous goroutine closures must be able to read
+// variables from the scope where they were defined (outer-scope capture).
+//
+// # Root cause (fixed in pushByteCode — bytecode/stack.go)
+//
+// The Go statement "go func() { ... }()" is compiled by the parent context as:
+//   Push <literal-closure>  — clones the raw bytecode, stamps parent's local
+//                             scope as capturedScope (contains outer variable)
+//   Go  N                   — pops clone as fx, launches GoRoutine
+//
+// GoRoutine builds a tiny call script "Push fx; Call N" that runs in a minimal
+// goroutine context whose c.symbols is a child of the global root table.
+// pushByteCode previously cloned fx (preserving capturedScope from the parent)
+// but then unconditionally overwrote capturedScope = c.symbols, replacing the
+// parent's local scope with the goroutine's root-child scope.  Every reference
+// to an outer variable then produced "unknown identifier".
+//
+// The fix: only stamp c.symbols when capturedScope is nil.  A clone that already
+// carries a captured scope (i.e., the goroutine re-push case) keeps it.
+@test "flow: goroutine closure reads outer-scope variable"
+{
+    // A buffered channel used to collect the result from the goroutine.
+    // The goroutine cannot send until it has read 'x' from the outer scope,
+    // so receiving from 'done' serves as both synchronization and assertion.
+    done := make(chan, 1)
+    x := 42
+
+    // The closure captures 'x' and 'done' from the enclosing scope.
+    // Before the BUG-02 fix, this produced "unknown identifier: x" at runtime
+    // because pushByteCode discarded the captured scope when re-pushing the
+    // closure inside GoRoutine.
+    go func(c chan) {
+        c <- x
+    }(done)
+
+    result := <- done
+    @assert result == 42
+}
+
+// Verify that multiple outer-scope variables are all accessible.
+@test "flow: goroutine closure captures multiple outer-scope variables"
+{
+    done := make(chan, 1)
+    a := 10
+    b := 20
+    label := "sum"
+
+    go func(c chan) {
+        // Reading three distinct outer-scope variables.
+        c <- a + b
+    }(done)
+
+    total := <- done
+    @assert total == 30
+    @assert label == "sum"
+}
+
+// Verify that the existing argument-passing form still works after the BUG-02
+// fix.  Arguments are passed explicitly rather than captured from outer scope.
+@test "flow: goroutine closure with explicit arguments still works"
+{
+    ch := make(chan, 1)
+
+    go func(c chan, n int) {
+        c <- n * 2
+    }(ch, 21)
+
+    result := <- ch
+    @assert result == 42
+}
+
+// Verify the standard named-function goroutine path is unaffected.
+@test "flow: named-function goroutine unaffected by BUG-02 fix"
+{
+    func worker(c chan) {
+        c <- "ok"
+    }
+
+    ch := make(chan, 1)
+    go worker(ch)
+    msg := <- ch
+    @assert msg == "ok"
 }

@@ -66,6 +66,32 @@ func goByteCode(c *Context, i any) error {
 
 // GoRoutine allows calling a named function as a go routine, using arguments. The invocation
 // of GoRoutine should be in a "go" statement to run the code.
+//
+// # Symbol table setup for named vs. closure goroutines
+//
+// Named function goroutine (go namedFunc(args)):
+//   fx is a *ByteCode with IsLiteral() == false, or fx is a data.Function
+//   value.  The goroutine only needs access to global package-level names,
+//   so functionSymbols is created as a non-boundary child of the first
+//   shared ancestor of the parent context's current scope.  On most systems
+//   that is the global root table, which already contains all imported packages.
+//
+// Closure / anonymous function goroutine (go func() { ... }()):
+//   fx is a *ByteCode with IsLiteral() == true.  Its capturedScope field
+//   (stamped by pushByteCode when the go statement ran in the parent context)
+//   points to the parent's local scope — the scope that contains the outer
+//   variables the closure wants to read or write.
+//
+//   Before the goroutine runs we mark the entire captured scope chain as
+//   shared.  The "shared" flag causes every subsequent Get / Set call on
+//   those tables to acquire a read or write lock, respectively.  Without
+//   this, the parent thread and the goroutine would both access the same
+//   symbol tables without any synchronisation, constituting a data race.
+//
+//   functionSymbols is still a non-boundary child of the first shared ancestor
+//   so the goroutine's call bootstrap code can resolve global names (packages,
+//   imported functions).  The closure's own variables are accessed through
+//   capturedScope after callBytecodeFunction installs the closure's frame.
 func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	messageMutex.Lock()
 
@@ -78,6 +104,22 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	parentSymbols := parentCtx.symbols.FindNextScope()
 	parentCtx.shared.Store(false)
 	parentCtx.mux.Unlock()
+
+	// If the function being launched is a closure (anonymous function literal),
+	// mark its captured scope chain as shared so that concurrent reads and writes
+	// by the goroutine and the parent thread are properly serialized.
+	//
+	// This must happen before ctx.Run() below and before messageMutex.Unlock()
+	// so it completes before the parent thread can resume and modify the tables.
+	if bc, ok := fx.(*ByteCode); ok && bc.IsLiteral() {
+		if captured := bc.GetCapturedScope(); captured != nil {
+			// Shared(true) marks this table and all its ancestors as shared.
+			// That propagation is important: the closure walks the entire
+			// ancestor chain when resolving symbol names, so every table in
+			// that chain must be protected.
+			captured.Shared(true)
+		}
+	}
 
 	// Create a new stream whose job is to invoke the function by name. We mark this
 	// as a literal function so that calls to it will not generate scope barriers

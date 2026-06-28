@@ -207,11 +207,51 @@ func stackCheckByteCode(c *Context, i any) error {
 // literal / closure), it is cloned and the current symbol table is captured
 // onto the clone so the closure retains access to variables from its defining
 // scope even after that scope is popped.
+//
+// # Scope capture rules for closures
+//
+// Normal execution (closure defined in main or a called function):
+//   The clone starts with capturedScope == nil (copied from the compiled
+//   literal, which never has a scope stamped on it). pushByteCode stamps
+//   c.symbols, which is exactly the scope where the closure was written.
+//   This is the common case and is correct.
+//
+// Loop-body closures (FUNC-H2 fix):
+//   The same compiled literal is pushed on every loop iteration, each time
+//   producing a fresh clone with capturedScope == nil. pushByteCode stamps
+//   the per-iteration scope, giving each closure its own independent capture.
+//
+// Goroutine closures (BUG-02 fix):
+//   When the Go statement executes, the compiled literal has already been
+//   pushed once in the parent context — that first push cloned it and
+//   stamped the parent's local scope (containing the captured variables)
+//   onto clone.capturedScope. goByteCode then pops this clone as the
+//   function value fx. GoRoutine re-emits "Push fx; Call N" in a minimal
+//   goroutine context whose c.symbols is a child of the global root and
+//   knows nothing about the parent's local variables.
+//
+//   Without the guard below, this second Push would clone fx (which already
+//   carries the correct capturedScope) and then unconditionally overwrite
+//   capturedScope with c.symbols — the goroutine's root-child scope —
+//   discarding the parent's local scope entirely. Every outer variable
+//   reference inside the closure then produces "unknown identifier".
+//
+//   The fix: only stamp c.symbols when the clone does not already have a
+//   captured scope. An already-captured scope must be preserved so the
+//   closure continues to see the variables from where it was defined.
 func pushByteCode(c *Context, i any) error {
 	if bc, ok := i.(*ByteCode); ok && bc.IsLiteral() {
 		clone := bc.Clone()
-		clone.capturedScope = c.symbols
-		
+
+		// Guard: only capture the current scope if no scope has been captured
+		// yet. This preserves a scope that was already stamped by an earlier
+		// Push in the parent context (the goroutine case described above).
+		// For the normal and loop-body cases clone.capturedScope is nil at
+		// this point, so the assignment runs as before.
+		if clone.capturedScope == nil {
+			clone.capturedScope = c.symbols
+		}
+
 		return c.push(clone)
 	}
 

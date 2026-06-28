@@ -556,6 +556,151 @@ func Test_pushByteCode_NonLiteralBytecodeNotCloned(t *testing.T) {
 	}
 }
 
+// Test_pushByteCode_PreservesCapturedScope is the regression test for BUG-02:
+// "go func() {}() closures cannot read outer-scope variables".
+//
+// # Root cause
+//
+// When a Go statement executes (go func() { ... }()), the parent context first
+// pushes the literal closure through pushByteCode — that push clones the raw
+// compiled bytecode and stamps the parent's local symbol table onto the clone's
+// capturedScope field.  goByteCode then pops this clone as the function value fx.
+//
+// GoRoutine rebuilds a tiny call sequence ("Push fx; Call N") that runs in a
+// minimal goroutine context whose c.symbols is a child of the global root table
+// and knows nothing about the parent's local variables.  When that "Push fx"
+// instruction executes, pushByteCode previously cloned fx (correctly copying
+// capturedScope from the parent-captured clone) but then unconditionally
+// overwrote capturedScope with c.symbols — the goroutine's root-child scope —
+// discarding the parent's local scope entirely.  Every outer variable reference
+// inside the closure then produced "unknown identifier".
+//
+// # Fix
+//
+// pushByteCode now only stamps c.symbols onto the clone when capturedScope is
+// nil.  For the normal and loop-iteration cases the clone always starts with a
+// nil capturedScope (copied from the original compiled literal), so behavior is
+// unchanged.  For the goroutine re-push case the clone inherits a non-nil
+// capturedScope from fx and the guard leaves it intact.
+func Test_pushByteCode_PreservesCapturedScope(t *testing.T) {
+	// Simulate the parent context: pushByteCode captures the parent's scope.
+	parentCtx := newTestContext(t)
+
+	bc := New("goroutine-closure")
+	bc.Literal(true)
+
+	// First push: the parent context stamps its own symbol table.
+	if err := pushByteCode(parentCtx.ctx, bc); err != nil {
+		t.Fatalf("parent push: %v", err)
+	}
+
+	fx, popErr := parentCtx.ctx.Pop()
+	if popErr != nil {
+		t.Fatalf("parent pop: %v", popErr)
+	}
+
+	fxCode, ok := fx.(*ByteCode)
+	if !ok {
+		t.Fatalf("expected *ByteCode, got %T", fx)
+	}
+
+	// The clone must carry the parent's scope as its captured scope.
+	parentScope := fxCode.capturedScope
+	if parentScope == nil {
+		t.Fatal("first push did not capture the parent scope")
+	}
+
+	if parentScope != parentCtx.ctx.symbols {
+		t.Error("first push: capturedScope should be the parent context's symbol table")
+	}
+
+	// Simulate GoRoutine: a separate goroutine context with a different (minimal)
+	// symbol table re-pushes fx.  Before the BUG-02 fix, this second push would
+	// overwrite capturedScope with the goroutine's root-child scope.
+	goroutineCtx := newTestContext(t)
+
+	// Sanity-check: the goroutine context has a different symbol table.
+	if goroutineCtx.ctx.symbols == parentCtx.ctx.symbols {
+		t.Fatal("test setup error: goroutine context must have a distinct symbol table")
+	}
+
+	if err := pushByteCode(goroutineCtx.ctx, fxCode); err != nil {
+		t.Fatalf("goroutine push: %v", err)
+	}
+
+	fxCode2, popErr2 := goroutineCtx.ctx.Pop()
+	if popErr2 != nil {
+		t.Fatalf("goroutine pop: %v", popErr2)
+	}
+
+	rePushed, ok := fxCode2.(*ByteCode)
+	if !ok {
+		t.Fatalf("expected *ByteCode from goroutine push, got %T", fxCode2)
+	}
+
+	// BUG-02 fix: the re-pushed clone must still point at the PARENT scope, not
+	// the goroutine context's scope.
+	if rePushed.capturedScope != parentScope {
+		t.Errorf("BUG-02: second push overwrote capturedScope:\n  got  %q\n  want %q",
+			rePushed.capturedScope.Name, parentScope.Name)
+	}
+
+	if rePushed.capturedScope == goroutineCtx.ctx.symbols {
+		t.Error("BUG-02: capturedScope was replaced with the goroutine context's scope")
+	}
+}
+
+// Test_pushByteCode_LoopIterationsCaptureDifferentScopes verifies that the
+// loop-closure case (FUNC-H2) continues to work after the BUG-02 fix.
+//
+// Each iteration of a loop pushes the same compiled literal but must capture a
+// distinct per-iteration scope.  The original compiled literal has a nil
+// capturedScope, so the BUG-02 guard (skip stamp when capturedScope != nil) does
+// not interfere: every push produces a fresh clone with the current iteration's
+// scope.
+func Test_pushByteCode_LoopIterationsCaptureDifferentScopes(t *testing.T) {
+	// A single compiled literal with no captured scope — exactly how the
+	// compiler emits a function literal before any execution.
+	original := New("loop-closure")
+	original.Literal(true)
+
+	// Simulate two loop iterations in two different contexts.
+	ctx1 := newTestContext(t)
+	ctx2 := newTestContext(t)
+
+	if err := pushByteCode(ctx1.ctx, original); err != nil {
+		t.Fatalf("ctx1 push: %v", err)
+	}
+
+	if err := pushByteCode(ctx2.ctx, original); err != nil {
+		t.Fatalf("ctx2 push: %v", err)
+	}
+
+	v1, _ := ctx1.ctx.Pop()
+	v2, _ := ctx2.ctx.Pop()
+
+	clone1, ok1 := v1.(*ByteCode)
+	clone2, ok2 := v2.(*ByteCode)
+
+	if !ok1 || !ok2 {
+		t.Fatalf("expected *ByteCode from both pushes; got %T and %T", v1, v2)
+	}
+
+	// Each clone must capture its own context's scope.
+	if clone1.capturedScope != ctx1.ctx.symbols {
+		t.Error("clone1 did not capture ctx1's symbol table")
+	}
+
+	if clone2.capturedScope != ctx2.ctx.symbols {
+		t.Error("clone2 did not capture ctx2's symbol table")
+	}
+
+	// The two captured scopes must be distinct.
+	if clone1.capturedScope == clone2.capturedScope {
+		t.Error("different loop iterations captured the same scope")
+	}
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 7 — dropByteCode
 // ─────────────────────────────────────────────────────────────────────────────
