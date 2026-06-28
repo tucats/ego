@@ -68,7 +68,9 @@ func defineStaticRoutes() *router.Router {
 
 	// Start the dashboard UI
 	r.New(defs.UIPath, admin.UIHandler, http.MethodGet).
-		Class(router.AdminRequestCounter)
+		Class(router.AdminRequestCounter).
+		Parameter("lang", util.StringParameterType).
+		Parameter("language", util.StringParameterType)
 
 	// Read an asset from disk or cache.
 	r.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).

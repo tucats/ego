@@ -1,10 +1,19 @@
 <!DOCTYPE html>
+<!-- The static UI labels in this file are in English, so the lang attribute is
+     always "en".  The API language preference (which may differ) is carried
+     separately by the <meta name="ego-lang"> tag below. -->
 <html lang="en">
 <head>
     <!-- The /assets path is not a true file system path, but served by Ego -->
     <link rel="stylesheet" href="/assets/dashboard/dashboard.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Language code injected by the server at request time. The dashboard's
+         JavaScript reads this value and sends it as the Accept-Language header
+         on every API call, so server responses come back in the right language.
+         The __EGO_LANG__ placeholder is replaced by the UIHandler in
+         internal/server/admin/ui.go before the page is written to the client. -->
+    <meta name="ego-lang" content="__EGO_LANG__">
     <title>Ego Dashboard</title>
 </head>
 <body>
