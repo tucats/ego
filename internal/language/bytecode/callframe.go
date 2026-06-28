@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // CallFrame is an object used to store state of the bytecode runtime
@@ -276,6 +276,12 @@ func immutableValue(v any) bool {
 // *CallFrame is stored at stack[framePointer-1], not stack[framePointer].
 // Both accesses below must use framePointer-1 (CALL-6 fix).
 func (c *Context) SetBreakOnReturn() {
+	// If there is nothing to break from because there aren't call frames
+	// above us, this is a no-op.
+	if c.framePointer == 0 {
+		return
+	}
+
 	callFrameValue := c.stack[c.framePointer-1]
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
 		ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
