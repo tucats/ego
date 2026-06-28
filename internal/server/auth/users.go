@@ -1,0 +1,199 @@
+// Package auth handles authentication for an Ego server. It includes
+// the service providers for database and filesystem authentication
+// storage modes.
+package auth
+
+import (
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/tucats/ego/internal/cli/cli"
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/util/strings"
+	"github.com/tucats/ego/internal/language/tokens"
+)
+
+type userIOService interface {
+	ReadUser(session int, name string, doNotLog bool) (defs.User, error)
+	WriteUser(session int, user defs.User) error
+	DeleteUser(session int, name string) error
+	ListUsers(suppressPasswords bool) map[string]defs.User
+	Flush() error
+}
+
+// AuthService stores the specific instance of a service provider for
+// authentication services (there are builtin providers for JSON based
+// file service and a database service that can connect to Postgres or
+// SQLite3).
+var AuthService userIOService
+
+var (
+	agingMutex sync.Mutex
+	aging      map[string]time.Time
+)
+
+// Initialize uses command line options to locate and load the authorized users
+// database, or initialize it to a helpful default.
+func Initialize(c *cli.Context) error {
+	var (
+		err             error
+		defaultUser     = defs.DefaultAdminUsername
+		defaultPassword = defs.DefaultAdminPassword
+		credential      = ""
+	)
+
+	if creds, _ := c.String("default-credential"); creds != "" {
+		credential = creds
+	} else if creds := settings.Get(defs.DefaultCredentialSetting); creds != "" {
+		credential = creds
+	}
+
+	if credential != "" {
+		if pos := strings.Index(credential, ":"); pos >= 0 {
+			defaultUser = credential[:pos]
+			defaultPassword = strings.TrimSpace(credential[pos+1:])
+		} else {
+			defaultUser = credential
+			defaultPassword = ""
+		}
+
+		settings.SetDefault(defs.LogonSuperuserSetting, defaultUser)
+	}
+
+	// Is there a user database to load? If it was not specified, use the default from
+	// the configuration, and if that's empty then use the default SQLITE3 database.
+	// The use of "found" here allows the user to specify no database by specifying
+	// an empty string, or using the value "memory" to mean in-memory database only
+	userDatabaseFile, found := c.String("users")
+	if !found {
+		userDatabaseFile = settings.Get(defs.LogonUserdataSetting)
+		if userDatabaseFile == "" {
+			authPath := settings.Get(defs.EgoPathSetting)
+			userDatabaseFile = defs.DefaultUserdataScheme + "://" + filepath.Join(authPath, defs.DefaultUserdataFileName)
+		}
+	}
+
+	displayName := userDatabaseFile
+	if displayName == "" {
+		// Since we're doing in-memory, launch the aging mechanism that
+		// deletes cached credentials extracted from tokens when the
+		// token expiration arrives.
+		go ageCredentials()
+
+		displayName = "memory"
+	}
+
+	if ui.IsActive(ui.AuthLogger) {
+		ui.Log(ui.AuthLogger, "server.auth.init", ui.A{
+			"database": userDatabaseFile,
+		})
+	} else {
+		ui.Log(ui.ServerLogger, "server.auth.init", ui.A{
+			"database": displayName,
+		})
+	}
+
+	// Let the token package know the database to be used for handling blacklists.
+	tokens.SetDatabasePath(userDatabaseFile)
+
+	// Create a new instance of the authorization service based on the database path.
+	// If initialization fails here, there is no way to start the server, so bail out.
+	AuthService, err = defineCredentialService(userDatabaseFile, defaultUser, defaultPassword)
+	if err != nil {
+		ui.Log(ui.ServerLogger, "server.auth.init.err", ui.A{
+			"error": err.Error(),
+		})
+
+		return err
+	}
+
+	// If there is a --superuser specified on the command line, or in the persistent profile data,
+	// mark that user as having ROOT privileges
+	su, ok := c.String("superuser")
+	if !ok {
+		su = settings.Get(defs.LogonSuperuserSetting)
+	}
+
+	if su != "" {
+		err = setPermission(0, su, defs.RootPermission, true)
+		if err != nil {
+			err = setPermission(0, su, defs.LogonPermission, true)
+		}
+	}
+
+	return err
+}
+
+// defineCredentialService creates a new instance of a credential service
+// based on the path provided. If the path is a database URL, a database
+// service is created. Otherwise, a file-based service is created.
+func defineCredentialService(path, user, password string) (userIOService, error) {
+	var err error
+
+	path = strings.TrimSuffix(strings.TrimPrefix(path, "\""), "\"")
+
+	if isDatabaseURL(path) {
+		AuthService, err = NewDatabaseService(path, user, password)
+	} else {
+		AuthService, err = NewFileService(path, user, password)
+	}
+
+	return AuthService, err
+}
+
+// Utility function to determine if a given path is a database URL or
+// not.
+func isDatabaseURL(path string) bool {
+	path = strings.ToLower(path)
+	drivers := []string{"postgres://", "sqlite3://", "sqlite://"}
+
+	for _, driver := range drivers {
+		if strings.HasPrefix(path, driver) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Go routine that runs periodically to see if credentials should be
+// aged out of the user store. Runs every 180 seconds by default, but
+// this can be overridden with the "ego.server.auth.cache.scan" setting.
+func ageCredentials() {
+	scanDelay := 180
+
+	if scanString := settings.Get(defs.AuthCacheScanSetting); scanString != "" {
+		if delay, err := egostrings.Atoi(scanString); err != nil {
+			scanDelay = delay
+		}
+	}
+
+	for {
+		time.Sleep(time.Duration(scanDelay) * time.Second)
+		agingMutex.Lock()
+
+		list := []string{}
+
+		for user, expires := range aging {
+			if time.Since(expires) > 0 {
+				list = append(list, user)
+			}
+		}
+
+		if len(list) > 0 {
+			ui.Log(ui.AuthLogger, "auth.proxy.expire", ui.A{
+				"count": len(list)})
+		}
+
+		for _, user := range list {
+			delete(aging, user)
+			_ = AuthService.DeleteUser(0, user)
+		}
+
+		agingMutex.Unlock()
+	}
+}

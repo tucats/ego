@@ -1,0 +1,135 @@
+package io
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/runtime/time"
+	"github.com/tucats/ego/internal/language/symbols"
+)
+
+// expand expands a list of file or path names into a list of files.
+func expand(s *symbols.SymbolTable, args data.List) (any, error) {
+	path := data.String(args.Get(0))
+	ext := ""
+
+	if args.Len() > 1 {
+		ext = data.String(args.Get(1))
+	}
+
+	path = sandboxName(SandBoxedIO(s), path)
+	list, err := ExpandPath(s, path, ext)
+
+	// Rewrap as an Ego array
+	result := data.NewArray(data.StringType, 0)
+
+	for _, item := range list {
+		result.Append(item)
+	}
+
+	return result, err
+}
+
+// ExpandPath is used to expand a path into a list of file names. This is
+// also used elsewhere to product path lists, so it must be an exported
+// symbol.
+func ExpandPath(s *symbols.SymbolTable, path, ext string) ([]string, error) {
+	names := []string{}
+
+	path = sandboxName(SandBoxedIO(s), path)
+
+	// Can we read this as a directory?
+	fi, err := os.ReadDir(path)
+	if err != nil {
+		fn := path
+
+		_, err := os.ReadFile(fn)
+		if err != nil {
+			fn = path + ext
+			_, err = os.ReadFile(fn)
+		}
+
+		if err != nil {
+			return names, errors.New(err)
+		}
+
+		// If we have a default suffix, make sure the pattern matches
+		if ext != "" && !strings.HasSuffix(fn, ext) {
+			return names, nil
+		}
+
+		names = append(names, fn)
+
+		return names, nil
+	}
+
+	// Read as a directory
+	for _, f := range fi {
+		fn := filepath.Join(path, f.Name())
+
+		list, err := ExpandPath(s, fn, ext)
+		if err != nil {
+			return names, err
+		}
+
+		names = append(names, list...)
+	}
+
+	return names, nil
+}
+
+// readDirectory implements the io.readdir() function.
+func readDirectory(s *symbols.SymbolTable, args data.List) (any, error) {
+	path := data.String(args.Get(0))
+	result := data.NewArray(IoEntryType, 0)
+
+	path = sandboxName(SandBoxedIO(s), path)
+
+	files, err := os.ReadDir(path)
+	if err != nil {
+		err = errors.New(err).In("ReadDir")
+
+		return data.NewList(result, err), err
+	}
+
+	for _, file := range files {
+		entry := data.NewStruct(IoEntryType)
+		i, _ := file.Info()
+
+		_ = entry.Set("Name", file.Name())
+		_ = entry.Set("IsDirectory", file.IsDir())
+		_ = entry.Set("Mode", i.Mode().String())
+		_ = entry.Set("Size", int(i.Size()))
+
+		// Create an Ego time.Time object from the os.FileInfo object
+		_ = entry.Set("Modified", data.NewStruct(time.TimeType).SetNative(i.ModTime()))
+
+		result.Append(entry)
+	}
+
+	return data.NewList(result, nil), nil
+}
+
+// If there is a sandbox path set, coerce the path to fit into the sandbox. Additionally,
+// when a sandbox path is present, disallow relative directory paths so they cannot be used
+// to escape the sandbox.
+func sandboxName(flag bool, path string) string {
+	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); flag && sandboxPrefix != "" {
+		if strings.HasPrefix(path, "../") || strings.HasSuffix(path, "/..") || strings.Contains(path, "/../") {
+			path = strings.ReplaceAll(path, "..", "<invalid path>")
+		}
+
+		if strings.HasPrefix(path, sandboxPrefix) {
+			return path
+		}
+
+		return filepath.Join(sandboxPrefix, path)
+	}
+
+	return path
+}

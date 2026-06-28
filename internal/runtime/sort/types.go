@@ -1,0 +1,272 @@
+package sort
+
+import (
+	"github.com/tucats/ego/internal/language/data"
+)
+
+var SortPackage = data.NewPackageFromMap("sort", map[string]any{
+	"Bytes": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Bytes",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.ByteType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.ByteType)},
+		},
+		Value: sortBytes,
+	},
+	"Float32s": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Float32s",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Float32Type),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.Float32Type)},
+		},
+		Value: sortFloat32s,
+	},
+	"Float64s": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Float64s",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Float64Type),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.Float64Type)},
+		},
+		Value: sortFloat64s,
+	},
+	"Int32s": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Int32s",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Int32Type),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.Int32Type)},
+		},
+		Value: sortInt32s,
+	},
+	"Int64s": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Int64s",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Int64Type),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.Int64Type)},
+		},
+		Value: sortInt64s,
+	},
+	"Ints": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Ints",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.IntType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.IntType)},
+		},
+		Value: sortInts,
+	},
+	"Slice": data.Function{
+		Declaration: &data.Declaration{
+			Name:  "Slice",
+			Scope: true,
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+				{
+					Name: "less",
+					Type: data.FunctionType(&data.Function{
+						Declaration: &data.Declaration{
+							Name: "",
+							Parameters: []data.Parameter{
+								{
+									Name: "i",
+									Type: data.IntType,
+								},
+								{
+									Name: "j",
+									Type: data.IntType,
+								},
+							},
+							Returns: []*data.Type{data.BoolType},
+						},
+					}),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: sortSlice,
+	},
+	"SliceStable": data.Function{
+		Declaration: &data.Declaration{
+			Name:  "SliceStable",
+			Scope: true,
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+				{
+					Name: "less",
+					Type: data.FunctionType(&data.Function{
+						Declaration: &data.Declaration{
+							Name: "",
+							Parameters: []data.Parameter{
+								{
+									Name: "i",
+									Type: data.IntType,
+								},
+								{
+									Name: "j",
+									Type: data.IntType,
+								},
+							},
+							Returns: []*data.Type{data.BoolType},
+						},
+					}),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: sortSliceStable,
+	},
+	"Sort": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Sort",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: genericSort,
+	},
+	"Stable": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Stable",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.InterfaceType)},
+		},
+		Value: sortStable,
+	},
+	"Strings": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Strings",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.StringType),
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.StringType)},
+		},
+		Value: sortStrings,
+	},
+	"StringsAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "StringsAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.StringType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortStringsAreSorted,
+	},
+	"IsSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IsSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.InterfaceType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortIsSorted,
+	},
+	"IntsAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IntsAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.IntType),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortIntsAreSorted,
+	},
+	"Float64sAreSorted": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Float64sAreSorted",
+			Parameters: []data.Parameter{
+				{
+					Name: "data",
+					Type: data.ArrayType(data.Float64Type),
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value: sortFloat64sAreSorted,
+	},
+	"Search": data.Function{
+		Declaration: &data.Declaration{
+			Name:  "Search",
+			Scope: true,
+			Parameters: []data.Parameter{
+				{
+					Name: "n",
+					Type: data.IntType,
+				},
+				{
+					Name: "f",
+					Type: data.FunctionType(&data.Function{
+						Declaration: &data.Declaration{
+							Name: "",
+							Parameters: []data.Parameter{
+								{
+									Name: "i",
+									Type: data.IntType,
+								},
+							},
+							Returns: []*data.Type{data.BoolType},
+						},
+					}),
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value: sortSearch,
+	},
+})

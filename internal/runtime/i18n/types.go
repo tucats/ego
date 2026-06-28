@@ -1,0 +1,55 @@
+package i18n
+
+import (
+	"github.com/tucats/ego/internal/language/data"
+)
+
+var I18nPackage = data.NewPackageFromMap("i18n", map[string]any{
+	"Language": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "Language",
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: language,
+	},
+	"T": data.Function{
+		Declaration: &data.Declaration{
+			Name: "T",
+			Parameters: []data.Parameter{
+				{
+					Name: "key",
+					Type: data.StringType,
+				},
+				{
+					Name: "parameters",
+					Type: data.MapType(data.StringType, data.InterfaceType),
+				},
+				{
+					Name: "language",
+					Type: data.StringType,
+				},
+			},
+			ArgCount: data.Range{1, 3},
+			Returns:  []*data.Type{data.StringType},
+		},
+		Value: translation,
+	},
+	"Format": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Format",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "parameters",
+					Type: data.MapType(data.StringType, data.InterfaceType),
+				},
+			},
+			ArgCount: data.Range{1, 2},
+			Returns:  []*data.Type{data.StringType},
+		},
+		Value: format,
+	},
+})

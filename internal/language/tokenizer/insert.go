@@ -1,0 +1,73 @@
+package tokenizer
+
+import "github.com/tucats/ego/internal/errors"
+
+// Delete removes the tokens at positions [start, end) from the token stream
+// (start inclusive, end exclusive). It returns ErrArrayIndex if the range is
+// invalid — start is negative, start is beyond the last token, end is before
+// start, or end exceeds the length of the token slice.
+//
+// After the deletion the current token pointer (TokenP) is adjusted so that
+// it still refers to the same logical position in the remaining stream:
+//   - If TokenP was inside the deleted range it is moved to start.
+//   - If TokenP was after the deleted range it is shifted back by the number
+//     of tokens removed.
+func (t *Tokenizer) Delete(start, end int) error {
+	if start < 0 || start >= len(t.Tokens) || end < start || end > len(t.Tokens) {
+		return errors.ErrArrayIndex
+	}
+
+	// Build a new token buffer from the old tokens up to the start position,
+	// plus the tokens after the end position.
+	result := make([]Token, 0, len(t.Tokens)-end+start)
+
+	for _, token := range t.Tokens[:start] {
+		result = append(result, token)
+	}
+
+	result = append(result, t.Tokens[end:]...)
+	t.Tokens = result
+
+	if t.TokenP >= start && t.TokenP <= end {
+		t.TokenP = start
+	} else if t.TokenP > end {
+		t.TokenP -= end - start
+	}
+
+	return nil
+}
+
+// Insert a list of tokens into the tokenizer buffer at the specified position. It is
+// an error if the position is less than zero or after the end of the existing token
+// buffer.
+func (t *Tokenizer) Insert(pos int, tokens ...Token) error {
+	// IF the insert position is out of range, return an error.
+	if pos < 0 || pos >= len(t.Tokens) {
+		return errors.ErrArrayIndex
+	}
+
+	// IF there are no tokens, nothing to do.
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	// Build a new token buffer from the old tokens up to the insert position,
+	// plus the new tokens. Then add the rest of the old tokens after the new ones.
+	result := make([]Token, 0, len(t.Tokens)+len(tokens))
+
+	for _, token := range t.Tokens[:pos] {
+		result = append(result, token)
+	}
+
+	result = append(result, tokens...)
+	result = append(result, t.Tokens[pos:]...)
+
+	t.Tokens = result
+
+	// If the token pointer is after the insertion point, adjust it accordingly.
+	if t.TokenP >= pos {
+		t.TokenP += len(tokens)
+	}
+
+	return nil
+}

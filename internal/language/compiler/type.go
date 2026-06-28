@@ -1,0 +1,257 @@
+package compiler
+
+import (
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/language/tokenizer"
+)
+
+// compileTypeDefinition compiles a "type" statement, which creates a named
+// user-defined type. The "type" keyword has already been consumed by the
+// caller. The expected form is:
+//
+//	type Name <typeSpec>
+//
+// where <typeSpec> can be a primitive type, struct, map, array, interface,
+// function signature, or another user-defined type name. The name and type
+// body are parsed and then delegated to typeEmitter, which emits bytecode to
+// store the type object in the symbol table.
+func (c *Compiler) compileTypeDefinition() error {
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
+		return c.compileError(errors.ErrMissingType)
+	}
+
+	name := c.t.Next()
+	if !name.IsIdentifier() {
+		return c.compileError(errors.ErrInvalidSymbolName)
+	}
+
+	name = c.normalizeToken(name)
+
+	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
+		return c.compileError(errors.ErrMissingType)
+	}
+
+	if c.t.IsNext(tokenizer.EmptyBlockToken) {
+		return c.compileError(errors.ErrMissingType)
+	}
+
+	typeName := name.Spelling()
+
+	return c.typeEmitter(typeName)
+}
+
+// typeDeclaration parses a type specification from the current token stream and
+// returns an instance value (the zero value) of that type. This is used in
+// contexts where a type is expected to produce a default value, such as in a
+// channel declaration or type-cast expression.
+func (c *Compiler) typeDeclaration() (any, error) {
+	theType, err := c.parseType("", false)
+	if err != nil {
+		return nil, err
+	}
+
+	return data.InstanceOfType(theType), nil
+}
+
+// parseTypeSpec reads a type specification token sequence and returns the
+// matching *data.Type. It handles the common shorthand forms used in var
+// declarations and parameter lists:
+//
+//   - "type"        — the meta-type (type of a type), available with extensions
+//   - "*T"          — pointer to T
+//   - "[]T"         — slice/array of T
+//   - "map[K]V"     — map from K to V
+//   - primitive type keywords (int, string, bool, …)
+//   - user-defined type names registered in c.types
+//
+// Returns UndefinedType (not an error) when no type token is recognized, so
+// the caller can fall back to other parsing strategies such as user type lookup.
+func (c *Compiler) parseTypeSpec() (*data.Type, error) {
+	if c.flags.extensionsEnabled && c.t.Peek(1).Is(tokenizer.TypeToken) {
+		c.t.Advance(1)
+
+		return data.TypeType, nil
+	}
+
+	if c.t.Peek(1).Is(tokenizer.PointerToken) {
+		c.t.Advance(1)
+		t, err := c.parseTypeSpec()
+
+		return data.PointerType(t), err
+	}
+
+	if c.t.Peek(1).Is(tokenizer.StartOfArrayToken) && c.t.Peek(2).Is(tokenizer.EndOfArrayToken) {
+		c.t.Advance(2)
+		t, err := c.parseTypeSpec()
+
+		return data.ArrayType(t), err
+	}
+
+	if c.t.Peek(1).Is(tokenizer.MapToken) && c.t.Peek(2).Is(tokenizer.StartOfArrayToken) {
+		c.t.Advance(2)
+
+		keyType, err := c.parseTypeSpec()
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		c.t.IsNext(tokenizer.EndOfArrayToken)
+
+		valueType, err := c.parseTypeSpec()
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		return data.MapType(keyType, valueType), nil
+	}
+
+	for _, typeDef := range data.TypeDeclarations {
+		found := true
+
+		for pos, token := range typeDef.Tokens {
+			eval := c.t.Peek(1 + pos)
+			if eval.Spelling() != token {
+				found = false
+			}
+		}
+
+		if found {
+			c.t.Advance(len(typeDef.Tokens))
+
+			return typeDef.Kind, nil
+		}
+	}
+
+	// Is it a type we already know about?
+	typeName := c.t.Peek(1)
+	if typeDef, ok := c.types[typeName.Spelling()]; ok {
+		c.t.Advance(1)
+
+		if err := c.ReferenceSymbol(typeName.Spelling()); err != nil {
+			return nil, err
+		}
+
+		return typeDef, nil
+	}
+
+	return data.UndefinedType, nil
+}
+
+// Given a string expression of a type specification, compile it and return the
+// type it represents, and an optional error if it was incorrectly formed. This
+// cannot reference user types as they are not visible to this function.
+//
+// If the string starts with the keyword `type` followed by a type name, then
+// the resulting value is a type definition of the given name.
+//
+// The dependent types map contains types from previous standalone type
+// compilations that the current spec is dependent upon. For example,
+// a type definition for a sub-structure that is then referenced in
+// the current type compilation. Passing nil just means there are no
+// dependent types.
+func CompileTypeSpec(source string, dependentTypes map[string]*data.Type) (*data.Type, error) {
+	typeCompiler := New("type compiler")
+	defer typeCompiler.Close()
+
+	typeCompiler.t = tokenizer.New(source, true)
+
+	if dependentTypes != nil {
+		typeCompiler.types = dependentTypes
+	}
+
+	nameSpelling := ""
+	// Does it have a type <name> prefix? And is that a package.name style name?
+	if typeCompiler.t.IsNext(tokenizer.TypeToken) {
+		name := typeCompiler.t.Next()
+		if !name.IsIdentifier() {
+			return data.UndefinedType, errors.ErrInvalidSymbolName.Context(name)
+		}
+
+		nameSpelling = name.Spelling()
+
+		if typeCompiler.t.IsNext(tokenizer.DotToken) {
+			name2 := typeCompiler.t.Next()
+			if !name2.IsIdentifier() {
+				return data.UndefinedType, errors.ErrInvalidSymbolName.Context(name2)
+			}
+
+			nameSpelling = nameSpelling + "." + name2.Spelling()
+		}
+	}
+
+	typeCompiler.b.SetName("type " + nameSpelling)
+
+	t, err := typeCompiler.parseType("", true)
+	if err == nil && nameSpelling != "" {
+		t = data.TypeDefinition(nameSpelling, t)
+	}
+
+	return t, err
+}
+
+// GetPackageType looks up a type by package name and type name, searching in
+// order:
+//  1. The compiler's local package map (c.packages).
+//  2. The root symbol table (for packages that have already been imported and
+//     moved to global storage).
+//  3. The bytecode package registry (for packages imported in earlier
+//     compilations in the same session).
+//
+// Returns nil if the type cannot be found in any of those locations.
+func (c *Compiler) GetPackageType(packageName, typeName string) *data.Type {
+	if p, found := c.packages[packageName]; found {
+		if t, found := p.Get(typeName); found {
+			if theType, ok := t.(*data.Type); ok {
+				return theType
+			}
+		}
+
+		// It was a package, but without a package body. Already moved to global storage?
+		if pkg, found := c.s.Root().Get(packageName); found {
+			if m, ok := pkg.(*data.Package); ok {
+				if t, found := m.Get(typeName); found {
+					if theType, ok := t.(*data.Type); ok {
+						return theType
+					}
+				}
+
+				if t, found := m.Get(data.TypeMDKey); found {
+					if theType, ok := t.(*data.Type); ok {
+						return theType.BaseType()
+					}
+				}
+			}
+		}
+	}
+
+	// Only remaining possibility; is it a previously imported package type?
+	return typeFromPreviousImport(packageName, typeName)
+}
+
+// typeFromPreviousImport attempts to locate a type defined inside a package
+// that was imported in a previous compilation pass (stored in the bytecode
+// package registry). It checks both the package's direct key-value store and
+// its attached symbol table, returning the type if found or nil otherwise.
+func typeFromPreviousImport(packageName, typeName string) *data.Type {
+	if bytecode.IsPackage(packageName) {
+		p, _ := bytecode.GetPackage(packageName)
+		if tV, ok := p.Get(typeName); ok {
+			if t, ok := tV.(*data.Type); ok {
+				return t
+			}
+		}
+
+		// Could also be a type stored in the symbol table.
+		symbolTable := symbols.GetPackageSymbolTable(p)
+		if t, ok := symbolTable.Get(typeName); ok {
+			if theType, ok := t.(*data.Type); ok {
+				return theType
+			}
+		}
+	}
+
+	return nil
+}

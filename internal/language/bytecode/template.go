@@ -1,0 +1,36 @@
+package bytecode
+
+import (
+	"text/template"
+
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/errors"
+)
+
+/******************************************\
+*                                         *
+*           T E M P L A T E S             *
+*                                         *
+\******************************************/
+
+// templateByteCode compiles a template string from the stack and stores it in
+// the template manager for the execution context.
+func templateByteCode(c *Context, i any) error {
+	name := data.String(i)
+
+	t, err := c.Pop()
+	if err == nil {
+		if isStackMarker(t) {
+			return c.runtimeError(errors.ErrFunctionReturnedVoid)
+		}
+
+		t, e2 := template.New(name).Parse(data.String(t))
+		if e2 == nil {
+			err = c.push(t)
+		} else {
+			err = c.runtimeError(e2)
+		}
+	}
+
+	return err
+}

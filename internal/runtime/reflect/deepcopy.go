@@ -1,0 +1,113 @@
+package reflect
+
+import (
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
+)
+
+// deepCopy implements the reflect.deepCopy function.
+func deepCopy(s *symbols.SymbolTable, args data.List) (any, error) {
+	var err error
+
+	depth := MaxDeepCopyDepth
+	if args.Len() > 1 {
+		depth, err = data.Int(args.Get(1))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return recursiveCopy(args.Get(0), depth), nil
+}
+
+// DeepCopy makes a deep copy of an Ego data type. It should be called with the
+// maximum nesting depth permitted (i.e. array index->array->array...). Because
+// it calls itself recursively, this is used to determine when to give up and
+// stop traversing nested data. The default is MaxDeepCopyDepth.
+func recursiveCopy(source any, depth int) any {
+	if depth < 0 {
+		return nil
+	}
+
+	switch v := source.(type) {
+	case bool:
+		return v
+
+	case byte:
+		return v
+
+	case int8:
+		return v
+
+	case int16:
+		return v
+
+	case uint16:
+		return v
+
+	case uint32:
+		return v
+
+	case uint:
+		return v
+
+	case uint64:
+		return v
+
+	case int32:
+		return v
+
+	case int:
+		return v
+
+	case int64:
+		return v
+
+	case string:
+		return v
+
+	case float32:
+		return v
+
+	case float64:
+		return v
+
+	case *data.Struct:
+		return v.Copy()
+
+	case *data.Array:
+		r := data.NewArray(v.Type(), v.Len())
+
+		for i := 0; i < v.Len(); i++ {
+			vv, _ := v.Get(i)
+			vv = recursiveCopy(vv, depth-1)
+			_ = r.Set(i, vv)
+		}
+
+		return r
+
+	case *data.Map:
+		r := data.NewMap(v.KeyType(), v.ElementType())
+
+		for _, k := range v.Keys() {
+			d, _, _ := v.Get(k)
+			_, _ = r.Set(k, recursiveCopy(d, depth-1))
+		}
+
+		return r
+
+	case *data.Package:
+		r := data.Package{}
+		keys := v.Keys()
+
+		for _, k := range keys {
+			d, _ := v.Get(k)
+			r.Set(k, recursiveCopy(d, depth-1))
+		}
+
+		return &r
+
+	default:
+		return v
+	}
+}

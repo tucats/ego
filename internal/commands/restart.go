@@ -1,0 +1,187 @@
+package commands
+
+import (
+	"os"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/cli/cli"
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/util/fork"
+	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/runtime/profile"
+)
+
+// Restart stops the currently-running detached server and immediately starts a new
+// instance using the same arguments that were stored in the PID file when the server
+// was first started. A new session UUID is generated for the restarted server so that
+// log entries from the new run are distinguishable from the previous run.
+//
+// Not supported on Windows (detached processes use Unix-style process management).
+//
+// Invoked by:
+//
+//	Traditional: ego server restart
+//	Verb:        ego restart server
+func Restart(c *cli.Context) error {
+	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
+		return err
+	}
+
+	serverStatus, err := killExistingServer(c)
+	if !errors.Nil(err) {
+		msg := err.Error()
+		if strings.Contains(msg, "connection refused") || strings.Contains(msg, "dial tcp") {
+			err = errors.ErrServerDown
+		}
+
+		return err
+	}
+
+	args := serverStatus.Args
+
+	// Set up the new ID. If there was one already (because this might be
+	// a restart operation) then update the UUID value. If not, add the uuid
+	// command line option.
+	logID := uuid.New()
+	found := false
+
+	for i, v := range args {
+		if v == "--session-uuid" {
+			args[i+1] = logID.String()
+			found = true
+
+			break
+		}
+	}
+
+	if !found {
+		args = append(args, "--session-uuid", logID.String())
+	}
+
+	if c.Boolean("new-token") {
+		args = append(args, "--new-token")
+	}
+
+	// If output is in chatty text format and verbose was requested, output an extra
+	// line describing the server id, image path, and log file name.
+	if c.Boolean(defs.VerboseOption) && ui.OutputFormat == ui.TextFormat {
+		logFile := "ego-server.log"
+
+		for i, v := range args {
+			if v == "--log-file" && i+1 <= len(args) {
+				logFile = args[i+1]
+
+				break
+			}
+		}
+
+		ui.Say("msg.server.start.verbose", ui.A{
+			"id":   logID.String(),
+			"path": args[0],
+			"log":  logFile,
+		})
+	}
+
+	// Sleep for one second. This guarantees that the log file stamp of the new log
+	// will not be the same as the old log stamp.
+	time.Sleep(1 * time.Second)
+
+	// Launch the new process
+	pid, err := fork.Run(args[0], args)
+	if err == nil {
+		serverStatus.PID = pid
+		serverStatus.ID = logID.String()
+
+		// Scan over args and remove any instance of "--new-token". These are
+		// not saved in the pid file, so this option is only a "one-shot"
+		for i, v := range args {
+			if v == "--new-token" {
+				args = append(args[:i], args[i+1:]...)
+			}
+		}
+
+		// Write the new status to the pid file.
+		// We need to write it again, because the log file name might have changed.
+		// Note that the log file name is not included in the status.Args slice.
+		serverStatus.Args = args
+		err = router.WritePidFile(c, *serverStatus)
+
+		if ui.OutputFormat == ui.TextFormat {
+			ui.Say("msg.server.started", map[string]any{
+				"pid": pid,
+			})
+		} else {
+			serverState, _ := router.ReadPidFile(c)
+			_ = c.Output(serverState)
+		}
+	} else {
+		_ = router.RemovePidFile(c)
+	}
+
+	if err != nil {
+		err = errors.New(err)
+	}
+
+	return err
+}
+
+// Kill off any existing instance of the server, if any. Returns the server status
+// of the server if it was running, and an error code indicating if the server
+// was killed. If the server was not running, returns nil and no error.
+func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
+	if c.Boolean("force") {
+		status, err := router.ReadPidFile(c)
+		if err == nil {
+			proc, e2 := os.FindProcess(status.PID)
+			if e2 == nil {
+				e2 = proc.Kill()
+				// If successful, and in text mode, report the stop to the console.
+				if e2 == nil && ui.OutputFormat == ui.TextFormat {
+					ui.Say("msg.server.stopped", map[string]any{
+						"pid": status.PID,
+					})
+				}
+			}
+
+			if e2 != nil {
+				err = errors.New(e2)
+			}
+		}
+
+		_ = router.RemovePidFile(c)
+
+		return status, err
+	}
+
+	// Not a force, let's try it the polite way. The current server (app.server
+	// or logon.server) must be the current server or this operation is invalid
+	// (cannot do a restart on another server)
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	server := settings.Get(defs.ApplicationServerSetting)
+	if server == "" {
+		server = settings.Get(defs.LogonServerSetting)
+	}
+
+	server = strings.TrimPrefix(server, "http://")
+	server = strings.TrimPrefix(server, "https://")
+
+	server, _, _ = strings.Cut(server, ":")
+	if strings.EqualFold(server, hostname) {
+		return nil, errors.ErrNotLocalServer.Context(server)
+	}
+
+	// All good, let's try to send a REST stop command to the local server.
+	status, err := politeStop(c)
+
+	return status, err
+}

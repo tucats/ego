@@ -1,0 +1,78 @@
+package builtins
+
+import (
+	"reflect"
+	"strings"
+
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
+)
+
+// describeType implements the type() function.
+func typeOf(s *symbols.SymbolTable, args data.List) (any, error) {
+	switch v := args.Get(0).(type) {
+	case *data.Map:
+		return v.Type(), nil
+
+	case *data.Array:
+		return data.ArrayType(v.Type()), nil
+
+	case *data.Struct:
+		return v.Type(), nil
+
+	case nil:
+		return data.NilType, nil
+
+	case error:
+		return data.ErrorType, nil
+
+	case *data.Channel:
+		return data.ChanType, nil
+
+	case *data.Type:
+		return data.TypeDefinition("type", v), nil
+
+	case *data.Package:
+		return data.PackageType(v.Name), nil
+
+	case *any:
+		return data.PointerType(data.InterfaceType), nil
+
+	case func(s *symbols.SymbolTable, args data.List) (any, error):
+		// BUILTIN-TYPES-1 fix: the original code returned the string "<builtin>",
+		// making typeof(builtinFunc) the only case that does not return a *data.Type.
+		// Callers that compare typeof() results or use them in type-switch statements
+		// received an unexpected string value.
+		//
+		// data.FunctionType() requires a non-nil *data.Function with a Declaration.
+		// We construct a minimal anonymous declaration so the result is a valid
+		// *data.Type of FunctionKind, consistent with the data.Function case below.
+		builtinFn := data.Function{
+			Declaration: &data.Declaration{Name: "<builtin>"},
+		}
+		
+		return data.FunctionType(&builtinFn), nil
+
+	case data.Function:
+		return data.FunctionType(&v), nil
+
+	default:
+		// Check to see if this is a package type. If it is a pointer type,
+		// strip off the "*" to get the type name.
+		typeName := strings.TrimPrefix(reflect.TypeOf(v).String(), "*")
+
+		if parts := strings.Split(typeName, "."); len(parts) == 2 {
+			if pkgData, found := s.Get(parts[0]); found {
+				if pkg, ok := pkgData.(*data.Package); ok {
+					if t, found := pkg.Get(parts[1]); found {
+						if theType, ok := t.(*data.Type); ok {
+							return theType, nil
+						}
+					}
+				}
+			}
+		}
+
+		return data.TypeOf(v), nil
+	}
+}

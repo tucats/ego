@@ -1418,7 +1418,7 @@ Would result in `y` containing the floating point value 17.0.
 This is because the string value "15" would be converted to a
 float64 value, and the integer value 2 would be converted to a
 float64 value before the body of the function is invoked. So
-`type(v1)` in the function will return "float64" as the result,
+`typeof(v1)` in the function will return "float64" as the result,
 regardless of the type of the value passed in when the function
 was called.
 
@@ -1435,7 +1435,7 @@ mode and is accepted as-is in dynamic mode.
 The `func` statement allows for a special data type `any`
 which really means "any type is allowed" and no conversion occurs.
 If the function body needs to know the actual type of the value
-passed, the `type()` function would be used.
+passed, the `typeof()` function would be used.
 
 A function that does not return a value at all should omit the
 return type declaration.

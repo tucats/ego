@@ -1,0 +1,491 @@
+package settings
+
+import (
+	"crypto/rand"
+	"database/sql"
+	"encoding/base64"
+	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/util/strings"
+	"github.com/tucats/ego/internal/errors"
+)
+
+type dbPersist struct {
+	Application string
+	Name        string
+	Table       string
+	Items       string
+	scheme      string
+	constr      string
+	db          *sql.DB
+}
+
+const (
+	configType = "config"
+	fileType   = "file"
+)
+
+func NewDatabaseConfigService(application, scheme, name string) (dbPersist, error) {
+	var (
+		err        error
+		connection string
+	)
+
+	handle := dbPersist{
+		Application: application,
+		Name:        name,
+		Table:       "config_ids",
+		Items:       "config_items",
+		scheme:      scheme,
+		constr:      name,
+	}
+
+	if scheme == defs.DeprecatedSqliteProvider || scheme == defs.SqliteProvider {
+		connection = egostrings.StripScheme(name)
+		// modernc.org/sqlite registers under the driver name "sqlite".
+		scheme = defs.SqliteProvider
+	} else {
+		connection = name
+	}
+
+	ui.Log(ui.AppLogger, "settings.db.open", ui.A{
+		"connection": connection,
+		"scheme":     scheme})
+
+	handle.db, err = sql.Open(scheme, connection)
+	if err != nil {
+		return handle, err
+	}
+
+	if scheme == defs.SqliteProvider {
+		handle.db.Exec("PRAGMA journal_mode=WAL;")
+		handle.db.Exec("PRAGMA busy_timeout=5000;")
+	}
+
+	tx, _ := handle.db.Begin()
+	defer tx.Rollback()
+
+	sql := fmt.Sprintf(`
+	create table IF NOT EXISTS %s (
+	    id TEXT PRIMARY KEY,
+        description TEXT NOT NULL,
+        name TEXT NOT NULL,
+        version INTEGER NOT NULL,
+		salt TEXT NOT NULL,
+		modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+		`, egostrings.SQLIdentifier(handle.Table))
+
+	_, err = tx.Exec(sql)
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"sql":   sql,
+			"table": handle.Items,
+			"error": err})
+
+		return handle, err
+	}
+
+	ui.Log(ui.AppLogger, "settings.table.created", ui.A{
+		"table": handle.Table,
+	})
+
+	sql = fmt.Sprintf(`
+    create table IF NOT EXISTS %s (
+        id TEXT,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL
+	)`,
+		egostrings.SQLIdentifier(handle.Items))
+
+	_, err = tx.Exec(sql)
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"sql":   sql,
+			"table": handle.Items,
+			"error": err})
+
+		return handle, err
+	}
+
+	ui.Log(ui.AppLogger, "settings.table.created", ui.A{
+		"table": handle.Items,
+	})
+
+	err = tx.Commit()
+
+	return handle, err
+}
+
+func (d dbPersist) Load(application, name string) (*Configuration, error) {
+	if d.db == nil {
+		return nil, errors.ErrDatabaseClientClosed
+	}
+
+	config, err := d.findConfig(name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			var result sql.Result
+
+			// If no configuration, create a new default one.
+			config = Configuration{
+				Name:        name,
+				Description: name + " configuration",
+				ID:          uuid.New().String(),
+				Version:     1,
+				Salt:        saltString(),
+				Dirty:       true,
+				Items:       make(map[string]string),
+			}
+
+			// Create a configuration entry in the database for this new profile.
+			sql := fmt.Sprintf(`INSERT INTO %s (id, description, name, version, salt) VALUES ($1, $2, $3, $4, $5)`, d.Table)
+
+			tx, _ := d.db.Begin()
+
+			result, err = tx.Exec(sql,
+				config.ID,
+				config.Description,
+				config.Name,
+				config.Version,
+				config.Salt)
+
+			if err != nil {
+				ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+					"sql":   sql,
+					"error": err})
+
+				tx.Rollback()
+
+				return nil, err
+			}
+
+			if count, _ := result.RowsAffected(); count == 0 {
+				ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+					"sql":   sql,
+					"error": errors.ErrTableNoRows})
+
+				tx.Rollback()
+
+				return nil, err
+			}
+
+			// Copy any items from the configuration defaults (uuid of 0) to the new configuration.
+			sql = fmt.Sprintf("SELECT key, value FROM %s WHERE id = '00000000-0000-0000-0000-000000000000'", d.Items)
+			rows, err := tx.Query(sql)
+
+			if err != nil {
+				ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+					"sql":   sql,
+					"error": err})
+
+				tx.Rollback()
+
+				return nil, err
+			}
+
+			count := 0
+
+			for rows.Next() {
+				var key, value string
+
+				err := rows.Scan(&key, &value)
+				if err != nil {
+					ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+						"sql":   sql,
+						"error": err})
+
+					tx.Rollback()
+
+					return nil, err
+				}
+
+				// Note, no decryption possible here. So if it's an item that must be
+				// decrypted, we don't use it as it cannot be verified as valid.
+				if _, ok := encryptedKeyValue[key]; ok {
+					continue
+				}
+
+				config.Items[key] = value
+				count++
+			}
+
+			ui.Log(ui.AppLogger, "settings.db.default.items.copied", ui.A{
+				"count": count,
+				"name":  name})
+
+			tx.Commit()
+
+			ui.Log(ui.AppLogger, "settings.db.default", ui.A{
+				"application": application,
+				"name":        name})
+
+			return &config, nil
+		}
+
+		return &config, err
+	}
+
+	sql := fmt.Sprintf(`SELECT key, value FROM %s WHERE id = $1 ORDER BY key`, d.Items)
+
+	rows, err := d.db.Query(sql, config.ID)
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"sql":   sql,
+			"table": d.Items,
+			"error": err})
+
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	config.Items = make(map[string]string)
+
+	// reencryptItems accumulates key→newCiphertext pairs for any encrypted
+	// value that was stored with the legacy MD5 scheme.  They are written
+	// back to the database after the SELECT loop closes its cursor.
+	reencryptItems := map[string]string{}
+
+	for rows.Next() {
+		var key, value string
+
+		err := rows.Scan(&key, &value)
+		if err != nil {
+			ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+				"sql":   sql,
+				"table": d.Items,
+				"error": err})
+
+			return nil, err
+		}
+
+		// Some specific items must be decrypted.
+		if _, ok := encryptedKeyValue[key]; ok {
+			rawEncrypted := value
+
+			value, _ = Decrypt(rawEncrypted, config.Salt+internalProfileID)
+
+			// Queue a re-encryption if the stored ciphertext used the old MD5
+			// scheme.  The actual UPDATE runs after the cursor is closed.
+			if NeedsNewHash(rawEncrypted) {
+				if newEncrypted, encErr := Encrypt(value, config.Salt+internalProfileID); encErr == nil {
+					reencryptItems[key] = newEncrypted
+				}
+			}
+		}
+
+		config.Items[key] = value
+	}
+
+	// Close the cursor before issuing further queries on the same connection.
+	rows.Close()
+
+	// Write back any items that were upgraded from the legacy encryption scheme.
+	for key, newEncrypted := range reencryptItems {
+		updateSQL := fmt.Sprintf(`UPDATE %s SET value = $1 WHERE id = $2 AND key = $3`,
+			egostrings.SQLIdentifier(d.Items))
+
+		if _, updateErr := d.db.Exec(updateSQL, newEncrypted, config.ID, key); updateErr == nil {
+			ui.Log(ui.AppLogger, "config.reencrypted", ui.A{
+				"name": key})
+		}
+	}
+
+	ui.Log(ui.AppLogger, "settings.db.load", ui.A{
+		"application": application,
+		"name":        name,
+		"count":       len(config.Items)})
+
+	return &config, nil
+}
+
+func (d dbPersist) Save(cp *Configuration) error {
+	var rows sql.Result
+
+	if d.db == nil {
+		return errors.ErrDatabaseClientClosed
+	}
+
+	ui.Log(ui.AppLogger, "settings.db.save", ui.A{
+		"name":  CurrentConfiguration.Name,
+		"count": len(CurrentConfiguration.Items)})
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"table": "",
+			"error": err})
+
+		return err
+	}
+
+	defer tx.Rollback()
+
+	// Update the configuration record with a new timestamp
+	sql := fmt.Sprintf(`UPDATE %s SET modified = CURRENT_TIMESTAMP WHERE id = $1`,
+		egostrings.SQLIdentifier(d.Table))
+
+	rows, err = tx.Exec(sql, cp.ID)
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"table": d.Table,
+			"sql":   sql,
+			"error": err})
+
+		return err
+	}
+
+	if count, _ := rows.RowsAffected(); count == 0 {
+		ui.Log(ui.AppLogger, "settings.db.profile.not.updated", ui.A{
+			"name": cp.Name})
+
+		return errors.ErrNoSuchProfile.Context(cp.Name)
+	}
+
+	// Delete all existing items for this configuration
+	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		egostrings.SQLIdentifier(d.Items))
+
+	_, err = tx.Exec(sql, cp.ID)
+	if err != nil {
+		ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+			"table": d.Items,
+			"sql":   sql,
+			"error": err})
+
+		return err
+	}
+
+	// Insert the items for this configuration
+	for key, value := range cp.Items {
+		sql := fmt.Sprintf(`INSERT INTO %s (id, key, value) VALUES ($1, $2, $3)`, egostrings.SQLIdentifier(d.Items))
+
+		// Some specific items must be encrypted.
+		if _, ok := encryptedKeyValue[key]; ok {
+			value, _ = Encrypt(value, cp.Salt+internalProfileID)
+		}
+
+		_, err = tx.Exec(sql, cp.ID, key, value)
+
+		if err != nil {
+			ui.Log(ui.AppLogger, "settings.db.error", ui.A{
+				"table": d.Items,
+				"sql":   sql,
+				"error": err})
+
+			return err
+		}
+	}
+
+	ui.Log(ui.AppLogger, "settings.db.load", ui.A{
+		"application": d.Application,
+		"name":        cp.Name,
+		"count":       len(cp.Items)})
+
+	return tx.Commit()
+}
+
+func (d dbPersist) DeleteProfile(name string) error {
+	if d.db == nil {
+		return errors.ErrDatabaseClientClosed
+	}
+
+	if name == CurrentConfiguration.Name {
+		return errors.ErrCannotDeleteActiveProfile.Context(name)
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	sql := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		egostrings.SQLIdentifier(d.Table))
+
+	_, err = tx.Exec(sql, CurrentConfiguration.ID)
+	if err != nil {
+		return err
+	}
+
+	sql = fmt.Sprintf(`DELETE FROM %s WHERE id = $1`,
+		egostrings.SQLIdentifier(d.Items))
+
+	_, err = tx.Exec(sql, CurrentConfiguration.ID)
+	if err == nil {
+		err = tx.Commit()
+	}
+
+	return err
+}
+
+// For the database, there is no difference between the Load and UseProfile functions. There is no in-memory
+// cache like there is for the file-system configuration files.
+func (d dbPersist) UseProfile(name string) (*Configuration, error) {
+	cp, err := d.Load(d.Application, name)
+	if err != nil {
+		ui.Log(ui.InternalLogger, "settings.db.error", ui.A{
+			"error": err})
+	}
+
+	return cp, err
+}
+
+func (d dbPersist) findConfig(name string) (Configuration, error) {
+	c := Configuration{
+		Name: name,
+	}
+
+	if d.db == nil {
+		return c, errors.ErrDatabaseClientClosed
+	}
+
+	sql := fmt.Sprintf(`
+    SELECT id, description, version, salt FROM %s WHERE name = $1 LIMIT 1`,
+		egostrings.SQLIdentifier(d.Table))
+
+	row := d.db.QueryRow(sql, name)
+	err := row.Scan(&c.ID, &c.Description, &c.Version, &c.Salt)
+
+	if err == nil {
+		ui.Log(ui.AppLogger, "settings.db.found", ui.A{
+			"name": name})
+	} else {
+		ui.Log(ui.AppLogger, "settings.db.not.found", ui.A{
+			"name": name})
+	}
+
+	c.Items = make(map[string]string)
+
+	return c, err
+}
+
+func (d dbPersist) Close() {
+	if d.db != nil {
+		_ = d.db.Close()
+		d.db = nil
+
+		ui.Log(ui.AppLogger, "settings.db.closed", ui.A{
+			"config": d.constr,
+		})
+	}
+}
+
+func saltString() string {
+	result := ""
+	salt := make([]byte, 16)
+
+	for len(result) < 64 {
+		rand.Read(salt)
+		text := strings.ReplaceAll(base64.StdEncoding.EncodeToString(salt), "=", "")
+		result += text
+	}
+
+	return result[:64]
+}

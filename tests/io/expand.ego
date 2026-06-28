@@ -9,10 +9,10 @@
 @test "io: io.Expand() single path name with .go extension"
 {
     here := profile.Get("ego.runtime.path")
-    want := filepath.Join(here, "app-cli/app/actions.go")
+    want := filepath.Join(here, "internal/cli/app/actions.go")
     got := io.Expand(here, ".go")
-    gotf := got[0]
-    @assert T.Equal(want, gotf,  "single path name with .go extension")
+    found := ( index(got, want) >=0 )
+    @assert T.Equal(found, true,  "single path name with .go extension")
 }
 
 @test "io: io.Expand() with single level deep directory"

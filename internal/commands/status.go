@@ -1,0 +1,167 @@
+package commands
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/tucats/ego/internal/cli/cli"
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/runtime/rest"
+	"github.com/tucats/ego/internal/util"
+)
+
+// Status displays the status of a running ego server. By default it contacts the
+// server at the configured application or logon address and reports whether it is
+// UP or DOWN, along with its version, PID, hostname, session ID, and uptime. With
+// --local it reads the PID file instead of making a network call.
+//
+// Invoked by:
+//
+//	Traditional: ego server status [<address>]  (default verb for "ego server")
+//	Verb:        ego show server status [<address>]  (default verb for "ego show server")
+func Status(c *cli.Context) error {
+	// If there is a parameter, it's the server address to query. If there isn't
+	// try the application server, and if not specified, the login server. If neither
+	// is present in the configuration, default to the current hostname (last resort)
+	addr := settings.Get(defs.ApplicationServerSetting)
+	if addr == "" {
+		addr = settings.Get(defs.LogonServerSetting)
+	}
+
+	if addr == "" {
+		addr, _ = os.Hostname()
+	}
+
+	if c.ParameterCount() > 0 {
+		addr = c.Parameter(0)
+	}
+
+	if !c.Boolean("local") {
+		return remoteStatus(c, addr)
+	}
+
+	// Otherwise, it's the local pid file, based on the port number.
+	msg := i18n.M("server.not.running")
+
+	status, err := router.ReadPidFile(c)
+	if err == nil {
+		if router.IsRunning(status.PID) {
+			since := "(" + util.FormatDuration(time.Since(status.Started), true) + ")"
+
+			msg = fmt.Sprintf("UP (%s) %s %s %s",
+				i18n.M("server.status", map[string]any{
+					"version": status.Version,
+					"pid":     status.PID,
+					"host":    status.Hostname,
+					"id":      status.ID,
+				}),
+				i18n.L("since"),
+				status.Started.Format(time.UnixDate), since)
+		} else {
+			_ = router.RemovePidFile(c)
+		}
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		fmt.Printf("%s\n", msg)
+	} else if err == nil {
+		c.Output(status)
+	} else {
+		s := defs.RestStatusResponse{Status: http.StatusInternalServerError, Message: msg}
+		b, _ := json.Marshal(s)
+		c.JSON(string(b))
+	}
+
+	return nil
+}
+
+// Ping a remote server's "up" service to see its status.
+func remoteStatus(c *cli.Context, addr string) error {
+	verbose := c.Boolean(defs.VerboseOption)
+
+	resp := defs.RemoteStatusResponse{}
+
+	name, err := ResolveServerName(addr)
+	if err != nil {
+		// This is not a good idea, comparing against text literal.
+		// However, not sure how else to do it at this point, since the error
+		// contains data about connection, etc. that we don't want to use in
+		// the comparison.
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			if ui.OutputFormat == ui.TextFormat {
+				fmt.Println("DOWN")
+			} else {
+				var b []byte
+
+				s := defs.RestStatusResponse{Status: http.StatusInternalServerError, Message: err.Error()}
+
+				if ui.OutputFormat == ui.JSONIndentedFormat {
+					b, _ = json.MarshalIndent(s, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+				} else {
+					b, _ = json.Marshal(s)
+				}
+
+				c.JSON(string(b))
+			}
+
+			os.Exit(3)
+		}
+
+		return err
+	}
+
+	err = rest.Exchange(defs.ServicesUpPath, http.MethodGet, nil, &resp, defs.StatusAgent)
+	if err != nil {
+		if ui.OutputFormat == ui.TextFormat {
+			fmt.Println("DOWN")
+		} else {
+			_ = c.Output(defs.RestStatusResponse{
+				Status:  http.StatusInternalServerError,
+				Message: err.Error()},
+			)
+		}
+
+		os.Exit(3)
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		var msg, since string
+
+		if startTime, err := time.Parse(time.UnixDate, resp.Since); err == nil {
+			if verbose {
+				since = " (" + util.FormatDuration(time.Since(startTime), true) + ")"
+			} else {
+				since = " for " + util.FormatDuration(time.Since(startTime), true)
+			}
+		}
+
+		if verbose {
+			msg = fmt.Sprintf("UP (%s) %s %s%s, %s",
+				i18n.M("server.status", map[string]any{
+					"version": resp.Version,
+					"pid":     resp.Pid,
+					"host":    resp.Hostname,
+					"id":      resp.ID,
+				}),
+				i18n.L("since"),
+				resp.Since, since,
+				name)
+		} else {
+			msg = fmt.Sprintf("UP%s as %s", since, name)
+		}
+
+		ui.Say(msg)
+	} else {
+		c.Output(resp)
+	}
+
+	return nil
+}
