@@ -22,6 +22,7 @@ import (
 const (
 	AssertDirective        = "assert"
 	AuthenticatedDirective = "authenticated"
+	CompileDirective       = "compile"
 	DebugDirective         = "debug"
 	DefineDirective        = "define"
 	EndPointDirective      = "endpoint"
@@ -81,6 +82,9 @@ func (c *Compiler) compileDirective() error {
 
 	case AuthenticatedDirective:
 		return c.authenticatedDirective()
+
+	case CompileDirective:
+		return c.compileBlockDirective()
 
 	case DebugDirective:
 		ui.Log(ui.InternalLogger, "runtime.debug.directive", nil)
@@ -719,6 +723,120 @@ func (c *Compiler) packagesDirective(singular bool) error {
 	}
 
 	c.b.Emit(bytecode.DumpPackages, data.NewList(names...))
+
+	return nil
+}
+
+// compileBlockDirective processes the @compile directive.
+// The directive is followed by bracketed code that is
+// compiled. If the compilation fails, the generated
+// code signals the error from the compiler. If the
+// code does compile, the compiled code is inserted
+// into the bytecode stream where the @compile directive
+// was found.
+//
+// The intent is to allow control of compiler errors,
+// so you could compile code in a try/catch block and
+// validate the compile error in the catch block,
+// without stopping the test. This would allow Ego
+// @test jobs that include validation of compiler
+// fixes.
+func (c *Compiler) compileBlockDirective() error {
+	if c.t.EndOfStatement() {
+		return c.compileError(errors.ErrMissingStatement)
+	}
+
+	// If the next token is word "block" then this is  block of
+	// code and doesn't require a full program prolog and
+	// main function.
+	blockMode := false
+	if c.t.IsNext(tokenizer.NewIdentifierToken("block")) {
+		blockMode = true
+	}
+
+	// Must start with opening braces with a block to compile.
+	if !c.t.IsNext(tokenizer.BlockBeginToken) {
+		return c.compileError(errors.ErrMissingStatement)
+	}
+
+	// Create a new compiler to compile the code in the block. Compile
+	// into a new block so if the compilation fails, we won't have added
+	// debris to the current bytecode stream.
+	subCompiler := New("@compile")
+	subCompiler.flags.extensionsEnabled = c.flags.extensionsEnabled
+
+	// If block mode was enabled in the @compile directive, the code in
+	// the block is a true block. OTherwise, we leave the block dept at 0
+	// so the sub-compiler must compile a full program with prolog and main
+	// function.
+	if blockMode {
+		subCompiler.functionDepth = c.functionDepth
+		subCompiler.blockDepth = c.blockDepth + 1
+		subCompiler.flags = c.flags
+	}
+
+	// Collect up all the tokens in the exiting token stream up to the
+	// mismatched closing brace. These will be the tokens sent to the
+	// sub-compiler for compilation.
+	tokens := tokenizer.New("", true)
+	braces := 1
+
+	var t tokenizer.Token
+
+	for !c.t.AtEnd() {
+		t = c.t.Next()
+
+		if t.Is(tokenizer.BlockBeginToken) {
+			braces++
+		} else if t.Is(tokenizer.BlockEndToken) {
+			braces--
+
+			if braces <= 1 {
+				break
+			}
+		}
+
+		tokens.Append(t)
+	}
+
+	// There must be a closing brace to match the opening brace of the block.
+	// It may be preceded by a semicolon, but it must be present.
+	// With this operation, all tokens for the @compile directive have been
+	// consumed, so the statement tokenizer that called us can continue on to
+	// the next statement.
+	_ = c.t.IsNext(tokenizer.SemicolonToken)
+
+	if !blockMode && !c.t.IsNext(tokenizer.BlockEndToken) {
+		return c.compileError(errors.ErrMissingStatement)
+	}
+
+	// We owe the token stream we compile a closing brace.
+	if !blockMode {
+		tokens.Append(tokenizer.BlockEndToken)
+	}
+
+	// Compile the block of code.
+	if bc, err := subCompiler.Compile("@compile", tokens); err != nil {
+		c.b.Emit(bytecode.Push, err)
+		c.b.Emit(bytecode.Signal, nil)
+
+		return nil
+	} else {
+		// If the compilation succeeded, add the compiled code to the
+		// current bytecode stream.
+		c.b.Append(bc)
+
+		// Also, if there are symbols created in the sub-compiler, emit code to add them
+		// to the bytecode stream.
+		if names := subCompiler.s.Names(); len(names) > 0 {
+			for _, name := range names {
+				value, _ := subCompiler.s.Get(name)
+
+				fmt.Println("DEBUG: @compile directive symbol:", name, "=", value)
+				c.b.Emit(bytecode.CreateAndStore, data.NewList(name, value))
+			}
+		}
+	}
 
 	return nil
 }

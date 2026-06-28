@@ -1,0 +1,74 @@
+// Test new @compile directive, which allows capture of
+// compile errors at runtime.
+
+@test "directives: @compile block with no error"
+{
+    x := 0
+    try {
+        @compile block {
+            x = 33
+        }
+    } catch(e) {
+        @assert e.Error() != ""
+    }
+
+    @assert x == 33
+}
+
+
+@test "directives: @compile block with error"
+{
+    x := 0
+    try {
+        @compile block {
+            x = bob
+        }
+    } catch(e) {
+        @assert strings.Contains(e.Error(), "unknown identifier")
+    }
+
+    @assert x == 0
+}
+
+
+@test "directives: @compile code with no error"
+{
+    var okay bool 
+
+    try {
+        @compile {
+            func foo() {
+                x = 33
+                fmt.Println(x)
+            }
+        }
+        okay = true
+    } catch(e) {
+        okay = false
+        @assert e.Error() != ""
+    }
+
+    @assert okay == true
+}
+
+
+@test "directives: @compile code with error"
+{
+    var okay bool 
+
+    try {
+        @compile {
+            func foo() {
+                x = bob
+                fmt.Println(x)
+            }
+        }
+
+        okay = true
+    } catch(e) {
+        okay = false
+        @assert strings.Contains(e.Error(), "unknown symbol: bob")
+    }
+
+    @assert okay == false
+}

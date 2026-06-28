@@ -638,7 +638,7 @@ func Test_pushByteCode_PreservesCapturedScope(t *testing.T) {
 		t.Fatalf("expected *ByteCode from goroutine push, got %T", fxCode2)
 	}
 
-	// BUG-02 fix: the re-pushed clone must still point at the PARENT scope, not
+	// The re-pushed clone must still point at the PARENT scope, not
 	// the goroutine context's scope.
 	if rePushed.capturedScope != parentScope {
 		t.Errorf("BUG-02: second push overwrote capturedScope:\n  got  %q\n  want %q",

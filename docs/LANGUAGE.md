@@ -4946,6 +4946,37 @@ Directives are special _Ego_ statements that perform special functions
 outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
 
+### @compile [block] { code }
+
+The @compile directive allows a test program to trap compiler errors in
+a block of code, and evaluate the compilation error. This is most commonly
+combined with a try/catch block, and requires language extensions to be
+enabled.
+
+```go
+try {
+    @compile block {
+        x = bob
+    }
+} catch(e) {
+    fmt.Println("Compile error, ", e)
+}
+```
+
+In this example, the text in the @compile braces will be compiled, but if
+there is a compile error, it signals that error which can be caught as the
+variable `e`. This could contain an error if `bbo` is not a known symbol,
+for example. If `bob` does exist, then the compilation may not have an error,
+and the code will run as if it was compiled inline.
+
+If the keyword `block` is not present, then the code between the braces must
+be a complete program. That is, it can support global type specifications,
+function declarations, etc. In fact, most statements like an assignment
+operation can only be used inside a function definition.
+
+This extension is used mostly in writing unit tests for the compiler
+itself.
+
 ### @extensions true|false|default
 
 Language extensions are off by default when you first start running

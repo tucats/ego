@@ -482,14 +482,15 @@ func Test_rangeNextByteCode_DefaultCase_PopsRangeStack_RANGE2(t *testing.T) {
 // 3-character ASCII string.
 //
 // Expected per-step behavior:
-//   step 0: index var = 0 (byte offset), value var = "a", PC unchanged
-//   step 1: index var = 1,               value var = "b", PC unchanged
-//   step 2: index var = 2,               value var = "c", PC unchanged
-//   step 3: exhausted — PC = dest,       rangeStack trimmed to 0 entries
+//
+//	step 0: index var = 0 (byte offset), value var = "a", PC unchanged
+//	step 1: index var = 1,               value var = "b", PC unchanged
+//	step 2: index var = 2,               value var = "c", PC unchanged
+//	step 3: exhausted — PC = dest,       rangeStack trimmed to 0 entries
 func Test_rangeNextString_FullIteration(t *testing.T) {
 	const dest = 99
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack("abc")
 
 	// initialize the range (creates symbols, populates rangeStack).
@@ -544,7 +545,7 @@ func Test_rangeNextString_FullIteration(t *testing.T) {
 func Test_rangeNextString_EmptyString(t *testing.T) {
 	const dest = 50
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack("")
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -563,7 +564,7 @@ func Test_rangeNextString_EmptyString(t *testing.T) {
 func Test_rangeNextString_DiscardedVariables(t *testing.T) {
 	const dest = 30
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack("x")
 
 	if err := rangeInitByteCode(tc.ctx, []any{defs.DiscardedVariable, defs.DiscardedVariable}); err != nil {
@@ -581,7 +582,7 @@ func Test_rangeNextString_DiscardedVariables(t *testing.T) {
 func Test_rangeNextString_MultiByteUTF8(t *testing.T) {
 	const dest = 99
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack("日本") // each character is 3 UTF-8 bytes
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -616,7 +617,7 @@ func Test_rangeNextArray_FullIteration(t *testing.T) {
 
 	arr := data.NewArrayFromInterfaces(data.IntType, 10, 20, 30)
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(arr)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -659,7 +660,7 @@ func Test_rangeNextArray_EmptyArray(t *testing.T) {
 
 	arr := data.NewArray(data.IntType, 0)
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(arr)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -680,7 +681,7 @@ func Test_rangeNextArray_DiscardedIndex(t *testing.T) {
 
 	arr := data.NewArrayFromInterfaces(data.IntType, 42)
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(arr)
 
 	if err := rangeInitByteCode(tc.ctx, []any{defs.DiscardedVariable, "v"}); err != nil {
@@ -702,7 +703,7 @@ func Test_rangeNextArray_DiscardedValue(t *testing.T) {
 
 	arr := data.NewArrayFromInterfaces(data.IntType, 99)
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(arr)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", defs.DiscardedVariable}); err != nil {
@@ -731,7 +732,7 @@ func Test_rangeNextMap_FullIteration(t *testing.T) {
 	m.Set("y", 20) //nolint:errcheck
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(m)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"k", "v"}); err != nil {
@@ -790,7 +791,7 @@ func Test_rangeNextMap_EmptyMap(t *testing.T) {
 
 	m := data.NewMap(data.StringType, data.IntType)
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(m)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"k", "v"}); err != nil {
@@ -818,7 +819,7 @@ func Test_rangeNextMap_ReadonlyDuringIteration(t *testing.T) {
 	m.Set("a", 1) //nolint:errcheck
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(m)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"k", "v"}); err != nil {
@@ -910,7 +911,7 @@ func Test_rangeNextChannel_FullIteration(t *testing.T) {
 	ch.Close()   // closing signals the range to stop after draining
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -955,7 +956,7 @@ func Test_rangeNextChannel_ClosedEmptyChannel(t *testing.T) {
 	ch.Close()
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -979,7 +980,7 @@ func Test_rangeNextChannel_DiscardedVariables(t *testing.T) {
 	ch.Close()
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{defs.DiscardedVariable, defs.DiscardedVariable}); err != nil {
@@ -1034,7 +1035,7 @@ func Test_rangeNextChannel_SingleVarReceivesValue(t *testing.T) {
 
 	// Simulate "for v := range ch": compiler puts "v" in indexName, valueName = "".
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"v", ""}); err != nil {
@@ -1054,8 +1055,6 @@ func Test_rangeNextChannel_SingleVarReceivesValue(t *testing.T) {
 			t.Errorf("step %d: PC changed prematurely", step)
 		}
 
-		// BUG-01: before the fix, "v" received step (0, 1, 2) instead of the
-		// channel value (100, 200, 300).
 		tc.assertSymbolValue("v", want)
 	}
 
@@ -1084,7 +1083,7 @@ func Test_rangeNextChannel_SingleVarDiscarded(t *testing.T) {
 
 	// Simulate "for _ := range ch": compiler emits indexName="_", valueName="".
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{defs.DiscardedVariable, ""}); err != nil {
@@ -1119,7 +1118,7 @@ func Test_rangeNextChannel_TwoVarCounterAndValue(t *testing.T) {
 	ch.Close()
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(ch)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
@@ -1165,7 +1164,7 @@ func Test_rangeNextInteger_FullIteration(t *testing.T) {
 	const dest = 99
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(3)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", ""}); err != nil {
@@ -1204,7 +1203,7 @@ func Test_rangeNextInteger_ZeroRange(t *testing.T) {
 	const dest = 20
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(0)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", ""}); err != nil {
@@ -1224,7 +1223,7 @@ func Test_rangeNextInteger_NegativeRange(t *testing.T) {
 	const dest = 20
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(-5)
 
 	if err := rangeInitByteCode(tc.ctx, []any{"i", ""}); err != nil {
@@ -1254,7 +1253,7 @@ func Test_rangeNextInteger_DiscardedIndex_RANGE1(t *testing.T) {
 	const dest = 20
 
 	tc := newTestContext(t).
-		withBytecodeSize(dest+1).
+		withBytecodeSize(dest + 1).
 		withStack(2) // two iterations
 
 	// Use the discarded variable for the index, no value variable.

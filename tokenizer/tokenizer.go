@@ -81,6 +81,16 @@ func New(src string, isCode bool) *Tokenizer {
 	return &t
 }
 
+// Append adds tokens from an external manipulation of source code, often
+// another tokenizer.. This is used when compiling a sub-block of code,
+// such as a function body, and the tokens from that block need to be
+// added to the current token stream. Don't use this if you do not know
+// what you are doing. This skips housekeeping, doesn't accumulate source
+// lines, etc.
+func (t *Tokenizer) Append(tokens ...Token) {
+	t.Tokens = append(t.Tokens, tokens...)
+}
+
 // Len returns the number of tokens in the token stream. This must
 // use a tokenizer by reference so there isn't an invalid copy of the
 // lock object in the tokenizer.

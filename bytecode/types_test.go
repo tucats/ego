@@ -254,8 +254,6 @@ func Test_unwrapByteCode_BUG03_Relaxed_WrongType(t *testing.T) {
 
 	err := unwrapByteCode(tc.ctx, "int")
 
-	// BUG-03 fix: wrong type in any mode pushes (nil, false), no error returned.
-	// Before the fix this pushed (coerced-int, true).
 	tc.assertNoError(err)
 	tc.assertTopStack(false) // ok = false (WRONG type)
 	tc.assertTopStack(nil)   // value = nil
