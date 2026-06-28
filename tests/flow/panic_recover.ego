@@ -1,0 +1,267 @@
+// panic_recover.ego — end-to-end tests for panic() and recover() interaction.
+//
+// Ego's panic() / recover() pair mirrors Go's: panic() begins a recoverable
+// unwind of the call stack, running deferred functions.  If a deferred function
+// calls recover(), the unwind stops and the panicking function returns normally
+// to its caller.
+//
+// # BUG-04 regression
+//
+// Before the fix, a function that panicked and had recover() called in a
+// deferred function would cause its CALLER to error with "function did not
+// return the expected number of values".  The root cause was that unwindPanic
+// (bytecode/panic.go) popped the call frame without providing any return value,
+// leaving the caller's stack marker exposed as the first thing the caller tried
+// to read.
+//
+// The fix: after a successful recover(), unwindPanic synthesizes the return
+// values before calling callFramePop, using:
+//   • Named return variables — their current symbol-table value (the deferred
+//     function may have modified them).
+//   • Unnamed return values  — nil (signals "no useful value was set before the
+//     panic" without false precision).
+//   • Void functions         — unchanged behavior (nothing to synthesize).
+//
+// The four groups of tests below cover every combination of:
+//   - Return arity: single vs. multiple
+//   - Return style: named vs. unnamed
+//   plus the nested-scope and deferred-modification edge cases.
+
+@extensions true
+
+// ── Group 1: unnamed single return ──────────────────────────────────────────
+
+// Regression test: the primary BUG-04 reproducer.  A function with a plain
+// unnamed return panics and has recover() in a deferred closure.  The caller
+// must NOT receive an error; it receives nil (unnamed return, no value was set).
+@test "flow: recover() unnamed single return gives nil to caller (BUG-04)"
+{
+    func panicIfZero(b int) int {
+        defer func() {
+            if r := recover(); r != nil {
+                _ = r
+            }
+        }()
+        if b == 0 {
+            panic("zero!")
+        }
+        return b * 2
+    }
+
+    // Normal path (no panic) must be unaffected.
+    r1 := panicIfZero(5)
+    @assert r1 == 10
+
+    // Panic path: caller gets nil (unnamed return, no value set).
+    // Before BUG-04 fix this line produced a fatal error.
+    r2 := panicIfZero(0)
+    @assert r2 == nil
+}
+
+// Verify that the recovery path doesn't interfere with subsequent normal calls.
+@test "flow: recover() unnamed single return — normal calls still work after panic"
+{
+    callCount := 0
+
+    func maybePanic(trigger bool) int {
+        defer func() { _ = recover() }()
+        callCount = callCount + 1
+        if trigger {
+            panic("triggered")
+        }
+        return 42
+    }
+
+    _ = maybePanic(true)    // panics, recovers
+    r := maybePanic(false)  // must return normally
+    @assert r == 42
+    @assert callCount == 2
+}
+
+// ── Group 2: named single return ────────────────────────────────────────────
+
+// When the function has a named return variable, its compiler-initialized zero
+// value is returned if the deferred function does not modify it.
+@test "flow: recover() named single return — zero value when defer does not modify"
+{
+    func panicZeroNamed() (result int) {
+        defer func() { _ = recover() }()
+        panic("oops")
+    }
+
+    // result was initialized to 0 by the compiler; defer did not touch it.
+    r := panicZeroNamed()
+    @assert r == 0
+}
+
+// The key named-return feature: the deferred function that calls recover() may
+// also write to the named return variable.  That value must reach the caller.
+@test "flow: recover() named single return — deferred modification is visible to caller"
+{
+    func panicAndSet() (result int) {
+        defer func() {
+            if recover() != nil {
+                result = 99
+            }
+        }()
+        panic("oops")
+    }
+
+    r := panicAndSet()
+    @assert r == 99
+}
+
+// Verify that the pre-panic value of a named return variable is preserved when
+// the deferred function does not overwrite it.
+@test "flow: recover() named single return — pre-panic value is preserved"
+{
+    func setThenPanic() (result int) {
+        result = 55  // set before panic
+        defer func() {
+            // recover but do NOT modify result
+            _ = recover()
+        }()
+        panic("after set")
+    }
+
+    r := setThenPanic()
+    @assert r == 55
+}
+
+// ── Group 3: nested-scope verification (Q1) ──────────────────────────────────
+
+// Confirm that a named return variable is found by c.symbols.Get() even when
+// the panic occurs inside a nested block (if, for, etc.).  The named-return
+// scope is an ancestor of whatever block was active at panic time.
+@test "flow: recover() named return reachable when panic is inside nested if-block"
+{
+    func nestedPanic() (result int) {
+        defer func() {
+            if recover() != nil {
+                result = 77
+            }
+        }()
+        x := 1
+        if x > 0 {
+            // The named-return scope is a parent of this if-block scope.
+            // unwindPanic must walk up to find 'result'.
+            panic("inside if")
+        }
+        return 0
+    }
+
+    r := nestedPanic()
+    @assert r == 77
+}
+
+@test "flow: recover() named return reachable when panic is inside nested for-loop"
+{
+    func loopPanic() (result int) {
+        defer func() {
+            if recover() != nil {
+                result = 88
+            }
+        }()
+        for i := 0; i < 3; i++ {
+            if i == 1 {
+                panic("in loop")
+            }
+        }
+        return 0
+    }
+
+    r := loopPanic()
+    @assert r == 88
+}
+
+// ── Group 4: multiple return values ─────────────────────────────────────────
+
+// Multiple unnamed returns: caller receives (nil, nil) — one nil per declared
+// return type, in declaration order.
+@test "flow: recover() multiple unnamed returns give nil pair to caller"
+{
+    func multiUnnamed() (int, string) {
+        defer func() { _ = recover() }()
+        panic("oops")
+    }
+
+    a, b := multiUnnamed()
+    @assert a == nil
+    @assert b == nil
+}
+
+// Multiple named returns: deferred function sets both; caller sees the
+// set values in the correct order.
+@test "flow: recover() multiple named returns — deferred sets both, caller receives them"
+{
+    func multiNamed() (x int, y string) {
+        defer func() {
+            if recover() != nil {
+                x = 42
+                y = "hello"
+            }
+        }()
+        panic("oops")
+    }
+
+    a, b := multiNamed()
+    @assert a == 42
+    @assert b == "hello"
+}
+
+// Multiple named returns: deferred sets only one; the other retains its
+// compiler-initialized zero value.
+@test "flow: recover() multiple named returns — partial deferred set"
+{
+    func partialSet() (x int, y string) {
+        defer func() {
+            if recover() != nil {
+                x = 7   // only x is set by the deferred function
+            }
+        }()
+        panic("partial")
+    }
+
+    a, b := partialSet()
+    @assert a == 7
+    @assert b == ""
+}
+
+// Multiple named returns: panic happens after one return variable was already
+// set to a non-zero value.  The pre-panic value must be preserved.
+@test "flow: recover() multiple named returns — pre-panic value preserved"
+{
+    func prePanicSet() (x int, y string) {
+        x = 100          // set before panic
+        y = "preset"     // set before panic
+        defer func() {
+            _ = recover()  // recover but do not modify x or y
+        }()
+        panic("after both set")
+    }
+
+    a, b := prePanicSet()
+    @assert a == 100
+    @assert b == "preset"
+}
+
+// ── Group 5: void function — unchanged behavior ───────────────────────────────
+
+// Void functions that use panic+recover must not be broken by the fix.
+// They should return normally to the caller with no observable return value.
+@test "flow: recover() in void function does not crash (unchanged behavior)"
+{
+    sideEffect := 0
+
+    func voidPanic() {
+        defer func() {
+            if recover() != nil {
+                sideEffect = 1
+            }
+        }()
+        panic("void panic")
+    }
+
+    voidPanic()
+    @assert sideEffect == 1
+}

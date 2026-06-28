@@ -106,9 +106,110 @@ func (c *Context) unwindPanic() error {
 				return errors.ErrStop
 			}
 
-			// Discard locals/partial results, then restore the caller's context.
+			// Discard the panicking function's locals and any partial expression
+			// results that were left on the stack when the panic interrupted
+			// execution.  We reset to the frame pointer before synthesizing
+			// return values so that callFramePop's topOfStackSlice logic picks
+			// up only those synthesized values and not stale stack slots.
 			c.stackPointer = c.framePointer
 
+			// Synthesize return values for the recovered function (BUG-04).
+			//
+			// In Go, a function that panics and has recover() called in a
+			// deferred function returns normally to its caller.  The caller
+			// receives:
+			//   • Named return variables — their current value in the symbol
+			//     table (the deferred function may have modified them).
+			//   • Unnamed return values  — nil, to unambiguously indicate that
+			//     no useful value was set before the panic.
+			//   • Void functions         — nothing (this branch is unreachable).
+			//
+			// Without this block, callFramePop finds an empty stack and no
+			// c.result, so the caller's assignment instruction (CreateAndStore
+			// or StackCheck) sees the stack marker from before the call and
+			// reports "function did not return the expected number of values".
+			//
+			// Implementation notes:
+			//   • c.bc is still the panicking function's bytecode; its
+			//     Declaration() carries the return-type list and its
+			//     GetReturnVarNames() carries the names of any named return
+			//     variables (set by the compiler in generateFunctionBytecode).
+			//   • c.symbols still points into the panicking function's scope
+			//     chain, so Get() can walk up to the named-return scope even
+			//     when the panic happened inside a nested if/for block.
+			//   • For a single return value we use the c.result / c.resultSet
+			//     fields, which callFramePop pushes onto the caller's stack.
+			//     For multiple return values we push the values above the frame
+			//     pointer directly; callFramePop collects them as topOfStackSlice.
+			if decl := c.bc.Declaration(); decl != nil && len(decl.Returns) > 0 {
+				varNames := c.bc.GetReturnVarNames() // nil when returns are unnamed
+
+				if len(decl.Returns) == 1 {
+					// Single return — use the c.result shortcut.
+					if len(varNames) == 1 {
+						// Named single return: read the current value from the
+						// symbol table.  The variable was zero-initialized at
+						// function entry and may have been modified by the
+						// deferred function that called recover().
+						val, found := c.symbols.Get(varNames[0])
+						if !found {
+							// Defensive fallback: the scope was somehow unavailable.
+							val = nil
+						}
+
+						c.result = val
+					} else {
+						// Unnamed single return: nil signals "no useful value".
+						c.result = nil
+					}
+
+					c.resultSet = true
+				} else {
+					// Multiple returns — push the function's stack marker followed
+					// by the values in reverse declaration order, mirroring what
+					// compileReturn emits for the normal (non-panic) return path.
+					//
+					// The stack marker is required: StackCheck (which the caller's
+					// multi-assignment compilation emits) scans down from the top
+					// looking for any StackMarker to verify the return values are
+					// present.  Without it, StackCheck fails with
+					// ErrReturnValueCount even when the value count is correct.
+					//
+					// Reverse order ensures the first declared variable ends up on
+					// top so the caller's left-to-right assignment pops in the
+					// right order.
+					_ = c.push(NewStackMarker(c.bc.name, len(decl.Returns)))
+
+					for i := len(decl.Returns) - 1; i >= 0; i-- {
+						// val is nil by default.  For named return variables we
+						// replace nil with the variable's current symbol-table
+						// value, which may be the compiler-initialized zero value
+						// or a value the deferred function explicitly set.
+						// For unnamed returns val stays nil — that unambiguously
+						// signals "no useful value was set before the panic".
+						var val any
+
+						if i < len(varNames) {
+							// Named return variable: read its current value.
+							// Get() walks up the scope-parent chain, reaching the
+							// named-return scope even when the panic occurred inside
+							// a nested if/for/switch block.
+							val, _ = c.symbols.Get(varNames[i])
+							// If the lookup unexpectedly fails, val stays nil as a
+							// safe fallback.
+						}
+
+						// Push above the frame pointer.  c.push is safe here
+						// because c.stackPointer was just reset to c.framePointer.
+						_ = c.push(val)
+					}
+				}
+			}
+
+			// Restore the caller's context; any synthesized return values are
+			// now either in c.result (single return) or on the stack above the
+			// frame pointer (multiple returns) and will be transferred to the
+			// caller's stack by callFramePop.
 			return c.callFramePop()
 		}
 

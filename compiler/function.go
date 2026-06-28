@@ -271,6 +271,26 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		return nil, nil, c.compileError(errors.ErrMissingParenthesis)
 	}
 
+	// Record the names of any named return variables on the bytecode object.
+	//
+	// This information is used at runtime by unwindPanic: when a panic is
+	// recovered inside a deferred function, unwindPanic needs to read the
+	// current values of the named return variables from the panicking
+	// function's symbol table so it can deliver them to the caller — exactly
+	// as a normal return statement would.  Without the names the runtime cannot
+	// locate those symbols.
+	//
+	// The slice is only set when there are named returns; it is left nil for
+	// void functions and functions with unnamed return values.
+	if len(c.returnVariables) > 0 {
+		names := make([]string, len(c.returnVariables))
+		for idx, rv := range c.returnVariables {
+			names[idx] = rv.Name
+		}
+
+		b.SetReturnVarNames(names)
+	}
+
 	// Now compile a statement or block into the function body. We'll use the
 	// current token stream in progress, and the current bytecode. But otherwise we
 	// use a new compiler context, so any nested operations do not affect the definition

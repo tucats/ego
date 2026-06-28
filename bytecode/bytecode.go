@@ -81,6 +81,19 @@ type ByteCode struct {
 	// so closures stored in a variable and called later can still find their
 	// captured variables.
 	capturedScope *symbols.SymbolTable
+
+	// returnVarNames holds the source-code names of any named return variables
+	// declared in the function signature, e.g. func f() (result int, err error)
+	// would give ["result", "err"].  It is nil for void functions and for
+	// functions with unnamed return values such as func f() (int, error).
+	//
+	// This field is set by the compiler (generateFunctionBytecode) and read by
+	// unwindPanic so that, when a panic is recovered inside a deferred function,
+	// the current values of the named return variables can be loaded from the
+	// panicking function's symbol table and delivered to the caller.  Without
+	// these names the runtime cannot distinguish named from unnamed returns or
+	// know which symbol-table entries to read.
+	returnVarNames []string
 }
 
 // String formats a bytecode as a function declaration string.
@@ -126,6 +139,23 @@ func (b *ByteCode) CaptureScope(s *symbols.SymbolTable) *ByteCode {
 // was evaluated, or nil if none was captured.
 func (b *ByteCode) GetCapturedScope() *symbols.SymbolTable {
 	return b.capturedScope
+}
+
+// SetReturnVarNames stores the source-code names of the function's named return
+// variables.  The compiler calls this once after it has parsed the full return
+// signature.  The slice must be in declaration order (left to right in the
+// source).  Passing nil or an empty slice marks the function as having no named
+// returns (either void or unnamed returns).
+func (b *ByteCode) SetReturnVarNames(names []string) *ByteCode {
+	b.returnVarNames = names
+
+	return b
+}
+
+// GetReturnVarNames returns the slice of named return variable names set by
+// SetReturnVarNames, or nil when the function has no named returns.
+func (b *ByteCode) GetReturnVarNames() []string {
+	return b.returnVarNames
 }
 
 // Size returns the number of instructions in the bytecode object. This may
