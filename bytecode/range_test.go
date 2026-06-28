@@ -999,6 +999,162 @@ func Test_rangeNextChannel_DiscardedVariables(t *testing.T) {
 	tc.assertProgramCounter(dest)
 }
 
+// Test_rangeNextChannel_SingleVarReceivesValue is the regression test for BUG-01.
+//
+// # Root cause
+//
+// When the Ego compiler compiles "for v := range ch { ... }" it emits
+//
+//	RangeInit ["v", ""]
+//
+// placing the sole loop variable "v" in the indexName slot and leaving
+// valueName empty.  Before the fix, rangeNextChannel treated indexName as an
+// array-style index and unconditionally wrote the loop counter (r.index = 0, 1,
+// 2, …) into it, discarding the received channel value entirely.  The caller
+// therefore saw 0, 1, 2 instead of the actual channel values.
+//
+// # Fix
+//
+// rangeNextChannel now checks whether valueName is present:
+//
+//   - Two-variable form (indexName + valueName both set): indexName gets the
+//     loop counter and valueName gets the received value — unchanged behavior.
+//
+//   - Single-variable form (valueName empty or "_"): indexName gets the received
+//     value, because channels carry no meaningful positional index.
+func Test_rangeNextChannel_SingleVarReceivesValue(t *testing.T) {
+	const dest = 99
+
+	ch := data.NewChannel(3)
+
+	ch.Send(100) //nolint:errcheck
+	ch.Send(200) //nolint:errcheck
+	ch.Send(300) //nolint:errcheck
+	ch.Close()
+
+	// Simulate "for v := range ch": compiler puts "v" in indexName, valueName = "".
+	tc := newTestContext(t).
+		withBytecodeSize(dest+1).
+		withStack(ch)
+
+	if err := rangeInitByteCode(tc.ctx, []any{"v", ""}); err != nil {
+		t.Fatalf("rangeInitByteCode: %v", err)
+	}
+
+	wantVals := []any{100, 200, 300}
+
+	for step, want := range wantVals {
+		pcBefore := tc.ctx.programCounter
+
+		if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+			t.Fatalf("step %d: rangeNextByteCode error: %v", step, err)
+		}
+
+		if tc.ctx.programCounter != pcBefore {
+			t.Errorf("step %d: PC changed prematurely", step)
+		}
+
+		// BUG-01: before the fix, "v" received step (0, 1, 2) instead of the
+		// channel value (100, 200, 300).
+		tc.assertSymbolValue("v", want)
+	}
+
+	// Exhaustion.
+	if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+		t.Fatalf("exhaustion step: %v", err)
+	}
+
+	tc.assertProgramCounter(dest)
+
+	if len(tc.ctx.rangeStack) != 0 {
+		t.Errorf("rangeStack not empty after channel exhaustion")
+	}
+}
+
+// Test_rangeNextChannel_SingleVarDiscarded verifies that the no-variable form
+// "for range ch" (indexName = "_", valueName = "") consumes channel values
+// without writing to any symbol.
+func Test_rangeNextChannel_SingleVarDiscarded(t *testing.T) {
+	const dest = 10
+
+	ch := data.NewChannel(2)
+	ch.Send(11) //nolint:errcheck
+	ch.Send(22) //nolint:errcheck
+	ch.Close()
+
+	// Simulate "for _ := range ch": compiler emits indexName="_", valueName="".
+	tc := newTestContext(t).
+		withBytecodeSize(dest+1).
+		withStack(ch)
+
+	if err := rangeInitByteCode(tc.ctx, []any{defs.DiscardedVariable, ""}); err != nil {
+		t.Fatalf("rangeInitByteCode: %v", err)
+	}
+
+	// Both values must be consumed without error and without symbol writes.
+	for step := 0; step < 2; step++ {
+		if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+			t.Fatalf("step %d: %v", step, err)
+		}
+	}
+
+	// Exhaustion.
+	if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+		t.Fatalf("exhaustion step: %v", err)
+	}
+
+	tc.assertProgramCounter(dest)
+}
+
+// Test_rangeNextChannel_TwoVarCounterAndValue verifies that the two-variable
+// form (for i, v := range ch) continues to work after the BUG-01 fix:
+// the first variable still receives the loop counter and the second still
+// receives the channel value.
+func Test_rangeNextChannel_TwoVarCounterAndValue(t *testing.T) {
+	const dest = 99
+
+	ch := data.NewChannel(2)
+	ch.Send("alpha") //nolint:errcheck
+	ch.Send("beta")  //nolint:errcheck
+	ch.Close()
+
+	tc := newTestContext(t).
+		withBytecodeSize(dest+1).
+		withStack(ch)
+
+	if err := rangeInitByteCode(tc.ctx, []any{"i", "v"}); err != nil {
+		t.Fatalf("rangeInitByteCode: %v", err)
+	}
+
+	type want struct {
+		counter int
+		value   string
+	}
+
+	steps := []want{
+		{0, "alpha"},
+		{1, "beta"},
+	}
+
+	for _, w := range steps {
+		if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+			t.Fatalf("step %d: %v", w.counter, err)
+		}
+
+		// i must still be the loop counter, not the value.
+		tc.assertSymbolValue("i", w.counter)
+		// v must be the received channel value.
+		tc.assertSymbolValue("v", w.value)
+	}
+
+	// Exhaustion.
+	if err := rangeNextByteCode(tc.ctx, dest); err != nil {
+		t.Fatalf("exhaustion: %v", err)
+	}
+
+	tc.assertProgramCounter(dest)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 9 — rangeNextInteger: per-step verification
 // ─────────────────────────────────────────────────────────────────────────────

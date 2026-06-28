@@ -362,6 +362,32 @@ func rangeNextArray(c *Context, r *rangeDefinition, actual *data.Array, destinat
 // the "channel is closed and drained" case) is treated as normal loop
 // termination — the program counter jumps to the destination and the range
 // entry is popped.
+//
+// # Variable assignment for channel ranges
+//
+// Channel ranges have different assignment semantics depending on how many
+// loop variables the caller declared:
+//
+// Two-variable form:  for i, v := range ch { ... }
+//
+//	The compiler sets r.indexName="i" and r.valueName="v".
+//	i receives the loop counter (r.index: 0, 1, 2, …) and v receives
+//	the channel value (datum).  This mirrors how two-variable array ranges
+//	work (index, element).
+//
+// Single-variable form:  for v := range ch { ... }
+//
+//	The compiler sets r.indexName="v" and r.valueName="".
+//	Because channels have no meaningful positional index — values arrive
+//	in send order and a counter adds no information — the sole declared
+//	variable must receive the channel value (datum).  Assigning the loop
+//	counter to it instead was BUG-01: the variable would read 0, 1, 2, …
+//	instead of the transmitted values.
+//
+// No-variable form:  for range ch { ... }
+//
+//	Both names are "" or "_".  The value is consumed and discarded; no
+//	symbols are written.
 func rangeNextChannel(c *Context, r *rangeDefinition, actual *data.Channel, destination int, stackSize int) error {
 	datum, err := actual.Receive()
 	if err != nil {
@@ -373,15 +399,28 @@ func rangeNextChannel(c *Context, r *rangeDefinition, actual *data.Channel, dest
 		return nil
 	}
 
-	if r.indexName != "" && r.indexName != defs.DiscardedVariable {
-		if err = c.symbols.Set(r.indexName, r.index); err != nil {
-			return err
-		}
-	}
+	valueNamePresent := r.valueName != "" && r.valueName != defs.DiscardedVariable
 
-	if r.valueName != "" && r.valueName != defs.DiscardedVariable {
+	if valueNamePresent {
+		// Two-variable form (for i, v := range ch):
+		//   indexName → loop counter, valueName → received value.
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+			if err = c.symbols.Set(r.indexName, r.index); err != nil {
+				return err
+			}
+		}
+
 		if err = c.symbols.Set(r.valueName, datum); err != nil {
 			return err
+		}
+	} else {
+		// Single-variable form (for v := range ch) or no-variable form (for range ch):
+		//   indexName → received value.  The loop counter is meaningless for
+		//   channel receives and is not exposed to the caller.
+		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
+			if err = c.symbols.Set(r.indexName, datum); err != nil {
+				return err
+			}
 		}
 	}
 

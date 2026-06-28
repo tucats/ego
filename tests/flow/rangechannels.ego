@@ -18,14 +18,79 @@
    for _, i := range xc {
       if count == 1 {
          @assert T.Equal( i, "sent from afar", "First message wrong")
-      } 
+      }
       if count == 2 {
          @assert T.Equal(i, "and another for good measure", "Second message wrong")
-      } 
+      }
       count = count + 1
    }
 
    // This assert was failing due to some race conditions in the channel runtime
    // that should be fixed now.
    @assert T.Equal(count,3, "Wrong number of messages")
+}
+
+// Regression test for BUG-01: "for v := range ch" (single-variable form) must
+// deliver channel values to v, not loop indices (0, 1, 2, ...).
+//
+// Before the fix, rangeNextChannel wrote the internal iteration counter into the
+// single declared variable (because the compiler places it in the indexName slot).
+// After the fix, rangeNextChannel detects an absent valueName and routes the
+// received datum to indexName instead.
+@test "flow: single-variable channel range receives values, not indices"
+{
+   // A named function is used as the goroutine body because anonymous closure
+   // goroutines cannot yet capture outer-scope variables (BUG-02).
+   func intSender(c chan) {
+      defer close(c)
+      c <- 10
+      c <- 20
+      c <- 30
+   }
+
+   ch := make(chan, 5)
+   go intSender(ch)
+
+   // Collect every value produced by the single-variable range.
+   // If BUG-01 were present, collected would hold [0, 1, 2] instead of
+   // [10, 20, 30].
+   collected := []int{}
+   for v := range ch {
+      collected = append(collected, v)
+   }
+
+   @assert len(collected) == 3
+   @assert collected[0] == 10
+   @assert collected[1] == 20
+   @assert collected[2] == 30
+}
+
+// Additional coverage: the two-variable form (for i, v := range ch) must
+// continue to deliver the loop counter to i and the channel value to v after
+// the BUG-01 fix.
+@test "flow: two-variable channel range counter and value are correct"
+{
+   func strSender(c chan) {
+      defer close(c)
+      c <- "alpha"
+      c <- "beta"
+      c <- "gamma"
+   }
+
+   ch := make(chan, 5)
+   go strSender(ch)
+
+   // The first variable (i) must receive the loop counter starting at 0.
+   // The second variable (v) must receive the channel value.
+   counterSum := 0
+   lastValue := ""
+
+   for i, v := range ch {
+      counterSum = counterSum + i
+      lastValue = v
+   }
+
+   // counterSum = 0 + 1 + 2 = 3
+   @assert counterSum == 3
+   @assert lastValue == "gamma"
 }
