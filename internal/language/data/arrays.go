@@ -403,6 +403,22 @@ func (a *Array) SetSize(size int) *Array {
 	return a
 }
 
+// MakeAny converts the array value type from whatever it is to an
+// any/interface{} type. This can be required when Ego is running in
+// dynamic type mode and the user stores a string in an array that
+// was specifically typed to hold integers. Ego allows this, but it is
+// now a lie to call the array []int, it must instead become []any since
+// it is no longer homogeneous. In relaxed or strict mode, this is not
+// allowed; that's controlled by the bytecode runtime.
+//
+// There is no function to undo this; you can only make an array "less
+// specific" in type.
+func (a *Array) MakeAny() {
+	if a != nil {
+		a.valueType = InterfaceType
+	}
+}
+
 // Set stores a value in the array. The array must not be set to immutable.
 // The array index must be within the size of the array. If the array is a
 // typed array, the type must match the array type. The value can handle

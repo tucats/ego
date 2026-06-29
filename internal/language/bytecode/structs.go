@@ -3,11 +3,11 @@ package bytecode
 import (
 	"reflect"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // This file implements bytecode instructions that read and write indexed
@@ -390,10 +390,27 @@ func storeInArray(c *Context, array *data.Array, subscript int, v any) error {
 		return c.runtimeError(errors.ErrArrayIndex).Context(subscript)
 	}
 
-	if c.typeStrictness == defs.StrictTypeEnforcement {
-		vv, _ := array.Get(subscript)
-		if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
+	vv, _ := array.Get(subscript)
+	if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
+		switch c.typeStrictness {
+		// Strict mode means this is an error
+		case defs.StrictTypeEnforcement:
 			return c.runtimeError(errors.ErrInvalidVarType)
+
+		// Relaxed mode means we will endeavor to translate the
+		// value to the array type on behalf of the user.
+		case defs.RelaxedTypeEnforcement:
+			var err error
+
+			v, err = data.Coerce(v, vv)
+			if err != nil {
+				return err
+			}
+
+		// Dynamic mode just means we convert the destination array
+		// to []any
+		default:
+			array.MakeAny()
 		}
 	}
 

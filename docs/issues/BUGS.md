@@ -39,7 +39,7 @@ a severity classification.
 | BUG-11 | MEDIUM | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
 | BUG-12 | MEDIUM | Writing to a nil map succeeds; should error |
 | BUG-13 | MEDIUM | `typeof()` result incompatible with `switch` case matching |
-| BUG-14 | MEDIUM | Typed array element type not enforced in dynamic mode |
+| BUG-14 | MEDIUM ✓ | Typed array element type not enforced in dynamic mode |
 | BUG-15 | MEDIUM | `append()` to typed array silently accepts wrong-type elements |
 | BUG-16 | MEDIUM | `defer namedFunc(arg)` evaluates args lazily (cross-ref: FLOW-M4) |
 | BUG-17 | LOW | `var (...)` group declaration not supported |
@@ -887,6 +887,18 @@ The LANGUAGE.md says `a[1] = 1325.0` on a `[]int` should fail, but in practice
 `1325.0` is silently truncated to `1325`. Even `a[0] = "string"` silently
 converts the array to a mixed-type array. Element type enforcement is entirely
 absent.
+
+*** Resolution: ***
+Its a little more complicated than that. The Ego-correct behavior depends on the
+current mode checking:
+
+- Strict requires that the type match
+- Relaxed will try to coerce the type to fit if possible
+- Dynamic will just convert the array type to []any
+
+Changes where made in StoreIndex to evaluate if type coercion of the value
+or the array are possible. A function `MakeAny()` was added to *data.Array
+elements that converts the type from a specific array type to []any.
 
 ---
 

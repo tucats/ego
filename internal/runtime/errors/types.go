@@ -77,7 +77,8 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 		Returns: []*data.Type{data.ErrorType},
 	}, next)
 
-	// Legacy version of the .Unwrap() function
+	// Set the context value (wrap it) in the existing error. Any
+	// previous context value is lost.
 	data.ErrorType.DefineFunction("Context", &data.Declaration{
 		Name: "Context",
 		Parameters: []data.Parameter{

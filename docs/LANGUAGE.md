@@ -240,8 +240,22 @@ a := []int{101, 102, 103}
 
 In this example, an array is created that can only contain `int` values.
 If you specify a value in the array initialization list that is not an
-`int`, it is converted to an `int` before it is stored. You can then
-only store `int` values in the array going forward,
+`int`, Ego's behavior depends on what type strictness it is running under.
+
+| Mode | Behavior |
+| ---- | -------- |
+| dynamic | The array becomes an array of `[]interface`, which an array of "any type" |
+| relaxed | The value is converted automatically to the `int` type |
+| strict | An error is reported if the value is not `int` |
+
+When in `relaxed` mode, if the value cannot be converted, then a runtime
+error is generated (for example, trying to store "donut" in a `[]int` array
+is an error because "donut" cannot be converted to an `int` value, but storing
+"153" in the `[]int` array will work because "153" can be unambiguously
+converted to an integer.)
+
+Assuming Ego is running in `strict` mode, the following outcomes would
+be expected:
 
 ```go
 a[1] = 1325    // Succeeds
