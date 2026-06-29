@@ -58,6 +58,26 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 		Returns: []*data.Type{data.InterfaceType},
 	}, unwrap)
 
+	// Register the (e error) Code() string function, which returns
+	// the Ego error code (the localization key) value associated with
+	// the error. If the error is not an Ego error, this returns the
+	// key value "not.an.ego.error"
+	data.ErrorType.DefineFunction("Code", &data.Declaration{
+		Name:    "Code",
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.StringType},
+	}, code)
+
+	// Register the (e error) Next() string function, which returns
+	// the next error value in a nested chain of errors. If there is
+	// no next value, returns nil.
+	data.ErrorType.DefineFunction("Next", &data.Declaration{
+		Name:    "Next",
+		Type:    data.ErrorType,
+		Returns: []*data.Type{data.ErrorType},
+	}, next)
+
+	// Legacy version of the .Unwrap() function
 	data.ErrorType.DefineFunction("Context", &data.Declaration{
 		Name: "Context",
 		Parameters: []data.Parameter{

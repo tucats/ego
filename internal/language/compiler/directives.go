@@ -7,14 +7,14 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/packages"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/validate"
 )
@@ -815,12 +815,26 @@ func (c *Compiler) compileBlockDirective() error {
 		tokens.Append(tokenizer.BlockEndToken)
 	}
 
+	// Generate start of a try block. The @compile directive is an implied
+	// try statement, with an optional catch to let a test validate a compile
+	// issue.
+	b1 := c.b.Mark()
+	tryMarker := bytecode.NewStackMarker("try")
+
+	c.b.Emit(bytecode.Try, 0)
+	c.b.Emit(bytecode.Push, tryMarker)
+
+	subCompiler.flags.unusedVars = true
+
 	// Compile the block of code.
-	if bc, err := subCompiler.Compile("@compile", tokens); err != nil {
+	bc, err := subCompiler.Compile("@compile", tokens)
+	if err == nil {
+		err = subCompiler.Errors()
+	}
+
+	if err != nil {
 		c.b.Emit(bytecode.Push, err)
 		c.b.Emit(bytecode.Signal, nil)
-
-		return nil
 	} else {
 		// If the compilation succeeded, add the compiled code to the
 		// current bytecode stream.
@@ -831,12 +845,53 @@ func (c *Compiler) compileBlockDirective() error {
 		if names := subCompiler.s.Names(); len(names) > 0 {
 			for _, name := range names {
 				value, _ := subCompiler.s.Get(name)
-
-				fmt.Println("DEBUG: @compile directive symbol:", name, "=", value)
 				c.b.Emit(bytecode.CreateAndStore, data.NewList(name, value))
 			}
 		}
 	}
+
+	c.b.Emit(bytecode.DropToMarker, tryMarker)
+	b2 := c.b.Mark()
+
+	// The catch block is optional. If not found, patch up the try destination to here
+	// and generate a pop of the try stack.
+	if !c.t.IsNext(tokenizer.CatchToken) {
+		_ = c.b.SetAddressHere(b1)
+		c.b.Emit(bytecode.TryPop)
+
+		return nil
+	}
+
+	// Need to generate a branch around the catch block for success cases.
+	c.b.Emit(bytecode.Branch, 0)
+	_ = c.b.SetAddressHere(b1)
+
+	// Is there a named variable that will hold the error?
+
+	if c.t.IsNext(tokenizer.StartOfListToken) {
+		errName := c.t.Next()
+		if !errName.IsIdentifier() {
+			return c.compileError(errors.ErrInvalidSymbolName)
+		}
+
+		if !c.t.IsNext(tokenizer.EndOfListToken) {
+			return c.compileError(errors.ErrMissingParenthesis)
+		}
+
+		c.b.Emit(bytecode.Load, defs.ErrorVariable)
+		c.b.Emit(bytecode.StoreAlways, errName)
+		c.DefineSymbol(errName.Spelling())
+	}
+
+	if err := c.compileRequiredBlock(false); err != nil {
+		return err
+	}
+	// Need extra PopScope because we're still running in the scope of the try{} block
+	//c.b.Emit(bytecode.PopScope)
+
+	// This marks the end of the try/catch
+	_ = c.b.SetAddressHere(b2)
+	c.b.Emit(bytecode.TryPop)
 
 	return nil
 }

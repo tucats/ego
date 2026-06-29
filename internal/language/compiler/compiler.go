@@ -8,16 +8,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/builtins"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/packages"
 )
 
 // requiredPackages is the list of packages that are always imported, regardless
@@ -76,6 +76,7 @@ type flagSet struct {
 	unusedVars            bool // True if unused variables are an error
 	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
+	fragment              bool // True if this compilation is not a complete program
 }
 
 type importElement struct {
@@ -133,9 +134,9 @@ type Compiler struct {
 	// that must not be referenced in this nested named function body. Any reference to a
 	// name in this set is a compile-time error. Nil for closures and top-level functions.
 	forbiddenSymbols map[string]bool
-	statementCount    int                      // Number of statements in the current block
-	lineNumberOffset  int                      // Offset used for generating line number data in debug data
-	flags             flagSet                  // Used to hold parser state flags
+	statementCount   int     // Number of statements in the current block
+	lineNumberOffset int     // Offset used for generating line number data in debug data
+	flags            flagSet // Used to hold parser state flags
 }
 
 // This is a list of the packages that were successfully auto-imported.
@@ -343,28 +344,46 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 func (c *Compiler) Errors() error {
 	var err *errors.Error
 
-	if len(c.symbolErrors) > 0 {
-		// Make a list of the error codes so we can sort them by variable name
-		var sortedErrors []string
+	// Guard against calling with no valid receiver
+	if c == nil {
+		return nil
+	}
 
-		for k := range c.symbolErrors {
-			sortedErrors = append(sortedErrors, k)
-		}
-
-		sort.Strings(sortedErrors)
-
-		// Format the errors into a single string
-		for _, k := range sortedErrors {
-			if errors.Nil(err) {
-				err = c.symbolErrors[k]
-			} else {
-				err = err.Chain(c.symbolErrors[k])
+	// We don't report symbol errors on fragments.
+	if !c.flags.fragment {
+		// Do we have unprocessed symbol scope errors hanging out? If so, now's the
+		// time to add them to the errors table.
+		for _, scope := range c.scopes {
+			for v, e := range scope.usage {
+				if e != nil {
+					c.symbolErrors[v] = e
+				}
 			}
 		}
 
-		// Report the errors to the log if active.
-		ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
-			"error": err.Error()})
+		if len(c.symbolErrors) > 0 {
+			// Make a list of the error codes so we can sort them by variable name
+			var sortedErrors []string
+
+			for k := range c.symbolErrors {
+				sortedErrors = append(sortedErrors, k)
+			}
+
+			sort.Strings(sortedErrors)
+
+			// Format the errors into a single string
+			for _, k := range sortedErrors {
+				if errors.Nil(err) {
+					err = c.symbolErrors[k]
+				} else {
+					err = err.Chain(c.symbolErrors[k])
+				}
+			}
+
+			// Report the errors to the log if active.
+			ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
+				"error": err.Error()})
+		}
 	}
 
 	// Reset the deferred error list.
@@ -513,8 +532,10 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 		}
 	}
 
-	// Return the slice of the generated code for this compilation. The Seal
-	// operation truncates the bytecode array to the smallest size possible.
+	// Return the slice of the generated code for this compilation. The Close
+	// operation truncates the bytecode array to the smallest size possible,
+	// and scans for any lazy compile errors, like unused variables during the
+	// compilation.
 	return c.Close()
 }
 

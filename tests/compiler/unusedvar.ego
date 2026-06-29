@@ -1,0 +1,18 @@
+@test "compiler: unused variable"
+{
+    failed := false
+
+    // The compiler should detect that "unused" is never used as a
+    // value reference.
+    @compile block {
+
+        unused := 42
+
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "var.unused"
+        @assert e.Unwrap() == "unused"
+    }
+
+    @assert failed == true
+}

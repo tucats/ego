@@ -73,12 +73,13 @@ language and tool set patterned off of the _Go_ programming language.
    1. [The `package` statement](#package)
 
 1. [Directives](#directives)
+   1. [@compile](#at-compile)
    1. [@error](#at-error)
-   2. [@global](#at-global)
-   3. [@localization](#at-localization)
-   4. [@optimizer](#at-optimizer)
-   5. [@template](#at-template)
-   6. [@type](#at-type)
+   1. [@global](#at-global)
+   1. [@localization](#at-localization)
+   1. [@optimizer](#at-optimizer)
+   1. [@template](#at-template)
+   1. [@type](#at-type)
 
 1. [Testing](#testing)
    1. [The `test` command](#at-test)
@@ -2284,6 +2285,29 @@ f2 := e.Unwrap()
 ```
 
 After this code executes, `f2` will contain the string value "foobar.txt".
+
+#### (e error) Code() string
+
+The `Code()` function can be used with any error as the receiver value, and will
+return the Ego localizable error code string, such as "div.zero" for a "division
+by zero" error. If the error is not an Ego error, but instead is an error from
+the operating system, the code string will be "not.an.ego.error".
+
+```go
+try {
+    x := hours/ 0.0
+} catch (e) {
+    code := e.Code()    // Will be "div.zero"
+    fmt.Printf("The code is %s\n", code)
+}
+```
+
+#### (e error) Next() error
+
+The `Next()` function can be used with any error as the receiver value, and will
+return the next error that is chained on this error. Errors from the system may
+contain a list of errors. The `Next()` function gets the next error in the list
+from the current error. If there is no next error, it returns `nil`.
 
 ### exec <a name="exec"></a>
 
@@ -4946,24 +4970,21 @@ Directives are special _Ego_ statements that perform special functions
 outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
 
-### @compile [block] { code }
+### @compile [block] { code } <a name="at=compile"></a>
 
-The @compile directive allows a test program to trap compiler errors in
-a block of code, and evaluate the compilation error. This is most commonly
-combined with a try/catch block, and requires language extensions to be
-enabled.
+The `@compile` directive allows a test program to trap compiler errors in
+a block of code, and evaluate the compilation error. The `@compile` directive
+acts like a `try`/`catch` block.
 
 ```go
-try {
-    @compile block {
-        x = bob
-    }
+@compile block {
+    x = bob
 } catch(e) {
     fmt.Println("Compile error, ", e)
 }
 ```
 
-In this example, the text in the @compile braces will be compiled, but if
+In this example, the text in the `@compile` braces will be compiled, but if
 there is a compile error, it signals that error which can be caught as the
 variable `e`. This could contain an error if `bbo` is not a known symbol,
 for example. If `bob` does exist, then the compilation may not have an error,

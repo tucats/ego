@@ -104,5 +104,17 @@ func (e *Error) Code() string {
 		return "<nil>"
 	}
 
-	return e.err.Error()
+	// The localization key is stored as the text of the Go-native internal error
+	code := e.err.Error()
+
+	return code
+}
+
+// Return the next error in the chain of nested errors, or nil if there aren't any.
+func (e *Error) Next() *Error {
+	if e == nil {
+		return nil
+	}
+
+	return e.next
 }

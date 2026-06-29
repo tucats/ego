@@ -1,0 +1,16 @@
+@test "compiler: invalid argument list syntax"
+{
+    var failed bool 
+
+    @compile block {
+        // Argument list missing a comma
+        fmt.Println("test" "value")
+
+    } catch(e) {
+        failed = true
+        code := e.Code()
+        @assert code == "list"
+    }
+
+    @assert failed == true
+}

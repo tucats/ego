@@ -2,8 +2,8 @@ package compiler
 
 import (
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -32,6 +32,7 @@ func CompileString(name string, programText string) (*bytecode.ByteCode, error) 
 
 	c := New(name).SetExtensionsEnabled(true)
 	c.functionDepth = 1
+	c.flags.fragment = true
 
 	t := tokenizer.New(programText, true)
 
@@ -67,6 +68,7 @@ func Run(name string, s *symbols.SymbolTable, t *tokenizer.Tokenizer) error {
 	// Set the depth >0 so we will process all statements without requiring a function
 	// body.
 	c.functionDepth = 1
+	c.flags.fragment = true
 
 	bc, err := c.Compile(name, t)
 	if err == nil {

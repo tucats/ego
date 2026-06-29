@@ -4,10 +4,8 @@
 @test "directives: @compile block with no error"
 {
     x := 0
-    try {
-        @compile block {
-            x = 33
-        }
+    @compile block {
+        x = 33
     } catch(e) {
         @assert e.Error() != ""
     }
@@ -19,10 +17,8 @@
 @test "directives: @compile block with error"
 {
     x := 0
-    try {
-        @compile block {
-            x = bob
-        }
+    @compile block {
+        x = bob
     } catch(e) {
         @assert strings.Contains(e.Error(), "unknown identifier")
     }
@@ -33,42 +29,36 @@
 
 @test "directives: @compile code with no error"
 {
-    var okay bool 
+    var failed bool 
 
-    try {
-        @compile {
-            func foo() {
-                x = 33
-                fmt.Println(x)
-            }
+    @compile {
+        func foo() {
+            x = 33
+            fmt.Println(x)
         }
-        okay = true
     } catch(e) {
-        okay = false
+        failed = true
         @assert e.Error() != ""
     }
 
-    @assert okay == true
+    @assert failed == false
 }
 
 
 @test "directives: @compile code with error"
 {
-    var okay bool 
+    var failed bool 
 
-    try {
-        @compile {
-            func foo() {
-                x = bob
-                fmt.Println(x)
-            }
+    @compile {
+        func foo() {
+            x = bob
+            fmt.Println(x)
         }
-
-        okay = true
     } catch(e) {
-        okay = false
-        @assert strings.Contains(e.Error(), "unknown symbol: bob")
+        failed = true
+        @assert e.Code() == "symbol.not.found"
+        @assert e.Unwrap() == "bob"
     }
 
-    @assert okay == false
+    @assert failed == true
 }
