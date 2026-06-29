@@ -349,7 +349,8 @@ func (c *Compiler) Errors() error {
 		return nil
 	}
 
-	// We don't report symbol errors on fragments.
+	// We don't report symbol errors on fragments, because they are not expected
+	// to be complete programs.
 	if !c.flags.fragment {
 		// Do we have unprocessed symbol scope errors hanging out? If so, now's the
 		// time to add them to the errors table.
@@ -360,30 +361,30 @@ func (c *Compiler) Errors() error {
 				}
 			}
 		}
+	}
 
-		if len(c.symbolErrors) > 0 {
-			// Make a list of the error codes so we can sort them by variable name
-			var sortedErrors []string
+	if len(c.symbolErrors) > 0 {
+		// Make a list of the error codes so we can sort them by variable name
+		var sortedErrors []string
 
-			for k := range c.symbolErrors {
-				sortedErrors = append(sortedErrors, k)
-			}
-
-			sort.Strings(sortedErrors)
-
-			// Format the errors into a single string
-			for _, k := range sortedErrors {
-				if errors.Nil(err) {
-					err = c.symbolErrors[k]
-				} else {
-					err = err.Chain(c.symbolErrors[k])
-				}
-			}
-
-			// Report the errors to the log if active.
-			ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
-				"error": err.Error()})
+		for k := range c.symbolErrors {
+			sortedErrors = append(sortedErrors, k)
 		}
+
+		sort.Strings(sortedErrors)
+
+		// Format the errors into a single string
+		for _, k := range sortedErrors {
+			if errors.Nil(err) {
+				err = c.symbolErrors[k]
+			} else {
+				err = err.Chain(c.symbolErrors[k])
+			}
+		}
+
+		// Report the errors to the log if active.
+		ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
+			"error": err.Error()})
 	}
 
 	// Reset the deferred error list.
@@ -820,4 +821,16 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 	}
 
 	return firstError
+}
+
+// Fragment sets the fragment flag, which controls when/how certain errors are
+// reported.
+func (c *Compiler) Fragment(flag bool) *Compiler {
+	if c == nil {
+		return nil
+	}
+
+	c.flags.fragment = flag
+
+	return c
 }

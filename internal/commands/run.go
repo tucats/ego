@@ -9,26 +9,26 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/cli/app"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/builtins"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/compiler"
-	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/language/debugger"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/util/profiling"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/compiler"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/debugger"
+	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/runtime"
 	"github.com/tucats/ego/internal/runtime/io"
 	egoOS "github.com/tucats/ego/internal/runtime/os"
 	"github.com/tucats/ego/internal/runtime/profile"
-	"github.com/tucats/ego/internal/language/symbols"
-	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/util/profiling"
 )
 
 var (
@@ -516,6 +516,8 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 			label = "main '" + mainName + "'"
 		}
 
+		comp.Fragment(true)
+		
 		b, err = comp.Compile(label, t)
 		if !errors.Nil(err) {
 			exitValue = 1
