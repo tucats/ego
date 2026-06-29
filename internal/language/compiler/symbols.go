@@ -5,9 +5,9 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -17,8 +17,8 @@ import (
 // "used") or a non-nil *errors.Error (the symbol was declared but never
 // read, so it will trigger an "unused variable" diagnostic on scope exit).
 type scope struct {
-	module  string            // name of the enclosing compilation unit, for error messages
-	depth   int               // nesting depth at which this scope was created
+	module  string                   // name of the enclosing compilation unit, for error messages
+	depth   int                      // nesting depth at which this scope was created
 	usage   map[string]*errors.Error // nil entry = used; non-nil entry = declared but not yet used
 	symbols *symbols.SymbolTable
 }
@@ -197,6 +197,23 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 	}
 
 	return nil
+}
+
+// Add a symbol name to the list of permanently optional symbols for this compilation.
+// This is currently only used in the REST services compilation, since not all services
+// need to use the request variable. Use this sparingly!
+func (c *Compiler) UsageOptional(name string) *Compiler {
+	if c == nil {
+		return c
+	}
+
+	if c.optionalUsage == nil {
+		c.optionalUsage = map[string]bool{}
+	}
+
+	c.optionalUsage[name] = true
+
+	return c
 }
 
 // Mark a variable as being used in the current scope. If the variable has not been defined

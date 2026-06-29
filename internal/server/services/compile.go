@@ -8,12 +8,12 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/compiler"
-	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/router"
 )
 
 var compilerCacheLock sync.Mutex
@@ -70,6 +70,11 @@ func compileAndCacheService(session *router.Session, endpoint, file string, symb
 			"error":   err.Error()})
 	}
 
+	// The request parameter may not always be needed by a service, so let's mark it as
+	// always used, to prevent compiler errors for services that never reference it.
+	compilerInstance.UsageOptional("req")
+
+	// Compile the service code.
 	serviceCode, err = compilerInstance.Compile(name, tokens)
 
 	return serviceCode, tokens, err

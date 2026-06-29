@@ -117,6 +117,7 @@ type Compiler struct {
 	packageMutex      sync.Mutex               // Mutex for serializing access to shared package management
 	types             map[string]*data.Type    // Types defined by the user in this compilation unit
 	symbolErrors      map[string]*errors.Error // List of symbol table errors (unused var, etc).
+	optionalUsage     map[string]bool          // List of symbols that do not hae to be referenced even if defined
 	started           time.Time                // Time compilation was started
 	scopes            []scope                  // Nested symbol table scopes for this compilation
 	functionDepth     int                      // Current nested function declaration depth
@@ -356,6 +357,11 @@ func (c *Compiler) Errors() error {
 		// time to add them to the errors table.
 		for _, scope := range c.scopes {
 			for v, e := range scope.usage {
+				// Skip over symbols marked as optionaly used.
+				if len(c.optionalUsage) > 0 && c.optionalUsage[v] {
+					continue
+				}
+
 				if e != nil {
 					c.symbolErrors[v] = e
 				}
