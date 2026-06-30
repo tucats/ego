@@ -2682,10 +2682,7 @@ the string value
 
 Given a JSON byte array expression, this creates the equivalent JSON object value.
 This may be a scalar type (such as int, string, or float64) or it may be an
-array or structure, or a combination of them. You do not have to provide a
-model of the data type; the `UnMarshal` function creates one dynamically.
-This means you are not guaranteed that the resulting structure has all the
-fields you might be expecting.
+array or structure, or a combination of them.
 
 ```go
 r := { age:0, name:""}
@@ -2697,16 +2694,6 @@ structure { age: 44, name:"Tom"} in the variable `r`. You can use the `reflect.M
 function to examine if a structure contains a field you expected. Note that the Unmarshal
 function returns an error code as its result; this will be nil if there are no errors
 found.
-
-You can optionally not pass the value to store the resulting decoded value as the second
-parameter. If only the byte array is passed, the function's return value is the decoded
-value.
-
-```go
-r := json.Unmarshal(s) 
-```
-
-In this usage, if there is an error decoding the byte array in `s` then an error is thrown.
 
 ### math <a name="math"></a>
 
