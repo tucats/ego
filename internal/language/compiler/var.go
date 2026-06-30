@@ -160,6 +160,21 @@ func (c *Compiler) collectVarListNames(names []string, isList bool) ([]string, b
 // varInitializer parses the initializer for the var list, if present. If there is no
 // initializer, no work is done. If there is an initializer, it's parsed and the model
 // is then stored in each symbol.
+//
+// The no-initializer path (else branch below) has a subtle correctness requirement:
+// for complex reference types (*Struct, *Array), the compile-time model produced by
+// kind.InstanceOf(kind) is a single Go pointer that would be shared across every
+// execution of this var statement. Because Ego structs and arrays are mutable, all
+// calls to a function containing the declaration would mutate that one shared object —
+// state would accumulate across calls (BUG-23).
+//
+// To avoid this, the no-initializer path emits a runtime call to $new(kind) for
+// *Struct and *Array zero-values. $new calls InstanceOf at execution time, creating
+// a fresh allocation for each function invocation. Scalar types (int, bool, string,
+// etc.) are Go value types and do not exhibit this aliasing problem; they continue
+// to use the cheaper Push-constant approach. Nil-state maps (*Map with data==nil)
+// are also safe to push as a constant because they cannot be mutated via Set() —
+// writes raise ErrNilMapWrite (BUG-12 fix) — so their aliasing is harmless.
 func varInitializer(c *Compiler, kind *data.Type, names []string, model any) error {
 	var err error
 
@@ -185,7 +200,26 @@ func varInitializer(c *Compiler, kind *data.Type, names []string, model any) err
 		}
 	} else {
 		for _, name := range names {
-			c.b.Emit(bytecode.Push, model)
+			// For mutable reference types the compile-time model is a shared
+			// pointer. We must create a fresh instance at each function
+			// invocation to prevent mutations in one call from affecting
+			// subsequent calls. Emit $new(kind) so that InstanceOf runs at
+			// execution time and allocates a new object every time.
+			switch model.(type) {
+			case *data.Struct, *data.Array:
+				c.b.Emit(bytecode.Load, "$new")
+				c.b.Emit(bytecode.Push, kind) // push the *data.Type, not the model
+				c.b.Emit(bytecode.Call, 1)
+
+			default:
+				// Scalar types (int, bool, string, …) are Go value types and
+				// are safe to push as constants. Nil-state maps (*Map with
+				// data==nil) are also safe: Set() refuses writes and
+				// re-assignment of the symbol replaces the pointer without
+				// mutating the shared nil-state object.
+				c.b.Emit(bytecode.Push, model)
+			}
+
 			c.b.Emit(bytecode.SymbolCreate, name)
 			c.b.Emit(bytecode.Store, name)
 		}

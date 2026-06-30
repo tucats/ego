@@ -1,0 +1,156 @@
+// Tests for var declarations of struct/array types that must produce a
+// fresh instance on every function call rather than sharing a single
+// compile-time object.
+//
+// Before the fix, the compiler baked the result of kind.InstanceOf(kind) — a
+// single *Struct or *Array pointer — into a Push bytecode constant. Every
+// execution of the function pushed and then mutated that same pointer, so
+// the counter accumulated across calls.
+//
+// After the fix, the compiler emits $new(kind) for *Struct and *Array zero
+// values so that InstanceOf runs at execution time and allocates a new
+// object on every invocation.
+
+@test "types: var struct - each call gets an independent zero value"
+{
+    type Counter struct { n int }
+
+    func increment() Counter {
+        var c Counter   // must be a fresh Counter{n:0} every call
+        c.n = c.n + 1
+
+        return c
+    }
+
+    r1 := increment()
+    r2 := increment()
+    r3 := increment()
+
+    // Every call must return n==1, not n==1,2,3 (aliasing).
+    @assert r1.n == 1
+    @assert r2.n == 1
+    @assert r3.n == 1
+    // After 3 calls none of the returned values should have changed.
+    @assert r1.n == 1
+}
+
+@test "types: var struct - returned pointers are independent"
+{
+    type Point struct { x int; y int }
+
+    func makePoint() *Point {
+        var p Point
+        p.x = p.x + 10
+
+        return &p
+    }
+
+    a := makePoint()
+    b := makePoint()
+
+    // a and b must be distinct objects.
+    @assert a.x == 10
+    @assert b.x == 10
+
+    // Mutating b must not affect a.
+    b.x = 99
+    @assert a.x == 10
+    @assert b.x == 99
+}
+
+@test "types: var struct - two names in one declaration are independent"
+{
+    type Pair struct { v int }
+
+    var p, q Pair   // both start at zero, but must be distinct objects
+
+    p.v = 1
+    q.v = 2
+
+    @assert p.v == 1
+    @assert q.v == 2
+}
+
+@test "types: var slice - each call gets an independent empty slice"
+{
+    func collect(item int) []int {
+        var list []int      // must be fresh []int{} every call
+        list = append(list, item)
+
+        return list
+    }
+
+    l1 := collect(10)
+    l2 := collect(20)
+    l3 := collect(30)
+
+    // Each call should return a slice of length 1.
+    @assert len(l1) == 1
+    @assert len(l2) == 1
+    @assert len(l3) == 1
+
+    @assert l1[0] == 10
+    @assert l2[0] == 20
+    @assert l3[0] == 30
+}
+
+@test "types: var slice - multiple calls accumulate only within their own call"
+{
+    // Regression: before the fix, each call would re-use the same underlying
+    // *Array, so three calls would produce slices of length 1, 2, 3.
+    func buildList() []string {
+        var items []string
+        items = append(items, "a")
+        items = append(items, "b")
+
+        return items
+    }
+
+    r1 := buildList()
+    r2 := buildList()
+
+    @assert len(r1) == 2
+    @assert len(r2) == 2
+}
+
+@test "types: var struct - nested struct fields are also independent"
+{
+    type Inner struct { v int }
+    type Outer struct { inner Inner }
+
+    func makeOuter() Outer {
+        var o Outer
+        o.inner.v = o.inner.v + 5
+
+        return o
+    }
+
+    x := makeOuter()
+    y := makeOuter()
+
+    @assert x.inner.v == 5
+    @assert y.inner.v == 5
+}
+
+@test "types: var nil map - aliasing is safe (nil-state maps are immutable)"
+{
+    // Nil-state maps still use a shared compile-time constant (they cannot be
+    // mutated, so the aliasing is harmless). Verify that the nil-state and the
+    // write-error semantics are both preserved.
+    func nilMap() map[string]int {
+        var m map[string]int   // nil-state
+
+        return m
+    }
+
+    m1 := nilMap()
+    m2 := nilMap()
+
+    @assert m1 == nil
+    @assert m2 == nil
+
+    // Assigning an initialized literal to one must not affect the other.
+    m1 = map[string]int{"x": 1}
+    @assert m1 == nil == false
+    @assert m2 == nil
+}
