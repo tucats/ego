@@ -46,7 +46,7 @@ a severity classification.
 | BUG-18 | LOW | `type()` documented but actual builtin is `typeof()` |
 | BUG-19 | LOW | `for v := range string` yields single-char strings, not int32 runes |
 | BUG-20 | LOW | `iota` not supported in `const` blocks |
-| BUG-21 | LOW | `@compile` test directive cannot pass computed values back to the enclosing test |
+| BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
 
 ---
 

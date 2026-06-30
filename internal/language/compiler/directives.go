@@ -840,12 +840,49 @@ func (c *Compiler) compileBlockDirective() error {
 		// current bytecode stream.
 		c.b.Append(bc)
 
-		// Also, if there are symbols created in the sub-compiler, emit code to add them
-		// to the bytecode stream.
-		if names := subCompiler.s.Names(); len(names) > 0 {
-			for _, name := range names {
-				value, _ := subCompiler.s.Get(name)
-				c.b.Emit(bytecode.CreateAndStore, data.NewList(name, value))
+		// For full-program mode (@compile without "block"), propagate the names
+		// declared at the top level of the sub-compilation into the OUTER
+		// compiler's static symbol tracker. This is necessary because Ego
+		// compilation is a single sequential pass: by the time the @compile
+		// directive is processed, the outer compiler has already started
+		// compiling the statements that come after it (e.g. `result := foo(...)`),
+		// and those statements are validated at compile time — before any bytecode
+		// ever runs. Without this registration, the outer compiler's
+		// validateSymbol call in compileSymbolValue rejects the name with
+		// "unknown symbol", even though the inline-spliced bytecode has already
+		// arranged to store the value in the live runtime symbol table via a
+		// StoreAlways instruction.
+		//
+		// NOTE: The names come from subCompiler.scopes[0] (the outermost scope
+		// frame of the sub-compiler, which captures every DefineSymbol and
+		// DefineGlobalSymbol call made during top-level statement compilation).
+		// The compiler's root-level symbol table c.s is NOT used here because
+		// compilation never writes values into c.s — it is a read-only lookup
+		// table for resolving pre-existing package and type names.
+		//
+		// Only full-program mode (@compile without "block") is affected.
+		// Block mode (@compile block) is deliberately left unchanged: block mode
+		// tests rely on being able to declare scratch variables inside the block
+		// whose unused-variable status the compiler can check. Exporting those
+		// names here would not interfere with unused-variable detection (detection
+		// happens inside the sub-compilation before this success path runs), but
+		// the scope boundary between block-mode content and the enclosing test is
+		// intentionally kept strict to avoid polluting the test's symbol scope.
+		if !blockMode && len(subCompiler.scopes) > 0 {
+			for name := range subCompiler.scopes[0].usage {
+				// Register the name with the outer compiler so that source code
+				// written after the @compile block can reference it without
+				// triggering a false "unknown symbol" compile-time error.
+				// The runtime value is already bound by StoreAlways/Store
+				// instructions in the inline-spliced bytecode — no additional
+				// CreateAndStore bytecode is needed here.
+				//
+				// DefineGlobalSymbol is idempotent on already-known names, and
+				// it marks the entry as "already used" (nil) so no spurious
+				// unused-variable warning is generated for names the caller
+				// happens not to reference in every code path. This is the same
+				// technique used in the BUG-09 fix in import.go.
+				c.DefineGlobalSymbol(name)
 			}
 		}
 	}

@@ -153,7 +153,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			// Multiple increments: each ++ must be independent and cumulative.
 			// a[0] starts at 0, after three a[0]++ calls it is 3.
 			name: "multiple array element increments (BUG-06)",
-			text: `a := []int{0, 10, 20}; a[0]++; a[0]++; a[0]++; result := a[0]`,
+			text: `a := []int{0, 10, 20}; a[0]++; a[0]++; a[0]++; result := a[0]`, //nolint:dupword
 			want: 3,
 		},
 		{

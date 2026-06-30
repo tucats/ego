@@ -47,7 +47,7 @@
 
 @test "directives: @compile code with error"
 {
-    var failed bool 
+    var failed bool
 
     @compile {
         func foo() {
@@ -61,4 +61,48 @@
     }
 
     @assert failed == true
+}
+
+
+@test "directives: @compile exports a declared function to the enclosing scope"
+{
+    // A function declared in a @compile { ... } block (full-program mode)
+    // must be callable from code that appears after the @compile statement
+    // in the same test. Before this fix, the outer compiler's static-analysis
+    // pass rejected the reference with "unknown symbol" because it didn't
+    // know the @compile block would produce that name.
+    var compileFailed bool
+
+    @compile {
+        import "strings"
+        func lower(s string) string {
+            return strings.ToLower(s)
+        }
+    } catch(e) {
+        compileFailed = true
+        @assert e.Error() != ""
+    }
+
+    @assert compileFailed == false
+    @assert lower("ABC") == "abc"
+}
+
+
+@test "directives: @compile compile error is still caught after the export fix"
+{
+    // Regression guard: adding compile-time export must not suppress the
+    // error path. A compile error inside a @compile { ... } block must
+    // still land in catch(e) rather than silently passing.
+    var compileFailed bool
+
+    @compile {
+        func broken() {
+            _ = nosuchname
+        }
+    } catch(e) {
+        compileFailed = true
+        @assert e.Code() == "symbol.not.found"
+    }
+
+    @assert compileFailed == true
 }

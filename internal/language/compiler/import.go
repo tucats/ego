@@ -148,8 +148,8 @@ func (c *Compiler) compileImport() error {
 
 		packageName = strings.ToLower(packageName)
 
-		// BUG-09 fix: figure out the "local name" up front, before any of the
-		// branches below run. The local name is what Ego code in *this* file
+		// Figure out the "local name" up front, before any of the branches
+		// below run. The local name is what Ego code in *this* file
 		// will type to reach the package (e.g. "str" in `str.ToUpper(...)`).
 		// If the import statement gave an alias (`import str "strings"`), the
 		// local name is that alias. Otherwise it is just the package's own

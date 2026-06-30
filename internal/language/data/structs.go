@@ -405,6 +405,7 @@ func (s *Struct) Delete(field string) error {
 	// to remove the field order entry as well.
 	if len(s.fieldOrder) > 0 {
 		newOrder := make([]string, 0, len(s.fieldOrder)-1)
+		
 		for _, name := range s.fieldOrder {
 			if name != field {
 				newOrder = append(newOrder, name)
