@@ -368,16 +368,66 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	var incrementCode *bytecode.ByteCode
 
 	// If increment mode was used, then the increment is just to add (or subtract)
-	// 1 from the value.
+	// 1 from the value.  Two forms are handled:
+	//
+	//  1. Simple variable increment: for i := 0; i < n; i++
+	//     The first instruction of incrementStore is Store "i", so we just emit
+	//     Load "i", Push 1, Add/Sub into incrementCode.
+	//
+	//  2. Qualified lvalue increment: for a[0] := 0; ...; a[0]++
+	//     The incrementStore has a load-path + StoreIndex structure.  We copy
+	//     the load path and emit LoadIndex to read the current value, then
+	//     apply the arithmetic.  The full incrementStore is appended afterward
+	//     by the caller to write the result back.
 	if autoMode != bytecode.Load {
-		t := data.String(incrementStore.Instruction(0).Operand)
 		incrementCode = bytecode.New("auto")
 
-		if err := c.ReferenceSymbol(t); err != nil {
-			return err
+		// Inspect the first instruction of the lvalue store code to decide
+		// whether this is a simple variable or a qualified lvalue.
+		firstInstr := incrementStore.Instruction(0)
+		isSimple := firstInstr != nil && firstInstr.Operation == bytecode.Store
+
+		if isSimple {
+			// Simple variable increment (the common case: i++ in a for loop).
+			t := data.String(firstInstr.Operand)
+
+			if err := c.ReferenceSymbol(t); err != nil {
+				return err
+			}
+
+			incrementCode.Emit(bytecode.Load, t)
+		} else {
+			// Qualified lvalue increment (e.g., a[i]++ or s.count++ in a for clause).
+			//
+			// The incrementStore structure is:
+			//   [0]     Load "base"    — load the container
+			//   [1..n-3] <index exprs> — push each index
+			//   [n-2]   StoreIndex     — write back (patched from LoadIndex)
+			//   [n-1]   DropToMarker   — cleanup
+			//
+			// Build incrementCode with the load path + LoadIndex so that the
+			// current element value ends up on the stack ready for arithmetic.
+			storeInstrIdx := incrementStore.Mark() - 2
+			storeInstr := incrementStore.Instruction(storeInstrIdx)
+
+			if storeInstr == nil || storeInstr.Operation != bytecode.StoreIndex {
+				// Not a recognized lvalue form for auto-increment.
+				return c.compileError(errors.ErrInvalidAuto)
+			}
+
+			// Copy the navigation instructions (Load base + index exprs).
+			for i := 0; i < storeInstrIdx; i++ {
+				instr := incrementStore.Instruction(i)
+				incrementCode.Emit(instr.Operation, instr.Operand)
+			}
+
+			// Read the current element value.  The operand mirrors that of
+			// StoreIndex: nil pops the index from stack; non-nil uses a folded
+			// constant directly.
+			incrementCode.Emit(bytecode.LoadIndex, storeInstr.Operand)
 		}
 
-		incrementCode.Emit(bytecode.Load, t)
+		// Push 1 and apply the Add or Sub operation.
 		incrementCode.Emit(bytecode.Push, 1)
 		incrementCode.Emit(autoMode)
 		c.t.Advance(1)

@@ -57,6 +57,62 @@ func TestCompiler_compileAssignment(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		// --- BUG-06 regression tests: ++ and -- on qualified lvalues ----------
+		//
+		// Before the fix, any lvalue with more than 2 store instructions (i.e.
+		// an array index or struct field) immediately returned ErrInvalidAuto.
+		// These cases must now compile without error.
+		{
+			// a[0]++ must compile: the lvalue a[0] has a Load+"Push 0"+StoreIndex
+			// structure that the new qualified-lvalue path handles.
+			name: "array element auto-increment (BUG-06)",
+			fields: fields{
+				t:             tokenizer.New("a[0]++", true),
+				symbols:       symbols.NewRootSymbolTable("test"),
+				functionDepth: 0,
+				constants:     []string{},
+				b:             bytecode.New("test"),
+			},
+			wantErr: nil,
+		},
+		{
+			// a[0]-- mirrors the ++ case above but uses Sub instead of Add.
+			name: "array element auto-decrement (BUG-06)",
+			fields: fields{
+				t:             tokenizer.New("a[0]--", true),
+				symbols:       symbols.NewRootSymbolTable("test"),
+				functionDepth: 0,
+				constants:     []string{},
+				b:             bytecode.New("test"),
+			},
+			wantErr: nil,
+		},
+		{
+			// s.field++ must compile: the struct field lvalue has a Load+"Push field"+
+			// StoreIndex structure that the new qualified-lvalue path handles.
+			name: "struct field auto-increment (BUG-06)",
+			fields: fields{
+				t:             tokenizer.New("s.field++", true),
+				symbols:       symbols.NewRootSymbolTable("test"),
+				functionDepth: 0,
+				constants:     []string{},
+				b:             bytecode.New("test"),
+			},
+			wantErr: nil,
+		},
+		{
+			// s.field-- mirrors the struct ++ case but uses Sub.
+			name: "struct field auto-decrement (BUG-06)",
+			fields: fields{
+				t:             tokenizer.New("s.field--", true),
+				symbols:       symbols.NewRootSymbolTable("test"),
+				functionDepth: 0,
+				constants:     []string{},
+				b:             bytecode.New("test"),
+			},
+			wantErr: nil,
+		},
+		// --- end BUG-06 regression tests -------------------------------------
 		{
 			name: "invalid auto-increment",
 			fields: fields{

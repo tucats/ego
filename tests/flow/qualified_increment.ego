@@ -1,0 +1,147 @@
+// Regression tests for ++ and -- on struct fields and array elements.
+//
+// Before the fix, applying ++ or -- to any "qualified" lvalue (a[i], s.field)
+// produced a compile error: "invalid use of auto increment/decrement operation".
+// These tests verify that both forms now compile and produce the correct result.
+
+// --- Array element increment -----------------------------------------------
+
+@test "flow: array element increment"
+{
+    a := []int{1, 2, 3}
+
+    a[0]++
+
+    // After a[0]++, a[0] must be 2.
+    @assert a[0] == 2
+
+    // Neighboring elements must be unchanged.
+    @assert a[1] == 2
+    @assert a[2] == 3
+}
+
+@test "flow: array element decrement"
+{
+    a := []int{10, 20, 30}
+
+    a[2]--
+
+    // After a[2]--, a[2] must be 29.
+    @assert a[2] == 29
+
+    // Other elements must be unchanged.
+    @assert a[0] == 10
+    @assert a[1] == 20
+}
+
+// --- Array element increment/decrement with a variable index ----------------
+
+@test "flow: array element increment, variable index"
+{
+    a := []int{0, 5, 10}
+    i := 1
+
+    a[i]++
+
+    // a[1] must now be 6; a[0] and a[2] must be untouched.
+    @assert a[i] == 6
+    @assert a[0] == 0
+    @assert a[2] == 10
+}
+
+@test "flow: array element decrement, variable index"
+{
+    a := []int{100, 200, 300}
+    idx := 0
+
+    a[idx]--
+
+    @assert a[idx] == 99
+    @assert a[1] == 200
+}
+
+// --- Multiple increments are cumulative -------------------------------------
+
+@test "flow: multiple array element increments"
+{
+    a := []int{0, 1, 2}
+
+    // Apply ++ three times to a[0].  Each call must see the value written
+    // by the previous call, so the final value must be 3.
+    a[0]++
+    a[0]++
+    a[0]++
+
+    @assert a[0] == 3
+}
+
+// --- Struct field increment and decrement -----------------------------------
+//
+// Dynamic (anonymous) struct literals are used here so that no type
+// declaration is required.  The ++ and -- operators must load the current
+// field value, add/subtract 1, and write the new value back to the field.
+
+@test "flow: struct field increment"
+{
+    s := {x: 10}
+
+    s.x++
+
+    @assert s.x == 11
+}
+
+@test "flow: struct field decrement"
+{
+    s := {count: 7}
+
+    s.count--
+
+    @assert s.count == 6
+}
+
+@test "flow: multiple struct field increments"
+{
+    s := {n: 0}
+
+    s.n++
+    s.n++
+    s.n++
+    s.n++
+    s.n++
+
+    @assert s.n == 5
+}
+
+// --- Independent fields are unaffected -------------------------------------
+
+@test "flow: struct other fields unaffected by increment"
+{
+    // s has two integer fields; incrementing one must not change the other.
+    s := {a: 1, b: 100}
+
+    s.a++
+
+    @assert s.a == 2
+    @assert s.b == 100
+}
+
+// --- For loop with qualified lvalue in the increment clause ----------------
+//
+// The for loop's increment clause (the third part of "for init; cond; incr")
+// was also affected by the same bug.  This test verifies that a qualified
+// lvalue works there too.
+
+@test "flow: for loop with array element increment"
+{
+    // Use a[0] as the loop counter.  At the end of 5 iterations a[0] must
+    // equal 5 and the sum must equal 0+1+2+3+4 = 10.
+    a := []int{0}
+    sum := 0
+
+    for a[0] = 0; a[0] < 5; a[0]++ {
+        sum = sum + a[0]
+    }
+
+    @assert a[0] == 5
+    @assert sum == 10
+}
