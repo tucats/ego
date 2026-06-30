@@ -35,7 +35,7 @@ a severity classification.
 | BUG-07 | MEDIUM ✓ | Two-value channel receive `v, ok := <-ch` not supported |
 | BUG-08 | MEDIUM ✓ | `delete(struct, key)` fails on dynamic structs despite spec |
 | BUG-09 | MEDIUM ✓ | Import alias (`import alias "pkg"`) not recognized at use site |
-| BUG-10 | MEDIUM | `json.Unmarshal(b)` single-argument form rejected |
+| BUG-10 | MEDIUM ✓ | `json.Unmarshal(b)` single-argument form rejected |
 | BUG-11 | MEDIUM ✓ | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
 | BUG-12 | MEDIUM ✓ | Writing to a nil map succeeds; should error |
 | BUG-13 | MEDIUM | `typeof()` result incompatible with `switch` case matching |
@@ -43,7 +43,7 @@ a severity classification.
 | BUG-15 | MEDIUM | `append()` to typed array silently accepts wrong-type elements |
 | BUG-16 | MEDIUM | `defer namedFunc(arg)` evaluates args lazily (cross-ref: FLOW-M4) |
 | BUG-17 | LOW | `var (...)` group declaration not supported |
-| BUG-18 | LOW | `type()` documented but actual builtin is `typeof()` |
+| BUG-18 | LOW ✓ | `type()` documented but actual builtin is `typeof()` |
 | BUG-19 | LOW | `for v := range string` yields single-char strings, not int32 runes |
 | BUG-20 | LOW | `iota` not supported in `const` blocks |
 | BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
@@ -835,7 +835,7 @@ Error: at delete(line 7), invalid or unsupported data type for this operation: a
 **Resolution:**
 
 The `delete()` function now works with dynamic structs (Ego structs created using
-an empty struct constant). If the struct is not a dyanmic struct (which is an Ego
+an empty struct constant). If the struct is not a dynamic struct (which is an Ego
 extension), most structs are static like Go) then a read-only error is generated.
 If the field name does not exist, an error is generated.
 
@@ -931,8 +931,8 @@ Always use the two-argument form: `err := json.Unmarshal(b, &target)`.
 The single-argument version was a legacy from a much older version of Ego
 that didn't yet properly support pointers, so the Go-compliant version
 was not possible. There's no reason to retain this legacy variable, so
-the fix is to delete it from the documentation and rquire that the Unmarshal()
-function be called properly.
+the fix is to delete it from the documentation and require that the
+`Unmarshal()` function be called properly.
 
 ---
 
@@ -1303,6 +1303,9 @@ func main() {
 **Notes:**  
 This is a documentation bug, not an implementation bug. `typeof()` works correctly.
 The LANGUAGE.md should be updated to use `typeof()`.
+
+**Resolution:**
+Documentation updated to use correct function name `typeof()`.
 
 ---
 
