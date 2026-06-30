@@ -1,0 +1,107 @@
+// Tests for import alias (`import alias "pkg"`) not recognized at
+// use site.
+//
+// LANGUAGE.md documents that `import str "strings"` binds the package under
+// the local name "str", so it must be referenced as `str.ToUpper(...)`
+// rather than `strings.ToUpper(...)`. Before the fix, using the alias
+// produced "unknown symbol: str" -- the alias name was never actually
+// registered as a usable symbol.
+//
+// Root cause (internal/language/compiler/import.go, compileImport): once
+// any import statement -- anywhere in the process, since the package cache
+// is shared by every compile, including concurrent server requests -- has
+// compiled and cached a given package's contents, every later import of
+// that same package takes a "already cached, just reference it" shortcut.
+// That shortcut bound the package into the symbol table under the
+// package's own canonical name instead of the local alias requested by
+// THIS import statement, so the alias was silently dropped. A second,
+// smaller instance of the same mistake existed in the fallback path used
+// for builtin packages that have no on-disk lib/packages/<name> extension
+// directory (such as "fmt").
+//
+// Because Ego function bodies are compiled lazily (on first call), the
+// missing alias is actually a *compile-time* symbol-resolution failure
+// that happens to surface when the function is first invoked -- it is NOT
+// a catchable runtime error, so try/catch cannot observe it. The @compile
+// directive (see tests/directives/compile.ego) is the right tool to test
+// this: it runs the compiler and hands any compile error to a catch block
+// instead of aborting the test.
+
+@test "datamodel: import alias is usable at the call site"
+{
+    import str "strings"
+
+    @assert str.ToUpper("hello") == "HELLO"
+}
+
+@test "datamodel: import alias works in the list import form"
+{
+    import (
+        s "strings"
+        "fmt"
+    )
+
+    @assert s.ToLower("WORLD") == "world"
+    @assert fmt.Sprintf("%d", 5) == "5"
+}
+
+@test "datamodel: two different aliases for the same package are independent"
+{
+    // Regression guard for the "already cached" shortcut: the second alias
+    // must not be discarded just because the package's contents were
+    // already cached by the first import.
+    import a1 "strings"
+    import a2 "strings"
+
+    @assert a1.ToUpper("x") == "X"
+    @assert a2.ToLower("Y") == "y"
+}
+
+@test "datamodel: alias for a builtin package with no extension source"
+{
+    // "fmt" has builtins registered directly in Go (runtime.AddPackage)
+    // but no lib/packages/fmt directory of extra .ego source on disk, so
+    // it exercises the second, separate place the alias was being dropped.
+    import f "fmt"
+
+    @assert f.Sprintf("%s!", "hi") == "hi!"
+}
+
+@test "datamodel: @compile confirms an aliased import compiles cleanly"
+{
+    // Direct demonstration of the actual failure mode: before the fix,
+    // this @compile block would fail with a compile-time "unknown symbol"
+    // error the first time the block's code ran (lazy compilation), even
+    // though try/catch around a plain call site cannot catch a compile
+    // error. @compile lets us observe the compiler's verdict directly.
+    var failed bool
+
+    @compile block {
+        import str "strings"
+        x := str.ToUpper("hi")
+        _ = x
+    } catch(e) {
+        failed = true
+        @assert e.Error() != ""
+    }
+
+    @assert failed == false
+}
+
+@test "datamodel: referencing a name that was never imported still fails"
+{
+    // Sanity check that the fix does not over-relax symbol resolution --
+    // an alias must still be declared by an import statement to be usable.
+    var failed bool
+
+    @compile block {
+        import str "strings"
+        x := nosuchalias.ToUpper("hi")
+        _ = x
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "symbol.not.found"
+    }
+
+    @assert failed == true
+}

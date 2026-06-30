@@ -148,17 +148,52 @@ func (c *Compiler) compileImport() error {
 
 		packageName = strings.ToLower(packageName)
 
+		// BUG-09 fix: figure out the "local name" up front, before any of the
+		// branches below run. The local name is what Ego code in *this* file
+		// will type to reach the package (e.g. "str" in `str.ToUpper(...)`).
+		// If the import statement gave an alias (`import str "strings"`), the
+		// local name is that alias. Otherwise it is just the package's own
+		// name (`import "strings"` -> local name "strings").
+		//
+		// This must be computed before the "already cached" shortcut just
+		// below, because that shortcut used to skip straight past the alias
+		// and always bind the package under its real name. See the comment
+		// on that branch for why that was wrong.
+		localName := aliasName
+		if localName == "" {
+			localName = packageName
+		}
+
 		if err := c.circularImportCheck(filePath); err != nil {
 			return err
 		}
 
 		// Does this package already exist? If so, just reference it.
+		//
+		// "Already exist" means some earlier import (anywhere in this process
+		// -- a different file, a different request, even a different alias
+		// for the same package) already compiled the package's source and
+		// stored the *contents* (its functions, constants, types) in the
+		// global package cache (see internal/packages/cache.go). That cache
+		// is shared by every goroutine in the process -- the server can be
+		// handling many requests at once, all sharing the same cached copy
+		// of, say, the "strings" package -- so it would be unsafe to store
+		// a single, process-wide alias name there. Aliases are a per-file,
+		// per-import-statement choice, not a property of the package itself.
+		//
+		// So even though the package's contents are reused from the cache,
+		// we still must bind THIS import statement's local name (localName,
+		// which honors the alias) into the symbol table for the program
+		// currently being compiled. The old code used "packageName" (the
+		// package's real name) here instead of the alias, so an aliased
+		// import of an already-cached package silently lost its alias and
+		// the alias name was never defined as a usable symbol.
 		if packages.Get(filePath) != nil {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
 				"name": filePath})
 
-			c.DefineGlobalSymbol(packageName)
-			c.b.Emit(bytecode.Import, data.NewList(packageName, filePath))
+			c.DefineGlobalSymbol(localName)
+			c.b.Emit(bytecode.Import, data.NewList(localName, filePath))
 
 			continue
 		}
@@ -217,10 +252,15 @@ func (c *Compiler) compileImport() error {
 			if err != nil {
 				// If it wasn't found but we did add some builtins, good enough.
 				// Skip past the filename that was rejected by c.Readfile()...
+				// (This happens for builtin packages like "fmt" that have no
+				// lib/packages/<name> directory of extra .ego source on disk --
+				// there's nothing more to compile, so we just bind the package
+				// that runtime.AddPackage() already built. As elsewhere in this
+				// function, bind it under localName so an alias is honored.)
 				if !packageDef.IsEmpty() {
 					c.t.Advance(1)
 
-					c.b.Emit(bytecode.Import, data.NewList(packageName, fileName.Spelling()))
+					c.b.Emit(bytecode.Import, data.NewList(localName, fileName.Spelling()))
 
 					if !isList || c.t.IsNext(tokenizer.EndOfListToken) {
 						break
@@ -253,13 +293,12 @@ func (c *Compiler) compileImport() error {
 		c.sourceFile = savedSourceFile
 
 		// Now that the package is in the cache, add the instruction to the active
-		// program to import that cached info at runtime.
-		if aliasName == "" {
-			aliasName = packageName
-		}
-
-		c.DefineGlobalSymbol(aliasName)
-		c.b.Emit(bytecode.Import, data.NewList(aliasName, filePath))
+		// program to import that cached info at runtime. As above, we bind the
+		// package under localName (the alias, if one was given) rather than
+		// packageName, so that `import str "strings"` makes the package
+		// reachable as "str", not "strings".
+		c.DefineGlobalSymbol(localName)
+		c.b.Emit(bytecode.Import, data.NewList(localName, filePath))
 
 		// If this is a list, keep going until we run out of tokens. Otherwise, done.
 		if !isList {
