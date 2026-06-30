@@ -1,0 +1,140 @@
+// Tests for delete(struct, key) on dynamic structs.
+//
+// LANGUAGE.md documents delete() as removing a field from a map, or deleting
+// a dynamic struct member. Before the fix, calling delete() on ANY struct
+// value failed with "invalid or unsupported data type for this operation".
+// data.Struct.Delete() now removes a field when the struct is dynamic (its
+// fields were grown one at a time via assignment, starting from an empty
+// `{}` literal), and rejects the operation with a read-only error when the
+// struct is static (its fields were established at creation time, either by
+// a typed declaration or by an initializer that already lists fields).
+
+@test "datamodel: delete removes field from dynamic struct"
+{
+    s := {}
+    s.x = 1
+    s.y = 2
+
+    delete(s, "x")
+
+    @assert s.y == 2
+
+    try {
+        _ = s.x
+        @fail "expected field.not.found error reading a deleted field"
+    } catch(e) {
+        @assert e.Code() == "field.not.found"
+    }
+}
+
+@test "datamodel: delete leaves other fields intact"
+{
+    s := {}
+    s.a = "one"
+    s.b = "two"
+    s.c = "three"
+
+    delete(s, "b")
+
+    @assert s.a == "one"
+    @assert s.c == "three"
+}
+
+@test "datamodel: delete the only field of a dynamic struct"
+{
+    s := {}
+    s.x = 1
+
+    delete(s, "x")
+
+    @assert fmt.Sprintf("%v", s) == "{}"
+}
+
+@test "datamodel: a field can be re-added after being deleted"
+{
+    s := {}
+    s.x = 1
+
+    delete(s, "x")
+    s.x = 99
+
+    @assert s.x == 99
+}
+
+@test "datamodel: delete on a static (typed) struct fails"
+{
+    type Point struct {
+        x int
+        y int
+    }
+
+    p := Point{x: 1, y: 2}
+
+    try {
+        delete(p, "x")
+        @fail "expected readonly error deleting a field from a static struct"
+    } catch(e) {
+        @assert e.Code() == "readonly"
+    }
+
+    // The structure must be unmodified by the failed delete.
+    @assert p.x == 1
+    @assert p.y == 2
+}
+
+@test "datamodel: delete on a struct literal with initial fields fails"
+{
+    // A literal that already lists its fields at creation time
+    // (as opposed to an empty {} grown via assignment) is static,
+    // so it cannot have fields removed.
+    s := { name: "Tom", age: 51 }
+
+    try {
+        delete(s, "name")
+        @fail "expected readonly error deleting from a pre-populated literal"
+    } catch(e) {
+        @assert e.Code() == "readonly"
+    }
+
+    @assert s.name == "Tom"
+}
+
+@test "datamodel: delete then re-add updates field order"
+{
+    // Field order tracks the chronological order fields were added to a
+    // dynamic struct, and is used (via fmt's %v formatting) to print fields
+    // in a deterministic order instead of map traversal order. Deleting a
+    // field must remove it from the order list too, so that re-adding the
+    // field later appends it at its new position rather than its old one.
+    d := {}
+    d.name = "Tom"
+    d.age = 66
+
+    @assert fmt.Sprintf("%v", d) == `{ name: "Tom", age: 66 }`
+
+    delete(d, "name")
+
+    @assert fmt.Sprintf("%v", d) == "{ age: 66 }"
+
+    // Re-adding "name" now puts it after "age", reflecting that "age" is
+    // chronologically the older of the two surviving field-order entries.
+    d.name = "Mary"
+
+    @assert fmt.Sprintf("%v", d) == `{ age: 66, name: "Mary" }`
+}
+
+@test "datamodel: delete of an unknown field on a dynamic struct errors"
+{
+    s := {}
+    s.z = 5
+
+    try {
+        delete(s, "nope")
+        @fail "expected field.for.type error deleting an unknown field"
+    } catch(e) {
+        @assert e.Code() == "field.for.type"
+    }
+
+    // The existing field must be untouched by the failed delete.
+    @assert s.z == 5
+}

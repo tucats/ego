@@ -3,8 +3,8 @@ package builtins
 import (
 	"fmt"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -46,11 +46,19 @@ func Delete(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		return v, err
 
+	case *data.Struct:
+		// Deleting from a struct requires that it be a dynamic structure (an Ego extension)
+		// but the Delete() function will detect and report that error for us. Most normal
+		// struct values cannot be successfully deleted.
+		err := v.Delete(data.String(args.Get(1)))
+
+		return v, err
+
 	default:
 		// BUILTIN-DELETE-1 fix: replaced the magic integer literal 1 with the
 		// named constant firstArgument so the meaning is clear at the call site.
 		const firstArgument = 1
-		
+
 		return nil, errors.ErrInvalidType.In("delete").Context(fmt.Sprintf("argument %d: %s", firstArgument, data.TypeOf(v).String()))
 	}
 }

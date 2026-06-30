@@ -33,7 +33,7 @@ a severity classification.
 | BUG-05 | HIGH | Calling a function stored in an `any` variable fails |
 | BUG-06 | HIGH ✓ | `++`/`--` not permitted on struct fields or array elements |
 | BUG-07 | MEDIUM ✓ | Two-value channel receive `v, ok := <-ch` not supported |
-| BUG-08 | MEDIUM | `delete(struct, key)` fails on dynamic structs despite spec |
+| BUG-08 | MEDIUM ✓ | `delete(struct, key)` fails on dynamic structs despite spec |
 | BUG-09 | MEDIUM | Import alias (`import alias "pkg"`) not recognized at use site |
 | BUG-10 | MEDIUM | `json.Unmarshal(b)` single-argument form rejected |
 | BUG-11 | MEDIUM | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
@@ -813,6 +813,21 @@ Error: at delete(line 7), invalid or unsupported data type for this operation: a
 
 **Notes:**  
 `delete()` on a `map` type works correctly. Only the struct variant is broken.
+
+**Resolution:**
+
+The `delete()` function now works with dynamic structs (Ego structs created using
+an empty struct constant). If the struct is not a dyanmic struct (which is an Ego
+extension), most structs are static like Go) then a read-only error is generated.
+If the field name does not exist, an error is generated.
+
+Along the way, noted that field order was not tracked for dynamic structs. That is,
+the order in which the fields are declared should be used as the order to print
+the fields when printing a formatted version of the struct. This was added, along
+with code to remove a field name from the field order list when the field was
+deleted. 
+
+Ego unit tests added.
 
 ---
 

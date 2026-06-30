@@ -377,6 +377,46 @@ func (s *Struct) GetAlways(name string) any {
 	return value
 }
 
+// Delete will remove a field from a struct, but only if it is a
+// dynamic struct (an Ego extension). It will return a readonly
+// error if it is a normal (static) struct, and will return an
+// invalid field error if the field does not exist.
+func (s *Struct) Delete(field string) error {
+	if s == nil {
+		return errors.ErrNilPointerReference
+	}
+
+	if s.static {
+		return errors.ErrReadOnly
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if _, found := s.fields[field]; !found {
+		return errors.ErrInvalidField.Clone().Context(field)
+	}
+
+	// Delete the field from the map.
+	delete(s.fields, field)
+
+	// Also, delete the name from the field order array. The field
+	// doesn't exist, but could be added again later, so we need
+	// to remove the field order entry as well.
+	if len(s.fieldOrder) > 0 {
+		newOrder := make([]string, 0, len(s.fieldOrder)-1)
+		for _, name := range s.fieldOrder {
+			if name != field {
+				newOrder = append(newOrder, name)
+			}
+		}
+
+		s.fieldOrder = newOrder
+	}
+
+	return nil
+}
+
 // PackageName returns the package in which the structure was
 // defined. This is used to compare against the current package
 // code being executed to determine if private structure members
@@ -512,6 +552,17 @@ func (s *Struct) Set(name string, value any) error {
 		}
 	}
 
+	// IF this is a dynamic structure, and the field name does not yet
+	// exist, add it to the field order.
+	if _, found := s.fields[name]; !found {
+		if s.fieldOrder == nil {
+			s.fieldOrder = []string{}
+		}
+
+		s.fieldOrder = append(s.fieldOrder, name)
+	}
+
+	// Finally, set the actual value.
 	s.fields[name] = value
 
 	return err
