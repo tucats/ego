@@ -303,7 +303,7 @@ ok: true s2: 42
 Error: interface conversion: interface{} is int, not string
 ```
 
-or in a two-value assertion: `ok: false s2: `
+or in a two-value assertion: `ok: false s2:`
 
 **Notes:**  
 Correct type assertion (`v.(int)`) does work when the type matches. The bug is
@@ -385,6 +385,7 @@ getting the function's zero/named return value.
 specific to functions that declare a return type.
 
 **Reproducer:**
+
 ```go
 @extensions true
 import "fmt"
@@ -411,14 +412,16 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 panicIfZero(5): 10
 recovered: zero!
 Error: at main(line 19), function did not return the expected number of values
 ```
 
 **Expected output:**
-```
+
+```text
 panicIfZero(5): 10
 recovered: zero!
 panicIfZero(0): 0
@@ -502,6 +505,7 @@ it inside the receiving function. In practice this fails with
 a function value is not supported.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -516,12 +520,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at show(line 4), invalid function invocation: {{false Println(...) ...}}
 ```
 
 **Expected output:**
-```
+
+```text
 The name is  tom
 ```
 
@@ -554,6 +560,7 @@ Applying them to struct field access (`s.field++`) or array element access
 operation"`. In Go, both forms are valid.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -569,7 +576,8 @@ func main() {
 ```
 
 **Actual error:**
-```
+
+```text
 Error: at line 7:4, invalid use of auto increment/decrement operation
 ```
 
@@ -597,7 +605,8 @@ of the lvalue was always `Store "name"`, which is only true for simple variables
 **Design:**
 
 A qualified lvalue's store bytecode has this structure:
-```
+
+```text
 [0]       Load "base"     — load the container (array or struct variable)
 [1..n-3]  <index exprs>   — push each intermediate index
 [n-2]     StoreIndex      — write back (patched from LoadIndex by patchStore)
@@ -668,6 +677,7 @@ form: `v, ok := <-ch`. In Ego, this produces `"incorrect number of return values
 Only the single-value form `v := <-ch` is supported.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -682,12 +692,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at main(line 8), incorrect number of return values
 ```
 
 **Expected output:**
-```
+
+```text
 10 true
 ```
 
@@ -712,7 +724,7 @@ different code path (`StoreChan`) that doesn't use `StackCheck`.
 **Design:** A new `ReceiveChannel` bytecode instruction performs the actual
 channel receive and leaves the stack in the shape `StackCheck 2` expects:
 
-```
+```text
 [0]  StackMarker("receive")
 [1]  ok bool      — true if a value was received, false if the channel
                      is closed and drained
@@ -790,6 +802,7 @@ a dynamic (empty-literal) struct fails with `"invalid or unsupported data type
 for this operation: argument 1: struct"`.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -803,12 +816,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at delete(line 7), invalid or unsupported data type for this operation: argument 1: struct
 ```
 
 **Expected output:**
-```
+
+```text
 {y: 2}
 ```
 
@@ -826,7 +841,7 @@ Along the way, noted that field order was not tracked for dynamic structs. That 
 the order in which the fields are declared should be used as the order to print
 the fields when printing a formatted version of the struct. This was added, along
 with code to remove a field name from the field order list when the field was
-deleted. 
+deleted.
 
 Ego unit tests added.
 
@@ -843,6 +858,7 @@ alias name produces `"unknown symbol: str"` — the alias is ignored and the
 package is not accessible under that name or its original name.
 
 **Reproducer:**
+
 ```go
 import str "strings"
 import "fmt"
@@ -854,12 +870,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at line 5:8, unknown symbol: str
 ```
 
 **Expected output:**
-```
+
+```text
 HELLO
 ```
 
@@ -879,6 +897,7 @@ LANGUAGE.md documents that `json.Unmarshal` can be called with just one argument
 `"incorrect function argument count: 1"`.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 import "json"
@@ -891,17 +910,27 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: incorrect function argument count: 1
 ```
 
 **Expected output:**
-```
+
+```text
 {age: 44, name: "Tom"}
 ```
 
 **Workaround:**  
 Always use the two-argument form: `err := json.Unmarshal(b, &target)`.
+
+**Resolution:**
+
+The single-argument version was a legacy from a much older version of Ego
+that didn't yet properly support pointers, so the Go-compliant version
+was not possible. There's no reason to retain this legacy variable, so
+the fix is to delete it from the documentation and rquire that the Unmarshal()
+function be called properly.
 
 ---
 
@@ -916,6 +945,7 @@ use the two-value assignment form `n, err := fmt.Printf(...)`, Ego reports
 works and returns the character count.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -926,13 +956,15 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 hello 42
 Error: at main(line 4), incorrect number of return values
 ```
 
 **Expected output:**
-```
+
+```text
 hello 42
 n: 8 err: <nil>
 ```
@@ -955,6 +987,7 @@ and retains the written values. This silently corrupts program state instead of
 alerting the programmer.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -967,14 +1000,17 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 42
 ```
 
 **Expected output:**
-```
+
+```text
 Error: assignment to entry in nil map
 ```
+
 (or a catchable Ego runtime error equivalent)
 
 **Notes:**  
@@ -993,6 +1029,7 @@ because of coercion in equality comparison, using `typeof(v)` as the switch
 expression with string case values fails with `"invalid integer value: int"`.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -1009,13 +1046,15 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 true
 Error: invalid integer value: int
 ```
 
 **Expected output:**
-```
+
+```text
 true
 it's int
 ```
@@ -1041,6 +1080,7 @@ must be of type int"`. In practice, `[]int` elements accept strings, floats, and
 other types silently in dynamic mode.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -1052,14 +1092,17 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 a: ["hello", 2, 3]
 ```
 
 **Expected output:**
-```
+
+```text
 Error: wrong type for element of []int: string
 ```
+
 (or a coercion to int with an error for non-numeric strings)
 
 **Notes:**  
@@ -1068,7 +1111,7 @@ The LANGUAGE.md says `a[1] = 1325.0` on a `[]int` should fail, but in practice
 converts the array to a mixed-type array. Element type enforcement is entirely
 absent.
 
-*** Resolution: ***
+***Resolution:***
 Its a little more complicated than that. The Ego-correct behavior depends on the
 current mode checking:
 
@@ -1091,6 +1134,7 @@ elements that converts the type from a specific array type to []any.
 `string` to a `[]int` silently succeeds and corrupts the array's type contract.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -1102,12 +1146,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 a: [1, 2, 3, "hello"]
 ```
 
 **Expected output:**
-```
+
+```text
 Error: wrong type for element of []int: string
 ```
 
@@ -1125,6 +1171,7 @@ lazily when the deferred function runs (at function return time), so the final
 value of the variable is seen instead of the value at defer time.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -1139,14 +1186,16 @@ func main() {
 ```
 
 **Actual output (LIFO, all see final x):**
-```
+
+```text
 main, x = 3
 defer x (should be 2): 3
 defer x (should be 1): 3
 ```
 
 **Expected output:**
-```
+
+```text
 main, x = 3
 defer x (should be 2): 2
 defer x (should be 1): 1
@@ -1154,6 +1203,7 @@ defer x (should be 1): 1
 
 **Workaround:**  
 Use a closure that receives the value as an argument:
+
 ```go
 defer func(v int) { fmt.Println("defer x:", v) }(x)
 ```
@@ -1170,6 +1220,7 @@ produces `"invalid type specification"`. This is a common Go pattern for
 declaring multiple variables at the top of a function.
 
 **Reproducer:**
+
 ```go
 import "fmt"
 
@@ -1183,12 +1234,14 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at line 5:5, invalid type specification
 ```
 
 **Expected output:**
-```
+
+```text
 3.14 pi
 ```
 
@@ -1205,6 +1258,7 @@ be used."` The actual builtin is named `typeof()`. Calling `type(v)` fails with
 `"in type, invalid value: <v>"`.
 
 **Test:**
+
 ```go
 import "fmt"
 func main() {
@@ -1233,6 +1287,7 @@ difference can cause porting issues for Go developers and silently produces
 different types from what Go documentation describes.
 
 **Test:**
+
 ```go
 import "fmt"
 func main() {
@@ -1243,14 +1298,16 @@ func main() {
 ```
 
 **Actual output:**
-```
+
+```text
 i=0, c=A, type=string
 i=1, c=B, type=string
 i=2, c=C, type=string
 ```
 
 **Expected Go output:**
-```
+
+```text
 i=0, c=65, type=int32
 i=1, c=66, type=int32
 i=2, c=67, type=int32
@@ -1274,6 +1331,7 @@ produces `"invalid constant expression file"`. This is not documented as an
 unsupported feature.
 
 **Reproducer:**
+
 ```go
 const (
     Apple  = iota
@@ -1283,7 +1341,8 @@ const (
 ```
 
 **Actual output:**
-```
+
+```text
 Error: at line 2:9, invalid constant expression file
 ```
 
@@ -1326,6 +1385,7 @@ whole test. It has two forms, and both have a scoping gap:
    chain, but it has not been root-caused.
 
 **Reproducer (full-program form, item 1):**
+
 ```go
 @test "demo: @compile full-program form cannot pass data out"
 {
@@ -1341,6 +1401,7 @@ whole test. It has two forms, and both have a scoping gap:
 ```
 
 **Reproducer (block form + import, item 2):**
+
 ```go
 @test "demo: @compile block + import drops an outer assignment"
 {
