@@ -3,9 +3,9 @@ package bytecode
 import (
 	"fmt"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -123,7 +123,20 @@ func callByteCode(c *Context, i any) error {
 		return err
 	}
 
-	// Special case of a call to a string, which is the result of a .String() pseudo method.
+	// IF this is an interface value that can unwrap as a function call
+	// target, do so before continuing. This allows a function pointer
+	// wrapped as an Ego "any" value to be used.
+	for {
+		if fp, ok := functionPointer.(data.Interface); ok {
+			functionPointer = fp.Value
+		} else {
+			break
+		}
+	}
+
+	// Special case of a call to a string, which is the result of a .String()
+	// pseudo method. The target string _is_ the result of the call, so just
+	// push it back on the stack and we're done.
 	if str, ok := functionPointer.(string); ok && argc == 0 {
 		_ = c.push(str)
 
@@ -141,7 +154,8 @@ func callByteCode(c *Context, i any) error {
 	}
 
 	// If this is a function pointer (from a stored type function list) unwrap the
-	// value of the function pointer, and validate the argument count.
+	// value of the function pointer, and use the declaration metadata to validate
+	// the argument count and types.
 	if dp, ok := functionPointer.(data.Function); ok {
 		savedDefinition = &dp
 
@@ -156,13 +170,15 @@ func callByteCode(c *Context, i any) error {
 
 		functionPointer = dp.Value
 
-		// If this is a native function, we can call it directly using reflection.
+		// If this is a native function, we can just call it directly using
+		// reflection, and that will push the result for us and we're done.
 		if dp.IsNative {
 			return callNative(c, &dp, args)
 		}
 	}
 
-	// Depends on the type here as to what we call...
+	// Gonna have to do an Ego function call of some kind. What kind depends
+	// on the type to what and how we call...
 	switch function := functionPointer.(type) {
 	case *data.Type:
 		// Calls to a type are really an attempt to cast the value.
@@ -173,7 +189,7 @@ func callByteCode(c *Context, i any) error {
 		return callBytecodeFunction(c, function, args)
 
 	case func(*symbols.SymbolTable, data.List) (any, error):
-		// Call runtime
+		// Call an Ego runtime
 		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args)
 
 	case error:
