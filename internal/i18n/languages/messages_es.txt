@@ -447,6 +447,7 @@ named.return.values=valores de retorno con valores de retorno nombrados en la de
 native.unknown.field=nombre de campo o método desconocido para este tipo de objeto
 nested.function.scope=la función nombrada anidada no puede acceder a la variable de la función envolvente; use un cierre
 nil=referencia a puntero nulo
+nil.map.write=asignación a una entrada en un mapa nulo
 no.database=el servidor no tiene conexión de base de datos predeterminada (indique un DSN)
 no.info=no hay información para el elemento
 no.main.package=no se encontró el paquete principal

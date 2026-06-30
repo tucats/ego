@@ -1,7 +1,9 @@
 @test "types: maps of pointer types"
 {
 
-    var a map[string]*int
+    // Initialize the map before writing to it: "var a map[string]*int" alone
+    // produces a nil map (matching Go semantics); writes require an initializer.
+    a := map[string]*int{}
 
     age := 55
     a["name"] = &age

@@ -41,8 +41,11 @@ func InstanceOfType(t *Type) any {
 		return NewStruct(t)
 
 	case MapKind:
-		// keyType and valueType were set when the MapType was constructed.
-		return NewMap(t.keyType, t.valueType)
+		// Return a nil-state map, matching Go's zero value for "var m map[K]V".
+		// The key and value types are preserved in the *Map wrapper so that
+		// type introspection works correctly before the map is initialized.
+		// See data.NewNilMap for the nil-state design rationale.
+		return NewNilMap(t.keyType, t.valueType)
 
 	case ArrayKind:
 		// A zero-length array of the element type.  Callers can append or
@@ -147,7 +150,8 @@ func (t *Type) InstanceOf(superType *Type) any {
 		return NewArray(t.valueType, 0)
 
 	case MapKind:
-		return NewMap(t.keyType, t.valueType)
+		// Return a nil-state map (see InstanceOfType MapKind above for rationale).
+		return NewNilMap(t.keyType, t.valueType)
 
 	case PointerKind:
 		// For a pointer type, create an instance of the pointed-to type.

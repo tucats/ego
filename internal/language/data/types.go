@@ -1746,27 +1746,44 @@ func TypeOfPointer(v any) *Type {
 	return TypeOf(actual)
 }
 
-// Determine if the given value is "nil". This an be either an actual
-// nil value, or a value that represents the "nil values" for the given
-// type (which are recorded as the address of the zero value).
+// IsNil reports whether the given value should be considered "nil" from the
+// Ego-language perspective. This covers several distinct cases:
+//
+//  1. A Go-level nil interface (v == nil).
+//  2. A zero-value *errors.Error (non-nil pointer but no inner error).
+//  3. A nil native Go error interface.
+//  4. A nil-state *Map: the *Map pointer is non-nil (it carries type metadata)
+//     but its internal data store (m.data) is nil, matching Go's zero value
+//     for "var m map[K]V". Ego code comparing "m == nil" must see this as true.
+//  5. A nil *any pointer or a *any pointing to a known sentinel zero-value.
 func IsNil(v any) bool {
-	// Is it outright a nil value?
+	// Case 1: outright nil interface.
 	if v == nil {
 		return true
 	}
 
-	// Is it a zero-value Ego error? A non-nil *errors.Error with no inner
-	// error (err == nil) is the zero value for the error type and is nil.
+	// Case 2: zero-value Ego error — a non-nil *errors.Error with no inner
+	// error is the zero value for the error type and is considered nil.
 	if ee, ok := v.(*errors.Error); ok {
 		return errors.Nil(ee)
 	}
 
-	// Is it a nil native Go error interface?
+	// Case 3: nil native Go error interface.
 	if err, ok := v.(error); ok {
 		return err == nil
 	}
 
-	// If it's not a pointer, then it can't be nil
+	// Case 4: nil-state *Map. The *Map pointer itself is never nil (it always
+	// holds keyType/elementType for type introspection), but when the internal
+	// data field is nil the map was declared without an initializer ("var m
+	// map[K]V") and must compare equal to nil from the Ego script's perspective.
+	// This makes "m == nil" and "if m == nil" work correctly for nil-state maps.
+	if mp, ok := v.(*Map); ok {
+		return mp == nil || mp.data == nil
+	}
+
+	// Case 5: *any pointer — only *any pointers can represent nil values for
+	// the scalar Ego types (int, bool, string, float64, interface{}).
 	addr, ok := v.(*any)
 	if !ok {
 		return false

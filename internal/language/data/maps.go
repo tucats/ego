@@ -26,16 +26,40 @@ type Map struct {
 	mutex       sync.RWMutex
 }
 
-// Generate a new map value. The caller must supply the data type codes for the expected
-// key and value types (such as data.StringType or data.FloatType). You can also
-// use data.InterfaceType for a type value, which means any type is accepted. The
-// result is an initialized map that you can begin to store or read values from.
+// NewMap creates an initialized, usable map with the given key and value types.
+// The internal data store is allocated immediately, so values can be read and
+// written without any additional initialization. Use this when you know the map
+// will be populated right away (e.g., a composite literal "map[K]V{...}" or an
+// explicit make() call).
 func NewMap(keyType, valueType *Type) *Map {
 	return &Map{
 		data:        map[any]any{},
 		keyType:     keyType,
 		elementType: valueType,
 		immutable:   0,
+	}
+}
+
+// NewNilMap creates a typed nil map — a *Map wrapper whose internal data store
+// is nil, matching Go's zero value for "var m map[K]V". The key and value types
+// are retained so that type introspection (TypeString, reflect.Type comparisons,
+// etc.) works correctly even though no data can be stored.
+//
+// Reading from a nil-state map returns the zero value (nil) with no error,
+// matching Go's nil-map read semantics. Writing to a nil-state map via Set()
+// returns ErrNilMapWrite, matching Go's "assignment to entry in nil map" panic
+// (converted to a catchable Ego runtime error here).
+//
+// Trusted native Go callers that use SetAlways() to initialize a struct field's
+// map (e.g. runtime/http header initialization) will auto-vivify the internal
+// data store on first write, so they are unaffected by nil-state semantics.
+func NewNilMap(keyType, valueType *Type) *Map {
+	return &Map{
+		// data is deliberately left as nil (Go's zero value for map[any]any).
+		// This is the nil-state sentinel used by variable declarations without
+		// an explicit initializer. All Map methods are nil-state-aware.
+		keyType:     keyType,
+		elementType: valueType,
 	}
 }
 
@@ -124,11 +148,23 @@ func (m *Map) Get(key any) (any, bool, error) {
 // with the type declaration for the map. Bad type values result in an error.
 // The function also returns a boolean indicating if the value replaced an
 // existing item or not.
+//
+// If the map is in nil-state (declared via "var m map[K]V" but never assigned
+// an initialized map), Set returns ErrNilMapWrite — a catchable Ego runtime
+// error that mirrors Go's "assignment to entry in nil map" panic.
 func (m *Map) Set(key any, value any) (bool, error) {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
 
 		return false, errors.ErrNilPointerReference
+	}
+
+	// A nil-state map (data == nil) was never initialized. Writes are
+	// forbidden, matching Go's nil-map assignment semantics. This check must
+	// come before the mutex lock because a nil-state map carries no data to
+	// protect — returning early avoids acquiring an unnecessary lock.
+	if m.data == nil {
+		return false, errors.ErrNilMapWrite
 	}
 
 	m.mutex.Lock()
@@ -153,7 +189,17 @@ func (m *Map) Set(key any, value any) (bool, error) {
 }
 
 // SetAlways sets a value in the map. The key and value types are assumed to
-// be correct.
+// be correct; no type validation or immutability check is performed. This is
+// the trusted native-Go bypass used by runtime packages that initialize
+// struct-owned map fields directly (e.g. HTTP header maps).
+//
+// If the map is in nil-state (data == nil), the internal data store is
+// lazily allocated before the write. This auto-vivification is intentional:
+// SetAlways is called only by trusted native Go code, not by Ego scripts, so
+// it does not need to enforce the "assignment to entry in nil map" restriction
+// that Set() enforces for user-visible writes. Without auto-vivification,
+// runtime packages that call SetAlways on a struct field's map (which starts
+// nil-state after NewStruct) would trigger a native Go panic.
 func (m *Map) SetAlways(key any, value any) *Map {
 	if m == nil {
 		ui.Log(ui.InternalLogger, "runtime.map.nil.modify", nil)
@@ -163,6 +209,13 @@ func (m *Map) SetAlways(key any, value any) *Map {
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	// Lazily allocate the data store on the first trusted native write so
+	// that struct fields of map type, which start nil-state after NewStruct,
+	// become usable without requiring an explicit Ego-level initialization.
+	if m.data == nil {
+		m.data = map[any]any{}
+	}
 
 	m.data[key] = value
 

@@ -440,6 +440,7 @@ named.return.values=valeurs de retour avec des valeurs de retour nommées dans l
 native.unknown.field=nom de champ ou de méthode inconnu pour ce type d'objet
 nested.function.scope=la fonction nommée imbriquée ne peut pas accéder à la variable de la fonction englobante
 nil=référence à un pointeur nul
+nil.map.write=affectation d'une valeur dans une map nulle
 no.database=le serveur n'a pas de connexion de base de données par défaut (indiquez un DSN)
 no.info=aucune information pour cet élément
 no.main.package=aucun paquet principal trouvé

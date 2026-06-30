@@ -36,8 +36,8 @@ a severity classification.
 | BUG-08 | MEDIUM ✓ | `delete(struct, key)` fails on dynamic structs despite spec |
 | BUG-09 | MEDIUM ✓ | Import alias (`import alias "pkg"`) not recognized at use site |
 | BUG-10 | MEDIUM | `json.Unmarshal(b)` single-argument form rejected |
-| BUG-11 | MEDIUM | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
-| BUG-12 | MEDIUM | Writing to a nil map succeeds; should error |
+| BUG-11 | MEDIUM ✓ | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
+| BUG-12 | MEDIUM ✓ | Writing to a nil map succeeds; should error |
 | BUG-13 | MEDIUM | `typeof()` result incompatible with `switch` case matching |
 | BUG-14 | MEDIUM ✓ | Typed array element type not enforced in dynamic mode |
 | BUG-15 | MEDIUM | `append()` to typed array silently accepts wrong-type elements |
@@ -47,6 +47,8 @@ a severity classification.
 | BUG-19 | LOW | `for v := range string` yields single-char strings, not int32 runes |
 | BUG-20 | LOW | `iota` not supported in `const` blocks |
 | BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
+| BUG-22 | MEDIUM | `make(map[K]V)` errors with "incorrect function argument count" |
+| BUG-23 | MEDIUM | `var` declarations of struct types share a single compile-time instance across calls |
 
 ---
 
@@ -996,15 +998,34 @@ this issue.
 
 ### BUG-12 — Writing to a nil map succeeds; should error
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 In Go, assigning to an entry in a nil map panics: `"assignment to entry in nil map"`.
-In Ego, a nil map (declared with `var m map[string]int`) silently accepts writes
-and retains the written values. This silently corrupts program state instead of
+In Ego, a nil map (declared with `var m map[string]int`) silently accepted writes
+and retained the written values. This silently corrupted program state instead of
 alerting the programmer.
 
-**Reproducer:**
+**Fix:**  
+Ego maps are already Go reference types (`*data.Map`). The nil-state is now represented
+by leaving the internal `m.data` field as Go's zero value (`nil` native map) while keeping
+the `*Map` wrapper non-nil (so type metadata is preserved for introspection). Two call
+sites were changed:
+
+- `data.InstanceOfType` and `(*data.Type).InstanceOf` for `MapKind` now return
+  `data.NewNilMap(keyType, valueType)` (nil-state) instead of `data.NewMap(...)`.
+  This covers `var m map[K]V` declarations.
+- `Map.Set()` now checks `m.data == nil` and returns `errors.ErrNilMapWrite` before
+  attempting any write. This is a catchable Ego runtime error.
+- `Map.SetAlways()` auto-vivifies `m.data` on first write (for trusted native Go runtime
+  callers that initialize struct-owned map fields via `SetAlways`).
+- `data.IsNil()` was extended with a `*Map` case so that `m == nil` in Ego scripts
+  correctly returns true for nil-state maps.
+- `builtins.NewInstanceOf` (`$new`) uses `data.NewMap()` directly for `MapKind` types,
+  so that map literals (`map[K]V{}`) produce usable initialized maps while `var m map[K]V`
+  (which calls `InstanceOf` directly) produces nil-state maps.
+
+**Reproducer (now correctly errors):**
 
 ```go
 import "fmt"
@@ -1012,28 +1033,20 @@ import "fmt"
 func main() {
     var m map[string]int   // nil map
 
-    m["key"] = 42          // should error; Go would panic here
-    fmt.Println(m["key"])  // prints 42 (unexpected: write to nil map succeeded)
+    try {
+        m["key"] = 42      // raises ErrNilMapWrite
+    } catch(e) {
+        fmt.Println(e)     // "assignment to entry in nil map"
+    }
 }
 ```
 
-**Actual output:**
+**Notes:**
 
-```text
-42
-```
-
-**Expected output:**
-
-```text
-Error: assignment to entry in nil map
-```
-
-(or a catchable Ego runtime error equivalent)
-
-**Notes:**  
-Reading from a nil map (`v := m["key"]`) correctly returns `nil`. Only writes
-are mishandled.
+- Reading from a nil map (`v := m["key"]`) correctly returns `nil` with no error (Go spec).
+- `len(m)`, `range m`, and `delete(m, k)` are all safe on nil maps (zero iterations / no-ops).
+- Assigning an initialized literal (`m = map[string]int{}`) escapes the nil state.
+- Tests in `tests/types/nil_map.ego` cover all 14 nil-map behavioral cases.
 
 ---
 
@@ -1453,6 +1466,102 @@ itself (or just check the `failed`/`catch` flag) rather than relying on an
 outer variable being updated. This is a test-infrastructure limitation, not a
 defect in user-facing Ego programs — flagged during work on BUG-09, filed for
 later investigation.
+
+---
+
+### BUG-22 — `make(map[K]V)` errors with "incorrect function argument count"
+
+**Severity:** MEDIUM
+
+**Description:**  
+In Go, maps may be created with `make(map[K]V)` or `make(map[K]V, initialCapacity)`.
+In Ego, calling `make` with a map type argument fails at runtime:
+
+```text
+Error: in make, incorrect function argument count: 1
+```
+
+The `make` built-in currently only accepts channels (`make(chan, n)`) and arrays/slices
+(`make([]T, n)`). Map types are not handled, so any call to `make(map[K]V)` errors
+regardless of whether an initial-capacity hint is provided.
+
+**Reproducer:**
+
+```go
+func main() {
+    m := make(map[string]int)   // errors: "incorrect function argument count: 1"
+    m["a"] = 1
+    fmt.Println(m["a"])
+}
+```
+
+**Expected output:**
+
+```text
+1
+```
+
+**Notes:**  
+The workaround is to use a map literal: `m := map[string]int{}`. Discovered during
+the BUG-12 nil-map investigation. The `make` function for maps does not need a
+capacity hint (Go ignores it for correctness; it is only a performance hint), so
+`make(map[K]V)` with no size argument should be the primary form to support.
+
+---
+
+### BUG-23 — `var` declarations of struct types share a single compile-time instance across calls
+
+**Severity:** MEDIUM
+
+**Description:**  
+When a named function contains a `var c MyStruct` declaration, the compiler evaluates
+`InstanceOf(MyStruct)` **once at compile time** and embeds the resulting `*Struct`
+pointer as a bytecode `Push` constant. Every call to the function pushes and mutates
+that same shared pointer, so state accumulates across calls.
+
+**Reproducer:**
+
+```go
+type Counter struct { n int }
+
+func increment() Counter {
+    var c Counter   // same *Struct every call
+    c.n = c.n + 1
+    return c
+}
+
+func main() {
+    fmt.Println(increment().n)  // want 1, got 1  ✓
+    fmt.Println(increment().n)  // want 1, got 2  ✗
+    fmt.Println(increment().n)  // want 1, got 3  ✗
+}
+```
+
+**Actual output:**
+
+```text
+1
+2
+3
+```
+
+**Expected output:**
+
+```text
+1
+1
+1
+```
+
+**Notes:**  
+Discovered during the BUG-12 nil-map investigation. The aliasing bug affects
+`*Struct` instances declared with `var`; it does **not** affect maps (nil-state maps
+cannot be mutated, so the shared pointer is harmless) or arrays declared with `var`
+(operations like `append` return a new array rather than mutating the original).
+
+The fix requires the compiler or the `SymbolCreate`/`CreateAndStore` opcode to call
+`data.DeepCopy` on the embedded constant before storing it, so each function call
+receives a fresh copy rather than the shared compile-time instance.
 
 ---
 

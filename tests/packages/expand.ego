@@ -3,8 +3,10 @@
 
 // Test using a lookup function written in Ego
 {
-   // Declare a map that stores our key value pairs in local scope.
-   var m map[string]string
+   // Declare and initialize the map that stores our key value pairs in local scope.
+   // A "var m map[string]string" declaration alone produces a nil map (matching
+   // Go semantics); writes require an explicit initializer first.
+   m := map[string]string{}
 
    m["NAME"] = "Tom"
    m["AGE"] = "60"

@@ -1,0 +1,151 @@
+// Tests for nil-map semantics introduced by the BUG-12 fix.
+//
+// Go's nil-map rules, now enforced by Ego:
+//   - var m map[K]V   declares a nil map (m == nil is true)
+//   - reads from a nil map return nil with no error
+//   - len(nil map) == 0
+//   - range over a nil map has zero iterations
+//   - delete from a nil map is a safe no-op
+//   - writes to a nil map raise a catchable runtime error
+//   - assigning an initialized map literal escapes the nil state
+
+@test "types: var map declaration is nil"
+{
+    var m map[string]int
+    @assert T.True(m == nil)
+}
+
+@test "types: nil map not equal to empty initialized map"
+{
+    var m map[string]int
+    empty := map[string]int{}
+    @assert T.True(m == nil)
+    @assert T.False(empty == nil)
+}
+
+@test "types: reading from nil map returns nil, no error"
+{
+    var m map[string]int
+    v := m["missing"]
+    @assert T.Nil(v)
+}
+
+@test "types: two-value read from nil map returns nil and false"
+{
+    var m map[string]bool
+    v, ok := m["key"]
+    @assert T.False(ok)
+    @assert T.Nil(v)
+}
+
+@test "types: len of nil map is zero"
+{
+    var m map[string]int
+    @assert T.Equal(len(m), 0)
+}
+
+@test "types: range over nil map has zero iterations"
+{
+    var m map[string]int
+    count := 0
+    for _ = range m {
+        count = count + 1
+    }
+    @assert T.Equal(count, 0)
+}
+
+@test "types: range key-value over nil map has zero iterations"
+{
+    var m map[int]string
+    count := 0
+    for _, _ = range m {
+        count = count + 1
+    }
+    @assert T.Equal(count, 0)
+}
+
+@test "types: delete from nil map is a safe no-op"
+{
+    var m map[string]int
+    // delete() on a nil map must not error; it is a no-op per Go spec.
+    delete(m, "key")
+    @assert T.True(m == nil)
+}
+
+@test "types: write to nil map fails - BUG-12 fix"
+{
+    var m map[string]int
+    caught := false
+    try {
+        m["key"] = 42
+    } catch(e) {
+        caught = true
+        // The error message must contain the Go-standard wording.
+        msg := string(e)
+        @assert T.True(strings.Contains(msg, "nil map"))
+    }
+    @assert T.True(caught)
+}
+
+@test "types: nil map type preserved after var declaration"
+{
+    var m map[string]int
+    // reflect.Type must still report the correct declared type even though the
+    // map is nil.  This verifies that the *Map wrapper retains key/value type
+    // metadata.
+    @assert T.Equal(reflect.Type(m), map[string]int)
+}
+
+@test "types: map escapes nil state after literal assignment"
+{
+    var m map[string]int
+    @assert T.True(m == nil)
+
+    m = map[string]int{}
+    @assert T.False(m == nil)
+
+    // Writing to the now-initialized map must succeed.
+    m["key"] = 7
+    @assert T.Equal(m["key"], 7)
+}
+
+@test "types: map escapes nil state after populated literal assignment"
+{
+    var m map[string]bool
+    m = map[string]bool{"yes": true, "no": false}
+    @assert T.False(m == nil)
+    @assert T.Equal(m["yes"], true)
+    @assert T.Equal(m["no"], false)
+    @assert T.Equal(len(m), 2)
+}
+
+@test "types: nil map write error is catchable and re-assignable"
+{
+    var m map[string]int
+    var writeErr error
+
+    try {
+        m["x"] = 1
+    } catch(e) {
+        writeErr = e
+    }
+
+    @assert T.NotNil(writeErr)
+
+    // After catching the error the map is still nil; the assignment did not
+    // partially succeed.
+    @assert T.True(m == nil)
+    @assert T.Equal(len(m), 0)
+}
+
+@test "types: multiple nil map vars are independent"
+{
+    // Each var declaration must produce a distinct nil-state map, not a shared
+    // object.  Assigning one must not affect the other.
+    var a map[string]int
+    var b map[string]int
+
+    a = map[string]int{"k": 1}
+    @assert T.False(a == nil)
+    @assert T.True(b == nil)
+}

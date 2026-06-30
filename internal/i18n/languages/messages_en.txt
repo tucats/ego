@@ -446,6 +446,7 @@ named.return.values=return values with named return values in function definitio
 native.unknown.field=unknown field or method name for this object type
 nested.function.scope=nested named function cannot access enclosing function variable
 nil=nil pointer reference
+nil.map.write=assignment to entry in nil map
 no.database=the server is not configured with a default database connection (use a data source name)
 no.info=no information for item
 no.main.package=no main package found

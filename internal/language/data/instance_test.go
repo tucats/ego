@@ -52,13 +52,17 @@ func TestInstanceOfType(t *testing.T) {
 			want: NewStruct(NewType("testStruct", StructKind, nil)),
 		},
 		{
+			// InstanceOfType for a map type now returns a nil-state map, matching
+			// Go's zero value for "var m map[K]V". The *Map wrapper is non-nil (it
+			// retains key/value type metadata) but its internal data field is nil.
+			// Map literals ("m := map[K]V{}") use $new() → NewMap() separately.
 			name: "test with map type",
 			t: &Type{
 				kind:      MapKind,
 				keyType:   StringType,
 				valueType: IntType,
 			},
-			want: NewMap(StringType, IntType),
+			want: NewNilMap(StringType, IntType),
 		},
 		{
 			name: "test with array type",

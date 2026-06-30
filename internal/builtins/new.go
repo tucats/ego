@@ -24,6 +24,16 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	// Is it a pointer to an actual type?
 	if typeValue, ok := args.Get(0).(*data.Type); ok {
+		// Map literals use this path ("map[K]V{}" → $new(mapType)). An empty
+		// map literal must produce an initialized, non-nil-state map, matching
+		// Go's "m := map[K]V{}" semantics. Use data.NewMap directly rather than
+		// InstanceOf, which returns a nil-state sentinel for MapKind (matching
+		// Go's "var m map[K]V" zero-value semantics instead — that is correct
+		// for var.go:76, which calls InstanceOf directly without going through $new).
+		if typeValue.Kind() == data.MapKind {
+			return data.NewMap(typeValue.KeyType(), typeValue.BaseType()), nil
+		}
+
 		return typeValue.InstanceOf(typeValue), nil
 	}
 
