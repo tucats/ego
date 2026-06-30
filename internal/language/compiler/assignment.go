@@ -258,8 +258,19 @@ func (c *Compiler) compileAssignment() error {
 		return nil
 	}
 
-	// If this is a construct like   x := <-ch   skip over the :=
-	_ = c.t.IsNext(tokenizer.ChannelReceiveToken)
+	// Detect whether the right-hand side begins with a channel-receive
+	// operator (<-).  We need to know this before parsing the expression
+	// so we can choose the right code-generation path below.
+	//
+	// After AnyNext consumed the assignment operator (:= or =) above, the
+	// tokenizer is now positioned at the first token of the RHS.  For
+	//
+	//   x := <-ch       (single-value receive)
+	//   v, ok := <-ch   (two-value receive)
+	//
+	// the current token is "<-".  IsNext checks for it and advances past
+	// it if found, leaving the tokenizer at the channel expression (ch).
+	isChannelReceive := c.t.IsNext(tokenizer.ChannelReceiveToken)
 
 	// Seems like a simple assignment at this point, so parse the expression
 	// to be assigned, emit the code for that expression, and then emit the code
@@ -270,6 +281,32 @@ func (c *Compiler) compileAssignment() error {
 	}
 
 	c.b.Append(expressionCode)
+
+	// Two-value channel receive: v, ok := <-ch
+	//
+	// When both conditions hold:
+	//   - isChannelReceive is true  (we saw and consumed "<-")
+	//   - multipleTargets is true   (the LHS was a comma-separated list)
+	//
+	// …the storeLValue produced by assignmentTargetList starts with
+	// StackCheck 2, which requires exactly two values above a stack marker.
+	// The single Load "ch" instruction emitted above pushes only the channel
+	// object (one value); that fails the StackCheck.
+	//
+	// ReceiveChannel fixes this: it pops the channel, performs the receive,
+	// and pushes [StackMarker("receive"), ok, datum] so that StackCheck 2
+	// sees two items (datum + ok) above the marker.  The storeLValue that
+	// follows then stores datum → v and ok → ok in the correct order.
+	//
+	// Single-value receive (v := <-ch) does NOT reach this branch because
+	// multipleTargets is false.  That path uses the StoreChan opcode which
+	// was already baked into the storeLValue by assignmentTarget/patchStore.
+	if isChannelReceive && c.flags.multipleTargets {
+		c.b.Emit(bytecode.ReceiveChannel)
+		c.b.Append(storeLValue)
+
+		return nil
+	}
 
 	// If this assignment was an any unwrap operation, then
 	// we need to modify the lvalue store by removing the last bytecode

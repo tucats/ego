@@ -107,6 +107,7 @@ const (
 	PushTest
 	RangeInit
 	ReadStack
+	ReceiveChannel
 	RequiredType
 	RespHeader
 	Response
@@ -238,6 +239,7 @@ var opcodeNames = map[Opcode]string{
 	RangeInit:          "RangeInit",
 	RangeNext:          "RangeNext",
 	ReadStack:          "ReadStack",
+	ReceiveChannel:     "ReceiveChannel",
 	RequiredType:       "RequiredType",
 	Recover:            "Recover",
 	Return:             "Return",
@@ -361,6 +363,7 @@ func initializeDispatch() {
 		dispatchTable[RangeInit] = rangeInitByteCode
 		dispatchTable[RangeNext] = rangeNextByteCode
 		dispatchTable[ReadStack] = readStackByteCode
+		dispatchTable[ReceiveChannel] = receiveChannelByteCode
 		dispatchTable[RequiredType] = requiredTypeByteCode
 		dispatchTable[Recover] = recoverByteCode
 		dispatchTable[Return] = returnByteCode

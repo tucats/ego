@@ -1,0 +1,109 @@
+// Regression tests for the two-value channel receive form: v, ok := <-ch
+//
+// Before the BUG-07 fix, this form always raised "incorrect number of return
+// values" at runtime because the storeLValue generated for a comma-separated
+// assignment list begins with StackCheck 2, but only one value (the channel
+// object) was pushed onto the stack before that check ran.
+//
+// The new ReceiveChannel bytecode opcode pops the channel, calls Receive(),
+// and pushes three items: a StackMarker("receive"), the ok bool, and the
+// datum.  StackCheck 2 then sees two items above the marker (datum + ok) and
+// the assignment stores each to the correct variable.
+
+// --- Open channel: value is available -------------------------------------------
+
+@test "flow: two-value receive returns true when channel has a value"
+{
+    ch := make(chan, 1)
+    ch <- 42
+
+    v, ok := <-ch
+
+    // ok must be true: the channel is open and a value was waiting.
+    @assert ok == true
+
+    // v must hold the sent value.
+    @assert v == 42
+}
+
+@test "flow: two-value receive, received value is correct"
+{
+    ch := make(chan, 3)
+    ch <- "hello"
+    ch <- "world"
+
+    // Receive the first item.
+    v1, ok1 := <-ch
+    @assert ok1 == true
+    @assert v1 == "hello"
+
+    // Receive the second item.
+    v2, ok2 := <-ch
+    @assert ok2 == true
+    @assert v2 == "world"
+}
+
+// --- Closed channel: channel is drained -----------------------------------------
+//
+// In Go (and Ego), receiving from a closed+empty channel returns the zero
+// value and ok=false.  This is the normal end-of-channel sentinel, not an
+// error.
+
+@test "flow: two-value receive returns false when channel is closed"
+{
+    ch := make(chan, 1)
+    close(ch)
+
+    v, ok := <-ch
+
+    // ok must be false: the channel is closed and empty.
+    @assert ok == false
+
+    // v should be nil (zero value) for a closed channel.
+    @assert v == nil
+}
+
+// --- Receive all items then detect close ----------------------------------------
+
+@test "flow: two-value receive drains buffered items before reporting close"
+{
+    ch := make(chan, 2)
+    ch <- 10
+    ch <- 20
+    close(ch)
+
+    // First two receives must succeed (items are still buffered).
+    v1, ok1 := <-ch
+    @assert ok1 == true
+    @assert v1 == 10
+
+    v2, ok2 := <-ch
+    @assert ok2 == true
+    @assert v2 == 20
+
+    // Third receive must see that the channel is now empty and closed.
+    v3, ok3 := <-ch
+    @assert ok3 == false
+    @assert v3 == nil
+}
+
+// --- Goroutine sender -----------------------------------------------------------
+//
+// Verify that the two-value form works correctly when a goroutine is the
+// sender.  The receiver uses a wait group to synchronize.
+
+@test "flow: two-value receive from goroutine sender"
+{
+    ch := make(chan, 1)
+
+    go func() {
+        ch <- 7
+    }()
+
+    // The goroutine may not have run yet; the channel is buffered so this
+    // will block only until the sender deposits its value.
+    v, ok := <-ch
+
+    @assert ok == true
+    @assert v == 7
+}

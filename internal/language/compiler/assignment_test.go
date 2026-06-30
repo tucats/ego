@@ -113,6 +113,27 @@ func TestCompiler_compileAssignment(t *testing.T) {
 			wantErr: nil,
 		},
 		// --- end BUG-06 regression tests -------------------------------------
+
+		// --- BUG-07 regression tests: two-value channel receive ---------------
+		//
+		// Before the fix, "v, ok := <-ch" produced "incorrect number of return
+		// values" at runtime because the storeLValue's StackCheck 2 found only
+		// one item on the stack (the channel object).  These compile-time tests
+		// verify that the assignment compiles without error.  Full correctness
+		// (the actual values received) is covered by run_test.go.
+		{
+			// v, ok := <-ch  — two-value receive must compile without error.
+			name: "two-value channel receive (BUG-07)",
+			fields: fields{
+				t:             tokenizer.New("v, ok := <-ch", true),
+				symbols:       symbols.NewRootSymbolTable("test"),
+				functionDepth: 0,
+				constants:     []string{},
+				b:             bytecode.New("test"),
+			},
+			wantErr: nil,
+		},
+		// --- end BUG-07 regression tests -------------------------------------
 		{
 			name: "invalid auto-increment",
 			fields: fields{

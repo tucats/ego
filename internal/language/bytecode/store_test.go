@@ -40,6 +40,13 @@ package bytecode
 //   - Blocks redefinition of existing *ByteCode functions when
 //     AllowFunctionRedefinitionSetting is not enabled.
 //
+// receiveChannelByteCode (ReceiveChannel opcode):
+//   - Pops a *data.Channel from the stack and calls Receive().
+//   - On a successful receive: pushes StackMarker("receive"), true, datum.
+//   - On a closed+drained channel: pushes StackMarker("receive"), false, nil.
+//   - Non-channel value on stack → ErrInvalidChannel.
+//   - Stack marker on stack → ErrFunctionReturnedVoid.
+//
 // storeBytecodeByteCode (StoreBytecode opcode):
 //   - Pops a *ByteCode from the stack, assigns the operand string as its name,
 //     and stores it in the symbol table via SetAlways.
@@ -66,6 +73,7 @@ package bytecode
 // Section 4: storeViaPointerByteCode
 // Section 5: storeAlwaysByteCode
 // Section 6: storeBytecodeByteCode
+// Section 7: receiveChannelByteCode
 //
 // All tests use the newTestContext / withXxx / assertXxx helpers from
 // testhelpers_test.go as required by the project testing standards.
@@ -1078,4 +1086,143 @@ func Test_storeAlwaysByteCode_FuncRedefinitionAllowed(t *testing.T) {
 	err := storeAlwaysByteCode(tc.ctx, "myFunc")
 
 	tc.assertNoError(err)
+}
+
+// ─── Section 7: receiveChannelByteCode ───────────────────────────────────────
+
+// Test_receiveChannelByteCode_SuccessfulReceive verifies the happy path: a
+// value is available in the channel, so the opcode pushes [marker, true, datum].
+//
+// Setup:   a buffered channel with one item (42) already sent into it.
+// Action:  receiveChannelByteCode with nil operand (operand is unused).
+// Expect:  three items on the stack (bottom → top): StackMarker("receive"),
+//
+//	true, 42.  No error.
+func Test_receiveChannelByteCode_SuccessfulReceive(t *testing.T) {
+	ch := data.NewChannel(1)
+	_ = ch.Send(42)
+
+	tc := newTestContext(t).withStack(ch)
+
+	err := receiveChannelByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+
+	// Datum (42) is on top.
+	tc.assertTopStack(42)
+
+	// ok (true) is next.
+	tc.assertTopStack(true)
+
+	// A StackMarker("receive") is at the bottom of the pushed group.
+	// Pop it and verify it is a stack marker with the right label.
+	raw, popErr := tc.ctx.Pop()
+	if popErr != nil {
+		t.Fatalf("unexpected pop error: %v", popErr)
+	}
+
+	if !isStackMarker(raw, "receive") {
+		t.Errorf("expected StackMarker(\"receive\"), got %T %v", raw, raw)
+	}
+}
+
+// Test_receiveChannelByteCode_ClosedChannel verifies behavior when the channel
+// is closed and already drained.  This is the normal "loop finished" condition
+// in for-range over a channel, not an error.
+//
+// Setup:   a channel that has been closed without sending any items.
+// Action:  receiveChannelByteCode.
+// Expect:  stack has [StackMarker("receive"), false, nil]; no error returned.
+func Test_receiveChannelByteCode_ClosedChannel(t *testing.T) {
+	ch := data.NewChannel(1)
+	ch.Close()
+
+	tc := newTestContext(t).withStack(ch)
+
+	err := receiveChannelByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+
+	// Datum is nil (zero value for a closed channel).
+	tc.assertTopStack(nil)
+
+	// ok is false — the channel was closed.
+	tc.assertTopStack(false)
+
+	// Consume the marker.
+	raw, popErr := tc.ctx.Pop()
+	if popErr != nil {
+		t.Fatalf("unexpected pop error: %v", popErr)
+	}
+
+	if !isStackMarker(raw, "receive") {
+		t.Errorf("expected StackMarker(\"receive\"), got %T %v", raw, raw)
+	}
+}
+
+// Test_receiveChannelByteCode_NonChannelValue verifies that passing a non-channel
+// value (e.g. an integer) returns ErrInvalidChannel.
+//
+// Setup:   integer 99 on the stack instead of a channel.
+// Action:  receiveChannelByteCode.
+// Expect:  ErrInvalidChannel; stack is empty (the integer was popped first).
+func Test_receiveChannelByteCode_NonChannelValue(t *testing.T) {
+	tc := newTestContext(t).withStack(99)
+
+	err := receiveChannelByteCode(tc.ctx, nil)
+
+	tc.assertError(err, errors.ErrInvalidChannel)
+}
+
+// Test_receiveChannelByteCode_StackMarker verifies that a stack marker on top
+// of the stack (which would indicate a void return) produces ErrFunctionReturnedVoid.
+//
+// Setup:   a StackMarker on the stack instead of a channel.
+// Action:  receiveChannelByteCode.
+// Expect:  ErrFunctionReturnedVoid.
+func Test_receiveChannelByteCode_StackMarker(t *testing.T) {
+	tc := newTestContext(t).withStack(NewStackMarker("void"))
+
+	err := receiveChannelByteCode(tc.ctx, nil)
+
+	tc.assertError(err, errors.ErrFunctionReturnedVoid)
+}
+
+// Test_receiveChannelByteCode_StackLayout verifies the exact push order
+// so that the surrounding storeLValue machinery (StackCheck 2 → Store v →
+// Store ok → DropToMarker) can consume the values correctly.
+//
+// The ReceiveChannel opcode must produce (bottom to top):
+//
+//	StackMarker("receive"), ok (bool), datum (any)
+//
+// This test sends two items through a channel and receives the first one,
+// verifying the complete three-item group is in the right order.
+func Test_receiveChannelByteCode_StackLayout(t *testing.T) {
+	ch := data.NewChannel(2)
+	_ = ch.Send("hello")
+	_ = ch.Send("world")
+
+	tc := newTestContext(t).withStack(ch)
+
+	err := receiveChannelByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+
+	// Stack pointer should now be at 3 (marker + ok + datum).
+	if tc.ctx.stackPointer != 3 {
+		t.Errorf("expected stackPointer=3, got %d", tc.ctx.stackPointer)
+	}
+
+	// datum is at stackPointer (index 2, top): "hello"
+	tc.assertTopStack("hello")
+
+	// ok is at index 1: true
+	tc.assertTopStack(true)
+
+	// marker is at index 0: StackMarker("receive")
+	raw, _ := tc.ctx.Pop()
+	if !isStackMarker(raw, "receive") {
+		t.Errorf("expected StackMarker(\"receive\"), got %T %v", raw, raw)
+	}
 }

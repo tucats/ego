@@ -184,6 +184,117 @@ func storeChanByteCode(c *Context, i any) error {
 	return err
 }
 
+// receiveChannelByteCode implements the ReceiveChannel opcode, which supports
+// the two-value channel receive form:
+//
+//	v, ok := <-ch
+//
+// In this form the programmer expects two results: the value read from the
+// channel (v) and a boolean flag (ok) that is true when the receive succeeded
+// and false when the channel was closed and drained.
+//
+// # Why a new opcode instead of reusing StoreChan?
+//
+// The existing StoreChan opcode handles single-value receive (v := <-ch) by
+// popping the channel from the stack and storing the received datum directly
+// into a named variable in the symbol table.  It produces one result.
+//
+// For the two-value form the compiler has already generated a storeLValue
+// buffer that begins with StackCheck 2 — it expects exactly two items above a
+// stack marker before it starts storing.  StoreChan does not push a marker or
+// produce two stack items, so it cannot satisfy that check.
+//
+// ReceiveChannel bridges the gap: it pops the channel, performs the receive,
+// and pushes three things onto the stack:
+//
+//  1. A StackMarker("receive") — this is the "floor" that StackCheck 2 scans
+//     down to when it verifies the item count.
+//  2. ok (bool) — false if the channel was closed and empty, true otherwise.
+//  3. datum (any) — the received value, or nil if the channel was closed.
+//
+// After ReceiveChannel the stack looks like (bottom → top):
+//
+//	[..., StackMarker("receive"), ok, datum]
+//
+// The storeLValue that follows does:
+//   - StackCheck 2       — counts datum + ok = 2 above the marker → passes
+//   - SymbolOptCreate v  — ensure v exists
+//   - Store v            — pops datum → v
+//   - SymbolOptCreate ok — ensure ok exists
+//   - Store ok           — pops ok → ok
+//   - DropToMarker       — discards the StackMarker("receive")
+//
+// # Error handling
+//
+// A closed (and drained) channel is NOT a runtime error from ReceiveChannel's
+// perspective — that is the normal end-of-channel condition signaled to the
+// caller via ok==false.  Any other error from Receive() (e.g. a nil channel
+// pointer) IS a hard runtime error and causes ReceiveChannel to return
+// immediately without pushing anything.
+func receiveChannelByteCode(c *Context, i any) error {
+	// Pop the channel object from the stack.  The compiler emits
+	// Load "ch" immediately before ReceiveChannel, so the top of stack
+	// is always the *data.Channel value.
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	if isStackMarker(v) {
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
+	}
+
+	// Confirm that the value is actually a channel.  Any other type
+	// (integer, string, struct, etc.) is a programming error.
+	ch, ok := v.(*data.Channel)
+	if !ok {
+		return c.runtimeError(errors.ErrInvalidChannel)
+	}
+
+	// Attempt to receive one value from the channel.
+	//
+	// ch.Receive() returns:
+	//   (datum, nil)                — a value was available; datum holds it
+	//   (nil, ErrChannelNotOpen)    — the channel is closed and drained
+	//   (nil, <other error>)        — something unexpected went wrong
+	datum, recvErr := ch.Receive()
+
+	// Convert the Go-style (value, error) pair into Ego's two-value
+	// channel receive semantics: (datum, ok bool).
+	//
+	// ok == false means the channel is closed and empty; it does NOT
+	// mean an unexpected error occurred.  Unexpected errors are returned
+	// as hard runtime errors instead.
+	channelOk := true
+
+	if recvErr != nil {
+		if errors.Equals(recvErr, errors.ErrChannelNotOpen) {
+			// Normal channel-closed condition: ok becomes false and the
+			// datum is the zero value (nil).
+			channelOk = false
+			datum = nil
+		} else {
+			// Unexpected error — surface it as a runtime abort.
+			return c.runtimeError(recvErr)
+		}
+	}
+
+	// Push the three-item result group onto the stack.
+	//
+	// Order: marker first (pushed to lowest position), then ok, then datum
+	// on top.  The storeLValue that follows pops datum first (stores to v),
+	// then ok (stores to ok flag), then DropToMarker cleans up the marker.
+	if err = c.push(NewStackMarker("receive")); err != nil {
+		return err
+	}
+
+	if err = c.push(channelOk); err != nil {
+		return err
+	}
+
+	return c.push(datum)
+}
+
 // storeGlobalByteCode implements the StoreGlobal opcode, which pops a value
 // from the stack and writes it directly into the root (global) symbol table,
 // bypassing any intermediate scopes.
