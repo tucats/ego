@@ -1,0 +1,49 @@
+@test "io: Printf two-value return"
+{
+    n, err := fmt.Printf("hello %d\n", 42)
+    @assert T.Equal(n, 9)
+    @assert T.Nil(err)
+}
+
+@test "io: Printf single-value return still works"
+{
+    n := fmt.Printf("hello %d\n", 42)
+    @assert T.Equal(n, 9)
+}
+
+@test "io: Print two-value return"
+{
+    n, err := fmt.Print("hello", "world")
+    @assert T.Equal(n, 11)
+    @assert T.Nil(err)
+}
+
+@test "io: Print single-value return still works"
+{
+    n := fmt.Print("hello", "world")
+    @assert T.Equal(n, 11)
+}
+
+@test "io: Println two-value return"
+{
+    n, err := fmt.Println("hello")
+    @assert T.Equal(n, 6)
+    @assert T.Nil(err)
+}
+
+@test "io: Println single-value return still works"
+{
+    n := fmt.Println("hello")
+    @assert T.Equal(n, 6)
+}
+
+@test "io: Printf return values reused across calls"
+{
+    n, e := fmt.Printf("a=%d\n", 1)
+    @assert T.Equal(n, 4)
+    @assert T.Nil(e)
+
+    n, e = fmt.Printf("bb=%d\n", 22)
+    @assert T.Equal(n, 6)
+    @assert T.Nil(e)
+}

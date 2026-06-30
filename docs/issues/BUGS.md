@@ -974,6 +974,24 @@ n: 8 err: <nil>
 `fmt.Printf` and `fmt.Println` (which also returns `(int, error)` in Go but is not
 documented to do so in Ego).
 
+**Resolution:**
+
+A number of the fmt functions were not observing the convention where a function that
+can return an optional error value (like fmt.Printf()) must use a data.List as the
+function argument, where the list contains the return values, and the return error is
+also returned as the second parameter. When the caller function sees these, it tolerates
+not having enough values on the stack for all destinations of the assignment. For
+example:
+
+```go
+   fmt.Println("Hello")
+   len = fmt.Println("Hello")        // result is 6
+   len, err = fmt.Println("Hello")   // result is 6, <nil>
+```
+
+This fix addressed Print(), Println(), and Printf() which all had variations of
+this issue.
+
 ---
 
 ### BUG-12 — Writing to a nil map succeeds; should error

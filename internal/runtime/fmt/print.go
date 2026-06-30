@@ -21,13 +21,14 @@ import (
 	"io"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
 // printFormat implements fmt.Printf() and is a wrapper around the native Go function.
+// It supports writing to the stdout writer if active, else uses the local formatter.
 func printFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	length := 0
 
@@ -35,14 +36,14 @@ func printFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	if err == nil {
 		if writer, found := s.Get(defs.StdoutWriterSymbol); found {
 			if writer, ok := writer.(io.Writer); ok {
-				return writer.Write([]byte(data.String(str)))
+				length, err = writer.Write([]byte(data.String(str)))
 			}
+		} else {
+			length, err = fmt.Printf("%s", data.String(str))
 		}
-
-		length, _ = fmt.Printf("%s", data.String(str))
 	}
 
-	return length, err
+	return data.NewList(length, err), err
 }
 
 // stringPrintFormat implements fmt.Sprintf() and is a wrapper around the native Go function.
@@ -132,7 +133,11 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 // printList implements fmt.Print() and is a wrapper around the native Go function.
 // This prints the arguments to the output but with no trailing newline.
 func printList(s *symbols.SymbolTable, args data.List) (any, error) {
-	var b strings.Builder
+	var (
+		length int
+		e2     error
+		b      strings.Builder
+	)
 
 	for i, v := range args.Elements() {
 		if i > 0 {
@@ -146,23 +151,27 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
 		if writer, ok := writer.(io.Writer); ok {
-			return writer.Write([]byte(str))
+			length, e2 = writer.Write([]byte(str))
 		}
+	} else {
+		length, e2 = fmt.Printf("%s", str)
 	}
-
-	text, e2 := fmt.Printf("%s", str)
 
 	if e2 != nil {
 		e2 = errors.New(e2)
 	}
 
-	return text, e2
+	return data.NewList(length, e2), e2
 }
 
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
 // This prints the arguments to the output with a trailing newline.
 func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
-	var b strings.Builder
+	var (
+		length int
+		e2     error
+		b      strings.Builder
+	)
 
 	for i, v := range args.Elements() {
 		if i > 0 {
@@ -176,17 +185,17 @@ func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
 		if writer, ok := writer.(io.Writer); ok {
-			return writer.Write([]byte(str + "\n"))
+			length, e2 = writer.Write([]byte(str + "\n"))
 		}
+	} else {
+		length, e2 = fmt.Printf("%s\n", str)
 	}
-
-	text, e2 := fmt.Printf("%s\n", str)
 
 	if e2 != nil {
 		e2 = errors.New(e2)
 	}
 
-	return text, e2
+	return data.NewList(length, e2), e2
 }
 
 // formatUsingString will attempt to use the String() function of the
