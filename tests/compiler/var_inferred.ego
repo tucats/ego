@@ -1,0 +1,149 @@
+// Tests for the BUG-17 fix: "var name = expr" (no explicit type between the
+// name and the "=") previously failed to compile with "invalid type
+// specification", even though it is valid, commonly used Go syntax that
+// means exactly the same thing as the short variable declaration
+// "name := expr" -- the type of "name" is inferred from the type of expr.
+//
+// See docs/issues/BUGS.md, BUG-17, for the full write-up, and
+// internal/language/compiler/var.go (varInferredInitializer) for the
+// implementation.
+
+@test "compiler: var with inferred type from a scalar initializer"
+{
+    // The exact reproducer from the bug report.
+    var pi = 3.14
+    @assert pi == 3.14
+
+    var greeting = "hello"
+    @assert greeting == "hello"
+
+    var count = 42
+    @assert count == 42
+
+    var ok = true
+    @assert ok == true
+}
+
+@test "compiler: var with inferred type from an expression initializer"
+{
+    // The initializer is compiled as a full expression, not just a literal.
+    a := 2
+    b := 3
+    var sum = a + b
+    @assert sum == 5
+}
+
+@test "compiler: var with inferred type from a self-describing composite literal"
+{
+    // There is no outer type to borrow element types from when the type is
+    // inferred, but a self-describing typed literal like []int{...} carries
+    // its own type and compiles normally.
+    var list = []int{1, 2, 3}
+    @assert len(list) == 3
+    @assert list[0] == 1
+    @assert list[2] == 3
+}
+
+@test "compiler: var(...) list with two inferred declarations"
+{
+    // The exact group-form reproducer from the bug report. This also
+    // exercises the companion fix to the list-continuation logic in
+    // compileVar: without it, only "p" would be declared and "q" would be
+    // silently skipped (or misparsed), because collectVarListNames's
+    // now-removed second return value used to signal "no more declarations"
+    // the moment a name was immediately followed by "=".
+    var (
+        p = 3.14
+        q = "pi"
+    )
+
+    @assert p == 3.14
+    @assert q == "pi"
+}
+
+@test "compiler: var(...) list with three inferred declarations"
+{
+    // Confirms the list loop keeps going past the second entry too.
+    var (
+        x = 1
+        y = 2
+        z = 3
+    )
+
+    @assert x + y + z == 6
+}
+
+@test "compiler: var(...) list mixing typed, inferred, and user-type forms"
+{
+    type Point struct {
+        x int
+        y int
+    }
+
+    var (
+        a int = 5    // explicit type + initializer
+        b = "hello"  // inferred type
+        c Point      // user-defined type, no initializer
+        d, e = 7     // inferred type, shared across two names
+    )
+
+    @assert a == 5
+    @assert b == "hello"
+    @assert c.x == 0
+    @assert c.y == 0
+    @assert d == 7
+    @assert e == 7
+}
+
+@test "compiler: var with multiple names sharing one inferred initializer"
+{
+    // "var a, b = 42" duplicates the single computed value across both
+    // names. This mirrors the pre-existing (if non-standard versus real Go)
+    // behavior of the typed path, "var a, b int = 42" -- see
+    // varInitializer's Dup-per-name loop in var.go. It is not full Go
+    // multi-value assignment (real Go requires one value per name); this
+    // test documents the existing, intentionally-preserved behavior rather
+    // than asserting new semantics.
+    var a, b = 42
+    @assert a == 42
+    @assert b == 42
+}
+
+@test "compiler: var with unknown user-defined type still errors"
+{
+    // Regression guard: the fix distinguishes "var name = expr" from
+    // "var name UserType" by peeking for an "=" token immediately after the
+    // name list. A genuinely unrecognized type name (no "=" present) must
+    // still be routed to varUserType() and fail there, rather than being
+    // silently accepted or misinterpreted as an inferred declaration.
+    var failed bool
+
+    @compile block {
+        var p NoSuchType
+        _ = p
+    } catch(e) {
+        failed = true
+        @assert e.Error() != ""
+    }
+
+    @assert failed == true
+}
+
+@test "compiler: var with missing symbol name still errors"
+{
+    // Regression guard: malformed declarations that have nothing to do with
+    // type inference (a name token that isn't a valid identifier) must
+    // still be rejected by collectVarListNames, unaffected by the removal
+    // of its "more declarations follow" return value.
+    var failed bool
+
+    @compile block {
+        var 5abc int
+        _ = 5abc
+    } catch(e) {
+        failed = true
+        @assert e.Error() != ""
+    }
+
+    @assert failed == true
+}

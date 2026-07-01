@@ -673,6 +673,53 @@ The type of `e2` is `Employee` and it contains initialized values for
 the permitted fields. Fields not explicitly named are set to zero
 values for their types.
 
+#### `var` with an initial value
+
+A `var` declaration can also supply an initial value instead of getting the
+type's zero value. When you do this, you can either state the type
+explicitly or let _Ego_ infer it from the value you supply.
+
+```go
+var age int = 25       // explicit type
+var pi = 3.14          // type inferred from the value (float64)
+```
+
+Both statements create a single variable and set it to the given value. The
+second form, where the type name is omitted, works exactly like the short
+variable declaration `pi := 3.14` — the new variable's type becomes whatever
+type the initializer expression evaluates to. This is convenient when the
+type is obvious from the value, or when writing the type out would just
+repeat what the value already makes clear. Because there is no explicit type
+in this form, a composite literal used as the initializer must name its own
+type, the same way it would need to on the right side of `:=`:
+
+```go
+var e2 = Employee{Name: "Bob", Age: 55}   // Employee names its own type
+```
+
+If more than one name shares a single initializer, for example
+`var a, b = 42`, every name is set to a copy of that one value (both `a` and
+`b` become `42`) rather than requiring one value per name.
+
+#### Grouped `var` declarations
+
+Multiple `var` declarations can be grouped together inside parentheses,
+avoiding the need to repeat the `var` keyword on every line:
+
+```go
+var (
+    greeting = "hi"          // type inferred (string)
+    count    int             // zero value (0)
+    rate     float64 = 1.5   // explicit type with initial value
+)
+```
+
+Each line inside the parentheses is a complete, independent declaration and
+may use any of the forms described above — a bare type, a type with an
+initializer, or an inferred type with no type token at all. This mirrors how
+`const (...)` groups multiple constant declarations together (see
+[Constants](#const) below).
+
 ### Constants <a name="const"></a>
 
 The `const` statement can define constant values in the current scope.
