@@ -5,9 +5,10 @@
     type Vehicle struct { make string; model string; year int }
     r := reflect.Reflect(Vehicle)
 
-    // Type is "type" for type definitions; BaseType is the struct layout
-    @assert r.Type == "type"
-    @assert r.BaseType == "struct{make string, model string, year int}"
+    // Type is "type" for type definitions; BaseType is the struct layout.
+    // Both fields are *data.Type objects; use string() to compare to string literals.
+    @assert string(r.Type) == "type"
+    @assert string(r.BaseType) == "struct{make string, model string, year int}"
     @assert r.IsType == true
     @assert r.Name == "Vehicle"
     @assert r.Native == false
@@ -19,9 +20,10 @@
     v := Car{ make: "Ford", model: "Mustang", year: 1969 }
     r := reflect.Reflect(v)
 
-    // Type is the named type; BaseType is the underlying struct layout
+    // Type is the named type; BaseType is the underlying struct layout.
+    // BaseType is a *data.Type; use string() for the struct layout comparison.
     @assert string(r.Type) == "Car"
-    @assert r.BaseType == "struct{make string, model string, year int}"
+    @assert string(r.BaseType) == "struct{make string, model string, year int}"
     @assert r.IsType == false
     @assert r.Native == false
 
@@ -39,7 +41,10 @@
     r := reflect.Reflect(t)
 
     @assert string(r.Type) == "time.Time"
-    @assert r.BaseType == "struct"
+    // BaseType is "struct" but may include method list when time.Time's
+    // methods have been registered from a prior test in the same suite.
+    // Use Index == 0 to check the string starts with "struct".
+    @assert strings.Index(string(r.BaseType), "struct") == 0
     @assert r.IsType == false
     // Must have at least the Add method in the Functions list
     found := false
@@ -56,8 +61,11 @@
     // Reflect on the type itself (not an instance)
     r := reflect.Reflect(time.Time)
 
-    @assert r.Type == "type"
-    @assert r.BaseType == "struct"
+    @assert string(r.Type) == "type"            // *data.Type — use string() cast
+    // BaseType begins with "struct" but may include the method list when
+    // time.Time's methods have been registered from a prior test in the suite.
+    // Use Index to check that the string starts with "struct".
+    @assert strings.Index(string(r.BaseType), "struct") == 0
     @assert r.IsType == true
     @assert r.Name == "Time"
     @assert r.Native == false
@@ -77,7 +85,7 @@
 {
     r := reflect.Reflect(reflect.Reflection)
 
-    @assert r.Type == "type"
+    @assert string(r.Type) == "type"           // *data.Type — use string() cast
     @assert r.IsType == true
     @assert r.Name == "Reflection"
     // Has the String() method

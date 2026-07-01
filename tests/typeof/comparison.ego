@@ -1,0 +1,94 @@
+// Tests for BUG-13 fix: == and != between typeof() and type constants.
+//
+// Before the fix, typeof(n) == "int" returned true via a "cheat" in equalTypes()
+// that compared actual.String() to the string v2. This was removed; comparisons
+// against type constants (typeof(n) == int) are the correct form.
+
+@test "typeof: type == matching type constant"
+{
+    n := 42
+    @assert typeof(n) == int
+}
+
+@test "typeof: type == non-matching type constant"
+{
+    n := 42
+    @assert !(typeof(n) == string)
+}
+
+@test "typeof: type != non-matching type constant"
+{
+    n := 42
+    @assert typeof(n) != string
+}
+
+@test "typeof: type != matching type constant is false"
+{
+    n := 42
+    @assert !(typeof(n) != int)
+}
+
+@test "typeof: type == string literal is false (BUG-13 cheat removed)"
+{
+    // Before BUG-13 fix: typeof(n) == "int" was true via the cheat.
+    // After fix: a type is never equal to a string literal.
+    n := 42
+    @assert !(typeof(n) == "int")
+}
+
+@test "typeof: type != string literal is true (BUG-13 cheat removed)"
+{
+    n := 42
+    @assert typeof(n) != "int"
+}
+
+@test "typeof: switch on typeof with type-constant case"
+{
+    n := 42
+    matched := false
+    switch typeof(n) {
+    case int:
+        matched = true
+    case string:
+        matched = false
+    }
+    @assert matched
+}
+
+@test "typeof: switch on typeof - string case does not match (BUG-13 fix)"
+{
+    // Before the fix, a switch on typeof(n) with case "int" would error with
+    // "invalid integer value: int" because the compiler pushes the case value
+    // first and the type coercion path tried to convert "int" to an integer.
+    // After the fix, the case simply does not match (type != string).
+    n := 42
+    matched := false
+    switch typeof(n) {
+    case "int":
+        matched = true
+    }
+    @assert !matched
+}
+
+@test "typeof: float64 type constant comparison"
+{
+    f := 3.14
+    @assert typeof(f) == float64
+    @assert typeof(f) != int
+    @assert !(typeof(f) == "float64")
+}
+
+@test "typeof: bool type constant comparison"
+{
+    b := true
+    @assert typeof(b) == bool
+    @assert typeof(b) != int
+}
+
+@test "typeof: string type constant comparison"
+{
+    s := "hello"
+    @assert typeof(s) == string
+    @assert typeof(s) != int
+    @assert !(typeof(s) == "string")
+}

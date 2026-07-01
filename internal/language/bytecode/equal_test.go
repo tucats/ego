@@ -29,10 +29,11 @@ package bytecode
 //
 // # Fixes verified here
 //
-//	EQUAL-1  equalTypes now wraps ErrNotAType in c.runtimeError, so the
-//	         error carries module-name and source-line annotation.
-//	         Verified by: Test_equalTypes_TypeVsNonType,
-//	                      Test_equalTypes_TypeVsNonType_ErrorIsDecorated
+//	EQUAL-1  equalTypes previously returned errors.ErrNotAType without going
+//	         through c.runtimeError when v2 was not a type or string.  The
+//	         fix added c.runtimeError decoration.  EQUAL-4 (BUG-13) later
+//	         superseded this by changing the non-type path to push false
+//	         instead of erroring, so the decoration question became moot.
 //
 //	EQUAL-2  getComparisonTerms now wraps any data.Coerce error in
 //	         c.runtimeError.  The coerce path is exercised by the
@@ -46,6 +47,16 @@ package bytecode
 //	         the switch handle every nil scenario before the switch runs.
 //	         Verified by: Test_equalByteCode_NilNilHandledByGuard,
 //	                      Test_equalByteCode_NilOneNilHandledByGuard
+//
+//	EQUAL-4  (BUG-13 fix) The type-vs-string cheat in equalTypes is removed.
+//	         typeof(n)=="int" now returns false; use typeof(n)==int instead.
+//	         A symmetric guard in equalByteCode handles the switch-case
+//	         ordering where the type is on the right (v2 = *data.Type).
+//	         Verified by: Test_equalTypes_TypeVsMatchingString,
+//	                      Test_equalTypes_TypeVsNonType,
+//	                      Test_equalTypes_TypeOnRight_StringLeft,
+//	                      Test_equalTypes_TypeOnRight_TypeLeft,
+//	                      Test_equalTypes_TypeOnRight_IntLeft
 
 import (
 	"testing"
@@ -56,18 +67,24 @@ import (
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 1 — equalTypes
+// Section 1 — equalTypes and *data.Type handling (EQUAL-4 / BUG-13 fix)
 //
 // equalTypes is an internal helper called when the left-hand operand (v1) is
-// a *data.Type value.  It compares v1 against either another *data.Type or a
-// plain string that names a type, pushing a bool result onto the stack.
+// a *data.Type value.  It compares v1 against another *data.Type only; all
+// other v2 types now push false (BUG-13 / EQUAL-4 fix).
 //
-// Code path: equalByteCode → case *data.Type → equalTypes(v2, c, actual)
+// Code paths:
+//   type on left  → equalByteCode → case *data.Type → equalTypes(v2, c, actual)
+//   type on right → equalByteCode → EQUAL-4 guard → equalTypes(v1, c, t2)
+//                   (covers switch-case ordering where the compiler pushes the
+//                    case value before loading the switch expression)
 //
 // The second operand (v2) may be:
 //   (a) another *data.Type  — compare by String() representation
-//   (b) a string            — compare against actual.String()
-//   (c) anything else       — return a decorated ErrNotAType (EQUAL-1 fix)
+//   (b) anything else       — push false (a type is never equal to a non-type)
+//
+// Before EQUAL-4, equalTypes also accepted a string v2 and compared it to
+// actual.String(), so typeof(n)=="int" returned true.  That cheat is removed.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Test_equalTypes_SameTypes verifies that two *data.Type values that represent
@@ -95,23 +112,29 @@ func Test_equalTypes_DifferentTypes(t *testing.T) {
 	tc.assertTopStack(false)
 }
 
-// Test_equalTypes_TypeVsMatchingString verifies that a *data.Type compares as
-// equal to the string that is its canonical name.
+// Test_equalTypes_TypeVsMatchingString verifies that a *data.Type compared
+// against a string that spells out its canonical name now returns FALSE.
 //
-// This exercises the `if v, ok := v2.(string)` branch of equalTypes.  Ego
-// code can write `typeof(x) == "int"`, which produces this case.
+// EQUAL-4 (BUG-13 fix): before this fix, typeof(x) == "int" returned true via
+// a legacy cheat in equalTypes.  Now that Ego has a first-class type system,
+// a type value is only equal to another type value — never to a string.
 func Test_equalTypes_TypeVsMatchingString(t *testing.T) {
 	// v1 = *data.Type for int, v2 = the string "int".
 	tc := newTestContext(t).withStack(data.IntType, "int")
 
 	tc.assertNoError(equalByteCode(tc.ctx, nil))
 
-	// data.IntType.String() returns "int", which matches the literal string.
-	tc.assertTopStack(true)
+	// BUG-13 fix: must now return false, not true.  Use the type constant
+	// directly: typeof(n) == int.
+	tc.assertTopStack(false)
 }
 
-// Test_equalTypes_TypeVsNonMatchingString verifies that a *data.Type does not
-// compare as equal to a string that names a different type.
+// Test_equalTypes_TypeVsNonMatchingString verifies that a *data.Type compared
+// against a string naming a different type returns false.
+//
+// This was already false before BUG-13 was fixed; the path changes (previously
+// it went through the string branch in equalTypes, now it hits the non-type
+// fallback) but the result is the same.
 func Test_equalTypes_TypeVsNonMatchingString(t *testing.T) {
 	// data.IntType.String() = "int", which differs from "float64".
 	tc := newTestContext(t).withStack(data.IntType, "float64")
@@ -121,58 +144,60 @@ func Test_equalTypes_TypeVsNonMatchingString(t *testing.T) {
 }
 
 // Test_equalTypes_TypeVsNonType verifies that comparing a *data.Type against a
-// value that is neither a string nor a *data.Type returns ErrNotAType.
+// non-type, non-string value returns FALSE (not an error).
 //
-// EQUAL-1 fix: before the fix, this error was returned directly from
-// equalTypes without going through c.runtimeError, so it carried no module or
-// line information.  After the fix, c.runtimeError decorates the error.
+// EQUAL-4 (BUG-13 fix): before this fix, the comparison returned ErrNotAType.
+// After the fix, a type is simply never equal to a non-type — the comparison
+// returns false rather than raising a runtime error, consistent with Go's
+// semantics for == between incomparable types.
 func Test_equalTypes_TypeVsNonType(t *testing.T) {
 	// v1 = *data.Type, v2 = 42 — not a type and not a string.
 	tc := newTestContext(t).withStack(data.IntType, 42)
 
-	// equalTypes must return ErrNotAType for an unrecognized v2.
-	tc.assertError(equalByteCode(tc.ctx, nil), errors.ErrNotAType)
+	// Must now return false without error.
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
 }
 
-// Test_equalTypes_TypeVsNonType_ErrorIsDecorated verifies the EQUAL-1 fix:
-// the error returned when v2 is not a type or string must now be an
-// *errors.Error decorated with module-name information.
+// Test_equalTypes_TypeOnRight_StringLeft verifies the EQUAL-4 guard for the
+// reverse operand order produced by switch-case compilation.
 //
-// Before EQUAL-1 was fixed, the code returned errors.ErrNotAType.Context(v2)
-// directly.  That produced a valid *errors.Error but one whose HasIn() flag
-// was false, because the raw Context() call does not invoke c.runtimeError.
-// After the fix, c.runtimeError wraps the error with the current module name,
-// so HasIn() becomes true whenever the context has a non-empty module name.
-func Test_equalTypes_TypeVsNonType_ErrorIsDecorated(t *testing.T) {
-	tc := newTestContext(t)
+// When the compiler emits code for `switch typeof(n) { case "int": ... }`, it
+// pushes the case value ("int") first, then loads the switch expression (typeof(n)).
+// getComparisonTerms thus produces v1="int" (string) and v2=*data.Type.
+// Before EQUAL-4 this path fell through to genericEqualCompare → Normalize →
+// Coerce("int", intTypeInstance) → coerceToInt("int") → error
+// "invalid integer value: int".  After the fix, the early guard in
+// equalByteCode pushes false without reaching genericEqualCompare.
+func Test_equalTypes_TypeOnRight_StringLeft(t *testing.T) {
+	// Stack: v1="int" (bottom), v2=data.IntType (top).
+	// This is the switch-case direction.
+	tc := newTestContext(t).withStack("int", data.IntType)
 
-	// Give the context a recognizable module name so we can tell whether
-	// runtimeError attached it to the error.
-	tc.ctx.module = "test_module.ego"
-	tc.ctx.line = 7
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	// A string is never equal to a type.
+	tc.assertTopStack(false)
+}
 
-	// Push v1 = *data.Type, v2 = 99 (an integer — triggers ErrNotAType).
-	tc.withStack(data.IntType, 99)
+// Test_equalTypes_TypeOnRight_TypeLeft verifies that type == type still works
+// correctly when the type is the right-hand operand (EQUAL-4 path).
+func Test_equalTypes_TypeOnRight_TypeLeft(t *testing.T) {
+	// Both int types, but placed so data.IntType is on the right (top of stack).
+	tc := newTestContext(t).withStack(data.IntType, data.IntType)
 
-	err := equalByteCode(tc.ctx, nil)
-	if err == nil {
-		t.Fatal("expected ErrNotAType, got nil")
-	}
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
 
-	// The error must be the concrete *errors.Error type returned by
-	// c.runtimeError.  The raw sentinel is also *errors.Error, but only the
-	// runtimeError-decorated version sets HasIn() to true.
-	egErr, ok := err.(*errors.Error)
-	if !ok {
-		t.Fatalf("expected *errors.Error, got %T", err)
-	}
+// Test_equalTypes_TypeOnRight_IntLeft verifies the EQUAL-4 guard for an integer
+// left-hand operand, confirming no error from genericEqualCompare's Normalize path.
+func Test_equalTypes_TypeOnRight_IntLeft(t *testing.T) {
+	// v1 = 42 (int), v2 = *data.Type (top).  Before EQUAL-4 this would also
+	// trigger the Coerce path, producing an "invalid integer value" error.
+	tc := newTestContext(t).withStack(42, data.IntType)
 
-	// HasIn() is true only when c.runtimeError called e.In(moduleName).
-	// This is the observable difference that confirms the EQUAL-1 fix is in
-	// effect.
-	if !egErr.HasIn() {
-		t.Error("EQUAL-1: error should carry module info (HasIn() == true) after fix")
-	}
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

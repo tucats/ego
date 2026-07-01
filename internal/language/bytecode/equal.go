@@ -26,6 +26,15 @@ import (
 // These two guards also mean that by the time the type switch executes, v1
 // is guaranteed to be non-nil.  There is therefore no `case nil:` branch in
 // the switch — such a branch would be unreachable dead code (EQUAL-3).
+//
+// EQUAL-4 (BUG-13 fix): *data.Type values are only equal to other *data.Type
+// values.  Before this fix, equalTypes() also accepted a string on the right-
+// hand side and compared it against the canonical type name, so typeof(n)=="int"
+// returned true.  This "cheat" predates the Ego type system and is now removed.
+// The type switch below now also handles the reverse ordering (type on v2, non-
+// type on v1) which previously fell through to genericEqualCompare and produced
+// a confusing "invalid integer value" error (seen in switch-case bodies where
+// the compiler pushes the case value before loading the switch expression).
 func equalByteCode(c *Context, i any) error {
 	// Get the two terms to compare. These are found either in the operand as an
 	// array of values or on the stack.
@@ -43,6 +52,25 @@ func equalByteCode(c *Context, i any) error {
 	// guaranteed to be non-nil for the rest of the function.
 	if data.IsNil(v1) || data.IsNil(v2) {
 		return c.push(false)
+	}
+
+	// EQUAL-4: If v2 is a *data.Type and v1 is not, treat it symmetrically with
+	// the case *data.Type branch below.  This covers the switch-case direction
+	// where the compiler pushes the case expression (e.g. the bare type name
+	// "int" or the type identifier int) before loading the switch expression
+	// (typeof(n)), meaning v2 carries the type and v1 carries the case value.
+	// Without this guard, control would fall to genericEqualCompare → Normalize,
+	// which tries to Coerce the case value to the type's instance kind and can
+	// produce "invalid integer value: int" for string case values.
+	if t2, ok := v2.(*data.Type); ok {
+		if _, v1IsType := v1.(*data.Type); !v1IsType {
+			// v1 is not a type; a type is never equal to a non-type value.
+			return c.push(false)
+		}
+
+		// Both are types: delegate to equalTypes with the roles canonicalized
+		// so actual (v1) is always the left-hand type.
+		return equalTypes(v1, c, t2)
 	}
 
 	var result bool
@@ -164,32 +192,33 @@ func genericEqualCompare(c *Context, v1 any, v2 any) error {
 	return c.push(result)
 }
 
-// equalTypes compares a *data.Type (v1) against either another *data.Type or a
-// string that names a type, pushing a boolean result onto the stack.
+// equalTypes compares two *data.Type values, pushing a boolean result onto the
+// stack.
 //
 // Deep-equal cannot be used on type objects because their internal pointers
 // differ even when the types are semantically identical.  String comparison of
 // the canonical type name is used instead.
 //
-// v2 may be:
-//   - a string      → compare against actual.String()
-//   - a *data.Type  → compare actual.String() against v.String()
-//   - anything else → return ErrNotAType via c.runtimeError (EQUAL-1 fix)
+// v2 must be a *data.Type.  Any other value causes the function to push false,
+// because a type value is never equal to a non-type value.
 //
-// EQUAL-1: The original code returned errors.ErrNotAType.Context(v2) directly,
-// bypassing c.runtimeError.  That left the error without the module name or
-// source-line annotation that every other runtime error in this package carries.
-// Fixed: use c.runtimeError so the error is consistently decorated.
+// EQUAL-1: The original code returned errors.ErrNotAType.Context(v2) directly
+// for non-type v2, bypassing c.runtimeError.  The error decoration is now moot
+// because non-type v2 is handled by pushing false (see EQUAL-4 below).
+//
+// EQUAL-4 (BUG-13 fix): The original code also accepted a string v2 and
+// compared it to actual.String(), so typeof(n)=="int" returned true.  This
+// "cheat" predated the Ego type system.  It is now removed: a type value is
+// only equal to another type value with the same canonical name.  Use the type
+// identifier directly — typeof(n) == int — rather than a string literal.
 func equalTypes(v2 any, c *Context, actual *data.Type) error {
-	if v, ok := v2.(string); ok {
-		return c.push(actual.String() == v)
-	} else if v, ok := v2.(*data.Type); ok {
+	if v, ok := v2.(*data.Type); ok {
 		return c.push(actual.String() == v.String())
 	}
 
-	// v2 is not a type descriptor or a type-name string.  Return an error
-	// decorated with the current module/line so callers can locate the fault.
-	return c.runtimeError(errors.ErrNotAType, v2)
+	// v2 is not a *data.Type.  A type is never equal to a non-type value,
+	// including strings that happen to spell out the type name.
+	return c.push(false)
 }
 
 // getComparisonTerms reads the two operands for any comparison instruction.

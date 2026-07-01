@@ -20,6 +20,13 @@ import (
 // and a type-specific test for equality is done.
 // If the values are not equal, then true is pushed
 // back on the stack, else false.
+//
+// COMPARE-4 (BUG-13 fix): *data.Type values must be handled explicitly here
+// to match the equalByteCode behaviour. Without dedicated cases, a type value
+// on either side would fall through to the default branch → Normalize →
+// Coerce, producing "invalid integer value: int" for string operands.  The
+// same EQUAL-4 logic is mirrored: type != type compares canonical names;
+// type != non-type is always true (they can never be equal).
 func notEqualByteCode(c *Context, i any) error {
 	var err error
 	// Get the two terms to compare. These are found either in the operand as an
@@ -33,6 +40,19 @@ func notEqualByteCode(c *Context, i any) error {
 	if !data.IsNil(v1) && data.IsNil(v2) ||
 		data.IsNil(v1) && !data.IsNil(v2) {
 		return c.push(true)
+	}
+
+	// COMPARE-4: Handle the case where v2 is a *data.Type and v1 is not (the
+	// switch-case direction where the compiler emits the case value first).  A
+	// non-type value is never equal to a type value, so != is always true.
+	if t2, ok := v2.(*data.Type); ok {
+		if t1, v1IsType := v1.(*data.Type); !v1IsType {
+			// v1 is not a type; types and non-types are always unequal.
+			return c.push(true)
+		} else {
+			// Both are types: compare canonical names.
+			return c.push(t1.String() != t2.String())
+		}
 	}
 
 	var result bool
@@ -54,6 +74,15 @@ func notEqualByteCode(c *Context, i any) error {
 
 	case nil:
 		result = (v2 != nil)
+
+	// COMPARE-4: A type value is only equal to another type with the same
+	// canonical name; it is unequal to all non-type values.
+	case *data.Type:
+		if other, ok := v2.(*data.Type); ok {
+			result = actual.String() != other.String()
+		} else {
+			result = true
+		}
 
 	case *errors.Error:
 		result = !actual.Equal(v2)

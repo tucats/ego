@@ -38,7 +38,7 @@ a severity classification.
 | BUG-10 | MEDIUM ✓ | `json.Unmarshal(b)` single-argument form rejected |
 | BUG-11 | MEDIUM ✓ | `fmt.Printf()` two-value return `n, err := fmt.Printf(...)` fails |
 | BUG-12 | MEDIUM ✓ | Writing to a nil map succeeds; should error |
-| BUG-13 | MEDIUM | `typeof()` result incompatible with `switch` case matching |
+| BUG-13 | MEDIUM ✓ | `typeof()` result incompatible with `switch` case matching |
 | BUG-14 | MEDIUM ✓ | Typed array element type not enforced in dynamic mode |
 | BUG-15 | MEDIUM | `append()` to typed array silently accepts wrong-type elements |
 | BUG-16 | MEDIUM | `defer namedFunc(arg)` evaluates args lazily (cross-ref: FLOW-M4) |
@@ -48,7 +48,7 @@ a severity classification.
 | BUG-20 | LOW | `iota` not supported in `const` blocks |
 | BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
 | BUG-22 | MEDIUM | `make(map[K]V)` errors with "incorrect function argument count" |
-| BUG-23 | MEDIUM | `var` declarations of struct types share a single compile-time instance across calls |
+| BUG-23 | MEDIUM ✓ | `var` declarations of struct types share a single compile-time instance across calls |
 
 ---
 
@@ -1052,51 +1052,55 @@ func main() {
 
 ### BUG-13 — `typeof()` result incompatible with `switch` case matching
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  
+**Status:** Fixed (EQUAL-4 / COMPARE-4)
 
 **Description:**  
-`typeof(v)` returns a type object (not a string). While `typeof(v) == "int"` works
-because of coercion in equality comparison, using `typeof(v)` as the switch
-expression with string case values fails with `"invalid integer value: int"`.
+`typeof(v)` returns a type object (`*data.Type`). A "cheat" in `equalByteCode` allowed
+`typeof(v) == "int"` to return `true` by comparing `actual.String()` to the string literal
+via `equalTypes()`. This predated the Ego type system and created an inconsistency: `==`
+coerced the type to a string, but `switch` case matching did not — it tried to coerce
+`"int"` (the case value) to an integer, failing with `"invalid integer value: int"`.
 
-**Reproducer:**
+**Root cause:**  
+`equalTypes()` in `internal/language/bytecode/equal.go` accepted a `string` v2 argument and
+compared `actual.String() == v`, enabling type-to-string equality. The compiler pushes the
+case value first and loads the switch expression second, so in a `switch typeof(n)` with
+`case "int":`, v1 = `"int"` (string) and v2 = `*data.Type`. This reversed order went to
+`genericEqualCompare` → `Normalize` → `Coerce`, which tried to coerce `"int"` into an
+integer — producing the error.
 
-```go
-import "fmt"
+**Fix:**  
+Removed the string branch from `equalTypes()`. A `*data.Type` is now only equal to another
+`*data.Type` with the same canonical name (`actual.String() == v.String()`), and unequal to
+all non-type values. Added a symmetric guard in both `equalByteCode` and `notEqualByteCode`
+to handle the case where v2 is a `*data.Type` and v1 is not (the switch-case ordering).
 
-func main() {
-    n := 42
-    t := typeof(n)          // returns type object, displays as "int"
-    fmt.Println(t == "int") // true — coercion works in ==
+**Behavior after fix:**
 
-    switch t {
-    case "int":             // ERROR: invalid integer value: int
-        fmt.Println("it's int")
-    }
-}
-```
+- `typeof(n) == int` → `true` (type constant comparison — correct)
+- `typeof(n) == "int"` → `false` (type is never equal to a string literal)
+- `typeof(n) != "int"` → `true`
+- `switch typeof(n) { case int: ... }` → matches correctly
+- `switch typeof(n) { case "int": ... }` → does not match (no error)
 
-**Actual output:**
+**Callers updated:**  
+Test files that compared `reflect.Reflect(v).BaseType == "typename"` (a `*data.Type` field
+compared to a string literal via the cheat) were updated to either use a type constant
+(`== int`, `== float32`, etc.) or a string cast (`string(r.BaseType) == "struct{...}"`).
 
-```text
-true
-Error: invalid integer value: int
-```
+**Files changed:**
 
-**Expected output:**
-
-```text
-true
-it's int
-```
-
-**Workaround:**  
-Convert to string before switching: `switch string(typeof(n)) { case "int": ... }`
-
-**Notes:**  
-The inconsistency — `==` coerces `typeof()` result to string, but `switch` does
-not — is what makes this a bug. Either the `==` coercion should be removed (making
-`typeof(n) == "int"` also fail), or `switch` should apply the same coercion.
+- `internal/language/bytecode/equal.go` — removed string branch from `equalTypes()`,
+  added EQUAL-4 guard for type-on-right ordering
+- `internal/language/bytecode/notEqual.go` — added COMPARE-4 guard and `case *data.Type:`
+- `internal/language/bytecode/equal_test.go` — updated tests for new behavior
+- `tests/json/unmarshal.ego` — `reflect.Type(arr[0]) == "map[...]"` → string cast
+- `tests/reflect/reflect_scalars.ego` — `.BaseType == "typename"` → type constants
+- `tests/reflect/reflect_structs.ego` — `.BaseType == "struct"` → `string()` cast or `Index`
+- `tests/reflect/reflect_packages.ego` — `.BaseType == "struct"` → `string()` cast or `Index`
+- `tests/datamodel/float32.ego` — `.BaseType == "float32"` → `== float32` type constant
+- `tests/typeof/comparison.ego` — new tests verifying the corrected behavior
 
 ---
 
@@ -1565,6 +1569,12 @@ cannot be mutated, so the shared pointer is harmless) or arrays declared with `v
 The fix requires the compiler or the `SymbolCreate`/`CreateAndStore` opcode to call
 `data.DeepCopy` on the embedded constant before storing it, so each function call
 receives a fresh copy rather than the shared compile-time instance.
+
+***Resolution:***
+The fundamental issue was that the `var` statement was using the common "zero-value"
+for the type, but was using the same one for any `var` value for that type. The
+correct fix is to modify the `var` compilation to call the internal `$new()`
+function at runtime which generates a unique instance of the item.
 
 ---
 

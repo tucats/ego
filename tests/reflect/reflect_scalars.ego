@@ -7,9 +7,11 @@
 {
     r := reflect.Reflect(42)
 
-    // For scalars, Type and BaseType both report the scalar type name
+    // For scalars, Type and BaseType both report the scalar type name.
+    // Type and BaseType are *data.Type objects; compare against the type
+    // constant (not a string literal) — BUG-13 fix removed the type-string cheat.
     @assert string(r.Type) == "int"
-    @assert r.BaseType == "int"
+    @assert r.BaseType == int
 
     // Size is the byte size of the type
     @assert r.Size == 8
@@ -21,15 +23,15 @@
 @test "reflect: Reflect() on other scalar types"
 {
     @assert string(reflect.Reflect("hello").Type) == "string"
-    @assert reflect.Reflect("hello").BaseType == "string"
+    @assert reflect.Reflect("hello").BaseType == string   // type constant, not string literal
     // String size is the number of bytes (5 chars + 16-byte header = 21 typically)
     @assert reflect.Reflect("hello").Size > 0
 
     @assert string(reflect.Reflect(true).Type) == "bool"
-    @assert reflect.Reflect(true).BaseType == "bool"
+    @assert reflect.Reflect(true).BaseType == bool        // type constant
 
     @assert string(reflect.Reflect(3.14).Type) == "float64"
-    @assert reflect.Reflect(3.14).BaseType == "float64"
+    @assert reflect.Reflect(3.14).BaseType == float64     // type constant
 
     @assert string(reflect.Reflect(int32(5)).Type) == "int32"
     @assert string(reflect.Reflect(int64(5)).Type) == "int64"
@@ -76,8 +78,8 @@
     r := reflect.Reflect(m)
 
     @assert string(r.Type) == "map[string]int"
-    // BaseType for a map is the element type
-    @assert r.BaseType == "int"
+    // BaseType for a map is the element type (*data.Type), compare by type constant.
+    @assert r.BaseType == int
 }
 
 @test "reflect: Reflect() on a nil value"
@@ -85,6 +87,7 @@
     var n interface{}
     r := reflect.Reflect(n)
 
+    // "interface{}" has no Ego type constant; cast to string to compare.
     @assert string(r.Type) == "interface{}"
-    @assert r.BaseType == "interface{}"
+    @assert string(r.BaseType) == "interface{}"
 }

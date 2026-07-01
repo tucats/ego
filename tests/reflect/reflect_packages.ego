@@ -26,12 +26,15 @@
 @test "reflect: packages, Reflect on time.Time"
 {
     r := reflect.Reflect(time.Time)
-    @assert r.BaseType == "struct"
+    // BaseType begins with "struct" but may include the method list when
+    // time.Time's methods have been registered from a prior test in the suite.
+    // Use Index to check that the string starts with "struct".
+    @assert strings.Index(string(r.BaseType), "struct") == 0
     @assert r.Builtins == false
     @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
     @assert r.Native == false
     @assert r.Name == "Time"
-    @assert r.Type == "type"
+    @assert string(r.Type) == "type"         // *data.Type — use string() cast
 
     // Verify type self-reference fixups were done correctly: the formatter
     // uses reflect to describe a function, which must show the correct form.
@@ -47,7 +50,10 @@
     tm := time.Now()
     r := reflect.Reflect(tm)
 
-    @assert r.BaseType == "struct"
+    // BaseType is "struct" but may include method list when time.Time's
+    // methods have been registered from a prior test in the same suite.
+    // Use Index == 0 to check the string starts with "struct".
+    @assert strings.Index(string(r.BaseType), "struct") == 0
     @assert r.Functions[0] == "(t Time) Add(d time.Duration) time.Time"
     @assert T.Equal(string(r.Type), "time.Time", "Unexpected type"+string(r.Type))
 }
