@@ -592,6 +592,54 @@ if it finds it, the value "Mary" is assigned to it. If the variable
 does not exist at this scope, but does in an outer scope level, then
 the variable at the outer scope is updated.
 
+#### Parallel Assignment <a name="parallel-assignment"></a>
+
+_Ego_ also supports Go-style _parallel assignment_, where more than one
+variable is assigned in a single statement using a comma-separated list of
+targets on the left and a matching comma-separated list of values on the
+right. Both `=` and `:=` are supported:
+
+```go
+var a, b, c int
+
+a, b, c = 10, 20, 30
+x, y, z := 1, 2, 3
+```
+
+All of the values on the right are evaluated first, in the order written,
+before any of the assignments happen. This makes parallel assignment a
+convenient way to swap values without a temporary variable:
+
+```go
+a, b := 1, 2
+a, b = b, a       // a is now 2, b is now 1
+```
+
+The number of values on the right must exactly match the number of targets
+on the left; a mismatched count is a compile-time error. As with any
+assignment, the blank identifier `_` can be used for a target whose value
+you don't need:
+
+```go
+a, _, c := 1, 2, 3   // the middle value, 2, is discarded
+```
+
+Parallel assignment also covers two multi-value forms that already existed
+in _Ego_: capturing every value returned by a function that returns more
+than one value, and the two-value form of a channel receive. In both cases
+the right side is a single expression (not a comma-separated list) that
+itself produces multiple values:
+
+```go
+func minMax(values []int) (int, int) {
+    // ...
+    return low, high
+}
+
+lo, hi := minMax(data)     // multi-value function return
+v, ok := <-ch              // two-value channel receive
+```
+
 Note that _Ego_ allows a shortcut for a specific assignment statement
 that adds or subtracts the constant `1` from a value. For example,
 
@@ -700,6 +748,20 @@ var e2 = Employee{Name: "Bob", Age: 55}   // Employee names its own type
 If more than one name shares a single initializer, for example
 `var a, b = 42`, every name is set to a copy of that one value (both `a` and
 `b` become `42`) rather than requiring one value per name.
+
+Alternatively, a `var` declaration can supply a comma-separated list of
+initializers, one value per name, exactly like [parallel
+assignment](#parallel-assignment):
+
+```go
+var a, b, c = 10, "hello", true   // type inferred separately for each name
+var x, y, z int = 1, 2, 3         // explicit shared type, one value each
+```
+
+Here each name gets its own value — and, for the type-inferred form, its own
+independent type — rather than every name sharing a single duplicated value.
+As with parallel assignment, the number of initializer values must exactly
+match the number of names; a mismatched count is a compile-time error.
 
 #### Grouped `var` declarations
 

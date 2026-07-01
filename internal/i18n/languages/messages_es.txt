@@ -178,6 +178,7 @@ assert.testing=fallo de prueba @assert
 asset=no existe tal recurso
 asset.range.header=Encabezado de rango inválido: {{header}}
 assignment=falta '=' o ':='
+assignment.count=discrepancia de asignación
 auth.type=tipo de autenticación no válido
 auth.db.sqlite.permissions=La base de datos de credenciales SQLite3 tiene permisos de archivo inseguros
 auth.file.permissions=el archivo de base de datos de credenciales tiene permisos inseguros

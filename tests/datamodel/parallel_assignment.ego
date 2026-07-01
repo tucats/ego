@@ -1,0 +1,246 @@
+// Tests for Go-style parallel (multi-value) assignment support:
+//
+//   a, b, c = 10, 20, 30
+//   a, b, c := 10, 20, 30
+//   var a, b, c int = 10, 20, 30
+//   var a, b, c = 10, "hello", true
+//
+// See internal/language/compiler/assignment.go (compileParallelAssignment)
+// and internal/language/compiler/var.go (varInitializerList and the
+// varInferredInitializer list branch) for the implementation.
+//
+// Known limitation: a target list containing an indexed or member lvalue
+// (e.g. "m[k], arr[i] = ...") is not supported -- see BUG-24 in
+// docs/issues/BUGS.md. All targets exercised here are simple names.
+
+@test "datamodel: parallel assignment with = and pre-declared variables"
+{
+    var a, b, c int
+    a, b, c = 10, 20, 30
+
+    @assert a == 10
+    @assert b == 20
+    @assert c == 30
+}
+
+@test "datamodel: parallel assignment with :="
+{
+    x, y, z := 1, 2, 3
+
+    @assert x == 1
+    @assert y == 2
+    @assert z == 3
+}
+
+@test "datamodel: parallel assignment two-value swap"
+{
+    a := 1
+    b := 2
+
+    a, b = b, a
+
+    @assert a == 2
+    @assert b == 1
+}
+
+@test "datamodel: parallel assignment three-value rotation"
+{
+    a := 1
+    b := 2
+    c := 3
+
+    a, b, c = c, a, b
+
+    @assert a == 3
+    @assert b == 1
+    @assert c == 2
+}
+
+@test "datamodel: parallel assignment RHS can be arbitrary expressions"
+{
+    x := 10
+    y := 20
+
+    a, b := x + 1, y * 2
+
+    @assert a == 11
+    @assert b == 40
+}
+
+@test "datamodel: parallel assignment with blank identifier target"
+{
+    a, _, c := 1, 2, 3
+
+    @assert a == 1
+    @assert c == 3
+}
+
+@test "datamodel: parallel assignment re-uses already-declared variables with ="
+{
+    var a int
+    var b int
+
+    a, b = 5, 6
+    @assert a == 5
+    @assert b == 6
+
+    // Re-assign again to confirm this isn't a one-shot SymbolCreate.
+    a, b = 7, 8
+    @assert a == 7
+    @assert b == 8
+}
+
+@test "datamodel: multi-return call assignment still works"
+{
+    // Regression guard: the single-expression path (a call that itself
+    // produces multiple values) must be unaffected by the new
+    // comma-separated-RHS-list path.
+    func pair() (int, int) {
+        return 55, 66
+    }
+
+    a, b := pair()
+    @assert a == 55
+    @assert b == 66
+}
+
+@test "datamodel: two-value channel receive still works"
+{
+    // Regression guard: v, ok := <-ch uses the same multi-target lvalue
+    // machinery and must still work after adding RHS expression lists.
+    ch := make(chan, 1)
+    ch <- 42
+    close(ch)
+
+    v, ok := <-ch
+    @assert v == 42
+    @assert ok == true
+}
+
+@test "datamodel: parallel assignment errors on too many RHS values"
+{
+    var failed bool
+
+    @compile block {
+        var a, b int
+        a, b = 1, 2, 3
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "assignment.count"
+    }
+
+    @assert failed == true
+}
+
+@test "datamodel: parallel assignment errors on too few RHS values"
+{
+    var failed bool
+
+    @compile block {
+        var a, b, c int
+        a, b, c = 1, 2
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "assignment.count"
+    }
+
+    @assert failed == true
+}
+
+@test "datamodel: var with typed per-name initializer list"
+{
+    var a, b, c int = 10, 20, 30
+
+    @assert a == 10
+    @assert b == 20
+    @assert c == 30
+}
+
+@test "datamodel: var with inferred per-name initializer list of mixed types"
+{
+    // Each name gets its own value and its own inferred type -- unlike the
+    // single-shared-value form (var a, b = 42), the values here need not
+    // even be the same type.
+    var a, b, c = 10, "hello", true
+
+    @assert a == 10
+    @assert b == "hello"
+    @assert c == true
+}
+
+@test "datamodel: var(...) list mixing typed and inferred per-name lists"
+{
+    var (
+        a, b int = 1, 2
+        c, d     = "x", "y"
+    )
+
+    @assert a == 1
+    @assert b == 2
+    @assert c == "x"
+    @assert d == "y"
+}
+
+@test "datamodel: var shared-value broadcast is unaffected by the list fix"
+{
+    // A single initializer expression (no comma) still duplicates its value
+    // across every declared name -- this is pre-existing, intentional
+    // behavior (see BUG-17 test coverage) and must not regress.
+    var a, b int = 42
+    @assert a == 42
+    @assert b == 42
+
+    var x, y = 7
+    @assert x == 7
+    @assert y == 7
+}
+
+@test "datamodel: var errors on too many typed initializer values"
+{
+    var failed bool
+
+    @compile block {
+        var a, b int = 1, 2, 3
+        _ = a
+        _ = b
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "assignment.count"
+    }
+
+    @assert failed == true
+}
+
+@test "datamodel: var errors on too few typed initializer values"
+{
+    var failed bool
+
+    @compile block {
+        var a, b, c int = 1, 2
+        _ = a
+        _ = b
+        _ = c
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "assignment.count"
+    }
+
+    @assert failed == true
+}
+
+@test "datamodel: var errors on too few inferred initializer values"
+{
+    var failed bool
+
+    @compile block {
+        var a, b, c = 1, 2
+        _ = a
+        _ = b
+        _ = c
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "assignment.count"
+    }
+
+    @assert failed == true
+}

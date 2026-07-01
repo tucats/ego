@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
@@ -211,6 +213,14 @@ func varInitializer(c *Compiler, kind *data.Type, names []string, model any) err
 			return err
 		}
 
+		// If there is more than one name and a comma follows the first
+		// initializer, this is a per-name list of initializers, as in Go's
+		// "var a, b, c int = 10, 20, 30". Each name gets its own value
+		// rather than every name sharing a single duplicated value.
+		if len(names) > 1 && c.t.IsNext(tokenizer.CommaToken) {
+			return varInitializerList(c, kind, names)
+		}
+
 		count := len(names)
 		for count > 1 {
 			c.b.Emit(bytecode.Dup)
@@ -250,6 +260,45 @@ func varInitializer(c *Compiler, kind *data.Type, names []string, model any) err
 			c.b.Emit(bytecode.SymbolCreate, name)
 			c.b.Emit(bytecode.Store, name)
 		}
+	}
+
+	return nil
+}
+
+// varInitializerList compiles the per-name initializer values for a typed var
+// declaration such as "var a, b, c int = 10, 20, 30". The caller has already
+// compiled the first initializer expression (its value is on top of the
+// stack) and consumed the comma that follows it. Each remaining name gets its
+// own initializer expression, coerced to kind exactly like the shared-value
+// path does, and the number of initializers must exactly match the number of
+// names.
+func varInitializerList(c *Compiler, kind *data.Type, names []string) error {
+	storeOne := func(name string) {
+		c.b.Emit(bytecode.SymbolCreate, name)
+		c.b.Emit(bytecode.Push, kind)
+		c.b.Emit(bytecode.Swap)
+		c.b.Emit(bytecode.Call, 1)
+		c.b.Emit(bytecode.Store, name)
+	}
+
+	storeOne(names[0])
+
+	for i := 1; i < len(names); i++ {
+		if err := c.compileInitializer(kind); err != nil {
+			return err
+		}
+
+		storeOne(names[i])
+
+		if i < len(names)-1 && !c.t.IsNext(tokenizer.CommaToken) {
+			return c.compileError(errors.ErrAssignmentCount,
+				fmt.Sprintf("%d variables but %d values", len(names), i+1))
+		}
+	}
+
+	if c.t.IsNext(tokenizer.CommaToken) {
+		return c.compileError(errors.ErrAssignmentCount,
+			fmt.Sprintf("%d variables but more than %d values", len(names), len(names)))
 	}
 
 	return nil
@@ -300,6 +349,40 @@ func (c *Compiler) varInferredInitializer(names []string) error {
 	expr, err := c.Expression(true)
 	if err != nil {
 		return err
+	}
+
+	// If there is more than one name and a comma follows the first
+	// initializer, this is a per-name list of initializers, as in Go's
+	// "var a, b, c = 10, 20, 30". Each name gets its own value rather than
+	// every name sharing a single duplicated value.
+	if len(names) > 1 && c.t.IsNext(tokenizer.CommaToken) {
+		expressions := []*bytecode.ByteCode{expr}
+
+		for {
+			e, err := c.Expression(true)
+			if err != nil {
+				return err
+			}
+
+			expressions = append(expressions, e)
+
+			if !c.t.IsNext(tokenizer.CommaToken) {
+				break
+			}
+		}
+
+		if len(expressions) != len(names) {
+			return c.compileError(errors.ErrAssignmentCount,
+				fmt.Sprintf("%d variables but %d values", len(names), len(expressions)))
+		}
+
+		for i, name := range names {
+			c.b.Append(expressions[i])
+			c.b.Emit(bytecode.SymbolCreate, name)
+			c.b.Emit(bytecode.Store, name)
+		}
+
+		return nil
 	}
 
 	c.b.Append(expr)

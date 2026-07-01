@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
@@ -280,6 +282,15 @@ func (c *Compiler) compileAssignment() error {
 		return err
 	}
 
+	// Is this a comma-separated list of RHS expressions, as in
+	// "a, b, c = 10, 20, 30"? A single expression that itself yields
+	// multiple values (a multi-return call, or a channel receive already
+	// handled above) is not followed by a comma, so this only triggers
+	// for a genuine parallel-assignment expression list.
+	if !isChannelReceive && c.t.IsNext(tokenizer.CommaToken) {
+		return c.compileParallelAssignment(expressionCode, storeLValue)
+	}
+
 	c.b.Append(expressionCode)
 
 	// Two-value channel receive: v, ok := <-ch
@@ -324,6 +335,53 @@ func (c *Compiler) compileAssignment() error {
 		} else {
 			c.b.Emit(bytecode.Swap)
 		}
+	}
+
+	c.b.Append(storeLValue)
+
+	return nil
+}
+
+// compileParallelAssignment compiles a Go-style parallel assignment whose
+// right-hand side is a comma-separated list of expressions, one per target,
+// as in:
+//
+//	a, b, c = 10, 20, 30
+//	x, y = y, x
+//
+// The caller has already compiled the left-hand side (storeLValue, which
+// contains a StackCheck instruction followed by one Store per target) and the
+// first RHS expression (firstExpr); the tokenizer has just consumed the comma
+// that follows it. This function parses the remaining expressions, verifies
+// the count matches the number of targets, and emits the values in reverse
+// order behind a fresh stack marker -- the same convention compileReturn uses
+// for multi-value returns -- so that the first target ends up on top of the
+// stack for storeLValue's first Store instruction to consume.
+func (c *Compiler) compileParallelAssignment(firstExpr *bytecode.ByteCode, storeLValue *bytecode.ByteCode) error {
+	expressions := []*bytecode.ByteCode{firstExpr}
+
+	for {
+		expr, err := c.Expression(true)
+		if err != nil {
+			return err
+		}
+
+		expressions = append(expressions, expr)
+
+		if !c.t.IsNext(tokenizer.CommaToken) {
+			break
+		}
+	}
+
+	if targetCount := storeLValue.StoreCount(); targetCount != len(expressions) {
+		return c.compileError(errors.ErrAssignmentCount,
+			fmt.Sprintf("%d variables but %d values", targetCount, len(expressions)))
+	}
+
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let", len(expressions)))
+
+	for i := len(expressions) - 1; i >= 0; i = i - 1 {
+		c.b.Append(expressions[i])
 	}
 
 	c.b.Append(storeLValue)

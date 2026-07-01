@@ -177,6 +177,7 @@ assert.testing=testing @assert failure
 asset=no such asset
 asset.range.header=Invalid range header: {{header}}
 assignment=missing '=' or ':='
+assignment.count=assignment mismatch
 auth.type=invalid authentication type
 auth.db.sqlite.permissions=SQLite3 credential database has insecure file permissions
 auth.file.permissions=credential database file has insecure permissions

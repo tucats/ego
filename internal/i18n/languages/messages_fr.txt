@@ -171,6 +171,7 @@ assert.testing=échec de test @assert
 asset=ressource inexistante
 asset.range.header=En-tête de plage invalide : {{header}}
 assignment=manque '=' ou ':='
+assignment.count=incompatibilité d'affectation
 auth.type=type d'authentification invalide
 auth.db.sqlite.permissions=La base de données d'identifiants SQLite3 a des permissions de fichier non sécurisées
 auth.file.permissions=le fichier de base de données d'identifiants a des permissions non sécurisées

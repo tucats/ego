@@ -30,7 +30,7 @@ a severity classification.
 | BUG-02 | HIGH ✓ | `go func() {}()` closures cannot read outer-scope variables |
 | BUG-03 | HIGH ✓ | Type assertions `v.(T)` always succeed regardless of actual type |
 | BUG-04 | HIGH ✓ | `recover()` in deferred function of a value-returning function causes caller error |
-| BUG-05 | HIGH | Calling a function stored in an `any` variable fails |
+| BUG-05 | HIGH ✓ | Calling a function stored in an `any` variable fails |
 | BUG-06 | HIGH ✓ | `++`/`--` not permitted on struct fields or array elements |
 | BUG-07 | MEDIUM ✓ | Two-value channel receive `v, ok := <-ch` not supported |
 | BUG-08 | MEDIUM ✓ | `delete(struct, key)` fails on dynamic structs despite spec |
@@ -49,6 +49,7 @@ a severity classification.
 | BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
 | BUG-22 | MEDIUM ✓ | `make(map[K]V)` errors with "incorrect function argument count" |
 | BUG-23 | MEDIUM ✓ | `var` declarations of struct types share a single compile-time instance across calls |
+| BUG-24 | MEDIUM | Multi-target assignment lists reject indexed/member lvalues (`m[k], arr[i] = ...`) |
 
 ---
 
@@ -1712,6 +1713,58 @@ The fundamental issue was that the `var` statement was using the common "zero-va
 for the type, but was using the same one for any `var` value for that type. The
 correct fix is to modify the `var` compilation to call the internal `$new()`
 function at runtime which generates a unique instance of the item.
+
+---
+
+### BUG-24 — Multi-target assignment lists reject indexed/member lvalues (`m[k], arr[i] = ...`)
+
+**Severity:** MEDIUM
+
+**Description:**  
+A comma-separated list of assignment targets only works correctly when every target
+is a simple, unqualified variable name (`a, b, c = ...`). As soon as any target in the
+list is an indexed or member expression (`m["k"]`, `arr[0]`, `s.field`), the assignment
+fails at runtime with `invalid or unsupported data type for this operation`. This is
+pre-existing behavior in `assignmentTargetList` (`internal/language/compiler/lvalue.go`)
+found while adding Go-style parallel assignment support (`a, b, c = 10, 20, 30`); it
+reproduces even on the multi-return-call form that has been supported for a long time,
+so it is not a regression from that new feature.
+
+**Reproducer:**
+
+```go
+func pair() (int, int) {
+    return 5, 6
+}
+
+func main() {
+    m := map[string]int{}
+    arr := []int{0, 0}
+
+    m["k"], arr[0] = pair()
+    fmt.Println(m["k"], arr[0])
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 8), invalid or unsupported data type for this operation
+```
+
+**Expected output:**
+
+```text
+5 6
+```
+
+**Notes:**  
+Single-target indexed/member assignment (`m["k"] = 5`) works fine on its own; the bug
+is specific to mixing indexed/member targets into a *multi-target* list. The same
+failure occurs with a literal expression list (`m["k"], arr[0] = 5, 6`), with the
+two-value form of a multi-return call, and regardless of whether `:=` or `=` is used.
+A workaround is to assign through a temporary simple variable and then copy it into the
+indexed/member target on its own line.
 
 ---
 
