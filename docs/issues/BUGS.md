@@ -47,7 +47,7 @@ a severity classification.
 | BUG-19 | LOW | `for v := range string` yields single-char strings, not int32 runes |
 | BUG-20 | LOW | `iota` not supported in `const` blocks |
 | BUG-21 | LOW ✓ | `@compile` test directive cannot pass computed values back to the enclosing test |
-| BUG-22 | MEDIUM | `make(map[K]V)` errors with "incorrect function argument count" |
+| BUG-22 | MEDIUM ✓ | `make(map[K]V)` errors with "incorrect function argument count" |
 | BUG-23 | MEDIUM ✓ | `var` declarations of struct types share a single compile-time instance across calls |
 
 ---
@@ -1493,41 +1493,49 @@ later investigation.
 
 ### BUG-22 — `make(map[K]V)` errors with "incorrect function argument count"
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  
+**Status:** Fixed
 
 **Description:**  
 In Go, maps may be created with `make(map[K]V)` or `make(map[K]V, initialCapacity)`.
-In Ego, calling `make` with a map type argument fails at runtime:
+In Ego, calling `make` with a map type argument previously failed at runtime:
 
 ```text
 Error: in make, incorrect function argument count: 1
 ```
 
-The `make` built-in currently only accepts channels (`make(chan, n)`) and arrays/slices
-(`make([]T, n)`). Map types are not handled, so any call to `make(map[K]V)` errors
-regardless of whether an initial-capacity hint is provided.
+The `make` built-in only handled channels and arrays/slices. Map types were not
+handled, so any call to `make(map[K]V)` errored regardless of whether an initial
+capacity hint was provided.
 
-**Reproducer:**
+**Fix:**  
+Added a map branch at the top of `Make()` in `internal/builtins/make.go`. When the
+first argument is a `*data.Type` with `Kind() == MapKind`, the function:
 
-```go
-func main() {
-    m := make(map[string]int)   // errors: "incorrect function argument count: 1"
-    m["a"] = 1
-    fmt.Println(m["a"])
-}
-```
+1. Validates the optional capacity hint (must be a non-negative integer if present)
+2. Creates and returns a new initialized `*data.Map` via `data.NewMap(keyType, valueType)`
 
-**Expected output:**
+The capacity value is accepted for Go source compatibility but is currently ignored
+for Ego maps, matching Go's semantics where it is only a performance hint.
 
-```text
-1
-```
+The function declaration in `internal/builtins/functions.go` was updated to allow
+1–3 arguments (`MinArgCount: 1, MaxArgCount: 3`), accommodating both
+`make(map[K]V)` and `make(map[K]V, n)`.
 
-**Notes:**  
-The workaround is to use a map literal: `m := map[string]int{}`. Discovered during
-the BUG-12 nil-map investigation. The `make` function for maps does not need a
-capacity hint (Go ignores it for correctness; it is only a performance hint), so
-`make(map[K]V)` with no size argument should be the primary form to support.
+**Array capacity (third argument) also validated:**  
+The array path already accepted a third `capacity` argument but only checked for
+negative values. Validation now also rejects capacity < size (matching Go's
+`make([]T, size, cap)` panic semantics with a catchable Ego error instead).
+
+**Files changed:**
+
+- `internal/builtins/make.go` — added map branch; validated array capacity range
+- `internal/builtins/functions.go` — updated `make` declaration to `MinArgCount: 1`
+- `internal/builtins/make_test.go` — added 11 new Go unit tests covering all map
+  and array-with-capacity combinations (no-size map, capacity hint, zero capacity,
+  negative capacity, non-integer capacity, writable result, empty after creation;
+  array with valid/equal/less-than/negative capacity)
+- `tests/types/make_map.ego` — 12 new Ego-level tests covering the same cases
 
 ---
 

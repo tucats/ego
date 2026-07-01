@@ -9,10 +9,10 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -179,26 +179,30 @@ var FunctionDictionary = map[string]FunctionDefinition{
 			Returns: []*data.Type{data.IntType},
 		}},
 	"make": {
-		MinArgCount:     2,
-		MaxArgCount:     2,
+		MinArgCount:     1,
+		MaxArgCount:     3,
 		FunctionAddress: Make,
 		Declaration: &data.Declaration{
-			Name: "make",
+			Name:     "make",
+			Variadic: true,
+			ArgCount: data.Range{1, 3},
 			Parameters: []data.Parameter{
 				{
 					Name: "t",
 					Type: data.TypeType,
 				},
 				{
-					Name: "count",
+					Name: "size",
+					Type: data.IntType,
+				},
+				{
+					Name: "capacity",
 					Type: data.IntType,
 				},
 			},
-			// BUILTIN-FUNCTIONS-2 fix: make() returns an array or channel, not
-			// an int.  The previous declaration of data.IntType was incorrect and
-			// could cause the compiler or strict-mode type checker to reject valid
-			// assignments from make() calls.  InterfaceType is used here because
-			// the actual return type depends on the first argument at runtime.
+			// make() returns a map, array or channel. InterfaceType is used
+			// here because the actual return type depends on the first argument
+			// at runtime.
 			Returns: []*data.Type{data.InterfaceType},
 		}},
 	"sizeof": {
@@ -399,7 +403,7 @@ func AddFunction(s *symbols.SymbolTable, fd FunctionDefinition) error {
 	if !alreadyExists {
 		FunctionDictionary[fd.Name] = fd
 	}
-	
+
 	functionDictionaryMu.Unlock()
 
 	if alreadyExists {

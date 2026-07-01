@@ -73,10 +73,10 @@ func Append(s *symbols.SymbolTable, args data.List) (any, error) {
 				}
 			}
 		} else {
-			// BUG-15 fix (APPEND-2): Always enforce the declared element type of a
-			// typed array, regardless of the type-checking mode. Previously, dynamic
-			// mode (NoTypeEnforcement) skipped this check entirely, allowing values of
-			// any type to be silently appended — violating the array's type contract.
+			// Always enforce the declared element type of a typed array, regardless of
+			// the type-checking mode. Previously, dynamic mode (NoTypeEnforcement)
+			// skipped this check entirely, allowing values of any type to be silently
+			// appended — violating the array's type contract.
 			//
 			// The type-checking mode still governs *how* a mismatch is handled:
 			//   strict (0): reject immediately with ErrWrongArrayValueType

@@ -1,16 +1,46 @@
 package builtins
 
 import (
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
-// Make implements the make() function. The first argument must be a model of the
+// Make implements the make() function. There are two forms of this call, for an
+// array or a map.
+//
+// For an array, the first argument must be a model of the
 // array type (using the Go native version), and the second argument is the size.
+// There is an optional third argument for the capacity, which is ignored
+// currently ignored for Ego arrays.  The result is a new array of the requested
+// size, with all elements set to the zero value for the element type.
+//
+// For a map, the first argument must be a model of the map type (using the Go
+// and the second argument is an optional size.  The result is a new map of the
+// requested type. The size value is currently not used for Ego maps.
 func Make(s *symbols.SymbolTable, args data.List) (any, error) {
 	kind := args.Get(0)
 
+	// Is this a map? That's the easier case.
+	if m, ok := kind.(*data.Type); ok && m.Kind() == data.MapKind {
+		if args.Len() > 1 {
+			size, err := data.Int(args.Get(1))
+			if err != nil {
+				return nil, errors.New(err).In("make")
+			}
+			// The size argument is currently ignored for Ego maps, but we still check
+			// for a negative value to avoid passing it to Go's make() which would panic.
+			if size < 0 {
+				return nil, errors.ErrInvalidFunctionArgument.In("make").Context(size)
+			}
+		}
+
+		result := data.NewMap(m.KeyType(), m.BaseType())
+
+		return result, nil
+	}
+
+	// Not a map, so it must be an array.  Get the size argument and validate it.
 	size, err := data.Int(args.Get(1))
 	if err != nil {
 		return nil, errors.New(err).In("make")
@@ -20,7 +50,21 @@ func Make(s *symbols.SymbolTable, args data.List) (any, error) {
 	// which panics with "makeslice: len out of range" — an unrecoverable error
 	// that bypasses Ego's try/catch mechanism.  Reject it explicitly here.
 	if size < 0 {
-		return nil, errors.ErrInvalidValue.In("make").Context(size)
+		return nil, errors.ErrInvalidFunctionArgument.In("make").Context(size)
+	}
+
+	// While we're here, if there is a capacity argument, validate it too.
+	// It's currently ignored for Ego arrays, but we still check for a negative
+	// value to avoid passing it to Go's make() which would panic.
+	if args.Len() > 2 {
+		capacity, err := data.Int(args.Get(2))
+		if err != nil {
+			return nil, errors.New(err).In("make")
+		}
+
+		if capacity < 0 || capacity < size {
+			return nil, errors.ErrInvalidFunctionArgument.In("make").Context(capacity)
+		}
 	}
 
 	// If it's an Ego type descriptor, resolve it to a concrete model value so

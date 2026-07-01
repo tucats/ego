@@ -2,8 +2,13 @@ package builtins
 
 // Tests for the Make() and New() builtins (builtins/make.go).
 //
-// Make() implements the Ego built-in make() function.  It constructs arrays
-// of a given type and size, or creates channels.
+// Make() implements the Ego built-in make() function.  It constructs:
+//   - Maps:    make(map[K]V) or make(map[K]V, capacityHint)
+//     BUG-22 fix: map support was added; capacity is accepted but ignored
+//     (matching Go's semantics where it is only a performance hint).
+//   - Arrays:  make([]T, size) or make([]T, size, capacity)
+//     capacity must be >= size; currently ignored for actual allocation.
+//   - Channels: make(chan, n)
 //
 // New() implements the Ego built-in new() function.  It returns a pointer to
 // a zero-value of the given type.
@@ -11,8 +16,8 @@ package builtins
 import (
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors" // used for ErrInvalidValue, ErrInvalidType, ErrNotAType
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -196,7 +201,7 @@ func Test_Make_NegativeSizeReturnsError(t *testing.T) {
 		t.Fatal("Make(int, -1) expected error, got nil")
 	}
 
-	if !errors.Equals(errors.New(err), errors.ErrInvalidValue) {
+	if !errors.Equals(errors.New(err), errors.ErrInvalidFunctionArgument) {
 		t.Errorf("Make(int, -1) error = %v, want ErrInvalidValue", err)
 	}
 }
@@ -231,6 +236,204 @@ func Test_Make_InvalidSizeStringReturnsError(t *testing.T) {
 	_, err := Make(s, args)
 	if err == nil {
 		t.Fatal("Make(int, \"not-a-number\") expected error, got nil")
+	}
+}
+
+// ---- Make — maps (BUG-22 fix) ----
+
+// Test_Make_Map_NoSize verifies that make(map[K]V) with no size argument
+// returns an initialized, writable *data.Map (BUG-22 fix).
+//
+// Before the fix this call errored with "incorrect function argument count: 1"
+// because the map branch did not exist.
+func Test_Make_Map_NoSize(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.StringType, data.IntType) // map[string]int
+	args := data.NewList(mapType)
+
+	got, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(map[string]int) error: %v (BUG-22 not fixed?)", err)
+	}
+
+	m, ok := got.(*data.Map)
+	if !ok {
+		t.Fatalf("Make(map[string]int) returned %T, want *data.Map", got)
+	}
+
+	// The map must be writable: Set() must not return an error.
+	if _, err := m.Set("key", 42); err != nil {
+		t.Errorf("Make(map[string]int) returned unwritable map: %v", err)
+	}
+}
+
+// Test_Make_Map_WithCapacity verifies that make(map[K]V, n) with a capacity
+// hint returns a valid, writable *data.Map.  The capacity is accepted for
+// compatibility with Go source but is currently ignored for Ego maps (as in
+// Go, where it is only a performance hint, not a hard allocation).
+func Test_Make_Map_WithCapacity(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.StringType, data.IntType)
+	args := data.NewList(mapType, 10) // capacity hint = 10
+
+	got, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(map[string]int, 10) error: %v", err)
+	}
+
+	m, ok := got.(*data.Map)
+	if !ok {
+		t.Fatalf("Make(map[string]int, 10) returned %T, want *data.Map", got)
+	}
+
+	if _, err := m.Set("hello", 1); err != nil {
+		t.Errorf("Make(map[string]int, 10): map not writable: %v", err)
+	}
+}
+
+// Test_Make_Map_ZeroCapacity verifies that make(map[K]V, 0) is valid and
+// returns a writable map.  Zero is an accepted capacity hint in Go.
+func Test_Make_Map_ZeroCapacity(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.IntType, data.StringType)
+	args := data.NewList(mapType, 0)
+
+	got, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(map[int]string, 0) error: %v", err)
+	}
+
+	if _, ok := got.(*data.Map); !ok {
+		t.Fatalf("Make(map[int]string, 0) returned %T, want *data.Map", got)
+	}
+}
+
+// Test_Make_Map_NegativeCapacity verifies that a negative capacity hint is
+// rejected.  Go panics on negative slice/map sizes; Ego catches it explicitly.
+func Test_Make_Map_NegativeCapacity(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.StringType, data.IntType)
+	args := data.NewList(mapType, -1)
+
+	_, err := Make(s, args)
+	if err == nil {
+		t.Fatal("Make(map[string]int, -1) expected error for negative capacity, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrInvalidFunctionArgument) {
+		t.Errorf("Make(map[string]int, -1) error = %v, want ErrInvalidFunctionArgument", err)
+	}
+}
+
+// Test_Make_Map_NonIntegerCapacity verifies that a non-integer capacity hint
+// produces a type error rather than a panic.
+func Test_Make_Map_NonIntegerCapacity(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.StringType, data.IntType)
+	args := data.NewList(mapType, "big") // capacity must be an integer
+
+	_, err := Make(s, args)
+	if err == nil {
+		t.Fatal("Make(map[string]int, \"big\") expected error for non-integer capacity, got nil")
+	}
+}
+
+// Test_Make_Map_IsEmptyAfterCreation verifies that a newly made map starts
+// empty (Len == 0) regardless of the capacity hint.
+func Test_Make_Map_IsEmptyAfterCreation(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	mapType := data.MapType(data.StringType, data.Float64Type)
+	args := data.NewList(mapType, 5)
+
+	got, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(map[string]float64, 5) error: %v", err)
+	}
+
+	m := got.(*data.Map)
+	if m.Len() != 0 {
+		t.Errorf("Make(map[string]float64, 5) Len = %d, want 0", m.Len())
+	}
+}
+
+// ---- Make — array with capacity (third argument) ----
+
+// Test_Make_Array_WithValidCapacity verifies that make([]int, 3, 5) succeeds
+// when capacity >= size.  The capacity value is accepted but currently ignored
+// for Ego arrays (same as Go, where it only affects the underlying slice
+// allocation).
+func Test_Make_Array_WithValidCapacity(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	args := data.NewList(0, 3, 5) // int model, size=3, capacity=5
+
+	got, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(int, 3, 5) error: %v", err)
+	}
+
+	arr, ok := got.([]any)
+	if !ok {
+		t.Fatalf("Make(int, 3, 5) returned %T, want []any", got)
+	}
+
+	if len(arr) != 3 {
+		t.Errorf("Make(int, 3, 5) length = %d, want 3", len(arr))
+	}
+}
+
+// Test_Make_Array_CapacityEqualToSize verifies that capacity == size is valid.
+func Test_Make_Array_CapacityEqualToSize(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	args := data.NewList(0, 4, 4) // size=4, capacity=4
+
+	_, err := Make(s, args)
+	if err != nil {
+		t.Fatalf("Make(int, 4, 4) error: %v", err)
+	}
+}
+
+// Test_Make_Array_CapacityLessThanSize verifies that capacity < size returns
+// an error.  In Go, make([]T, size, cap) panics when cap < size; Ego rejects
+// it with ErrInvalidFunctionArgument.
+func Test_Make_Array_CapacityLessThanSize(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	args := data.NewList(0, 5, 2) // size=5, capacity=2 — invalid
+
+	_, err := Make(s, args)
+	if err == nil {
+		t.Fatal("Make(int, 5, 2) expected error for capacity < size, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrInvalidFunctionArgument) {
+		t.Errorf("Make(int, 5, 2) error = %v, want ErrInvalidFunctionArgument", err)
+	}
+}
+
+// Test_Make_Array_NegativeCapacityReturnsError verifies that a negative
+// capacity argument is rejected.
+func Test_Make_Array_NegativeCapacityReturnsError(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	args := data.NewList(0, 3, -1) // size=3, capacity=-1
+
+	_, err := Make(s, args)
+	if err == nil {
+		t.Fatal("Make(int, 3, -1) expected error for negative capacity, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrInvalidFunctionArgument) {
+		t.Errorf("Make(int, 3, -1) error = %v, want ErrInvalidFunctionArgument", err)
+	}
+}
+
+// Test_Make_Array_NonIntegerCapacityReturnsError verifies that a non-integer
+// capacity argument produces an error.
+func Test_Make_Array_NonIntegerCapacityReturnsError(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+	args := data.NewList(0, 3, "huge")
+
+	_, err := Make(s, args)
+	if err == nil {
+		t.Fatal("Make(int, 3, \"huge\") expected error for non-integer capacity, got nil")
 	}
 }
 

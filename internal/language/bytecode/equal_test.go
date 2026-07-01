@@ -62,8 +62,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ func Test_equalTypes_TypeVsMatchingString(t *testing.T) {
 
 	tc.assertNoError(equalByteCode(tc.ctx, nil))
 
-	// BUG-13 fix: must now return false, not true.  Use the type constant
+	// Must return false, not true.  Use the type constant
 	// directly: typeof(n) == int.
 	tc.assertTopStack(false)
 }

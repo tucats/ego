@@ -1,0 +1,126 @@
+// Tests for BUG-22 fix: make() with map types.
+//
+// Before the fix, make(map[K]V) failed with "incorrect function argument
+// count: 1" because the map branch did not exist in the Make() builtin.
+//
+// After the fix:
+//   - make(map[K]V) with no size argument creates an initialized, writable map
+//   - make(map[K]V, n) with a capacity hint also creates an initialized map;
+//     the hint is accepted for Go compatibility but is currently ignored (as in
+//     Go, where it is only a performance hint)
+//   - Negative capacity returns a runtime error
+//
+// Array make() with a capacity (third argument) is also tested here:
+//   - make([]T, size, cap) is valid when cap >= size
+//   - make([]T, size, cap) errors when cap < size
+
+@test "types: make(map) - basic map creation (BUG-22 fix)"
+{
+    // make(map[string]int) must return an initialized map, not an error.
+    m := make(map[string]int)
+    @assert m != nil
+    @assert len(m) == 0
+}
+
+@test "types: make(map) - map is writable after make"
+{
+    m := make(map[string]int)
+    m["a"] = 1
+    m["b"] = 2
+    @assert len(m) == 2
+    @assert m["a"] == 1
+    @assert m["b"] == 2
+}
+
+@test "types: make(map) - with capacity hint"
+{
+    // make(map[string]int, 10) — capacity is accepted and ignored.
+    m := make(map[string]int, 10)
+    @assert m != nil
+    @assert len(m) == 0
+    m["x"] = 42
+    @assert m["x"] == 42
+}
+
+@test "types: make(map) - zero capacity hint"
+{
+    // make(map[string]bool, 0) is valid in Go and must be valid in Ego.
+    m := make(map[string]bool, 0)
+    @assert m != nil
+    m["flag"] = true
+    @assert m["flag"] == true
+}
+
+@test "types: make(map) - negative capacity rejected"
+{
+    caught := false
+    try {
+        m := make(map[string]int, -1)
+        _ = m
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
+
+@test "types: make(map) - map starts empty regardless of capacity"
+{
+    m := make(map[string]float64, 100)
+    @assert len(m) == 0
+}
+
+@test "types: make(map) - different key/value types"
+{
+    // make works for various key and value type combinations.
+    mi := make(map[int]string)
+    mi[1] = "one"
+    @assert mi[1] == "one"
+}
+
+@test "types: make(map) - make vs literal produce equivalent maps"
+{
+    // make(map[string]int) and map[string]int{} must behave identically.
+    m1 := make(map[string]int)
+    m2 := map[string]int{}
+    m1["k"] = 99
+    m2["k"] = 99
+    @assert m1["k"] == m2["k"]
+    @assert len(m1) == len(m2)
+}
+
+@test "types: make(array) - with valid capacity"
+{
+    // make([]int, 3, 5) is valid: capacity (5) >= size (3).
+    a := make([]int, 3, 5)
+    @assert len(a) == 3
+}
+
+@test "types: make(array) - capacity equal to size"
+{
+    a := make([]int, 4, 4)
+    @assert len(a) == 4
+}
+
+@test "types: make(array) - capacity less than size rejected"
+{
+    caught := false
+    try {
+        a := make([]int, 5, 2)
+        _ = a
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
+
+@test "types: make(array) - negative capacity rejected"
+{
+    caught := false
+    try {
+        a := make([]int, 3, -1)
+        _ = a
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
