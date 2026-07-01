@@ -40,7 +40,7 @@ a severity classification.
 | BUG-12 | MEDIUM ✓ | Writing to a nil map succeeds; should error |
 | BUG-13 | MEDIUM ✓ | `typeof()` result incompatible with `switch` case matching |
 | BUG-14 | MEDIUM ✓ | Typed array element type not enforced in dynamic mode |
-| BUG-15 | MEDIUM | `append()` to typed array silently accepts wrong-type elements |
+| BUG-15 | MEDIUM ✓ | `append()` to typed array silently accepts wrong-type elements |
 | BUG-16 | MEDIUM | `defer namedFunc(arg)` evaluates args lazily (cross-ref: FLOW-M4) |
 | BUG-17 | LOW | `var (...)` group declaration not supported |
 | BUG-18 | LOW ✓ | `type()` documented but actual builtin is `typeof()` |
@@ -1162,35 +1162,50 @@ elements that converts the type from a specific array type to []any.
 
 ### BUG-15 — `append()` to typed array silently accepts wrong-type elements
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  
+**Status:** Fixed (APPEND-2)
 
 **Description:**  
-`append()` does not enforce the element type of a typed array. Appending a
-`string` to a `[]int` silently succeeds and corrupts the array's type contract.
+`append()` did not enforce the element type of a typed array in dynamic (default)
+mode. Appending a `string` to a `[]int` silently succeeded and corrupted the
+array's type contract.
 
-**Reproducer:**
+**Root cause:**  
+`builtins/append.go` gated the element-type check with
+`typeChecking < defs.NoTypeEnforcement`. In dynamic mode (`NoTypeEnforcement = 2`),
+`2 < 2` is false, so the check never ran and any value was accepted.
+
+**Fix:**  
+Removed the `typeChecking < defs.NoTypeEnforcement` guard from the element-type
+check (APPEND-2 in `internal/builtins/append.go`). A typed array's element-type
+contract is now always enforced regardless of the type-checking mode. The mode
+still controls *how* a mismatch is handled:
+
+- **strict (0)**: reject immediately with `ErrWrongArrayValueType`
+- **relaxed (1)**: attempt coercion; error if coercion fails
+- **dynamic (2)**: same as relaxed — coerce if possible, error if not
+
+Interface-typed arrays (`[]interface{}`) continue to accept any element.
+
+**Behavior after fix:**
 
 ```go
-import "fmt"
-
-func main() {
-    a := []int{1, 2, 3}
-    a = append(a, "hello")    // should error: wrong type for []int
-    fmt.Println("a:", a)      // prints: [1, 2, 3, "hello"]
-}
+a := []int{1, 2, 3}
+a = append(a, "hello")   // error: wrong type for element of []int (all modes)
+a = append(a, true)      // succeeds: bool→int coercion (relaxed/dynamic)
+f := []float64{1.1}
+f = append(f, 3)         // succeeds: int→float64 coercion (relaxed/dynamic)
 ```
 
-**Actual output:**
+**Files changed:**
 
-```text
-a: [1, 2, 3, "hello"]
-```
-
-**Expected output:**
-
-```text
-Error: wrong type for element of []int: string
-```
+- `internal/builtins/append.go` — removed `typeChecking < defs.NoTypeEnforcement`
+  gate; added APPEND-2 comment block explaining the invariant
+- `internal/builtins/append_test.go` — renamed `Test_Append_NoTypeEnforcementSkipsCheck`
+  to `Test_Append_DynamicModeCoercesCompatibleType` (the old test documented wrong
+  behavior); added `Test_Append_DynamicModeRejectsIncompatibleType` (BUG-15 fix test)
+- `tests/types/append_type_check.ego` — new Ego-level tests covering: compatible
+  appends, string→int rejection, coercible types, interface arrays, multi-element
 
 ---
 

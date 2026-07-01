@@ -1,0 +1,108 @@
+// Tests for BUG-15 fix: append() must enforce the element type of a typed array
+// regardless of the type-checking mode.
+//
+// Before the fix, dynamic mode (the default) skipped the element-type check
+// entirely, so append([]int{1,2,3}, "hello") silently corrupted the array.
+// After the fix, incompatible types error in all modes.
+//
+// Some tests are mode-sensitive: Go does not allow bool→int or int→float64
+// as implicit conversions, so strict mode (--types=strict) rejects them.
+// Relaxed/dynamic mode attempts coercion and accepts them. Those tests use
+// try/catch and assert a valid array state under either outcome.
+
+@test "types: append - compatible element type accepted"
+{
+    a := []int{1, 2, 3}
+    a = append(a, 4)
+    @assert len(a) == 4
+    @assert a[3] == 4
+}
+
+@test "types: append - incompatible element type rejected (BUG-15 fix)"
+{
+    // Appending a string to a []int must error in all type-checking modes.
+    a := []int{1, 2, 3}
+    caught := false
+    try {
+        a = append(a, "hello")
+    } catch {
+        caught = true
+    }
+    @assert caught
+    // The array must remain unmodified.
+    @assert len(a) == 3
+}
+
+@test "types: append - bool appended to []int: coerced or rejected by mode"
+{
+    // In relaxed/dynamic mode, bool is coercible to int (true→1, false→0).
+    // In strict mode, Go does not permit bool→int even via explicit cast,
+    // so the append is rejected and the array remains unchanged.
+    a := []int{1, 2}
+    caught := false
+    try {
+        a = append(a, true)
+    } catch {
+        caught = true
+    }
+    // Valid in either mode: coerced (len 3, element 1) or rejected (len 2).
+    @assert (caught && len(a) == 2) || (!caught && len(a) == 3 && a[2] == 1)
+}
+
+@test "types: append - int appended to []float64: coerced or rejected by mode"
+{
+    // In relaxed/dynamic mode, int is coercible to float64.
+    // In strict mode, Go does not permit implicit int→float64, so the
+    // append is rejected and the array remains unchanged.
+    f := []float64{1.1, 2.2}
+    caught := false
+    try {
+        f = append(f, 3)
+    } catch {
+        caught = true
+    }
+    // Valid in either mode: coerced (len 3) or rejected (len 2).
+    @assert (caught && len(f) == 2) || (!caught && len(f) == 3)
+}
+
+@test "types: append - string appended to []float64 rejected"
+{
+    f := []float64{1.1, 2.2}
+    caught := false
+    try {
+        f = append(f, "oops")
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert len(f) == 2
+}
+
+@test "types: append - interface array accepts any type"
+{
+    // An untyped (interface) array imposes no element-type constraint.
+    mixed := []interface{}{"x", 1}
+    mixed = append(mixed, true, 3.14)
+    @assert len(mixed) == 4
+}
+
+@test "types: append - preserves array element type after append"
+{
+    // Appending the right type must keep the array's declared element type.
+    a := []string{"hello", "world"}
+    a = append(a, "ego")
+    @assert len(a) == 3
+    @assert a[2] == "ego"
+}
+
+@test "types: append - multiple incompatible elements rejected"
+{
+    a := []int{10}
+    caught := false
+    try {
+        a = append(a, 20, "bad", 30)
+    } catch {
+        caught = true
+    }
+    @assert caught
+}

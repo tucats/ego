@@ -73,19 +73,26 @@ func Append(s *symbols.SymbolTable, args data.List) (any, error) {
 				}
 			}
 		} else {
-			// Verify that the item is compatible with the array type. We only do this if
-			// we are in relaxed or strict mode.
-			if typeChecking < defs.NoTypeEnforcement && !kind.IsInterface() && !data.TypeOf(j).IsType(kind) {
-				// Mismatched type. Do we complain, or fix it? If we can determine the state of
-				// the type checking system (stored in the symbol table) and it is an integer
-				// value greater than zero, then we are allowed to coerce the value to the
-				// appropriate type.
+			// BUG-15 fix (APPEND-2): Always enforce the declared element type of a
+			// typed array, regardless of the type-checking mode. Previously, dynamic
+			// mode (NoTypeEnforcement) skipped this check entirely, allowing values of
+			// any type to be silently appended — violating the array's type contract.
+			//
+			// The type-checking mode still governs *how* a mismatch is handled:
+			//   strict (0): reject immediately with ErrWrongArrayValueType
+			//   relaxed (1): attempt coercion; error if coercion fails
+			//   dynamic (2): same as relaxed — coerce if possible, error if not
+			//
+			// Interface-typed arrays ([]interface{}) accept any element and are
+			// intentionally excluded from this check.
+			if !kind.IsInterface() && !data.TypeOf(j).IsType(kind) {
 				if typeChecking > defs.StrictTypeEnforcement {
+					// Relaxed or dynamic: attempt coercion to the target element type.
 					if j, err = data.Coerce(j, data.InstanceOfType(kind)); err != nil {
 						return nil, errors.New(err).In("append")
 					}
 				} else {
-					// Nope, we are in strict type checking mode, so complain and be done.
+					// Strict: reject the mismatched value without attempting coercion.
 					return nil, errors.ErrWrongArrayValueType.In("append")
 				}
 			}

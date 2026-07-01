@@ -146,18 +146,38 @@ func Test_Append_RelaxedModeCoercesCompatibleType(t *testing.T) {
 	}
 }
 
-// Test_Append_NoTypeEnforcementSkipsCheck verifies that with no type
-// enforcement, any value may be appended to any array.
-func Test_Append_NoTypeEnforcementSkipsCheck(t *testing.T) {
+// Test_Append_DynamicModeCoercesCompatibleType verifies that in dynamic mode
+// (NoTypeEnforcement) a value that can be coerced to the array's element type
+// is accepted — dynamic mode behaves like relaxed mode for typed arrays after
+// the BUG-15 fix.
+//
+// bool is coercible to int (true→1, false→0), so this should succeed.
+func Test_Append_DynamicModeCoercesCompatibleType(t *testing.T) {
 	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2)
-	// A bool value is incompatible with int, but should be allowed in
-	// no-enforcement mode.
-	args := data.NewList(arr, true)
+	args := data.NewList(arr, true) // bool — coercible to int in dynamic mode
 	s := newSymbolsWithTypeLevel(defs.NoTypeEnforcement)
 
 	_, err := Append(s, args)
 	if err != nil {
-		t.Fatalf("Append() no-enforcement error: %v", err)
+		t.Fatalf("Append() dynamic mode coerce error: %v", err)
+	}
+}
+
+// Test_Append_DynamicModeRejectsIncompatibleType verifies the BUG-15 fix:
+// appending a value of a completely incompatible type to a typed array must
+// return an error even in dynamic (no-enforcement) mode.
+//
+// Before the fix, dynamic mode skipped the element-type check entirely, so
+// append([]int{1,2,3}, "hello") silently corrupted the array.
+func Test_Append_DynamicModeRejectsIncompatibleType(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	// "hello" cannot be coerced to int — must error in all modes (BUG-15 fix).
+	args := data.NewList(arr, "hello")
+	s := newSymbolsWithTypeLevel(defs.NoTypeEnforcement)
+
+	_, err := Append(s, args)
+	if err == nil {
+		t.Fatal("Append() dynamic mode: expected type error for string→int, got nil (BUG-15 not fixed)")
 	}
 }
 
