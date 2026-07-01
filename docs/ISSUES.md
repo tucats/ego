@@ -50,7 +50,7 @@ reflected in each area's summary table.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
 Across all six areas, this document currently tracks **224 issues**:
-**213 resolved** and **11 still open**. Open issues are
+**214 resolved** and **10 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 24 issues (20 resolved)
+- [BUG — General Language Bugs](#area-bug) — 24 issues (21 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -187,7 +187,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-17](#BUG-17) | BUG | `var name = value` (type-inferred initializer, without an explicit type) was not supported. | ✓ |
 | [BUG-18](#BUG-18) | BUG | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | BUG | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
-| [BUG-20](#BUG-20) | BUG | `iota` is not supported inside `const` blocks. |  |
+| [BUG-20](#BUG-20) | BUG | `iota` is not supported inside `const` blocks. | ✓ |
 | [BUG-21](#BUG-21) | BUG | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. |  |
 | [BUG-22](#BUG-22) | BUG | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | BUG | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
@@ -426,7 +426,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-17](#BUG-17) | LOW | `var name = value` (type-inferred initializer, without an explicit type) was not supported. | ✓ |
 | [BUG-18](#BUG-18) | LOW | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | LOW | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
-| [BUG-20](#BUG-20) | LOW | `iota` is not supported inside `const` blocks. | |
+| [BUG-20](#BUG-20) | LOW | `iota` is not supported inside `const` blocks. | ✓ |
 | [BUG-21](#BUG-21) | LOW | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. | |
 | [BUG-22](#BUG-22) | MEDIUM | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | MEDIUM | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
@@ -1915,6 +1915,79 @@ Error: at line 2:9, invalid constant expression file
 Since `iota` is not mentioned in LANGUAGE.md, it may be intentionally unsupported.
 The error message is confusing and unhelpful — it should say something like
 `"iota is not supported in Ego const blocks"`.
+
+**Resolution:**  
+`iota` is now supported inside `const` declarations, matching Go's behavior,
+including the common idiom of omitting `= expr` on later entries in a block so
+they repeat the nearest preceding entry's expression:
+
+```go
+const (
+    Apple  = iota   // 0
+    Banana          // 1 (repeats "= iota")
+    Cherry          // 2 (repeats "= iota")
+)
+```
+
+Two changes were needed, both in `internal/language/compiler/`:
+
+1. **Recognizing `iota` as a value, not a symbol lookup** (`expr_atom.go`,
+   `expressionAtom()`): `iota` is not a reserved word — there is no dedicated
+   tokenizer type for it — so it is matched by its spelling, the same way the
+   `true`/`false` boolean literals are recognized. When the compiler is inside
+   a `const(...)` declaration, a bare `iota` reference is compiled as a literal
+   integer push instead of falling through to the ordinary symbol-lookup path
+   (which is what previously produced `ErrInvalidConstant`, since `iota` isn't
+   itself a previously-declared constant).
+
+2. **Tracking the current counter and supporting the "omit the expression"
+   shorthand** (`constant.go`, `compileConst()`): a new `Compiler.iota` field
+   holds the zero-based position of the ConstSpec currently being compiled,
+   or `-1` when the compiler is not inside a `const` declaration at all (so an
+   unrelated use of the name `iota` elsewhere in a program still resolves as a
+   normal, possibly-undefined, identifier — matching Go's own
+   `"undefined: iota"` behavior outside of `const`). `compileConst()` sets this
+   to `0` at the start of a block, increments it after every spec (whether or
+   not that spec had its own `= expr`), and restores the previous value on
+   exit via a `defer`. `Compiler.Clone()` (used internally by `Expression()`)
+   was updated to copy this field so the isolated expression-compiling clone
+   still sees the active counter.
+
+   To support omitting `= expr`, `compileConst()` now remembers the token
+   positions spanning the most recent explicit right-hand side. When a later
+   spec has no `=` of its own, those same tokens are re-parsed (via the
+   tokenizer's existing `Mark()`/`Set()` bookmarking, the same mechanism
+   already used elsewhere in the compiler for speculative parsing) against the
+   *current* `iota` value, which reproduces Go's specified "textual
+   substitution of the first preceding non-empty expression list" semantics
+   without needing a general-purpose constant-folding evaluator. This only
+   applies inside a parenthesized `const ( ... )` block, and only when a
+   preceding spec actually had an expression to repeat — a single,
+   non-parenthesized `const Name` with no `=`, or the very first spec in a
+   block with no `=`, are still compile errors (`ErrMissingEqual`), exactly as
+   before this change.
+
+**Tests:**
+
+- Go unit tests in `internal/language/compiler/constant_test.go`:
+  `TestCompiler_compileConst` gained table cases for a bare `iota`, the
+  repeat-the-previous-expression idiom, `iota` inside a larger expression
+  (`1 << iota`), the standalone (non-block) form, and two guard cases
+  confirming `ErrMissingEqual` is still raised when there's nothing to repeat.
+  `TestCompiler_compileConst_IotaValues` inspects the emitted bytecode's
+  `Push` operands directly to confirm `iota` actually takes the values `0, 1,
+  2, ...` in order (not just that compilation succeeds).
+  `TestCompiler_compileConst_IotaScopeRestored` confirms `Compiler.iota` is
+  restored to its `-1` sentinel after a `const` block finishes compiling.
+- Ego-language tests in `tests/types/iota.ego` cover the exact reproducer
+  above, explicit `iota` on every spec, the classic bit-shift/blank-identifier
+  idiom (`KB = 1 << (10 * iota)`), independent counters across separate
+  `const` blocks, the standalone form, mixing `iota` with plain constants, and
+  `iota` inside an arithmetic expression. Two `@compile block { ... }
+  catch(e) { ... }` tests verify the error paths: referencing `iota` outside
+  any `const` declaration reports `symbol.not.found` (matching Go's own
+  "undefined: iota" behavior), and a `const` block whose first entry omits `=`
+  still reports `equals` (`ErrMissingEqual`).
 
 ---
 

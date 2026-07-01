@@ -83,6 +83,12 @@ const (
 	Relaxed = "relaxed"
 	Dynamic = "dynamic"
 	Main    = "main"
+
+	// Iota is the spelling of Go's predeclared "iota" identifier. It is not a
+	// reserved word in Ego (there is no dedicated token for it); the compiler
+	// recognizes it by comparing an identifier's spelling against this
+	// constant while compiling the right-hand side of a const declaration.
+	Iota = "iota"
 )
 
 const (

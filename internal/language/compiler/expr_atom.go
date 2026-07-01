@@ -221,6 +221,33 @@ func (c *Compiler) expressionAtom() error {
 		return nil
 	}
 
+	// Is this a reference to Go's predeclared "iota" identifier? It is not a
+	// reserved word -- there is no dedicated token type for it -- so we detect
+	// it here by comparing the identifier's spelling, the same way the "true"
+	// and "false" boolean literals are recognized above by comparing spelling
+	// against defs.True/defs.False.
+	//
+	// iota only means something inside a const(...) declaration. compileConst()
+	// (see constant.go) sets c.iota to 0 or higher for the duration of
+	// compiling each constant's right-hand-side expression, and restores it to
+	// -1 once the declaration is finished. So c.iota >= 0 here means "we are
+	// currently compiling the right-hand side of a ConstSpec", and c.iota
+	// itself holds that spec's zero-based position in the block. When that's
+	// true we push the current counter value as an ordinary integer literal
+	// (exactly like a numeric literal such as `2` would be pushed) instead of
+	// falling through to compileSymbolValue(), which would otherwise treat
+	// "iota" as an ordinary variable reference and fail with an undefined-symbol
+	// error. Outside of a const declaration (c.iota == -1) we deliberately do
+	// nothing special here, so a plain, unrelated use of the name "iota" falls
+	// through to the normal identifier lookup below and reports "undefined
+	// symbol", matching Go's own behavior.
+	if text == defs.Iota && c.iota >= 0 {
+		c.t.Advance(1)
+		c.b.Emit(bytecode.Push, data.Constant(c.iota))
+
+		return nil
+	}
+
 	// Is it just a symbol needing a load?
 	if t.IsIdentifier() {
 		// Check for auto-increment or decrement

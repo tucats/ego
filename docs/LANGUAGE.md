@@ -800,7 +800,65 @@ const (
 ```
 
 This defines three constant values. Note that the value is set using an
-`=` character since a symbols is not actually being created.
+`=` character since a symbol is not actually being created.
+
+#### iota
+
+Inside a parenthesized `const (...)` group, the predeclared identifier `iota`
+represents a counter that starts at `0` for the first constant in the group
+and increases by one for each constant after that:
+
+```go
+const (
+    Sunday = iota // 0
+    Monday        // 1
+    Tuesday       // 2
+    Wednesday     // 3
+    Thursday      // 4
+    Friday        // 5
+    Saturday      // 6
+)
+```
+
+Notice that only the first entry, `Sunday`, spells out `= iota`. Any later
+entry in the same group that has no `=` of its own simply repeats the
+expression from the nearest entry above it that did have one -- so `Monday`
+behaves as if it had been written `Monday = iota`, and picks up the next
+counter value (`1`). This is why the sequence above counts up automatically
+even though `iota` is only mentioned once.
+
+`iota` can also appear as part of a larger expression, and that expression is
+what gets repeated for each following entry. A common use of this is building
+a set of bit-shifted values, such as byte-size constants:
+
+```go
+const (
+    _  = iota             // 0 is skipped by assigning it to the blank identifier
+    KB = 1 << (10 * iota) // 1 << 10  == 1024
+    MB                    // 1 << 20 == 1,048,576
+    GB                    // 1 << 30 == 1,073,741,824
+)
+```
+
+Here every entry after `KB` repeats the whole expression `1 << (10 * iota)`,
+not just the `iota` part, with `iota` itself continuing to count up (`1`, `2`,
+`3`, ...). The first entry's value is discarded by assigning it to the blank
+identifier `_`, a common idiom when the zero value isn't useful on its own.
+
+A few other things to know about `iota`:
+
+- It is only meaningful inside a `const` declaration. Using `iota` anywhere
+  else is treated like referencing any other undeclared name, and is a
+  compile-time error.
+- It is not a reserved word, so it's still fine to use `iota` as an ordinary
+  variable or parameter name outside of a `const` declaration.
+- Each separate `const` declaration -- parenthesized group or single
+  statement -- gets its own counter starting back at `0`. A plain,
+  non-parenthesized `const answer = iota` is legal too; it is treated as a
+  one-entry group, so `answer` is simply `0`.
+- Omitting the `= expr` on an entry is only allowed once at least one earlier
+  entry in the same group provided an expression to repeat. The very first
+  entry in a group must always include `= expr`.
 
 ### Operators<a name="operators"></a>
 
@@ -3611,9 +3669,9 @@ After this code executes, the value of the array is ["", "apple", "cherry", "pea
 The `sql` package provides support for accessing a database. Currently,
 this must one of the following supported database provider types:
 
-* a Postgres database or a database that uses the Postgres
+- a Postgres database or a database that uses the Postgres
 wire protocol for communicating
-* A SQLite3 database in the file system.
+- A SQLite3 database in the file system.
 
 The package has an `Open` function which creates a new database client
 object. With this object, you can execute a SQL query and get back
@@ -3625,9 +3683,9 @@ of arbitrary size.
 
 The driver must be one of the following supported Database driver types:
 
-* postgres - uses Postgres connection string or URL format
-* sqlite3 - Specifies the file system path of the database file
-* dsn - Specifies a named DSN defined by the Ego server
+- postgres - uses Postgres connection string or URL format
+- sqlite3 - Specifies the file system path of the database file
+- dsn - Specifies a named DSN defined by the Ego server
 
 The connection-string is a driver-specific connection string. For
 example, for Sqlite3, this is the path to the database file. For
@@ -3725,14 +3783,14 @@ The `FormatFloat` function formats a floating-point value. The format value is
 a single byte containing a character describing the expected output format. The
 `format` value must be one of the following:
 
-* 'b' (-ddddp±ddd, a binary exponent),
-* 'e' (-d.dddde±dd, a decimal exponent),
-* 'E' (-d.ddddE±dd, a decimal exponent),
-* 'f' (-ddd.dddd, no exponent),
-* 'g' ('e' for large exponents, 'f' otherwise),
-* 'G' ('E' for large exponents, 'f' otherwise),
-* 'x' (-0xd.ddddp±ddd, a hexadecimal fraction and binary exponent), or
-* 'X' (-0Xd.ddddP±ddd, a hexadecimal fraction and binary exponent).
+- 'b' (-ddddp±ddd, a binary exponent),
+- 'e' (-d.dddde±dd, a decimal exponent),
+- 'E' (-d.ddddE±dd, a decimal exponent),
+- 'f' (-ddd.dddd, no exponent),
+- 'g' ('e' for large exponents, 'f' otherwise),
+- 'G' ('E' for large exponents, 'f' otherwise),
+- 'x' (-0xd.ddddp±ddd, a hexadecimal fraction and binary exponent), or
+- 'X' (-0Xd.ddddP±ddd, a hexadecimal fraction and binary exponent).
 
 The `precision` value describes the number of digits that will be
 formatted to the right of the decimal point (trailing zero digits are
@@ -5156,13 +5214,13 @@ using the command line:
 When extensions are enabled, additional language features are available.
 These include:
 
-* The `print` statement as a shorter form of `fmt.Println()`
-* The `panic` statement to signal a runtime error
-* The `try` and `catch` statements for error catching
-* The optional operator `? value : ifErrorValue`
-* Use of `len()` with any data type
-* Addition of the `index()` function for searching any data type
-* Support for variable-length argument lists in functions (as distinct
+- The `print` statement as a shorter form of `fmt.Println()`
+- The `panic` statement to signal a runtime error
+- The `try` and `catch` statements for error catching
+- The optional operator `? value : ifErrorValue`
+- Use of `len()` with any data type
+- Addition of the `index()` function for searching any data type
+- Support for variable-length argument lists in functions (as distinct
   from functions with variadic `...` argument lists)
 
 You can also temporarily set this value within any function by using
@@ -5383,18 +5441,18 @@ checking is strict, relaxed, or dynamic.
 
 When in strict mode,
 
-* All values in an array constant must be of the same type
-* You cannot store a value in a variable of a different type
-* You cannot create or delete structure members
+- All values in an array constant must be of the same type
+- You cannot store a value in a variable of a different type
+- You cannot create or delete structure members
 
 When in relaxed mode,
 
-* If possible a value will be converted before being stored to match the type of the receiving variable
-* In expressions, data types will automatically be promoted to the most complex type in the expression
+- If possible a value will be converted before being stored to match the type of the receiving variable
+- In expressions, data types will automatically be promoted to the most complex type in the expression
 
 When in dynamic mode,
 
-* Any value will be converted to the required type for any operation, automatically
+- Any value will be converted to the required type for any operation, automatically
 
 This mode is effective only within the current statement block
 (demarcated by "{" and "}" characters). When the block finishes,

@@ -1,0 +1,147 @@
+// Tests for BUG-20: Go's "iota" identifier inside const declarations.
+//
+// iota starts at 0 for the first entry in a const(...) block and increases by
+// one for every entry after that, whether or not that entry spells out its
+// own "= expression" (an entry with no "=" repeats the nearest preceding
+// entry that had one -- this is how the classic "const ( A = iota; B; C )"
+// idiom works).
+
+@test "types: iota basic sequence"
+{
+    const (
+        Apple  = iota
+        Banana
+        Cherry
+    )
+
+    @assert Apple == 0
+    @assert Banana == 1
+    @assert Cherry == 2
+}
+
+@test "types: iota explicit on every spec"
+{
+    const (
+        A = iota
+        B = iota
+        C = iota
+    )
+
+    @assert A == 0
+    @assert B == 1
+    @assert C == 2
+}
+
+@test "types: iota skip with blank identifier"
+{
+    // The classic Go "power of two" idiom: the blank identifier discards the
+    // first (zero) value, and later specs repeat "1 << (10 * iota)" with an
+    // ever-increasing iota.
+    const (
+        _  = iota
+        KB = 1 << (10 * iota)
+        MB
+        GB
+    )
+
+    @assert KB == 1024
+    @assert MB == 1048576
+    @assert GB == 1073741824
+}
+
+@test "types: iota resets for each const block"
+{
+    const (
+        First = iota
+        Second
+    )
+
+    const (
+        Third = iota
+        Fourth
+    )
+
+    @assert First == 0
+    @assert Second == 1
+    @assert Third == 0
+    @assert Fourth == 1
+}
+
+@test "types: standalone const with iota is zero"
+{
+    // Even outside a parenthesized block, a single "const Name = iota" is
+    // legal -- Go treats it as a one-entry block, so iota is 0.
+    const Solo = iota
+    @assert Solo == 0
+}
+
+@test "types: iota mixed with plain constants"
+{
+    const (
+        Name  = "widget" // spec 0: no iota reference, iota counter is still 0 here
+        Index = iota     // spec 1: iota == 1
+        Next             // spec 2: repeats "= iota", now == 2
+    )
+
+    @assert Name == "widget"
+    @assert Index == 1
+    @assert Next == 2
+}
+
+@test "types: iota usable in arithmetic expressions"
+{
+    const (
+        Base = iota + 10
+        Next
+    )
+
+    @assert Base == 10
+    @assert Next == 11
+}
+
+@test "types: iota outside const block is an error"
+{
+    // iota only has meaning inside a const declaration. Referencing it as a
+    // plain identifier elsewhere must fail to compile, exactly like any other
+    // undeclared symbol.
+    var compileFailed bool
+
+    @compile block {
+        x := iota
+        fmt.Println(x)
+    } catch(e) {
+        compileFailed = true
+        @assert e.Code() == "symbol.not.found"
+        @assert e.Unwrap() == "iota"
+    }
+
+    @assert compileFailed == true
+}
+
+@test "types: iota name is an ordinary identifier outside const"
+{
+    // "iota" is not a reserved word -- outside of a const declaration it can
+    // be used as a perfectly ordinary variable name.
+    iota := 5
+    @assert iota + 1 == 6
+}
+
+@test "types: const block first spec still requires equals"
+{
+    // The "omit = expr to repeat the previous spec" shorthand only applies
+    // when there IS a previous spec with its own expression. The very first
+    // entry in a block still requires "=", so this must still be a compile
+    // error, exactly as it was before iota support was added.
+    var compileFailed bool
+
+    @compile block {
+        const (
+            Foo
+        )
+    } catch(e) {
+        compileFailed = true
+        @assert e.Code() == "equals"
+    }
+
+    @assert compileFailed == true
+}

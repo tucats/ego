@@ -138,6 +138,15 @@ type Compiler struct {
 	statementCount   int     // Number of statements in the current block
 	lineNumberOffset int     // Offset used for generating line number data in debug data
 	flags            flagSet // Used to hold parser state flags
+	// iota holds the current value of Go's predeclared "iota" identifier while the
+	// compiler is working through a const(...) declaration. compileConst() sets this
+	// to 0 when it starts compiling a block of constants, increments it after each
+	// constant in the block, and restores the prior value when the block is done.
+	// A value of -1 (the default, see New()) means "not currently inside a const
+	// declaration" -- expressionAtom() uses that to decide whether a bare "iota"
+	// identifier should be treated as the special counter or looked up as an
+	// ordinary (and, outside a const block, undefined) symbol.
+	iota int
 }
 
 // This is a list of the packages that were successfully auto-imported.
@@ -194,6 +203,7 @@ func New(name string) *Compiler {
 		importStack:  make([]importElement, 0),
 		symbolErrors: map[string]*errors.Error{},
 		started:      time.Now(),
+		iota:         -1, // Not inside a const(...) block yet; see the field comment.
 		flags: flagSet{
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
@@ -228,6 +238,10 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.functionLocalScopeStart = c.functionLocalScopeStart
 	clone.statementCount = c.statementCount
 	clone.started = c.started
+	// Propagate the current "iota" counter so that an expression clone created by
+	// Expression() (used to compile a const ConstSpec's right-hand side) still
+	// recognizes a bare "iota" reference while inside a const(...) block.
+	clone.iota = c.iota
 
 	// Make a new copy of the slices.
 	clone.constants = append([]string(nil), c.constants...)
