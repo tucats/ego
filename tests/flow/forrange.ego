@@ -24,10 +24,12 @@
 
 {
     // Range over a string. For each iteration, provides the next
-    // unicode rune. The index variable advances to the byte position
-    // of the character in the underlying slice.
+    // unicode rune, as an int32 code point value (matching Go, where
+    // the range value over a string has type `rune`, an alias for
+    // int32). The index variable advances to the byte position of
+    // the character in the underlying slice.
     a := "\u2318foo\u2318"
-    b := ["\u2318", "f", "o", "o", "\u2318"]
+    b := [int32(0x2318), 'f', 'o', 'o', int32(0x2318)]
     c := [0, 3, 4, 5, 6]
     p := 0
     for i, ch := range a {

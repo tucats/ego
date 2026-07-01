@@ -484,7 +484,21 @@ func rangeNextMap(c *Context, r *rangeDefinition, actual *data.Map, destination 
 // r.keySet (byte offsets) and r.runes (decoded runes).  The index variable
 // receives the byte offset (matching Go semantics — multi-byte UTF-8
 // characters produce non-consecutive offsets) and the value variable receives
-// a single-character string.
+// the decoded rune itself.
+//
+// BUG-19 fix: in Go, `for i, ch := range someString` gives `ch` the type
+// `rune`, which is just an alias for `int32` — it holds the Unicode code
+// point number (e.g. 65 for 'A'), not a one-character string. The previous
+// Ego implementation converted the rune to a `string(value)` before storing
+// it, so `ch` came out as a single-character string like "A" instead of the
+// integer 65. That silently diverged from documented Go behavior and could
+// trip up anyone porting Go code, or anyone who expected to do arithmetic on
+// the loop value (e.g. checking if a rune is in the range of digits).
+//
+// `value` below is already of Go type `rune`, which — because `rune` is
+// defined as `type rune = int32` in the Go language — is stored in the
+// symbol table as a plain `int32`. No explicit conversion is needed; we
+// simply stop wrapping it in `string(...)`.
 func rangeNextString(c *Context, r *rangeDefinition, destination int, stackSize int) error {
 	var err error
 
@@ -492,17 +506,17 @@ func rangeNextString(c *Context, r *rangeDefinition, destination int, stackSize 
 		c.programCounter = destination
 		c.rangeStack = c.rangeStack[:stackSize-1]
 	} else {
-		key := r.keySet[r.index]   // byte offset of the current rune
-		value := r.runes[r.index]  // the rune itself
+		key := r.keySet[r.index]  // byte offset of the current rune
+		value := r.runes[r.index] // the rune itself (Go type: rune == int32)
 
 		if r.indexName != "" && r.indexName != defs.DiscardedVariable {
 			err = c.symbols.Set(r.indexName, key)
 		}
 
 		if err == nil && r.valueName != "" && r.valueName != defs.DiscardedVariable {
-			// Convert the rune to a one-character string, matching Go's
-			// for _, ch := range s { ... } where ch is a rune, not an int.
-			err = c.symbols.Set(r.valueName, string(value))
+			// Store the rune as-is (an int32 code point), matching Go's
+			// for _, ch := range s { ... } where ch has type rune.
+			err = c.symbols.Set(r.valueName, value)
 		}
 
 		r.index++

@@ -1333,6 +1333,41 @@ fmt.Println("The products are all named", names)
 This creates an array of string values, and stores the name of each
 key in the list by appending them.
 
+You can also use `range` to step through the characters of a `string`
+value. This matches Go's behavior exactly: the index variable receives
+the **byte offset** of each character within the string (not a simple
+0, 1, 2, … count), and the value variable receives the decoded Unicode
+code point as an `int32` (Go calls this type `rune`, which is just
+another name for `int32`) — **not** a one-character string. For example,
+
+```go
+for i, ch := range "Hi⌘!" {
+    fmt.Printf("i=%d, ch=%v, type=%T\n", i, ch, ch)
+}
+```
+
+prints:
+
+```text
+i=0, ch=72, type=int32
+i=1, ch=105, type=int32
+i=2, ch=8984, type=int32
+i=5, ch=33, type=int32
+```
+
+Note that the index jumps from `2` to `5`, skipping `3` and `4`, because
+`⌘` (U+2318) is encoded as 3 bytes in UTF-8 — the index tracks byte
+position, not character count. If you need the character as a
+one-character `string` instead of its integer code point, convert it
+explicitly:
+
+```go
+for i, ch := range "Hi⌘!" {
+    s := string([]int32{ch})   // "H", "i", "⌘", "!"
+    fmt.Println(i, s)
+}
+```
+
 ### `break` and `continue` <a name="break-continue"></a>
 
 Sometimes when running an loop, you may wish to change the flow of

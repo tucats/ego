@@ -481,11 +481,15 @@ func Test_rangeNextByteCode_DefaultCase_PopsRangeStack_RANGE2(t *testing.T) {
 // Test_rangeNextString_FullIteration verifies a complete for-range loop over a
 // 3-character ASCII string.
 //
+// BUG-19: the value variable must receive the rune as an int32 code point
+// (matching Go's `for i, ch := range s` where ch has type rune), not a
+// one-character string.
+//
 // Expected per-step behavior:
 //
-//	step 0: index var = 0 (byte offset), value var = "a", PC unchanged
-//	step 1: index var = 1,               value var = "b", PC unchanged
-//	step 2: index var = 2,               value var = "c", PC unchanged
+//	step 0: index var = 0 (byte offset), value var = int32('a'), PC unchanged
+//	step 1: index var = 1,               value var = int32('b'), PC unchanged
+//	step 2: index var = 2,               value var = int32('c'), PC unchanged
 //	step 3: exhausted — PC = dest,       rangeStack trimmed to 0 entries
 func Test_rangeNextString_FullIteration(t *testing.T) {
 	const dest = 99
@@ -500,13 +504,13 @@ func Test_rangeNextString_FullIteration(t *testing.T) {
 
 	type want struct {
 		idx any
-		val string
+		val int32
 	}
 
 	steps := []want{
-		{0, "a"},
-		{1, "b"},
-		{2, "c"},
+		{0, 'a'},
+		{1, 'b'},
+		{2, 'c'},
 	}
 
 	for step, w := range steps {
@@ -578,7 +582,8 @@ func Test_rangeNextString_DiscardedVariables(t *testing.T) {
 }
 
 // Test_rangeNextString_MultiByteUTF8 verifies that the index variable receives
-// the byte offset (not the sequential rune count) for multi-byte characters.
+// the byte offset (not the sequential rune count) for multi-byte characters,
+// and that the value variable receives the rune's int32 code point (BUG-19).
 func Test_rangeNextString_MultiByteUTF8(t *testing.T) {
 	const dest = 99
 	tc := newTestContext(t).
@@ -595,7 +600,7 @@ func Test_rangeNextString_MultiByteUTF8(t *testing.T) {
 	}
 
 	tc.assertSymbolValue("i", 0) // byte offset 0
-	tc.assertSymbolValue("v", "日")
+	tc.assertSymbolValue("v", '日')
 
 	// Second step: rune '本' at byte offset 3.
 	if err := rangeNextByteCode(tc.ctx, dest); err != nil {
@@ -603,7 +608,7 @@ func Test_rangeNextString_MultiByteUTF8(t *testing.T) {
 	}
 
 	tc.assertSymbolValue("i", 3) // byte offset 3 (not 1!)
-	tc.assertSymbolValue("v", "本")
+	tc.assertSymbolValue("v", '本')
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
