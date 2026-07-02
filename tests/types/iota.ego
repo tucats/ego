@@ -106,7 +106,7 @@
     // undeclared symbol.
     var compileFailed bool
 
-    @compile block {
+    @compile block unknown=true {
         x := iota
         fmt.Println(x)
     } catch(e) {
