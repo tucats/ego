@@ -4,7 +4,7 @@
 
     // The compiler will report two errors, that "bob" is not found, and
     // that "unused" is unused.
-    @compile block {
+    @compile block unknown=true unused=true {
 
         unused := bob
 
