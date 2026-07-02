@@ -126,6 +126,10 @@ var FunctionDictionary = map[string]FunctionDefinition{
 					Type: data.InterfaceType,
 				},
 			},
+			// close() on a channel returns (wasOpen bool, err error) — see
+			// the Close() doc comment in internal/builtins/close.go for why
+			// this two-value, catchable-error return exists (BUG-29).
+			Returns: []*data.Type{data.BoolType, data.ErrorType},
 		}},
 	"delete": {
 		MinArgCount:     1,

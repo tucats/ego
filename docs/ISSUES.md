@@ -50,7 +50,7 @@ reflected in each area's summary table.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
 Across all six areas, this document currently tracks **259 issues**:
-**216 resolved** and **43 still open**. Open issues are
+**219 resolved** and **40 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 59 issues (22 resolved)
+- [BUG — General Language Bugs](#area-bug) — 59 issues (25 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -194,9 +194,9 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
 | [BUG-25](#BUG-25) | BUG | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
 | [BUG-26](#BUG-26) | BUG | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
-| [BUG-27](#BUG-27) | BUG | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | |
-| [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | |
-| [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | |
+| [BUG-27](#BUG-27) | BUG | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
+| [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
+| [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
 | [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
 | [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
@@ -467,9 +467,9 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-24](#BUG-24) | MEDIUM | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
 | [BUG-25](#BUG-25) | CRITICAL | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
 | [BUG-26](#BUG-26) | CRITICAL | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
-| [BUG-27](#BUG-27) | CRITICAL | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | |
-| [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | |
-| [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | |
+| [BUG-27](#BUG-27) | CRITICAL | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
+| [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
+| [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
 | [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
 | [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
@@ -2535,6 +2535,45 @@ so any Go-level panic from the underlying stdlib type propagates all the way out
 process. Wrapping the calls in `try {} catch (e) {}` does not help — confirmed the crash
 still occurs identically.
 
+**Resolution (July 2026):**  
+Added a general-purpose panic-recovery safety net at the native-call boundary, rather than
+a `sync.WaitGroup`-specific fix, so that *any* native Go method or function called from Ego
+that panics is turned into a normal, catchable Ego error instead of crashing the process.
+
+- **`internal/language/bytecode/callNative.go` — new `safeReflectCall` helper.** Both
+  `CallWithReceiver` (method calls, e.g. `wg.Done()`) and `CallDirect` (package-level
+  function calls, e.g. `math.Sqrt(x)`) now route their `reflect.Value.Call(...)` through this
+  shared helper instead of calling it directly. `safeReflectCall` wraps the call in a
+  `defer recover()`; if the native code panics, the recovered value is captured in a named
+  return and converted into a new error (see below) instead of being allowed to keep
+  unwinding the goroutine's stack.
+- **New error `ErrNativeCallPanic`** (key `native.call.panic`), added to
+  `internal/errors/messages.go` and localized in all three `messages_*.txt` files, per
+  CLAUDE.md's "Adding Error Messages" convention. The error's `.Context(...)` includes both
+  a short description of what was being called (e.g. `*sync.WaitGroup.Done`, built from
+  `reflect.TypeOf(receiver)` and the method name, or the resolved function name via
+  `runtime.FuncForPC` for `CallDirect`) and the original panic value, so a developer — or
+  Ego code inspecting the caught error — has as much context as possible about what failed
+  and why.
+- Because the returned value is a plain Go `error` (not a `data.List`), it flows through the
+  ordinary bytecode `handleCatch` mechanism and is automatically try/catch-eligible, with no
+  further wrapping required.
+
+**What this does *not* fix:** a small number of Go runtime conditions use `runtime.fatal()`
+instead of an ordinary `panic()`, and a fatal error is deliberately unrecoverable — no
+`recover()`, however placed, can catch it. `sync.Mutex.Unlock()` on an unlocked mutex is
+exactly this case; see BUG-28's own resolution for how that specific situation is instead
+prevented from ever happening, rather than recovered from after the fact.
+
+**Tests added:**
+- `internal/language/bytecode/callNative_test.go` (Section 10): `Test_safeReflectCall_NoPanic`
+  (ordinary calls are unaffected) and `Test_safeReflectCall_RecoversPanic` (the direct
+  regression test — verifies no panic escapes, and that the resulting error is
+  `ErrNativeCallPanic` and mentions both the call description and the original panic text).
+- `tests/packages/sync.ego` — `"sync: WaitGroup extra Done is catchable, not a crash"` is the
+  end-to-end Ego-level regression test for the original repro above; `"sync: WaitGroup
+  normal Add, Done, and Wait"` guards against a regression in ordinary usage.
+
 ---
 
 <a id="BUG-28"></a>
@@ -2595,6 +2634,41 @@ of wrapping inside Ego (nor even a Go-level `defer recover()`) can intercept it 
 runtime function must guard against the misuse explicitly (e.g. tracking lock state) before
 ever calling into the native `sync.Mutex`.
 
+**Resolution (July 2026):**  
+As predicted in the Notes above, BUG-27's general `recover()`-based safety net (see its own
+resolution) cannot help here, because Go's `fatal()` path bypasses `recover()` entirely by
+design. The fix instead prevents the risky call from ever happening:
+
+- **`internal/language/bytecode/callNative.go` — new `mutexLockState` + `callMutexMethod`.**
+  Ego represents a `sync.Mutex` variable as a bare `*sync.Mutex` with no extra field where an
+  "am I locked?" flag could live (see `SetNew` in `internal/runtime/sync/types.go`), so a
+  package-level `sync.Map` (`mutexLockState`) supplies that missing bookkeeping externally,
+  keyed by the `*sync.Mutex` pointer itself. `callMutexMethod` intercepts `Lock`, `Unlock`,
+  and `TryLock` calls on a `*sync.Mutex` receiver *before* `CallWithReceiver`'s generic
+  reflection-based dispatch: `Lock`/`TryLock` update the tracked state as usual, and `Unlock`
+  checks the tracked state first — if the mutex isn't marked locked, the real `Unlock()` is
+  never called at all, so the fatal error can never be triggered.
+- **New error `ErrMutexNotLocked`** (key `mutex.not.locked`), added to
+  `internal/errors/messages.go` and localized in all three `messages_*.txt` files, is
+  returned instead — an ordinary, catchable Ego error.
+- `sync.RWMutex` is registered internally (`SyncRWMutexType` in
+  `internal/runtime/sync/types.go`) but is not actually exposed to Ego code (it's absent from
+  `SyncPackage`'s member map) — this fix is therefore scoped to `sync.Mutex`, the only type
+  reachable from Ego code that has this failure mode today.
+
+**Tests added:**
+- `internal/language/bytecode/callNative_test.go` (Section 11): six tests covering normal
+  Lock/Unlock, TryLock while unlocked/locked, an unhandled-method-name fallback, and two
+  direct regression tests — `Test_callMutexMethod_UnlockWithoutLock` and
+  `Test_callMutexMethod_DoubleUnlockReturnsErrorNotFatal` (the exact repro from this issue,
+  exercised through `callMutexMethod` and again through the public `CallWithReceiver` entry
+  point in `Test_CallWithReceiver_MutexDoubleUnlock`).
+- `tests/packages/sync.ego` — `"sync: Mutex double Unlock is catchable, not a crash"` is the
+  end-to-end Ego-level regression test; `"sync: Mutex normal lock and unlock cycle"`,
+  `"sync: Mutex TryLock reports availability correctly"`, and `"sync: independent Mutex
+  values track lock state separately"` guard against regressions in ordinary usage and in
+  the per-instance bookkeeping.
+
 ---
 
 <a id="BUG-29"></a>
@@ -2652,6 +2726,41 @@ unconditionally calls Go's native `close(c.channel)` before checking `c.isOpen`;
 computes `wasActive` *after* the unconditional close. `Send()` in the same file is protected
 by `defer recover()` (per CLAUDE.md's documented note on `data.Channel`), but `Close()` has
 no equivalent guard.
+
+**Resolution (July 2026):**  
+Applied the same fix pattern the Notes above point at for `Send()`: check the channel's
+state before ever touching the native channel, rather than trying to recover afterward.
+
+- **`internal/language/data/channel.go` — `Channel.Close()` signature changed** from
+  `func() bool` to `func() (wasOpen bool, err error)`. The method now checks `c.isOpen`
+  *before* calling the native `close()` (both under the same exclusive `c.mutex.Lock()` that
+  was already held for the whole method, so there's no race window between the check and the
+  close). If the channel is already closed, it returns `false, errors.ErrChannelNotOpen`
+  (the same error `Send()` already used for a closed channel) instead of calling `close()`
+  again — so the panic can no longer happen at all.
+- **`internal/builtins/close.go` — `Close()`** now builds a `data.NewList(wasOpen, err)` for
+  the channel case, following the documented multi-return convention (CLAUDE.md's
+  `callRuntimeFunction` dispatch mechanics section), which is what makes the error catchable
+  via `try`/`catch` rather than an uncatchable abort.
+- **`internal/builtins/functions.go`** — the `"close"` builtin's `Declaration.Returns` was
+  updated to `[]*data.Type{data.BoolType, data.ErrorType}` to match the new two-value
+  contract. This is backward compatible: every existing call site in the codebase and test
+  suite uses `close(ch)` as a bare statement or inside `defer`, both of which are unaffected
+  by adding return values; the two-value form `wasOpen, err := close(ch)` now also works.
+
+**Tests added:**
+- `internal/language/data/channel_test.go`: `Test_Channel_Close_FirstCallSucceeds`,
+  `Test_Channel_Close_NilReceiver`, and the direct regression test
+  `Test_Channel_Close_DoubleCloseDoesNotPanic` (wraps the second `Close()` call in its own
+  `recover()` so a regression fails the test cleanly instead of crashing the whole `go test`
+  run).
+- `internal/builtins/close_test.go`: updated the existing tests for the new `data.List`
+  return shape and added `Test_Close_DoubleCloseReturnsError`, the same regression test one
+  layer up through the `close()` builtin wrapper.
+- `tests/defer/channel.ego` — `"defer: double close is catchable, not a crash"` is the
+  end-to-end Ego-level regression test for the original repro above;
+  `"defer: closing a channel returns wasOpen and no error"` guards the new two-value return
+  form.
 
 ---
 

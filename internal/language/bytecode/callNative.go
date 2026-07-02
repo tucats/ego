@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // Make a call to a native (Go) function. The function value is found in the function
@@ -521,6 +523,174 @@ func convertFromNativeArray(result any, c *Context) error {
 	}
 }
 
+// safeReflectCall invokes a native Go method or function that was located
+// via reflection (a reflect.Value produced either by ax.MethodByName(...)
+// for a method, or by reflect.ValueOf(fn) for a plain function — both kinds
+// support the same m.Call(argList) call, which is why one helper can serve
+// both CallWithReceiver and CallDirect below).
+//
+// # Why this exists (background for developers new to Go)
+//
+// Ego lets scripts call ordinary Go functions and methods — things like
+// math.Sqrt, or Lock()/Done() on a sync.Mutex/sync.WaitGroup — by looking
+// them up with the "reflect" package and invoking them dynamically. The
+// problem is that Go code can panic (an unrecoverable-looking runtime
+// error) for all sorts of reasons a caller can't always predict in
+// advance: a wrong argument, an internal invariant the standard library
+// enforces, and so on. Go's built-in recover() function can catch an
+// ordinary panic() and stop it from crashing the program, but only if
+// recover() is called from a deferred function that runs while the panic
+// is still unwinding the stack — see https://go.dev/blog/defer-panic-and-recover
+// for the full explanation if this is new to you.
+//
+// Before this function existed, nothing on Ego's native-call path ever
+// called recover() at all, so ANY panic from ANY native Go function or
+// method — for example, calling Done() on a sync.WaitGroup more times than
+// Add() was called, which panics with "sync: negative WaitGroup counter" —
+// crashed the entire `ego` process, not just the Ego script that triggered
+// it (see BUG-27 in docs/ISSUES.md for the original report).
+//
+// This function is a general-purpose safety net: it wraps the call in a
+// deferred recover() and, if a panic happens, converts it into a normal Go
+// `error` value instead of letting it escape. Once it's a normal error, the
+// rest of Ego's usual error handling takes over, and the panic becomes a
+// perfectly ordinary, catchable Ego runtime error (try/catch can handle it
+// just like a division-by-zero or an out-of-range index).
+//
+// # This is a safety net, not a cure-all
+//
+// A small number of Go runtime conditions are considered so severe that Go
+// deliberately makes them impossible to recover from even with the pattern
+// used here — they call runtime.fatal() (sometimes printed as
+// "fatal error: ...") instead of an ordinary panic(), and a fatal error
+// always terminates the process no matter what. Unlocking an already-
+// unlocked sync.Mutex is one specific example (see BUG-28 in
+// docs/ISSUES.md); that case can only be prevented by never making the
+// risky call in the first place, which is what the mutexLockState
+// bookkeeping and callMutexMethod function (below) do specifically for
+// sync.Mutex. This function's recover()-based safety net still helps for
+// every OTHER kind of native-call panic, which is why both mechanisms are
+// used together.
+//
+// callDescription is a short, human-readable label such as
+// "*sync.WaitGroup.Done" that is folded into the resulting error's context
+// when a panic is recovered, so that whatever catches the error (an Ego
+// try/catch block, or a developer reading a log) has as much information
+// as possible about what was being called when things went wrong.
+func safeReflectCall(m reflect.Value, argList []reflect.Value, callDescription string) (results []reflect.Value, err error) {
+	// This deferred function always runs when safeReflectCall returns,
+	// including when it returns because of a panic. recover() returns nil
+	// if there was no panic; if there was one, it returns whatever value
+	// was passed to panic(...) (often an error, but it can be any value at
+	// all — Go does not restrict what you can panic with). Assigning to the
+	// named return value "err" here is what lets us turn that panic into a
+	// normal returned error instead of letting the panic keep propagating
+	// up the call stack.
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New(errors.ErrNativeCallPanic).Context(fmt.Sprintf("%s: %v", callDescription, r))
+		}
+	}()
+
+	results = m.Call(argList)
+
+	return results, nil
+}
+
+// mutexLockState tracks, for every *sync.Mutex an Ego program has created,
+// whether that mutex is currently locked. The map key is the *sync.Mutex
+// pointer itself (Go pointers are directly comparable, so they work fine as
+// map keys), and the value is true while the mutex is locked.
+//
+// # Why this bookkeeping is necessary (background for developers new to Go)
+//
+// Normally a Go value can carry its own extra fields, but Ego represents a
+// `sync.Mutex` variable as a bare *sync.Mutex with nothing extra attached
+// (see SetNew in internal/runtime/sync/types.go) — there's no natural place
+// on the Ego side to stash an "am I locked?" flag next to it. This map
+// supplies that missing bookkeeping externally, keyed by pointer identity,
+// which is how Go itself identifies "the same mutex" for locking purposes.
+//
+// This tracking exists specifically to fix BUG-28 (docs/ISSUES.md): calling
+// Unlock() on a sync.Mutex that is not currently locked does not produce an
+// ordinary panic() that safeReflectCall's recover() could catch above — it
+// triggers Go's "fatal error: sync: unlock of unlocked mutex", which uses a
+// stronger, deliberately unrecoverable failure mode (Go's authors consider
+// this a sign of a program bug too serious to keep running from). Since
+// that failure can't be caught after the fact, the only way to avoid it is
+// to catch the mistake BEFORE ever calling the real Unlock() — which is
+// exactly what mutexLockState and callMutexMethod (below) do.
+//
+// sync.Map (rather than a plain map guarded by its own mutex) is used
+// because it already supports safe concurrent reads and writes from
+// multiple goroutines, which matters here: Ego programs can call methods on
+// the same sync.Mutex from many goroutines at once, same as in Go.
+var mutexLockState sync.Map // key: *sync.Mutex, value: bool (true means locked)
+
+// callMutexMethod intercepts Lock, Unlock, and TryLock calls on a
+// *sync.Mutex receiver, using the mutexLockState bookkeeping above to
+// refuse an Unlock() call when the mutex isn't actually locked — see the
+// mutexLockState comment for the full explanation of why this proactive
+// check, rather than a recover()-based fix, is required for this specific
+// case.
+//
+// handled reports whether methodName was one of the three method names
+// this function knows about. When handled is false, the caller (see
+// CallWithReceiver below) should fall back to the normal reflection-based
+// dispatch, so that any sync.Mutex method this function doesn't specially
+// handle keeps working exactly as it did before.
+func callMutexMethod(mu *sync.Mutex, methodName string) (result any, handled bool, err error) {
+	switch methodName {
+	case "Lock":
+		// Locking an already-locked mutex is completely normal Go behavior
+		// — the caller simply waits until the mutex becomes available. That
+		// is not a bug, so there is nothing to guard against here beyond
+		// recording that the mutex is now locked once Lock() returns.
+		mu.Lock()
+		mutexLockState.Store(mu, true)
+
+		return nil, true, nil
+
+	case "Unlock":
+		locked, _ := mutexLockState.Load(mu)
+		if locked != true {
+			// Refuse to call the real Unlock() at all. Doing so would
+			// trigger Go's unrecoverable "fatal error: sync: unlock of
+			// unlocked mutex" and take down the whole ego process — see
+			// the mutexLockState comment above for the full explanation.
+			// Returning a normal, catchable Ego error here instead lets
+			// the calling Ego program detect and react to the mistake
+			// (for example, by logging it and continuing), rather than
+			// losing all of its other in-flight work to a process crash.
+			return nil, true, errors.New(errors.ErrMutexNotLocked).Context("Unlock")
+		}
+
+		mutexLockState.Store(mu, false)
+		mu.Unlock()
+
+		return nil, true, nil
+
+	case "TryLock":
+		// TryLock() is always safe to call regardless of the current lock
+		// state — it never blocks and never panics, it just reports
+		// whether it succeeded. We only need to update our bookkeeping so
+		// that a later Unlock() call is judged correctly.
+		acquired := mu.TryLock()
+		if acquired {
+			mutexLockState.Store(mu, true)
+		}
+
+		return acquired, true, nil
+
+	default:
+		// Not one of the methods we specially handle (there are none today,
+		// since Lock/Unlock/TryLock are the only sync.Mutex methods Ego
+		// exposes — see internal/runtime/sync/types.go — but this keeps the
+		// function forward-compatible if that ever changes).
+		return nil, false, nil
+	}
+}
+
 // CallWithReceiver looks up methodName on receiver and calls it with args,
 // returning the result(s).
 //
@@ -557,6 +727,20 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 		return CallWithReceiver(*actual, methodName, args...)
 
 	default:
+		// sync.Mutex needs to be special-cased here, before the generic
+		// reflection-based call further down: an Unlock() call on an
+		// already-unlocked mutex cannot be safely handled by the
+		// recover()-based safety net in safeReflectCall (see the
+		// mutexLockState comment above callMutexMethod for the full
+		// explanation of why). If actual is a *sync.Mutex and methodName is
+		// one callMutexMethod knows how to handle, use that instead of
+		// falling through to the generic path below.
+		if mu, ok := actual.(*sync.Mutex); ok {
+			if result, handled, err := callMutexMethod(mu, methodName); handled {
+				return result, err
+			}
+		}
+
 		// Build the reflect argument list.
 		argList := make([]reflect.Value, len(args))
 		for i, arg := range args {
@@ -580,7 +764,16 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 			return nil, errors.ErrNoFunctionReceiver.Context(methodName)
 		}
 
-		results := m.Call(argList)
+		// Describe this call for use in a potential panic-recovery error
+		// message (see safeReflectCall). reflect.TypeOf(actual) gives the
+		// receiver's concrete Go type, e.g. "*sync.WaitGroup".
+		callDescription := fmt.Sprintf("%s.%s", reflect.TypeOf(actual).String(), methodName)
+
+		results, err := safeReflectCall(m, argList, callDescription)
+		if err != nil {
+			return nil, err
+		}
+
 		if len(results) == 1 {
 			return results[0].Interface(), nil
 		}
@@ -606,7 +799,20 @@ func CallDirect(fn any, args ...any) (any, error) {
 		argList[i] = reflect.ValueOf(arg)
 	}
 
-	results := fv.Call(argList)
+	// Describe this call for use in a potential panic-recovery error message
+	// (see safeReflectCall). runtime.FuncForPC recovers the original Go
+	// function's fully-qualified name (e.g. "math.Sqrt") from its address;
+	// if that lookup ever fails (it shouldn't, for a valid function value)
+	// we fall back to a generic label rather than leaving it blank.
+	callDescription := "native function call"
+	if fn := runtime.FuncForPC(fv.Pointer()); fn != nil {
+		callDescription = fn.Name()
+	}
+
+	results, err := safeReflectCall(fv, argList, callDescription)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(results) == 1 {
 		return results[0].Interface(), nil

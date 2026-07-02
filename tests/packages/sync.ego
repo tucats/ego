@@ -1,0 +1,121 @@
+// Tests for the sync package (sync.Mutex, sync.WaitGroup).
+//
+// This file also carries the regression tests for BUG-27 and BUG-28 (see
+// docs/ISSUES.md): misusing sync.Mutex or sync.WaitGroup from Ego code used
+// to crash the entire ego process instead of producing a normal, catchable
+// Ego error. Both bugs are now fixed, so the "misuse" tests below expect a
+// catchable error rather than a program crash.
+
+import "sync"
+import "errors"
+
+@test "sync: Mutex normal lock and unlock cycle"
+{
+    var mu sync.Mutex
+
+    mu.Lock()
+    mu.Unlock()
+
+    mu.Lock()
+    mu.Unlock()
+
+    @pass
+}
+
+@test "sync: Mutex TryLock reports availability correctly"
+{
+    var mu sync.Mutex
+
+    // Nothing else holds the mutex yet, so this must succeed.
+    acquired := mu.TryLock()
+    @assert acquired
+
+    // The mutex is now locked, so a second TryLock() must fail rather
+    // than block.
+    blocked := mu.TryLock()
+    @assert !blocked
+
+    mu.Unlock()
+}
+
+@test "sync: Mutex double Unlock is catchable, not a crash"
+{
+    // Regression test for BUG-28. Before the fix, calling Unlock() on a
+    // sync.Mutex that was not locked triggered Go's unrecoverable
+    // "fatal error: sync: unlock of unlocked mutex" and crashed the whole
+    // ego process. It must now be an ordinary, catchable Ego error.
+    var mu sync.Mutex
+    caught := false
+
+    mu.Lock()
+    mu.Unlock()
+
+    try {
+        mu.Unlock()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("mutex.not.locked"))
+    }
+
+    @assert caught
+
+    // The mutex must still be usable afterward — the failed Unlock()
+    // should not have corrupted its state.
+    mu.Lock()
+    mu.Unlock()
+}
+
+@test "sync: WaitGroup normal Add, Done, and Wait"
+{
+    var wg sync.WaitGroup
+
+    wg.Add(2)
+    wg.Done()
+    wg.Done()
+    wg.Wait()
+
+    @pass
+}
+
+@test "sync: WaitGroup extra Done is catchable, not a crash"
+{
+    // Regression test for BUG-27. Before the fix, calling Done() more
+    // times than Add() panicked with "sync: negative WaitGroup counter",
+    // and nothing on the native-call path ever recovered from a panic, so
+    // it crashed the whole ego process. It must now be an ordinary,
+    // catchable Ego error.
+    var wg sync.WaitGroup
+    caught := false
+
+    wg.Add(1)
+    wg.Done()
+
+    try {
+        wg.Done()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("native.call.panic"))
+    }
+
+    @assert caught
+}
+
+@test "sync: independent Mutex values track lock state separately"
+{
+    // Guards against a bookkeeping bug where the lock-state tracking added
+    // for BUG-28 might accidentally be shared across different Mutex
+    // instances instead of being tracked per-instance.
+    var mu1 sync.Mutex
+    var mu2 sync.Mutex
+
+    mu1.Lock()
+
+    // mu2 was never locked, so it must be independently lockable...
+    mu2.Lock()
+    mu2.Unlock()
+
+    // ...and unlocking mu1 must still work normally.
+    mu1.Unlock()
+
+    @pass
+}

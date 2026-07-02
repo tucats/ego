@@ -1,4 +1,13 @@
 // Tests for defer with channels (including the close-channel pattern).
+//
+// The final two tests in this file are the regression tests for BUG-29 (see
+// docs/ISSUES.md): closing an already-closed channel used to call Go's
+// built-in close() a second time, which panics with "close of closed
+// channel" and crashed the entire ego process. close() on a channel now
+// returns (wasOpen bool, err error), and a double close reports a normal,
+// catchable error instead of crashing.
+
+import "errors"
 
 @test "defer: close channel exactly once via defer"
 {
@@ -49,4 +58,34 @@
     @assert T.Equal(len(result), 2)
     @assert T.Equal(result[0], 10)
     @assert T.Equal(result[1], 20)
+}
+
+@test "defer: closing a channel returns wasOpen and no error"
+{
+    c := make(chan, 1)
+
+    wasOpen, err := close(c)
+
+    @assert wasOpen
+    @assert err == nil
+}
+
+@test "defer: double close is catchable, not a crash"
+{
+    // Regression test for BUG-29. Before the fix, this second close(c)
+    // call panicked with "close of closed channel" and crashed the whole
+    // ego process instead of reaching the catch block below.
+    c := make(chan, 1)
+    caught := false
+
+    close(c)
+
+    try {
+        close(c)
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("channel.not.open"))
+    }
+
+    @assert caught
 }

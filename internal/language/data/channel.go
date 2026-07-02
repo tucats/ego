@@ -166,11 +166,36 @@ func (c *Channel) IsEmpty() bool {
 // Close the channel so no more sends are permitted to the channel, and
 // the receiver can test for channel completion. Must do the logging
 // before taking the exclusive lock so c.String() can work.
-func (c *Channel) Close() bool {
+//
+// wasOpen reports whether the channel was open (and is therefore being
+// newly closed by this call). If the channel was already closed, Close
+// returns a non-nil error instead of touching the channel again.
+//
+// # Why the isOpen check below matters (background for new Go developers)
+//
+// Go's built-in close() function panics if you call it on a channel that
+// has already been closed — the exact panic message is
+// "close of closed channel". A panic that is never recovered crashes the
+// whole program, which for Ego means crashing the entire `ego` process,
+// not just the Ego script that triggered it.
+//
+// An earlier version of this function called Go's close() unconditionally,
+// every time Close() was called, with no check first. That meant a second
+// call to Close() on the same channel — an easy mistake to make, and one
+// real Ego programs were hitting — brought down the whole interpreter (see
+// BUG-29 in docs/ISSUES.md for the original bug report and repro).
+//
+// The fix is straightforward: check c.isOpen BEFORE calling the native
+// close(), and only call it when the channel is actually still open. Since
+// that check and the close() call both happen while c.mutex is held
+// exclusively (see the Lock()/Unlock() below), no other goroutine can slip
+// in a second, concurrent Close() call between the check and the close —
+// so close() can never be called twice, and the panic can never happen.
+func (c *Channel) Close() (wasOpen bool, err error) {
 	if c == nil {
 		ui.Log(ui.InternalLogger, "runtime.chan.not.open", nil)
 
-		return false
+		return false, nil
 	}
 
 	if ui.IsActive(ui.TraceLogger) {
@@ -178,15 +203,25 @@ func (c *Channel) Close() bool {
 			"name": c.String()})
 	}
 
+	// Hold the exclusive (write) lock for the entire check-then-close
+	// sequence below. "Exclusive" means no other goroutine can be holding
+	// any lock (read or write) on this same mutex at the same time, which
+	// is what makes the check-then-close sequence safe from a race with
+	// another goroutine's concurrent Close() call.
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	close(c.channel)
+	if !c.isOpen {
+		// Already closed by an earlier call. Report this as an ordinary,
+		// catchable Ego error (the same one Send() already returns for a
+		// closed channel) instead of calling the native close() again.
+		return false, errors.ErrChannelNotOpen
+	}
 
-	wasActive := c.isOpen
+	close(c.channel)
 	c.isOpen = false
 
-	return wasActive
+	return true, nil
 }
 
 // Generate a human-readable expression of a channel object. This is

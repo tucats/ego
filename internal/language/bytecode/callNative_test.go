@@ -34,17 +34,35 @@ package bytecode
 // CALL-9  CallWithReceiver does not check whether MethodByName returned a
 //         valid reflect.Value before calling .Call(), so an unknown method
 //         name causes an unrecoverable panic.
+//
+// BUG-27 Calling a native Go method or function that panics (for example,
+//        calling Done() on a sync.WaitGroup more times than Add() was
+//        called) crashed the entire ego process, because nothing on the
+//        native-call path ever called recover(). safeReflectCall (Section
+//        10 below) is the fix: a shared helper used by both CallDirect and
+//        CallWithReceiver that recovers any panic and turns it into a
+//        normal, catchable Ego error instead.
+//
+// BUG-28 Calling Unlock() on a sync.Mutex that isn't locked triggers Go's
+//        unrecoverable "fatal error: sync: unlock of unlocked mutex",
+//        which even safeReflectCall's recover() cannot catch (fatal errors
+//        are a stronger, deliberately-unrecoverable failure mode). The fix
+//        (Section 11 below, callMutexMethod) tracks each sync.Mutex's lock
+//        state and refuses to call the real Unlock() at all when the
+//        mutex isn't locked, avoiding the fatal error in the first place.
 
 import (
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // nativeFn builds a *data.Function with the given parameter declarations.
@@ -703,7 +721,7 @@ func Test_convertFromNative_ScalarInt(t *testing.T) {
 // Test_convertFromNative_ScalarString verifies that a plain string result is
 // pushed onto the stack.
 func Test_convertFromNative_ScalarString(t *testing.T) {
-		const hello = "hello"
+	const hello = "hello"
 
 	tc := newTestContext(t)
 	dp := nativeFnReturning(data.StringType)
@@ -944,7 +962,7 @@ func Test_CallDirect_SingleReturn(t *testing.T) {
 // Test_CallDirect_StringFunction verifies a string-in, string-out function.
 // strings.TrimSpace("  hello  ") should return "hello".
 func Test_CallDirect_StringFunction(t *testing.T) {
-		const hello = "hello"
+	const hello = "hello"
 
 	result, err := CallDirect(strings.TrimSpace, "  hello  ")
 
@@ -1030,7 +1048,7 @@ func Test_CallWithReceiver_ValidMethod(t *testing.T) {
 // pointer-to-interface) correctly dereferences before calling the method.
 func Test_CallWithReceiver_PointerReceiver(t *testing.T) {
 	knownDate := time.Date(2024, time.June, 15, 0, 0, 0, 0, time.UTC)
-	
+
 	var iface any = knownDate
 
 	ptr := &iface // *any wrapping time.Time
@@ -1084,7 +1102,300 @@ func Test_CallWithReceiver_UnknownMethod(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 10: callNative — end-to-end integration
+// Section 10: safeReflectCall — recover native-call panics (BUG-27)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// safeReflectCall wraps a reflect-based method/function call in a deferred
+// recover(), so a panic inside the native Go code being called turns into a
+// normal Go error return instead of crashing the process. See the big
+// doc comment on safeReflectCall in callNative.go for the full background
+// on why this is needed and what it can/cannot catch.
+
+// Test_safeReflectCall_NoPanic verifies the ordinary, successful path: a
+// function that returns normally should have its results passed straight
+// through with a nil error.
+func Test_safeReflectCall_NoPanic(t *testing.T) {
+	m := reflect.ValueOf(strings.ToUpper)
+	argList := []reflect.Value{reflect.ValueOf("hello")}
+
+	results, err := safeReflectCall(m, argList, "strings.ToUpper")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 1 || results[0].String() != "HELLO" {
+		t.Errorf("safeReflectCall results = %v, want [\"HELLO\"]", results)
+	}
+}
+
+// Test_safeReflectCall_RecoversPanic is the direct regression test for
+// BUG-27. It calls a function that panics (via a small helper below) through
+// safeReflectCall and verifies that:
+//
+//  1. the panic does NOT propagate out of safeReflectCall (which is what
+//     used to crash the whole ego process), and
+//  2. a non-nil error is returned instead, built from the new
+//     ErrNativeCallPanic error and carrying both the call description and
+//     the original panic value as context, so a developer (or an Ego
+//     try/catch block) can tell what actually went wrong.
+func Test_safeReflectCall_RecoversPanic(t *testing.T) {
+	m := reflect.ValueOf(panicsWithMessage)
+
+	var (
+		panicked bool
+		results  []reflect.Value
+		err      error
+	)
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				panicked = true
+			}
+		}()
+
+		results, err = safeReflectCall(m, nil, "test.panicsWithMessage")
+	}()
+
+	if panicked {
+		t.Fatal("safeReflectCall let a panic escape: BUG-27 fix was not applied")
+	}
+
+	if results != nil {
+		t.Errorf("safeReflectCall results = %v, want nil after a panic", results)
+	}
+
+	if err == nil {
+		t.Fatal("expected a non-nil error after a recovered panic, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrNativeCallPanic) {
+		t.Errorf("safeReflectCall error = %v, want ErrNativeCallPanic", err)
+	}
+
+	// The error's text should mention both the call description we passed
+	// in and the original panic message, so whoever reads the error (a
+	// human, or Ego code inspecting e.Error()) has enough context to
+	// understand what call actually failed and why.
+	msg := err.Error()
+	if !strings.Contains(msg, "test.panicsWithMessage") {
+		t.Errorf("error message %q does not contain the call description", msg)
+	}
+
+	if !strings.Contains(msg, "boom") {
+		t.Errorf("error message %q does not contain the original panic text", msg)
+	}
+}
+
+// panicsWithMessage is a trivial helper function with no arguments and no
+// return values, used only by Test_safeReflectCall_RecoversPanic above to
+// exercise the panic-recovery path via reflection.
+func panicsWithMessage() {
+	panic("boom")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 11: callMutexMethod — sync.Mutex misuse guard (BUG-28)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// callMutexMethod intercepts Lock/Unlock/TryLock calls on a *sync.Mutex so
+// that Unlock() can never be called on a mutex that isn't locked — Go's
+// real sync.Mutex.Unlock() would otherwise trigger an unrecoverable fatal
+// error (not an ordinary panic()) in that situation, which safeReflectCall's
+// recover() above is specifically unable to catch. See the mutexLockState
+// doc comment in callNative.go for the full explanation.
+
+// Test_callMutexMethod_LockThenUnlock verifies the normal, well-behaved
+// sequence: Lock() followed by Unlock() should both succeed with no error,
+// and the mutex should genuinely be unlocked afterward (checked here with
+// TryLock, which only succeeds if nothing else is holding the lock).
+func Test_callMutexMethod_LockThenUnlock(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	if _, handled, err := callMutexMethod(mu, "Lock"); !handled || err != nil {
+		t.Fatalf("Lock: handled=%v err=%v, want handled=true err=nil", handled, err)
+	}
+
+	if _, handled, err := callMutexMethod(mu, "Unlock"); !handled || err != nil {
+		t.Fatalf("Unlock: handled=%v err=%v, want handled=true err=nil", handled, err)
+	}
+
+	// If Unlock() above actually released the mutex, a TryLock() here must
+	// succeed. Clean up by unlocking again so the test doesn't leak a
+	// locked mutex.
+	result, handled, err := callMutexMethod(mu, "TryLock")
+	if !handled || err != nil {
+		t.Fatalf("TryLock: handled=%v err=%v, want handled=true err=nil", handled, err)
+	}
+
+	// callMutexMethod's "result any" return holds a plain bool for
+	// TryLock; assert to bool explicitly rather than comparing the
+	// interface value directly, which keeps the test's intent obvious.
+	acquired, ok := result.(bool)
+	if !ok {
+		t.Fatalf("TryLock result = %T, want bool", result)
+	}
+
+	if !acquired {
+		t.Fatal("TryLock() after Lock()+Unlock() failed to acquire; mutex was not actually unlocked")
+	}
+
+	_, _, _ = callMutexMethod(mu, "Unlock")
+}
+
+// Test_callMutexMethod_UnlockWithoutLock is the direct regression test for
+// BUG-28. Calling "Unlock" on a mutex that was never locked must NOT call
+// Go's real sync.Mutex.Unlock() (which would trigger an unrecoverable fatal
+// error and crash the test binary); instead it must be refused up front
+// with a normal, catchable error.
+func Test_callMutexMethod_UnlockWithoutLock(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	result, handled, err := callMutexMethod(mu, "Unlock")
+
+	if !handled {
+		t.Fatal("Unlock: handled=false, want true")
+	}
+
+	if result != nil {
+		t.Errorf("Unlock on unlocked mutex returned result=%v, want nil", result)
+	}
+
+	if err == nil {
+		t.Fatal("Unlock on unlocked mutex: expected a non-nil error, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrMutexNotLocked) {
+		t.Errorf("Unlock on unlocked mutex error = %v, want ErrMutexNotLocked", err)
+	}
+
+	// Prove the mutex genuinely was never locked by Go's own accounting:
+	// TryLock() should succeed here, since nothing real ever locked it.
+	if !mu.TryLock() {
+		t.Error("mutex appears locked after a refused Unlock() call; callMutexMethod must not have called the real Lock()")
+	}
+
+	mu.Unlock()
+}
+
+// Test_callMutexMethod_DoubleUnlockReturnsErrorNotFatal extends the BUG-28
+// regression test to the exact repro from docs/ISSUES.md: Lock(), Unlock(),
+// then Unlock() again. The second Unlock() must be refused with a catchable
+// error rather than reaching Go's real Unlock() a second time.
+func Test_callMutexMethod_DoubleUnlockReturnsErrorNotFatal(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	_, _, _ = callMutexMethod(mu, "Lock")
+
+	if _, _, err := callMutexMethod(mu, "Unlock"); err != nil {
+		t.Fatalf("first Unlock unexpected error: %v", err)
+	}
+
+	_, _, err := callMutexMethod(mu, "Unlock")
+	if err == nil {
+		t.Fatal("second Unlock: expected a non-nil error, got nil")
+	}
+
+	if !errors.Equals(errors.New(err), errors.ErrMutexNotLocked) {
+		t.Errorf("second Unlock error = %v, want ErrMutexNotLocked", err)
+	}
+}
+
+// Test_callMutexMethod_TryLockWhenLocked verifies that TryLock() correctly
+// reports failure (and does not disturb the lock state) when the mutex is
+// already locked.
+func Test_callMutexMethod_TryLockWhenLocked(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	_, _, _ = callMutexMethod(mu, "Lock")
+
+	result, handled, err := callMutexMethod(mu, "TryLock")
+	if !handled || err != nil {
+		t.Fatalf("TryLock: handled=%v err=%v, want handled=true err=nil", handled, err)
+	}
+
+	acquired, ok := result.(bool)
+	if !ok {
+		t.Fatalf("TryLock result = %T, want bool", result)
+	}
+
+	if acquired {
+		t.Error("TryLock() on an already-locked mutex reported success")
+	}
+
+	// The mutex should still be considered locked, so Unlock() must
+	// succeed cleanly (it would fail with ErrMutexNotLocked if our
+	// bookkeeping had incorrectly cleared the locked state above).
+	if _, _, err := callMutexMethod(mu, "Unlock"); err != nil {
+		t.Errorf("Unlock after failed TryLock unexpected error: %v", err)
+	}
+}
+
+// Test_callMutexMethod_UnhandledMethodFallsThrough verifies that a method
+// name callMutexMethod does not know about (there are none today, since
+// Lock/Unlock/TryLock are the only sync.Mutex methods Ego exposes — but this
+// guards against a silent behavior change if that ever grows) reports
+// handled=false so CallWithReceiver falls back to the generic reflection
+// path instead of silently doing nothing.
+func Test_callMutexMethod_UnhandledMethodFallsThrough(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	_, handled, err := callMutexMethod(mu, "SomeFutureMethod")
+	if handled {
+		t.Error("handled=true for an unknown method name, want false")
+	}
+
+	if err != nil {
+		t.Errorf("unexpected error for an unhandled method name: %v", err)
+	}
+}
+
+// Test_CallWithReceiver_MutexDoubleUnlock exercises the full public
+// CallWithReceiver entry point (rather than callMutexMethod directly) to
+// confirm the BUG-28 fix is actually wired up end-to-end: a *sync.Mutex
+// receiver with methodName "Unlock" must be intercepted before reaching the
+// generic reflection dispatch further down in CallWithReceiver.
+func Test_CallWithReceiver_MutexDoubleUnlock(t *testing.T) {
+	mu := &sync.Mutex{}
+
+	if _, err := CallWithReceiver(mu, "Lock"); err != nil {
+		t.Fatalf("Lock via CallWithReceiver unexpected error: %v", err)
+	}
+
+	if _, err := CallWithReceiver(mu, "Unlock"); err != nil {
+		t.Fatalf("first Unlock via CallWithReceiver unexpected error: %v", err)
+	}
+
+	var (
+		panicked bool
+		callErr  error
+	)
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				panicked = true
+			}
+		}()
+
+		_, callErr = CallWithReceiver(mu, "Unlock")
+	}()
+
+	if panicked {
+		t.Fatal("CallWithReceiver panicked (or crashed via fatal error) on double Unlock: BUG-28 fix was not applied")
+	}
+
+	if callErr == nil {
+		t.Fatal("second Unlock via CallWithReceiver: expected a non-nil error, got nil")
+	}
+
+	if !errors.Equals(errors.New(callErr), errors.ErrMutexNotLocked) {
+		t.Errorf("second Unlock via CallWithReceiver error = %v, want ErrMutexNotLocked", callErr)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 12: callNative — end-to-end integration
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Test_callNative_SandboxedFunctionBlocked verifies that when both the
@@ -1209,8 +1520,8 @@ func Test_callNative_ReceiverCall_NoReceiverInStack(t *testing.T) {
 		IsNative: true,
 		Value:    math.Abs, // value doesn't matter — receiver pop fails first
 		Declaration: &data.Declaration{
-			Name: "Year",
-			Type: data.IntType, // non-nil Type flags this as a method call
+			Name:       "Year",
+			Type:       data.IntType, // non-nil Type flags this as a method call
 			Parameters: []data.Parameter{},
 		},
 	}
@@ -1222,7 +1533,7 @@ func Test_callNative_ReceiverCall_NoReceiverInStack(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 11: sandboxName — apply sandbox path prefix
+// Section 13: sandboxName — apply sandbox path prefix
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Test_sandboxName_NoSandbox verifies that when the context is not sandboxed
