@@ -5,16 +5,15 @@
 //   - Defer calling a named function (not a closure)
 //   - Argument capture timing for closure vs named-function defers
 //
-// Key Ego/Go difference (FLOW-M4):
+// Fixed Ego/Go difference (BUG-16 / FLOW-M4):
 //   In Go, arguments to a deferred function call are evaluated immediately when
 //   the defer statement executes (eager evaluation), regardless of whether the
 //   callee is a named function or a closure.
-//   In Ego, arguments to 'defer namedFunc(arg)' are evaluated LAZILY - at the
-//   time the deferred function actually runs, not when it is registered.
-//   Only the closure-with-immediate-call form 'defer func(p T){...}(arg)' behaves
-//   eagerly (capturing arg at registration time), which matches Go.
-//
-//   Use 'defer func(p T){...}(arg)' to get Go-compatible eager capture semantics.
+//   Ego now matches this: both 'defer namedFunc(arg)' and the closure form
+//   'defer func(p T){...}(arg)' capture their arguments at the point the
+//   "defer" statement executes, not when the deferred call actually runs at
+//   function-return time. Only the CALL itself is deferred -- its arguments
+//   are not.
 
 @test "flow: multiple defers run in LIFO order"
 {
@@ -74,12 +73,11 @@
     @assert log == "early"
 }
 
-@test "flow: named function defer evaluates arg lazily"
+@test "flow: named function defer captures arg eagerly"
 {
-    // When 'defer namedFunc(arg)' is used (Ego-specific behavior), the
-    // argument is NOT evaluated until the deferred function actually runs.
-    // This differs from Go, where all defer arguments are evaluated eagerly.
-    // Use the closure form instead if Go-compatible eager capture is needed.
+    // BUG-16 / FLOW-M4 (fixed): 'defer namedFunc(arg)' now evaluates its
+    // argument immediately, at the point the "defer" statement executes --
+    // matching Go, and matching the closure form's behavior above.
     log := ""
 
     func setLog(val string) {
@@ -88,14 +86,42 @@
 
     func work() {
         x := "early"
-        defer setLog(x)   // in Ego: x is read lazily when defer runs
-        x = "late"        // this WILL be reflected in the deferred call
+        defer setLog(x)   // x is captured NOW, not when the defer runs
+        x = "late"        // this must NOT be reflected in the deferred call
     }
 
     work()
 
-    // Ego evaluates x when the defer runs, so "late" is used.
-    @assert log == "late"
+    // The deferred call already captured "early" at defer-statement time, so
+    // the later change to x has no effect on it.
+    @assert log == "early"
+}
+
+@test "flow: named function defer arg in loop, eager per iteration"
+{
+    // Before the fix, this idiom required an explicit closure wrapper (see
+    // "flow: defer in a loop registers multiple defers" below) to snapshot
+    // the loop variable, because a plain named-function defer re-read the
+    // variable lazily and would have seen only its final value on every
+    // call. Now that arguments are captured eagerly, a plain named-function
+    // defer works correctly without any extra wrapping.
+    log := ""
+
+    func appendChar(c string) {
+        log = log + c
+    }
+
+    func work() {
+        items := []string{"1", "2", "3"}
+        for _, s := range items {
+            defer appendChar(s)   // "s" is captured eagerly on each iteration
+        }
+    }
+
+    work()
+
+    // Defers registered for "1", "2", "3" run in reverse: "3", "2", "1".
+    @assert log == "321"
 }
 
 @test "flow: defers still run when returns early"
@@ -144,4 +170,110 @@
 
     // Defers registered for "1", "2", "3" run in reverse: "3", "2", "1".
     @assert log == "321"
+}
+
+@test "flow: named function defer, multiple args captured eagerly"
+{
+    // BUG-16 / FLOW-M4: every argument in a multi-argument named-function
+    // defer call is captured eagerly, not just the first one.
+    logA := 0
+    logB := 0
+
+    func setLog(a int, b int) {
+        logA = a
+        logB = b
+    }
+
+    func work() {
+        a := 1
+        b := 10
+        defer setLog(a, b)
+        a = 2
+        b = 20
+    }
+
+    work()
+
+    @assert logA == 1
+    @assert logB == 10
+}
+
+@test "flow: named function defer, expression arg captured eagerly"
+{
+    // The argument does not have to be a bare variable -- any expression is
+    // fully evaluated at "defer" time, exactly like a normal function call.
+    log := 0
+
+    func setLog(v int) {
+        log = v
+    }
+
+    func work() {
+        x := 5
+        defer setLog(x*2 + 1)
+        x = 100
+    }
+
+    work()
+
+    @assert log == 11
+}
+
+@test "flow: value receiver method defer captures args eagerly"
+{
+    // The argument-hoisting fix also applies to "defer receiver.Method(args)"
+    // -- only the receiver/method lookup and the call itself remain deferred.
+    logA := 0
+    logB := 0
+
+    type logger struct {
+        prefix string
+    }
+
+    func (l logger) Log(a int, b int) {
+        logA = a
+        logB = b
+    }
+
+    func work() {
+        l := logger{prefix: "seen:"}
+        a := 1
+        b := 2
+        defer l.Log(a, b)
+        a = 99
+        b = 99
+    }
+
+    work()
+
+    @assert logA == 1
+    @assert logB == 2
+}
+
+@test "flow: named function defer with variadic spread"
+{
+    // "defer f(slice...)" captures the slice value (its header, per Go
+    // semantics for reference types) at defer time. Reassigning the
+    // variable afterward to point at a different slice does not affect the
+    // deferred call, since the deferred call already holds the original
+    // slice reference.
+    log := 0
+
+    func sum(nums ...int) {
+        total := 0
+        for _, n := range nums {
+            total = total + n
+        }
+        log = total
+    }
+
+    func work() {
+        nums := []int{1, 2, 3}
+        defer sum(nums...)
+        nums = []int{100, 200, 300}
+    }
+
+    work()
+
+    @assert log == 6
 }

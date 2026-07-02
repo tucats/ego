@@ -151,6 +151,14 @@ func runFromContext(context *cli.Context) error {
 			Action:      TimeoutAction,
 			EnvVar:      defs.EgoTimeoutEnv,
 		},
+		{
+			LongName:   "types",
+			ShortName:  "t",
+			Private:    true,
+			OptionType: cli.KeywordType,
+			Keywords:   []string{"relaxed", "strict", "static", "dynamic", "default"},
+			Action:     TypesAction,
+		},
 	}
 
 	baseCommands := []cli.Option{

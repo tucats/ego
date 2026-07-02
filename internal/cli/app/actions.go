@@ -13,12 +13,12 @@ import (
 	"github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/runtime/rest"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/runtime/rest"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -26,6 +26,30 @@ import (
 // duration. This can be checked by the running system to know if there is
 // a timeout pending.
 var TimeoutSet string
+
+// TypesAction is the action routine for the --types global option. This sets
+// the type checking mode for the current execution of Ego. The value must be
+// one of "relaxed", "strict", "dynamic", or "default". If the value is invalid,
+// an error is returned. This is a private option, to capture the setting when it
+// is (commonly) mistakenly placed before the run or test command that needs it.
+func TypesAction(c *cli.Context) error {
+	if types, present := c.FindGlobal().String("types"); present {
+		switch strings.ToLower(types) {
+		case "static":
+			settings.SetDefault(defs.StaticTypesSetting, "strict")
+
+		case "relaxed", "strict", "dynamic":
+			settings.SetDefault(defs.StaticTypesSetting, strings.ToLower(types))
+
+		case "default":
+			// No change, leave as default
+		default:
+			return errors.ErrInvalidKeyword.Context(types)
+		}
+	}
+
+	return nil
+}
 
 // JSONQueryAction is called when the --json-query global option is used, which
 // lets the user define an expression to parse resulting JSON into a smaller or

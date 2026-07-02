@@ -1853,6 +1853,72 @@ Note that `defer` statements are executed when the function comes
  statement, as in the case of a function that does not return a
  value.
 
+#### When are a deferred call's arguments evaluated?
+
+A `defer` statement defers two different things, and it's important to keep
+them separate: it defers _making the call_, but it does **not** defer
+_evaluating the call's arguments_. The arguments are evaluated immediately,
+at the point where the `defer` statement itself runs -- their values are
+then frozen and simply carried along until the deferred call actually
+happens later.
+
+```go
+func example() {
+    x := 1
+    defer fmt.Println("x was", x)   // "x was 1" -- x is read RIGHT NOW
+    x = 2
+    x = 3
+    // when example() returns, the deferred call finally runs, printing
+    // "x was 1" -- not "x was 3" -- because x's value was captured back
+    // when the defer statement executed.
+}
+```
+
+This is true no matter what form the deferred call takes:
+
+- A named function call, `defer namedFunc(arg)`.
+- A method call, `defer receiver.Method(arg)`.
+- The closure-with-immediate-call form, `defer func(p T){ ... }(arg)`.
+
+All three evaluate `arg` immediately and hand a snapshot of its value to the
+deferred call. This is also why deferring inside a loop works the way you'd
+expect -- each iteration's `defer` captures that iteration's value, not
+whatever the loop variable ends up being by the time the function returns:
+
+```go
+func example() {
+    for i := 0; i < 3; i++ {
+        defer fmt.Println("i was", i)
+    }
+    // Prints, in this order when example() returns:
+    //   i was 2
+    //   i was 1
+    //   i was 0
+    // (reverse order, because defers run last-in-first-out -- but each one
+    // still remembers its own iteration's value of i.)
+}
+```
+
+Only the values passed as an argument are captured this way. Anything else
+the deferred call refers to -- a variable from the surrounding scope that
+isn't passed as an argument, or a field reached through a receiver -- is
+still looked up normally when the deferred call actually runs, exactly like
+an ordinary closure:
+
+```go
+func example() {
+    total := 0
+    defer func() {
+        fmt.Println("final total was", total)   // reads "total" when it RUNS
+    }()
+    total = total + 1
+    total = total + 1
+    // Prints "final total was 2" -- because this closure takes no
+    // arguments, so nothing was captured eagerly; it simply reads whatever
+    // "total" holds by the time the deferred call executes.
+}
+```
+
 ### Function Variable Values  <a name="function-variables"></a>
 
 Functions can be values themselves. For example, consider:

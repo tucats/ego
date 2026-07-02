@@ -50,7 +50,7 @@ reflected in each area's summary table.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
 Across all six areas, this document currently tracks **224 issues**:
-**214 resolved** and **10 still open**. Open issues are
+**216 resolved** and **8 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,14 +75,14 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 24 issues (21 resolved)
+- [BUG — General Language Bugs](#area-bug) — 24 issues (22 resolved)
 
 ### Functional / Behavioral Issues
 
 *(originally `FUNCTIONAL_ISSUES.md`)*
 
 - [FUNC — Functions](#area-func) — 7 issues (7 resolved)
-- [FLOW — Flow Control](#area-flow-functional) — 6 issues (5 resolved)
+- [FLOW — Flow Control](#area-flow-functional) — 6 issues (6 resolved)
 - [JSON — JSON package](#area-json) — 5 issues (5 resolved)
 - [TYPE — Type system](#area-type) — 1 issue (1 resolved)
 - [SCRIPT — @transaction Scripting endpoint](#area-script) — 4 issues (4 resolved)
@@ -183,7 +183,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-13](#BUG-13) | BUG | `typeof()` results were incompatible with `switch` case matching due to an inconsistent type-to-string comparison. | ✓ |
 | [BUG-14](#BUG-14) | BUG | Typed array element types were not enforced when assigning to an element in dynamic mode. | ✓ |
 | [BUG-15](#BUG-15) | BUG | `append()` to a typed array silently accepted elements of the wrong type. | ✓ |
-| [BUG-16](#BUG-16) | BUG | `defer namedFunc(arg)` evaluates its arguments lazily instead of at defer time (cross-referenced with FLOW-M4). |  |
+| [BUG-16](#BUG-16) | BUG | `defer namedFunc(arg)` evaluates its arguments lazily instead of at defer time (cross-referenced with FLOW-M4). | ✓ |
 | [BUG-17](#BUG-17) | BUG | `var name = value` (type-inferred initializer, without an explicit type) was not supported. | ✓ |
 | [BUG-18](#BUG-18) | BUG | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | BUG | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
@@ -191,7 +191,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-21](#BUG-21) | BUG | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. | ✓ |
 | [BUG-22](#BUG-22) | BUG | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | BUG | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
-| [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. |  |
+| [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -222,12 +222,12 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [CODE-M1](#CODE-M1) | CODE | No request body size limit on POST /admin/run | ✓ |
 | [CODE-M2](#CODE-M2) | CODE | Global trace logger state mutated per-request without synchronization | ✓ |
 | [CODE-M3](#CODE-M3) | CODE | Client-supplied session UUID not validated or bound to the authenticated user | ✓ |
-| [CODE-M4](#CODE-M4) | CODE | Sandbox I/O path confinement can be bypassed via symlinks |  |
-| [CODE-M5](#CODE-M5) | CODE | Language extensions enabled in sandboxed symbol table |  |
+| [CODE-M4](#CODE-M4) | CODE | Sandbox I/O path confinement can be bypassed via symlinks | |
+| [CODE-M5](#CODE-M5) | CODE | Language extensions enabled in sandboxed symbol table | |
 | [COERCE-1](#COERCE-1) | COERCE | `NeedsCoerce` returns the wrong answer when the `Push` operand does not match the target type | ✓ |
 | [COERCE-2](#COERCE-2) | COERCE | `data.UInt` accessor panics with a type assertion failure | ✓ |
 | [COMPARE-1](#COMPARE-1) | COMPARE | `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests | ✓ |
-| [COMPARE-2](#COMPARE-2) | COMPARE | `notEqualByteCode` uses value types instead of pointer types for composite cases |  |
+| [COMPARE-2](#COMPARE-2) | COMPARE | `notEqualByteCode` uses value types instead of pointer types for composite cases | |
 | [COMPARE-3](#COMPARE-3) | COMPARE | `int8` missing from signed-integer case in four ordering functions | ✓ |
 | [COMPARE-4](#COMPARE-4) | COMPARE | Four comparison operators returned raw errors without `c.runtimeError` decoration | ✓ |
 | [CONTEXT-1](#CONTEXT-1) | CONTEXT | `GetModuleName` panics with a nil pointer dereference when `bc` is nil | ✓ |
@@ -240,9 +240,9 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [DEBUGGER-BREAKS-3](#DEBUGGER-BREAKS-3) | DEBUGGER-BREAKS | clearBreakWhen/clearBreakAtLine kept iterating a shifted slice after removing a match instead of returning immediately. | ✓ |
 | [DEBUGGER-COMMANDS-1](#DEBUGGER-COMMANDS-1) | DEBUGGER-COMMANDS | The print case used full-string errors.Equal instead of key-based errors.Equals, discarding output when ErrStop carried context. | ✓ |
 | [DEBUGGER-SHOW-1](#DEBUGGER-SHOW-1) | DEBUGGER-SHOW | showSource mutated its err parameter by value, so invalid range arguments were silently swallowed by the caller. | ✓ |
-| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | DEBUGGER-SHOW | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. |  |
+| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | DEBUGGER-SHOW | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | |
 | [DEFER-1](#DEFER-1) | DEFER | `deferByteCode` receiver slice captures wrong elements when new count ≠ deferThisSize | ✓ |
-| [DEFER-2](#DEFER-2) | DEFER | `deferByteCode` skips receiver capture when `deferThisSize == 0` |  |
+| [DEFER-2](#DEFER-2) | DEFER | `deferByteCode` skips receiver capture when `deferThisSize == 0` | |
 | [EQUAL-1](#EQUAL-1) | EQUAL | `equalTypes` returns an undecorated error (no module or line info) | ✓ |
 | [EQUAL-2](#EQUAL-2) | EQUAL | `getComparisonTerms` returns raw coerce error (no location info) | ✓ |
 | [EQUAL-3](#EQUAL-3) | EQUAL | `case nil:` branch in `equalByteCode`'s switch is dead code | ✓ |
@@ -254,7 +254,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [FLOW-L2](#FLOW-L2) | FLOW | The switch init; expr semicolon-separated form was not supported. | ✓ |
 | [FLOW-M1](#FLOW-M1) | FLOW | The for init clause only accepted :=, rejecting = assignment to a pre-declared variable. | ✓ |
 | [FLOW-M2](#FLOW-M2) | FLOW | Multi-value case v1, v2: clauses were not supported and produced a spurious compile error. | ✓ |
-| [FLOW-M4](#FLOW-M4) | FLOW | defer namedFunc(arg) evaluates its argument lazily at run time instead of eagerly at registration time. |  |
+| [FLOW-M4](#FLOW-M4) | FLOW | defer namedFunc(arg) evaluates its argument lazily at run time instead of eagerly at registration time. | ✓ |
 | [FUNC-H1](#FUNC-H1) | FUNC | Calling a variadic function with zero variadic arguments failed with an argument-count error. | ✓ |
 | [FUNC-H2](#FUNC-H2) | FUNC | Closures storing a loop variable became invalid (unknown identifier) once the loop exited. | ✓ |
 | [FUNC-L1](#FUNC-L1) | FUNC | String multiplication (*) behaved asymmetrically, treating a left-hand string operand as repetition. | ✓ |
@@ -276,7 +276,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [JSON-M3](#JSON-M3) | JSON | json.Unmarshal into a struct returned an error for unknown JSON fields instead of ignoring them (as Go does). | ✓ |
 | [LOAD-1](#LOAD-1) | LOAD | `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration | ✓ |
 | [LOAD-2](#LOAD-2) | LOAD | `explodeByteCode` doc comment incorrectly described the operand as "a struct" | ✓ |
-| [LOAD-3](#LOAD-3) | LOAD | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases |  |
+| [LOAD-3](#LOAD-3) | LOAD | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | |
 | [LOGIN-C1](#LOGIN-C1) | LOGIN | Passwords hashed with bare, unsalted SHA-256, enabling parallel rainbow-table cracking | ✓ |
 | [LOGIN-C2](#LOGIN-C2) | LOGIN | No brute-force or rate-limiting protection on the login endpoint | ✓ |
 | [LOGIN-H1](#LOGIN-H1) | LOGIN | Timing attack possible via non-constant-time password comparison | ✓ |
@@ -387,11 +387,10 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 
 ---
 
-
-
 ---
 
 <a id="area-bug"></a>
+
 ## BUG — General Language Bugs
 
 This area records general Ego-language bugs discovered through systematic testing (as opposed to the documented behavioral differences tracked elsewhere). `FLOW-M4` (defer lazy argument evaluation, tracked in the Functional Issues area) is cross-referenced here as BUG-16 for completeness only.
@@ -422,7 +421,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-13](#BUG-13) | MEDIUM | `typeof()` results were incompatible with `switch` case matching due to an inconsistent type-to-string comparison. | ✓ |
 | [BUG-14](#BUG-14) | MEDIUM | Typed array element types were not enforced when assigning to an element in dynamic mode. | ✓ |
 | [BUG-15](#BUG-15) | MEDIUM | `append()` to a typed array silently accepted elements of the wrong type. | ✓ |
-| [BUG-16](#BUG-16) | MEDIUM | `defer namedFunc(arg)` evaluates its arguments lazily instead of at defer time (cross-referenced with FLOW-M4). | |
+| [BUG-16](#BUG-16) | MEDIUM | `defer namedFunc(arg)` evaluates its arguments lazily instead of at defer time (cross-referenced with FLOW-M4). | ✓ |
 | [BUG-17](#BUG-17) | LOW | `var name = value` (type-inferred initializer, without an explicit type) was not supported. | ✓ |
 | [BUG-18](#BUG-18) | LOW | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | LOW | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
@@ -435,6 +434,7 @@ This area records general Ego-language bugs discovered through systematic testin
 ---
 
 <a id="BUG-01"></a>
+
 ### BUG-01 — `for v := range ch` over channel yields indices, not values
 
 **Severity:** HIGH
@@ -521,6 +521,7 @@ Two new Ego language tests were added to `tests/flow/rangechannels.ego`:
 ---
 
 <a id="BUG-02"></a>
+
 ### BUG-02 — `go func() {}()` closures cannot read outer-scope variables
 
 **Severity:** HIGH
@@ -642,6 +643,7 @@ races when the parent thread and the goroutine access the same tables concurrent
 ---
 
 <a id="BUG-03"></a>
+
 ### BUG-03 — Type assertions `v.(T)` always succeed regardless of actual type
 
 **Severity:** HIGH
@@ -755,6 +757,7 @@ loop.
 ---
 
 <a id="BUG-04"></a>
+
 ### BUG-04 — `recover()` in deferred function of a value-returning function causes caller error
 
 **Severity:** HIGH
@@ -879,6 +882,7 @@ values before calling `callFramePop`:
 ---
 
 <a id="BUG-05"></a>
+
 ### BUG-05 — Calling a function stored in an `any` variable fails
 
 **Severity:** HIGH
@@ -935,6 +939,7 @@ used (i.e. the target can be bytecode, a built-in function, a type, etc.)
 ---
 
 <a id="BUG-06"></a>
+
 ### BUG-06 — `++`/`--` not permitted on struct fields or array elements
 
 **Severity:** HIGH
@@ -1054,6 +1059,7 @@ values.
 ---
 
 <a id="BUG-07"></a>
+
 ### BUG-07 — Two-value channel receive `v, ok := <-ch` not supported
 
 **Severity:** MEDIUM
@@ -1179,6 +1185,7 @@ sender is a separate goroutine.
 ---
 
 <a id="BUG-08"></a>
+
 ### BUG-08 — `delete(struct, key)` fails on dynamic structs
 
 **Severity:** MEDIUM
@@ -1236,6 +1243,7 @@ Ego unit tests added.
 ---
 
 <a id="BUG-09"></a>
+
 ### BUG-09 — Import alias (`import alias "pkg"`) not recognized at use site
 
 **Severity:** MEDIUM
@@ -1276,6 +1284,7 @@ Import the package under its canonical name and use it without aliasing.
 ---
 
 <a id="BUG-10"></a>
+
 ### BUG-10 — `json.Unmarshal(b)` single-argument form rejected
 
 **Severity:** MEDIUM
@@ -1325,6 +1334,7 @@ the fix is to delete it from the documentation and require that the
 ---
 
 <a id="BUG-11"></a>
+
 ### BUG-11 — `fmt.Printf()` two-value return fails
 
 **Severity:** MEDIUM
@@ -1386,6 +1396,7 @@ this issue.
 ---
 
 <a id="BUG-12"></a>
+
 ### BUG-12 — Writing to a nil map succeeds; should error
 
 **Severity:** MEDIUM  **Status:** Fixed
@@ -1441,6 +1452,7 @@ func main() {
 ---
 
 <a id="BUG-13"></a>
+
 ### BUG-13 — `typeof()` result incompatible with `switch` case matching
 
 **Severity:** MEDIUM  
@@ -1496,6 +1508,7 @@ compared to a string literal via the cheat) were updated to either use a type co
 ---
 
 <a id="BUG-14"></a>
+
 ### BUG-14 — Typed array element type not enforced in dynamic mode
 
 **Severity:** MEDIUM
@@ -1553,6 +1566,7 @@ elements that converts the type from a specific array type to []any.
 ---
 
 <a id="BUG-15"></a>
+
 ### BUG-15 — `append()` to typed array silently accepts wrong-type elements
 
 **Severity:** MEDIUM  
@@ -1603,6 +1617,7 @@ f = append(f, 3)         // succeeds: int→float64 coercion (relaxed/dynamic)
 ---
 
 <a id="BUG-16"></a>
+
 ### BUG-16 — `defer namedFunc(arg)` evaluates arguments lazily (cross-ref: FLOW-M4)
 
 **Severity:** MEDIUM
@@ -1645,16 +1660,28 @@ defer x (should be 2): 2
 defer x (should be 1): 1
 ```
 
-**Workaround:**  
+**Workaround (no longer required, kept for historical reference):**  
 Use a closure that receives the value as an argument:
 
 ```go
 defer func(v int) { fmt.Println("defer x:", v) }(x)
 ```
 
+**Resolution:**  
+See `FLOW-M4` for the full write-up of the fix — the two identifiers track the
+same underlying bug and were fixed together. Running the reproducer above now
+correctly prints:
+
+```text
+main, x = 3
+defer x (should be 2): 2
+defer x (should be 1): 1
+```
+
 ---
 
 <a id="BUG-17"></a>
+
 ### BUG-17 — `var name = value` (type-inferred initializer) not supported
 
 **Severity:** LOW  
@@ -1776,6 +1803,7 @@ values) is not supported by either path and was out of scope for this fix.
 ---
 
 <a id="BUG-18"></a>
+
 ### BUG-18 — `type()` documented but actual builtin is `typeof()`
 
 **Severity:** LOW
@@ -1808,6 +1836,7 @@ Documentation updated to use correct function name `typeof()`.
 ---
 
 <a id="BUG-19"></a>
+
 ### BUG-19 — `for v := range string` yields single-char strings, not int32 runes
 
 **Severity:** LOW  
@@ -1885,6 +1914,7 @@ back, or compare `ch` against a rune literal like `'A'` directly).
 ---
 
 <a id="BUG-20"></a>
+
 ### BUG-20 — `iota` not supported in `const` blocks
 
 **Severity:** LOW
@@ -1992,6 +2022,7 @@ Two changes were needed, both in `internal/language/compiler/`:
 ---
 
 <a id="BUG-21"></a>
+
 ### BUG-21 — `@compile` test directive cannot pass computed values back to the enclosing test
 
 **Severity:** LOW
@@ -2084,6 +2115,7 @@ status from the execution of the compilation unit.
 ---
 
 <a id="BUG-22"></a>
+
 ### BUG-22 — `make(map[K]V)` errors with "incorrect function argument count"
 
 **Severity:** MEDIUM  
@@ -2133,6 +2165,7 @@ negative values. Validation now also rejects capacity < size (matching Go's
 ---
 
 <a id="BUG-23"></a>
+
 ### BUG-23 — `var` declarations of struct types share a single compile-time instance across calls
 
 **Severity:** MEDIUM
@@ -2196,6 +2229,7 @@ function at runtime which generates a unique instance of the item.
 ---
 
 <a id="BUG-24"></a>
+
 ### BUG-24 — Multi-target assignment lists reject indexed/member lvalues (`m[k], arr[i] = ...`)
 
 **Severity:** MEDIUM
@@ -2261,7 +2295,6 @@ them with:
 Tests covered: arithmetic, type conversions, string operations, maps, structs,
 closures, goroutines, channels, defer/recover, error handling, built-in functions,
 packages (math, sort, strings, strconv, errors, json, fmt), operators, and scoping.
-
 
 ---
 
@@ -2850,7 +2883,7 @@ Three new tests added to `tests/functions/named_returns.ego`:
 | [FLOW-H1](#FLOW-H1) | High | `for range` over an array marked it read-only, so writes through the index inside the loop body failed. | ✓ |
 | [FLOW-M1](#FLOW-M1) | Medium | The `for` init clause only accepted `:=`, rejecting `=` assignment to a pre-declared variable. | ✓ |
 | [FLOW-M2](#FLOW-M2) | Medium | Multi-value `case v1, v2:` clauses were not supported and produced a spurious compile error. | ✓ |
-| [FLOW-M4](#FLOW-M4) | Medium | `defer namedFunc(arg)` evaluates its argument lazily at run time instead of eagerly at registration time. | |
+| [FLOW-M4](#FLOW-M4) | Medium | `defer namedFunc(arg)` evaluates its argument lazily at run time instead of eagerly at registration time. | ✓ |
 | [FLOW-L1](#FLOW-L1) | Low | Labeled `break`/`continue` were not supported. | ✓ |
 | [FLOW-L2](#FLOW-L2) | Low | The `switch init; expr` semicolon-separated form was not supported. | ✓ |
 
@@ -2983,7 +3016,7 @@ updated to use `case "Sat", "Sun":` directly.
 
 #### FLOW-M4 — `defer namedFunc(arg)` evaluates arguments lazily, not eagerly
 
-**Status:** Open / unresolved.
+**Status:** Fixed.
 
 **Affected files:**
 
@@ -3016,7 +3049,7 @@ setLog is called with "second", not "first"
 This silent behavioral difference can produce hard-to-diagnose bugs when the
 variable changes between the `defer` statement and the function's return.
 
-**Workaround:**  
+**Workaround (no longer required, kept for historical reference):**  
 Use the closure form with an explicit argument to get Go-compatible eager capture:
 
 ```go
@@ -3026,15 +3059,103 @@ x = "second"
 // setLog receives "first"
 ```
 
-**Test file:** `tests/flow/defer_lifo.ego` — tests `"flow: named function defer evaluates
-arg lazily"` and `"flow: closure arg captured at defer time (eager)"` document both
-behaviors side by side.
+**Test file:** `tests/flow/defer_lifo.ego` — tests `"flow: closure arg captured at
+defer time (eager)"` and `"flow: named function defer captures arg eagerly"` document
+both forms now behaving identically, plus additional coverage described in the
+Resolution section below.
 
-**Recommendation:**  
+**Recommendation (superseded by Resolution below):**  
 When compiling `defer namedFunc(arg)`, evaluate and snapshot all argument expressions
 at the point of the `defer` statement and store them in a local temporary, exactly
 as is done for the closure-invocation form. This would make both forms consistent
 with Go and with each other.
+
+**Resolution:**  
+Fixed exactly along the lines of the recommendation above, entirely in
+`internal/language/compiler/defer.go`. No changes were needed in the runtime
+(`internal/language/bytecode/defer.go`, `context.go`, or the `deferStatement`
+struct) — that plumbing already correctly stores and replays a list of
+pre-computed argument values; it was only ever fed those values *lazily* for
+the named-function form.
+
+**How `defer namedFunc(arg)` was compiled before the fix:** `compileDefer()`
+rewrites any deferred call that isn't already a `func(){...}()` literal into
+one, so `defer namedFunc(arg)` was rewritten to `defer func(){ namedFunc(arg) }()`
+*before* being compiled. Because the closure's body is compiled once but only
+*runs* later (when the deferred call actually executes), the token `arg`
+inside that body was compiled as an ordinary variable reference — a `Load`
+instruction — that reads whatever `arg` holds from the live, captured symbol
+table at the time the closure finally runs. That is what made the argument
+"lazy": the expression that computes its value was physically inside the
+deferred closure, not in the compiler's normal (immediately-executing)
+bytecode stream.
+
+**The fix:** a new function, `hoistDeferCallArguments()`, runs *before* the
+existing `func(){...}()` rewrite. For a call like `namedFunc(arg1, arg2)`, it:
+
+1. Locates the call's argument list in the token stream (reusing the same
+   "skip the identifier/dot chain" logic `findDeferCallEnd()` already used,
+   factored out into a small sibling helper, `findDeferCallArgsStart()`).
+2. Compiles each argument expression, left to right, using the compiler's
+   normal expression grammar (`c.conditional()` — the same entry point an
+   ordinary function call's argument list uses). Because this happens in the
+   compiler's current (non-deferred) bytecode stream, each argument's value is
+   computed right now, at the `defer` statement's point in the program — this
+   is the crux of the fix.
+3. Immediately stores each computed value into its own compiler-generated
+   temporary variable (`data.GenerateName()` + a `StoreAlways` instruction —
+   the same "materialize this expression under a private name" idiom already
+   used by `compileAddressOf`/`compilePointerDereference` for `&expr`/`*expr`).
+4. Rewrites the token stream so the call now reads `namedFunc($1, $2)` instead
+   of `namedFunc(arg1, arg2)`, using the tokenizer's existing `Delete`/`Insert`
+   primitives (the same primitives the surrounding `func(){...}()` rewrite
+   already relied on).
+
+The existing `func(){...}()` wrap then proceeds completely unchanged, now
+wrapping `namedFunc($1, $2)`. When the deferred closure eventually runs, `$1`
+and `$2` are simple variable *reads* of values that were already computed and
+frozen — there is nothing left to re-evaluate, so the bug cannot recur.
+
+Two details worth calling out:
+
+- **Why this doesn't defer the call itself late enough to matter:** the
+  callee (and, for a method call, its receiver) are still resolved only when
+  the closure finally runs — exactly as before. Only the *arguments* moved
+  earlier. This preserves the reason the closure-wrap exists in the first
+  place (so a deferred method call's receiver setup is itself deferred; see
+  `DEFER-1`/`DEFER-2`).
+- **`$`-prefixed temporary names need no special scoping:** `DefineSymbol`/
+  `ReferenceSymbol` (`compiler/symbols.go`) already special-case any name
+  starting with `$` and never flag it as unused or undeclared, so the nested
+  closure body's reference to `$1` resolves through the same "read a captured
+  outer-scope variable at run time" mechanism any ordinary closure already
+  uses — no new symbol-table plumbing was required.
+- **Variadic spread (`defer f(s...)`) is handled correctly too:** the slice
+  value itself is hoisted and frozen (matching Go, where a slice is a
+  reference-type value — reassigning the variable afterward to point at a
+  *different* slice does not affect the deferred call, but mutating the
+  *same* underlying array would still be visible, exactly as in Go).
+
+**Tests:**
+
+- Go unit tests in `internal/language/compiler/defer_test.go`: new table
+  cases for one argument, multiple arguments, a variadic argument, and a
+  dotted method call, plus a case confirming a malformed argument expression
+  is still correctly reported as a compile error. A dedicated
+  `TestCompiler_compileDefer_ArgumentsHoistedEagerly` inspects the actual
+  emitted bytecode shape (`DeferStart` → `Push` the argument value → `StoreAlways`
+  the temp → `Push` the closure → `Defer`) and confirms the closure body loads
+  the temp variable by name rather than containing any trace of the original
+  literal argument value.
+- Ego-language tests in `tests/flow/defer_lifo.ego`: the pre-existing test
+  that had documented the buggy lazy behavior as expected
+  (`"flow: named function defer evaluates arg lazily"`) was rewritten to
+  assert the correct eager behavior and renamed
+  `"flow: named function defer captures arg eagerly"`. New tests were added
+  for: a named-function defer inside a loop capturing each iteration's value
+  without needing a manual closure workaround; multiple arguments; an
+  arithmetic expression argument; a value-receiver method call; and a
+  variadic spread argument.
 
 ---
 
@@ -3914,7 +4035,6 @@ transaction responses.
 
 ---
 
-
 ---
 
 This chapter covers the review of the `builtins` Go package — the implementation of Ego's built-in functions (`append`, `cast`, `copy`, `delete`, `index`, `length`, `make`, `new`, `typeof`, and the function-registration/dispatch machinery). All issues found in the initial audit have been resolved.
@@ -4495,7 +4615,6 @@ return data.FunctionType(&builtinFn), nil
 
 **Tests:** `Test_TypeOf_BuiltinFunctionReturnsFuncType`
 
-
 ---
 
 This chapter documents behavioral anomalies, potential bugs, and design concerns found during the comprehensive bytecode-instruction unit-test effort. Each entry includes the affected instruction(s), a description of the original behavior, the risk level, and the resolution.
@@ -4571,6 +4690,7 @@ a context, push stack items, and assert outcomes.
 ---
 
 <a id="branch"></a>
+
 ## BRANCH — Branch Instructions
 
 | ID | Summary | Status |
@@ -4580,6 +4700,7 @@ a context, push stack items, and assert outcomes.
 | [BRANCH-3](#BRANCH-3) | Misleading error context for non-integer operands | ✓ |
 
 <a id="BRANCH-1"></a>
+
 ### BRANCH-1 — Stack mutated before address validation in conditional branches
 
 **Affected instructions:** `branchFalseByteCode`, `branchTrueByteCode`  
@@ -4622,6 +4743,7 @@ value remains on the stack after an address-validation error.
 ---
 
 <a id="BRANCH-2"></a>
+
 ### BRANCH-2 — nil operand silently accepted as address 0
 
 **Affected instructions:** `branchByteCode`, `branchFalseByteCode`,
@@ -4658,6 +4780,7 @@ instead of `nil`.  Two new tests were added for the conditional variants.
 ---
 
 <a id="BRANCH-3"></a>
+
 ### BRANCH-3 — Misleading error context for non-integer operands
 
 **Affected instructions:** `branchByteCode`, `branchFalseByteCode`,
@@ -4703,6 +4826,7 @@ if address < 0 || address > c.bc.nextAddress {
 ---
 
 <a id="call"></a>
+
 ## CALL — Call Instructions
 
 | ID | Summary | Status |
@@ -4719,6 +4843,7 @@ if address < 0 || address > c.bc.nextAddress {
 | [CALL-10](#CALL-10) | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
 
 <a id="CALL-1"></a>
+
 ### CALL-1 — Argument count mismatch silently ignored for non-variadic functions with default ArgCount
 
 **Affected function:** `validateArgCount`  
@@ -4782,6 +4907,7 @@ confirms the extensions path returns nil.
 ---
 
 <a id="CALL-2"></a>
+
 ### CALL-2 — First extra variadic argument bypasses strict type checking
 
 **Affected function:** `validateStrictParameterTyping`  
@@ -4826,6 +4952,7 @@ false for n >= len(parms), but the explicit continue makes the intent clear).
 ---
 
 <a id="CALL-3"></a>
+
 ### CALL-3 — Nil pointer dereference in callRuntimeFunction when savedDefinition is nil and context is sandboxed
 
 **Affected function:** `callRuntimeFunction`  
@@ -4876,6 +5003,7 @@ a bare runtime function with `sandboxedIO = true` no longer panics.
 ---
 
 <a id="CALL-4"></a>
+
 ### CALL-4 — `parentTable` nil guard is dead code for non-literal named functions
 
 **Affected function:** `callBytecodeFunction`  
@@ -4952,6 +5080,7 @@ clone path is needed.
 ---
 
 <a id="CALL-5"></a>
+
 ### CALL-5 — `getPackageSymbols` passes the `this` struct instead of `this.value` to `GetPackageSymbolTable`
 
 **Affected function:** `getPackageSymbols`  
@@ -4998,6 +5127,7 @@ The existing tests were updated:
   resulting scope carries `IsClone() == true`.
 
 <a id="CALL-6"></a>
+
 ### CALL-6 — `SetBreakOnReturn` reads the wrong stack slot (off-by-one)
 
 **Affected function:** `SetBreakOnReturn`  
@@ -5070,6 +5200,7 @@ updated to assert `ctx.breakOnReturn == true`.
 ---
 
 <a id="CALL-7"></a>
+
 ### CALL-7 — `callTypeCast` panics when Path-A struct types receive empty argument list
 
 **Affected function:** `callTypeCast`  
@@ -5123,6 +5254,7 @@ now assert `ErrArgumentCount` and an empty stack rather than catching a panic.
 ---
 
 <a id="CALL-8"></a>
+
 ### CALL-8 — `makeNativeArrayArgument` missing `Int64Kind` and `Float32Kind` for `*data.Array` conversion
 
 **Affected function:** `makeNativeArrayArgument`  
@@ -5176,6 +5308,7 @@ succeeds and produces the expected concrete slice type.
 ---
 
 <a id="CALL-9"></a>
+
 ### CALL-9 — `CallWithReceiver` panics when method name is not found on receiver
 
 **Affected function:** `CallWithReceiver`  
@@ -5225,6 +5358,7 @@ that a non-nil error is returned.
 ---
 
 <a id="CALL-10"></a>
+
 ### CALL-10 — `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions
 
 **Affected function:** `synthesizeDefinition`  
@@ -5276,6 +5410,7 @@ why the clamp is needed.
 ---
 
 <a id="trycatch"></a>
+
 ## TRYCATCH — Try/Catch Instructions
 
 | ID | Summary | Status |
@@ -5283,6 +5418,7 @@ why the clamp is needed.
 | [TRYCATCH-1](#TRYCATCH-1) | `willCatchByteCode` panics on negative integer operands | ✓ |
 
 <a id="TRYCATCH-1"></a>
+
 ### `TRYCATCH-1` — `willCatchByteCode` panics on negative integer operands
 
 **Affected function:** `willCatchByteCode`  
@@ -5332,6 +5468,7 @@ returns `ErrInternalCompiler` without panicking.
 ---
 
 <a id="coerce"></a>
+
 ## COERCE — Coerce and Conversions Instructions
 
 | ID | Summary | Status |
@@ -5340,6 +5477,7 @@ returns `ErrInternalCompiler` without panicking.
 | [COERCE-2](#COERCE-2) | `data.UInt` accessor panics with a type assertion failure | ✓ |
 
 <a id="COERCE-1"></a>
+
 ### COERCE-1 — `NeedsCoerce` returns the wrong answer when the `Push` operand does not match the target type
 
 **Affected function:** `NeedsCoerce` (method on `ByteCode`)  
@@ -5381,6 +5519,7 @@ All 869 Ego-language integration tests pass in both `--types strict` and
 ---
 
 <a id="COERCE-2"></a>
+
 ### COERCE-2 — `data.UInt` accessor panics with a type assertion failure
 
 **Affected path:** `coerceByteCode` → `data.UInt`  
@@ -5414,16 +5553,18 @@ on the stack rather than catching a panic.
 ---
 
 <a id="compare"></a>
+
 ## COMPARE — Comparison Instructions
 
 | ID | Summary | Status |
 | :-- | :-- | :-- |
 | [COMPARE-1](#COMPARE-1) | `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests | ✓ |
-| [COMPARE-2](#COMPARE-2) | `notEqualByteCode` uses value types instead of pointer types for composite cases |  |
+| [COMPARE-2](#COMPARE-2) | `notEqualByteCode` uses value types instead of pointer types for composite cases | |
 | [COMPARE-4](#COMPARE-4) | Four comparison operators returned raw errors without `c.runtimeError` decoration | ✓ |
 | [COMPARE-3](#COMPARE-3) | `int8` missing from signed-integer case in four ordering functions | ✓ |
 
 <a id="COMPARE-1"></a>
+
 ### COMPARE-1 — `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests
 
 **Affected operators:** `!=`, `>=`  
@@ -5453,6 +5594,7 @@ and unsigned integers.
 ---
 
 <a id="COMPARE-2"></a>
+
 ### COMPARE-2 — `notEqualByteCode` uses value types instead of pointer types for composite cases
 
 **Affected function:** `notEqualByteCode`  
@@ -5512,6 +5654,7 @@ After the fix, invert the bug-documentation assertions in
 ---
 
 <a id="COMPARE-4"></a>
+
 ### COMPARE-4 — Four comparison operators returned raw errors without `c.runtimeError` decoration
 
 **Affected functions:** `lessThanByteCode`, `lessThanOrEqualByteCode`,
@@ -5578,6 +5721,7 @@ inconsistent operator.
 ---
 
 <a id="COMPARE-3"></a>
+
 ### COMPARE-3 — `int8` missing from signed-integer case in four ordering functions
 
 **Affected functions:** `lessThanByteCode`, `greaterThanByteCode`,
@@ -5630,6 +5774,7 @@ updated to assert `nil` error and the correct boolean result.
 ---
 
 <a id="context"></a>
+
 ## CONTEXT — Context Management
 
 | ID | Summary | Status |
@@ -5638,6 +5783,7 @@ updated to assert `nil` error and the correct boolean result.
 | [CONTEXT-2](#CONTEXT-2) | `SetDebug` unconditionally sets `singleStep = true` regardless of argument | ✓ |
 
 <a id="CONTEXT-1"></a>
+
 ### CONTEXT-1 — `GetModuleName` panics with a nil pointer dereference when `bc` is nil
 
 **Affected function:** `GetModuleName`  
@@ -5690,6 +5836,7 @@ func (c *Context) GetModuleName() string {
 ---
 
 <a id="CONTEXT-2"></a>
+
 ### CONTEXT-2 — `SetDebug` unconditionally sets `singleStep = true` regardless of argument
 
 **Affected function:** `SetDebug`  
@@ -5741,6 +5888,7 @@ clears both fields.
 ---
 
 <a id="create"></a>
+
 ## CREATE — Array, Map, Structure Creation
 
 | ID | Summary | Status |
@@ -5750,6 +5898,7 @@ clears both fields.
 | [CREATE-3](#CREATE-3) | `makeArrayByteCode` element-pop loop swallowed stack underflow silently | ✓ |
 
 <a id="CREATE-1"></a>
+
 ### CREATE-1 — `makeArrayByteCode` called `result.Set` twice per element
 
 **Affected function:** `makeArrayByteCode`  
@@ -5796,6 +5945,7 @@ if err := result.Set(count-i-1, value); err != nil {
 ---
 
 <a id="CREATE-2"></a>
+
 ### CREATE-2 — `addMissingFields` inverted error check skipped coerced-value write-back
 
 **Affected function:** `addMissingFields`  
@@ -5861,6 +6011,7 @@ the coercion block entirely.
 ---
 
 <a id="CREATE-3"></a>
+
 ### CREATE-3 — `makeArrayByteCode` element-pop loop swallowed stack underflow silently
 
 **Affected function:** `makeArrayByteCode`  
@@ -5922,14 +6073,16 @@ when only the base type is on the stack and count=1 requires one element pop.
 ---
 
 <a id="defer"></a>
+
 ## DEFER — Defer Management
 
 | ID | Summary | Status |
 | :-- | :-- | :-- |
 | [DEFER-1](#DEFER-1) | `deferByteCode` receiver slice captures wrong elements when new count ≠ deferThisSize | ✓ |
-| [DEFER-2](#DEFER-2) | `deferByteCode` skips receiver capture when `deferThisSize == 0` |  |
+| [DEFER-2](#DEFER-2) | `deferByteCode` skips receiver capture when `deferThisSize == 0` | |
 
 <a id="DEFER-1"></a>
+
 ### DEFER-1 — `deferByteCode` receiver slice captures wrong elements when new count ≠ deferThisSize
 
 **Affected function:** `deferByteCode`  
@@ -6003,6 +6156,7 @@ captured rather than only `[R2]`.
 ---
 
 <a id="DEFER-2"></a>
+
 ### DEFER-2 — `deferByteCode` skips receiver capture when `deferThisSize == 0`
 
 **Affected function:** `deferByteCode`  
@@ -6050,6 +6204,7 @@ current (zero-capture) behavior as a regression anchor.
 ---
 
 <a id="equal"></a>
+
 ## EQUAL — Equality Testing
 
 | ID | Summary | Status |
@@ -6059,6 +6214,7 @@ current (zero-capture) behavior as a regression anchor.
 | [EQUAL-3](#EQUAL-3) | `case nil:` branch in `equalByteCode`'s switch is dead code | ✓ |
 
 <a id="EQUAL-1"></a>
+
 ### EQUAL-1 — `equalTypes` returns an undecorated error (no module or line info)
 
 **Affected function:** `equalTypes`  
@@ -6108,6 +6264,7 @@ name.
 ---
 
 <a id="EQUAL-2"></a>
+
 ### EQUAL-2 — `getComparisonTerms` returns raw coerce error (no location info)
 
 **Affected function:** `getComparisonTerms`  
@@ -6172,6 +6329,7 @@ for two valid numeric values; the fix is defensive.
 ---
 
 <a id="EQUAL-3"></a>
+
 ### EQUAL-3 — `case nil:` branch in `equalByteCode`'s switch is dead code
 
 **Affected function:** `equalByteCode`  
@@ -6234,15 +6392,17 @@ still produce the correct bool results after the dead code was removed.
 ---
 
 <a id="load"></a>
+
 ## LOAD — Load Instructions
 
 | ID | Summary | Status |
 | :-- | :-- | :-- |
 | [LOAD-1](#LOAD-1) | `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration | ✓ |
 | [LOAD-2](#LOAD-2) | `explodeByteCode` doc comment incorrectly described the operand as "a struct" | ✓ |
-| [LOAD-3](#LOAD-3) | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases |  |
+| [LOAD-3](#LOAD-3) | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | |
 
 <a id="LOAD-1"></a>
+
 ### LOAD-1 — `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration
 
 **Affected function:** `explodeByteCode`  
@@ -6296,6 +6456,7 @@ the expected behavior after the fix.
 ---
 
 <a id="LOAD-2"></a>
+
 ### LOAD-2 — `explodeByteCode` doc comment incorrectly described the operand as "a struct"
 
 **Affected function:** `explodeByteCode`  
@@ -6344,6 +6505,7 @@ The comment was rewritten to describe the actual behavior accurately:
 ---
 
 <a id="LOAD-3"></a>
+
 ### LOAD-3 — `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases
 
 **Affected test:** `Test_explodeByteCode` in `bytecode/data_test.go`  
@@ -6404,6 +6566,7 @@ bare `return` with `continue` to let the loop reach cases 3 and 4.
 ---
 
 <a id="area-flow-bytecode"></a>
+
 ## FLOW (Bytecode) — Flow Control Instructions
 
 | ID | Summary | Status |
@@ -6413,6 +6576,7 @@ bare `return` with `continue` to let the loop reach cases 3 and 4.
 | [FLOW-3](#FLOW-3) | Pre-helper tests in `flow_test.go` used raw `&Context{}` struct literals | ✓ |
 
 <a id="FLOW-1"></a>
+
 ### FLOW-1 — `Test_branchFalseByteCode` called `branchTrueByteCode` for its invalid-address sub-case
 
 **Affected test:** `Test_branchFalseByteCode` in `bytecode/flow_test.go`  
@@ -6460,6 +6624,7 @@ if !e.(*errors.Error).Equal(errors.ErrInvalidBytecodeAddress) {
 ---
 
 <a id="FLOW-2"></a>
+
 ### FLOW-2 — `moduleByteCode` and `atLineByteCode` access `array[1]` without a bounds check
 
 **Affected functions:** `moduleByteCode`, `atLineByteCode`  
@@ -6537,6 +6702,7 @@ without panicking and still set the primary field correctly:
 ---
 
 <a id="FLOW-3"></a>
+
 ### FLOW-3 — Pre-helper tests in `flow_test.go` used raw `&Context{}` struct literals
 
 **Affected tests:** `Test_stopByteCode`, `Test_panicByteCode`, `Test_typeCast`,
@@ -6594,6 +6760,7 @@ chain.  Key conversion notes:
 ---
 
 <a id="math"></a>
+
 ## MATH — Math Operations
 
 | ID | Summary | Status |
@@ -6611,6 +6778,7 @@ chain.  Key conversion notes:
 | [MATH-11](#MATH-11) | `notByteCode` and `negateByteCode` return raw (undecorated) errors from `c.Pop()` | ✓ |
 
 <a id="MATH-1"></a>
+
 ### MATH-1 — `exponentByteCode` returns 0 for signed integer `x^0` (should return 1)
 
 **Affected function:** `exponentByteCode`  
@@ -6660,6 +6828,7 @@ the correct result.
 ---
 
 <a id="MATH-2"></a>
+
 ### MATH-2 — `multiplyByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
 
 **Affected function:** `multiplyByteCode`  
@@ -6694,6 +6863,7 @@ case int16:
 ---
 
 <a id="MATH-3"></a>
+
 ### MATH-3 — `multiplyByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
 
 **Affected function:** `multiplyByteCode`  
@@ -6726,6 +6896,7 @@ case uint16:
 ---
 
 <a id="MATH-4"></a>
+
 ### MATH-4 — `subtractByteCode` `case int8:` asserts `v1.(int16)` when v1 is `int8` — panics
 
 **Affected function:** `subtractByteCode`  
@@ -6759,6 +6930,7 @@ case int8:
 ---
 
 <a id="MATH-5"></a>
+
 ### MATH-5 — `divideByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
 
 **Affected function:** `divideByteCode`  
@@ -6792,6 +6964,7 @@ case int16:
 ---
 
 <a id="MATH-6"></a>
+
 ### MATH-6 — `divideByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
 
 **Affected function:** `divideByteCode`  
@@ -6825,6 +6998,7 @@ case uint16:
 ---
 
 <a id="MATH-7"></a>
+
 ### MATH-7 — `moduloByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics
 
 **Affected function:** `moduloByteCode`  
@@ -6858,6 +7032,7 @@ case int16:
 ---
 
 <a id="MATH-8"></a>
+
 ### MATH-8 — `moduloByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics
 
 **Affected function:** `moduloByteCode`  
@@ -6891,6 +7066,7 @@ case uint16:
 ---
 
 <a id="MATH-9"></a>
+
 ### MATH-9 — `notByteCode` multi-type case returns wrong result for zero values of non-`int` integer types
 
 **Affected function:** `notByteCode`  
@@ -6954,6 +7130,7 @@ updated to assert `true` for zero values of each affected type.
 ---
 
 <a id="MATH-10"></a>
+
 ### MATH-10 — `addByteCode` function comment incorrectly says "OR" for boolean operands
 
 **Affected function:** `addByteCode`  
@@ -6989,6 +7166,7 @@ performs OR) was added:
 ---
 
 <a id="MATH-11"></a>
+
 ### MATH-11 — `notByteCode` and `negateByteCode` return raw (undecorated) errors from `c.Pop()`
 
 **Affected functions:** `notByteCode`, `negateByteCode`  
@@ -7027,6 +7205,7 @@ if err != nil {
 ---
 
 <a id="members"></a>
+
 ## MEMBERS — Member Access
 
 | ID | Summary | Status |
@@ -7040,6 +7219,7 @@ if err != nil {
 | [MEMBERS-7](#MEMBERS-7) | `getMemberValue` silently returns `(nil, nil)` for a nil `*data.Type` behind `*any` | ✓ |
 
 <a id="MEMBERS-1"></a>
+
 ### MEMBERS-1 — `memberByteCode` returns raw errors from `c.Pop()` without `c.runtimeError` decoration
 
 **Affected function:** `memberByteCode`  
@@ -7078,6 +7258,7 @@ if err != nil {
 ---
 
 <a id="MEMBERS-2"></a>
+
 ### MEMBERS-2 — `getMemberValue` returns raw `ErrFunctionReturnedVoid` when stack marker detected
 
 **Affected function:** `getMemberValue`  
@@ -7103,6 +7284,7 @@ if isStackMarker(m) {
 ---
 
 <a id="MEMBERS-3"></a>
+
 ### MEMBERS-3 — `getStructMemberValue` returns raw errors without `c.runtimeError` decoration
 
 **Affected function:** `getStructMemberValue`  
@@ -7131,6 +7313,7 @@ return nil, c.runtimeError(errors.ErrSymbolNotExported).Context(name)
 ---
 
 <a id="MEMBERS-4"></a>
+
 ### MEMBERS-4 — `memberByteCode` doc comment says "second a map" but the function handles many types
 
 **Affected function:** `memberByteCode`  
@@ -7164,6 +7347,7 @@ supported object types.  See the updated `memberByteCode` doc comment in
 ---
 
 <a id="MEMBERS-5"></a>
+
 ### MEMBERS-5 — `getPackageMemberValue` signature includes dead parameters `v any` and `found bool`
 
 **Affected function:** `getPackageMemberValue`  
@@ -7199,6 +7383,7 @@ The function now declares its own local `v` and `found` variables.
 ---
 
 <a id="MEMBERS-6"></a>
+
 ### MEMBERS-6 — `getMemberValue` ignores the member name when the object is `*data.Type`
 
 **Affected function:** `getMemberValue`  
@@ -7251,6 +7436,7 @@ The two `_MEMBERS6` tests were renamed and updated:
 ---
 
 <a id="MEMBERS-7"></a>
+
 ### MEMBERS-7 — `getMemberValue` silently returns `(nil, nil)` for a nil `*data.Type` behind `*any`
 
 **Affected function:** `getMemberValue`  
@@ -7286,6 +7472,7 @@ form) now asserts `ErrInvalidType`.
 ---
 
 <a id="optimizer"></a>
+
 ## OPTIMIZER — Bytecode Optimizer
 
 | ID | Summary | Status |
@@ -7301,6 +7488,7 @@ form) now asserts `ErrInvalidType`.
 | [OPTIMIZER-9](#OPTIMIZER-9) | Dead `else if` condition in placeholder consistency check | ✓ |
 
 <a id="OPTIMIZER-1"></a>
+
 ### OPTIMIZER-1 — Branch-target scan is O(n²): pre-build a target set instead
 
 **Affected function:** `optimize`  
@@ -7341,6 +7529,7 @@ aborting the pass (subsumed from OPTIMIZER-8).
 ---
 
 <a id="OPTIMIZER-2"></a>
+
 ### OPTIMIZER-2 — `reflect.DeepEqual` for operand comparison is unnecessarily expensive
 
 **Affected function:** `optimize`  
@@ -7367,6 +7556,7 @@ fallback path.
 ---
 
 <a id="OPTIMIZER-3"></a>
+
 ### OPTIMIZER-3 — No opcode-indexed dispatch: all rules tried at every position
 
 **Affected function:** `optimize`  
@@ -7404,6 +7594,7 @@ for the old opcode).
 ---
 
 <a id="OPTIMIZER-4"></a>
+
 ### OPTIMIZER-4 — Backtracking by `maxPatternSize` instead of the matched pattern size
 
 **Affected function:** `optimize`  
@@ -7443,6 +7634,7 @@ at re-examined positions are near-free anyway.
 ---
 
 <a id="OPTIMIZER-5"></a>
+
 ### OPTIMIZER-5 — `Patch` corrupts the instruction array when the replacement is longer than the deleted region
 
 **Affected function:** `Patch`  
@@ -7477,6 +7669,7 @@ This is safe for any relative sizes of `insert` and `deleteSize`.
 ---
 
 <a id="OPTIMIZER-6"></a>
+
 ### OPTIMIZER-6 — `continue` after `found=false` in placeholder mismatch should be `break`
 
 **Affected function:** `optimize` (inner pattern-match loop)  
@@ -7509,6 +7702,7 @@ consistently.
 ---
 
 <a id="OPTIMIZER-7"></a>
+
 ### OPTIMIZER-7 — `executeFragment` creates full interpreter context for trivial constant folding
 
 **Affected function:** `executeFragment`  
@@ -7547,6 +7741,7 @@ non-numeric types that reach the constant-fold rules.
 ---
 
 <a id="OPTIMIZER-8"></a>
+
 ### OPTIMIZER-8 — `data.Int` failure in branch-check scan aborts the entire optimization pass
 
 **Affected function:** `optimize`  
@@ -7582,6 +7777,7 @@ coincide with a valid pattern window unless the bytecode is severely malformed.
 ---
 
 <a id="OPTIMIZER-9"></a>
+
 ### OPTIMIZER-9 — Dead `else if` condition in placeholder consistency check
 
 **Affected function:** `optimize`  
@@ -7615,6 +7811,7 @@ reject the match and short-circuit.
 ---
 
 <a id="range"></a>
+
 ## RANGE — Range Loops
 
 | ID | Summary | Status |
@@ -7626,6 +7823,7 @@ reject the match and short-circuit.
 | [RANGE-5](#RANGE-5) | `rangeInitByteCode` appends a stale entry to `rangeStack` even when the type-switch default sets an error | ✓ |
 
 <a id="RANGE-1"></a>
+
 ### RANGE-1 — `rangeNextInteger` unconditionally calls `c.symbols.Set` without guarding empty or discarded variable names
 
 **Affected function:** `rangeNextInteger`  
@@ -7669,6 +7867,7 @@ Tests renamed from `_CurrentlyBroken_RANGE1` to `_RANGE1`; both now assert
 ---
 
 <a id="RANGE-2"></a>
+
 ### RANGE-2 — `rangeNextByteCode` default case does not pop the range stack
 
 **Affected function:** `rangeNextByteCode`  
@@ -7700,6 +7899,7 @@ now asserts `len(tc.ctx.rangeStack) == 0`.
 ---
 
 <a id="RANGE-3"></a>
+
 ### RANGE-3 — Map remains readonly if a for-range loop exits before exhaustion
 
 **Affected functions:** `rangeInitByteCode`, `rangeNextMap`, `popScopeByteCode`  
@@ -7779,6 +7979,7 @@ Test renamed from `_EarlyExitLeavesMapReadonly_RANGE3` to
 ---
 
 <a id="RANGE-4"></a>
+
 ### RANGE-4 — `rangeNextByteCode` returns a raw error for the `[]any` case without `c.runtimeError()` decoration
 
 **Affected function:** `rangeNextByteCode`  
@@ -7814,6 +8015,7 @@ Test renamed from `_CurrentlyBroken_RANGE4` to `_RANGE4`.
 ---
 
 <a id="RANGE-5"></a>
+
 ### RANGE-5 — `rangeInitByteCode` appends a stale entry to `rangeStack` even when the type-switch default sets an error
 
 **Affected function:** `rangeInitByteCode`  
@@ -7849,6 +8051,7 @@ if err == nil {
 ---
 
 <a id="stack"></a>
+
 ## STACK — Stack Management
 
 | ID | Summary | Status |
@@ -7858,6 +8061,7 @@ if err == nil {
 | [STACK-3](#STACK-3) | `dropByteCode` silently swallows stack underflow when dropping more items than exist | ✓ |
 
 <a id="STACK-1"></a>
+
 ### STACK-1 — `copyByteCode` pushes the integer literal `2` instead of the deep copy
 
 **Affected function:** `copyByteCode`  
@@ -7895,6 +8099,7 @@ Test renamed from `_PushesIntegerTwo_CurrentlyBroken_STACK1` to
 ---
 
 <a id="STACK-2"></a>
+
 ### STACK-2 — `readStackByteCode` guard uses `>` instead of `>=`, causing panics on boundary indices
 
 **Affected function:** `readStackByteCode`  
@@ -7935,6 +8140,7 @@ Both tests were renamed (dropping `_CurrentlyBroken_`) and updated to assert
 ---
 
 <a id="STACK-3"></a>
+
 ### STACK-3 — `dropByteCode` silently swallows stack underflow when dropping more items than exist
 
 **Affected function:** `dropByteCode`  
@@ -7975,6 +8181,7 @@ now asserts `ErrStackUnderflow` rather than logging that nil was returned.
 ---
 
 <a id="store"></a>
+
 ## STORE — Store Instructions
 
 | ID | Summary | Status |
@@ -7985,6 +8192,7 @@ now asserts `ErrStackUnderflow` rather than logging that nil was returned.
 | [STORE-4](#STORE-4) | `storeChanByteCode` passes nil (`x`) as error context instead of the variable name | ✓ |
 
 <a id="STORE-1"></a>
+
 ### STORE-1 — Misleading comment in `storeByteCode` for the readonly-prefix branch
 
 **Affected function:** `storeByteCode`  
@@ -8030,6 +8238,7 @@ if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
 ---
 
 <a id="STORE-2"></a>
+
 ### STORE-2 — `defs.DiscardedVariable` used where `defs.ReadonlyVariablePrefix` is intended
 
 **Affected functions:** `storeByteCode`, `storeGlobalByteCode`, `storeAlwaysByteCode`  
@@ -8080,6 +8289,7 @@ if len(symbolName) > 1 && symbolName[0:1] == defs.ReadonlyVariablePrefix { ... }
 ---
 
 <a id="STORE-3"></a>
+
 ### STORE-3 — Scalar pointer helpers check `d.(string)` instead of target type in strict/relaxed mode
 
 **Affected functions:** `storeBoolViaPointer`, `storeByteViaPointer`,
@@ -8158,6 +8368,7 @@ The original documentation test was replaced with four targeted tests:
 ---
 
 <a id="STORE-4"></a>
+
 ### STORE-4 — `storeChanByteCode` passes nil (`x`) as error context instead of the variable name
 
 **Affected function:** `storeChanByteCode`  
@@ -8202,6 +8413,7 @@ error message via `strings.Contains`.
 ---
 
 <a id="structs"></a>
+
 ## STRUCT — Struct, Map, Array, Channel Indexing
 
 | ID | Summary | Status |
@@ -8211,6 +8423,7 @@ error message via `strings.Contains`.
 | [STRUCT-3](#STRUCT-3) | `flattenByteCode` produces incorrect `argCountDelta` for empty arrays | ✓ |
 
 <a id="STRUCT-1"></a>
+
 ### STRUCT-1 — Dead code check in `storeInPackage` is unreachable
 
 **Affected function:** `storeInPackage`  
@@ -8270,6 +8483,7 @@ solely for this guard.
 ---
 
 <a id="STRUCT-2"></a>
+
 ### STRUCT-2 — `storeIndexByteCode` mutates a struct field before checking package visibility
 
 **Affected function:** `storeIndexByteCode`  
@@ -8338,6 +8552,7 @@ that the struct is not modified before the error is returned.
 ---
 
 <a id="STRUCT-3"></a>
+
 ### STRUCT-3 — `flattenByteCode` produces incorrect `argCountDelta` for empty arrays
 
 **Affected function:** `flattenByteCode`  
@@ -8411,6 +8626,7 @@ after flattening an empty array, confirming correct behavior.  The full
 ---
 
 <a id="packages"></a>
+
 ## PACKAGES — Package Instructions
 
 | ID | Summary | Status |
@@ -8419,6 +8635,7 @@ after flattening an empty array, confirming correct behavior.  The full
 | [PACKAGES-2](#PACKAGES-2) | `makePackageItemList` panics on nil values in the package dictionary or symbol table | ✓ |
 
 <a id="PACKAGES-1"></a>
+
 ### PACKAGES-1 — `inPackageByteCode` panics when the symbol table holds a non-package value under the package name
 
 **Affected function:** `inPackageByteCode`  
@@ -8482,6 +8699,7 @@ Two tests cover this fix:
 ---
 
 <a id="PACKAGES-2"></a>
+
 ### PACKAGES-2 — `makePackageItemList` panics on nil values in the package dictionary or symbol table
 
 **Affected function:** `makePackageItemList`  
@@ -8556,6 +8774,7 @@ the output list so the item is not silently discarded.
 ---
 
 <a id="print"></a>
+
 ## Print Instructions
 
 The print-related instructions live in `bytecode/print.go`.  Tests are in
@@ -8569,6 +8788,7 @@ The print-related instructions live in `bytecode/print.go`.  Tests are in
 ---
 
 <a id="PRINT-1"></a>
+
 ### PRINT-1: Unchecked type assertion in `formatValueForPrinting` panics on nil struct-array elements
 
 | | |
@@ -8638,6 +8858,7 @@ rows without panicking.
 ---
 
 <a id="PRINT-2"></a>
+
 ### PRINT-2: `case *data.Function:` in `formatValueForPrinting` is unreachable dead code
 
 | | |
@@ -8685,6 +8906,7 @@ confirm the same for `*data.Function` pointers.
 ---
 
 <a id="return"></a>
+
 ## Return Instruction
 
 The return instruction lives in `bytecode/return.go`.  Tests are in
@@ -8698,6 +8920,7 @@ The return instruction lives in `bytecode/return.go`.  Tests are in
 ---
 
 <a id="RETURN-1"></a>
+
 ### RETURN-1: `isStackMarker(c.Result)` uses the bound method instead of the field — guard never fires
 
 | | |
@@ -8763,6 +8986,7 @@ that pushing a StackMarker and calling Return(true) now returns
 ---
 
 <a id="RETURN-2"></a>
+
 ### RETURN-2: `err` from `c.Pop()` in the bool branch is silently overwritten
 
 | | |
@@ -8818,6 +9042,7 @@ silently proceeding.
 ---
 
 <a id="area-types-bytecode"></a>
+
 ## Type Instructions
 
 The type-related bytecode instructions live in `bytecode/types.go`.  Tests are
@@ -8832,6 +9057,7 @@ in `bytecode/types_test.go`.
 ---
 
 <a id="TYPES-1"></a>
+
 ### TYPES-1: Dead nil guard in `deRefByteCode` leaves `*c3` vulnerable to panic
 
 | | |
@@ -8895,6 +9121,7 @@ instead of panicking.
 ---
 
 <a id="TYPES-2"></a>
+
 ### TYPES-2: `reflect.TypeOf(v).String()` panics when `v` is nil in `relaxedConformanceCheck`
 
 | | |
@@ -8945,6 +9172,7 @@ that an error is returned rather than a panic.
 ---
 
 <a id="TYPES-3"></a>
+
 ### TYPES-3: Int-dispatch switch in `relaxedConformanceCheck` has unreachable cases
 
 | | |
@@ -9015,7 +9243,6 @@ those cases.
 `int16(5)` value now passes when `int16(0)` is the operand, and
 `Test_requiredTypeByteCode_Int16Operand_WrongValue_TYPES3` confirms that a
 plain `int` value fails for the same operand.
-
 
 ---
 
@@ -9254,7 +9481,7 @@ if err == nil || errors.Equals(err, errors.ErrStop) {
 | ID | Summary | Status |
 | -- | ------- | ------ |
 | [DEBUGGER-SHOW-1](#DEBUGGER-SHOW-1) | `showSource` mutated its `err` parameter by value, so invalid range arguments were silently swallowed by the caller. | ✓ |
-| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. |  |
+| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | |
 
 <a id="DEBUGGER-SHOW-1"></a>
 
@@ -9359,7 +9586,6 @@ characters inside string literals.  Given that the error only affects display
 alignment (not execution), and that the current tokenizer's `New()` call
 carries measurable overhead for short expressions, this issue is documented
 but deferred.
-
 
 ---
 
