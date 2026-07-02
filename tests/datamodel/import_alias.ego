@@ -94,7 +94,7 @@
     // an alias must still be declared by an import statement to be usable.
     var failed bool
 
-    @compile block {
+    @compile block unknown=true {
         import str "strings"
         x := nosuchalias.ToUpper("hi")
         _ = x
