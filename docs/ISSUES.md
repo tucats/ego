@@ -1,4 +1,4 @@
-# Ego Issues — Consolidated Bug, Design, and Security Tracker
+# Ego Issues — Consolidated Bug, Design, and Security Tracking
 
 ## Introduction
 

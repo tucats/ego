@@ -742,16 +742,114 @@ func (c *Compiler) packagesDirective(singular bool) error {
 // @test jobs that include validation of compiler
 // fixes.
 func (c *Compiler) compileBlockDirective() error {
+	// Supported directive modifiers
+	const (
+		unusedVarsFlag  = "unused"
+		unknownVarsFlag = "unknown"
+		optimizeFlag    = "optimize"
+		trueFlag        = "true"
+		falseFlag       = "false"
+		onFlag          = "on"
+		offFlag         = "off"
+	)
+
+	var (
+		savedUnusedVars  = settings.GetBool(defs.UnusedVarLoggingSetting)
+		savedUnknownVars = settings.GetBool(defs.UnknownVarSetting)
+		savedOptimize    = settings.GetInt(defs.OptimizerSetting)
+
+		unusedVars  = savedUnusedVars
+		unknownVars = savedUnknownVars
+		optimize    = savedOptimize
+		blockMode   = false
+	)
+
 	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingStatement)
 	}
 
-	// If the next token is word "block" then this is  block of
-	// code and doesn't require a full program prolog and
-	// main function.
-	blockMode := false
-	if c.t.IsNext(tokenizer.NewIdentifierToken("block")) {
-		blockMode = true
+	// Process any optional flags that modify the behavior of the @compile directive.
+	for !c.t.Peek(1).Is(tokenizer.BlockBeginToken) {
+		switch c.t.Peek(1).Spelling() {
+		case "block":
+			// "block" means this is block of code and doesn't require
+			// a full program prolog and main function.
+			blockMode = true
+
+			c.t.Advance(1)
+
+		case unusedVarsFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next().Spelling()
+			switch strings.ToLower(flag) {
+			case trueFlag, onFlag, "1":
+				unusedVars = true
+
+			case falseFlag, offFlag, "0":
+				unusedVars = false
+
+			default:
+				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
+			}
+
+		case unknownVarsFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next().Spelling()
+			switch strings.ToLower(flag) {
+			case trueFlag, onFlag, "1":
+				unknownVars = true
+
+			case falseFlag, offFlag, "0":
+				unknownVars = false
+
+			default:
+				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
+			}
+
+		case optimizeFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next()
+			switch strings.ToLower(flag.Spelling()) {
+			case offFlag, falseFlag:
+				optimize = 0
+
+			case "low":
+				optimize = 1
+
+			case "high":
+				optimize = 2
+
+			default:
+				if flag.Class() != tokenizer.IntegerTokenClass {
+					return c.compileError(errors.ErrInvalidValue).Context(flag)
+				}
+
+				var err error
+
+				optimize, err = strconv.Atoi(flag.Spelling())
+				if err != nil || optimize < 0 || optimize > 2 {
+					return c.compileError(errors.ErrInvalidValue).Context(flag)
+				}
+			}
+
+		default:
+			return c.compileError(errors.ErrInvalidKeyword).Context(c.t.Peek(1).Spelling())
+		}
 	}
 
 	// Must start with opening braces with a block to compile.
@@ -765,6 +863,19 @@ func (c *Compiler) compileBlockDirective() error {
 	subCompiler := New("@compile")
 	subCompiler.flags.extensionsEnabled = c.flags.extensionsEnabled
 
+	// Load up the other values from the @compile directive flags, which may
+	// just hold the original unchanged values...
+	settings.SetDefault(defs.UnusedVarsSetting, strconv.FormatBool(unusedVars))
+	settings.SetDefault(defs.UnknownVarSetting, strconv.FormatBool(unknownVars))
+	settings.SetDefault(defs.OptimizerOption, strconv.Itoa(optimize))
+
+	// Make sure we put everything back when we're done.
+	defer func() {
+		settings.SetDefault(defs.UnusedVarsSetting, strconv.FormatBool(savedUnusedVars))
+		settings.SetDefault(defs.UnknownVarSetting, strconv.FormatBool(savedUnknownVars))
+		settings.SetDefault(defs.OptimizerOption, strconv.Itoa(savedOptimize))
+	}()
+
 	// If block mode was enabled in the @compile directive, the code in
 	// the block is a true block. OTherwise, we leave the block dept at 0
 	// so the sub-compiler must compile a full program with prolog and main
@@ -774,6 +885,13 @@ func (c *Compiler) compileBlockDirective() error {
 		subCompiler.blockDepth = c.blockDepth + 1
 		subCompiler.flags = c.flags
 	}
+	// Must wait til now to set this value so 'block' mode doesn't override
+	// it from the outer compiler. Also, even though the parent compiler may
+	// be evaluating a code fragment, we have to do the sub-compile as a first
+	// class compiler, so disable fragment mode if on.
+	subCompiler.flags.unusedVars = unusedVars
+	subCompiler.flags.fragment = false
+	subCompiler.flags.trial = false
 
 	// Collect up all the tokens in the exiting token stream up to the
 	// mismatched closing brace. These will be the tokens sent to the
@@ -823,8 +941,6 @@ func (c *Compiler) compileBlockDirective() error {
 
 	c.b.Emit(bytecode.Try, 0)
 	c.b.Emit(bytecode.Push, tryMarker)
-
-	subCompiler.flags.unusedVars = true
 
 	// Compile the block of code.
 	bc, err := subCompiler.Compile("@compile", tokens)

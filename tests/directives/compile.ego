@@ -1,5 +1,9 @@
 // Test new @compile directive, which allows capture of
-// compile errors at runtime.
+// compile errors at runtime. Note that some of these 
+// tests use the unknown=true flag to ensure that compilation
+// unit being tests triggers an unknown variable error from
+// the compiler, regardless of the user's current configuration
+// settings.
 
 @test "directives: @compile block with no error"
 {
@@ -16,14 +20,11 @@
 
 @test "directives: @compile block with error"
 {
-    x := 0
     @compile block {
-        x = bob
+        fmt.Println(a b)
     } catch(e) {
-        @assert strings.Contains(e.Error(), "unknown identifier")
+        @assert e.Code() == "list"
     }
-
-    @assert x == 0
 }
 
 
@@ -33,7 +34,7 @@
 
     @compile {
         func foo() {
-            x = 33
+            x := 33
             fmt.Println(x)
         }
     } catch(e) {
@@ -49,9 +50,9 @@
 {
     var failed bool
 
-    @compile {
+    @compile unknown=true {
         func foo() {
-            x = bob
+            x := bob
             fmt.Println(x)
         }
     } catch(e) {
@@ -95,7 +96,7 @@
     // still land in catch(e) rather than silently passing.
     var compileFailed bool
 
-    @compile {
+    @compile unknown=true {
         func broken() {
             _ = nosuchname
         }

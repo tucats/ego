@@ -4,7 +4,7 @@ package builtins
 //
 // Make() implements the Ego built-in make() function.  It constructs:
 //   - Maps:    make(map[K]V) or make(map[K]V, capacityHint)
-//     BUG-22 fix: map support was added; capacity is accepted but ignored
+//     fixed BUG-22: map support was added; capacity is accepted but ignored
 //     (matching Go's semantics where it is only a performance hint).
 //   - Arrays:  make([]T, size) or make([]T, size, capacity)
 //     capacity must be >= size; currently ignored for actual allocation.
@@ -263,7 +263,7 @@ func Test_Make_Map_NoSize(t *testing.T) {
 
 	// The map must be writable: Set() must not return an error.
 	if _, err := m.Set("key", 42); err != nil {
-		t.Errorf("Make(map[string]int) returned unwritable map: %v", err)
+		t.Errorf("Make(map[string]int) returned un-writable map: %v", err)
 	}
 }
 

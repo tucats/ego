@@ -138,7 +138,7 @@ type Compiler struct {
 	statementCount   int     // Number of statements in the current block
 	lineNumberOffset int     // Offset used for generating line number data in debug data
 	flags            flagSet // Used to hold parser state flags
-	// iota holds the current value of Go's predeclared "iota" identifier while the
+	// iota holds the current value of Go's pre-declared "iota" identifier while the
 	// compiler is working through a const(...) declaration. compileConst() sets this
 	// to 0 when it starts compiling a block of constants, increments it after each
 	// constant in the block, and restores the prior value when the block is done.
@@ -371,7 +371,7 @@ func (c *Compiler) Errors() error {
 		// time to add them to the errors table.
 		for _, scope := range c.scopes {
 			for v, e := range scope.usage {
-				// Skip over symbols marked as optionaly used.
+				// Skip over symbols marked as optionally used.
 				if len(c.optionalUsage) > 0 && c.optionalUsage[v] {
 					continue
 				}

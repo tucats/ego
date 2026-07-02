@@ -92,7 +92,7 @@ func TestCompiler_compileConst(t *testing.T) {
 			wantErr: errors.New(errors.ErrInvalidConstant).Context("bar"),
 		},
 		{
-			// BUG-20: a bare "iota" reference is legal inside a const(...) block --
+			// fixed BUG-20: a bare "iota" reference is legal inside a const(...) block --
 			// it should compile like any other constant expression, not be rejected
 			// as an unknown symbol.
 			name: "iota basic",
@@ -106,7 +106,7 @@ func TestCompiler_compileConst(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			// BUG-20: a ConstSpec may omit "= expr" to repeat the previous spec's
+			// fixed BUG-20: a ConstSpec may omit "= expr" to repeat the previous spec's
 			// expression (here, "= iota"), which is how Go's classic
 			// "const ( A = iota; B; C )" idiom is written.
 			name: "iota repeat",
@@ -120,7 +120,7 @@ func TestCompiler_compileConst(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			// BUG-20: iota also works in an expression, not just by itself.
+			// fixedBUG-20: iota also works in an expression, not just by itself.
 			name: "iota in expression",
 			fields: fields{
 				t:             tokenizer.New("(foo = 1 << iota; bar; baz)", true),
@@ -132,7 +132,7 @@ func TestCompiler_compileConst(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			// BUG-20: iota is legal even in the non-parenthesized single-constant
+			// fixed BUG-20: iota is legal even in the non-parenthesized single-constant
 			// form; Go treats it the same as a one-element const block (iota is 0).
 			name: "iota standalone",
 			fields: fields{

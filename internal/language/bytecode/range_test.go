@@ -481,7 +481,7 @@ func Test_rangeNextByteCode_DefaultCase_PopsRangeStack_RANGE2(t *testing.T) {
 // Test_rangeNextString_FullIteration verifies a complete for-range loop over a
 // 3-character ASCII string.
 //
-// BUG-19: the value variable must receive the rune as an int32 code point
+// fixed BUG-19: the value variable must receive the rune as an int32 code point
 // (matching Go's `for i, ch := range s` where ch has type rune), not a
 // one-character string.
 //

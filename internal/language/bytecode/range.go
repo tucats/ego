@@ -486,7 +486,7 @@ func rangeNextMap(c *Context, r *rangeDefinition, actual *data.Map, destination 
 // characters produce non-consecutive offsets) and the value variable receives
 // the decoded rune itself.
 //
-// BUG-19 fix: in Go, `for i, ch := range someString` gives `ch` the type
+// fixed BUG-19: in Go, `for i, ch := range someString` gives `ch` the type
 // `rune`, which is just an alias for `int32` — it holds the Unicode code
 // point number (e.g. 65 for 'A'), not a one-character string. The previous
 // Ego implementation converted the rune to a `string(value)` before storing

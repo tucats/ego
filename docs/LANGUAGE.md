@@ -5240,10 +5240,28 @@ variable `e`. This could contain an error if `bbo` is not a known symbol,
 for example. If `bob` does exist, then the compilation may not have an error,
 and the code will run as if it was compiled inline.
 
+The keyword `block` is one of the options that can be set on the compilation
+unit, that do not affect the rest of the program's compilation.
+
+| Keyword | Values | Description |
+| ------- | ------ | ----------- |
+| block | | If present, the code in braces is a statement block. Otherwise it must be a full program. There is no option value, the option is true if `block` is present. |
+| unused | true\|false | If true, unused variables generate a compile error. If false, no error is reported. |
+| unknown | true\|false | If true, unknown symbol references generate a compile error. If false, the unknown symbol will only cause an error if the compiled function code is executed. |
+| optimize | 0\|1\|2 | Specify the optimization level for this compilation. |
+
 If the keyword `block` is not present, then the code between the braces must
 be a complete program. That is, it can support global type specifications,
 function declarations, etc. In fact, most statements like an assignment
 operation can only be used inside a function definition.
+
+If `unknown` or `unused` are set, they override the default setting for the
+Ego profile setting. This allows a compilation test to validate the operation
+of the compiler feature irrespective of the user's default configuration value,
+which is not changed by this operation.
+
+Similarly, the `optimize` setting allows the test to override the compiler
+optimization setting for just this block of code.
 
 This extension is used mostly in writing unit tests for the compiler
 itself.
