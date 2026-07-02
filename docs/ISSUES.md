@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **224 issues**:
-**216 resolved** and **8 still open**. Open issues are
+Across all six areas, this document currently tracks **259 issues**:
+**216 resolved** and **43 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 24 issues (22 resolved)
+- [BUG — General Language Bugs](#area-bug) — 59 issues (22 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -192,6 +192,41 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-22](#BUG-22) | BUG | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | BUG | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
+| [BUG-25](#BUG-25) | BUG | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
+| [BUG-26](#BUG-26) | BUG | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
+| [BUG-27](#BUG-27) | BUG | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | |
+| [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | |
+| [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | |
+| [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
+| [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
+| [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
+| [BUG-33](#BUG-33) | BUG | Struct field type declarations are never enforced, even in strict mode. | |
+| [BUG-34](#BUG-34) | BUG | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
+| [BUG-35](#BUG-35) | BUG | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
+| [BUG-36](#BUG-36) | BUG | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | |
+| [BUG-37](#BUG-37) | BUG | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | |
+| [BUG-38](#BUG-38) | BUG | The documented variadic multi-argument form of `strings.String` is not implemented. | |
+| [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
+| [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | |
+| [BUG-41](#BUG-41) | BUG | Multi-line nested struct/map literals fail to parse with "invalid list". | |
+| [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
+| [BUG-43](#BUG-43) | BUG | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
+| [BUG-44](#BUG-44) | BUG | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | |
+| [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
+| [BUG-46](#BUG-46) | BUG | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
+| [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
+| [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
+| [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
+| [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
+| [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
+| [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
+| [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
+| [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | |
+| [BUG-55](#BUG-55) | BUG | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
+| [BUG-56](#BUG-56) | BUG | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
+| [BUG-57](#BUG-57) | BUG | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
+| [BUG-58](#BUG-58) | BUG | The `uint8()` cast function is not recognized despite being documented. | |
+| [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -430,6 +465,41 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-22](#BUG-22) | MEDIUM | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | MEDIUM | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | MEDIUM | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
+| [BUG-25](#BUG-25) | CRITICAL | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
+| [BUG-26](#BUG-26) | CRITICAL | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
+| [BUG-27](#BUG-27) | CRITICAL | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | |
+| [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | |
+| [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | |
+| [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
+| [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
+| [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
+| [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | |
+| [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
+| [BUG-35](#BUG-35) | HIGH | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
+| [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | |
+| [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | |
+| [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | |
+| [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
+| [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | |
+| [BUG-41](#BUG-41) | HIGH | Multi-line nested struct/map literals fail to parse with "invalid list". | |
+| [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
+| [BUG-43](#BUG-43) | MEDIUM | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
+| [BUG-44](#BUG-44) | MEDIUM | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | |
+| [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
+| [BUG-46](#BUG-46) | MEDIUM | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
+| [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
+| [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
+| [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
+| [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
+| [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
+| [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
+| [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
+| [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | |
+| [BUG-55](#BUG-55) | MEDIUM | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
+| [BUG-56](#BUG-56) | MEDIUM | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
+| [BUG-57](#BUG-57) | MEDIUM | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
+| [BUG-58](#BUG-58) | LOW | The `uint8()` cast function is not recognized despite being documented. | |
+| [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | |
 
 ---
 
@@ -2279,6 +2349,1902 @@ failure occurs with a literal expression list (`m["k"], arr[0] = 5, 6`), with th
 two-value form of a multi-return call, and regardless of whether `:=` or `=` is used.
 A workaround is to assign through a temporary simple variable and then copy it into the
 indexed/member target on its own line.
+
+---
+
+<a id="BUG-25"></a>
+
+### BUG-25 — `fallthrough` into a `switch`'s `default`/terminal clause causes an infinite loop
+
+**Severity:** CRITICAL
+
+**Description:**  
+`fallthrough` from a `case` clause into the `default` clause — a perfectly legal, idiomatic
+Go construct — causes the program to loop forever instead of executing the `default` block
+once. The same happens when `fallthrough` is used as the last statement of a switch's only/
+last `case` with no following clause at all (which real Go rejects as a compile-time error,
+"cannot fallthrough final case in switch").
+
+**Reproducer:**
+
+```go
+func main() {
+    x := 2
+    switch x {
+    case 1:
+        fmt.Println("one")
+    case 2:
+        fmt.Println("two")
+        fallthrough
+    default:
+        fmt.Println("default")
+    }
+}
+```
+
+**Actual output:**
+
+```text
+two
+two
+two
+two
+... (repeats forever until killed; ./ego --timeout 3s run reports
+     "INTERNAL: Ego execution time exceeded 3s; terminating program execution")
+```
+
+**Expected output:**
+
+```text
+two
+default
+```
+
+**Notes:**  
+Root cause in `internal/language/compiler/switch.go`: `compileSwitchCase` records the
+`fallthrough` branch's fixup address and only patches it when the *next* clause is itself
+compiled by `compileSwitchCase` (i.e. another `case`). `compileSwitchDefaultBlock` never
+patches this address, and if no clause follows at all, `compileSwitch`'s main loop exits
+without patching it either. The resulting branch instruction is left targeting address `0`,
+so execution jumps to the start of the function's bytecode and re-enters the switch,
+looping forever. `fallthrough` into a following `case` works correctly because that path is
+patched; only fallthrough-into-`default` and fallthrough-as-terminal-statement are affected.
+
+---
+
+<a id="BUG-26"></a>
+
+### BUG-26 — Struct assignment and pass-by-value alias instead of copying
+
+**Severity:** CRITICAL
+
+**Description:**  
+Assigning one struct variable to another (`p2 := p1`), or passing a struct to a function
+parameter, does not copy the struct — both variables (or the parameter and the argument)
+end up referring to the same underlying struct instance, so mutating one silently mutates
+the other. This reproduces for `:=`, `=`, and function-parameter passing; for both named
+and anonymous struct types; and in dynamic, strict, and relaxed type modes. This is the
+same class of defect as the already-fixed BUG-23 (`var` zero-value structs sharing a single
+compile-time instance), but is a much broader, still-open gap: BUG-23's fix does not cover
+ordinary struct-to-struct assignment or function-argument binding.
+
+**Reproducer:**
+
+```go
+type Point struct {
+    X int
+    Y int
+}
+
+func mutate(p Point) {
+    p.X = 555
+}
+
+func main() {
+    p1 := Point{X: 1, Y: 2}
+    p2 := p1
+    p2.X = 99
+    fmt.Println("after p2.X=99: p1 =", p1, " p2 =", p2)
+
+    mutate(p1)
+    fmt.Println("after mutate(p1) [pass by value]: p1 =", p1)
+}
+```
+
+**Actual output:**
+
+```text
+after p2.X=99: p1 = Point{ X: 99, Y: 2 }  p2 = Point{ X: 99, Y: 2 }
+after mutate(p1) [pass by value]: p1 = Point{ X: 555, Y: 2 }
+```
+
+**Expected output** (verified against real Go):
+
+```text
+after p2.X=99: p1 = {1 2}  p2 = {99 2}
+after mutate(p1) [pass by value]: p1 = {1 2}
+```
+
+**Notes:**  
+`docs/LANGUAGE.md` line 495 states that a value argument "gets a copy made and that copy is
+what is passed to the function," matching standard Go struct value semantics — this is
+violated for both assignment and argument passing. Root cause: `internal/language/bytecode/store.go`
+(`storeByteCode`) and `internal/language/bytecode/structs.go` (`storeIndexByteCode`) store
+the `*data.Struct` pointer directly, with no call to `Struct.Copy()`
+(`internal/language/data/structs.go:574`) — that method is only invoked by the explicit
+`DeepCopy`/`copy()`-builtin paths, never by ordinary assignment or argument binding. Array
+and map reference-alias semantics are correct and intentional (they match Go slice/map
+behavior); this issue is specific to structs, which in Go are value types.
+
+---
+
+<a id="BUG-27"></a>
+
+### BUG-27 — Misusing `sync.WaitGroup` crashes the entire `ego` process with a raw Go panic
+
+**Severity:** CRITICAL
+
+**Description:**  
+Calling `Done()` more times than `Add()` on a `sync.WaitGroup` produces an unrecoverable Go
+runtime panic that crashes the whole `ego` process (not just the running program), printing
+a full Go stack trace that discloses internal file paths. It is not catchable with
+`try`/`catch`.
+
+**Reproducer:**
+
+```go
+import "sync"
+
+func main() {
+    var wg sync.WaitGroup
+    wg.Add(1)
+    wg.Done()
+    wg.Done()
+    fmt.Println("after double done")
+}
+```
+
+**Actual output:**
+
+```text
+panic: sync: negative WaitGroup counter
+
+goroutine 1 [running]:
+sync.(*WaitGroup).Add(...)
+	.../sync/waitgroup.go:118 +0x264
+...
+github.com/tucats/ego/internal/language/bytecode.CallWithReceiver(...)
+	.../internal/language/bytecode/callNative.go:583 +0x484
+...
+main.main()
+	/Users/tom/go/src/github.com/tucats/ego/main.go:90 +0x2f8
+```
+(exit code 2 — the entire process terminates; "after double done" is never printed)
+
+**Expected output:**
+
+A catchable Ego runtime error (or at minimum a clean fatal message), not a raw Go-runtime
+stack dump that crashes the whole binary and bypasses `try`/`catch` entirely.
+
+**Notes:**  
+`sync.WaitGroup` is a native pass-through (per CLAUDE.md's documented "Native pass-through"
+pattern), dispatched via `reflect.Value.Call` in
+`internal/language/bytecode/callNative.go:CallWithReceiver`. There is no `recover()`
+anywhere on this call path (`callNative.go`, `callRuntimeFunction.go`, `run.go`, `main.go`),
+so any Go-level panic from the underlying stdlib type propagates all the way out of the
+process. Wrapping the calls in `try {} catch (e) {}` does not help — confirmed the crash
+still occurs identically.
+
+---
+
+<a id="BUG-28"></a>
+
+### BUG-28 — Double-`Unlock()` of a `sync.Mutex` crashes the entire process
+
+**Severity:** CRITICAL
+
+**Description:**  
+Calling `Unlock()` on a `sync.Mutex` that is not currently locked triggers Go's
+`internal/sync.fatal()` path (`fatal error: sync: unlock of unlocked mutex`), which is not
+interceptable even by a Go-level `recover()`, let alone Ego's `try`/`catch`. The entire
+`ego` process crashes.
+
+**Reproducer:**
+
+```go
+import "sync"
+
+func main() {
+    try {
+        var mu sync.Mutex
+        mu.Lock()
+        mu.Unlock()
+        mu.Unlock()
+    } catch (e) {
+        fmt.Println("caught:", e)
+    }
+    fmt.Println("survived")
+}
+```
+
+**Actual output:**
+
+```text
+fatal error: sync: unlock of unlocked mutex
+
+goroutine 1 [running]:
+internal/sync.fatal(...)
+	.../runtime/panic.go:1191 +0x20
+internal/sync.(*Mutex).unlockSlow(...)
+	.../internal/sync/mutex.go:204 +0x38
+...
+```
+(exit code 2; neither "caught" nor "survived" is ever printed)
+
+**Expected output:**
+
+```text
+caught: <some Ego error describing the misuse>
+survived
+```
+
+**Notes:**  
+Same root-cause class as BUG-27 (unguarded native pass-through). This case is strictly
+worse: Go's `sync.Mutex.Unlock` calls `fatal()` directly rather than `panic()`, so no amount
+of wrapping inside Ego (nor even a Go-level `defer recover()`) can intercept it — the
+runtime function must guard against the misuse explicitly (e.g. tracking lock state) before
+ever calling into the native `sync.Mutex`.
+
+---
+
+<a id="BUG-29"></a>
+
+### BUG-29 — Closing an already-closed channel crashes the entire process
+
+**Severity:** CRITICAL
+
+**Description:**  
+Calling `close()` a second time on the same channel panics with Go's native
+`"panic: close of closed channel"` and crashes the whole `ego` process; the panic is not
+caught by `try`/`catch`. This is inconsistent with `Send()` on a closed channel, which is
+already handled gracefully and returns a catchable "channel not open" error.
+
+**Reproducer:**
+
+```go
+func main() {
+    ch := make(chan, 2)
+    close(ch)
+    try {
+        close(ch)
+        fmt.Println("double close did not error")
+    } catch (e) {
+        fmt.Println("double close caught:", e)
+    }
+    fmt.Println("done")
+}
+```
+
+**Actual output:**
+
+```text
+panic: close of closed channel
+
+goroutine 1 [running]:
+github.com/tucats/ego/internal/language/data.(*Channel).Close(...)
+	/Users/tom/go/src/github.com/tucats/ego/internal/language/data/channel.go:184 +0xf4
+github.com/tucats/ego/internal/builtins.Close(...)
+	/Users/tom/go/src/github.com/tucats/ego/internal/builtins/close.go:16 +0x78
+...
+```
+(exit code 2; nothing after the first `close(ch)` ever prints)
+
+**Expected output:**
+
+```text
+double close caught: <catchable "channel not open"-style error>
+done
+```
+
+**Notes:**  
+Root cause: `internal/language/data/channel.go`, `Channel.Close()` (~line 168-187)
+unconditionally calls Go's native `close(c.channel)` before checking `c.isOpen`; it only
+computes `wasActive` *after* the unconditional close. `Send()` in the same file is protected
+by `defer recover()` (per CLAUDE.md's documented note on `data.Channel`), but `Close()` has
+no equivalent guard.
+
+---
+
+<a id="BUG-30"></a>
+
+### BUG-30 — Closures created in a loop all capture the loop variable's final value, not a per-iteration value
+
+**Severity:** HIGH
+
+**Description:**  
+Building a slice of closures inside a `for` or `range` loop, where each closure captures
+the loop's index/value variable, results in every closure observing the *same final* value
+of that variable rather than the value it had on the iteration that created the closure.
+This was standard Go behavior before Go 1.22, but since Go 1.22 the language spec changed
+so that `for`-loop and `range`-loop variables get a fresh instance per iteration — this is
+now one of the best-known recent Go semantic changes, and Ego does not match it. This
+divergence is not listed in `docs/LANGUAGE.md`'s "Key differences from Go" table.
+
+**Reproducer:**
+
+```go
+func main() {
+    var funcs []any
+    for i := 0; i < 3; i++ {
+        funcs = append(funcs, func() int { return i })
+    }
+    for _, f := range funcs {
+        fmt.Println(f())
+    }
+}
+```
+
+**Actual output:**
+
+```text
+3
+3
+3
+```
+
+**Expected output** (verified against real Go 1.24, `go run`):
+
+```text
+0
+1
+2
+```
+
+**Notes:**  
+The same defect reproduces for `range` loops (both the range value and the range index
+variable). Root cause: `internal/language/compiler/for.go` emits `PushScope` once, before
+the loop begins, for the loop's index/value variable(s); the same scope — and therefore the
+same underlying variable — is reused across all iterations instead of a fresh scope per
+iteration. The existing regression test for the related FUNC-H2 fix
+(`Test_pushByteCode_LoopIterationsCaptureDifferentScopes`) only verifies that closures
+created in two *separate contexts* (simulating separate goroutines) capture distinct
+scopes; it does not exercise the single-context, sequential-loop-iteration case shown here.
+
+This also means Ego's own existing regression test
+(`tests/functions/scope_advanced.ego`, `"functions: stored closure survives after loop"`)
+encodes stale, pre-Go-1.22 semantics: it asserts that a single closure variable reassigned
+each iteration observes the *post-loop* value of `i` (`3`), commented "Matches Go" — but
+real modern Go actually returns `2` for that exact scenario (verified via `go run`), because
+the last iteration's closure captures its own per-iteration copy of `i`, which is never
+mutated further once the loop exits. That test's assertion should be revisited alongside
+any fix for this issue.
+
+---
+
+<a id="BUG-31"></a>
+
+### BUG-31 — A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop
+
+**Severity:** HIGH
+
+**Description:**  
+In Go and every C-family language, a bare `break` inside a `switch` exits only the
+`switch`, not any enclosing loop. In Ego, `break` inside a `switch` exits the nearest
+enclosing `for` loop instead — silently wrong control flow. Additionally, `break` inside a
+`switch` with *no* enclosing loop at all produces a spurious compile error, even though
+that is perfectly legal Go.
+
+**Reproducer:**
+
+```go
+func main() {
+    for i := 0; i < 5; i++ {
+        switch i {
+        case 3:
+            break
+        }
+        fmt.Println(i)
+    }
+}
+```
+
+**Actual output:**
+
+```text
+0
+1
+2
+```
+
+**Expected output** (verified against real Go):
+
+```text
+0
+1
+2
+3
+4
+```
+
+**Second reproducer** (no enclosing loop):
+
+```go
+func main() {
+    x := 5
+    switch x {
+    case 5:
+        break
+    }
+    fmt.Println("after switch")
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 5:1, loop control statement outside of for-loop
+```
+
+**Expected output:**
+
+```text
+after switch
+```
+
+**Notes:**  
+Root cause: `internal/language/compiler/switch.go` never pushes anything onto the
+compiler's loop stack (`c.loops`) for a `switch` construct. `compileBreak`
+(`internal/language/compiler/for.go`) only knows about `c.loops`, populated exclusively by
+`for`-loop compilation, so a bare `break` always resolves to the innermost `for` loop if one
+exists, or errors if none does. `continue` is unaffected by this bug, since Go has no
+"continue the switch" concept and continuing the enclosing loop is the correct target.
+
+---
+
+<a id="BUG-32"></a>
+
+### BUG-32 — Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack
+
+**Severity:** HIGH
+
+**Description:**  
+Any native or runtime-package function that returns multiple values via the `data.List`
+convention (e.g. `(value, error)` pairs) corrupts the interpreter stack when its call is
+nested directly as a single argument to another function call, rather than first being
+assigned to variables. This affects `json.Marshal`, `strings.Template`, `time.Parse`, and —
+by the same mechanism — very likely every other native/runtime function using this
+convention. User-defined Ego functions with multiple return values do **not** have this
+problem when nested the same way.
+
+**Reproducer 1** (`docs/LANGUAGE.md`'s own documented example, ~line 2955-2960):
+
+```go
+import "json"
+
+func main() {
+    a := map[string]interface{}{"name": "Tom", "age": 44}
+    s := string(json.Marshal(a))
+    fmt.Println(s)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 4), invalid function invocation: <nil>
+```
+
+**Expected output:**
+
+```text
+{"age":44,"name":"Tom"}
+```
+
+**Reproducer 2** (`@template` example, also drawn near-verbatim from `docs/LANGUAGE.md`):
+
+```go
+@template hello "Greetings, {{.Name}}"
+
+func main() {
+    fmt.Println(strings.Template(hello, { Name: "Tom"}))
+}
+```
+
+**Actual output:** `Error: at main(line 4), invalid function invocation: <nil>`
+
+**Reproducer 3:**
+
+```go
+func main() {
+    fmt.Println(time.Parse("1/2/2006 15:04", "12/7/1960 15:30"))
+}
+```
+
+**Actual output:** `Error: at main(line 2), invalid function invocation: <nil>`
+
+**Notes:**  
+All three work correctly once the return values are captured first, e.g.
+`b, err := json.Marshal(a); s := string(b)`. Via `--log bytecode` disassembly: the outer
+call (e.g. `Println`) compiles with only as many argument slots reserved as there are
+syntactic arguments (`Call 1`), but the inner multi-return call pushes a
+`StackMarker("results")` plus both list items (value, then error) per the documented
+multi-return convention (see CLAUDE.md's "`callRuntimeFunction` dispatch mechanics"
+section). The outer call only pops one value as its argument and then pops the *next* stack
+item as the function pointer to invoke — which is the inner call's leftover error value —
+producing "invalid function invocation: `<nil>`". By contrast, `fmt.Println(userFunc())` for
+a user-defined `func userFunc() (int, error)` correctly spreads both values into `Println`,
+confirming that only the native/runtime `data.List` multi-return path is affected.
+
+---
+
+<a id="BUG-33"></a>
+
+### BUG-33 — Struct field type declarations are never enforced, even in strict mode
+
+**Severity:** HIGH
+
+**Description:**  
+A struct field declared with an explicit type (e.g. `Age int`) silently accepts a value of
+a completely different, non-coercible type (e.g. a string) both at construction and on
+later assignment — in dynamic mode *and* in `--types strict` mode. This is inconsistent
+with typed arrays and maps, both of which do enforce element/value types.
+
+**Reproducer:**
+
+```go
+type Employee struct {
+    Name string
+    Age  int
+}
+
+func main() {
+    e := Employee{Name: "Robin", Age: 30}
+    e.Age = "old"
+    fmt.Println(typeof(e.Age), e)
+}
+```
+
+**Actual output** (both `./ego run` and `./ego run --types strict`):
+
+```text
+string Employee{ Name: "Robin", Age: "old" }
+```
+
+**Expected output:**
+
+In dynamic mode, at minimum a coercible value (e.g. `"42"`) should be converted to `int`,
+matching how map values are type-checked/coerced on assignment. In strict mode, this should
+be a compile- or run-time type error, matching the enforcement already applied to typed
+arrays and maps.
+
+**Notes:**  
+Root cause: `internal/language/bytecode/structs.go` (`storeIndexByteCode`, case
+`*data.Struct`) calls `a.Set(key, v)` with no type check at all — contrast with the sibling
+`storeInArray` helper a few lines below it, which explicitly checks `c.typeStrictness`.
+`data.Struct.Set` (`internal/language/data/structs.go:514`) does have a coercion block
+gated on `s.typeDef.fields != nil`, but that field map does not appear to be populated for
+structs built from named-type literals, so the coercion path never fires for this
+construction pattern.
+
+---
+
+<a id="BUG-34"></a>
+
+### BUG-34 — Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair
+
+**Severity:** HIGH
+
+**Description:**  
+Comparing two scalar pointers (e.g. `*int`) with `==` and with `!=` both produce `false`
+for the same pair of pointers, violating the basic invariant that exactly one of `x == y`
+and `x != y` must be true. `docs/LANGUAGE.md` line 115 documents that pointer identity
+comparison "is not supported" and that `!=` "does not compare addresses," but does not
+document that *both* operators silently return `false` unconditionally — that produces
+silently-wrong branching logic in real code (e.g. `if pa != pb { ... }` never fires, even
+though the two pointers are, in fact, different).
+
+**Reproducer:**
+
+```go
+func main() {
+    a := 5
+    b := 5
+    pa := &a
+    pb := &b
+    fmt.Println(pa == pb)
+    fmt.Println(pa != pb)
+}
+```
+
+**Actual output:**
+
+```text
+false
+false
+```
+
+**Expected output:**
+
+Given that pointer identity comparison is intentionally unsupported, the two operators
+should at minimum be consistent negations of each other (or both should raise a clear
+compile/runtime error) rather than silently agreeing on a value that makes `!=` unusable.
+
+**Notes:**  
+Root cause: `internal/language/bytecode/equal.go`/`notEqual.go` have explicit type-switch
+cases only for `*data.Map`, `*data.Array`, `*data.Struct`, and `*data.Type` — there is no
+case for scalar Go pointers such as `*int`/`*string`/`*bool` (the representation produced by
+`&intVar`, per `internal/language/data/pointers.go:AddressOf`). These fall through to the
+`default: genericEqualCompare` path, which finds no matching case in its inner switch and
+leaves `result` at its zero value (`false`) for both operators.
+
+---
+
+<a id="BUG-35"></a>
+
+### BUG-35 — An error raised inside a `catch` block escapes all enclosing `try` blocks
+
+**Severity:** HIGH
+
+**Description:**  
+When a `try`/`catch` is nested inside another `try`, and the *inner* `catch` block itself
+raises a new error, that error is not caught by the *outer* `try`'s `catch`, even though the
+inner catch block is lexically inside the outer `try{}`'s braces. The error escapes the
+entire construct uncaught, aborting the program. This is analogous to Go's
+`defer`+`recover()`, where a panic raised while a recover-handler itself is executing still
+unwinds into the next outer recover — Ego's `try`/`catch` should behave the same way per
+`docs/LANGUAGE.md` lines 2211-2214.
+
+**Reproducer:**
+
+```go
+func main() {
+    try {
+        try {
+            x := 0
+            _ = 5 / x
+        } catch {
+            y := 0
+            _ = 10 / y
+        }
+    } catch (outer) {
+        fmt.Println("outer caught:", outer)
+    }
+    fmt.Println("done")
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 8), division by zero
+Error: terminated with errors
+```
+(exit code 1; neither "outer caught" nor "done" is ever printed)
+
+**Expected output:**
+
+```text
+outer caught: division by zero
+done
+```
+
+**Notes:**  
+Root cause: `internal/language/bytecode/catch.go:100` (`handleCatch`) only ever inspects
+`c.tryStack[len(c.tryStack)-1]`. On catching an error it zeroes that top entry's `.addr`
+("so recursive errors don't occur") but does not pop it off the stack — `TryPop` is emitted
+by the compiler only once, after the *entire* catch block finishes
+(`internal/language/compiler/try.go:66`). So while the inner catch block executes, the
+top-of-stack entry is still the same try's now-inert (`addr == 0`) entry, and `handleCatch`
+never falls through to check the entry below it (the outer try). The condition only ever
+looks at index `len-1`, so a live outer entry further down the stack is invisible to any
+error thrown during the inner catch block's execution.
+
+---
+
+<a id="BUG-36"></a>
+
+### BUG-36 — `strings.Left`/`Right`/`Substring` produce a blank error for documented edge-case arguments
+
+**Severity:** HIGH
+
+**Description:**  
+`strings.Left`/`strings.Right`, when passed a `count` of `0` or less, produce a blank,
+uninformative error and abort the program — instead of the empty string that
+`docs/LANGUAGE.md` explicitly documents ("If the value of the count parameter is less than
+1, an empty string is returned"). `strings.Substring` has the same underlying defect for a
+negative start position.
+
+**Reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    x := strings.Left("Bob Smith", 0)
+    fmt.Println(x)
+}
+```
+
+**Actual output:**
+
+```text
+Error: 
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+""
+```
+
+(`strings.Right("Bob Smith", 0)` fails identically.)
+
+**Second reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    x := strings.Substring("Abe Lincoln", -1, 4)
+    fmt.Println(x)
+}
+```
+
+**Actual output:** `Error: ` (blank), program aborts.
+
+**Notes:**  
+Root cause in `internal/runtime/strings/substrings.go`, `leftSubstring`/`rightSubstring`:
+
+```go
+p, err := data.Int(args.Get(1))
+if err != nil || p <= 0 {
+    return "", errors.New(err).In("Left")   // err is nil here when p <= 0!
+}
+if p <= 0 {                                  // dead code — never reached
+    return "", nil
+}
+```
+
+When `p <= 0` but the argument parsed successfully, `err` is `nil`, so `errors.New(nil)` is
+called; wrapped through `.In("Left")` this becomes a non-nil `error` interface around
+effectively empty content, producing the blank `"Error: "` message and aborting instead of
+returning the documented empty string (the immediately following `if p <= 0` line is dead
+code that was clearly meant to handle this case). The same `errors.New(nil)` pattern
+recurs in `substring()` (same file, ~line 21-24) for a negative start position.
+
+---
+
+<a id="BUG-37"></a>
+
+### BUG-37 — The single-argument (default newline delimiter) form of `strings.Split` is not implemented
+
+**Severity:** HIGH
+
+**Description:**  
+`docs/LANGUAGE.md` documents a one-argument form of `strings.Split(text)` that splits on a
+default delimiter of newline ("If the character is not present, then a newline is assumed
+as the delimiter character"). Calling it with one argument fails with an argument-count
+error; only the two-argument form works.
+
+**Reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    b := "line1\nline2\nline3"
+    x := strings.Split(b)
+    fmt.Println(x)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 4), incorrect function argument count: 1
+```
+
+**Expected output:**
+
+```text
+["line1", "line2", "line3"]
+```
+
+**Notes:**  
+Root cause: `internal/runtime/strings/types.go:473-490` declares `Split` as `IsNative: true`
+pointing directly at Go's `strings.Split`, which always requires exactly two parameters. No
+`ArgCount` range and no Ego wrapper supplying a default `"\n"` separator was implemented, so
+the documented single-argument form has no code path at all.
+
+---
+
+<a id="BUG-38"></a>
+
+### BUG-38 — The documented variadic multi-argument form of `strings.String` is not implemented
+
+**Severity:** HIGH
+
+**Description:**  
+`docs/LANGUAGE.md` documents `strings.String(...)` as accepting multiple integer arguments
+and combining each as a Unicode code point into the resulting string. Only the single-
+argument form actually works; calling it with more than one argument fails with an
+argument-count error.
+
+**Reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    a := strings.String(115, 101, 116, 115)
+    fmt.Println(a)
+}
+```
+
+**Actual output:**
+
+```text
+Error: incorrect function argument count: 4
+```
+
+**Expected output:**
+
+```text
+sets
+```
+
+**Notes:**  
+Root cause: `internal/runtime/strings/types.go:491-503` declares `String` with exactly one
+required parameter (`{Name: "any", Type: data.InterfaceType}`) and no `ArgCount` range or
+variadic marker — the entire multi-argument use case documented for this function is
+unimplemented. `strings.String(115)` (single argument) correctly returns `"s"`.
+
+---
+
+<a id="BUG-39"></a>
+
+### BUG-39 — `@compile block` corrupts parsing when the block body contains any nested `{ }`
+
+**Severity:** HIGH
+
+**Description:**  
+An `@compile block { ... }` directive whose body contains any nested brace pair (an `if`,
+`for`, or `func` block) fails to parse — the compiler stops collecting tokens for the block
+too early, desynchronizing the surrounding token stream so that a subsequent, syntactically
+valid `catch(e)` clause is rejected as an unexpected token. The non-`block` (full-program)
+form of `@compile` has the same underlying defect, surfacing once the program contains two
+or more top-level braced constructs (e.g. two `func` declarations).
+
+**Reproducer:**
+
+```go
+func main() {
+    @compile block {
+        x := 1
+        if true {
+            x = 2
+        }
+        fmt.Println(x)
+    } catch(e) {
+        fmt.Println("compile error: ", e)
+    }
+    fmt.Println("done")
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 8:7, unexpected token: Reserved "catch"
+Error: terminated with errors
+```
+
+**Expected output:**
+
+The block should compile as ordinary Ego code (per `docs/LANGUAGE.md`'s `@compile`
+section), with any resulting compile error caught by the trailing `catch(e)`. Since the
+block here is entirely valid Ego, the program should print `2` then `done`.
+
+**Notes:**  
+Root cause in `internal/language/compiler/directives.go` (`compileBlockDirective`,
+token-collection loop, ~line 897-920): the brace-depth counter starts at 1 and stops
+collecting as soon as it returns to `<= 1`:
+
+```go
+} else if t.Is(tokenizer.BlockEndToken) {
+    braces--
+    if braces <= 1 {   // BUG: should be braces == 0
+        break
+    }
+}
+```
+
+Any nested `{ }` that returns depth to 1 (i.e. the closing brace of the `if` block)
+terminates collection early, silently discarding the rest of the intended block. For the
+non-`block` form only, a compensating single `tokens.Append(tokenizer.BlockEndToken)`
+happens to paper over exactly one dropped brace, which is why single-top-level-construct
+full-program examples happen to work while anything with a second top-level braced
+construct fails the same way.
+
+---
+
+<a id="BUG-40"></a>
+
+### BUG-40 — `uuid.Parse` on invalid input crashes the program instead of returning a catchable error
+
+**Severity:** HIGH
+
+**Description:**  
+`docs/LANGUAGE.md`'s `uuid.Parse` documentation states that on a parse failure, "the `id`
+will be `nil`, and the `err` will describe the error" — a normal, catchable two-value
+return. In practice, an invalid UUID string aborts the whole program with an uncatchable
+runtime error; `err` is never assigned/inspectable at all.
+
+**Reproducer:**
+
+```go
+import "uuid"
+
+func main() {
+    id, err := uuid.Parse("not-a-uuid")
+    fmt.Println(id, err)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 3), invalid UUID length: 10
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+<nil> invalid UUID length: 10
+```
+
+**Notes:**  
+Root cause in `internal/runtime/uuid/uuid.go:23-34` (`parseUUID`):
+
+```go
+u, err := uuid.Parse(s)
+if err != nil {
+    return nil, errors.New(err)   // NOT wrapped in data.NewList(...)
+}
+```
+
+This is exactly the anti-pattern documented in this repo's own CLAUDE.md
+("`callRuntimeFunction` dispatch mechanics — catchable vs uncatchable errors"): a
+non-`data.List` result combined with a non-nil Go error triggers `c.runtimeError(err)`, an
+uncatchable abort, instead of the documented catchable two-value return.
+
+---
+
+<a id="BUG-41"></a>
+
+### BUG-41 — Multi-line nested struct/map literals fail to parse with "invalid list"
+
+**Severity:** HIGH
+
+**Description:**  
+A struct/map literal containing a nested struct/map literal, formatted across multiple
+lines, fails to compile with `invalid list`. The identical literal written on a single line
+parses correctly, as does one level of nesting when everything stays on one line. This
+directly breaks `docs/LANGUAGE.md`'s own `@localization` example, which is formatted
+multi-line with nested per-language maps and fails to even compile.
+
+**Reproducer:**
+
+```go
+func main() {
+    x := {
+        "a": { "b": "c" }
+    }
+    fmt.Println(x)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 3:17, invalid list
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+{ a: { b: "c" } }
+```
+
+**Second reproducer** (`docs/LANGUAGE.md`'s own `@localization` example, verbatim structure):
+
+```go
+@localization {
+    "en": {
+        "hello.msg": "hello, {{Name}}"
+    }
+}
+```
+
+**Actual output:** `Error: at line 3:14, invalid list` — the documentation's own canonical
+example fails to compile. The single-line equivalent
+`@localization { "en": { "hello.msg": "hello there" } }` compiles fine.
+
+**Notes:**  
+Root cause appears to be in `internal/language/compiler/expr_atom.go` (`parseStruct`) —
+after parsing a nested struct value that ends in `}` followed by a newline, the loop's
+"next token must be comma or terminator" check fails, suggesting the tokenizer's automatic
+newline/statement-termination handling inserts something between the inner closing brace
+and the outer comma/brace that the nested-struct-literal parser does not tolerate.
+
+---
+
+<a id="BUG-42"></a>
+
+### BUG-42 — `io.ReadFile`/`io.WriteFile` are documented but do not exist
+
+**Severity:** HIGH
+
+**Description:**  
+`docs/LANGUAGE.md`'s `io` package section documents `io.ReadFile(filename)` and
+`io.WriteFile(filename, string)`. Neither function exists on the `io` package. The actual
+file read/write functions live on the **`os`** package instead, under different names and
+with different signatures than documented.
+
+**Reproducer:**
+
+```go
+import "io"
+
+func main() {
+    io.WriteFile("/tmp/x.txt", "hello")
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 4), unknown package member: WriteFile
+```
+
+**Expected output:**
+
+Either the function should exist on `io` as documented, or the documentation should point
+to the actual location.
+
+**Notes:**  
+`internal/runtime/io/types.go` only defines `Expand`, `Open`, `ReadDir`, `Prompt` (plus
+`io.DirList`, implemented separately in `lib/packages/io/dirlist.ego`). The real read/write
+functions are in `internal/runtime/os/types.go`:
+`os.ReadFile(filename)` takes exactly 1 argument (matches Go, not the `io.ReadFile` doc's
+package), and the write function is spelled `os.Writefile` (lowercase `f`, inconsistent
+with every other exported PascalCase name in the codebase) and requires **3** arguments —
+`Writefile(filename string, mode int, data []byte)` — not the 2-argument
+`io.WriteFile(filename, string)` shown in `docs/LANGUAGE.md`'s `io` section
+(~lines 2891-2944).
+
+---
+
+<a id="BUG-43"></a>
+
+### BUG-43 — `defer receiver.Method(args)` eagerly captures its arguments but not the receiver
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md`'s `defer` documentation (and CLAUDE.md's notes on the FLOW-M4/BUG-16
+fix) establish that a deferred call's arguments are evaluated eagerly, at the point the
+`defer` statement runs, not when the deferred call actually executes. For a receiver-
+qualified deferred call (`defer receiver.Method(args)`), the *arguments* are correctly
+captured eagerly, but the *receiver* expression is not — it is re-resolved from the live
+symbol table when the deferred call finally executes, matching neither Go semantics nor
+Ego's own documented eager-argument-evaluation guarantee.
+
+**Reproducer:**
+
+```go
+type Logger struct {
+    prefix string
+}
+
+func (l Logger) Log(msg string) {
+    fmt.Println(l.prefix, msg)
+}
+
+func main() {
+    l := Logger{prefix: "A"}
+    defer l.Log("deferred")
+    l.prefix = "B"
+    fmt.Println("main prefix now", l.prefix)
+}
+```
+
+**Actual output:**
+
+```text
+main prefix now B
+B deferred
+```
+
+**Expected output** (verified against real Go 1.24, `go run`):
+
+```text
+main prefix now B
+A deferred
+```
+
+**Notes:**  
+A control test confirms the *argument* (`msg`) to the same deferred call **is** eagerly
+captured correctly — mutating `msg` after the `defer` statement does not affect the printed
+value. Only the receiver is wrong. Root cause: `internal/language/compiler/defer.go`'s
+`hoistDeferCallArguments` (the fix for BUG-16/FLOW-M4) only hoists the tokens *inside the
+parentheses* of the deferred call into eagerly-evaluated temp variables. The receiver
+portion of a dotted call (`l` in `l.Log(...)`) is left inside the wrapped closure
+(`func(){ l.Log($1) }()`) and is therefore resolved from the live symbol table when the
+deferred closure actually executes. This is a distinct, narrower gap than FLOW-M4 (which is
+specifically about bare-identifier calls like `defer namedFunc(arg)`), confirmed still open
+even though FLOW-M4/BUG-16 itself is fixed as of commit `e7e70637`.
+
+---
+
+<a id="BUG-44"></a>
+
+### BUG-44 — In `switch init; expr`, a `case` body cannot shadow the switch's init variable
+
+**Severity:** MEDIUM
+
+**Description:**  
+FLOW-L2 added support for `switch init; expr { ... }`, documenting that "the init variable
+is in scope in case bodies." However, the fix appears to have made case bodies share the
+*same* scope as the init clause rather than a nested child scope, so a `case` body cannot
+declare a new local variable with the same name as the switch's init variable — something
+that compiles and runs fine in real Go, since a `case` clause body is its own implicit
+block nested inside the switch statement's block.
+
+**Reproducer:**
+
+```go
+func main() {
+    switch v := 1; v {
+    case 1:
+        v := 99
+        fmt.Println(v)
+    }
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 4), symbol already exists: v
+```
+
+**Expected output:**
+
+```text
+99
+```
+
+**Notes:**  
+Confirmed workaround: wrapping the `case` body in an extra explicit `{}` block fixes it
+(prints `99`), which proves the case body itself is not being treated as its own scope when
+the switch has an init clause — ordinary `switch` (no init clause) does not have this
+problem; variable shadowing across separate `case`s works correctly there.
+
+---
+
+<a id="BUG-45"></a>
+
+### BUG-45 — An unrecovered `panic()` inside a goroutine does not stop the main program
+
+**Severity:** MEDIUM
+
+**Description:**  
+In real Go, an unrecovered panic in *any* goroutine terminates the whole process
+immediately — this is one of Go's best-known concurrency behaviors, and is more severe than
+an ordinary returned/propagated error, not less. In Ego, an unrecovered `panic()` inside a
+goroutine prints a panic message but does **not** stop the main program, which continues
+running to completion (or times out). By contrast, an ordinary runtime error (e.g. division
+by zero) inside a goroutine *does* correctly abort the main program almost immediately. This
+divergence is not listed in `docs/LANGUAGE.md`'s "Key differences from Go" table or the
+Threads section.
+
+**Reproducer A** (panic — main is not stopped):
+
+```go
+func worker(done chan) {
+    done <- true
+    panic("goroutine panic")
+}
+
+func main() {
+    done := make(chan, 1)
+    go worker(done)
+    _ = <-done
+    count := 0
+    for i := 0; i < 50000000; i++ {
+        count = count + 1
+    }
+    fmt.Println("main finished loop, count =", count)
+}
+```
+
+**Actual output:** prints `panic: goroutine panic` plus call frames, then runs the entire
+50,000,000-iteration loop to completion (or times out under `--timeout`) — the loop is
+never aborted regardless of how much wall-clock time is given.
+
+**Reproducer B** (ordinary runtime error, for comparison — identical structure, but
+`worker` does `x := 0; y := 5 / x` instead of `panic(...)`):
+
+**Actual output:** `Error: at worker(line 6), division by zero` /
+`Error: terminated with errors`, exit 1 — main's loop is correctly aborted almost
+immediately.
+
+**Expected output:**
+
+An unrecovered `panic()` in a goroutine should be at least as fatal to the whole program as
+an ordinary propagated runtime error — not silently swallowed.
+
+**Notes:**  
+Root cause: `internal/language/bytecode/panic.go`'s `unwindPanic()` returns
+`errors.ErrStop` for an unrecovered top-level panic — the same sentinel used for a
+goroutine's normal, successful completion.
+`internal/language/bytecode/goroutine.go:176` explicitly excludes `ErrStop` from
+propagating to the parent context
+(`if err != nil && !err.Is(errors.ErrStop)`), so the fatal-panic path and the
+falls-off-the-end-normally path are indistinguishable to the parent, and
+`parentCtx.running.Store(false)` (`goroutine.go:186`) is never reached for the panic case.
+
+---
+
+<a id="BUG-46"></a>
+
+### BUG-46 — A typed array silently degrades to `[]interface{}` on an out-of-type index assignment
+
+**Severity:** MEDIUM
+
+**Description:**  
+In dynamic mode, assigning a value of the wrong type to an element of a typed array (e.g.
+storing a `string` into an `[]int`) succeeds silently and converts the array's declared
+type from `[]int` to `[]interface{}`, rather than erroring — even though `append()` (after
+the BUG-15 fix) and map value assignment both correctly error for the analogous case in the
+same mode. `strict`/`relaxed` type modes correctly reject this; only `dynamic` mode has the
+gap.
+
+**Reproducer:**
+
+```go
+func main() {
+    a := []int{1, 2, 3}
+    fmt.Println("before:", typeof(a))
+    a[1] = "hello"
+    fmt.Println("after:", typeof(a), a)
+}
+```
+
+**Actual output:**
+
+```text
+before: []int
+after: []interface{} [int(1), "hello", int(3)]
+```
+
+**Expected output:**
+
+Consistent with map value assignment (`docs/LANGUAGE.md` line 372: assigning a wrong-typed
+value to a typed map produces `Error: wrong map value type: ...`), a typed array should
+either reject the assignment or coerce the value, not silently widen the whole array's
+declared type.
+
+**Notes:**  
+`docs/LANGUAGE.md` lines 246-256 describe per-mode behavior only for *array-literal
+initialization*, not for later index assignment, so this is an undocumented inconsistency
+between two structurally similar constructs (typed arrays vs. typed maps) rather than a
+contradiction of an explicit doc statement.
+
+---
+
+<a id="BUG-47"></a>
+
+### BUG-47 — Negative shift amounts silently flip the shift operator's direction instead of erroring
+
+**Severity:** MEDIUM
+
+**Description:**  
+Shifting by a negative amount (`x << n` or `x >> n` where `n < 0`) silently reinterprets
+the operator's direction (i.e. `x << n` behaves as `x >> |n|`) instead of raising an error.
+Real Go panics with `"runtime error: negative shift amount"` for a non-constant negative
+shift. This divergence is not listed in the "Key differences from Go" table.
+
+**Reproducer:**
+
+```go
+func main() {
+    n := -2
+    fmt.Println(20 << n)
+    fmt.Println(20 >> n)
+}
+```
+
+**Actual output:**
+
+```text
+5
+80
+```
+
+**Expected output** (verified against real Go, `go run`): a runtime error
+(`"runtime error: negative shift amount"`), not a silently reversed result.
+
+**Notes:**  
+Root cause: `internal/language/compiler/expr_operators.go:117-124` compiles `<<` as
+`Negate` + `BitShift`, so a single `BitShift` opcode
+(`internal/language/bytecode/math.go:1122-1163`) can infer direction from the sign of its
+operand (`shift < 0` → left, `shift >= 0` → right). This conflates the compiler's internal
+sign-encoding trick with a genuinely negative user-supplied shift amount: negating an
+already-negative `n` flips it positive, which the runtime then reads as "shift right,"
+silently reversing the operator's semantics instead of raising the existing
+`ErrInvalidBitShift` (which only fires for `shift < -64 || shift > 63`, not for an ordinary
+negative shift that Go rejects).
+
+---
+
+<a id="BUG-48"></a>
+
+### BUG-48 — `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments
+
+**Severity:** MEDIUM
+
+**Description:**  
+`fmt.Printf`/`fmt.Sprintf` with a format string containing `%%` but no substitution
+arguments print the literal, unprocessed `%%` instead of collapsing it to a single `%`.
+The same call with at least one substitution argument correctly collapses `%%`.
+
+**Reproducer:**
+
+```go
+func main() {
+    fmt.Printf("Progress: 50%%\n")
+}
+```
+
+**Actual output:**
+
+```text
+Progress: 50%%
+```
+
+**Expected output:**
+
+```text
+Progress: 50%
+```
+
+**Notes:**  
+Root cause in `internal/runtime/fmt/print.go:59-68`, `stringPrintFormat`: when
+`args.Len() == 1` (i.e. the format string only, no substitution values), the function
+returns `fmtString` verbatim without ever calling Go's `fmt.Sprintf` or running the `%%`
+preprocessing loop. Confirmed working correctly once at least one substitution argument is
+present (e.g. `fmt.Printf("%d%%\n", 5)` → `5%`).
+
+---
+
+<a id="BUG-49"></a>
+
+### BUG-49 — `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md` documents `base64.Decode(data string) (string, error)`. In practice,
+only the single-value form works; the two-value form fails with a return-count error.
+
+**Reproducer:**
+
+```go
+import "base64"
+
+func main() {
+    s := base64.Encode("Hello, World!")
+    d, err := base64.Decode(s)
+    fmt.Println(d, err)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 4), incorrect number of return values
+```
+
+**Expected output:**
+
+```text
+Hello, World! <nil>
+```
+
+**Notes:**  
+`internal/runtime/base64/types.go` declares `Returns: []*data.Type{data.StringType}` (a
+single value) although the docs and `internal/runtime/base64/encoding.go`'s `decode`
+implementation itself follow the `(any, error)` Go-idiom signature. On invalid input, the
+resulting error becomes an uncatchable-by-default runtime abort unless wrapped in
+`try`/`catch` (confirmed catchable inside `try`), which is inconsistent with the documented
+two-return-value error-handling contract.
+
+---
+
+<a id="BUG-50"></a>
+
+### BUG-50 — `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md` documents that "any marker whose key is not found in `values` is left
+unchanged in the result." Instead, an unresolved `{{marker}}` is replaced with a raw
+internal error string from a third-party dependency.
+
+**Reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    person := struct {
+        First string
+        Last  string
+    }{First: "Tom", Last: "Smith"}
+    msg := strings.Substitution("Hello, {{First}} {{Missing}}!", person)
+    fmt.Println(msg)
+}
+```
+
+**Actual output:**
+
+```text
+!jaxon.json.element.not.found: Missing!
+```
+
+**Expected output:**
+
+```text
+Hello, Tom {{Missing}}!
+```
+
+**Notes:**  
+Reproduces identically with a `map[string]interface{}` value. Root cause:
+`internal/runtime/strings/substrings.go:183` delegates directly to the external
+`github.com/tucats/subs` package's `Substitution()`, whose "key not found" error
+(`jaxon.json.element.not.found`) is substituted verbatim into the output text instead of
+leaving the `{{marker}}` untouched.
+
+---
+
+<a id="BUG-51"></a>
+
+### BUG-51 — `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) as documented
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md` gives a worked example stating that `{}` and `<-` are each considered a
+single token by the language and should each occupy one slot in `strings.Tokenize`'s result
+array. In practice, each character of these compound tokens is emitted as a separate
+`Special` token.
+
+**Reproducer:**
+
+```go
+import "strings"
+
+func main() {
+    t := strings.Tokenize("x{} <- f(3, 4)")
+    fmt.Println(len(t))
+}
+```
+
+**Actual output:**
+
+```text
+11
+```
+(individual tokens for `{`, `}`, `<`, `-` rather than merged `{}` and `<-`)
+
+**Expected output:**
+
+```text
+9
+```
+
+**Notes:**  
+Root cause: `internal/runtime/strings/parse.go:12` calls `tokenizer.New(src, false)`. Per
+the doc comment on `tokenizer.New` (`internal/language/tokenizer/tokenizer.go:50-58`),
+passing `isCode=false` disables "crushing" of multi-character operator tokens (`:=`, `<=`,
+`&&`, `...`, and by extension `{}`/`<-`) into single tokens — that flag is intended for
+non-code strings such as SQL. Since `strings.Tokenize` is documented as tokenizing "based on
+the Ego language rules," it should be calling `tokenizer.New(src, true)`.
+
+---
+
+<a id="BUG-52"></a>
+
+### BUG-52 — `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input
+
+**Severity:** MEDIUM
+
+**Description:**  
+Real Go's `fmt.Sscanf` returns a non-nil error (e.g. `io.EOF`, or a "does not match format"
+error) when fewer values are scanned than the format string requests, or when literal text
+in the format string does not match the input. Ego's `fmt.Sscanf` silently returns `nil`
+for `err` in both cases, even though the scanned-value count (`n`) correctly reflects the
+shortfall — callers relying on `if err != nil` to detect a failed/partial scan will
+silently miss it.
+
+**Reproducer:**
+
+```go
+func main() {
+    var c, d int
+    n, err := fmt.Sscanf("5", "%d %d", &c, &d)
+    fmt.Println(n, err, c, d)
+}
+```
+
+**Actual output:**
+
+```text
+1 <nil> 5 0
+```
+
+**Expected output** (verified against real Go, `go run`):
+
+```text
+1 EOF 5 0
+```
+
+**Notes:**  
+A second case, `fmt.Sscanf("wrong 35", "age %d", &a)`, returns `0 input does not match format 0`
+in real Go vs. Ego's `0 <nil> 0`. Root cause in `internal/runtime/fmt/scan.go`'s
+`scanner()`: the literal-text-mismatch branch (`count == 0`, ~line 363) does a bare `break`
+out of the loop without ever setting the shared `err` variable declared earlier in the
+function (~line 145). Additionally, the integer-parsing case (`'d'`, `'x'`, `'b'`, `'o'`)
+shadows the outer `err` via `n, err := nativeFormat.Sscanf(...)` (`:=` at ~line 234), so even
+a genuine parse error in that branch never propagates to the function's return value either.
+
+---
+
+<a id="BUG-53"></a>
+
+### BUG-53 — `math.Primes` with a negative argument crashes instead of returning an empty result
+
+**Severity:** MEDIUM
+
+**Description:**  
+`math.Primes(0)` gracefully returns an empty list, but `math.Primes` with a negative
+argument crashes with a confusing internal error that points at an unrelated call site
+(`make`) rather than at the actual `math.Primes` call or a validation message.
+
+**Reproducer:**
+
+```go
+import "math"
+
+func main() {
+    fmt.Println(math.Primes(-5))
+}
+```
+
+**Actual output:**
+
+```text
+Error: at make(line 97), invalid function argument: -4
+```
+
+**Expected output:**
+
+An empty result (matching `math.Primes(0)`'s behavior) or a clear, argument-specific
+validation error naming `Primes`, not `make`.
+
+**Notes:**  
+Root cause: `lib/packages/math/primes.ego:6` — `t := make([]bool, size+1)` performs no
+validation that `size >= 0` before passing a negative length straight into `make()`.
+
+---
+
+<a id="BUG-54"></a>
+
+### BUG-54 — `@compile ... unused=false` does not suppress "unused variable" errors
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md` documents that `@compile`'s `unused=` flag, when set, overrides the
+default unused-variable-checking setting for that compilation — `unused=false` should mean
+an unused local variable inside the compiled block does not produce a compile error. In
+practice, the override has no effect; the error is still reported.
+
+**Reproducer:**
+
+```go
+@compile block unused=false {
+    neverUsed := 42
+} catch(e) {
+    fmt.Println("BUG: got compile error even with unused=false: ", e)
+}
+fmt.Println("done")
+```
+
+**Actual output:**
+
+```text
+BUG: got compile error even with unused=false:  at ...(line ...), variable created but never used: neverUsed
+done
+```
+
+**Expected output:**
+
+```text
+done
+```
+(no error caught)
+
+**Notes:**  
+Root cause: `Compiler.Errors()` (`internal/language/compiler/compiler.go:358-386`) sweeps
+any still-open scope's usage errors into `c.symbolErrors` unconditionally, without checking
+`c.flags.unusedVars`. That flag is only honored inside `PopSymbolScope`, for scopes popped
+before the compile unit finishes — the block's own top-level scope is swept by `Errors()`
+regardless of the `unused=` override. Separately, the *default* value used when `unused=` is
+omitted is seeded from the wrong setting key (`UnusedVarLoggingSetting`, a logging toggle,
+rather than `UnusedVarsSetting`) at `directives.go:757`.
+
+---
+
+<a id="BUG-55"></a>
+
+### BUG-55 — `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md`'s `reflect.Reflect()` method table documents `Members()` and
+`Functions()` as callable methods (with parentheses), alongside genuine methods like
+`String()`. Calling either with parentheses, exactly as documented, fails.
+
+**Reproducer:**
+
+```go
+import "reflect"
+
+type Point struct {
+    X int
+    Y int
+}
+
+func main() {
+    pt := Point{X: 1, Y: 2}
+    r := reflect.Reflect(pt)
+    fmt.Println("Members:", r.Members())
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 10), invalid function invocation: ["X", "Y"]
+```
+(`.Functions()` fails the same way, e.g. `invalid function invocation: ["Sum() int"]`.)
+
+**Expected output:**
+
+```text
+Members: [X, Y]
+```
+
+**Notes:**  
+Root cause: in `internal/runtime/reflect/types.go`, `Members` and `Functions` are
+registered via `DefineField(...)` (plain fields of `[]string` type), not `DefineFunction`.
+`call.go` has a special case letting a bare **string** field be "called" with `()` and
+simply return itself (used for pseudo-methods like `Type()`), but no equivalent special
+case exists for array-typed fields, so calling them raises `ErrInvalidFunctionCall`.
+Undocumented workaround: use `r.Members`/`r.Functions` without parentheses.
+
+---
+
+<a id="BUG-56"></a>
+
+### BUG-56 — `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string
+
+**Severity:** MEDIUM
+
+**Description:**  
+Printing a `time.Duration` or `time.Time` value directly via `fmt.Println`/`fmt.Print`
+shows Ego's internal representation of the underlying native Go type (its Go struct field
+layout) rather than the human-readable formatted string that `.String()` and `%v` both
+correctly produce for the same value. This directly affects `docs/LANGUAGE.md`'s own `time`
+examples, which show printing durations/times directly.
+
+**Reproducer:**
+
+```go
+import "time"
+
+func main() {
+    d, _ := time.ParseDuration("90m")
+    fmt.Println(d)
+    fmt.Println(d.String())
+    fmt.Println(fmt.Sprintf("%v", d))
+}
+```
+
+**Actual output:**
+
+```text
+time.Duration int64 1h30m0s
+1h30m0s
+1h30m0s
+```
+
+**Expected output:**
+
+```text
+1h30m0s
+1h30m0s
+1h30m0s
+```
+
+**Notes:**  
+`time.Time` shows the same bug: `fmt.Println(t)` produces
+`time.Time struct{wall: uint64, ext: int64, loc: *time.Location} = 1960-12-07 15:30:00 +0000 UTC`
+instead of the clean timestamp. `.String()` and `%v` are unaffected — only the bare
+`fmt.Println`/`fmt.Print` path shows the internal layout, indicating an inconsistency in
+how Ego's default value formatter handles these two native types compared to its own
+`%v`/`.String()` formatting path.
+
+---
+
+<a id="BUG-57"></a>
+
+### BUG-57 — `@type relaxed` does not coerce assigned values to the receiving variable's type
+
+**Severity:** MEDIUM
+
+**Description:**  
+`docs/LANGUAGE.md` documents that in `relaxed` type mode, "if possible a value will be
+converted before being stored to match the type of the receiving variable." In practice,
+assigning a value of a different (but coercible) type in relaxed mode simply changes the
+variable's type to match the assigned value, exactly like `dynamic` mode — no coercion to
+the original declared type occurs. Separately, `@type strict` mode silently *truncates*
+numeric values on assignment without erroring, even though the documentation states strict
+mode disallows storing a value of a different type — string values are correctly rejected
+in strict mode, but numeric widening/narrowing is not, which is an inconsistent application
+of the same rule.
+
+**Reproducer:**
+
+```go
+func main() {
+    @type relaxed
+    {
+        var w int = 5
+        fmt.Println("before:", typeof(w))
+        w = 3.7
+        fmt.Println("after:", w, typeof(w))
+    }
+}
+```
+
+**Actual output:**
+
+```text
+before: int
+after: 3.7 float64
+```
+
+**Expected output:**
+
+```text
+before: int
+after: 3 int
+```
+
+**Notes:**  
+The same assignment under `@type strict` produces `w = 3, int` with no error at all
+(confirmed strict mode *does* correctly reject `w = "hello"` for the same `int` variable
+with `invalid type for this variable`), so the enforcement is inconsistently applied within
+strict mode itself, independent of the `relaxed`-mode issue described above.
+
+---
+
+<a id="BUG-58"></a>
+
+### BUG-58 — The `uint8()` cast function is not recognized despite being documented
+
+**Severity:** LOW
+
+**Description:**  
+`docs/LANGUAGE.md` line 1115 explicitly lists `uint8()` (e.g. `uint8(240)`) as a valid cast
+function. Calling it fails with an unknown-symbol error. `var x uint8` works correctly as a
+*type* declaration; only the *cast function* `uint8(...)` is missing. `byte(5)`, its
+documented-equivalent alias, works correctly, as do all other numeric cast functions
+(`byte`, `int8`, `int16`, `uint16`, `int32`, `uint32`, `int`, `uint`, `int64`, `uint64`,
+`float32`, `float64`, `bool`, `string`).
+
+**Reproducer:**
+
+```go
+func main() {
+    fmt.Println(uint8(5))
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 2:12, unknown symbol: uint8
+```
+
+**Expected output:**
+
+```text
+5
+```
+
+**Notes:**  
+Trivial, low-risk fix: register `uint8` as a cast-function alias for `byte`, matching how
+the type name `uint8` is already recognized in variable declarations.
+
+---
+
+<a id="BUG-59"></a>
+
+### BUG-59 — `@compile ... optimize=N` silently has no effect
+
+**Severity:** LOW
+
+**Description:**  
+`docs/LANGUAGE.md` documents `@compile`'s `optimize=N` option as overriding the optimizer
+level "for just this block of code." In practice, the override is never actually applied —
+it is written to a settings key that nothing reads.
+
+**Reproducer:**
+
+```go
+func main() {
+    before := profile.Get("ego.compiler.optimize")
+    fmt.Println("before:", before)
+    @compile block optimize=2 {
+        x := 1
+        fmt.Println(x)
+    }
+    after := profile.Get("ego.compiler.optimize")
+    fmt.Println("after:", after)
+}
+```
+
+**Actual output:**
+
+```text
+before: false
+1
+after: false
+```
+
+**Expected output:**
+
+The `optimize=2` override should have some observable effect while the block compiles
+(e.g. on the setting read by the optimizer, or on the resulting bytecode), rather than none
+at all.
+
+**Notes:**  
+Root cause: `internal/language/compiler/directives.go` (~lines 759, 870, 876) — the
+save/restore logic uses `defs.OptimizerSetting` (`"ego.compiler.optimize"`, the real key
+read by `bytecode.go:332`) to *capture* the saved value, but *writes* the override to
+`defs.OptimizerOption` (`"optimize"` — an unrelated CLI-grammar-option constant from
+`internal/defs/constants.go`, never read anywhere for this purpose). The override is dead
+code.
 
 ---
 
