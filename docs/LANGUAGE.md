@@ -112,7 +112,6 @@ know where to watch out.
 | `string(65)` produces `"A"` (Unicode rune) | In Ego, **`string(int)` produces the decimal string** `"65"`. To convert a rune to a string, use `string([]int{65})` or `fmt.Sprintf("%c", 65)`. |
 | Missing map key returns the zero value of the value type | In Ego, **a missing map key always returns `nil`**, regardless of the declared value type. Use the two-value form `v, ok := m[key]` to distinguish missing from present. |
 | `var p *T` declares a nil pointer of type `*T` | In Ego, **`var p *T` produces the zero value of `T`**, not a nil pointer. Use `p := &x` to obtain a real pointer, or return `nil` explicitly from a function with pointer return type. |
-| `for i, v := range a { a[i] = ... }` mutates the array in place | In Ego, **`for range` over an array iterates an immutable copy**. Assigning through the range index (`a[i] = ...`) fails. Use an ordinary index loop (`for i := 0; i < len(a); i++`) to mutate elements. |
 | Pointer variables have unique identity; `pa != pb` compares addresses | In Ego, **pointer identity comparison is not supported**. `pa != pb` does not compare addresses. Use `*pa != *pb` to compare the pointed-to values. |
 | Go does not allow nested named function declarations inside another function | Ego **allows nested named functions**, but they do **not** capture the enclosing function's scope. A nested named function can only access its own parameters, its own locals, and package/global names — not the enclosing function's parameters or locals. Use a function literal (closure) when you need the enclosing scope. |
 
@@ -123,7 +122,7 @@ a fallback value when an expression would otherwise produce an error — this ha
 
 The _Ego_ language is run using the `ego` command-line interface. This
 provides the ability to run a program from an external text file, to
-interactively enter _Ego_ programming statements, or to run _Ego_
+interactively enter _Ego_ programming statements like a REPL, or to run _Ego_
 programs as web services. This functionality is documented elsewhere;
 this guide focuses on writing _Ego_ programs regardless of the runtime
 environment.
@@ -176,13 +175,14 @@ listed here.
 | `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
 | `chan` | chan int | any | A channel, used to communicate values between threads. Requires an element type, e.g. `chan string` |
 
-_Note that the numeric range values shown are approximate._ The types `int` and `uint` are generalized
-values for "the most efficient integer type for this architecture." In implementations of _Ego_ for
-macOS, Windows, and amd64-based Linux systems, the type of `int` is the same range as the type `int64`,
-and similarly for the unsigned version. However, there may be systems where an `int` is a 32-bit value
-because that is the most efficient form of integer for that architecture. You can use the _Ego_ function
-`sizeof()` to determine the size of a value in bytes to determine the actual range of an `int` value on
-your implementation.
+_Note that the numeric range values shown are approximate._ The types `int` and `uint`
+are generalized values for "the most efficient integer type for this architecture." In
+implementations of _Ego_ for macOS, Windows, and amd64-based Linux systems, the type of
+`int` is the same range as the type `int64`, and similarly for the unsigned version.
+However, there may be systems where an `int` is a 32-bit value because that is the most
+efficient form of integer for that architecture. You can use the _Ego_ function `sizeof()`
+to determine the size of a value in bytes to determine the actual range of an `int`
+value on your implementation.
 
 &nbsp;
 
@@ -199,8 +199,8 @@ span multiple lines of text. A string value enclosed in back-quotes
 
 In the Go language, `int` is a shortcut for either an `int32` or `int64`,
 depending on whichever is the fastest native integer data type. In all
-current ports of _Ego_, the `int` type is an `int64` (and a `uint` is therefore
-the same size as a `uint64`).
+current ports of _Ego_, the `int` type is an `int64` (and a `uint` is
+therefore the same size as a `uint64`).
 
 A `chan` value has no constant expression; it is a type that can be
 used to create a variable used to communicate between threads. See
@@ -231,8 +231,9 @@ For example, the value at position 0 is the integer `123` and the
 value at position 1 is the string `"Fred"`.
 
 These kinds of arrays are _anonymous_ arrays, in that they have no
-specific type for the values. You can also specify a type for the
-array using a typed array constant. For example,
+specific type for the values. In Go parlance, these are implemented
+as arrays of type `any`. You can also specify a type for the array
+using a typed array constant. For example,
 
 ```go
 a := []int{101, 102, 103}
@@ -265,28 +266,28 @@ a[1] = 1325.0  // Failed, must be of type int
 ### Structures<a name="structures"></a>
 
 A structure (called `struct` in the _Ego_ language) is a set of
-key/value pairs. The key is an _Ego_ symbol, and the value is any
-supported value type. Each key must be unique. The values can be
-read or written in the struct based on the key name. Once a struct
-is created, it cannot have new keys added to it directly. A struct
+named fields with values for each field. The field name is an
+_Ego_ identifier, and the value is any supported value type.
+Each field name must be unique. The values can be read or written
+in the `struct` based on the key name. Once a `struct`
+is created, it cannot have new fields added to it. A `struct`
 constant is indicated by braces, as in:
 
 ```go
 {  Name: "Tom", Age: 53 }
 ```
 
-This struct has two members, `Name` and `Age`. Note that the
-member names (the keys of the key/value pair) are case-sensitive.
-The struct member `Name` is a string value, and the struct member
-`Age` is an int value.
+This `struct` has two fields, `Name` and `Age`. Note that the
+field names are case-sensitive. The `struct` member `Name` is
+a string value, and the `struct` member `Age` is an int value.
 
-This type of struct is known as an _anonymous_ struct in that it
+This type of `struct` is known as an _anonymous_ struct in that it
 does not have a specific type, and in fact the fields are all
-declared as type any so they can hold any arbitrary values
-unless static type checking is enabled.
+declared as type `any` so they can hold any arbitrary values
+unless strict type checking is enabled.
 
-You cannot add new fields to this struct if you create a struct
-constant with fields already. That is, you cannot
+You cannot add new fields to a `struct` if you create it using
+a `struct` constant with fields. That is, you cannot
 
 ```go
 a := { Name: "Bob" }
@@ -295,8 +296,8 @@ a.Age = 43
 
 The second line will generate an error because Age is not a member
 of the structure. There is one special case of an _anonymous_
-struct that can have fields added (or removed) dynamically. This is
-an empty _anonymous_ struct,
+`struct` that can have fields added (or removed) dynamically. This is
+an empty _anonymous_ `struct`,
 
 ```go
 a := {}
@@ -304,29 +305,59 @@ a.Name = "Fred"
 a.Gender = "M"
 ```
 
-The empty anonymous structure can have fields added to it just by
-naming them, and they are created as needed.
+The empty anonymous `struct` can have fields added to it just by
+naming them, and they are created as needed. In the above example,
+the anonymous `struct` named `a` is created using a constant with
+no fields declared. This is followed by naming field values that
+do not already exist. These fields are added to the `struct`
+dynamically. You can also delete a field using the `delete()`
+function:
+
+```go
+a := {}
+a.Name = "Fred"
+a.Age = 55
+delete(a, "Age")
+```
+
+The delete operation names the field as a string expression "Age",
+and the associated field is deleted from the `struct` value. This
+operation can _only_ be done on _anonymous_ structs that were
+created using the `{}` empty struct literal. Additionally, the
+field name given in `delete()` must exist, or an error is
+generated.
 
 ### Maps<a name="maps"></a>
 
 A `map` in the _Ego_ language functions the same as it does in Go. A
-map is declared as having a key type and a value type, and a hashmap
-is constructed based on that information. You can set a value in the
-map and you can fetch a value from the map.
+`map` is declared as having a key type and a value type, and internally,
+a hashmap is constructed based on that information. You can set a value
+in the map and you can read a value from the map.
 
-You can create a map by setting a value to an empty map constant.
-For example,
+You can create an initialized map by setting a value to an empty map constant.
+An initialized map has internal data structure initialized so it is ready
+to have values added to it. For example,
 
 ```go
 staff := map[int]string{}
 ```
 
-This creates a map (stored in `staff`) that has an integer value as
-the key, and stores a string value for each unique key. A map can
-contain only one key of a given value; setting the key value a second
-time just replaces the value of the map for that key.
+Alternatively you can declare the map be expressing it's type and then
+using the `make()` function to initialize it:
 
-You can also initialize the map values using `{}` notation, as in:
+```go
+var staff map[int]string
+
+staff = make(map[int]string)
+```
+
+Either form creates a map (stored in `staff`) that has an integer
+value as the key, and stores a string value for each unique key. A
+map can contain only one key of a given value; setting the key
+value a second time just replaces the value of the map for that key.
+
+You can also initialize the map values using a map constant, which is
+a list of key/value pairs:
 
 ```go
 staff := map[int]string{101:"Jeff", 102:"Susan"}
@@ -335,12 +366,14 @@ staff[103] = "Buddy"
 staff[104] = "Donna"
 ```
 
-This adds members to the map. Note that the key  _must_ be an integer
+This adds members to the map. Note that the key _must_ be an integer
 value, and the value _must_ be a string value because that's how the
 map was declared. Unlike a variable, a map always has a static definition
 once it is created and cannot contain values of a different type.
-Attempting to store a boolean in the map results in a runtime error,
-for example.
+Attempting to store a boolean in the map results in a runtime error.
+
+You can read a value from the may by using `[]` notation to express
+the key value. The key value must match the map declaration. for example,
 
 ```go
 id := 102
@@ -536,11 +569,11 @@ The _Ego_ language is, by default, a case-sensitive language, such
 
 &nbsp;
 
-There is a reserved name that is just an underscore, "&lowbar;". This name
+There is a reserved name that is just an underscore, "_". This name
 means _value we will ignore._ So anytime you need to reference a variable
 to conform to the syntax of the language, but you do not want or need
-the value for your particular program, you can specify "&lowbar;" which is a
-short-hand value for "discard this value".
+the value for your particular program, you can specify "_" which is a
+short-hand for "discard this value".
 
 A symbol name that starts with an underscore character is a read-only
 variable. That is, its value can be set once when it is created, but
@@ -574,7 +607,7 @@ and write a new value to it.
 
 > **Go developer note:** In Go, `:=` both creates _and_ infers the type,
 > which is then fixed for the lifetime of the variable. In Ego's default
-> dynamic mode, `:=` creates the variable but its type changes to match
+> dynamic mode, `:=` creates the variable but its type can change to match
 > whatever value you assign to it later with `=`. Enable static typing
 > (via the `ego.compiler.types` setting) to get Go-like type discipline.
 
@@ -804,7 +837,7 @@ This defines three constant values. Note that the value is set using an
 
 #### iota
 
-Inside a parenthesized `const (...)` group, the predeclared identifier `iota`
+Inside a parenthesized `const (...)` group, the pre-declared identifier `iota`
 represents a counter that starts at `0` for the first constant in the group
 and increases by one for each constant after that:
 
@@ -863,13 +896,13 @@ A few other things to know about `iota`:
 ### Operators<a name="operators"></a>
 
 Operators is the term for language elements that allow you to perform
-mathematical or other operations using constant values as well as
+mathematical or other operations using constant values and
 variable values, to produce a new computed value. Some operators can
-operate on a wide range of different value types, and some operators
+operate on a wide range of different data types, and some operators
 have more limited functionality.
 
 There are _dereference_ operators that are used to access members of
-a struct, values of a type, or index into an array.
+a struct, key values in a map, or index into an array.
 
 &nbsp;
 
@@ -962,9 +995,9 @@ describing the relationship between the two values.
 &nbsp;
 &nbsp;
 
-There are three expression types that are only enabled when compiler
-extensions are permitted. These are _optional_, _conditional_, and
-_ternary_ expressions.
+There are additional expression types that are only enabled when compiler
+extensions are permitted. These are _optional_ and _conditional_
+expressions.
 
 An _optional_ expression is an expression, that if when computed
 causes an error or exception, is replaced with a default value.
@@ -1015,19 +1048,6 @@ x := "got a " + if wasCorrect { "true" } else { "false" } + " answer"
 
 Depending on the value of the expression `wasCorrect`, the variable `x` will
 contain either "got a true answer" or "got a false answer".
-
-A _ternary_ expression is similar to the conditional expression above, but uses
-the familiar C-style `? :` syntax:
-
-```go
-pay := hours >= 0 ? wage * hours : wage
-```
-
-The expression before the `?` is the condition. If it evaluates to `true`, the
-expression between `?` and `:` is used; otherwise the expression after `:` is
-used. This is equivalent to `if cond { a } else { b }` but is more concise for
-simple cases. The ternary operator requires that language extensions be enabled
-via `@extensions true` or the `ego.compiler.extensions` setting.
 
 ### Type Conversions<a name="typeConversion"></a>
 
@@ -1088,9 +1108,15 @@ For base types, the following are available:
 | :--------- | :-------------------- | :---------- |
 | bool() | bool(55) | Convert the value to a boolean, where zero values are false and non-zero values are true |
 | byte() | byte(65) | Convert the value to an 8-bit integer |
+| int16() | int16(25434) | Convert the value to an 16-bit integer |
 | int32() | int32(4096) | Convert the value to an 32-bit integer |
 | int() | int(78.3) | Convert the value to an integer, in this case `78` |
 | int64() | int64(2^20) | Convert the value to a 64-bit integer, in this case `1125899906842624` |
+| uint8() | uint8(240) | Convert the value to an unsigned 8-bit integer |
+| uint16() | uint16(40000) | Convert the value to an unsigned 16-bit integer |
+| uint32() | uint32(2503) | Convert the value to an unsigned 16-bit integer |
+| uint() | uint(240) | Convert the value to an unsigned default-sized integer |
+| uint64() | uint64(12071957) | Convert the value to an unsigned 64-bit integer |
 | float32() | float32(33) | Convert the value to a 32-bit floating value, in this case `33.0` |
 | float64() | float64(33) | Convert the value to a 64-bit floating value, in this case `33.0` |
 | string() | string(true) | Convert the argument to a string value, in this case `true` |
@@ -1126,7 +1152,7 @@ In all cases, the result is a typed array of the given cast type. Each
 element of the array is converted to the target type and stored in the
 array. So []bool() on an array of integers results in an array of bool
 values, where zeros become false and any other value becomes true. The
-special type name any means _no specified type_ and is used
+special type name `any` means _no specified type_ and is used
 for arrays with heterogenous values.
 
 Note the special case of []int("string"). If the parameter is not an
@@ -1135,28 +1161,35 @@ each rune from the original string.
 
 #### make
 
-The `make` pseudo-function is used to allocate an array, or a channel with
-the capacity to hold multiple messages. The first argument must be a data
-type specification, and the second argument is the size of the item (array
-elements or channel messages)
+The `make` pseudo-function is used to allocate an `array`, a `map`, or a
+`channel` with the capacity to hold multiple messages. The first argument
+must be a data type specification, and the second argument is the size
+of the item (array elements or channel messages). For a `map` type, the
+size is optional.
 
 ```go
 a := make([]int, 5)
+a := make(map[string]int)
 b := make(chan string, 10)
 ```
 
-The first example creates an array of 5 elements, each of which is of type `int`,
+The first example creates an `array` of 5 elements, each of which is of type `int`,
 and initialized to the _zero value_ for the given type. This could have been
 done by using `a := [0,0,0,0,0]` as a statement, but by using the make() function
 you can specify the number of elements dynamically at runtime.
 
-The second example creates a channel capable of holding up to 10 `string` messages.
-Creating a channel like this is required if the channel is shared among many
-threads. If a channel variable is declare by default, it holds a single message.
+The second example creates a `map` with a type that specifies a `string` key and an
+`int` value. The size can be omitted; it is present for compatibility with Go, which
+can use it as a hint for storage allocation. Currently, _Ego_ ignores the size
+value.
+
+The third example creates a `channel` capable of holding up to 10 `string` messages.
+Creating a `channel` like this is required if the `channel` is shared among many
+threads. If a `channel` variable is declared by default, it holds a single message.
 This means that before a thread can send a value, another thread must read the
-value; if there are multiple threads waiting to send they are effectively run
-one-at-a-time. By creating a channel that can hold multiple messages, up to 10
-(in the above example) threads could send a message to the channel before the
+value; if there are multiple threads waiting to send they are effectively going to
+run one-at-a-time. By creating a `channel` that can hold multiple messages, up to 10
+(in the above example) threads could send a message to the `channel` before the
 first message was read.
 
 &nbsp;
@@ -1193,7 +1226,7 @@ Consider the following example code:
  ```go
 salary := hours * wage                  // (1)
 if salary < 100.0 {                     // (2)
-   fmt.Println("Not paid enough!")       // (3)
+   fmt.Println("Not paid enough!")      // (3)
 }                                       // (4)
 
 total = total + salary                  // (5)
@@ -1204,7 +1237,7 @@ over them line-by-line. The numbers is parenthesis are not part of
 the program, but are used to identify each line of the code.
 
 1. This first line calculates a new value by multiplying the `hours`
-   times the `salary`, and store it in a new value called `salary`.
+   times the `wage`, and store it in a new value called `salary`.
    This uses an assignment statement; the `:=` indicates the variable
    does not already exist and will be created by this operation. We
    assume the values of `hours` and `wage` were calculated already in
@@ -1218,11 +1251,11 @@ the program, but are used to identify each line of the code.
    _basic block_ which is a group of statements that are all executed
    together.
 
-3. If salary is less than 100.0, then the fmt.Println() operation is
+3. If `salary` is less than 100.0, then the `fmt.Println()` operation is
    performed. Don't worry that we haven't talked about this yet; its
    covered below in the section on the `fmt` package, but it is enough
    to know that this produces a line of output with the string
-   `Not paid enough!`. If, however, the value of `salary` is not less
+   "Not paid enough!". If, however, the value of `salary` is not less
    than 100.0, then the basic block is not executed, and the program
    continues with the statement after the block.
 
@@ -1255,13 +1288,17 @@ compared to see if it is less than 100. If so, then the value
 is not less than 100, the value of `scale` is set to `"large"`.
 Regardless of which basic block was executed, after the block
 executes, the program resumes with the next statement after the
- `if` statements.
+`if` statements.
 
 ### Switch <a name="switch"></a>
 
 A `switch` statement selects one of several blocks to execute based
 on the value of an expression. It is a more concise alternative to
-a chain of `if`/`else if`/`else` statements.
+a chain of `if`/`else if`/`else` statements. The expression value is
+compared to each successive value in the `case` statements, and if the
+expression matches the value, the statement(s) after the `case` statement are
+executed. The execution resume after the `switch` statement is closed
+by the `}` end-of-block.
 
 ```go
 switch <expression> {
@@ -1290,13 +1327,13 @@ symbol available in the body of the `switch` statement block. The value
 after the semicolon is the value switched on, but this can be an arbitrary
 expression that need not be based on `x`. As an Ego-specific extension, you
 can omit the semicolon and expression, and the value of the assignment (`x`
-in the above example) is automatically selected as the switch value.
+in the above example) is automatically selected as the _switch_ value.
 
 The expression after `switch` is evaluated once and compared against
 each `case` value in order. When a match is found, the statements in
-that case block are executed, and execution continues after the `switch`
-block (there is no fall-through between cases, unlike C). A `default`
-clause is optional; it executes when no `case` matches.
+that `case` block are executed, and execution continues after the `switch`
+block (there is no fall-through between cases, unlike languages like _C_).
+A `default` clause is optional; it executes when no `case` value matches.
 
 ```go
 day := "Saturday"
@@ -1408,8 +1445,8 @@ The variable `i` in the above example is scoped to the `for`
 statement and its loop body. That is, after this loop runs, the
 variable `i` will no longer exist because it was created (using
 the `:=` operator) in the scope of the loop. You can use a simple
- assignment (`=`) of an existing variable if you want the updated
- index value available after the loop body ends.
+assignment (`=`) of an existing variable if you want the updated
+index value available after the loop body ends.
 
 ```go
 var i int
@@ -1491,21 +1528,30 @@ of the keys, for example:
 ```go
 names := []string{}
 for name := range inventory {
-    names = names + name
+    names = append(names, name)
 }
 
-fmt.Println("The products are all named", names)
+fmt.Println("The products are all named", strings.Join(names, ", "))
 ```
 
 This creates an array of string values, and stores the name of each
-key in the list by appending them.
+key in the array by appending them. The use of `strings.Join()` will
+be discussed later in the `strings` package, but for now, it is
+sufficient to know it creates a string from an array of strings,
+separating each item by the ", " string. So an array
+
+```go
+[]string{"Tom", "Bob", "Sue"}
+```
+
+is formatted into the string "Tom, Bob, Sue".
 
 You can also use `range` to step through the characters of a `string`
 value. This matches Go's behavior exactly: the index variable receives
-the **byte offset** of each character within the string (not a simple
+the **byte offset** of each character within the `string` (not a simple
 0, 1, 2, … count), and the value variable receives the decoded Unicode
 code point as an `int32` (Go calls this type `rune`, which is just
-another name for `int32`) — **not** a one-character string. For example,
+another name for `int32`) — **not** a one-character `string`. For example,
 
 ```go
 for i, ch := range "Hi⌘!" {
@@ -1564,12 +1610,13 @@ the conditional statement is executed.
 2. The `continue` statement causes control to branch back to the
 top of the loop. The index value is incremented, and then tested
 again to see if the loop should run again. The `continue` statement
-means "stop executing the rest of this loop body, but continue
+means "stop executing the rest of _this_ loop body, but continue
 looping".
 3. Similarly, the index is compared to 7, and if it equal to 7 then
 the conditional statement is executed.
 4. The `break` statement exits the loop entirely. It means "without
-changing any of the values, behave as if the loop condition had been met and resume execution after the loop body.
+changing any of the values, behave as if the loop condition had been
+met and resume execution after the loop body.
 
 Note that if you create a `for` loop that has no conditional, index,
 or range value, then the loop body _must_ contain at least one `break`
@@ -1652,7 +1699,7 @@ mode and is accepted as-is in dynamic mode.
 The `func` statement allows for a special data type `any`
 which really means "any type is allowed" and no conversion occurs.
 If the function body needs to know the actual type of the value
-passed, the `typeof()` function would be used.
+passed, the `typeof()` function can be used.
 
 A function that does not return a value at all should omit the
 return type declaration.
@@ -1673,7 +1720,7 @@ func main() {
     name := "Tom"
 
     f := func() string {
-    return name + " Cole"
+        return name + " Cole"
     }
 
     fmt.Println(f())
