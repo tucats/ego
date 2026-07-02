@@ -188,7 +188,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-18](#BUG-18) | BUG | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | BUG | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
 | [BUG-20](#BUG-20) | BUG | `iota` is not supported inside `const` blocks. | ✓ |
-| [BUG-21](#BUG-21) | BUG | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. |  |
+| [BUG-21](#BUG-21) | BUG | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. | ✓ |
 | [BUG-22](#BUG-22) | BUG | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | BUG | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. |  |
@@ -427,7 +427,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-18](#BUG-18) | LOW | LANGUAGE.md documented a `type()` function, but the actual builtin is named `typeof()`. | ✓ |
 | [BUG-19](#BUG-19) | LOW | `for v := range someString` yielded single-character strings instead of `int32` Unicode code points. | ✓ |
 | [BUG-20](#BUG-20) | LOW | `iota` is not supported inside `const` blocks. | ✓ |
-| [BUG-21](#BUG-21) | LOW | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. | |
+| [BUG-21](#BUG-21) | LOW | The `@compile` test directive cannot pass values computed inside the compiled block/program back to the enclosing test. | ✓ |
 | [BUG-22](#BUG-22) | MEDIUM | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | MEDIUM | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | MEDIUM | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
@@ -2074,6 +2074,12 @@ itself (or just check the `failed`/`catch` flag) rather than relying on an
 outer variable being updated. This is a test-infrastructure limitation, not a
 defect in user-facing Ego programs — flagged during work on BUG-09, filed for
 later investigation.
+
+**Resolution:**
+The directive hoists symbols exported from the compilation to the current
+symbol scope at which the `@compile{}` runs. This allows the code to make
+a call to a function insice the compilation unit to extract values or
+status from the execution of the compilation unit.
 
 ---
 
