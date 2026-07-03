@@ -192,7 +192,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-22](#BUG-22) | BUG | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | BUG | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | BUG | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
-| [BUG-25](#BUG-25) | BUG | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
+| [BUG-25](#BUG-25) | BUG | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | ✓ |
 | [BUG-26](#BUG-26) | BUG | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
 | [BUG-27](#BUG-27) | BUG | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
 | [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
@@ -465,7 +465,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-22](#BUG-22) | MEDIUM | `make(map[K]V)` failed with an "incorrect function argument count" error. | ✓ |
 | [BUG-23](#BUG-23) | MEDIUM | `var` declarations of struct types shared a single compile-time struct instance across function calls, causing state to leak between calls. | ✓ |
 | [BUG-24](#BUG-24) | MEDIUM | Multi-target assignment lists rejected indexed/member lvalues such as `m[k], arr[i] = ...`. | |
-| [BUG-25](#BUG-25) | CRITICAL | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | |
+| [BUG-25](#BUG-25) | CRITICAL | `fallthrough` into (or as) a `switch`'s `default`/terminal clause causes an infinite loop. | ✓ |
 | [BUG-26](#BUG-26) | CRITICAL | Struct assignment and pass-by-value alias the same struct instead of copying it. | |
 | [BUG-27](#BUG-27) | CRITICAL | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
 | [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
@@ -2356,7 +2356,8 @@ indexed/member target on its own line.
 
 ### BUG-25 — `fallthrough` into a `switch`'s `default`/terminal clause causes an infinite loop
 
-**Severity:** CRITICAL
+**Severity:** CRITICAL  
+**Status:** Fixed
 
 **Description:**  
 `fallthrough` from a `case` clause into the `default` clause — a perfectly legal, idiomatic
@@ -2409,6 +2410,63 @@ without patching it either. The resulting branch instruction is left targeting a
 so execution jumps to the start of the function's bytecode and re-enters the switch,
 looping forever. `fallthrough` into a following `case` works correctly because that path is
 patched; only fallthrough-into-`default` and fallthrough-as-terminal-statement are affected.
+
+**Fix:**  
+`compileSwitch()` in `internal/language/compiler/switch.go` now tracks a pending
+`fallthrough` branch address across the whole switch instead of only inside
+`compileSwitchCase()`:
+
+1. When the main clause loop encounters a `default:` token while a `fallthrough` from the
+   previous `case` is still pending, the pending address is moved into a new
+   `fallThroughToDefault` variable instead of being dropped. Because `compileSwitch` always
+   compiles the `default` body into a separate buffer and appends it to the very end of the
+   switch's bytecode (after every `case`, regardless of where `default:` appears in the
+   source), the branch target isn't known until that append happens — so the patch is applied
+   at that point, immediately before `c.b.Append(defaultBlock)`, using `SetAddressHere`.
+2. If the main clause loop instead runs out of clauses (hits the switch's closing `}`) while a
+   `fallthrough` is still pending and was never claimed by a `default:`, `compileSwitch` now
+   returns a new compile-time error, `errors.ErrInvalidFallthrough` ("cannot fallthrough final
+   case in switch") — matching real Go's rejection of the same construct — instead of silently
+   emitting a branch to address `0`. This also correctly covers the case where a `default:`
+   clause exists elsewhere in the switch but does not immediately follow the `fallthrough` in
+   source order (e.g. `default:` declared *before* the final `case`): since nothing follows the
+   `fallthrough` textually, it is still an error, exactly as in Go.
+3. `fallthrough` into a following `case` is unaffected — that path was already correct and
+   continues to be patched inside `compileSwitchCase()` itself.
+
+**New error added:**  
+`errors.ErrInvalidFallthrough` (`internal/errors/messages.go`, key `invalid.fallthrough`),
+with entries added to all three localization files
+(`messages_en.txt`, `messages_fr.txt`, `messages_es.txt`).
+
+**Incidental fix (found while adding tests for this bug):**  
+`compileBlockDirective()` (`internal/language/compiler/directives.go:757`), which implements
+the `@compile` test directive, read and restored the wrong settings key when computing the
+default "unused variable" enforcement for a `@compile` block — it used
+`defs.UnusedVarLoggingSetting` (a verbose-logging toggle) instead of `defs.UnusedVarsSetting`
+(the actual error-enforcement flag). This is one of the two root causes already tracked as
+[BUG-54](#BUG-54); see that entry for the remaining, still-open part of the bug. Fixing the
+key mismatch here was necessary to write reliable `@compile`-based regression tests for
+BUG-25 without them tripping over unrelated stale global settings.
+
+**Files changed:**
+
+- `internal/language/compiler/switch.go` — track and patch (or reject) a pending
+  `fallthrough` that targets a `default` clause or has no following clause at all
+- `internal/errors/messages.go` — added `ErrInvalidFallthrough`
+- `internal/i18n/languages/messages_en.txt`, `messages_fr.txt`, `messages_es.txt` — added the
+  `invalid.fallthrough` localization key
+- `internal/language/compiler/directives.go` — fixed `compileBlockDirective()` to read/restore
+  `defs.UnusedVarsSetting` instead of `defs.UnusedVarLoggingSetting`
+- `internal/language/compiler/switch_test.go` — new Go unit tests: fallthrough into `default`
+  for both value and conditional switches, fallthrough as a terminal statement (with and
+  without an earlier `default:`) now producing `ErrInvalidFallthrough`, and a non-regression
+  check that fallthrough into a following `case` still works
+- `internal/language/compiler/directives_test.go` — new Go unit test verifying `@compile` no
+  longer leaks/corrupts `defs.UnusedVarsSetting` via the wrong settings key
+- `tests/flow/switch_advanced.ego` — new Ego-level regression tests covering the same
+  scenarios end-to-end, including two `@compile`-based tests that assert the new
+  `invalid.fallthrough` compile error is produced
 
 ---
 
@@ -4067,7 +4125,9 @@ validation that `size >= 0` before passing a negative length straight into `make
 
 ### BUG-54 — `@compile ... unused=false` does not suppress "unused variable" errors
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  
+**Status:** Partially fixed — see the update below; the primary symptom (`unused=false` not
+suppressing the error) is still open.
 
 **Description:**  
 `docs/LANGUAGE.md` documents that `@compile`'s `unused=` flag, when set, overrides the
@@ -4108,6 +4168,23 @@ before the compile unit finishes — the block's own top-level scope is swept by
 regardless of the `unused=` override. Separately, the *default* value used when `unused=` is
 omitted is seeded from the wrong setting key (`UnusedVarLoggingSetting`, a logging toggle,
 rather than `UnusedVarsSetting`) at `directives.go:757`.
+
+**Update (found and fixed while working on [BUG-25](#BUG-25)):**  
+The second root cause above — `directives.go:757` reading `defs.UnusedVarLoggingSetting`
+instead of `defs.UnusedVarsSetting` — has been fixed. This mismatch was not just cosmetic:
+because the same (wrong) value was also written back to `defs.UnusedVarsSetting` when the
+`@compile` directive finished (its "restore the setting to how we found it" step), running a
+single `@compile` statement with no explicit `unused=` flag could permanently overwrite the
+real `defs.UnusedVarsSetting` for the rest of the process with whatever
+`defs.UnusedVarLoggingSetting` happened to be — silently turning "unused variable" error
+enforcement on or off process-wide. A regression test,
+`TestCompileBlockDirectiveDoesNotLeakUnusedVarsSetting` in
+`internal/language/compiler/directives_test.go`, sets the two settings to different values,
+runs a `@compile` block, and confirms `defs.UnusedVarsSetting` is unchanged afterward.
+
+The primary reported symptom — `@compile ... unused=false` still reporting the error — is
+**not** fixed by this change, since it is caused by the first root cause (`Compiler.Errors()`
+ignoring `c.flags.unusedVars` for the block's own top-level scope), which remains open.
 
 ---
 

@@ -754,7 +754,7 @@ func (c *Compiler) compileBlockDirective() error {
 	)
 
 	var (
-		savedUnusedVars  = settings.GetBool(defs.UnusedVarLoggingSetting)
+		savedUnusedVars  = settings.GetBool(defs.UnusedVarsSetting)
 		savedUnknownVars = settings.GetBool(defs.UnknownVarSetting)
 		savedOptimize    = settings.GetInt(defs.OptimizerSetting)
 

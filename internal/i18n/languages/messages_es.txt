@@ -383,6 +383,7 @@ invalid.cache.item=error interno; tipo de elemento de caché no válido
 invalid.catch.set=conjunto catch no válido {{index}}
 invalid.dsn=cadena DSN no válida
 invalid.duration=cadena de duración no válida
+invalid.fallthrough=no se puede usar fallthrough en el último caso de un switch
 invalid.filter=filtro SQL no válido
 invalid.http.method=método HTTP no válido
 invalid.named.return.values=Uso no válido de valores de retorno nombrados y no nombrados

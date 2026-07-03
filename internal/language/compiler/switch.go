@@ -35,14 +35,29 @@ import (
 // is known.
 func (c *Compiler) compileSwitch() error {
 	var (
-		defaultBlock        *bytecode.ByteCode
-		fallThrough         int
-		conditional         bool
-		hasScope            bool
-		next                int
-		switchTestValueName string
-		err                 error
-		fixups              = make([]int, 0)
+		defaultBlock *bytecode.ByteCode
+		// fallThrough holds the bytecode address of a "Branch" instruction
+		// emitted for a pending "fallthrough" statement that has not yet been
+		// patched to point at the next clause's body. It is passed by pointer
+		// into compileSwitchCase(), which both reads it (to patch a fallthrough
+		// left over from the *previous* case) and writes it (to record a new
+		// one left by the *current* case). A value of 0 means "no fallthrough
+		// is currently pending".
+		fallThrough int
+		// fallThroughToDefault remembers a fallThrough address that must be
+		// patched to jump into the default clause once we know where the
+		// default clause's bytecode will be appended. This is needed because
+		// (see the comment on defaultBlock's use below) the default clause is
+		// always compiled into its own separate buffer and spliced in only
+		// after every case has been compiled - so its final address in the
+		// bytecode stream is not known until the whole switch has been parsed.
+		fallThroughToDefault int
+		conditional          bool
+		hasScope             bool
+		next                 int
+		switchTestValueName  string
+		err                  error
+		fixups               = make([]int, 0)
 	)
 
 	if c.t.AnyNext(tokenizer.SemicolonToken, tokenizer.EndOfTokens) {
@@ -84,6 +99,21 @@ func (c *Compiler) compileSwitch() error {
 
 		// Could be a default statement:
 		if c.t.IsNext(tokenizer.DefaultToken) {
+			// If the case we just finished ended in "fallthrough", that
+			// fallthrough's target is this default clause. We cannot patch
+			// the branch address yet, though - compileSwitchDefaultBlock()
+			// compiles the default body into a *separate* bytecode buffer
+			// (defaultBlock) that only gets spliced into the main bytecode
+			// stream after this loop ends, once every case has been seen.
+			// So instead of patching now, we squirrel away the pending
+			// address in fallThroughToDefault and clear fallThrough, so
+			// the "did anything go unpatched?" check after the loop (below)
+			// does not mistake this for an error.
+			if fallThrough > 0 {
+				fallThroughToDefault = fallThrough
+				fallThrough = 0
+			}
+
 			defaultBlock, err = c.compileSwitchDefaultBlock()
 			if err != nil {
 				return err
@@ -97,6 +127,17 @@ func (c *Compiler) compileSwitch() error {
 		}
 	}
 
+	// If we reach the end of the switch block with a "fallthrough" still
+	// pending, it means the last clause in the switch ended in "fallthrough"
+	// with no case or default clause after it to fall into. Real Go rejects
+	// this at compile time ("cannot fallthrough final case in switch"); Ego
+	// used to leave the fallthrough's branch instruction targeting address 0,
+	// which re-entered the switch from the top of the function and looped
+	// forever. Report it as a compile error instead.
+	if fallThrough > 0 {
+		return c.compileError(errors.ErrInvalidFallthrough)
+	}
+
 	// If there was a last case with conditional, branch it here.
 	if next > 0 {
 		_ = c.b.SetAddressHere(next)
@@ -104,6 +145,17 @@ func (c *Compiler) compileSwitch() error {
 
 	// If there was a default block, emit it here
 	if defaultBlock != nil {
+		// A pending fallthrough that targeted the default clause now knows
+		// its destination: the address the default block's bytecode is
+		// about to be appended at. Patch the branch instruction before the
+		// default block is spliced in, so it lands on the default block's
+		// first instruction instead of falling through to address 0.
+		if fallThroughToDefault > 0 {
+			if err := c.b.SetAddressHere(fallThroughToDefault); err != nil {
+				return err
+			}
+		}
+
 		c.b.Append(defaultBlock)
 	}
 

@@ -382,6 +382,7 @@ invalid.cache.item=internal error; invalid cache item type
 invalid.catch.set=invalid catch set {{index}}
 invalid.dsn=invalid DSN string
 invalid.duration=invalid duration string
+invalid.fallthrough=cannot fallthrough final case in switch
 invalid.filter=invalid SQL filter
 invalid.http.method=invalid HTTP method
 invalid.named.return.values=Invalid use of named and non-named return values

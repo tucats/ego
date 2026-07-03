@@ -376,6 +376,7 @@ invalid.cache.item=erreur interne ; type d'élément de cache invalide
 invalid.catch.set=ensemble catch invalide {{index}}
 invalid.dsn=chaîne DSN invalide
 invalid.duration=chaîne de durée invalide
+invalid.fallthrough=impossible de faire un fallthrough sur le dernier cas d'un switch
 invalid.filter=filtre SQL invalide
 invalid.http.method=méthode HTTP invalide
 invalid.named.return.values=Utilisation invalide de valeurs de retour nommées et non nommées

@@ -258,3 +258,118 @@
 
     @assert seen == 42
 }
+
+@test "flow: fallthrough into default clause (BUG-25)"
+{
+    // Regression test for BUG-25: "fallthrough" from a matched "case" into
+    // the switch's "default" clause is legal, idiomatic Go and must run the
+    // default body exactly once. Before the fix, this compiled to a branch
+    // instruction targeting bytecode address 0, which sent execution back to
+    // the start of the enclosing code and looped forever.
+    fallLog := ""
+    switch 2 {
+    case 1:
+        fallLog = fallLog + "one"
+    case 2:
+        fallLog = fallLog + "two"
+        fallthrough
+    default:
+        fallLog = fallLog + "+default"
+    }
+
+    @assert fallLog == "two+default"
+}
+
+@test "flow: conditional switch fallthrough into default (BUG-25)"
+{
+    // Same regression as above, but for a conditional (expression-less)
+    // switch. Fallthrough is compiled by the same shared code regardless of
+    // whether the switch has a value or is condition-based, so both forms
+    // need coverage.
+    fallCount := 0
+    switch {
+    case fallCount < 0:
+        fallCount = 100
+    case fallCount == 0:
+        fallCount++
+        fallthrough
+    default:
+        fallCount++
+    }
+
+    @assert fallCount == 2
+}
+
+@test "flow: fallthrough into default runs exactly once (BUG-25)"
+{
+    // Uses a counter to prove the default body runs exactly once - not zero
+    // times (default skipped) and not "many" times (the infinite-loop bug).
+    fallRuns := 0
+    switch 9 {
+    case 9:
+        fallthrough
+    default:
+        fallRuns++
+    }
+
+    @assert fallRuns == 1
+}
+
+@test "flow: fallthrough as final statement is a compile error (BUG-25)"
+{
+    // "fallthrough" used as the last statement of a switch's last clause,
+    // with no case or default clause following it, must be rejected at
+    // compile time - the same error real Go reports ("cannot fallthrough
+    // final case in switch"). The @compile directive lets us compile this
+    // broken fragment at runtime and catch the resulting error instead of
+    // failing the whole test file. Before the fix, this compiled cleanly
+    // into a branch to bytecode address 0, which looped forever at runtime.
+    //
+    // The broken switch is wrapped in its own function and compiled in
+    // full-program mode (no "block" flag) rather than inline block mode;
+    // block mode shares the outer compiler's scope-tracking flags, and on
+    // a profile with "unused variable" errors enabled, that combination
+    // flags "caught" below as unused even though it is both assigned and
+    // read. Full-program mode compiles the broken code in a completely
+    // separate sub-compiler, avoiding that interaction entirely.
+    var caught bool
+
+    @compile {
+        func broken() {
+            switch 1 {
+            case 1:
+                fallthrough
+            }
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "invalid.fallthrough"
+    }
+
+    @assert caught == true
+}
+
+@test "flow: fallthrough after an earlier default is still an error (BUG-25)"
+{
+    // A "default:" clause declared *before* the case that ends in
+    // "fallthrough" does not count as "the next clause" - fallthrough only
+    // targets the clause that immediately follows it in source order. Since
+    // nothing follows this fallthrough, it must still be a compile error.
+    var caught bool
+
+    @compile {
+        func broken() {
+            switch 1 {
+            default:
+                // intentionally empty
+            case 1:
+                fallthrough
+            }
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "invalid.fallthrough"
+    }
+
+    @assert caught == true
+}
