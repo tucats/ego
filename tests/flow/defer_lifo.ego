@@ -160,8 +160,10 @@
     func work() {
         items := []string{"1", "2", "3"}
         for _, s := range items {
-            s := s   // capture copy (needed here because range in Ego
-                     // does not provide per-iteration scope for closures)
+            // BUG-30 fix: range loops now give each iteration its own copy
+            // of "s" (matching Go 1.22+ semantics), so the closure below
+            // captures this iteration's value directly - no manual
+            // "s := s" copy workaround is needed anymore.
             defer func(v string) { log = log + v }(s)
         }
     }

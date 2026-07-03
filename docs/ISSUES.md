@@ -197,7 +197,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-27](#BUG-27) | BUG | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
 | [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
 | [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
-| [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
+| [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
 | [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
 | [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
 | [BUG-33](#BUG-33) | BUG | Struct field type declarations are never enforced, even in strict mode. | |
@@ -227,6 +227,9 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-57](#BUG-57) | BUG | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
 | [BUG-58](#BUG-58) | BUG | The `uint8()` cast function is not recognized despite being documented. | |
 | [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | |
+| [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
+| [BUG-61](#BUG-61) | BUG | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
+| [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -470,7 +473,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-27](#BUG-27) | CRITICAL | Misusing `sync.WaitGroup` (extra `Done()`) crashes the entire `ego` process with a raw Go panic. | ✓ |
 | [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
 | [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
-| [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | |
+| [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
 | [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
 | [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
 | [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | |
@@ -500,6 +503,9 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-57](#BUG-57) | MEDIUM | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
 | [BUG-58](#BUG-58) | LOW | The `uint8()` cast function is not recognized despite being documented. | |
 | [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | |
+| [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
+| [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
+| [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 
 ---
 
@@ -2949,7 +2955,8 @@ state before ever touching the native channel, rather than trying to recover aft
 
 ### BUG-30 — Closures created in a loop all capture the loop variable's final value, not a per-iteration value
 
-**Severity:** HIGH
+**Severity:** HIGH  
+**Status:** Fixed
 
 **Description:**  
 Building a slice of closures inside a `for` or `range` loop, where each closure captures
@@ -3008,6 +3015,68 @@ real modern Go actually returns `2` for that exact scenario (verified via `go ru
 the last iteration's closure captures its own per-iteration copy of `i`, which is never
 mutated further once the loop exits. That test's assertion should be revisited alongside
 any fix for this issue.
+
+**Fix:**  
+`compileFor`'s single, once-per-loop `PushScope` (for the loop's index/value variable) is
+unchanged — the increment/condition clauses of a classic `for i := 0; i < n; i++` loop, and
+the `RangeNext` bytecode for a `for k, v := range x` loop, still read and write that one
+persistent variable exactly as before. What changed is that the loop **body** — which,
+unlike the loop's own outer scope, is already recreated fresh every iteration (its
+`PushScope` instruction is ordinary loop-body bytecode, re-executed every time the loop
+branches back to the top) — now always begins with a small "prologue" that copies the
+persistent variable's current value into a same-named variable in that fresh, per-iteration
+scope. A closure created anywhere in the body captures *that* scope (this already worked
+correctly per-iteration for ordinary body-declared variables; see the FUNC-H2 fix), and
+therefore this iteration's own copy, not the loop's single, ever-changing variable.
+
+For a classic `for` loop specifically, an "epilogue" was also added: it copies the
+per-iteration copy's value back out to the persistent variable before the per-iteration
+scope is destroyed, preserving the (rare, but legal) Go pattern of a loop body reassigning
+its own counter to influence later iterations (e.g. `for i := 0; i < 10; i++ { if skip { i
++= 5 } }`). Range loops do not get an epilogue: reassigning a range loop's index or value
+variable inside the body has no effect on which element is visited next in Go, so there is
+nothing to copy back.
+
+A loop whose counter is a *qualified* lvalue rather than a plain name (e.g. `for a[0] = 0;
+a[0] < n; a[0]++`) is deliberately left unchanged — there is no single variable name to give
+a fresh per-iteration copy to, and this form is rare enough that it isn't worth the added
+complexity of shadowing an arbitrary lvalue expression.
+
+**Known limitation:** the epilogue (mutation copy-back) only runs when a loop iteration
+finishes normally, by falling off the end of the body. A `break` or `continue` — including
+one nested inside an `if`/`switch`/`try` block — branches directly out of the body and skips
+the epilogue entirely, exactly as those statements already skip over any ordinary block's
+closing `PopScope` today (a pre-existing characteristic of how `break`/`continue` interact
+with nested scopes in this compiler; see [BUG-61](#BUG-61)). In practice this means a
+same-iteration reassignment of the loop counter is not carried forward to the next iteration
+if that same iteration also used `break` or `continue`. This does **not** affect the primary
+fix: closures still correctly capture their own per-iteration copy of the variable no matter
+how the iteration ends, because the copy-in prologue always runs first, before any user code
+(including any `break`/`continue`) executes — this is verified directly by a test in both the
+Go and Ego test suites.
+
+`tests/functions/scope_advanced.ego`'s `"functions: stored closure survives after loop"` and
+`tests/flow/defer_lifo.ego`'s `"flow: defer in a loop registers multiple defers"` were updated
+to match: the former now asserts the modern-Go value (`2`, not `3`); the latter had its
+now-unnecessary — and, after this fix, actively conflicting (duplicate declaration in the
+same scope) — manual `s := s` per-iteration-copy workaround removed.
+
+**Files changed:**
+
+- `internal/language/compiler/for.go` — added `loopVariablePrologue()`, `loopVariableEpilogue()`,
+  and `compileForBody()`; wired the prologue into `rangeFor()` and the prologue+epilogue into
+  `iterationFor()` (only when the loop counter is a simple name)
+- `tests/functions/scope_advanced.ego` — updated `"functions: stored closure survives after
+  loop"` to assert the correct Go 1.22+ result
+- `tests/flow/defer_lifo.ego` — removed the now-obsolete `s := s` workaround in `"flow: defer
+  in a loop registers multiple defers"`
+- `internal/language/compiler/for_loopvar_test.go` — new Go unit tests: the BUG-30 reproducer
+  for classic and range loops, index/value/both range variants, the updated
+  stored-closure-after-loop scenario, counter mutation propagating through normal completion,
+  break/continue/labeled-continue regression guards, nested loops, an unused-loop-variable
+  compile guard, and the qualified-lvalue-counter fallback path
+- `tests/flow/for_loopvar.ego` — new Ego-level regression tests covering the same scenarios
+  end-to-end, plus a goroutine-in-a-loop guard
 
 ---
 
@@ -4554,6 +4623,188 @@ read by `bytecode.go:332`) to *capture* the saved value, but *writes* the overri
 `defs.OptimizerOption` (`"optimize"` — an unrelated CLI-grammar-option constant from
 `internal/defs/constants.go`, never read anywhere for this purpose). The override is dead
 code.
+
+---
+
+<a id="BUG-60"></a>
+
+### BUG-60 — Type assertion to a function type fails to compile
+
+**Severity:** LOW
+
+**Description:**  
+Found while writing Go unit tests for the BUG-30 fix: asserting an `interface{}` value to a
+function type (`x.(func() int)`) does not compile, even though Go allows a type assertion
+target to be any type, including a function type. The workaround used in the BUG-30 tests
+was to avoid the assertion entirely and rely on Ego's dynamic typing to call the value
+directly.
+
+**Reproducer:**
+
+```go
+func main() {
+    var x any = func() int { return 42 }
+    v := x.(func() int)
+    fmt.Println(v())
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 3:10, invalid identifier
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+42
+```
+
+**Notes:**  
+The same failure occurs whether the asserted-to function type appears alone
+(`x.(func() int)`) or as part of a larger expression (`x.(func() int)()`), and regardless of
+the function type's signature (no parameters, parameters, multiple returns). This is
+distinct from a *value* of a named function type failing — declaring and calling a plain
+`func() int` variable works fine; only using one as the *target type* of a type assertion
+fails. Not yet root-caused against a specific line in the type-assertion parser
+(`internal/language/compiler/expr_atom.go` and/or `internal/language/compiler/types.go` are
+the likely locations, based on where other type-assertion target parsing lives), since this
+was discovered incidentally rather than through a dedicated investigation.
+
+---
+
+<a id="BUG-61"></a>
+
+### BUG-61 — `break`/`continue` inside a nested block, in a top-level fragment, leaves the runtime scope one level too deep
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while writing Go unit tests for the BUG-30 fix. When a program with no enclosing
+`func main()` — the form used internally by `compiler.RunString()`/`compiler.Run()`, e.g. for
+the interactive REPL, evaluated one statement at a time — is instead compiled and run as a
+*single* multi-statement unit containing a `for` loop with a `break` or `continue` nested
+inside an `if` block, any variable declared by a statement *after* the loop ends up
+inaccessible from outside that compile-and-run call, because the runtime's "current scope"
+pointer is left one level deeper than it should be.
+
+**Reproducer** (Go, using the compiler package directly — see Notes for why this does not
+reproduce through the ordinary `ego` CLI):
+
+```go
+s := symbols.NewRootSymbolTable("repro")
+compiler.AddStandard(s)
+
+err := compiler.RunString("repro", s, `
+    total := 0
+    for i := 0; i < 5; i++ {
+        if i == 3 {
+            break
+        }
+        total = total + i
+    }
+    result := total == 3
+`)
+
+v, found := s.Get("result")
+fmt.Println(err, v, found)
+```
+
+**Actual output:**
+
+```text
+<nil> <nil> false
+```
+
+`result` was never actually declared as far as the caller's symbol table (`s`) is concerned,
+even though the program compiled and ran with no error, and `total` (declared *before* the
+loop) is present and correct (`total, _ := s.Get("total")` returns `3`).
+
+**Expected output:**
+
+```text
+<nil> true true
+```
+
+**Notes:**  
+This does **not** reproduce through `ego run` (a `.ego` file compiled that way requires a
+`func main()`, and returning from a function unconditionally discards all of that function's
+scopes regardless of exactly how many `PopScope` instructions actually ran), the interactive
+REPL (each line is compiled and run as its own separate call, so a scope left over from one
+line cannot affect the next), or `ego test` (each `@test { ... }` block's own brace-delimited
+block scope appears to absorb the discrepancy). It was only found by calling
+`compiler.RunString()` directly with a multi-statement program containing no function
+wrapper at all — which is exactly the shape of several existing Go-level compiler tests, and
+is why the BUG-30 unit tests in `internal/language/compiler/for_loopvar_test.go` that need
+`break`/`continue` wrap the relevant code in a small named function rather than using it at
+the bare top level. Root cause: `compileBreak`/`compileContinue`
+(`internal/language/compiler/for.go`) emit a bare, unconditional `Branch` with no
+accompanying `PopScope`, regardless of how many block scopes (each pushed by
+`compileBlock` for its own `{ }`, per `internal/language/compiler/block.go`) lie between the
+`break`/`continue` statement and the loop's own boundary. `popScopeByteCode`
+(`internal/language/bytecode/symbols.go`) walks up exactly one parent per `PopScope`
+executed (or exactly `N` when given an explicit `PopScope, N` count, which nothing currently
+supplies for this case), so a `break`/`continue` nested one or more blocks deep leaves that
+many scopes un-popped when it lands at the loop's exit/continue point, which only pops the
+loop's own single scope. `internal/language/compiler/compiler.go`'s `blockDepth` field
+already tracks exactly how many block levels deep the compiler is at any point during
+compilation, which is what a fix would most likely use to compute and emit the correct
+`PopScope, N` before each `break`/`continue`'s branch.
+
+---
+
+<a id="BUG-62"></a>
+
+### BUG-62 — Channel receive (`<-ch`) is not supported as a general expression atom
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while writing Go unit tests for the BUG-30 fix. Go allows a channel receive
+expression (`<-ch`) to appear anywhere a value is expected — as a function argument, as an
+operand of an arithmetic or logical operator, and so on. In Ego, `<-ch` is only recognized
+immediately after `:=` or `=` in an assignment statement (`v := <-ch` or `v = <-ch`); using
+it anywhere else in an expression is a compile error.
+
+**Reproducer:**
+
+```go
+func main() {
+    ch := make(chan, 1)
+    ch <- 5
+
+    // As a function-call argument:
+    fmt.Println(<-ch)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 6:17, unexpected token: Special "<-"
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+5
+```
+
+**Notes:**  
+The same error occurs for any non-assignment position, e.g. `total := 10 + <-ch` (as an
+operand of `+`). The direct-assignment forms (`v := <-ch`, `v = <-ch`, and the two-value
+`v, ok := <-ch`) all work correctly and are unaffected — this is specifically about `<-ch`
+appearing anywhere else. Root cause: `tokenizer.ChannelReceiveToken` handling exists only in
+`internal/language/compiler/assignment.go` and `internal/language/compiler/lvalue.go` (both
+concerned with compiling the right-hand side of an assignment statement); the general
+expression-atom parser used everywhere else (`internal/language/compiler/expr_atom.go`) has
+no case for it at all, so the tokenizer's `<-` token simply falls through to "unexpected
+token" wherever it is encountered outside those two call sites. The current workaround is to
+always assign a channel receive to a temporary variable on its own line before using the
+result: `v := <-ch; fmt.Println(v)`.
 
 ---
 

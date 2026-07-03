@@ -1,0 +1,227 @@
+// Tests for BUG-30: "for" and "for range" loops must give each iteration
+// its own fresh copy of the loop's index/value variable(s), matching the
+// Go 1.22+ language change often referred to as "per-iteration loop
+// variables" or "loopvar".
+//
+// Before the fix, a loop's index/value variable(s) lived in a single scope
+// pushed once before the loop started and popped once after it ended, so
+// every iteration shared exactly the same variable. A closure created
+// inside the loop body therefore always observed whatever value the
+// variable held once the loop finished, regardless of which iteration
+// created the closure - this was one of the best-known Go 1.22 semantic
+// changes, and Ego did not match it before this fix.
+
+@test "flow: for loop closures capture distinct per-iteration values"
+{
+    // The exact reproducer from docs/ISSUES.md BUG-30.
+    var funcs []any
+    for i := 0; i < 3; i++ {
+        funcs = append(funcs, func() int { return i })
+    }
+
+    @assert funcs[0]() == 0
+    @assert funcs[1]() == 1
+    @assert funcs[2]() == 2
+}
+
+@test "flow: range loop closures capture distinct index values"
+{
+    items := []string{"a", "b", "c"}
+    var funcs []any
+    for i := range items {
+        funcs = append(funcs, func() int { return i })
+    }
+
+    @assert funcs[0]() == 0
+    @assert funcs[1]() == 1
+    @assert funcs[2]() == 2
+}
+
+@test "flow: range loop closures capture distinct values"
+{
+    items := []string{"a", "b", "c"}
+    var funcs []any
+    for _, v := range items {
+        funcs = append(funcs, func() string { return v })
+    }
+
+    @assert funcs[0]() == "a"
+    @assert funcs[1]() == "b"
+    @assert funcs[2]() == "c"
+}
+
+@test "flow: range loop closures capture distinct index and value pairs"
+{
+    items := []string{"a", "b", "c"}
+    var funcs []any
+    for i, v := range items {
+        funcs = append(funcs, func() string { return string(i) + v })
+    }
+
+    @assert funcs[0]() == "0a"
+    @assert funcs[1]() == "1b"
+    @assert funcs[2]() == "2c"
+}
+
+@test "flow: closure stored during loop sees its own iteration value after loop ends"
+{
+    // The loop body executes for i == 0, 1, 2; the condition "3 < 3" then
+    // fails and the loop exits without a fourth iteration. The closure
+    // stored on the LAST iteration to run (i == 2) must return 2, matching
+    // real Go 1.22+ - not the post-loop value of the counter (3), which is
+    // what pre-1.22 Go (and Ego, before this fix) would have returned,
+    // because every iteration's closure shared one variable.
+    captured := func() int { return -1 }
+    for i := 0; i < 3; i = i + 1 {
+        captured = func() int { return i }
+    }
+
+    @assert captured() == 2
+}
+
+@test "flow: mutating the loop counter inside the body still affects later iterations"
+{
+    // Go 1.22 explicitly preserves this pattern: reassigning the loop
+    // counter inside the body still affects later iterations, as long as
+    // the iteration finishes normally (does not break/continue).
+    count := 0
+    for i := 0; i < 10; i++ {
+        count++
+        if i == 2 {
+            i = 100
+        }
+    }
+
+    @assert count == 3
+}
+
+@test "flow: break still exits a for loop with per-iteration variables"
+{
+    total := 0
+    for i := 0; i < 5; i++ {
+        if i == 3 {
+            break
+        }
+        total = total + i
+    }
+
+    @assert total == 3
+}
+
+@test "flow: continue still skips the rest of the body correctly"
+{
+    total := 0
+    for i := 0; i < 5; i++ {
+        if i == 2 {
+            continue
+        }
+        total = total + i
+    }
+
+    @assert total == 8
+}
+
+@test "flow: closure captures correctly even when its iteration also continues"
+{
+    // The fix's per-iteration copy is made before any user code runs, so it
+    // is unaffected by a "continue" later in the same iteration.
+    var funcs []any
+    for i := 0; i < 5; i++ {
+        if i == 2 {
+            continue
+        }
+        funcs = append(funcs, func() int { return i })
+    }
+
+    @assert len(funcs) == 4
+    @assert funcs[0]() == 0
+    @assert funcs[1]() == 1
+    @assert funcs[2]() == 3
+    @assert funcs[3]() == 4
+}
+
+@test "flow: nested for loops each get independently fresh variables"
+{
+    var funcs []any
+    for i := 0; i < 2; i++ {
+        for j := 0; j < 2; j++ {
+            funcs = append(funcs, func() int { return i*10 + j })
+        }
+    }
+
+    @assert funcs[0]() == 0
+    @assert funcs[1]() == 1
+    @assert funcs[2]() == 10
+    @assert funcs[3]() == 11
+}
+
+@test "flow: labeled continue across nested loops still works"
+{
+    outerCount := 0
+    outer:
+    for i := 0; i < 3; i++ {
+        for j := 0; j < 3; j++ {
+            if j == 1 {
+                continue outer
+            }
+            outerCount++
+        }
+    }
+
+    @assert outerCount == 3
+}
+
+@test "flow: loop variable unused in body does not error"
+{
+    // Regression guard: the fix's compiler-generated shadow copy of the
+    // loop variable must not trigger a false "declared but never used"
+    // error when the body itself never reads the loop variable.
+    ticks := 0
+    for i := 0; i < 3; i++ {
+        ticks++
+    }
+
+    @assert ticks == 3
+}
+
+@test "flow: qualified lvalue loop counter is unaffected by this fix"
+{
+    // A loop counter that is not a simple name (here, an array element) has
+    // no single variable to give a fresh per-iteration copy to, and is left
+    // exactly as before.
+    a := []int{0}
+    count := 0
+
+    for a[0] = 0; a[0] < 3; a[0]++ {
+        count++
+    }
+
+    @assert count == 3
+    @assert a[0] == 3
+}
+
+@test "flow: goroutines started in a loop each see their own iteration value"
+{
+    // A closure passed to "go" is a related, but separately-fixed (FUNC-H2),
+    // scenario. Verify a for-loop goroutine still receives its own value
+    // when the value is captured via an explicit parameter, which remains
+    // the required, portable pattern for goroutines (unlike closures over
+    // a per-iteration copy, a goroutine may run after the loop - or even
+    // after the whole program - has moved on, so it needs its own copy
+    // regardless of how the loop variable itself is scoped).
+    results := make(chan, 3)
+
+    for i := 0; i < 3; i++ {
+        go func(n int) {
+            results <- n
+        }(i)
+    }
+
+    total := 0
+    for count := 0; count < 3; count++ {
+        v := <-results
+        total = total + v
+    }
+
+    @assert total == 3
+}
