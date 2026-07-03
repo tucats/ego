@@ -304,7 +304,7 @@ func storeIndexByteCode(c *Context, i any) error {
 			}
 		}
 
-		// BUG-26 fix: "outer.field = someStruct" must copy the struct value
+		// fix BUG-26: "outer.field = someStruct" must copy the struct value
 		// into the field, not alias it. See copyStructForValueSemantics.
 		if err = a.Set(key, copyStructForValueSemantics(v)); err != nil {
 			return c.runtimeError(err)
@@ -325,7 +325,7 @@ func storeIndexByteCode(c *Context, i any) error {
 				}
 			}
 
-			// BUG-26 fix: same struct-copy rule as the direct *data.Struct
+			// fix BUG-26: same struct-copy rule as the direct *data.Struct
 			// case above, reached here via a pointer-to-interface indirection.
 			if err = ax.Set(key, copyStructForValueSemantics(v)); err != nil {
 				return c.runtimeError(err)

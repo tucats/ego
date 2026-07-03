@@ -26,30 +26,30 @@ package bytecode
 //
 // # Bugs documented here
 //
-// CALL-8  makeNativeArrayArgument does not convert *data.Array of Int64 or
-//         Float32 elements; those cases fall through to ErrInvalidType even
-//         though the pass-through and return paths handle native []int64 and
-//         []float32 slices.
+// issue CALL-8  makeNativeArrayArgument does not convert *data.Array of Int64 or
+//               Float32 elements; those cases fall through to ErrInvalidType even
+//               though the pass-through and return paths handle native []int64 and
+//               []float32 slices.
 //
-// CALL-9  CallWithReceiver does not check whether MethodByName returned a
-//         valid reflect.Value before calling .Call(), so an unknown method
-//         name causes an unrecoverable panic.
+// issue CALL-9  CallWithReceiver does not check whether MethodByName returned a
+//               valid reflect.Value before calling .Call(), so an unknown method
+//               name causes an unrecoverable panic.
 //
-// BUG-27 Calling a native Go method or function that panics (for example,
-//        calling Done() on a sync.WaitGroup more times than Add() was
-//        called) crashed the entire ego process, because nothing on the
-//        native-call path ever called recover(). safeReflectCall (Section
-//        10 below) is the fix: a shared helper used by both CallDirect and
-//        CallWithReceiver that recovers any panic and turns it into a
-//        normal, catchable Ego error instead.
+// issue BUG-27  Calling a native Go method or function that panics (for example,
+//               calling Done() on a sync.WaitGroup more times than Add() was
+//               called) crashed the entire ego process, because nothing on the
+//               native-call path ever called recover(). safeReflectCall (Section
+//               10 below) is the fix: a shared helper used by both CallDirect and
+//               CallWithReceiver that recovers any panic and turns it into a
+//               normal, catchable Ego error instead.
 //
-// BUG-28 Calling Unlock() on a sync.Mutex that isn't locked triggers Go's
-//        unrecoverable "fatal error: sync: unlock of unlocked mutex",
-//        which even safeReflectCall's recover() cannot catch (fatal errors
-//        are a stronger, deliberately-unrecoverable failure mode). The fix
-//        (Section 11 below, callMutexMethod) tracks each sync.Mutex's lock
-//        state and refuses to call the real Unlock() at all when the
-//        mutex isn't locked, avoiding the fatal error in the first place.
+// issue BUG-28 Calling Unlock() on a sync.Mutex that isn't locked triggers Go's
+//              unrecoverable "fatal error: sync: unlock of unlocked mutex",
+//               which even safeReflectCall's recover() cannot catch (fatal errors
+//               are a stronger, deliberately-unrecoverable failure mode). The fix
+//               (Section 11 below, callMutexMethod) tracks each sync.Mutex's lock
+//               state and refuses to call the real Unlock() at all when the
+//               mutex isn't locked, avoiding the fatal error in the first place.
 
 import (
 	"math"
@@ -1128,8 +1128,8 @@ func Test_safeReflectCall_NoPanic(t *testing.T) {
 	}
 }
 
-// Test_safeReflectCall_RecoversPanic is the direct regression test for
-// BUG-27. It calls a function that panics (via a small helper below) through
+// Test_safeReflectCall_RecoversPanic is the direct regression test
+// for BUG-27. It calls a function that panics (via a small helper below) through
 // safeReflectCall and verifies that:
 //
 //  1. the panic does NOT propagate out of safeReflectCall (which is what
@@ -1240,11 +1240,11 @@ func Test_callMutexMethod_LockThenUnlock(t *testing.T) {
 		t.Fatal("TryLock() after Lock()+Unlock() failed to acquire; mutex was not actually unlocked")
 	}
 
-	_, _, _ = callMutexMethod(mu, "Unlock")
+	_, _, _ = callMutexMethod(mu, "Unlock") //nolint:dogsled
 }
 
-// Test_callMutexMethod_UnlockWithoutLock is the direct regression test for
-// BUG-28. Calling "Unlock" on a mutex that was never locked must NOT call
+// Test_callMutexMethod_UnlockWithoutLock is the direct regression test
+// for BUG-28. Calling "Unlock" on a mutex that was never locked must NOT call
 // Go's real sync.Mutex.Unlock() (which would trigger an unrecoverable fatal
 // error and crash the test binary); instead it must be refused up front
 // with a normal, catchable error.
@@ -1285,7 +1285,7 @@ func Test_callMutexMethod_UnlockWithoutLock(t *testing.T) {
 func Test_callMutexMethod_DoubleUnlockReturnsErrorNotFatal(t *testing.T) {
 	mu := &sync.Mutex{}
 
-	_, _, _ = callMutexMethod(mu, "Lock")
+	_, _, _ = callMutexMethod(mu, "Lock") //nolint:dogsled
 
 	if _, _, err := callMutexMethod(mu, "Unlock"); err != nil {
 		t.Fatalf("first Unlock unexpected error: %v", err)
@@ -1307,7 +1307,7 @@ func Test_callMutexMethod_DoubleUnlockReturnsErrorNotFatal(t *testing.T) {
 func Test_callMutexMethod_TryLockWhenLocked(t *testing.T) {
 	mu := &sync.Mutex{}
 
-	_, _, _ = callMutexMethod(mu, "Lock")
+	_, _, _ = callMutexMethod(mu, "Lock") //nolint:dogsled
 
 	result, handled, err := callMutexMethod(mu, "TryLock")
 	if !handled || err != nil {

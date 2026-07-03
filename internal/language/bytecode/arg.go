@@ -118,7 +118,7 @@ func argByteCode(c *Context, i any) error {
 		}
 	}
 
-	// BUG-26 fix: passing a struct as a plain (non-pointer) argument must
+	// fix BUG-26: passing a struct as a plain (non-pointer) argument must
 	// give the function its own copy, not a shared alias of the caller's
 	// struct. copyStructForValueSemantics only touches *data.Struct values,
 	// so this is normally safe: a pointer created by Ego's own "&x" operator

@@ -2,8 +2,9 @@ package data
 
 import "testing"
 
-// Tests for Struct.Copy(), specifically the fix found while working on
-// BUG-26 (struct assignment/pass-by-value did not copy structs at all).
+// Tests for Struct.Copy(), specifically the fix found while working
+// on BUG-26 (struct assignment/pass-by-value did not copy structs
+// at all).
 //
 // Copy() used to build its result by calling NewStructFromMap(s.fields).
 // NewStructFromMap() is meant to build a struct from a generic

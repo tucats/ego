@@ -269,7 +269,7 @@ func createAndStoreByteCode(c *Context, i any) error {
 
 		err = c.setConstant(name, constantValue)
 	} else {
-		// BUG-26 fix: "p2 := p1" must copy the struct, not alias it. The
+		// fix BUG-26: "p2 := p1" must copy the struct, not alias it. The
 		// readonly branch above already gets an independent copy for free
 		// from data.DeepCopy, so only this plain-store branch needs it.
 		err = c.set(name, copyStructForValueSemantics(value))

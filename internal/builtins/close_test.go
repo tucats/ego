@@ -112,8 +112,8 @@ func Test_Close_ChannelCloseReturnsTrueWhenOpen(t *testing.T) {
 	}
 }
 
-// Test_Close_DoubleCloseReturnsError is the direct regression test for
-// BUG-29. It verifies that calling Close() a second time on the same
+// Test_Close_DoubleCloseReturnsError is the direct regression test
+// for BUG-29. It verifies that calling Close() a second time on the same
 // channel:
 //
 //  1. does NOT panic (which is what used to crash the whole ego process),

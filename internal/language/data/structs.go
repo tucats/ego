@@ -572,7 +572,7 @@ func (s *Struct) Set(name string, value any) error {
 // Make a copy of the current structure object. The resulting structure
 // will be an exact duplicate, but allocated in new storage.
 //
-// BUG-26 fix note: this used to build the copy by calling
+// fix BUG-26 note: this used to build the copy by calling
 // NewStructFromMap(s.fields). NewStructFromMap() is designed to build a
 // struct from a generic "map[string]any" that might have embedded metadata
 // keys mixed in with the real fields (as happens when reconstructing a

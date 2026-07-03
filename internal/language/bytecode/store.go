@@ -25,8 +25,8 @@ import (
 // affects the other's. Every other Ego type used here is a pointer to a Go
 // struct (*data.Struct, *data.Array, *data.Map, ...), so simply copying the
 // "any" value in a Go sense only copies the pointer, not what it points to -
-// both names end up pointing at the very same underlying struct (this was
-// BUG-26).
+// both names end up pointing at the very same underlying struct (this
+// was BUG-26).
 //
 // This function is the fix: if the value is a *data.Struct, it returns a
 // fresh, independent copy (see copyStructRecursive). Every other value -
@@ -151,7 +151,7 @@ func storeByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	// BUG-26 fix: "name = otherStructVar" must copy the struct, not alias it.
+	// fix BUG-26: "name = otherStructVar" must copy the struct, not alias it.
 	// See copyStructForValueSemantics for why only *data.Struct is affected.
 	value = copyStructForValueSemantics(value)
 

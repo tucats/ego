@@ -182,8 +182,8 @@ func (c *Channel) IsEmpty() bool {
 // An earlier version of this function called Go's close() unconditionally,
 // every time Close() was called, with no check first. That meant a second
 // call to Close() on the same channel — an easy mistake to make, and one
-// real Ego programs were hitting — brought down the whole interpreter (see
-// BUG-29 in docs/ISSUES.md for the original bug report and repro).
+// real Ego programs were hitting — brought down the whole interpreter
+// (see BUG-29 in docs/ISSUES.md for the original bug report and repro).
 //
 // The fix is straightforward: check c.isOpen BEFORE calling the native
 // close(), and only call it when the channel is actually still open. Since
