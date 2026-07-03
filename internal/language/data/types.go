@@ -1045,9 +1045,23 @@ func (t *Type) FixSelfReferences() *Type {
 
 		declaration := function.Declaration
 		if declaration != nil {
+			// Handle by-value receiver types. This is a special case where the
+			// receiver is a value of the type, but the type itself is not yet
+			// fully defined. So we replace the placeholder with the completed type.
 			if declaration.Type != nil && declaration.Type.kind == OwnKind {
 				declaration.Type = t
 				changed = true
+			}
+
+			// Handle pointer receiver types. This is a special case where the
+			// receiver is a pointer to the type, but the type itself is not yet
+			// fully defined. So we replace the placeholder with a pointer to the
+			// completed type.
+			if declaration.Type != nil && declaration.Type.kind == PointerKind {
+				if declaration.Type.valueType.kind == OwnKind {
+					declaration.Type = PointerType(t)
+					changed = true
+				}
 			}
 
 			for index, returnType := range declaration.Returns {

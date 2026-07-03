@@ -18,7 +18,7 @@
 import "http"
 import "math"
 
-func handler(req http.Request, w http.ResponseWriter) {
+func handler(req http.Request, w *http.ResponseWriter) {
     // Regardless of a success or error reply, we should set the
     // result content type appropriately.
     if req.IsJSON {

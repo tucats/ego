@@ -3,7 +3,7 @@
 
 import "http"
 
-func handler( req http.Request, w http.ResponseWriter ) {
+func handler( req http.Request, w *http.ResponseWriter ) {
     @template body `
     <body>
         {{.Body}}

@@ -8,7 +8,7 @@ import "http"
 
 var Count int = 41
 
-func handler( req http.Request, w http.ResponseWriter) {
+func handler( req http.Request, w *http.ResponseWriter) {
     Count = Count + 1
 
     w.Header().Add("Content-Type", "application/json")

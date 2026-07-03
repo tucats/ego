@@ -10,7 +10,7 @@
 
 import "http"
 
-func handler(req http.Request, resp http.Response ) {
+func handler(req http.Request, resp *http.Response ) {
     // Is there another auth server we should refer this to? If so,
     // this is an error.
     if auth := profile.Get("ego.server.authority"); auth != "" {

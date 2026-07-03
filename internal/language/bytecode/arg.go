@@ -118,7 +118,28 @@ func argByteCode(c *Context, i any) error {
 		}
 	}
 
-	c.symbols.SetAlways(argName, v)
+	// BUG-26 fix: passing a struct as a plain (non-pointer) argument must
+	// give the function its own copy, not a shared alias of the caller's
+	// struct. copyStructForValueSemantics only touches *data.Struct values,
+	// so this is normally safe: a pointer created by Ego's own "&x" operator
+	// is a *any (see addressOfByteCode), not a *data.Struct, so ordinary
+	// pointer-passing is unaffected.
+	//
+	// However, some values - notably the REST server's ResponseWriter,
+	// handed to a service handler through the "@handler" compiler directive
+	// - are declared with a pointer parameter type (e.g. "w *http.
+	// ResponseWriter") but are, at the Go level, an ordinary *data.Struct
+	// with no *any indirection wrapped around them; the pointer-ness exists
+	// only in Ego's type system; not in the underlying value. Copying such a
+	// value would silently detach the handler's "w" from the real
+	// ResponseWriter the REST server reads the response from afterward, so
+	// any argument whose *declared* type is a pointer (argType.IsPointer())
+	// is left exactly as received, regardless of its runtime Go type.
+	if argType != nil && argType.IsPointer() {
+		c.symbols.SetAlways(argName, v)
+	} else {
+		c.symbols.SetAlways(argName, copyStructForValueSemantics(v))
+	}
 
 	return nil
 }

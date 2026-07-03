@@ -15,6 +15,65 @@ import (
 // syntax constructs where a value is not used. It can also be
 // used to discard the result of a function call.
 
+// copyStructForValueSemantics is a small helper used at every place where a
+// value is bound to a *new* name: plain assignment ("p2 = p1"), short
+// variable declaration ("p2 := p1"), function-argument binding (calling
+// "mutate(p1)"), and storing a struct value into a struct field
+// ("outer.field = someStruct"). In Go, a struct is a *value* type: each of
+// those operations is supposed to give the destination its own independent
+// copy of the struct, so that later modifying one variable's fields never
+// affects the other's. Every other Ego type used here is a pointer to a Go
+// struct (*data.Struct, *data.Array, *data.Map, ...), so simply copying the
+// "any" value in a Go sense only copies the pointer, not what it points to -
+// both names end up pointing at the very same underlying struct (this was
+// BUG-26).
+//
+// This function is the fix: if the value is a *data.Struct, it returns a
+// fresh, independent copy (see copyStructRecursive). Every other value -
+// including *data.Array and *data.Map - is returned completely unchanged.
+// Arrays and maps are intentionally left aliased: that matches Go's own
+// slice/map semantics, where assigning or passing one around copies only a
+// lightweight reference, not the underlying data.
+func copyStructForValueSemantics(value any) any {
+	if s, ok := value.(*data.Struct); ok {
+		return copyStructRecursive(s)
+	}
+
+	return value
+}
+
+// copyStructRecursive copies a struct the same way Go itself does: fully,
+// including any fields that are themselves structs, but *not* including the
+// contents of any fields that are slices/maps/pointers/channels (Go only
+// copies those fields' lightweight headers, leaving the underlying data
+// shared - which is exactly how Ego's *data.Array/*data.Map already behave
+// when assigned, so there is nothing extra to do for them here).
+//
+// Struct.Copy() only copies one level: it allocates a new struct with a new
+// fields map, but the values stored in that map - including any nested
+// *data.Struct - are still the very same pointers as the original. Without
+// this recursive step, "b2 := b1" for a struct b1 containing a nested struct
+// field would correctly stop b1 and b2 from sharing their *top-level*
+// fields, yet a write to b2.Nested.X would still be visible through
+// b1.Nested.X, because both still point at one shared inner struct.
+//
+// FieldNames(true) is used (rather than FieldNames(false)) so that private
+// (lowercase) fields are included too - a struct copy must duplicate every
+// field, not just the ones visible to Ego code outside the struct's package.
+func copyStructRecursive(s *data.Struct) *data.Struct {
+	result := s.Copy()
+
+	for _, name := range result.FieldNames(true) {
+		if fieldValue, ok := result.Get(name); ok {
+			if nested, ok := fieldValue.(*data.Struct); ok {
+				result.SetAlways(name, copyStructRecursive(nested))
+			}
+		}
+	}
+
+	return result
+}
+
 // storeByteCode implements the Store opcode, which writes a value from the
 // stack (or from the operand itself) into a named symbol-table variable.
 //
@@ -91,6 +150,10 @@ func storeByteCode(c *Context, i any) error {
 	if err != nil {
 		return c.runtimeError(err)
 	}
+
+	// BUG-26 fix: "name = otherStructVar" must copy the struct, not alias it.
+	// See copyStructForValueSemantics for why only *data.Struct is affected.
+	value = copyStructForValueSemantics(value)
 
 	// Variables whose names start with "_" (the readonly prefix) receive
 	// their value wrapped in data.Constant so that subsequent loads see

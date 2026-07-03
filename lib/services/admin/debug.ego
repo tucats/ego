@@ -7,7 +7,7 @@
 
 import "http"
 
-func handler(req http.Request, w http.ResponseWriter) {
+func handler(req http.Request, w *http.ResponseWriter) {
     // Get the list of permissions for the active user and return it.
     text := fmt.Sprintf("User %s permissions: %s", 
             req.Username, 

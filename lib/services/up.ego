@@ -9,7 +9,7 @@ import (
     "os"
 )
 
-func handler( req http.Request, resp http.ResponseWriter) {
+func handler( req http.Request, resp *http.ResponseWriter) {
     resp.WriteHeader(200)
 
     host, _ := os.Hostname()

@@ -1,0 +1,170 @@
+// Tests for BUG-26: struct assignment (":=" and "="), function argument
+// passing, and struct-field assignment must all give the destination its
+// own independent copy of the struct, matching Go's value semantics.
+//
+// Before the fix, none of these operations copied anything: the destination
+// ended up pointing at the exact same underlying struct as the source, so
+// mutating one silently mutated the other. This is distinct from BUG-23
+// (see var_aliasing.ego), which was about "var" zero-value declarations
+// sharing a single compile-time instance across function calls.
+//
+// Arrays and maps are deliberately NOT copied by this fix - they continue
+// to alias on assignment, matching Go's own slice/map reference semantics.
+// Several tests below pin down that this aliasing was not accidentally
+// changed.
+//
+// NOTE: unlike local variables, "type" declarations are not scoped to their
+// enclosing {} test block - they must have unique names across this entire
+// file (and, per the project's test conventions, ideally across the whole
+// test suite). Every type below is therefore given an "SV" (Struct Value)
+// prefix plus a number, even where two tests would otherwise want to reuse
+// an identical shape.
+
+@test "types: short declaration copies a struct, does not alias"
+{
+    type SVPoint1 struct { x int; y int }
+
+    p1 := SVPoint1{x: 1, y: 2}
+    p2 := p1
+    p2.x = 99
+
+    @assert p1.x == 1
+    @assert p2.x == 99
+}
+
+@test "types: plain assignment copies a struct, does not alias"
+{
+    type SVPoint2 struct { x int; y int }
+
+    p1 := SVPoint2{x: 1, y: 2}
+    var p2 SVPoint2
+    p2 = p1
+    p2.x = 99
+
+    @assert p1.x == 1
+    @assert p2.x == 99
+}
+
+@test "types: anonymous struct assignment copies, does not alias"
+{
+    a1 := {n: 5}
+    a2 := a1
+    a2.n = 42
+
+    @assert a1.n == 5
+    @assert a2.n == 42
+}
+
+@test "types: struct passed to a function is a copy, not an alias"
+{
+    type SVPoint3 struct { x int; y int }
+
+    func svMutate3(p SVPoint3) {
+        p.x = 555
+    }
+
+    p1 := SVPoint3{x: 1, y: 2}
+    svMutate3(p1)
+
+    @assert p1.x == 1
+}
+
+@test "types: struct field assignment of a struct value copies, does not alias"
+{
+    type SVPoint4 struct { x int; y int }
+    type SVBox4 struct { origin SVPoint4 }
+
+    src := SVPoint4{x: 10, y: 20}
+    var box SVBox4
+    box.origin = src
+    box.origin.x = 555
+
+    @assert src.x == 10
+    @assert box.origin.x == 555
+}
+
+@test "types: nested struct-in-struct field is copied recursively"
+{
+    // A shallow struct copy alone is not enough: b1 and b2 must not share
+    // the nested "origin" struct either, or mutating b2.origin.x would be
+    // visible through b1.origin.x.
+    type SVPoint5 struct { x int; y int }
+    type SVBox5 struct { origin SVPoint5; label string }
+
+    b1 := SVBox5{origin: SVPoint5{x: 1, y: 2}, label: "a"}
+    b2 := b1
+    b2.origin.x = 999
+
+    @assert b1.origin.x == 1
+    @assert b2.origin.x == 999
+}
+
+@test "types: arrays still alias on assignment"
+{
+    // Regression guard: this fix must not change array aliasing, which is
+    // intentional and matches Go's slice reference semantics.
+    svArr1 := []int{1, 2, 3}
+    svArr2 := svArr1
+    svArr2[0] = 99
+
+    @assert svArr1[0] == 99
+    @assert svArr2[0] == 99
+}
+
+@test "types: maps still alias on assignment"
+{
+    // Regression guard: this fix must not change map aliasing.
+    svMap1 := map[string]int{"a": 1}
+    svMap2 := svMap1
+    svMap2["a"] = 77
+
+    @assert svMap1["a"] == 77
+    @assert svMap2["a"] == 77
+}
+
+@test "types: array/map fields inside a copied struct still share storage"
+{
+    // Regression guard: a struct field that is itself an array or map must
+    // keep sharing its backing storage after a struct-level copy, matching
+    // Go, where copying a struct copies a slice/map field's lightweight
+    // header but not the data it refers to.
+    type SVBag9 struct { items []int; tags map[string]int }
+
+    b1 := SVBag9{items: []int{1, 2, 3}, tags: map[string]int{"a": 1}}
+    b2 := b1
+    b2.items[0] = 999
+    b2.tags["a"] = 888
+
+    @assert b1.items[0] == 999
+    @assert b1.tags["a"] == 888
+}
+
+@test "types: pointer receiver method still mutates the original struct"
+{
+    // Regression guard: method receiver binding uses a different code path
+    // than plain assignment/argument passing, and must be unaffected.
+    type SVCounter10 struct { n int }
+
+    func (c *SVCounter10) svInc10() {
+        c.n = c.n + 1
+    }
+
+    c := SVCounter10{n: 1}
+    c.svInc10()
+
+    @assert c.n == 2
+}
+
+@test "types: value receiver method does not mutate the original struct"
+{
+    type SVCounter11 struct { n int }
+
+    func (c SVCounter11) svBump11() {
+        c.n = c.n + 1
+    }
+
+    c := SVCounter11{n: 1}
+    c.svBump11()
+
+    @assert c.n == 1
+}

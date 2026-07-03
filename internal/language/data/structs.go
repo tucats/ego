@@ -571,6 +571,23 @@ func (s *Struct) Set(name string, value any) error {
 
 // Make a copy of the current structure object. The resulting structure
 // will be an exact duplicate, but allocated in new storage.
+//
+// BUG-26 fix note: this used to build the copy by calling
+// NewStructFromMap(s.fields). NewStructFromMap() is designed to build a
+// struct from a generic "map[string]any" that might have embedded metadata
+// keys mixed in with the real fields (as happens when reconstructing a
+// struct from JSON-like data), so it deliberately skips copying any key
+// that starts with MetadataPrefix ("__"). That is the wrong behavior here:
+// a struct's own field map can legitimately contain a "__"-prefixed key
+// that is real field data, not embedded metadata - most notably
+// NativeFieldName ("__native"), which packages like time, uuid, and sync
+// use to store the wrapped Go-native value. Routing through
+// NewStructFromMap silently dropped that field on every copy, which went
+// unnoticed while Copy() only had a couple of narrow, native-value-free
+// callers, but became a real problem once ordinary assignment started
+// calling Copy() for every struct (see copyStructForValueSemantics in the
+// bytecode package). The fix copies s.fields key-by-key with no filtering,
+// so every field - "__"-prefixed or not - survives the copy.
 func (s *Struct) Copy() *Struct {
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.read", nil)
@@ -581,16 +598,21 @@ func (s *Struct) Copy() *Struct {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	result := NewStructFromMap(s.fields)
-	result.typeDef = s.typeDef
-	result.typeName = s.typeName
-	result.readonly = s.readonly
-	result.static = s.static
-	result.strictTypeChecks = s.strictTypeChecks
-	result.typeDef = s.typeDef
-	result.typeName = s.typeName
-	result.fromBuiltinPackage = s.fromBuiltinPackage
-	result.fieldOrder = s.fieldOrder
+	fields := make(map[string]any, len(s.fields))
+	for k, v := range s.fields {
+		fields[k] = v
+	}
+
+	result := &Struct{
+		typeDef:            s.typeDef,
+		typeName:           s.typeName,
+		readonly:           s.readonly,
+		static:             s.static,
+		strictTypeChecks:   s.strictTypeChecks,
+		fromBuiltinPackage: s.fromBuiltinPackage,
+		fields:             fields,
+		fieldOrder:         s.fieldOrder,
+	}
 
 	return result
 }
