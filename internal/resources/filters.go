@@ -5,18 +5,20 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // newFilter is an internal function used to create a specific filter, given
-// a column name, operator string, and a value object. The type of the object
-// influences the resulting SQL query fragment.
+// a column name, operator string, and a value object.
 //
-// * string values are enclosed in single quotes
-// * uuid values are enclosed in single quotes
-// * all other values are generated using the default native Go format.
+// The value is stored as-is (a uuid.UUID is converted to its string form,
+// matching how UUID columns are stored in the table) and is later bound as
+// a query parameter ($N) by Generate, rather than being quoted and
+// concatenated directly into the SQL text. Binding means the value may
+// safely contain any character at all -- including a single quote, e.g. a
+// name like "O'Brien" -- with no risk of it being interpreted as SQL syntax.
 //
 // An panic is generated if an invalid operator is supported. Currently, the
 // only supported operators are EqualsOperator and NotEqualsOperator. A panic
@@ -39,47 +41,18 @@ func (r *ResHandle) newFilter(name, operator string, value any) *Filter {
 
 	for _, column := range r.Columns {
 		if strings.EqualFold(column.Name, name) {
-			switch actual := value.(type) {
-			case string:
-				if strings.Contains(actual, "'") {
-					r.Err = errors.ErrSQLInjection.Context(actual)
-
-					return invalidFilterError
-				}
-
+			if actual, ok := value.(uuid.UUID); ok {
 				return &Filter{
 					Name:     column.SQLName,
-					Value:    "'" + actual + "'",
+					Value:    actual.String(),
 					Operator: operator,
 				}
+			}
 
-			case uuid.UUID:
-				text := actual.String()
-				if strings.Contains(text, "'") {
-					r.Err = errors.ErrSQLInjection.Context(text)
-
-					return invalidFilterError
-				}
-
-				return &Filter{
-					Name:     column.SQLName,
-					Value:    "'" + text + "'",
-					Operator: operator,
-				}
-
-			default:
-				text := fmt.Sprintf("%v", actual)
-				if strings.Contains(text, "'") {
-					r.Err = errors.ErrSQLInjection.Context(text)
-
-					return invalidFilterError
-				}
-
-				return &Filter{
-					Name:     column.SQLName,
-					Value:    text,
-					Operator: operator,
-				}
+			return &Filter{
+				Name:     column.SQLName,
+				Value:    value,
+				Operator: operator,
 			}
 		}
 	}
@@ -133,11 +106,16 @@ func (r ResHandle) NotEquals(name string, value any) *Filter {
 	return r.newFilter(name, NotEqualsOperator, value)
 }
 
-// Generate produces a SQL command fragment expressing this filter. If the
-// filter is nil, a string reflecting the error type is returned.
-func (f *Filter) Generate() string {
+// Generate produces a SQL comparison fragment expressing this filter, using
+// "$placeholder" as the bind-parameter reference for the filter's value
+// (e.g. Generate(2) produces `"name" = $2`). The caller is responsible for
+// keeping placeholder in sync with any other parameters already used
+// earlier in the same statement (such as an UPDATE's SET clause) and for
+// appending f.Value to the statement's argument list in the same order. If
+// the filter is nil, a string reflecting the error type is returned instead.
+func (f *Filter) Generate(placeholder int) string {
 	if f != nil {
-		return egostrings.SQLIdentifier(f.Name) + f.Operator + f.Value
+		return egostrings.SQLIdentifier(f.Name) + f.Operator + fmt.Sprintf("$%d", placeholder)
 	}
 
 	return "*** BAD NIL FILTER HANDLE ***"

@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
@@ -455,14 +456,13 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			switch db.Provider {
 			case defs.SqliteProvider:
 				// DSN-backed SQLite table: strip the schema prefix so the DROP succeeds.
+				// Quote the raw (unqualified) table name directly as a SQL identifier
+				// instead of substituting it into a double-quote-delimited template via
+				// QueryParameters/SQLEscape: SQLEscape only rejects embedded "'" and ";"
+				// characters, not '"', so a table name containing a '"' could otherwise
+				// break out of the template's own quoting and inject arbitrary SQL.
 				tableName = table
-				q, err = parsing.QueryParameters(`DROP TABLE "{{table}}";`, map[string]string{
-					"table": tableName,
-				})
-
-				if err != nil {
-					return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.db.operation"), http.StatusInternalServerError)
-				}
+				q = "DROP TABLE " + egostrings.SQLIdentifier(tableName) + ";"
 
 			case defs.PostgresProvider:
 				// PostgreSQL with a DSN: the schema-qualified query built above is correct.

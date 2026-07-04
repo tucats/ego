@@ -27,6 +27,14 @@ func (r *ResHandle) Update(v any, filters ...*Filter) error {
 
 	sql := r.updateSQL()
 
+	// items holds one bind value per column, already referenced by the SET
+	// clause built by updateSQL() as $1..$len(items). Any filter added below
+	// becomes additional WHERE-clause parameters, so their placeholders must
+	// continue numbering from len(items)+1 -- args starts as a copy of items
+	// for exactly that reason.
+	items := r.explode(v)
+	args := append([]any{}, items...)
+
 	for index, filter := range filters {
 		if filter == nil {
 			continue
@@ -38,17 +46,16 @@ func (r *ResHandle) Update(v any, filters ...*Filter) error {
 			sql = sql + andClause
 		}
 
-		sql = sql + filter.Generate()
+		args = append(args, filter.Value)
+		sql = sql + filter.Generate(len(args))
 	}
-
-	items := r.explode(v)
 
 	ui.Log(ui.ResourceLogger, "resource.update", ui.A{
 		"sql": sql})
 	ui.Log(ui.ResourceLogger, "resource.parms", ui.A{
-		"list": items})
+		"list": args})
 
-	_, err = r.Database.Exec(sql, items...)
+	_, err = r.Database.Exec(sql, args...)
 
 	return err
 }

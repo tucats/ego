@@ -17,6 +17,14 @@ const (
 	egoDialect = 1
 )
 
+// SQLEscape validates that source is safe to embed directly in a SQL
+// statement -- either as a single-quoted string literal or, at some call
+// sites (e.g. QueryParameters), inside a double-quote-delimited identifier
+// template. Rather than escaping special characters, it rejects them
+// outright: a "'", "\"", or ";" appearing anywhere in the middle of the
+// (optionally quote-wrapped) value would let the value break out of
+// whichever quoting the caller's template uses, so any of them is treated
+// as an invalid name.
 func SQLEscape(source string) (string, error) {
 	var (
 		err    error
@@ -31,6 +39,18 @@ func SQLEscape(source string) (string, error) {
 
 	for idx, ch := range source {
 		if idx > 0 && idx < len(source)-1 && ch == '\'' {
+			return "INVALID-NAME", errors.ErrInvalidSQLName
+		}
+
+		// A literal '"' is just as dangerous as a "'": several call sites
+		// (e.g. QueryParameters templates like `DROP TABLE "{{table}}";`)
+		// embed the escaped value inside double quotes, so an unescaped
+		// '"' would let the value break out of that identifier quoting.
+		// Guarded the same way as the "'" check above: a matching leading/
+		// trailing quote pair was already stripped off by the trim step, so
+		// only an occurrence in the *interior* of the (trimmed) value is
+		// treated as suspicious.
+		if idx > 0 && idx < len(source)-1 && ch == '"' {
 			return "INVALID-NAME", errors.ErrInvalidSQLName
 		}
 

@@ -522,7 +522,6 @@ service.error=Erreur : {{err}}
 slice.index=index de tranche invalide
 sort.order.invalid=Ordre de tri invalide : {{order}}
 spacing=valeur d'espacement invalide
-sql.injection=possible violation d'injection SQL
 sql.commit.error=Erreur lors de la validation de la transaction : {{err}}
 sql.execute.error=Erreur lors de l'exécution SQL : {{err}}
 sql.name=nom SQL invalide

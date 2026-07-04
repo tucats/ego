@@ -66,6 +66,37 @@ func TestTable_FormatJSON(t *testing.T) {
 			},
 			want: "[{\"one\":60,\"two\":\"Tom\"},{\"one\":59,\"two\":\"Mary\"}]",
 		},
+		{
+			// Regression test: a column header containing a double-quote
+			// character (e.g. a crafted SQL column alias such as
+			// `SELECT 1 AS "a""b"`) must be escaped exactly like a value is,
+			// not written into the output raw. Before this fix, only values
+			// were escaped, so a header like this would break the JSON
+			// structure instead of producing a single well-formed key.
+			name: "column header containing a double quote is escaped",
+			fields: fields{
+				columnCount: 1,
+				columns:     []string{`a"b`},
+				rows:        [][]string{{"Tom"}},
+				columnOrder: []int{0},
+			},
+			want: `[{"a\"b":"Tom"}]`,
+		},
+		{
+			// Regression test: a value containing a double-quote must be
+			// escaped exactly once. Before this fix, FormatJSON ran the
+			// value through a redundant escape() helper before strconv.Quote,
+			// which double-escaped the quote (producing \\\" instead of \")
+			// and corrupted the value on the round trip through a JSON parser.
+			name: "value containing a double quote is escaped exactly once",
+			fields: fields{
+				columnCount: 1,
+				columns:     []string{"quip"},
+				rows:        [][]string{{`he said "hi"`}},
+				columnOrder: []int{0},
+			},
+			want: `[{"quip":"he said \"hi\""}]`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -211,32 +242,6 @@ func TestTable_paginateText(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// escape — internal helper
-// ---------------------------------------------------------------------------
-
-func TestEscape(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"no quotes", "no quotes"},
-		{`say "hello"`, `say \"hello\"`},
-		{`""`, `\"\"`},
-		{"", ""},
-		{`a"b"c`, `a\"b\"c`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := escape(tt.input)
-			if got != tt.want {
-				t.Errorf("escape(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
-	}
-}
-
-// ---------------------------------------------------------------------------
 // FormatJSON — empty table and boolean values
 // ---------------------------------------------------------------------------
 
@@ -267,8 +272,43 @@ func TestTable_FormatJSON_BoolValues(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// FormatIndented — empty table
+// FormatIndented — header and value escaping
 // ---------------------------------------------------------------------------
+
+// TestTable_FormatIndented_EscapesHeaderAndValue is the FormatIndented
+// counterpart of the two new FormatJSON cases above: FormatIndented shares
+// the same header/value-writing logic, so it needs the same regression
+// coverage for (a) a header containing a double quote, and (b) a value
+// containing a double quote being escaped exactly once (not left raw, and
+// not double-escaped).
+func TestTable_FormatIndented_EscapesHeaderAndValue(t *testing.T) {
+	tb, err := New([]string{`a"b`})
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	tb.SetPagination(0, 0)
+
+	if err := tb.AddRow([]string{`he said "hi"`}); err != nil {
+		t.Fatalf("AddRow() error = %v", err)
+	}
+
+	got := tb.FormatIndented()
+
+	if !strings.Contains(got, `"a\"b":`) {
+		t.Errorf("FormatIndented() = %q, want header escaped as \"a\\\"b\":", got)
+	}
+
+	if !strings.Contains(got, `"he said \"hi\""`) {
+		t.Errorf("FormatIndented() = %q, want value escaped exactly once as \"he said \\\"hi\\\"\"", got)
+	}
+
+	// A double-escaped value (the pre-fix bug) would contain a literal
+	// backslash-backslash sequence; make sure that never appears.
+	if strings.Contains(got, `\\\"`) {
+		t.Errorf("FormatIndented() = %q, value appears to be double-escaped", got)
+	}
+}
 
 func TestTable_FormatIndented_EmptyTable(t *testing.T) {
 	tb, _ := New([]string{"x"})

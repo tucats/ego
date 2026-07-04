@@ -143,7 +143,12 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 			}
 
 			// Create a configuration entry in the database for this new profile.
-			sql := fmt.Sprintf(`INSERT INTO %s (id, description, name, version, salt) VALUES ($1, $2, $3, $4, $5)`, d.Table)
+			// d.Table is always the hardcoded literal "config_ids" (see
+			// NewDatabaseConfigService), never user input, but SQLIdentifier is
+			// used anyway to match the convention used by every other query in
+			// this file (see the other egostrings.SQLIdentifier(d.Table/d.Items)
+			// call sites below).
+			sql := fmt.Sprintf(`INSERT INTO %s (id, description, name, version, salt) VALUES ($1, $2, $3, $4, $5)`, egostrings.SQLIdentifier(d.Table))
 
 			tx, _ := d.db.Begin()
 
@@ -175,7 +180,7 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 			}
 
 			// Copy any items from the configuration defaults (uuid of 0) to the new configuration.
-			sql = fmt.Sprintf("SELECT key, value FROM %s WHERE id = '00000000-0000-0000-0000-000000000000'", d.Items)
+			sql = fmt.Sprintf("SELECT key, value FROM %s WHERE id = '00000000-0000-0000-0000-000000000000'", egostrings.SQLIdentifier(d.Items))
 			rows, err := tx.Query(sql)
 
 			if err != nil {
@@ -230,7 +235,7 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 		return &config, err
 	}
 
-	sql := fmt.Sprintf(`SELECT key, value FROM %s WHERE id = $1 ORDER BY key`, d.Items)
+	sql := fmt.Sprintf(`SELECT key, value FROM %s WHERE id = $1 ORDER BY key`, egostrings.SQLIdentifier(d.Items))
 
 	rows, err := d.db.Query(sql, config.ID)
 	if err != nil {

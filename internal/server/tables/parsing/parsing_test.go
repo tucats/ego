@@ -7,6 +7,36 @@ import (
 	"github.com/tucats/ego/internal/defs"
 )
 
+// TestSQLEscape_RejectsEmbeddedDoubleQuote is a regression/hardening test:
+// SQLEscape used to reject an embedded "'" and ";" but not an embedded '"',
+// even though several callers (e.g. QueryParameters templates like
+// `DROP TABLE "{{table}}";`) embed the escaped value inside double quotes.
+// A value containing a '"' must now be rejected the same way a value
+// containing a "'" already is, so it can never break out of that
+// double-quote-delimited identifier.
+func TestSQLEscape_RejectsEmbeddedDoubleQuote(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+	}{
+		{name: "ordinary identifier", input: "mytable", wantErr: false},
+		{name: "embedded single quote is rejected", input: "my'table", wantErr: true},
+		{name: "embedded semicolon is rejected", input: "my;table", wantErr: true},
+		{name: "embedded double quote is rejected", input: `my"table`, wantErr: true},
+		{name: "embedded double quote plus comment sequence is rejected", input: `evil" ; DROP TABLE users; --`, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := SQLEscape(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SQLEscape(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func Test_formWhereClause(t *testing.T) {
 	tests := []struct {
 		name    string

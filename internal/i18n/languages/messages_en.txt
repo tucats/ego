@@ -528,7 +528,6 @@ service.error=Error: {{err}}
 slice.index=invalid slice index
 sort.order.invalid=Invalid sort order: {{order}}
 spacing=invalid spacing value
-sql.injection=possible SQL injection violation
 sql.commit.error=Error committing transaction: {{err}}
 sql.execute.error=Error in SQL execute: {{err}}
 sql.name=invalid SQL name

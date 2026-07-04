@@ -36,12 +36,12 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 		return nil, r.Err
 	}
 
-	sql, err := generateReadSQL(r, filters)
+	sql, args, err := generateReadSQL(r, filters)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := r.Database.Query(sql)
+	rows, err := r.Database.Query(sql, args...)
 	if rows != nil {
 		defer rows.Close()
 	}
@@ -104,13 +104,16 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 
 // generateReadSQL generates the SQL query for reading objects from the
 // database, given the list of filters and any attached sorting specification
-// associated with the resource handle.
-func generateReadSQL(r *ResHandle, filters []*Filter) (string, error) {
+// associated with the resource handle. It returns the SQL text, the ordered
+// list of bind-parameter values referenced by the "$N" placeholders in that
+// text, and any error.
+func generateReadSQL(r *ResHandle, filters []*Filter) (string, []any, error) {
 	if r == nil {
-		return "", errors.ErrNilPointerReference.Clone().Context("resource handle")
+		return "", nil, errors.ErrNilPointerReference.Clone().Context("resource handle")
 	}
 
 	sql := r.readRowSQL()
+	args := make([]any, 0, len(filters))
 
 	for index, filter := range filters {
 		if filter == nil {
@@ -123,7 +126,8 @@ func generateReadSQL(r *ResHandle, filters []*Filter) (string, error) {
 			sql = sql + andClause
 		}
 
-		sql = sql + filter.Generate()
+		args = append(args, filter.Value)
+		sql = sql + filter.Generate(len(args))
 	}
 
 	// Add any active order-by clause
@@ -132,7 +136,7 @@ func generateReadSQL(r *ResHandle, filters []*Filter) (string, error) {
 	ui.Log(ui.ResourceLogger, "resource.read", ui.A{
 		"sql": sql})
 
-	return sql, nil
+	return sql, args, nil
 }
 
 // Read a single value from the resources using the default ID

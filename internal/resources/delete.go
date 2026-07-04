@@ -35,6 +35,7 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 	}
 
 	sql := r.deleteRowSQL()
+	args := make([]any, 0, len(filters))
 
 	for index, filter := range filters {
 		if filter == nil {
@@ -47,13 +48,14 @@ func (r *ResHandle) Delete(filters ...*Filter) (int64, error) {
 			sql = sql + andClause
 		}
 
-		sql = sql + filter.Generate()
+		args = append(args, filter.Value)
+		sql = sql + filter.Generate(len(args))
 	}
 
 	ui.Log(ui.ResourceLogger, "resource.delete", ui.A{
 		"sql": sql})
 
-	result, err := r.Database.Exec(sql)
+	result, err := r.Database.Exec(sql, args...)
 	if err == nil {
 		count, err = result.RowsAffected()
 	}

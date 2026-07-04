@@ -134,14 +134,26 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 	}
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
-	// the filter string.
+	// the filter string. The rowID value comes straight from the caller's request
+	// body, so it must be bound as a query parameter ($N) rather than concatenated
+	// into the SQL text -- a rowID value containing a "'" would otherwise be able
+	// to break out of the WHERE clause and inject arbitrary SQL (this was a real,
+	// unguarded SQL injection: every other value in this function is already bound
+	// via $N, but this one was concatenated as a raw string literal instead).
 	if id, found := items[defs.RowIDName]; found {
 		idString := data.String(id)
 		if idString != "" {
+			filterCount++
+			values = append(values, idString)
+
+			rowIDClause := fmt.Sprintf("%s = $%d", egostrings.SQLIdentifier(defs.RowIDName), filterCount)
+
 			if where == "" {
-				where = "WHERE " + defs.RowIDName + " = '" + idString + "'"
+				where = "WHERE " + rowIDClause
 			} else {
-				where = where + " " + defs.RowIDName + " = '" + idString + "'"
+				// The existing filter clause already starts with "WHERE ", so the
+				// rowID clause must be joined with "AND" to form valid SQL.
+				where = where + " AND " + rowIDClause
 			}
 		}
 	}
@@ -426,7 +438,12 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 
 	switch provider {
 	case defs.SqliteProvider, defs.DeprecatedSqliteProvider:
-		// SQLite: no schema qualification needed; use the plain (unquoted) table name.
+		// SQLite: no schema qualification needed, but the table name still comes
+		// straight from the URL path and MUST be quoted as a SQL identifier before
+		// being embedded in the CREATE TABLE statement below. Without this, a table
+		// name containing spaces, parentheses, or a SQL comment sequence ("--")
+		// could inject arbitrary DDL fragments into the statement.
+		table = egostrings.SQLIdentifier(table)
 
 	case defs.PostgresProvider:
 		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))

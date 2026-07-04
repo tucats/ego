@@ -115,8 +115,14 @@ func (t *Table) String(format string) (string, error) {
 //     emitted as a bare JSON number (no quotes).
 //   - If a cell value is the literal string "true" or "false" (defs.True /
 //     defs.False), it is emitted as a JSON boolean.
-//   - All other values are emitted as JSON strings (with double-quote
-//     escaping via escape()).
+//   - All other values are emitted as JSON strings, escaped with
+//     strconv.Quote.
+//
+// Column headers are escaped with strconv.Quote exactly like string values
+// are. A header is not necessarily a fixed, trusted label: it can come from
+// a SQL column alias in a user-supplied query (e.g. `SELECT 1 AS "a""b"` is
+// legal SQL and produces a column literally named a"b), so writing it into
+// the output unescaped would let a crafted header break the JSON structure.
 //
 // RowLimit and SetStartingRow are respected. An empty table returns "[]".
 func (t *Table) FormatJSON() string {
@@ -151,16 +157,15 @@ func (t *Table) FormatJSON() string {
 				buffer.WriteRune(',')
 			}
 
-			buffer.WriteRune('"')
-			buffer.WriteString(header)
-			buffer.WriteString("\":")
+			buffer.WriteString(strconv.Quote(header))
+			buffer.WriteRune(':')
 
 			if _, valid := egostrings.Atoi(row[i]); valid == nil {
 				buffer.WriteString(row[i])
 			} else if row[i] == defs.True || row[i] == defs.False {
 				buffer.WriteString(row[i])
 			} else {
-				buffer.WriteString(strconv.Quote(escape(row[i])))
+				buffer.WriteString(strconv.Quote(row[i]))
 			}
 		}
 
@@ -208,16 +213,15 @@ func (t *Table) FormatIndented() string {
 				buffer.WriteString(",\n      ")
 			}
 
-			buffer.WriteRune('"')
-			buffer.WriteString(header)
-			buffer.WriteString("\":")
+			buffer.WriteString(strconv.Quote(header))
+			buffer.WriteRune(':')
 
 			if _, valid := egostrings.Atoi(row[i]); valid == nil {
 				buffer.WriteString(row[i])
 			} else if row[i] == defs.True || row[i] == defs.False {
 				buffer.WriteString(row[i])
 			} else {
-				buffer.WriteString(strconv.Quote(escape(row[i])))
+				buffer.WriteString(strconv.Quote(row[i]))
 			}
 		}
 
@@ -423,24 +427,4 @@ func AlignText(text string, width int, alignment int) string {
 
 		return string(r[:width])
 	}
-}
-
-// escape replaces every double-quote character in s with the two-character
-// sequence \" so the result can be safely embedded inside a JSON string.
-// Note: strconv.Quote wraps the whole string in outer quotes and also escapes
-// other control characters. FormatJSON calls strconv.Quote(escape(s)) so the
-// outer quotes come from strconv.Quote while the inner quotes are pre-escaped
-// here to avoid double-escaping.
-func escape(s string) string {
-	result := strings.Builder{}
-
-	for _, ch := range s {
-		if ch == '"' {
-			result.WriteString("\\\"")
-		} else {
-			result.WriteRune(ch)
-		}
-	}
-
-	return result.String()
 }

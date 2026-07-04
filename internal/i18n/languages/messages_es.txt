@@ -529,7 +529,6 @@ service.error=Error: {{err}}
 slice.index=índice de slice no válido
 sort.order.invalid=Orden de clasificación inválido: {{order}}
 spacing=valor de espaciado no válido
-sql.injection=posible violación de inyección SQL
 sql.commit.error=Error al confirmar la transacción: {{err}}
 sql.execute.error=Error al ejecutar SQL: {{err}}
 sql.name=nombre SQL no válido

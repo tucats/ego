@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // ListTables will list all the tables for the given session.User.
@@ -157,14 +158,19 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 
 		// Build the zero-row query used to count columns.
 		// PostgreSQL requires a schema-qualified name; SQLite uses plain table names.
+		// name/schema come from the database's own catalog (sqlite_schema /
+		// information_schema.tables), but a table created via the admin-only
+		// "@sql" raw-SQL endpoint can legally have a '"' embedded in its name
+		// (e.g. CREATE TABLE "a""b" (...)), so both are still run through
+		// egostrings.SQLIdentifier rather than concatenated with manual quotes.
 		var columnQuery string
 
 		switch db.Provider {
 		case defs.SqliteProvider:
-			columnQuery = "SELECT * FROM \"" + name + "\" WHERE 1=0"
+			columnQuery = "SELECT * FROM " + egostrings.SQLIdentifier(name) + " WHERE 1=0"
 
 		case defs.PostgresProvider:
-			columnQuery = "SELECT * FROM \"" + schema + "\".\"" + name + "\" WHERE 1=0"
+			columnQuery = "SELECT * FROM " + egostrings.SQLIdentifier(schema) + "." + egostrings.SQLIdentifier(name) + " WHERE 1=0"
 
 		default:
 			err = errors.ErrUnsupportedDatabase.Context(db.Provider)

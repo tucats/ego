@@ -1,6 +1,7 @@
 package parsing
 
 import (
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
@@ -115,6 +116,45 @@ func TestFormUpdateQuery(t *testing.T) {
 			wantValues: []any{30, "John"},
 			wantErr:    "",
 		},
+		{
+			// Regression test for a real SQL injection: items[defs.RowIDName]
+			// (the request body's row ID field) used to be concatenated
+			// directly into the WHERE clause as a single-quoted string
+			// literal, so a row ID containing a "'" could break out of the
+			// literal and inject arbitrary SQL. It must now be bound as a
+			// "$N" parameter instead, so it can safely contain any text at
+			// all, including something that looks like an injection payload.
+			name: "update query with no URL filter grafts a rowID containing a quote as a bound parameter",
+			args: args{
+				urlString: "http://example.com/tables/data/rows",
+				items:     map[string]any{"name": "John", defs.RowIDName: "abc' OR '1'='1"},
+				columns:   []defs.DBColumn{{Name: "name", Type: "string"}},
+				user:      "admin",
+				provider:  defs.SqliteProvider,
+			},
+			want:       `UPDATE "data" SET "name"=$1 WHERE "_row_id_" = $2`,
+			wantValues: []any{"John", "abc' OR '1'='1"},
+			wantErr:    "",
+		},
+		{
+			// Regression test for a related correctness bug found alongside
+			// the injection: when a URL filter AND a rowID were both present,
+			// the rowID clause used to be appended to the filter's WHERE
+			// clause with no "AND" between them, producing invalid SQL
+			// (e.g. `WHERE ("id" = 1) "_row_id_" = '5'`). The two clauses
+			// must now be properly joined with "AND".
+			name: "update query combines a URL filter and a rowID with AND",
+			args: args{
+				urlString: "http://example.com/tables/data/rows?filter=EQ(id,1)",
+				items:     map[string]any{"name": "John", defs.RowIDName: "5"},
+				columns:   []defs.DBColumn{{Name: "name", Type: "string"}},
+				user:      "admin",
+				provider:  defs.SqliteProvider,
+			},
+			want:       `UPDATE "data" SET "name"=$1 WHERE ("id" = 1) AND "_row_id_" = $2`,
+			wantValues: []any{"John", "5"},
+			wantErr:    "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -142,6 +182,59 @@ func TestFormUpdateQuery(t *testing.T) {
 		if !reflect.DeepEqual(values, tt.wantValues) {
 			t.Errorf("%s, Unexpected values. Expected: %v, Got: %v", tt.name, tt.wantValues, values)
 		}
+	}
+}
+
+// TestFormCreateQuery_SQLiteTableNameIsQuoted is a regression test for a real
+// SQL injection: FormCreateQuery's SQLite branch used to write the table
+// name (taken straight from the URL path) directly into the CREATE TABLE
+// statement with no quoting at all, while the PostgreSQL branch correctly
+// quoted it via FullName/SQLIdentifier. A table name containing SQL
+// metacharacters (spaces, parentheses, a comment sequence) could inject
+// arbitrary DDL fragments. The table name must now be wrapped in
+// egostrings.SQLIdentifier for SQLite too, exactly like every other
+// identifier this package writes into SQL text.
+func TestFormCreateQuery_SQLiteTableNameIsQuoted(t *testing.T) {
+	tests := []struct {
+		name      string
+		tableName string
+		want      string
+	}{
+		{
+			name:      "ordinary table name is simply quoted",
+			tableName: "mytable",
+			want:      `CREATE TABLE "mytable"("col" TEXT NULL )`,
+		},
+		{
+			// A table name containing a SQL comment sequence and an
+			// embedded double quote: with the bug, this would have been
+			// written raw into the statement, letting "--" comment out
+			// everything after it (or worse). SQLIdentifier doubles the
+			// embedded '"' and wraps the whole thing in one pair of
+			// quotes, so it becomes a single (oddly named, but inert)
+			// identifier instead of breaking out of the statement.
+			name:      "table name containing a quote and a SQL comment sequence is neutralized",
+			tableName: `evil" ; DROP TABLE users; --`,
+			want:      `CREATE TABLE "evil"" ; DROP TABLE users; --"("col" TEXT NULL )`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &url.URL{Path: "/tables/" + tt.tableName}
+			w := httptest.NewRecorder()
+
+			items := []defs.DBColumn{{Name: "col", Type: "string", Nullable: defs.BoolValue{Specified: true, Value: true}}}
+
+			got, err := FormCreateQuery(u, "admin", false, items, 1, w, defs.SqliteProvider, false)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tt.want {
+				t.Errorf("FormCreateQuery() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

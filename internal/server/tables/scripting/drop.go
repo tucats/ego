@@ -8,6 +8,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // doDrop handles the "drop" opcode. It executes DROP TABLE for task.Table,
@@ -44,8 +45,12 @@ func doDrop(sessionID int, user string, db *database.Database, task defs.TXOpera
 
 	switch db.Provider {
 	case defs.SqliteProvider:
-		// SQLite: no schema prefix; just quote the table name.
-		table = "\"" + task.Table + "\""
+		// SQLite: no schema prefix. Quote the table name as a proper SQL
+		// identifier -- egostrings.SQLIdentifier doubles any embedded '"'
+		// characters, unlike naive "\"" + s + "\"" concatenation, which lets a
+		// table name containing a quote break out of the identifier and inject
+		// arbitrary SQL into this DROP TABLE statement.
+		table = egostrings.SQLIdentifier(task.Table)
 
 	case defs.PostgresProvider:
 		// PostgreSQL: use the schema-qualified name.

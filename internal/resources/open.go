@@ -84,7 +84,12 @@ func (r *ResHandle) Close() {
 
 func (r *ResHandle) DropAllResources() error {
 	if r != nil {
-		_, err := r.Database.Exec("DROP TABLE IF EXISTS " + r.Table)
+		// r.Table is always one of this package's own hardcoded literal
+		// table names (e.g. "dsns", "credentials"), never user input, but
+		// egostrings.SQLIdentifier is used anyway to match this codebase's
+		// convention of never concatenating an identifier into SQL text
+		// unquoted -- see the sibling helpers in generators.go.
+		_, err := r.Database.Exec("DROP TABLE IF EXISTS " + egostrings.SQLIdentifier(r.Table))
 		if err != nil {
 			return err
 		}

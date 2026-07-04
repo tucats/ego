@@ -78,13 +78,14 @@ type ResHandle struct {
 }
 
 // Filter is an object describing a single comparison used in creating
-// SQL query strings. This includes the name of the column, the value
-// to compare against (which is converted to SQL nomenclature, depending
-// on the Go data type) and a string expression with the SQL operator
-// being used.
+// SQL query strings. This includes the name of the column, the raw value
+// to compare against, and the SQL operator being used. Value is bound as a
+// query parameter ($N) by Generate rather than being quoted and embedded
+// directly in the SQL text, so it may safely contain any character
+// (including a single quote) without risk of SQL injection.
 type Filter struct {
 	Name     string
-	Value    string
+	Value    any
 	Operator string
 }
 
