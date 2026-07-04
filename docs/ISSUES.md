@@ -207,7 +207,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-37](#BUG-37) | BUG | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | |
 | [BUG-38](#BUG-38) | BUG | The documented variadic multi-argument form of `strings.String` is not implemented. | |
 | [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
-| [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | |
+| [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | BUG | Multi-line nested struct/map literals fail to parse with "invalid list". | |
 | [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
 | [BUG-43](#BUG-43) | BUG | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
@@ -483,7 +483,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | |
 | [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | |
 | [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
-| [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | |
+| [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | HIGH | Multi-line nested struct/map literals fail to parse with "invalid list". | |
 | [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
 | [BUG-43](#BUG-43) | MEDIUM | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
@@ -3678,6 +3678,45 @@ This is exactly the anti-pattern documented in this repo's own CLAUDE.md
 ("`callRuntimeFunction` dispatch mechanics — catchable vs uncatchable errors"): a
 non-`data.List` result combined with a non-nil Go error triggers `c.runtimeError(err)`, an
 uncatchable abort, instead of the documented catchable two-value return.
+
+**Resolution (July 2026):**  
+`internal/runtime/uuid/uuid.go` — `parseUUID`: the function's declaration
+(`internal/runtime/uuid/types.go`) already listed two `Returns` entries
+(`UUIDTypeDef, data.ErrorType`), but the implementation returned a bare
+`(nil, error)` pair instead of wrapping the pair in a `data.List`. Per
+`callRuntimeFunction`'s dispatch rules, a non-`data.List` result combined with
+a non-nil Go `error` is treated as an uncatchable abort rather than a normal
+two-value return. The fix wraps both the success and failure paths in
+`data.NewList(...)`, with the wrapper-level Go `error` always `nil` (the
+dispatcher ignores it for list results):
+
+```go
+u, err := uuid.Parse(s)
+if err != nil {
+    return data.NewList(nil, errors.New(err)), nil
+}
+
+result := data.NewStruct(UUIDTypeDef).SetNative(u)
+
+return data.NewList(result, nil), nil
+```
+
+`uuid.Parse("not-a-uuid")` now returns `(nil, err)` exactly as documented,
+with `err.Error() == "invalid UUID length: 10"`, and no longer aborts the
+program.
+
+New tests:
+
+- `internal/runtime/uuid/uuid_test.go` — `TestParseUUID_ValidInput` confirms
+  the success path still returns a 2-element list with a populated UUID and a
+  `nil` error; `TestParseUUID_InvalidInput` is the direct regression test,
+  asserting the wrapper itself returns a `nil` Go error and that the returned
+  `data.List` carries `(nil, error)` rather than the process aborting.
+- `tests/packages/uuid.ego` — `"packages: uuid.Parse invalid input is
+  catchable"` exercises the fix end-to-end at the language level: it asserts
+  `id == nil`, `err != nil`, and the exact error text. Prior to the fix, this
+  test would have aborted the entire test file with an uncatchable runtime
+  error before reaching any `@assert`.
 
 ---
 

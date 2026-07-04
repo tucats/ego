@@ -20,17 +20,24 @@ func nilUUID(symbols *symbols.SymbolTable, args data.List) (any, error) {
 }
 
 // parseUUID implements the uuid.parseUUID() function.
+//
+// This is declared with two return values (UUID, error), so the result must
+// always be wrapped in a data.List -- see the "callRuntimeFunction dispatch
+// mechanics" note in CLAUDE.md. Returning a bare (nil, error) here would be
+// treated as a single-value result with a non-nil Go error, which aborts the
+// program with an uncatchable runtime error instead of the documented
+// catchable two-value return (BUG-40).
 func parseUUID(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	s := data.String(args.Get(0))
 
 	u, err := uuid.Parse(s)
 	if err != nil {
-		return nil, errors.New(err)
+		return data.NewList(nil, errors.New(err)), nil
 	}
 
 	result := data.NewStruct(UUIDTypeDef).SetNative(u)
 
-	return result, err
+	return data.NewList(result, nil), nil
 }
 
 // toString implements the (u uuid.UUID) String() function.

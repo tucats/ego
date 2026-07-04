@@ -24,3 +24,18 @@
 	@assert u == p
 
 }
+
+// Regression test for BUG-40: uuid.Parse on invalid input must return a
+// normal, catchable (nil, error) pair rather than aborting the program.
+// Prior to the fix, this whole test file would abort with an uncatchable
+// runtime error before ever reaching the @assert statements below.
+@test "packages: uuid.Parse invalid input is catchable" {
+
+	// The two-value form documented in docs/LANGUAGE.md: id is nil and err
+	// describes the failure, with no program-terminating error.
+	id, err := uuid.Parse("not-a-uuid")
+
+	@assert id == nil
+	@assert err != nil
+	@assert err.Error() == "invalid UUID length: 10"
+}
