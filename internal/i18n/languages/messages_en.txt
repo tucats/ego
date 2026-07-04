@@ -323,6 +323,7 @@ dup.type=duplicate type name
 empty.column=empty column list
 endpoint=invalid endpoint path string
 entry.not.found=undefined entrypoint name
+eof.marker=@compile eof marker not found before end of source
 equals=missing '='
 expected.subcommand=expected one of
 expired=expired token

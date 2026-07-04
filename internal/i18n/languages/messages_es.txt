@@ -324,6 +324,7 @@ dup.type=nombre de tipo duplicado
 empty.column=lista de columnas vacía
 endpoint=cadena de ruta de endpoint no válida
 entry.not.found=nombre de punto de entrada no definido
+eof.marker=marcador de fin @compile no encontrado antes del final de la fuente
 equals=falta '='
 expected.subcommand=se esperaba uno de
 expired=token expirado

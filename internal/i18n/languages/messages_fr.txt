@@ -317,6 +317,7 @@ dup.type=nom de type en double
 empty.column=liste de colonnes vide
 endpoint=chaîne de chemin d'endpoint invalide
 entry.not.found=nom de point d'entrée non défini
+eof.marker=marqueur de fin @compile introuvable avant la fin de la source
 equals=manque '='
 expected.subcommand=attendu l'un de
 expired=jeton expiré

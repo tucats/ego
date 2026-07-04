@@ -747,6 +747,7 @@ func (c *Compiler) compileBlockDirective() error {
 		unusedVarsFlag  = "unused"
 		unknownVarsFlag = "unknown"
 		optimizeFlag    = "optimize"
+		eofFlag         = "eof"
 		trueFlag        = "true"
 		falseFlag       = "false"
 		onFlag          = "on"
@@ -762,14 +763,28 @@ func (c *Compiler) compileBlockDirective() error {
 		unknownVars = savedUnknownVars
 		optimize    = savedOptimize
 		blockMode   = false
+
+		// eofMarker holds the value of an "eof=" option, e.g.
+		// @compile eof="$EOF". It stays empty ("") unless that option is
+		// given. When it IS given, the code to compile is delimited by a
+		// text marker instead of matching "{" "}" braces -- see the long
+		// comment above collectTokensUntilEOFMarker for why a test author
+		// would want that.
+		eofMarker = ""
 	)
 
 	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrMissingStatement)
 	}
 
-	// Process any optional flags that modify the behavior of the @compile directive.
-	for !c.t.Peek(1).Is(tokenizer.BlockBeginToken) {
+	// Process any optional flags that modify the behavior of the @compile
+	// directive. Normally this loop reads flags until it reaches the "{"
+	// that opens a traditional brace-delimited block. But "eof=" mode has
+	// no opening brace at all -- the code to compile is just the plain
+	// statements that follow, up to a marker string -- so the loop must
+	// also stop cleanly at the end of the @compile statement itself (the
+	// synthetic ";" the tokenizer inserts at the end of the source line).
+	for !c.t.Peek(1).Is(tokenizer.BlockBeginToken) && !c.t.EndOfStatement() {
 		switch c.t.Peek(1).Spelling() {
 		case "block":
 			// "block" means this is block of code and doesn't require
@@ -847,14 +862,53 @@ func (c *Compiler) compileBlockDirective() error {
 				}
 			}
 
+		case eofFlag:
+			// eof="<marker>" switches this @compile directive from the
+			// traditional "{ ... }" brace-delimited block to EOF-marker
+			// mode: the code to compile is every statement that follows,
+			// up to (but not including) a run of tokens whose spellings,
+			// concatenated together, exactly equal <marker>. The value
+			// must be a quoted string, e.g. eof="$EOF" or eof="###".
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			markerToken := c.t.Next()
+			if !markerToken.IsString() {
+				return c.compileError(errors.ErrInvalidValue).Context(markerToken)
+			}
+
+			eofMarker = markerToken.Spelling()
+			if eofMarker == "" {
+				// An empty marker could never be distinguished from "the
+				// very next token", which would make every @compile eof=
+				// directive stop immediately with zero lines of code. This
+				// is always a test-authoring mistake, so reject it early
+				// with a clear error rather than silently compiling an
+				// empty program.
+				return c.compileError(errors.ErrInvalidValue).Context(markerToken)
+			}
+
 		default:
 			return c.compileError(errors.ErrInvalidKeyword).Context(c.t.Peek(1).Spelling())
 		}
 	}
 
-	// Must start with opening braces with a block to compile.
-	if !c.t.IsNext(tokenizer.BlockBeginToken) {
-		return c.compileError(errors.ErrMissingStatement)
+	// How the directive's own statement ends depends on which mode we're
+	// in. Traditional mode ends with the block's opening "{", which must
+	// be consumed here so the tokens that follow are just the block's
+	// contents. EOF-marker mode has no such brace: the flag loop above
+	// already stopped at the end of the @compile statement, so all that is
+	// left to do is consume the synthetic ";" the tokenizer placed there.
+	if eofMarker == "" {
+		// Must start with opening braces with a block to compile.
+		if !c.t.IsNext(tokenizer.BlockBeginToken) {
+			return c.compileError(errors.ErrMissingStatement)
+		}
+	} else {
+		_ = c.t.IsNext(tokenizer.SemicolonToken)
 	}
 
 	// Create a new compiler to compile the code in the block. Compile
@@ -893,44 +947,76 @@ func (c *Compiler) compileBlockDirective() error {
 	subCompiler.flags.fragment = false
 	subCompiler.flags.trial = false
 
-	// Collect up all the tokens in the exiting token stream up to the
-	// mismatched closing brace. These will be the tokens sent to the
-	// sub-compiler for compilation.
-	tokens := tokenizer.New("", true)
-	braces := 1
+	// Collect up all the tokens that make up the code to compile. These
+	// will be the tokens sent to the sub-compiler for compilation. Exactly
+	// how they are collected depends on which delimiter mode this
+	// @compile directive used.
+	var tokens *tokenizer.Tokenizer
 
-	var t tokenizer.Token
+	if eofMarker != "" {
+		// EOF-marker mode: scan forward until a run of tokens spells out
+		// eofMarker exactly; everything before that run is the code to
+		// compile. See collectTokensUntilEOFMarker for the full algorithm.
+		// Unlike brace-delimited mode, this never needs to look at "{" or
+		// "}" at all, so mismatched braces inside the collected code are
+		// simply passed through to the sub-compiler like any other token
+		// -- which is the whole point of offering this mode (see the
+		// comment on eofMarker above).
+		found := false
 
-	for !c.t.AtEnd() {
-		t = c.t.Next()
-
-		if t.Is(tokenizer.BlockBeginToken) {
-			braces++
-		} else if t.Is(tokenizer.BlockEndToken) {
-			braces--
-
-			if braces <= 1 {
-				break
-			}
+		tokens, found = c.collectTokensUntilEOFMarker(eofMarker)
+		if !found {
+			// Ran out of source before ever seeing the marker text. This
+			// is always a test-authoring mistake (a typo in the marker,
+			// or a forgotten terminator line), so report it clearly
+			// instead of silently compiling whatever was left.
+			return c.compileError(errors.ErrMissingEOFMarker).Context(eofMarker)
 		}
 
-		tokens.Append(t)
-	}
+		// The marker itself may be followed by the tokenizer's own
+		// synthetic ";" (inserted because the marker text ended a source
+		// line). Consume it if present so a following "catch(e) { ... }"
+		// clause, if any, is seen cleanly by the code below.
+		_ = c.t.IsNext(tokenizer.SemicolonToken)
+	} else {
+		// Traditional brace-delimited mode: collect up all the tokens in
+		// the existing token stream up to the mismatched closing brace.
+		tokens = tokenizer.New("", true)
+		braces := 1
 
-	// There must be a closing brace to match the opening brace of the block.
-	// It may be preceded by a semicolon, but it must be present.
-	// With this operation, all tokens for the @compile directive have been
-	// consumed, so the statement tokenizer that called us can continue on to
-	// the next statement.
-	_ = c.t.IsNext(tokenizer.SemicolonToken)
+		var t tokenizer.Token
 
-	if !blockMode && !c.t.IsNext(tokenizer.BlockEndToken) {
-		return c.compileError(errors.ErrMissingStatement)
-	}
+		for !c.t.AtEnd() {
+			t = c.t.Next()
 
-	// We owe the token stream we compile a closing brace.
-	if !blockMode {
-		tokens.Append(tokenizer.BlockEndToken)
+			if t.Is(tokenizer.BlockBeginToken) {
+				braces++
+			} else if t.Is(tokenizer.BlockEndToken) {
+				braces--
+
+				if braces <= 1 {
+					break
+				}
+			}
+
+			tokens.Append(t)
+		}
+
+		// There must be a closing brace to match the opening brace of the block.
+		// It may be preceded by a semicolon, but it must be present.
+		// With this operation, all tokens for the @compile directive have been
+		// consumed, so the statement tokenizer that called us can continue on to
+		// the next statement.
+		_ = c.t.IsNext(tokenizer.SemicolonToken)
+
+		if !blockMode && !c.t.IsNext(tokenizer.BlockEndToken) {
+			return c.compileError(errors.ErrMissingStatement)
+		}
+
+		// We owe the token stream we compile a closing brace.
+		if !blockMode {
+			tokens.Append(tokenizer.BlockEndToken)
+		}
 	}
 
 	// Generate start of a try block. The @compile directive is an implied
@@ -1047,4 +1133,134 @@ func (c *Compiler) compileBlockDirective() error {
 	c.b.Emit(bytecode.TryPop)
 
 	return nil
+}
+
+// collectTokensUntilEOFMarker implements the "eof=" option of the @compile
+// directive (see compileBlockDirective). Instead of the traditional
+// "{ ... }" brace-delimited block, this mode lets a test write the code to
+// compile as plain statements terminated by an arbitrary marker string, e.g.:
+//
+//	@compile eof="$EOF"
+//	    fmt.Println(1,,2)
+//	$EOF
+//
+// WHY THIS EXISTS (read this if you're new to the codebase):
+//
+// The normal "{ ... }" form finds the end of its block by counting braces:
+// every "{" it sees adds one to a counter, every "}" subtracts one, and it
+// stops when the counter falls back to the starting level. That works fine
+// for well-formed code, but it makes it very hard to write a test whose
+// whole POINT is that the code has mismatched braces (for example, testing
+// that the compiler reports a sensible error for a missing "}"). With
+// brace-counting, a stray extra "{" or a missing "}" inside the test code
+// throws off the count and the @compile directive itself may fail to find
+// its own end, confusing the test in ways that have nothing to do with what
+// the test is actually trying to check.
+//
+// "eof=" mode sidesteps all of that: it doesn't look at "{" or "}" tokens
+// specially at all. It just keeps reading tokens and gluing their spellings
+// together, watching for the moment that glued-together text exactly
+// matches the marker string the test author chose. Everything read before
+// that point -- braces, mismatched or not -- is simply handed to the
+// sub-compiler as the code to test. The marker itself is discarded (it is
+// punctuation for the test file, not code to compile).
+//
+// The marker can be one token or several: the comparison is done against
+// concatenated *spellings*, not against a single token, so a marker like
+// "$EOF" will actually be matched as two tokens ("$" and "EOF") glued
+// together, and a marker like "END" might be one identifier token. This is
+// deliberate -- it means the test author can pick literally any marker text
+// that won't appear naturally in their test code, without needing to know
+// how the Ego tokenizer would lex it.
+//
+// Parameters:
+//   - marker: the exact text to watch for, e.g. "$EOF". Must be non-empty
+//     (compileBlockDirective rejects an empty marker before calling this).
+//
+// Returns:
+//   - a new *tokenizer.Tokenizer containing every token read BEFORE the
+//     marker was found (this is what gets handed to the sub-compiler).
+//   - true if the marker was found; false if the input ran out first (the
+//     caller should treat this as a test-authoring error and not attempt to
+//     compile the partial result).
+//
+// Note on limits: this uses a simple "try to match, and if it stops
+// matching, flush what we were holding and start over from right here"
+// strategy. It does not do full backtracking (the way, say, a regular
+// expression engine would) to look for a match that starts in the *middle*
+// of a run of tokens we already gave up on. For an arbitrary marker chosen
+// specifically to be unlikely to appear in ordinary code -- which is the
+// whole point of letting the test author pick it -- this is never an issue
+// in practice, and keeping the algorithm simple makes it easy to verify by
+// reading it.
+func (c *Compiler) collectTokensUntilEOFMarker(marker string) (*tokenizer.Tokenizer, bool) {
+	// This is the token stream we will hand back to the caller: everything
+	// that turned out to be real code, not part of the marker.
+	tokens := tokenizer.New("", true)
+
+	// While we are in the middle of a possible match, we hold the tokens we
+	// have read so far in "pending" instead of putting them in "tokens"
+	// right away -- we don't yet know if they are the marker or just code
+	// that happens to start with the same letters.
+	var pending []tokenizer.Token
+
+	// "candidate" is always the concatenation of the spellings of every
+	// token currently sitting in "pending". It starts empty, and it is
+	// always either empty or a proper (partial) prefix of "marker".
+	candidate := ""
+
+	for !c.t.AtEnd() {
+		next := c.t.Next()
+
+		// What would our candidate become if we added this new token?
+		attempt := candidate + next.Spelling()
+
+		if attempt == marker {
+			// Complete match! The tokens in "pending" plus this one spell
+			// out the marker exactly, so none of them are code -- we just
+			// throw them away and report success. Note we do NOT append
+			// "next" to "tokens" here.
+			return tokens, true
+		}
+
+		if strings.HasPrefix(marker, attempt) {
+			// Not a complete match yet, but still consistent with the
+			// marker so far (e.g. marker is "$EOF" and attempt is "$E").
+			// Keep holding these tokens back and keep looking.
+			pending = append(pending, next)
+			candidate = attempt
+
+			continue
+		}
+
+		// This token broke the match. Everything we were holding in
+		// "pending" turns out to have been ordinary code after all (it
+		// just happened to start the same way the marker does), so release
+		// it into the real result now, in the order it was read.
+		tokens.Append(pending...)
+		pending = nil
+		candidate = ""
+
+		// The token that broke the match might, on its own, be the start
+		// of a brand new match attempt (this matters if the marker's first
+		// character can also appear elsewhere in ordinary code). Check it
+		// against a fresh, empty candidate before deciding it's just plain
+		// code.
+		if next.Spelling() == marker {
+			return tokens, true
+		}
+
+		if next.Spelling() != "" && strings.HasPrefix(marker, next.Spelling()) {
+			pending = append(pending, next)
+			candidate = next.Spelling()
+		} else {
+			tokens.Append(next)
+		}
+	}
+
+	// We reached the end of the source without ever completing a match.
+	// The caller treats this as an error, so it doesn't matter that
+	// "pending" (a false start) never made it into "tokens" -- the whole
+	// result is going to be discarded anyway.
+	return tokens, false
 }

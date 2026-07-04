@@ -5315,6 +5315,7 @@ unit, that do not affect the rest of the program's compilation.
 | unused | true\|false | If true, unused variables generate a compile error. If false, no error is reported. |
 | unknown | true\|false | If true, unknown symbol references generate a compile error. If false, the unknown symbol will only cause an error if the compiled function code is executed. |
 | optimize | 0\|1\|2 | Specify the optimization level for this compilation. |
+| eof | "marker" | Use a text marker instead of `{ }` braces to delimit the code to compile. See below. |
 
 If the keyword `block` is not present, then the code between the braces must
 be a complete program. That is, it can support global type specifications,
@@ -5331,6 +5332,74 @@ optimization setting for just this block of code.
 
 This extension is used mostly in writing unit tests for the compiler
 itself.
+
+#### Delimiting the code with `eof="marker"` instead of braces
+
+The `{ code }` form above finds the end of the code to compile by counting
+`{` and `}` tokens as it reads them, stopping once the count returns to
+where it started. That works well as long as the code being tested has
+correctly balanced braces — but it makes it awkward to write a test whose
+whole point is that the braces are **not** balanced, such as checking that
+the compiler reports a sensible error for a missing `}`. A stray or missing
+brace inside the test code throws off the count, so the `@compile` directive
+can grab the wrong tokens, or leave tokens behind that confuse the
+_enclosing_ program with an unrelated error.
+
+The `eof="marker"` option avoids this entirely by delimiting the code with a
+plain text marker instead of braces:
+
+```go
+@compile eof="$EOF"
+    fmt.Println(1,,2)
+$EOF
+catch(e) {
+    fmt.Println("Compile error, ", e)
+}
+```
+
+Here, there are no braces around the code at all. Instead, the compiler
+scans the token stream that follows the `@compile eof="$EOF"` line, gluing
+together the spelling of each token it reads, until that concatenated text
+exactly matches the marker string (`$EOF` in this example). Everything read
+before the marker is the code to compile; the marker's own tokens are
+discarded. Because braces are never treated specially in this mode, code
+with intentionally mismatched braces can be tested cleanly:
+
+```go
+@compile block eof="$EOF"
+    if true {
+        fmt.Println("this block is never closed")
+$EOF
+catch(e) {
+    // e.Code() is "block.end" - "missing '}'"
+}
+```
+
+The marker string can be written as a single token (for example `"END"`) or
+split across several tokens by the tokenizer (for example `"$EOF"`, which is
+actually read as the two tokens `$` and `EOF`) — the comparison is always
+done against the _concatenated spelling_ of the tokens read so far, not
+against a single token, so you can pick whatever marker text is convenient
+and unlikely to appear naturally in the code you are testing. The marker
+value must be a non-empty quoted string.
+
+The `eof=` option can be freely combined with `block`, `unused`, `unknown`,
+and `optimize`, exactly as they combine with the brace-delimited form:
+
+```go
+@compile block unused=false eof="###"
+    func scratch() {
+        neverReferenced := 1
+    }
+###
+catch(e) {
+    fmt.Println("Compile error, ", e)
+}
+```
+
+`eof=` is an addition to `@compile`, not a replacement — the `{ code }`
+brace-delimited form shown at the top of this section continues to work
+exactly as it always has.
 
 ### @extensions true|false|default
 

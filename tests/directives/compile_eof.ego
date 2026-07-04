@@ -1,0 +1,238 @@
+// Tests for the "eof=" option of the @compile directive.
+//
+// WHAT IS @compile? (background for a new reader)
+//
+// @compile is a directive you can put inside an Ego program (or, as here,
+// inside an Ego test) that compiles a piece of Ego source code AT RUNTIME
+// and lets you inspect whether that inner compile succeeded or failed. This
+// is how this test suite verifies "does the compiler correctly reject this
+// bad syntax?" without stopping the whole test run: the @compile directive
+// is wrapped in an implicit try, and an optional "catch(e) { ... }" lets you
+// look at the resulting error, exactly like a normal try/catch.
+//
+// THE ORIGINAL FORM (still fully supported, see tests/directives/compile.ego):
+//
+//   @compile block {
+//       fmt.Println("test" "value")   // deliberately missing a comma
+//   } catch(e) {
+//       @assert e.Code() == "list"
+//   }
+//
+// This form finds the end of the code to compile by literally counting "{"
+// and "}" tokens as it reads them: each "{" adds one to a counter, each "}"
+// subtracts one, and reading stops once the counter falls back to where it
+// started. That works great when the code being tested has correctly
+// balanced braces. It falls apart, though, the moment you want to test code
+// that DOESN'T have balanced braces -- for example, checking that the
+// compiler reports a sensible error for a missing "}". The very thing
+// you're testing (a brace mismatch) is also the thing the @compile
+// directive uses to find its own end, so the two interfere with each other
+// and you get confusing, unrelated errors instead of the error you meant to
+// test.
+//
+// THE "eof=" FORM (what this file tests):
+//
+//   @compile eof="$EOF"
+//       fmt.Println(1,,2)   // deliberately has an extra comma
+//   $EOF
+//   catch(e) {
+//       @assert e.Code() == "token.extra"
+//   }
+//
+// Instead of counting braces, this form watches the token stream for a
+// plain text marker that YOU choose (here, "$EOF") and treats everything
+// before that marker as the code to compile. Braces inside that code are
+// never inspected at all, so code with missing, extra, or otherwise
+// mismatched braces is handed to the inner compiler exactly as written,
+// and you can test its error handling cleanly. The marker can be spelled
+// as one token (like "END") or several (like "$EOF", which the tokenizer
+// actually reads as two separate tokens, "$" and "EOF", glued back
+// together for the comparison) -- whatever text is convenient and unlikely
+// to appear by accident in your test code.
+//
+// "eof=" is an ADDITION to @compile, not a replacement: the brace-delimited
+// form keeps working exactly as before (see compile.ego), and all of the
+// other flags (block, unused=, unknown=, optimize=) can be combined with
+// eof= exactly the same way they combine with the brace form.
+
+@test "directives: @compile eof= with no compile error" {
+    // The simplest possible eof= usage: perfectly valid code, terminated by
+    // a single-token marker ("END"). Since the code compiles cleanly, the
+    // catch block must never run.
+    var failed bool
+
+    @compile block eof="END"
+        x := 1 + 2
+        y := x * 2
+        _ = y
+    END
+    catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "directives: @compile eof= catches a compile error" {
+    // A deliberately malformed statement (an extra comma inside an array
+    // literal) inside the eof= block. The marker here is "$EOF", written
+    // across two lines' worth of source the way the feature request
+    // originally described it, and is intentionally the same marker
+    // spelling used throughout the rest of this file.
+    var code string
+
+    @compile block eof="$EOF"
+        x := []int{1,,2}
+    $EOF
+    catch(e) {
+        code = e.Code()
+    }
+
+    // "token.extra" is the error code for an unexpected token where an
+    // expression was required -- exactly what an extra "," produces.
+    @assert code == "token.extra"
+}
+
+@test "directives: @compile eof= marker can be split across multiple tokens" {
+    // "$EOF" does not lex as a single token: the Ego tokenizer reads it as
+    // "$" followed by "EOF". This test exists specifically to prove the
+    // eof= matcher compares the CONCATENATED SPELLING of a run of tokens
+    // against the marker text, not a single token's spelling -- otherwise
+    // a two-character marker like this could never be recognized at all.
+    var failed bool
+
+    @compile block eof="$EOF"
+        z := 100
+        _ = z
+    $EOF
+    catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "directives: @compile eof= handles code with a MISSING closing brace" {
+    // THIS IS THE HEADLINE SCENARIO the eof= option exists for. The code
+    // below opens an "if" block with "{" but never closes it -- on
+    // purpose, to check that the compiler reports a sensible error for a
+    // missing "}". Using the ORIGINAL brace-delimited "@compile block { ... }"
+    // form for a test like this is fragile: the missing "}" confuses the
+    // very brace-counting logic that finds the end of the @compile block,
+    // so the test can fail (or worse, silently pass) for reasons that have
+    // nothing to do with the actual bug being tested. eof= mode has no such
+    // problem, because it never looks at braces at all -- it just watches
+    // for the marker text.
+    var code string
+
+    @compile block eof="$EOF"
+        if true {
+            x := 1
+            _ = x
+    $EOF
+    catch(e) {
+        code = e.Code()
+    }
+
+    // "block.end" is the error code for a missing '}' - see
+    // internal/errors/messages.go (ErrMissingEndOfBlock) and the [error]
+    // section of messages_en.txt ("block.end=missing '}'").
+    @assert code == "block.end"
+}
+
+@test "directives: @compile eof= handles code with an EXTRA closing brace" {
+    // The mirror image of the previous test: one closing brace too many.
+    // With the brace-delimited form, an extra unmatched "}" inside the
+    // tested code would make the @compile directive think ITS OWN block
+    // ended right there, leaving the remaining code (the second
+    // fmt-style statement and the real "catch" clause below it) to spill
+    // out and confuse the OUTER compiler with an unrelated error. eof= mode
+    // is unaffected, because "}" is just an ordinary token to it -- only
+    // the marker text ends the collected code.
+    var code string
+
+    @compile block eof="$EOF"
+        a := 1
+        }
+        b := 2
+        _ = b
+    $EOF
+    catch(e) {
+        code = e.Code()
+    }
+
+    @assert code == "statement.not.found"
+}
+
+@test "directives: @compile eof= still supports the unused= flag" {
+    // Every flag that works with the brace-delimited form must keep
+    // working when combined with eof=. Here, unused=false tells the inner
+    // compiler not to complain about a variable that is declared but never
+    // read, so this must compile with NO error.
+    var failed bool
+
+    @compile unused=false eof="###"
+        func scratch() {
+            neverReferenced := 1
+        }
+    ###
+    catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "directives: @compile eof= still enforces unused= when set to true" {
+    // The converse of the previous test: with unused=true, the same
+    // unreferenced variable must be flagged, proving the flag genuinely
+    // still takes effect in eof= mode rather than being silently ignored.
+    var code string
+
+    @compile unused=true eof="###"
+        func scratch() {
+            neverReferenced := 1
+        }
+    ###
+    catch(e) {
+        code = e.Code()
+    }
+
+    @assert code == "var.unused"
+}
+
+@test "directives: @compile eof= still supports the optimize= flag" {
+    // optimize=high must be accepted (and simply have no effect on whether
+    // the code compiles) exactly as it does for the brace-delimited form.
+    var failed bool
+
+    @compile block optimize=high eof="$EOF"
+        n := 6 * 7
+        _ = n
+    $EOF
+    catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "directives: @compile eof= without block runs a full program" {
+    // Just like the brace-delimited form, omitting "block" switches to
+    // full-program mode: the collected code must be a complete top-level
+    // declaration (such as a function), not a bare statement. This proves
+    // eof= respects that same distinction rather than always behaving like
+    // block mode.
+    var compileFailed bool
+
+    @compile eof="$EOF"
+        func addOne(n int) int {
+            return n + 1
+        }
+    $EOF
+    catch {
+        compileFailed = true
+    }
+
+    @assert compileFailed == false
+}
