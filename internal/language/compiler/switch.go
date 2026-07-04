@@ -91,6 +91,22 @@ func (c *Compiler) compileSwitch() error {
 		return c.compileError(errors.ErrMissingBlock)
 	}
 
+	// BUG-31: push a "switch" entry onto the same stack that "for" loops use
+	// for tracking break/continue targets. Before this fix, a bare "break"
+	// statement inside a switch's case body had nowhere of its own to attach
+	// to, so compileBreak (in for.go) always resolved it against the nearest
+	// enclosing *for* loop instead - meaning "break" inside a switch quit the
+	// whole loop rather than just the switch (or, if there was no enclosing
+	// loop at all, it was rejected as a compile error even though a bare
+	// "break" inside a switch is perfectly legal Go). Pushing this entry
+	// gives compileBreak somewhere correct to record the branch, and it is
+	// popped again below once the switch is fully compiled. Because
+	// switchLoopType is a distinct value from the real for-loop types,
+	// compileContinue (in for.go) knows to skip straight past it and keep
+	// looking for a genuine enclosing for loop, since Go has no notion of
+	// "continue the switch".
+	c.loopStackPush(switchLoopType)
+
 	// Iterate over each case or default selector in the switch block.
 	for !c.t.IsNext(tokenizer.BlockEndToken) {
 		if next > 0 {
@@ -163,6 +179,21 @@ func (c *Compiler) compileSwitch() error {
 	for _, n := range fixups {
 		_ = c.b.SetAddressHere(n)
 	}
+
+	// BUG-31: patch every bare "break" statement found directly inside this
+	// switch (collected on c.loops.breaks by compileBreak) so that it also
+	// lands right here, at the same "just past the last case/default body"
+	// address as a normal case miss. This is the point where the switch
+	// statement is considered finished, so break behaves exactly like
+	// falling out of the bottom of the switch normally would. Once patched,
+	// pop the switchLoopType entry pushed earlier so outer code (an
+	// enclosing for loop or switch, if any) sees its own loop stack entry on
+	// top again.
+	for _, fixAddr := range c.loops.breaks {
+		_ = c.b.SetAddressHere(fixAddr)
+	}
+
+	c.loopStackPop()
 
 	// If we weren't using conditional cases, clean up the symbol used for
 	// the value used for case matching. If we were given one by the source

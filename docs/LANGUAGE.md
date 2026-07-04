@@ -1369,6 +1369,59 @@ default:
 
 This form is equivalent to a chain of `if`/`else if` statements.
 
+#### `break` inside a `switch`
+
+Because a matched `case` never falls through into the next one, you do not
+need a `break` statement just to stop a `case` body from running into the
+next `case` — that already happens automatically. A `break` statement is
+still useful, though, if you want to stop executing a `case` body early,
+before reaching its last statement:
+
+```go
+switch x {
+case 1:
+    fmt.Println("checking x")
+    if x < 0 {
+        break               // stop here; skip the rest of this case body
+    }
+    fmt.Println("x is not negative")
+}
+```
+
+A `break` used this way ends only the `switch` statement. If the `switch` is
+itself inside a `for` loop, `break` does **not** exit the loop — execution
+simply resumes with whatever statement follows the `switch` block, and the
+loop continues with its next iteration:
+
+```go
+for i := 0; i < 5; i++ {
+    switch i {
+    case 3:
+        break               // exits the switch only, not the for loop
+    }
+    fmt.Println(i)          // still runs on every iteration, including i == 3
+}
+```
+
+This program prints `0`, `1`, `2`, `3`, and `4` — the loop runs to
+completion. If you want a `break` written inside a `switch` to end an
+enclosing loop instead, label the loop and use that label on the `break`
+statement, as described in [Break and Continue](#break-continue):
+
+```go
+outer:
+for i := 0; i < 5; i++ {
+    switch i {
+    case 3:
+        break outer         // exits the labeled for loop, not just the switch
+    }
+    fmt.Println(i)
+}
+```
+
+This prints only `0`, `1`, and `2`, since `break outer` exits the loop as
+soon as `i` reaches `3`.
+
 ### For _condition_ <a name="for-conditional"></a>
 
 The simplest form of iterative execution (also referred to as a

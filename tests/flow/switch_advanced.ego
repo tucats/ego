@@ -373,3 +373,129 @@
 
     @assert caught == true
 }
+
+@test "flow: switch break stays in switch (BUG-31)"
+{
+    // In Go (and every C-family language), a bare "break" inside a "switch"
+    // exits only the switch - not any "for" loop the switch happens to be
+    // sitting inside. Before the fix, Ego's "break" always targeted the
+    // nearest enclosing "for" loop instead, so this loop would have stopped
+    // dead after i==3 instead of running all five iterations.
+    visited := ""
+
+    for i := 0; i < 5; i++ {
+        switch i {
+        case 3:
+            break
+        }
+        visited = visited + string(i)
+    }
+
+    @assert visited == "01234"
+}
+
+@test "flow: break in switch with no loop (BUG-31)"
+{
+    // A "switch" does not need to be inside a loop at all for "break" to be
+    // legal inside one of its cases - it simply ends the switch early, the
+    // same as falling off the end of the case body would. Before the fix
+    // this was rejected as a compile-time error ("loop control statement
+    // outside of for-loop") even though no loop is involved.
+    x := 5
+    reached := false
+
+    switch x {
+    case 5:
+        break
+    }
+
+    reached = true
+
+    @assert reached == true
+}
+
+@test "flow: continue in switch reaches loop (BUG-31)"
+{
+    // Unlike "break", Go has no notion of "continue the switch" - a bare
+    // "continue" written inside a switch always continues the nearest
+    // enclosing "for" loop. This must keep working once "switch" started
+    // pushing its own entry onto the same break/continue tracking stack
+    // that "for" loops use.
+    visited := ""
+
+    for i := 0; i < 5; i++ {
+        switch i {
+        case 2:
+            continue
+        }
+        visited = visited + string(i)
+    }
+
+    @assert visited == "0134"
+}
+
+@test "flow: labeled break past switch (BUG-31)"
+{
+    // A labeled break (e.g. "break outer") must still find and exit the
+    // labeled "for" loop even when written inside a "switch" nested in that
+    // loop - the switch's own tracking entry must not get in the way of the
+    // label lookup.
+    visited := ""
+
+outer:
+    for i := 0; i < 5; i++ {
+        switch i {
+        case 2:
+            break outer
+        }
+        visited = visited + string(i)
+    }
+
+    @assert visited == "01"
+}
+
+@test "flow: nested switch break is inner only (BUG-31)"
+{
+    // When a switch is nested directly inside another switch (no loop
+    // involved at all), an unlabeled "break" in the inner switch's case
+    // body must exit only that inner switch, leaving the outer switch's
+    // remaining statements to run normally.
+    reachedAfterInner := false
+    reachedAfterOuter := false
+
+    switch 1 {
+    case 1:
+        switch true {
+        case true:
+            break
+        }
+        reachedAfterInner = true
+    }
+
+    reachedAfterOuter = true
+
+    @assert reachedAfterInner == true
+    @assert reachedAfterOuter == true
+}
+
+@test "flow: continue in bare switch is error (BUG-31)"
+{
+    // A bare "continue" with no enclosing "for" loop at all is still a
+    // compile-time error, exactly as in real Go - BUG-31 only changed what
+    // "break" is allowed to target, not "continue".
+    var caught bool
+
+    @compile {
+        func broken() {
+            switch 1 {
+            case 1:
+                continue
+            }
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "loop.control"
+    }
+
+    @assert caught == true
+}

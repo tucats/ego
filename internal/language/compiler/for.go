@@ -21,6 +21,15 @@ const (
 	rangeLoopType       runtimeLoopType = 2
 	forLoopType         runtimeLoopType = 3
 	conditionalLoopType runtimeLoopType = 4
+
+	// switchLoopType (BUG-31) marks a stack entry that represents a "switch"
+	// statement rather than an actual "for" loop. It is pushed onto the same
+	// c.loops stack used by "for" loops so that a bare "break" inside a
+	// switch's case body has somewhere to attach itself to (see
+	// compileBreak/compileSwitch). It is NOT a real loop - nothing ever
+	// iterates - so code that walks the loop stack looking for a "for" loop
+	// to continue (see compileContinue) must skip over entries of this type.
+	switchLoopType runtimeLoopType = 5
 )
 
 // These are used to generate index names when needed for range loops when the "_"
@@ -774,6 +783,15 @@ func (c *Compiler) compileBreak() error {
 // An optional label after "continue" (e.g. "continue outer") names a specific
 // enclosing loop whose iteration to continue. Without a label the innermost
 // loop is used.
+//
+// BUG-31: a "switch" statement pushes a switchLoopType entry onto the same
+// stack that "for" loops use (see compileSwitch), so that a bare "break"
+// inside a switch has a place to attach itself to. But real Go has no
+// concept of "continue the switch" - "continue" always means "go to the
+// next iteration of the nearest enclosing for loop". So this function must
+// be careful to walk past any switchLoopType entries and never treat one as
+// a valid continue target, whether it was found by searching for the
+// nearest loop or by matching a label.
 func (c *Compiler) compileContinue() error {
 	if c.loops == nil {
 		return c.compileError(errors.ErrInvalidLoopControl)
@@ -787,6 +805,26 @@ func (c *Compiler) compileContinue() error {
 
 		if targetLoop == nil {
 			return c.compileError(errors.ErrUnknownLabel, label)
+		}
+
+		// A label can only ever be attached to a "for" loop (see
+		// loopStackPush, which only consumes a pending label - it is never
+		// passed switchLoopType). If the label somehow resolved to a switch
+		// entry, it is not a valid continue target.
+		if targetLoop.loopType == switchLoopType {
+			return c.compileError(errors.ErrInvalidLoopControl)
+		}
+	} else {
+		// No label was given, so we want the nearest *real* for loop. Skip
+		// over any switch entries sitting on top of the loop stack; a bare
+		// "continue" written inside a switch actually continues whatever
+		// for loop encloses that switch, not the switch itself.
+		for targetLoop != nil && targetLoop.loopType == switchLoopType {
+			targetLoop = targetLoop.parent
+		}
+
+		if targetLoop == nil {
+			return c.compileError(errors.ErrInvalidLoopControl)
 		}
 	}
 

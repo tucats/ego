@@ -198,7 +198,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-28](#BUG-28) | BUG | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
 | [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
-| [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
+| [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
 | [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
 | [BUG-33](#BUG-33) | BUG | Struct field type declarations are never enforced, even in strict mode. | |
 | [BUG-34](#BUG-34) | BUG | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
@@ -474,7 +474,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-28](#BUG-28) | CRITICAL | Double-`Unlock()` of a `sync.Mutex` crashes the entire process with an unrecoverable Go fatal error. | ✓ |
 | [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
-| [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | |
+| [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
 | [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
 | [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | |
 | [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
@@ -3157,6 +3157,46 @@ compiler's loop stack (`c.loops`) for a `switch` construct. `compileBreak`
 `for`-loop compilation, so a bare `break` always resolves to the innermost `for` loop if one
 exists, or errors if none does. `continue` is unaffected by this bug, since Go has no
 "continue the switch" concept and continuing the enclosing loop is the correct target.
+
+**Resolution (July 2026):**  
+`internal/language/compiler/for.go` and `internal/language/compiler/switch.go`:
+
+- Added a new `switchLoopType` value to the `runtimeLoopType` enum in `for.go`. This
+  is not a real loop type (nothing ever iterates) — it exists purely so a `switch`
+  construct has a place of its own on the compiler's loop stack (`c.loops`) for `break`
+  statements to attach to.
+- `compileSwitch` (`switch.go`) now calls `c.loopStackPush(switchLoopType)` right before
+  compiling the switch's case/default bodies, and patches every `break` collected on that
+  entry to land at the switch's normal exit point (the same address a case miss already
+  branches to), then calls `c.loopStackPop()`. This is the exact same push/pop pattern
+  `for`-loop compilation already used, just applied to `switch`.
+- `compileBreak` needed no changes: it already resolves an unlabeled `break` to the
+  top of `c.loops`, which is now correctly the switch (if one is the innermost
+  enclosing construct) rather than skipping past it to the next `for` loop out.
+- `compileContinue` was changed to walk past any `switchLoopType` entries — both when
+  picking the default (innermost) target and when a label resolves to one — since real Go
+  has no "continue the switch" concept; a bare or labeled `continue` must always land on a
+  genuine `for` loop. If no such loop remains after skipping switch entries, compilation
+  still fails with the same `errors.ErrInvalidLoopControl` as before.
+
+As a side effect, a `switch` with no enclosing loop at all no longer needs a loop to exist
+merely to give `break` somewhere to go — `c.loops` is non-nil for the duration of compiling
+the switch body regardless of what (if anything) encloses it, so the bug report's second
+reproducer (`break` inside a switch with no loop around it) now compiles and runs instead of
+failing with `ErrInvalidLoopControl` ("loop control statement outside of for-loop").
+
+New tests:
+
+- `internal/language/compiler/switch_test.go` — six new `TestBUG31*` unit tests: a `break`
+  inside a `switch` inside a `for` loop completing every iteration;  a `break` inside a
+  `switch` with no enclosing loop at all; a `continue` inside a `switch` correctly skipping
+  an iteration of the enclosing `for` loop; a labeled `break outer` reaching through a
+  nested `switch` to a labeled loop; a bare `break` in a `switch` nested inside another
+  `switch` exiting only the inner one; and a bare `continue` inside a `switch` with no
+  enclosing loop still failing to compile with `ErrInvalidLoopControl`.
+- `tests/flow/switch_advanced.ego` — six matching `@test` blocks (suffixed `(BUG-31)`)
+  covering the same scenarios at the Ego-language level, including a `@compile`/`catch`
+  regression check that `continue` outside of any loop remains a compile error.
 
 ---
 
