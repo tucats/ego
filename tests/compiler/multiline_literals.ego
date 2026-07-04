@@ -1,0 +1,158 @@
+// Regression tests for BUG-41: a struct/map/array literal spanning multiple
+// lines failed to compile with "invalid list" whenever an element value
+// ended in "}" or "]" (typically a nested literal) and was the last element
+// before the enclosing literal's own closing brace/bracket, with no trailing
+// comma. The identical literal written on one line always worked, as did the
+// same multi-line shape with an explicit trailing comma before the close.
+
+@test "compiler: untyped map literal, nested value, no trailing comma" {
+    x := {
+        "a": { "b": "c" }
+    }
+
+    @assert x["a"]["b"] == "c"
+}
+
+@test "compiler: LANGUAGE.md @localization example shape compiles" {
+    // Verbatim structure of the @localization example in docs/LANGUAGE.md:
+    // three levels of nesting, no trailing commas.
+    x := {
+        "en": {
+            "hello": {
+                "msg": "hi"
+            }
+        }
+    }
+
+    @assert x["en"]["hello"]["msg"] == "hi"
+}
+
+@test "compiler: untyped array literal, no trailing comma" {
+    x := []int{
+        1,
+        2
+    }
+
+    @assert len(x) == 2
+    @assert x[0] == 1
+    @assert x[1] == 2
+}
+
+@test "compiler: nested typed array literal, no trailing comma" {
+    x := [][]int{
+        []int{1, 2},
+        []int{
+            3,
+            4
+        }
+    }
+
+    @assert len(x) == 2
+    @assert x[0][0] == 1
+    @assert x[1][1] == 4
+}
+
+@test "compiler: typed map literal, no trailing comma" {
+    m := map[string]int{
+        "a": 1,
+        "b": 2
+    }
+
+    @assert m["a"] == 1
+    @assert m["b"] == 2
+}
+
+@test "compiler: typed struct literal, ordered fields, no trailing comma" {
+    type OrderedPoint struct {
+        X int
+        Y int
+    }
+
+    p := OrderedPoint{
+        1,
+        2
+    }
+
+    @assert p.X == 1
+    @assert p.Y == 2
+}
+
+@test "compiler: typed struct literal, named fields, no trailing comma" {
+    type NamedPoint struct {
+        X int
+        Y int
+    }
+
+    p := NamedPoint{
+        X: 1,
+        Y: 2
+    }
+
+    @assert p.X == 1
+    @assert p.Y == 2
+}
+
+@test "compiler: typed struct literal with nested struct field" {
+    type NestedPoint struct {
+        X int
+        Y int
+    }
+
+    type NestedLine struct {
+        A NestedPoint
+        B NestedPoint
+    }
+
+    l := NestedLine{
+        A: NestedPoint{
+            5,
+            6
+        },
+        B: NestedPoint{7, 8}
+    }
+
+    @assert l.A.X == 5
+    @assert l.A.Y == 6
+    @assert l.B.X == 7
+    @assert l.B.Y == 8
+}
+
+@test "compiler: literal with trailing commas still parses" {
+    // Regression guard: the documented Go-style workaround (an explicit
+    // trailing comma before the close) must keep working.
+    x := []int{
+        1,
+        2,
+    }
+
+    @assert len(x) == 2
+    @assert x[0] == 1
+    @assert x[1] == 2
+}
+
+@test "compiler: single-line nested literal still parses" {
+    x := { "a": { "b": "c" } }
+
+    @assert x["a"]["b"] == "c"
+}
+
+@test "compiler: genuine missing comma on one line is still an error" {
+    // Regression guard: the fix only skips synthetic ";" tokens the
+    // tokenizer inserts at a line break. A malformed literal missing its
+    // comma on a single line (so no synthetic ";" is involved) must still
+    // be rejected as an invalid list. Uses an untyped array literal (no
+    // braces) so as not to disturb the @compile block's own brace matching;
+    // the brace-delimited struct/map form of this same check is covered by
+    // TestBUG41GenuineMissingCommaStillErrors in the Go test suite.
+    var failed bool
+
+    @compile block {
+        x := [1 2]
+        _ = x
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "list"
+    }
+
+    @assert failed == true
+}

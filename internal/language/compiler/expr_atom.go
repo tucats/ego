@@ -656,7 +656,13 @@ func (c *Compiler) compileArrayRangeInitializer() (bool, error) {
 func (c *Compiler) compileArrayInitializer(listTerminator tokenizer.Token, kind *data.Type) error {
 	count := 0
 
-	for c.t.Peek(1).IsNot(listTerminator) {
+	for {
+		c.skipSyntheticSemicolons()
+
+		if c.t.Peek(1).Is(listTerminator) {
+			break
+		}
+
 		if err := c.conditional(); err != nil {
 			return err
 		}
@@ -672,6 +678,8 @@ func (c *Compiler) compileArrayInitializer(listTerminator tokenizer.Token, kind 
 		if c.t.AtEnd() {
 			break
 		}
+
+		c.skipSyntheticSemicolons()
 
 		if c.t.Peek(1).Is(listTerminator) {
 			break
@@ -727,6 +735,27 @@ func (c *Compiler) parseStructDeclaration() error {
 	return err
 }
 
+// skipSyntheticSemicolons consumes any run of ";" tokens at the current
+// tokenizer position.
+//
+// The tokenizer inserts a synthetic ";" at the end of any source line whose
+// last token is one that would end a Go statement (including "}"),
+// following Go's own automatic semicolon insertion rules (see
+// tokenizer.splitLines). It has no awareness that the line might actually
+// be inside a brace- or bracket-enclosed literal list (struct, map, or
+// array) rather than a statement block, so when an element of such a list
+// -- commonly a nested literal value -- ends a source line, a stray ";" is
+// left between that element and the "," or closing bracket the list parser
+// expects next.
+//
+// Every literal-list parsing loop must call this both before checking for
+// the list terminator and before checking for the "," separator, so that a
+// multi-line literal parses the same as its single-line equivalent (BUG-41).
+func (c *Compiler) skipSyntheticSemicolons() {
+	for c.t.IsNext(tokenizer.SemicolonToken) {
+	}
+}
+
 // Parse an anonymous structure. This is a list of name/value pairs
 // which result in a Struct data type using the data types of the
 // values as the structure field types.
@@ -743,7 +772,13 @@ func (c *Compiler) parseStruct(needsMarker bool) error {
 		c.b.Emit(bytecode.Push, bytecode.NewStackMarker("struct-init"))
 	}
 
-	for c.t.Peek(1).IsNot(listTerminator) {
+	for {
+		c.skipSyntheticSemicolons()
+
+		if c.t.Peek(1).Is(listTerminator) {
+			break
+		}
+
 		// First element: name
 		name := c.t.Next()
 		if !name.IsString() && !name.IsIdentifier() {
@@ -770,6 +805,8 @@ func (c *Compiler) parseStruct(needsMarker bool) error {
 		if c.t.AtEnd() {
 			break
 		}
+
+		c.skipSyntheticSemicolons()
 
 		if c.t.Peek(1).Is(listTerminator) {
 			break

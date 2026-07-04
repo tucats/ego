@@ -61,13 +61,24 @@ func (c *Compiler) compileInitializer(t *data.Type) error {
 func (c *Compiler) parseArrayInitializer(base *data.Type) error {
 	count := 0
 
-	for !c.t.IsNext(tokenizer.DataEndToken) {
+	for {
+		// Skip any synthetic ";" the tokenizer inserted after a nested
+		// literal value that ended a source line; see skipSyntheticSemicolons
+		// (BUG-41).
+		c.skipSyntheticSemicolons()
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
 		// Values separated by commas.
 		if err := c.compileInitializer(base.BaseType()); err != nil {
 			return err
 		}
 
 		count++
+
+		c.skipSyntheticSemicolons()
 
 		if c.t.IsNext(tokenizer.DataEndToken) {
 			break
@@ -94,7 +105,14 @@ func (c *Compiler) parseArrayInitializer(base *data.Type) error {
 func (c *Compiler) parseMapInitializer(base *data.Type) error {
 	count := 0
 
-	for !c.t.IsNext(tokenizer.DataEndToken) {
+	for {
+		// See parseArrayInitializer/skipSyntheticSemicolons (BUG-41).
+		c.skipSyntheticSemicolons()
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
 		// Pairs of values with a colon between.
 		if err := c.unary(); err != nil {
 			return err
@@ -113,6 +131,8 @@ func (c *Compiler) parseMapInitializer(base *data.Type) error {
 		}
 
 		count++
+
+		c.skipSyntheticSemicolons()
 
 		if c.t.IsNext(tokenizer.DataEndToken) {
 			break
@@ -185,7 +205,14 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 
 	fieldNames := base.FieldNames()
 
-	for !c.t.IsNext(tokenizer.DataEndToken) {
+	for {
+		// See parseArrayInitializer/skipSyntheticSemicolons (BUG-41).
+		c.skipSyntheticSemicolons()
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
 		if c.t.AtEnd() {
 			break
 		}
@@ -237,6 +264,8 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 
 				count++
 
+				c.skipSyntheticSemicolons()
+
 				if c.t.IsNext(tokenizer.DataEndToken) {
 					break
 				}
@@ -259,6 +288,8 @@ func (c *Compiler) structInitializeByOrderedList(tokenMark int, base *data.Type)
 			c.b.Emit(bytecode.Push, fieldName)
 
 			count++
+
+			c.skipSyntheticSemicolons()
 
 			if c.t.IsNext(tokenizer.DataEndToken) {
 				break
@@ -289,7 +320,14 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 	c.t.Set(tokenMark)
 
 	// Scan the list of field names and values
-	for !c.t.IsNext(tokenizer.DataEndToken) {
+	for {
+		// See parseArrayInitializer/skipSyntheticSemicolons (BUG-41).
+		c.skipSyntheticSemicolons()
+
+		if c.t.IsNext(tokenizer.DataEndToken) {
+			break
+		}
+
 		// Pairs of name:value
 		name := c.t.Next()
 		if !name.IsIdentifier() {
@@ -316,6 +354,8 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 
 		count++
 
+		c.skipSyntheticSemicolons()
+
 		if c.t.IsNext(tokenizer.DataEndToken) {
 			break
 		}
@@ -336,7 +376,14 @@ func (c *Compiler) structInitializeByName(tokenMark int, base *data.Type) (int, 
 func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Type) (int, error) {
 	var count int
 
-	for c.t.Peek(1).IsNot(tokenizer.DataEndToken) {
+	for {
+		// See parseArrayInitializer/skipSyntheticSemicolons (BUG-41).
+		c.skipSyntheticSemicolons()
+
+		if c.t.Peek(1).Is(tokenizer.DataEndToken) {
+			break
+		}
+
 		fieldName := fieldNames[count]
 		fieldType, _ := base.Field(fieldName)
 
@@ -347,6 +394,8 @@ func (c *Compiler) compileEmbeddedInitializer(fieldNames []string, base *data.Ty
 		c.b.Emit(bytecode.Push, fieldName)
 
 		count++
+
+		c.skipSyntheticSemicolons()
 		_ = c.t.IsNext(tokenizer.CommaToken)
 	}
 
