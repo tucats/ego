@@ -512,8 +512,6 @@ func (s *Struct) SetAlways(name string, value any) *Struct {
 // readonly, and the field must not be a readonly field. If strict
 // type checking is enabled, the type is validated.
 func (s *Struct) Set(name string, value any) error {
-	var err error
-
 	if s == nil {
 		ui.Log(ui.InternalLogger, "runtime.struct.nil.write", nil)
 
@@ -542,14 +540,51 @@ func (s *Struct) Set(name string, value any) error {
 		}
 	}
 
-	if s.typeDef.fields != nil {
-		if t, ok := s.typeDef.fields[name]; ok {
+	// fix BUG-33: s.typeDef can be one of two shapes:
+	//
+	//   1. The raw struct-kind *Type itself (this happens for an anonymous
+	//      struct literal, e.g. `struct{ Age int }{ Age: 5 }`). Its `fields`
+	//      map (built by Type.DefineField) already lists each field name and
+	//      declared type.
+	//
+	//   2. A "named type" wrapper *Type (this happens for a struct created
+	//      from a `type Employee struct {...}` declaration). This wrapper's
+	//      own `fields` map is always nil -- the field definitions live on
+	//      the struct type it wraps, reachable via BaseType().
+	//
+	// The old code below read s.typeDef.fields directly, which only ever
+	// worked for case 1. For case 2 (by far the more common way to declare
+	// a struct type) the lookup silently found nothing, so neither the
+	// strict-mode type check nor the dynamic-mode coercion ever ran --
+	// meaning a field declared as `Age int` would happily accept a string
+	// like "old" with no error and no conversion. Calling BaseType() first
+	// resolves either shape to the actual struct-kind type, so both cases
+	// now find their declared field types.
+	fieldTypes := s.typeDef.BaseType().fields
+	if fieldTypes != nil {
+		if t, ok := fieldTypes[name]; ok {
 			// Does it have to match already?
 			if s.strictTypeChecks && !IsType(value, t) {
 				return errors.ErrInvalidType.Context(TypeOf(value).String())
 			}
-			// Make sure it is compatible with the field type.
-			value, err = t.Coerce(value)
+
+			// Make sure it is compatible with the field type. If the value
+			// truly cannot be converted (e.g. assigning the string "old" to
+			// an int field), Coerce reports an error. Return immediately in
+			// that case, before the "s.fields[name] = value" line below runs,
+			// so the field keeps its previous, valid value instead of being
+			// overwritten with the zero value of the field's type. Without
+			// this early return, a caller who wraps the assignment in
+			// try/catch and recovers from the error would still find the
+			// field silently reset to (for example) 0 -- a second, subtler
+			// form of the same "type declaration is not enforced" problem
+			// this fix addresses.
+			coerced, err := t.Coerce(value)
+			if err != nil {
+				return err
+			}
+
+			value = coerced
 		}
 	}
 
@@ -566,7 +601,7 @@ func (s *Struct) Set(name string, value any) error {
 	// Finally, set the actual value.
 	s.fields[name] = value
 
-	return err
+	return nil
 }
 
 // Make a copy of the current structure object. The resulting structure

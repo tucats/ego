@@ -247,7 +247,11 @@ func loadSliceByteCode(c *Context, i any) error {
 //   - *data.Struct  — checks package visibility first, then sets the named
 //     field.  If the struct belongs to a different package than the current
 //     context, unexported (lowercase) field names are rejected with
-//     ErrSymbolNotExported before any modification is made.
+//     ErrSymbolNotExported before any modification is made.  In strict
+//     mode, a field whose declared type does not match the new value's
+//     type is rejected (see checkStructFieldStrictType); relaxed/dynamic
+//     mode instead coerces the value when possible, in data.Struct.Set
+//     (BUG-33).
 //   - *any wrapping *data.Struct — same as the direct *data.Struct case
 //     but reached via a pointer-to-interface indirection.
 //   - *data.Array   — delegates to storeInArray; validates the integer
@@ -304,6 +308,21 @@ func storeIndexByteCode(c *Context, i any) error {
 			}
 		}
 
+		// fix BUG-33: in strict mode, reject a value whose type does not
+		// already match the field's declared type. This mirrors the
+		// c.typeStrictness check storeInArray performs for typed array
+		// elements a few lines below. The check is read-only -- unlike an
+		// earlier version of this fix, it does NOT record the strictness
+		// setting on the struct itself (via SetStrictTypeChecks), because
+		// that flag is a field of data.Struct and therefore part of what
+		// reflect.DeepEqual compares for struct equality (see data.Equals).
+		// Persisting it there made two otherwise-identical structs compare
+		// as different merely because one of them had a field assigned to
+		// it while running in strict mode.
+		if err := checkStructFieldStrictType(c, a, key, v); err != nil {
+			return c.runtimeError(err)
+		}
+
 		// fix BUG-26: "outer.field = someStruct" must copy the struct value
 		// into the field, not alias it. See copyStructForValueSemantics.
 		if err = a.Set(key, copyStructForValueSemantics(v)); err != nil {
@@ -323,6 +342,13 @@ func storeIndexByteCode(c *Context, i any) error {
 				if !egostrings.HasCapitalizedName(key) {
 					return c.runtimeError(errors.ErrSymbolNotExported).Context(key)
 				}
+			}
+
+			// fix BUG-33: same strict-mode field-type check as the direct
+			// *data.Struct case above, reached here via a pointer-to-interface
+			// indirection.
+			if err := checkStructFieldStrictType(c, ax, key, v); err != nil {
+				return c.runtimeError(err)
 			}
 
 			// fix BUG-26: same struct-copy rule as the direct *data.Struct
@@ -348,6 +374,47 @@ func storeIndexByteCode(c *Context, i any) error {
 
 	default:
 		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(a).String())
+	}
+
+	return nil
+}
+
+// checkStructFieldStrictType enforces a struct field's declared type when a
+// new value is about to be assigned to it (e.g. the Ego statement
+// "e.Age = someValue"). This is the struct equivalent of the type check
+// storeInArray performs for typed array elements a few lines above, fixing
+// BUG-33 ("struct field type declarations are never enforced, even in
+// strict mode").
+//
+// Only strict mode (--types strict) is checked here: the new value's Go
+// type must already match the field's declared type exactly, with no
+// coercion attempted. A mismatch returns ErrInvalidType.
+//
+// In relaxed and dynamic mode this function always returns nil (no error).
+// Those modes still get type enforcement, just later and more leniently:
+// data.Struct.Set (called by the caller right after this check) attempts to
+// coerce the value to the field's declared type -- e.g. converting the
+// string "42" to the int 42 -- and returns its own error if the value truly
+// cannot be converted (e.g. the string "old" to an int).
+//
+// If the field's declared type cannot be determined at all (for example, a
+// dynamically-built struct with no associated type information), this
+// function returns nil and no enforcement happens for that field, matching
+// the struct's pre-existing, untyped behavior.
+func checkStructFieldStrictType(c *Context, s *data.Struct, key string, value any) error {
+	if c.typeStrictness != defs.StrictTypeEnforcement {
+		return nil
+	}
+
+	fieldType, err := s.Type().BaseType().Field(key)
+	if err != nil {
+		// No declared type for this field (e.g. an untyped/dynamic struct).
+		// There is nothing to enforce, so allow the write.
+		return nil
+	}
+
+	if !data.IsType(value, fieldType) {
+		return errors.ErrInvalidType.Context(data.TypeOf(value).String())
 	}
 
 	return nil

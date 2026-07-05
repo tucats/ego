@@ -433,6 +433,137 @@ func Test_storeIndexByteCode_StructStore(t *testing.T) {
 	}
 }
 
+// newNamedEmployeeStruct builds a *data.Struct that mimics an instance of
+// the Ego-language declaration:
+//
+//	type Employee struct {
+//	    Age int
+//	}
+//	e := Employee{Age: 30}
+//
+// It is used by the BUG-33 tests below to confirm that field-type
+// enforcement works for structs built from a *named* type, not just for
+// anonymous struct literals (data.NewStructFromMap), which is what earlier
+// tests in this section (e.g. Test_storeIndexByteCode_StructStore) exercise.
+func newNamedEmployeeStruct() *data.Struct {
+	structKind := data.StructureType(data.Field{Name: "Age", Type: data.IntType})
+	namedType := data.TypeDefinition("Employee", structKind)
+	s := data.NewStruct(namedType)
+	s.SetAlways("Age", 30)
+
+	return s
+}
+
+// Test_storeIndexByteCode_StructNamedTypeDynamicCoercion is a BUG-33
+// regression test: in dynamic (default) mode, assigning a coercible value of
+// a different Go type (the string "42") to a field declared as int on a
+// struct built from a named type must succeed and store the converted int,
+// not the raw string. Before the fix this silently stored "42" unconverted.
+func Test_storeIndexByteCode_StructNamedTypeDynamicCoercion(t *testing.T) {
+	s := newNamedEmployeeStruct()
+	tc := newTestContext(t).withStack("42", s, "Age")
+
+	err := storeIndexByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+
+	top, _ := tc.ctx.Pop()
+	result := top.(*data.Struct)
+	v, _ := result.Get("Age")
+
+	if v != 42 {
+		t.Errorf("Age = %v (%T), want int 42", v, v)
+	}
+}
+
+// Test_storeIndexByteCode_StructNamedTypeDynamicNonCoercibleError is a
+// BUG-33 regression test: in dynamic mode, assigning a value that cannot be
+// converted to the field's declared type at all (the string "old" to an int
+// field) must return a catchable runtime error, not silently succeed.
+func Test_storeIndexByteCode_StructNamedTypeDynamicNonCoercibleError(t *testing.T) {
+	s := newNamedEmployeeStruct()
+	tc := newTestContext(t).withStack("old", s, "Age")
+
+	err := storeIndexByteCode(tc.ctx, nil)
+
+	if err == nil {
+		t.Fatal("expected an error assigning \"old\" to an int field, got nil")
+	}
+
+	// The field must retain its previous value (30), not be zeroed.
+	v, _ := s.Get("Age")
+	if v != 30 {
+		t.Errorf("Age = %v, want unchanged 30 after a failed coercion", v)
+	}
+}
+
+// Test_storeIndexByteCode_StructNamedTypeStrictModeRejectsMismatch is the
+// core BUG-33 regression test: in strict mode (--types strict), assigning a
+// value whose type does not already match the field's declared type is
+// rejected outright with ErrInvalidType, mirroring the enforcement already
+// applied to typed arrays (see Test_storeInArray_StrictTypeMismatch) and
+// typed maps. Before the fix, struct fields were never type-checked in any
+// mode, strict included.
+func Test_storeIndexByteCode_StructNamedTypeStrictModeRejectsMismatch(t *testing.T) {
+	s := newNamedEmployeeStruct()
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement).withStack("42", s, "Age")
+
+	err := storeIndexByteCode(tc.ctx, nil)
+
+	tc.assertError(err, errors.ErrInvalidType)
+
+	// The field must retain its previous value (30): the write must be
+	// rejected before any modification, exactly like the STRUCT-2 package
+	// visibility check above.
+	v, _ := s.Get("Age")
+	if v != 30 {
+		t.Errorf("Age = %v, want unchanged 30 after a rejected strict-mode assignment", v)
+	}
+}
+
+// Test_storeIndexByteCode_StructNamedTypeStrictModeAllowsMatch verifies that
+// strict mode still permits an assignment whose value already matches the
+// field's declared type.
+func Test_storeIndexByteCode_StructNamedTypeStrictModeAllowsMatch(t *testing.T) {
+	s := newNamedEmployeeStruct()
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement).withStack(31, s, "Age")
+
+	err := storeIndexByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+
+	v, _ := s.Get("Age")
+	if v != 31 {
+		t.Errorf("Age = %v, want 31", v)
+	}
+}
+
+// Test_storeIndexByteCode_StructStrictModeDoesNotAffectEquality guards
+// against a regression discovered while fixing BUG-33: an earlier version of
+// the fix recorded the strict-mode setting directly on the *data.Struct
+// instance (via SetStrictTypeChecks) at assignment time. Because that flag
+// is a private field of data.Struct, it became part of what
+// reflect.DeepEqual compares for struct equality (data.Equals), so two
+// otherwise-identical structs could compare as unequal merely because one of
+// them had a field assigned to it while running in strict mode. The fix
+// checks c.typeStrictness directly in checkStructFieldStrictType instead of
+// persisting it on the struct, so this must not happen.
+func Test_storeIndexByteCode_StructStrictModeDoesNotAffectEquality(t *testing.T) {
+	s1 := newNamedEmployeeStruct()
+	s2 := newNamedEmployeeStruct()
+
+	// Only s1 is ever written to under strict mode.
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement).withStack(30, s1, "Age")
+
+	err := storeIndexByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+
+	if !data.Equals(s1, s2) {
+		t.Errorf("s1 and s2 have identical field values but compared unequal; " +
+			"strict-mode assignment must not leave persistent state on the struct")
+	}
+}
+
 // Test_storeIndexByteCode_ArrayStore verifies that writing to an in-bounds
 // array element succeeds.
 func Test_storeIndexByteCode_ArrayStore(t *testing.T) {

@@ -84,6 +84,102 @@
     @assert c.name == "hits"
 }
 
+@test "types: struct field coerces on assign (BUG-33)"
+{
+    // BUG-33: a field declared with an explicit type (here, "age int") must
+    // enforce that type on later assignment, the same way a typed map value
+    // is coerced when a new value is assigned to it. In dynamic mode, a
+    // value of a different but convertible type -- here, the string "42" --
+    // should be converted to the field's declared type rather than being
+    // stored unconverted. Force dynamic mode explicitly so this test's
+    // outcome does not depend on whether the whole suite was invoked with
+    // "ego test" (dynamic) or "ego --types strict test" (see the sibling
+    // "strict struct field enforcement" test below for strict-mode behavior).
+    @type dynamic
+
+    type Employee33A struct {
+        name string
+        age  int
+    }
+
+    e := Employee33A{name: "Robin", age: 30}
+
+    e.age = "42"
+
+    @assert typeof(e.age) == int
+    @assert e.age == 42
+}
+
+@test "types: struct field rejects bad value (BUG-33)"
+{
+    // BUG-33 (continued): a value that genuinely cannot be converted to the
+    // field's declared type -- the string "old" assigned to an int field --
+    // must raise a catchable runtime error instead of being silently
+    // accepted, and the field must keep its previous, valid value rather
+    // than being reset to the zero value of its declared type. Force
+    // dynamic mode explicitly for the same reason as the sibling test above.
+    @type dynamic
+
+    type Employee33B struct {
+        name string
+        age  int
+    }
+
+    e := Employee33B{name: "Robin", age: 30}
+    caughtErr := false
+
+    try {
+        e.age = "old"
+    } catch {
+        caughtErr = true
+    }
+
+    @assert caughtErr
+    @assert e.age == 30
+}
+
+@test "types: strict struct field enforcement (BUG-33)"
+{
+    // BUG-33 (continued): in strict mode (@type strict / --types strict),
+    // a struct field assignment whose value does not already match the
+    // field's declared type must be rejected outright -- no coercion is
+    // attempted, even for a value (the string "42") that dynamic mode would
+    // have happily converted. This matches the enforcement already applied
+    // to typed arrays and maps in strict mode.
+    type Employee33C struct {
+        name string
+        age  int
+    }
+
+    e := Employee33C{name: "Robin", age: 30}
+    caughtErr := false
+
+    {
+        @type strict
+
+        try {
+            e.age = "42"
+        } catch {
+            caughtErr = true
+        }
+
+        @type dynamic
+    }
+
+    @assert caughtErr
+    @assert e.age == 30
+
+    // Strict mode still permits an assignment whose value already matches
+    // the field's declared type.
+    {
+        @type strict
+        e.age = 31
+        @type dynamic
+    }
+
+    @assert e.age == 31
+}
+
 @test "types: struct with mixed field types"
 {
     type Record struct {
