@@ -81,7 +81,7 @@ func TestCompileBlockDirectiveDoesNotLeakUnusedVarsSetting(t *testing.T) {
 // collected token stream partway through the block, leaving the rest of the
 // source -- including the trailing "catch(e) { ... }" clause and anything
 // after it -- to be parsed as if the @compile statement had already ended,
-// which desynchronized the whole remaining parse.
+// which de-synchronized the whole remaining parse.
 //
 // Before the fix, running this program failed to compile at all (the
 // "catch" keyword was rejected as an unexpected token). After the fix it
@@ -121,9 +121,9 @@ func TestCompileBlockDirectiveNestedBraceInBlockMode(t *testing.T) {
 	}
 }
 
-// TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode is the
-// BUG-39 regression test for the full-program (non-"block") form of
-// @compile, which shares the same brace-counting defect.
+// TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode is
+// the BUG-39 regression test for the full-program (non-"block") form
+// of @compile, which shares the same brace-counting defect.
 //
 // The notes accompanying BUG-39 explain that the full-program form used to
 // appear to work for a single top-level construct (e.g. one function

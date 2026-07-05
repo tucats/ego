@@ -1,9 +1,11 @@
 package egostrings
 
 import (
-	"errors"
+	"math"
 	"strconv"
 	"strings"
+
+	"github.com/tucats/ego/internal/errors"
 )
 
 // Atoi converts a string to an integer, extending the standard library's
@@ -41,7 +43,7 @@ func Atoi(s string) (int, error) {
 	if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
 		runes := []rune(s[1 : len(s)-1])
 		if len(runes) != 1 {
-			return 0, errors.New("error.invalid.rune")
+			return 0, errors.ErrInvalidRune.In("Atoi").Context(s)
 		}
 
 		v = int64(runes[0])
@@ -67,6 +69,11 @@ func Atoi(s string) (int, error) {
 	// zero value alongside the error rather than a partial result.
 	if err != nil {
 		v = 0
+	} else {
+		// If the parsed value is outside the range of int, return an error.
+		if v < int64(math.MinInt) || v > int64(math.MaxInt) {
+			return 0, errors.ErrLossOfPrecision.In("Atoi").Context(s)
+		}
 	}
 
 	return int(v), err

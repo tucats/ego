@@ -663,8 +663,8 @@ func Test_equalByteCode_SamePointerIsEqual(t *testing.T) {
 	tc.assertTopStack(true)
 }
 
-// Test_equalByteCode_DifferentPointersSameValueAreNotEqual is the core
-// BUG-34 regression test: two distinct *int pointers whose pointed-to values
+// Test_equalByteCode_DifferentPointersSameValueAreNotEqual is the
+// core BUG-34 regression test: two distinct *int pointers whose pointed-to values
 // happen to be equal (5 == 5) must NOT compare as == -- pointer comparison
 // is by address/identity, not by the pointed-to value. Before the fix this
 // returned false anyway, but only by accident (result defaulted to false for
@@ -718,8 +718,11 @@ func Test_equalByteCode_PointerVsNonPointerIsNotEqual(t *testing.T) {
 // still handled defensively). Two different *any pointers must compare as
 // not equal even when the values they point to are equal.
 func Test_equalByteCode_AnyPointerIdentity(t *testing.T) {
-	var v1 any = 5
-	var v2 any = 5
+	var (
+		v1 any = 5
+		v2 any = 5
+	)
+
 	p1 := &v1
 	p2 := &v2
 
@@ -773,10 +776,10 @@ func Test_notEqualByteCode_PointerVsNonPointerIsUnequal(t *testing.T) {
 	tc.assertTopStack(true)
 }
 
-// Test_equalNotEqual_PointerResultsAreConsistentNegations is the headline
-// BUG-34 regression test: for a representative set of pointer/value pairs,
-// == and != must always disagree (exactly one is true), never both false
-// (the original bug) and never both true.
+// Test_equalNotEqual_PointerResultsAreConsistentNegations is the
+// key BUG-34 regression test: for a representative set of pointer/value
+// pairs, == and != must always disagree (exactly one is true), never
+// both false (the original bug) and never both true.
 func Test_equalNotEqual_PointerResultsAreConsistentNegations(t *testing.T) {
 	a := 5
 	b := 5
