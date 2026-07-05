@@ -2941,59 +2941,6 @@ has the following members:
 
 &nbsp;
 
-#### io.ReadFile(filename)
-
-The `ReadFile` function reads input from a file. If the filename is "." then the
-function reads a single line of text from stdin (the console or a pipe). Otherwise,
-the filename must be the absolute or relative path to a file in the file system, and
-its' entire contents are returned as an array of bytes.
-
-```go
-fn := "mydata.txt"
-s := io.ReadFile(fn)
-```
-
-The variable `s` will contain a `[]byte` array containing the entire contents of
-the input file. You can convert this to a string (including line breaks) using
-the `string()` cast operation. You can then use `strings.Split()` to convert
-this into an array of strings based on the line breaks if you wish.
-
-```go
-fn := "mydata.txt"
-b, err := io.ReadFile(fn)
-a := strings.Split(string(b), "\n")
-```
-
-After this code runs, `a` contains an array of strings, one for each line in the input
-file.
-
-#### io.WriteFile(filename, string)
-
-The `WriteFile()` function writes an array of bytes or a string value to a file. If the
-file does not exist, it is created. If the file previously existed, the contents are
-over-written by the new file.
-
-```go
-fn := "mydata.txt"
-s := io.ReadFile(fn)
-
-io.WriteFile("NewData.txt", s)
-```
-
-This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
-writes it to the "NewData.txt" file, in its entirety. You can also just write a string
-value to the file, such as
-
-```go
-fn := "mydata.txt"
-s := []string{"This is line one", "This is line two"}
-
-io.WriteFile("NewData.txt", strings.Join(s, "\n"))
-```
-
-This results in the array of strings `s` being combined into a single string value with
-new-line characters, and the resulting string being written to the file.
-
 ### json <a name="json"></a>
 
 The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
@@ -3591,6 +3538,33 @@ output similar to:
     You are running the  /bin/bash  shell program
 ```
 
+
+#### os.ReadFile(filename) ([]byte, error)
+
+The `ReadFile` function reads input from a file. If the filename is "." then the
+function reads a single line of text from stdin (the console or a pipe). Otherwise,
+the filename must be the absolute or relative path to a file in the file system, and
+its' entire contents are returned as an array of bytes.
+
+```go
+fn := "mydata.txt"
+s, err := os.ReadFile(fn)
+```
+
+The variable `s` will contain a `[]byte` array containing the entire contents of
+the input file. You can convert this to a string (including line breaks) using
+the `string()` cast operation. You can then use `strings.Split()` to convert
+this into an array of strings based on the line breaks if you wish.
+
+```go
+fn := "mydata.txt"
+b, err := os.ReadFile(fn)
+a := strings.Split(string(b), "\n")
+```
+
+After this code runs, `a` contains an array of strings, one for each line in the input
+file.
+
 #### os.Remove(filename)
 
 The `Remove()` function deletes a file from the file system.
@@ -3604,6 +3578,30 @@ os.Remove(fn)
 When this program runs, the physical file "NewData.txt" will have been deleted
 from the file system, assuming the current user has permission to delete the
 file.
+
+
+#### os.WriteFile(filename string, data []byte, mode int) error
+
+The `WriteFile()` function writes an array of bytes or a string value to a file. If the
+file does not exist, it is created. If the file previously existed, the contents are
+over-written by the new file.
+
+```go
+fn := "mydata.txt"
+s, err := io.ReadFile(fn)
+if err == nil {
+   err = io.WriteFile("NewData.txt", s, 0o644)
+}
+```
+
+This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
+writes it to the "NewData.txt" file, in its entirety. Note that the mode value is
+an integer, but is most commonly expressed as an octal value to match file system
+semantics of a grouping of 3-bit values. Note that in Ego, you must use the radix
+prefix `0o` before the octal value. In Go, a leading zero implies octal.
+
+&nbsp;
+&hbsp;
 
 ### profile <a name="profile"></a>
 

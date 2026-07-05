@@ -9,9 +9,9 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -20,7 +20,7 @@ import (
 func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	name := data.String(args.Get(0))
 	if name == "." {
-		return ui.Prompt(""), nil
+		return data.NewList(ui.Prompt(""), nil), nil
 	}
 
 	name = sandboxName(name)
@@ -29,18 +29,19 @@ func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	if err != nil {
 		err = errors.New(err).In("ReadFile")
 
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
-	return data.NewArray(data.ByteType, 0).Append(content), nil
+	return data.NewList(data.NewArray(data.ByteType, 0).Append(content), nil), nil
 }
 
-// writeFile implements os.Writefile() writes a byte array (or string) to a file.
+// writeFile implements os.WriteFile() writes a byte array (or string) to a file.
+// Accepting a string as the data parameter is an Ego extension.
 func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	fileName := sandboxName(data.String(args.Get(0)))
 
 	// The file mode must be a valid uint32 value.
-	modeArg, err := args.GetInt(1)
+	modeArg, err := args.GetInt(2)
 	if err != nil {
 		return nil, errors.ErrInvalidFunctionArgument.In("os.WriteFile").Context(modeArg)
 	}
@@ -51,10 +52,10 @@ func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	mode := fs.FileMode(uint32(modeArg))
 
-	if a, ok := args.Get(2).(*data.Array); ok {
+	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
 			if err := os.WriteFile(fileName, a.GetBytes(), mode); err != nil {
-				err = errors.New(err).In("Writefile")
+				err = errors.New(err).In("WriteFile")
 
 				return err, err
 			}
@@ -67,7 +68,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	err = os.WriteFile(fileName, []byte(text), mode)
 	if err != nil {
-		err = errors.New(err).In("Writefile")
+		err = errors.New(err).In("WriteFile")
 	}
 
 	return err, err

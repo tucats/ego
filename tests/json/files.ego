@@ -174,7 +174,7 @@ fileBasePath := "/tmp/ego_json_files_" + uuid.New().Gibberish()
     path := fileBasePath + "_bad.json"
     _ = os.Remove(path)
 
-    os.Writefile(path, 0644, []byte("not valid json {{{"))
+    os.WriteFile(path, []byte("not valid json {{{"), 0o644, )
     _, err := json.ReadFile(path)
     @assert err != nil
 

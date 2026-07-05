@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 59 issues (28 resolved)
+- [BUG — General Language Bugs](#area-bug) — 59 issues (29 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -209,7 +209,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
 | [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | BUG | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
-| [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
+| [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
 | [BUG-43](#BUG-43) | BUG | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
 | [BUG-44](#BUG-44) | BUG | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | |
 | [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
@@ -485,7 +485,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
 | [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | HIGH | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
-| [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | |
+| [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
 | [BUG-43](#BUG-43) | MEDIUM | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | |
 | [BUG-44](#BUG-44) | MEDIUM | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | |
 | [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
@@ -4079,6 +4079,15 @@ with every other exported PascalCase name in the codebase) and requires **3** ar
 `Writefile(filename string, mode int, data []byte)` — not the 2-argument
 `io.WriteFile(filename, string)` shown in `docs/LANGUAGE.md`'s `io` section
 (~lines 2891-2944).
+
+**Resolution:***
+
+- Removed the bogus references to the functions in the io package.
+- Added references to Go-compliant forms in LANGUAGES.md
+- Fixed mispelled `Writefile` function name (should be `WriteFile`)
+- Fixed parameter order to match Go, so mode is last parameter
+- Added documentation note in LANGUAGE.md about using `0o` radix prefix for octal
+- Updated Ego unit tests to use correct package and argument lists.
 
 ---
 

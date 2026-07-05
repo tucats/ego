@@ -4,7 +4,7 @@
     d := []byte("This is a test string of text written to the file")
 
     // Write some data to the file.
-    e := os.Writefile(name, 0o777, d)
+    e := os.WriteFile(name, d, 0o777)
     @assert e == nil 
 
     // Open the file and create a *io.File object

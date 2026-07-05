@@ -386,9 +386,9 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 		Value:    os.Setenv,
 		IsNative: true,
 	},
-	"Writefile": data.Function{
+	"WriteFile": data.Function{
 		Declaration: &data.Declaration{
-			Name: "Writefile",
+			Name: "WriteFile",
 			Parameters: []data.Parameter{
 				{
 					Name:      "filename",
@@ -396,12 +396,12 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 					Sandboxed: true,
 				},
 				{
-					Name: "mode",
-					Type: data.IntType,
-				},
-				{
 					Name: "data",
 					Type: data.ArrayType(data.ByteType),
+				},
+				{
+					Name: "mode",
+					Type: data.IntType,
 				},
 			},
 			Returns: []*data.Type{data.ErrorType},
