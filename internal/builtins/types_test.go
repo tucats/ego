@@ -240,3 +240,137 @@ func Test_TypeOf_FunctionValueReturnsFuncType(t *testing.T) {
 		t.Errorf("typeOf(data.Function) returned %T, want *data.Type", got)
 	}
 }
+
+// Every value Ego's "&name" address-of operator produces is represented
+// internally as a *any -- a raw Go pointer to the named symbol's storage
+// slot (see bytecode.addressOfByteCode and symbols.SymbolTable.GetAddress) --
+// regardless of what concrete type is stored in that slot. Before the
+// BUG-34 follow-up fix below, typeOf unconditionally reported every single
+// one of these as the generic data.PointerType(data.InterfaceType) (i.e.
+// "*interface{}"), discarding the pointed-to type entirely: typeof(&someInt)
+// and typeof(&someString) were indistinguishable. The tests in this section
+// build a *any exactly the way GetAddress does (take the address of a local
+// "any" variable holding a concrete value) and confirm the pointed-to type
+// is now preserved.
+
+// Test_TypeOf_PointerToIntReturnsPointerToIntType verifies that typeof(&x)
+// for an int x reports "*int", not the generic "*interface{}".
+func Test_TypeOf_PointerToIntReturnsPointerToIntType(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+
+	var v any = 42
+
+	p := &v
+	args := data.NewList(p)
+
+	got, err := typeOf(s, args)
+	if err != nil {
+		t.Fatalf("typeOf(*any -> int) error: %v", err)
+	}
+
+	tp, ok := got.(*data.Type)
+	if !ok {
+		t.Fatalf("typeOf(*any -> int) returned %T, want *data.Type", got)
+	}
+
+	if !tp.IsPointer() {
+		t.Fatalf("typeOf(*any -> int) = %v, want a pointer type", tp)
+	}
+
+	if !tp.BaseType().IsType(data.IntType) {
+		t.Errorf("typeOf(*any -> int) base type = %v, want IntType", tp.BaseType())
+	}
+}
+
+// Test_TypeOf_PointerToStringReturnsPointerToStringType verifies that
+// typeof(&x) for a string x reports "*string".
+func Test_TypeOf_PointerToStringReturnsPointerToStringType(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+
+	var v any = "hello"
+
+	p := &v
+	args := data.NewList(p)
+
+	got, err := typeOf(s, args)
+	if err != nil {
+		t.Fatalf("typeOf(*any -> string) error: %v", err)
+	}
+
+	tp, ok := got.(*data.Type)
+	if !ok {
+		t.Fatalf("typeOf(*any -> string) returned %T, want *data.Type", got)
+	}
+
+	if !tp.IsPointer() {
+		t.Fatalf("typeOf(*any -> string) = %v, want a pointer type", tp)
+	}
+
+	if !tp.BaseType().IsType(data.StringType) {
+		t.Errorf("typeOf(*any -> string) base type = %v, want StringType", tp.BaseType())
+	}
+}
+
+// Test_TypeOf_PointerToNilInterfaceFallsBackToGenericPointerType verifies
+// that a pointer to an as-yet-unassigned interface{} slot (the dereferenced
+// value is nil) still falls back to the old, generic
+// data.PointerType(data.InterfaceType) answer rather than erroring or
+// panicking on the nil.
+func Test_TypeOf_PointerToNilInterfaceFallsBackToGenericPointerType(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+
+	var v any // nil
+
+	p := &v
+	args := data.NewList(p)
+
+	got, err := typeOf(s, args)
+	if err != nil {
+		t.Fatalf("typeOf(*any -> nil) error: %v", err)
+	}
+
+	tp, ok := got.(*data.Type)
+	if !ok {
+		t.Fatalf("typeOf(*any -> nil) returned %T, want *data.Type", got)
+	}
+
+	if !tp.IsPointer() {
+		t.Fatalf("typeOf(*any -> nil) = %v, want a pointer type", tp)
+	}
+
+	if !tp.BaseType().IsInterface() {
+		t.Errorf("typeOf(*any -> nil) base type = %v, want InterfaceType", tp.BaseType())
+	}
+}
+
+// Test_TypeOf_PointerToStructReturnsPointerToStructType verifies that
+// typeof(&x) for a struct-valued x reports a pointer wrapping the struct's
+// own type, not the generic "*interface{}".
+func Test_TypeOf_PointerToStructReturnsPointerToStructType(t *testing.T) {
+	s := symbols.NewSymbolTable("test")
+
+	box := data.NewStructFromMap(map[string]any{"n": 1})
+
+	var v any = box
+
+	p := &v
+	args := data.NewList(p)
+
+	got, err := typeOf(s, args)
+	if err != nil {
+		t.Fatalf("typeOf(*any -> struct) error: %v", err)
+	}
+
+	tp, ok := got.(*data.Type)
+	if !ok {
+		t.Fatalf("typeOf(*any -> struct) returned %T, want *data.Type", got)
+	}
+
+	if !tp.IsPointer() {
+		t.Fatalf("typeOf(*any -> struct) = %v, want a pointer type", tp)
+	}
+
+	if tp.BaseType().Kind() != data.StructKind {
+		t.Errorf("typeOf(*any -> struct) base type = %v, want a struct kind", tp.BaseType())
+	}
+}

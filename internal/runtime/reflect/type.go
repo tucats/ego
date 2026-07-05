@@ -51,6 +51,41 @@ func describeType(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.PackageType(v.Name), nil
 
 	case *any:
+		// fix BUG-34 (reflect/typeof pointer-type follow-up): every Ego
+		// pointer, no matter what it points to, is represented internally
+		// as a *any -- a raw Go pointer to the pointed-to variable's
+		// storage slot in the symbol table (see
+		// bytecode.addressOfByteCode and symbols.SymbolTable.GetAddress).
+		// The old code unconditionally reported every pointer as the
+		// generic "*interface{}", discarding the pointed-to type
+		// entirely: reflect.Type(&someInt), reflect.Type(&someString),
+		// and reflect.Type(&someStruct) were all indistinguishable from
+		// one another. Dereference the pointer and recurse so the
+		// reported type instead reflects what it actually points to --
+		// e.g. "*int" for &someInt, matching what a Go programmer expects
+		// from reflect.TypeOf(&someInt). See the identical fix (and fuller
+		// comment) in builtins.typeOf, which this function otherwise
+		// duplicates -- keep the two in sync (see BUILTIN-TYPES-1).
+		pointee := *v
+		if pointee == nil {
+			// Nothing to describe (e.g. a pointer to a variable that was
+			// declared but never assigned a value); fall back to the old,
+			// generic answer rather than recursing on a nil.
+			return data.PointerType(data.InterfaceType), nil
+		}
+
+		pointeeType, err := describeType(s, data.NewList(pointee))
+		if err != nil {
+			return nil, err
+		}
+
+		if t, ok := pointeeType.(*data.Type); ok {
+			return data.PointerType(t), nil
+		}
+
+		// The recursive call did not produce a *data.Type (this should not
+		// normally happen); fall back to the generic answer rather than
+		// propagating a malformed result.
 		return data.PointerType(data.InterfaceType), nil
 
 	case func(s *symbols.SymbolTable, args data.List) (any, error):

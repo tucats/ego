@@ -48,3 +48,27 @@
     @assert reflect.Type([]map[string]int{}) == []map[string]int
     @assert reflect.Type(map[string]*int{}) == map[string]*int
 }
+
+@test "reflect: Type() on pointer values (BUG-34)"
+{
+    // BUG-34 follow-up: every pointer produced by Ego's "&name" operator is
+    // represented internally as a raw *any (a pointer to the variable's
+    // storage slot in the symbol table), regardless of what it points to.
+    // Before this fix, reflect.Type() reported every single pointer as the
+    // generic "*interface{}", discarding the pointed-to type entirely, so
+    // a pointer to an int and a pointer to a string were indistinguishable.
+    // The fix dereferences the pointer and recurses so the declared type of
+    // the pointed-to value is preserved.
+    n := 42
+    pn := &n
+    @assert string(reflect.Type(pn)) == "*int"
+
+    s := "hello"
+    ps := &s
+    @assert string(reflect.Type(ps)) == "*string"
+
+    type PtrPoint struct { x int; y int }
+    p := PtrPoint{x: 1, y: 2}
+    pp := &p
+    @assert string(reflect.Type(pp)) == "*PtrPoint struct{x int, y int}"
+}

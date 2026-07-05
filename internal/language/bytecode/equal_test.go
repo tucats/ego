@@ -631,3 +631,194 @@ func Test_equalByteCode_StackDiscipline_ConsumesBothPushesOne(t *testing.T) {
 	// Nothing else should remain on the stack.
 	tc.assertStackEmpty()
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 13 — BUG-34: scalar/native pointer identity comparison
+//
+// Before this fix, neither equalByteCode nor notEqualByteCode had a case for
+// a plain Go pointer value (e.g. *int, *string, or the *any that Ego's real
+// "&name" address-of operator actually produces -- see
+// addressOfByteCode/symbols.SymbolTable.GetAddress). Such a value fell
+// through to genericEqualCompare, whose inner switch also has no pointer
+// case, leaving `result` at its zero value (false) unconditionally. That
+// made "pa == pb" AND "pa != pb" both false for the same pair of pointers --
+// even "pa == pa" was false -- violating the basic invariant that exactly one
+// of == and != must be true.
+//
+// isPointerValue + the new default-case branches in equalByteCode and
+// notEqualByteCode fix this by comparing pointer identity (the Go pointer
+// value itself, comparable via plain "==") whenever both operands are
+// pointers, and treating a pointer as unequal to any non-pointer value.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Test_equalByteCode_SamePointerIsEqual verifies that a pointer compares
+// equal to itself.
+func Test_equalByteCode_SamePointerIsEqual(t *testing.T) {
+	n := 5
+	p := &n
+
+	tc := newTestContext(t).withStack(p, p)
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_equalByteCode_DifferentPointersSameValueAreNotEqual is the core
+// BUG-34 regression test: two distinct *int pointers whose pointed-to values
+// happen to be equal (5 == 5) must NOT compare as == -- pointer comparison
+// is by address/identity, not by the pointed-to value. Before the fix this
+// returned false anyway, but only by accident (result defaulted to false for
+// every pointer pair); Test_notEqualByteCode_DifferentPointersSameValueAreNotEqual
+// below confirms != is now the correct, consistent negation of this result.
+func Test_equalByteCode_DifferentPointersSameValueAreNotEqual(t *testing.T) {
+	a := 5
+	b := 5
+	pa := &a
+	pb := &b
+
+	tc := newTestContext(t).withStack(pa, pb)
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_equalByteCode_DifferentConcretePointerTypesAreNotEqual verifies that
+// comparing pointers of two different concrete Go types (here *int vs
+// *string) is well-defined as false and does not panic, even though both
+// operands are pointer-kind values.
+func Test_equalByteCode_DifferentConcretePointerTypesAreNotEqual(t *testing.T) {
+	n := 5
+	s := "5"
+	pn := &n
+	ps := &s
+
+	tc := newTestContext(t).withStack(pn, ps)
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_equalByteCode_PointerVsNonPointerIsNotEqual verifies that a pointer is
+// never equal to a non-pointer value (e.g. "pa == 5").
+func Test_equalByteCode_PointerVsNonPointerIsNotEqual(t *testing.T) {
+	n := 5
+	pn := &n
+
+	tc := newTestContext(t).withStack(pn, 5)
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_equalByteCode_AnyPointerIdentity exercises the *any pointer
+// representation that Ego's actual "&name" operator produces at runtime
+// (see symbols.SymbolTable.GetAddress), as opposed to the *int used by the
+// other tests in this section (which stand in for what data.AddressOf would
+// produce, a code path that is not currently reachable from "&name" but is
+// still handled defensively). Two different *any pointers must compare as
+// not equal even when the values they point to are equal.
+func Test_equalByteCode_AnyPointerIdentity(t *testing.T) {
+	var v1 any = 5
+	var v2 any = 5
+	p1 := &v1
+	p2 := &v2
+
+	tc := newTestContext(t).withStack(p1, p1)
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+
+	tc2 := newTestContext(t).withStack(p1, p2)
+	tc2.assertNoError(equalByteCode(tc2.ctx, nil))
+	tc2.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_SamePointerIsNotUnequal verifies that a pointer does
+// not compare != to itself (the exact negation of
+// Test_equalByteCode_SamePointerIsEqual).
+func Test_notEqualByteCode_SamePointerIsNotUnequal(t *testing.T) {
+	n := 5
+	p := &n
+
+	tc := newTestContext(t).withStack(p, p)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_DifferentPointersSameValueAreNotEqual is the BUG-34
+// regression test for !=: two distinct pointers to variables holding equal
+// values must compare as != true. Before the fix this was false, making !=
+// completely unusable for pointer comparisons (it could never fire).
+func Test_notEqualByteCode_DifferentPointersSameValueAreNotEqual(t *testing.T) {
+	a := 5
+	b := 5
+	pa := &a
+	pb := &b
+
+	tc := newTestContext(t).withStack(pa, pb)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_notEqualByteCode_PointerVsNonPointerIsUnequal verifies that a pointer
+// is always != a non-pointer value.
+func Test_notEqualByteCode_PointerVsNonPointerIsUnequal(t *testing.T) {
+	n := 5
+	pn := &n
+
+	tc := newTestContext(t).withStack(pn, 5)
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_equalNotEqual_PointerResultsAreConsistentNegations is the headline
+// BUG-34 regression test: for a representative set of pointer/value pairs,
+// == and != must always disagree (exactly one is true), never both false
+// (the original bug) and never both true.
+func Test_equalNotEqual_PointerResultsAreConsistentNegations(t *testing.T) {
+	a := 5
+	b := 5
+	pa := &a
+	pb := &b
+
+	cases := []struct {
+		name string
+		v1   any
+		v2   any
+	}{
+		{"same pointer", pa, pa},
+		{"different pointers, equal values", pa, pb},
+		{"pointer vs scalar", pa, 5},
+		{"pointer vs nil", pa, nil},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			eqTc := newTestContext(t).withStack(tt.v1, tt.v2)
+			eqTc.assertNoError(equalByteCode(eqTc.ctx, nil))
+
+			eqResult, err := eqTc.ctx.Pop()
+			if err != nil {
+				t.Fatalf("Pop (==) failed: %v", err)
+			}
+
+			neTc := newTestContext(t).withStack(tt.v1, tt.v2)
+			neTc.assertNoError(notEqualByteCode(neTc.ctx, nil))
+
+			neResult, err := neTc.ctx.Pop()
+			if err != nil {
+				t.Fatalf("Pop (!=) failed: %v", err)
+			}
+
+			eqBool, _ := eqResult.(bool)
+			neBool, _ := neResult.(bool)
+
+			if eqBool == neBool {
+				t.Errorf("%s: == returned %v and != returned %v; exactly one must be true (BUG-34)",
+					tt.name, eqBool, neBool)
+			}
+		})
+	}
+}

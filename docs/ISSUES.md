@@ -201,7 +201,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
 | [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | ✓ |
 | [BUG-33](#BUG-33) | BUG | Struct field type declarations are never enforced, even in strict mode. | ✓ |
-| [BUG-34](#BUG-34) | BUG | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
+| [BUG-34](#BUG-34) | BUG | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | ✓ |
 | [BUG-35](#BUG-35) | BUG | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
 | [BUG-36](#BUG-36) | BUG | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | BUG | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
@@ -477,7 +477,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
 | [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | ✓ |
 | [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | ✓ |
-| [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
+| [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | ✓ |
 | [BUG-35](#BUG-35) | HIGH | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
 | [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
@@ -3483,6 +3483,56 @@ case for scalar Go pointers such as `*int`/`*string`/`*bool` (the representation
 `&intVar`, per `internal/language/data/pointers.go:AddressOf`). These fall through to the
 `default: genericEqualCompare` path, which finds no matching case in its inner switch and
 leaves `result` at its zero value (`false`) for both operators.
+
+**Resolution (July 2026):**  
+Investigation found that `data.AddressOf` (the function referenced in the root-cause notes
+above, with its per-scalar-type switch producing `*int`, `*string`, etc.) is not actually
+called anywhere in the `&` operator's real execution path — it appears to be dead code. The
+real implementation, `addressOfByteCode` (`internal/language/bytecode/types.go`), calls
+`symbols.SymbolTable.GetAddress`, which always returns a `*any` — a raw Go pointer to the
+named variable's storage slot in the symbol table — regardless of what concrete type is
+stored there. So every Ego pointer, of any pointed-to type, arrives at `equalByteCode` /
+`notEqualByteCode` as a `*any`, which is just as unhandled by the old type switches as the
+scalar pointer types originally suspected.
+
+The fix adds a new helper, `isPointerValue` (in `equal.go`), that reports whether a value is
+any native Go pointer-kind value (covering `*any`, the double-pointer forms `AddressOf` would
+return for Ego's own reference types, and, defensively, the scalar pointer types `AddressOf`
+would produce if it were ever wired up). `equalByteCode`'s and `notEqualByteCode`'s `default`
+cases now check this first:
+
+- If both operands are pointers, they compare by **address identity** — `v1 == v2` in Go,
+  which is safe (cannot panic) because pointer-kind values are always comparable, and
+  differently-typed pointers are well-defined as simply unequal, not an error.
+- If exactly one operand is a pointer, the result is always "not equal" (a pointer is never
+  equal to a non-pointer value).
+- Otherwise (neither is a pointer), control falls through to `genericEqualCompare` exactly
+  as before.
+
+This makes pointer comparison behave like Go: `pa == pa` is now `true`, `pa == pb` for two
+different variables is `false` even when their values are equal, and `==`/`!=` are always
+consistent negations of each other. `docs/LANGUAGE.md`'s "pointer identity comparison is not
+supported" row was removed from the Go-vs-Ego differences table since this is no longer a
+difference.
+
+**Follow-up fix — `typeof()` / `reflect.Type()` on pointers:** while confirming the actual
+pointer representation (`*any`) with `reflect.Type(&x)`, a second, related bug was found and
+fixed in the same investigation: `internal/builtins/types.go` (`typeOf`, the `typeof()`
+built-in) and `internal/runtime/reflect/type.go` (`describeType`, `reflect.Type()`) both had
+a `case *any: return data.PointerType(data.InterfaceType), nil` — meaning every pointer,
+regardless of what it pointed to, was reported as the generic `*interface{}`. `typeof(&x)`
+for an `int` `x` and a `string` `x` were indistinguishable. Both functions now dereference
+the pointer and recurse on the pointed-to value, wrapping the result in `data.PointerType(...)`,
+so `typeof(&n)` for an `int` `n` now correctly reports `*int`, `reflect.Type(&aBox)` reports
+`*Box` (for a struct type `Box`), and so on. A pointer to a not-yet-assigned `interface{}`
+slot (dereferences to `nil`) still falls back to the old, generic answer.
+
+Verified with new Go tests in `internal/language/bytecode/equal_test.go` (pointer identity
+and consistent-negation cases for both `==` and `!=`), `internal/builtins/types_test.go`
+and `internal/runtime/reflect/type_test.go` (pointer-type preservation for `typeof()` /
+`reflect.Type()`), new Ego tests in `tests/types/pointer_ops.ego` and
+`tests/reflect/type.ego`, and a full run of `tools/gotests.sh` plus `ego test` under all
+three typing modes (strict/relaxed/dynamic).
 
 ---
 

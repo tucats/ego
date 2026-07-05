@@ -114,6 +114,29 @@ func notEqualByteCode(c *Context, i any) error {
 		}
 
 	default:
+		// fix BUG-34: mirror the pointer-identity handling added to
+		// equalByteCode's default case -- see the comment there for the
+		// full rationale. A native Go pointer value (e.g. *int, *string --
+		// from data.AddressOf, or **Map/**Array/**Channel) has no case of
+		// its own above, so without this branch execution falls straight
+		// into the strict/normalize logic below, which has no notion of a
+		// pointer and left `result` at its zero value (false) -- meaning
+		// "pa != pb" was always false, even for two pointers to two
+		// different variables.
+		if isPointerValue(v1) || isPointerValue(v2) {
+			if isPointerValue(v1) && isPointerValue(v2) {
+				// See equalByteCode's default case for why "v1 != v2" here
+				// can never panic.
+				result = (v1 != v2)
+			} else {
+				// A pointer is never equal to a non-pointer value (e.g.
+				// pa != 5), so they are always "not equal".
+				result = true
+			}
+
+			break
+		}
+
 		// If type checking is set to strict, the types must match exactly.
 		if c.typeStrictness == defs.StrictTypeEnforcement {
 			if !data.TypeOf(v1).IsType(data.TypeOf(v2)) {

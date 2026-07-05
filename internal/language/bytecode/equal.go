@@ -115,10 +115,70 @@ func equalByteCode(c *Context, i any) error {
 		}
 
 	default:
+		// fix BUG-34: a native Go pointer value -- e.g. *int, *string,
+		// *float64 (produced by data.AddressOf when Ego code takes the
+		// address of a scalar variable with "&x"), *any (AddressOf's
+		// fallback for interface{} values), or **Map/**Array/**Channel
+		// (the double-pointer form AddressOf returns when "&" is applied to
+		// a variable that already holds one of Ego's own reference types) --
+		// has no case of its own above, so it used to fall straight through
+		// to genericEqualCompare. That function's inner switch has no branch
+		// for a pointer's Go type either, so `result` was left at its zero
+		// value (false) no matter what -- meaning "pa == pb" was always
+		// false, even when pa and pb pointed at the exact same variable.
+		//
+		// isPointerValue reports whether a value is one of these native Go
+		// pointers (see its doc comment for why Ego's own *data.Struct,
+		// *data.Map, *data.Array, and *data.Type are excluded -- they are
+		// already handled, correctly, by the cases above).
+		if isPointerValue(v1) || isPointerValue(v2) {
+			if isPointerValue(v1) && isPointerValue(v2) {
+				// Two pointers are equal only when they share the exact same
+				// concrete Go type (e.g. both *int) AND the same address.
+				// "v1 == v2" is safe here and can never panic: both operands
+				// are guaranteed to be Go pointer values, which are always
+				// comparable, and Go's interface-equality rules already
+				// define comparisons between two differently-typed pointers
+				// as simply "not equal" (no panic) rather than an error.
+				return c.push(v1 == v2)
+			}
+
+			// A pointer is never equal to a non-pointer value (e.g. pa == 5).
+			return c.push(false)
+		}
+
 		return genericEqualCompare(c, v1, v2)
 	}
 
 	return c.push(result)
+}
+
+// isPointerValue reports whether v is a native Go pointer -- e.g. *int,
+// *string, *float64 (as produced by data.AddressOf when Ego code evaluates
+// "&x" for a scalar variable x), *any (AddressOf's fallback representation
+// for interface{} values), or **Map / **Array / **Channel (the
+// pointer-to-pointer form AddressOf returns when "&" is applied to a
+// variable that already holds one of Ego's own reference types).
+//
+// It is used by equalByteCode and notEqualByteCode (fix for BUG-34) to
+// detect a pointer comparison so it can be resolved by address identity
+// instead of silently falling through to comparison logic that has no
+// notion of a pointer at all and always reported "not equal to anything".
+//
+// Ego's own composite value types -- *data.Struct, *data.Map, *data.Array,
+// *data.Type -- are technically Go pointers too, but callers never see them
+// reach this function in practice: the type switches in equalByteCode and
+// notEqualByteCode each have a dedicated, earlier case for those types that
+// compares structural (deep) equality instead of address identity, which is
+// the correct semantics for them (see BUG-26).
+func isPointerValue(v any) bool {
+	if v == nil {
+		return false
+	}
+
+	t := reflect.TypeOf(v)
+
+	return t != nil && t.Kind() == reflect.Ptr
 }
 
 func genericEqualCompare(c *Context, v1 any, v2 any) error {

@@ -160,13 +160,63 @@
 
 @test "types: pointer dereference equality"
 {
-    // NOTE: Ego does not support pointer identity comparison (pa != pb).
-    // Two pointers to separate variables with equal values compare as equal
-    // in Ego, unlike Go where pointer identity is based on memory address.
-    // Only the dereferenced value comparison is reliable.
+    // Dereferencing two different pointers compares the pointed-to values,
+    // which is reliable regardless of pointer identity support.
     a := 5
     b := 5
     pa := &a
     pb := &b
     @assert *pa == *pb
+}
+
+@test "types: pointer identity comparison (BUG-34)"
+{
+    // BUG-34: pa == pb and pa != pb used to both return false unconditionally
+    // for every pair of pointers -- even "pa == pa" was false -- because
+    // neither operator had any case for a native Go pointer value. That
+    // violated the basic invariant that exactly one of == and != must be
+    // true. Ego now compares pointers by address/identity, matching Go:
+    // a pointer equals only itself (or another pointer to the very same
+    // variable), never a different variable that merely holds an equal
+    // value.
+    a := 5
+    b := 5
+    pa := &a
+    pb := &b
+    pa2 := pa
+
+    // A pointer is equal to itself.
+    @assert pa == pa
+    @assert !(pa != pa)
+
+    // Assigning a pointer just copies the address; both names refer to the
+    // same variable, so they compare equal.
+    @assert pa == pa2
+    @assert !(pa != pa2)
+
+    // Two different variables are two different pointers, even though the
+    // values stored in them happen to be equal.
+    @assert pa != pb
+    @assert !(pa == pb)
+
+    // A pointer is never equal to a non-pointer value.
+    @assert pa != 5
+    @assert !(pa == 5)
+}
+
+@test "types: typeof preserves pointed-to type (BUG-34)"
+{
+    // BUG-34 follow-up: typeof(&x) used to report the generic *interface{}
+    // for every pointer, no matter what x was, because every Ego pointer is
+    // represented internally as a raw *any (a pointer to the variable's
+    // storage slot). typeof now dereferences and recurses so the type of
+    // whatever is actually pointed to is preserved.
+    n := 42
+    pn := &n
+    @assert typeof(pn) == typeof(&n)
+    @assert string(typeof(pn)) == "*int"
+
+    s := "hello"
+    ps := &s
+    @assert string(typeof(ps)) == "*string"
 }

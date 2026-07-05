@@ -112,7 +112,6 @@ know where to watch out.
 | `string(65)` produces `"A"` (Unicode rune) | In Ego, **`string(int)` produces the decimal string** `"65"`. To convert a rune to a string, use `string([]int{65})` or `fmt.Sprintf("%c", 65)`. |
 | Missing map key returns the zero value of the value type | In Ego, **a missing map key always returns `nil`**, regardless of the declared value type. Use the two-value form `v, ok := m[key]` to distinguish missing from present. |
 | `var p *T` declares a nil pointer of type `*T` | In Ego, **`var p *T` produces the zero value of `T`**, not a nil pointer. Use `p := &x` to obtain a real pointer, or return `nil` explicitly from a function with pointer return type. |
-| Pointer variables have unique identity; `pa != pb` compares addresses | In Ego, **pointer identity comparison is not supported**. `pa != pb` does not compare addresses. Use `*pa != *pb` to compare the pointed-to values. |
 | Go does not allow nested named function declarations inside another function | Ego **allows nested named functions**, but they do **not** capture the enclosing function's scope. A nested named function can only access its own parameters, its own locals, and package/global names — not the enclosing function's parameters or locals. Use a function literal (closure) when you need the enclosing scope. |
 
 In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
