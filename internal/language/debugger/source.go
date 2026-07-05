@@ -3,9 +3,9 @@ package debugger
 import (
 	"strings"
 
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // indent is the number of spaces added per nesting level in the source
@@ -76,9 +76,7 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, sessionCon
 		// and leading/trailing whitespace before re-indenting.
 		t = strings.TrimSpace(strings.TrimSuffix(t, ";"))
 
-		opened := strings.Count(t, "{") + strings.Count(t, "(")
-		closed := strings.Count(t, "}") + strings.Count(t, ")")
-
+		opened, closed := identationCounts(t)
 		if opened > closed {
 			// More openers than closers on this line — indent this line at the
 			// current level, then increase nesting for the next line.
@@ -102,4 +100,37 @@ func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, sessionCon
 	}
 
 	return nil
+}
+
+// identationCounts returns the number of openers and closers in a line of
+// source text.  Openers are '{' and '(', closers are '}' and ')'. This uses
+// the tokenizer to avoid counting characters that appear inside string literals,
+// which would produce incorrect indentation.
+func identationCounts(line string) (int, int) {
+	opened := 0
+	closed := 0
+
+	// Tokenize this line. The "is code" flag is true.
+	tokens := tokenizer.New(line, true)
+
+	// Scan the tokens, counting openers and closers.  The tokenizer will
+	// ignore any openers/closers that appear inside string literals, so we
+	// don't have to worry about that here.
+	for tokens.Peek(1).IsNot(tokenizer.EndOfTokens) {
+		t := tokens.Next()
+
+		if t.Class() != tokenizer.SpecialTokenClass {
+			continue
+		}
+
+		switch t.Spelling() {
+		case "{", "(":
+			opened++
+
+		case "}", ")":
+			closed++
+		}
+	}
+
+	return opened, closed
 }

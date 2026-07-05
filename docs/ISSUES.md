@@ -278,7 +278,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [DEBUGGER-BREAKS-3](#DEBUGGER-BREAKS-3) | DEBUGGER-BREAKS | clearBreakWhen/clearBreakAtLine kept iterating a shifted slice after removing a match instead of returning immediately. | ✓ |
 | [DEBUGGER-COMMANDS-1](#DEBUGGER-COMMANDS-1) | DEBUGGER-COMMANDS | The print case used full-string errors.Equal instead of key-based errors.Equals, discarding output when ErrStop carried context. | ✓ |
 | [DEBUGGER-SHOW-1](#DEBUGGER-SHOW-1) | DEBUGGER-SHOW | showSource mutated its err parameter by value, so invalid range arguments were silently swallowed by the caller. | ✓ |
-| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | DEBUGGER-SHOW | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | |
+| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | DEBUGGER-SHOW | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | ✓ |
 | [DEFER-1](#DEFER-1) | DEFER | `deferByteCode` receiver slice captures wrong elements when new count ≠ deferThisSize | ✓ |
 | [DEFER-2](#DEFER-2) | DEFER | `deferByteCode` skips receiver capture when `deferThisSize == 0` | |
 | [EQUAL-1](#EQUAL-1) | EQUAL | `equalTypes` returns an undecorated error (no module or line info) | ✓ |
@@ -388,7 +388,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [RETURN-2](#RETURN-2) | RETURN | `err` from `c.Pop()` in the bool branch is silently overwritten | ✓ |
 | [SCRIPT-H1](#SCRIPT-H1) | SCRIPT | The readrows opcode capped results at one row due to a copy-pasted ?limit=1 fragment. | ✓ |
 | [SCRIPT-L1](#SCRIPT-L1) | SCRIPT | An empty transaction body returned a plain-text response with no Content-Type header. | ✓ |
-| [SCRIPT-M1](#SCRIPT-M1) | SCRIPT | _rows_ was always 0 in user error-condition expressions after an insert opcode. | ✓ |
+| [SCRIPT-M1](#SCRIPT-M1) | SCRIPT | \_rows\_ was always 0 in user error-condition expressions after an insert opcode. | ✓ |
 | [SCRIPT-M2](#SCRIPT-M2) | SCRIPT | The drop opcode (and sql ... DROP TABLE) did not flush the schema cache, leaving stale column metadata. | ✓ |
 | [STACK-1](#STACK-1) | STACK | `copyByteCode` pushes the integer literal `2` instead of the deep copy | ✓ |
 | [STACK-2](#STACK-2) | STACK | `readStackByteCode` guard uses `>` instead of `>=`, causing panics on boundary indices | ✓ |
@@ -2698,14 +2698,15 @@ panic: sync: negative WaitGroup counter
 
 goroutine 1 [running]:
 sync.(*WaitGroup).Add(...)
-	.../sync/waitgroup.go:118 +0x264
+    .../sync/waitgroup.go:118 +0x264
 ...
 github.com/tucats/ego/internal/language/bytecode.CallWithReceiver(...)
-	.../internal/language/bytecode/callNative.go:583 +0x484
+    .../internal/language/bytecode/callNative.go:583 +0x484
 ...
 main.main()
-	/Users/tom/go/src/github.com/tucats/ego/main.go:90 +0x2f8
+    /Users/tom/go/src/github.com/tucats/ego/main.go:90 +0x2f8
 ```
+
 (exit code 2 — the entire process terminates; "after double done" is never printed)
 
 **Expected output:**
@@ -2753,6 +2754,7 @@ exactly this case; see BUG-28's own resolution for how that specific situation i
 prevented from ever happening, rather than recovered from after the fact.
 
 **Tests added:**
+
 - `internal/language/bytecode/callNative_test.go` (Section 10): `Test_safeReflectCall_NoPanic`
   (ordinary calls are unaffected) and `Test_safeReflectCall_RecoversPanic` (the direct
   regression test — verifies no panic escapes, and that the resulting error is
@@ -2800,11 +2802,11 @@ fatal error: sync: unlock of unlocked mutex
 
 goroutine 1 [running]:
 internal/sync.fatal(...)
-	.../runtime/panic.go:1191 +0x20
+    .../runtime/panic.go:1191 +0x20
 internal/sync.(*Mutex).unlockSlow(...)
-	.../internal/sync/mutex.go:204 +0x38
-...
+    .../internal/sync/mutex.go:204 +0x38
 ```
+
 (exit code 2; neither "caught" nor "survived" is ever printed)
 
 **Expected output:**
@@ -2844,6 +2846,7 @@ design. The fix instead prevents the risky call from ever happening:
   reachable from Ego code that has this failure mode today.
 
 **Tests added:**
+
 - `internal/language/bytecode/callNative_test.go` (Section 11): six tests covering normal
   Lock/Unlock, TryLock while unlocked/locked, an unhandled-method-name fallback, and two
   direct regression tests — `Test_callMutexMethod_UnlockWithoutLock` and
@@ -2893,11 +2896,12 @@ panic: close of closed channel
 
 goroutine 1 [running]:
 github.com/tucats/ego/internal/language/data.(*Channel).Close(...)
-	/Users/tom/go/src/github.com/tucats/ego/internal/language/data/channel.go:184 +0xf4
+    /Users/tom/go/src/github.com/tucats/ego/internal/language/data/channel.go:184 +0xf4
 github.com/tucats/ego/internal/builtins.Close(...)
-	/Users/tom/go/src/github.com/tucats/ego/internal/builtins/close.go:16 +0x78
+    /Users/tom/go/src/github.com/tucats/ego/internal/builtins/close.go:16 +0x78
 ...
 ```
+
 (exit code 2; nothing after the first `close(ch)` ever prints)
 
 **Expected output:**
@@ -2936,6 +2940,7 @@ state before ever touching the native channel, rather than trying to recover aft
   by adding return values; the two-value form `wasOpen, err := close(ch)` now also works.
 
 **Tests added:**
+
 - `internal/language/data/channel_test.go`: `Test_Channel_Close_FirstCallSucceeds`,
   `Test_Channel_Close_NilReceiver`, and the direct regression test
   `Test_Channel_Close_DoubleCloseDoesNotPanic` (wraps the second `Close()` call in its own
@@ -3521,6 +3526,7 @@ func main() {
 Error: at main(line 8), division by zero
 Error: terminated with errors
 ```
+
 (exit code 1; neither "outer caught" nor "done" is ever printed)
 
 **Expected output:**
@@ -3593,7 +3599,7 @@ func main() {
 }
 ```
 
-**Actual output:** `Error: ` (blank), program aborts.
+**Actual output:** `Error:` (blank), program aborts.
 
 **Notes:**  
 Root cause in `internal/runtime/strings/substrings.go`, `leftSubstring`/`rightSubstring`:
@@ -3672,7 +3678,7 @@ The `strings.Split()` function was implemented as a pure native passthrough func
 Ego extension of allowing a default separator if one is not given was not being honored.
 Added a new shim function `split()` in the runtime strings package that handles the case of
 the missing separator by providing a default if needed, and then calling through to the
-native function. The Ego array is constructed from the returned native array and the 
+native function. The Ego array is constructed from the returned native array and the
 function returns.
 
 Added new Ego unit tests to validate this Ego-specific behavior in the strings package.
@@ -3734,7 +3740,7 @@ The function type declaration was not correctly set to cover variadic values. Ad
 the return code should have been invalid argument type, not count.
 
 1. `internal/runtime/strings/types.go` updated to specify that the `String()` function, an
-   _Ego_ extension, was a variadic function.
+   *Ego* extension, was a variadic function.
 
 2. `internal/runtime/strings/conversion.go` updated `toString()` to return correct error
    when a non-integer or non-string value was found in the variadic list.
@@ -4514,6 +4520,7 @@ func main() {
 ```text
 11
 ```
+
 (individual tokens for `{`, `}`, `<`, `-` rather than merged `{}` and `<-`)
 
 **Expected output:**
@@ -4654,6 +4661,7 @@ done
 ```text
 done
 ```
+
 (no error caught)
 
 **Notes:**  
@@ -4717,6 +4725,7 @@ func main() {
 ```text
 Error: at main(line 10), invalid function invocation: ["X", "Y"]
 ```
+
 (`.Functions()` fails the same way, e.g. `invalid function invocation: ["Sum() int"]`.)
 
 **Expected output:**
@@ -5158,7 +5167,7 @@ and the second low-priority issue around input/output (IO) would be named `IO-L2
 | [FUNC-L1](#FUNC-L1) | Low | String multiplication (`*`) behaved asymmetrically, treating a left-hand string operand as repetition. | ✓ |
 | [FUNC-L2](#FUNC-L2) | Low | Using an explicit return value expression in a function with named returns was a compile error. | ✓ |
 
-### High priority issues
+### High FUNC Issues
 
 <a id="FUNC-H1"></a>
 
@@ -5336,7 +5345,7 @@ that a runtime error is thrown.
 
 ---
 
-### Medium priority issues
+### Medium FUNC issues
 
 <a id="FUNC-M1"></a>
 
@@ -5566,7 +5575,7 @@ the success case (coercible string) and the error case.
 
 ---
 
-### Low priority issues
+### Low FUNC issues
 
 <a id="FUNC-L1"></a>
 
@@ -5717,7 +5726,7 @@ Three new tests added to `tests/functions/named_returns.ego`:
 | [FLOW-L1](#FLOW-L1) | Low | Labeled `break`/`continue` were not supported. | ✓ |
 | [FLOW-L2](#FLOW-L2) | Low | The `switch init; expr` semicolon-separated form was not supported. | ✓ |
 
-### High priority issues
+### High FLOW issues
 
 <a id="FLOW-H1"></a>
 
@@ -5771,7 +5780,7 @@ variables, server runtime arrays, etc.).
 
 ---
 
-### Medium priority issues
+### Medium FLOW issues
 
 <a id="FLOW-M1"></a>
 
@@ -5989,7 +5998,7 @@ Two details worth calling out:
 
 ---
 
-### Low priority issues
+### Low FLOW issues
 
 <a id="FLOW-L1"></a>
 
@@ -6119,7 +6128,7 @@ The implementation wraps Go's `encoding/json` and the `jaxon` path-query library
 | [JSON-M2](#JSON-M2) | Medium | `json.Parse("[]", ".")` returned an error while the equivalent `json.Parse("{}", ".")` succeeded. | ✓ |
 | [JSON-M3](#JSON-M3) | Medium | `json.Unmarshal` into a struct returned an error for unknown JSON fields instead of ignoring them (as Go does). | ✓ |
 
-### High priority issues
+### High JSON issues
 
 <a id="JSON-H1"></a>
 
@@ -6271,7 +6280,7 @@ asserts `err != nil`, matching Go's `encoding/json` behavior.
 
 ---
 
-### Medium priority issues
+### Medium JSON issues
 
 <a id="JSON-M1"></a>
 
@@ -6466,7 +6475,7 @@ by the standard `encoding/json` decoder.
 | -- | -------- | ------- | ------ |
 | [TYPE-H1](#TYPE-H1) | High | `json.Unmarshal` could not reconstruct deeply nested types or typed elements inside `[]any` arrays. | ✓ |
 
-### High priority issues
+### High TYPE issues
 
 <a id="TYPE-H1"></a>
 
@@ -6594,7 +6603,7 @@ implemented in sibling files (`rows.go`, `insert.go`, `drop.go`, etc.).
 | [SCRIPT-M2](#SCRIPT-M2) | Medium | The `drop` opcode (and `sql ... DROP TABLE`) did not flush the schema cache, leaving stale column metadata. | ✓ |
 | [SCRIPT-L1](#SCRIPT-L1) | Low | An empty transaction body returned a plain-text response with no `Content-Type` header. | ✓ |
 
-### High priority issues
+### High priority SCRIPT issues
 
 <a id="SCRIPT-H1"></a>
 
@@ -6652,7 +6661,7 @@ if the provider is sqlite3 then we can't and shouldn't use dotted names.
 
 ---
 
-### Medium priority issues
+### Medium SCRIPT issues
 
 <a id="SCRIPT-M1"></a>
 
@@ -6824,7 +6833,7 @@ database to obtain the updated column list for the recreated table.
 
 ---
 
-### Low priority issues
+### Low SCRIPT issues
 
 <a id="SCRIPT-L1"></a>
 
@@ -6964,13 +6973,13 @@ if len(array) > 0 && kind.IsInterface() {
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original CAST-1 behavior
 
 The character-literal detection used `len(actual) == 3` and byte-indexed the
 string (`actual[1]`).  A multi-byte Unicode character like `'é'` (2 UTF-8
 bytes) produced `len == 4`, so the condition was never true and the cast failed.
 
-#### Fix
+#### Fix for CAST-1
 
 The byte-index check was replaced with a rune-based check:
 
@@ -6996,14 +7005,14 @@ single quotes (regardless of byte width) is handled correctly.
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original CAST-2 behavior
 
 After calling `data.Coerce`, the code tested `if v != nil` and returned
 `ErrInvalidType` when the coercion succeeded but produced `nil`.  This was
 incorrect: `data.Coerce` returning `(nil, nil)` is a valid success for certain
 target types.
 
-#### Fix
+#### Fix for CAST-2
 
 The `if v != nil` guard was removed.  When `err == nil`, the coercion
 succeeded; the result (including nil) is returned directly:
@@ -7036,14 +7045,14 @@ return v, nil
 **Risk:** High
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original COPY-1 behavior
 
 The `*data.Array` case created an empty result array `r` and iterated the
 source `v`, but wrote the deep-copied elements back into `v` via `v.Set(i, vv)`
 instead of `r.Set(i, vv)`.  The returned `r` was always empty; the source `v`
 was mutated as a side effect.
 
-#### Fix
+#### Fix for COPY-1
 
 One character changed — `v.Set` became `r.Set`:
 
@@ -7063,13 +7072,13 @@ _ = r.Set(i, vv)   // was: _ = v.Set(i, vv)
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original COPY-2 behavior
 
 `v.Copy()` produced a shallow copy — fields that were themselves pointers
 (nested `*data.Array`, `*data.Map`, etc.) shared storage between the original
 and the copy, unlike the `*data.Map` case which recursed with `DeepCopy`.
 
-#### Fix
+#### Fix for COPY-2
 
 After the shallow `Copy()`, `DeepCopy` now iterates every public field and
 replaces its value with a recursive deep copy:
@@ -7102,13 +7111,13 @@ return r
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original DELETE-1 behavior
 
 The `default` error case used the magic integer literal `1` to indicate the
 first argument.  While technically correct, the literal had no name to
 communicate its intent.
 
-#### Fix
+#### Fix for DELETE-1
 
 A local named constant `firstArgument = 1` was introduced at the call site,
 making the intent explicit without changing the error output:
@@ -7140,13 +7149,13 @@ return nil, errors.ErrInvalidType.In("delete").Context(
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original FUNCTIONS-1 behavior
 
 `FunctionDictionary` is a package-level `map`.  All five functions that read
 or write it did so without holding any lock, producing data races detectable
 by Go's `-race` flag when called concurrently.
 
-#### Fix
+#### Fix for FUNCTIONS-1
 
 A package-level `sync.RWMutex` named `functionDictionaryMu` was added.
 All read operations (`FindFunction`, `FindName`, `CallBuiltin`, and the key
@@ -7172,13 +7181,13 @@ functionDictionaryMu.Unlock()
 **Risk:** Medium
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original FUNCTIONS-2 behavior
 
 The `Returns` field for `"make"` was `[]*data.Type{data.IntType}`.  `Make`
 actually returns a `[]any`, a `*data.Array`, or a `*data.Channel` — never an
 `int`.  This mismatch exposed incorrect metadata to the compiler's type checker.
 
-#### Fix
+#### Fix for FUNCTIONS-2
 
 The `Returns` declaration was changed to `data.InterfaceType`, reflecting the
 polymorphic return:
@@ -7206,7 +7215,7 @@ Returns: []*data.Type{data.InterfaceType},
 **Risk:** Medium
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original INDEX-1 behavior
 
 The `*data.Map` case returned the raw `bool` from `arg.Get`:
 
@@ -7218,7 +7227,7 @@ return found, err   // ← bool, not int
 All other cases returned an `int` (array index, 1-based string position, or
 -1 for not found).  The function's declaration said it returns `int`.
 
-#### Fix
+#### Fix for INDEX-1
 
 The map case now returns `1` (found) or `0` (not found):
 
@@ -7251,13 +7260,13 @@ return 0, err
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original LENGTH-1 behavior
 
 The channel case returned `math.MaxInt32` for any open channel and `0` only
 when the channel was both closed and empty.  An open channel with zero buffered
 items returned `math.MaxInt32` instead of `0`, diverging from Go's `len()`.
 
-#### Fix
+#### Fix for LENGTH-1
 
 The channel case now calls `arg.Len()` — a new method added to `data.Channel`
 that delegates to Go's built-in `len(c.channel)`:
@@ -7295,13 +7304,13 @@ BUILTIN-NEW-2.
 **Risk:** High
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original MAKE-1 behavior
 
 Passing a negative size to `Make` caused Go's runtime to panic with
 "makeslice: len out of range" — an unrecoverable error that bypassed Ego's
 `try/catch` mechanism.
 
-#### Fix
+#### Fix for MAKE-1
 
 A bounds check was added immediately after the size conversion:
 
@@ -7323,13 +7332,13 @@ if size < 0 {
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original MAKE-2 behavior
 
 Types not covered by the element-type switch (e.g. `int64`, `int32`, `float32`)
 fell through without populating the array.  The caller received a `[]any` of
 `size` nil elements with no error.
 
-#### Fix
+#### Fix for MAKE-2
 
 Cases were added for `int64`, `int32`, `int16`, `int8`, `byte`, and `float32`
 so each produces the correct typed zero value.  An explicit `default` case now
@@ -7356,13 +7365,13 @@ returning a nil-filled slice.
 **Risk:** Medium
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original NEW-1 behavior
 
 `reflect.Int` and `reflect.Int64` shared a single `case` clause that returned
 the untyped integer literal `0`.  Go infers untyped `0` as `int`, so a caller
 requesting a `reflect.Int64` zero value received `int(0)` instead of `int64(0)`.
 
-#### Fix
+#### Fix for NEW-1
 
 The two cases were split so each returns the correct concrete Go type:
 
@@ -7385,13 +7394,13 @@ case reflect.Int64:
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original NEW-2 behavior
 
 When the argument was a `*data.Channel`, `NewInstanceOf` returned the same
 channel unchanged.  `$new(ch)` and `ch` therefore aliased the same underlying
 channel object.
 
-#### Fix
+#### Fix for NEW-2
 
 `NewInstanceOf` now calls `data.NewChannel(typeValue.Cap())` to create a fresh,
 independent channel with the same buffer capacity.  `Cap()` is a new method
@@ -7425,13 +7434,13 @@ if typeValue, ok := args.Get(0).(*data.Channel); ok {
 **Risk:** Low
 **Status: RESOLVED**
 
-#### Original behavior
+#### Original TYPES-1 behavior
 
 Every other `typeOf` case returned a `*data.Type`.  The builtin-function case
 returned the string `"<builtin>"`, making `typeof(someBuiltinFunc)` the only
 path that violated the uniform return type.
 
-#### Fix
+#### Fix for TYPES-1
 
 The case now constructs a minimal `data.Function` descriptor with a
 `"<builtin>"` name and returns a proper `*data.Type` of `FunctionKind`:
@@ -7449,7 +7458,7 @@ return data.FunctionType(&builtinFn), nil
 
 This chapter documents behavioral anomalies, potential bugs, and design concerns found during the comprehensive bytecode-instruction unit-test effort. Each entry includes the affected instruction(s), a description of the original behavior, the risk level, and the resolution.
 
-### Testing Infrastructure
+### Bytecode Testing Infrastructure
 
 The comprehensive bytecode unit-test suite is built on shared helpers in
 `bytecode/testhelpers_test.go`.  All bytecode instruction tests in this
@@ -12311,7 +12320,7 @@ if err == nil || errors.Equals(err, errors.ErrStop) {
 | ID | Summary | Status |
 | -- | ------- | ------ |
 | [DEBUGGER-SHOW-1](#DEBUGGER-SHOW-1) | `showSource` mutated its `err` parameter by value, so invalid range arguments were silently swallowed by the caller. | ✓ |
-| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | |
+| [DEBUGGER-SHOW-2](#DEBUGGER-SHOW-2) | Indentation logic counts braces/parens in raw source text, so characters inside string literals miscount indentation. | ✓ |
 
 <a id="DEBUGGER-SHOW-1"></a>
 
@@ -12414,12 +12423,23 @@ The formatter is a best-effort display aid rather than a semantic renderer.
 Fixing it properly would require tokenizing each source line and skipping
 characters inside string literals.  Given that the error only affects display
 alignment (not execution), and that the current tokenizer's `New()` call
-carries measurable overhead for short expressions, this issue is documented
-but deferred.
+carries measurable overhead for short expressions, this issue is low priority.
+
+#### DEBUGGER-SHOW-2: Resolution
+
+This isn't a complicated fix. Instead of the simplistic count for specific
+characters in the source line, a helper function was added to the `source.go`
+file that tokenzied each line and counted the number of opening and closing
+braces or parenthesis. The tokenizer correctly ignores such characters in
+any string literal. The helper function returns the accurate count of open
+and close semantic operations, which the source display can then use.
+
+Added a Go unit test to validate edge cases and permutations of source text
+sent to the helper function.
 
 ---
 
-### About This Section
+### Security Risk Issues
 
 There is a section (`##`) for each area of Ego that was evaluated for security and
 operational risk issues. Within each section, the risks are grouped by severity
@@ -12451,7 +12471,7 @@ remediation plan somewhat.
 | [LOGIN-L2](#LOGIN-L2) | Low | `InsecureSkipVerify` available without a prominent warning | ✓ |
 | [LOGIN-L3](#LOGIN-L3) | Low | Returned token expiration is recalculated independently of the token contents | ✓ |
 
-### Critical
+### Critical LOGIN Issues
 
 <a id="LOGIN-C1"></a>
 
@@ -12512,7 +12532,7 @@ login endpoint.
 
 ---
 
-### High
+### High LOGIN Issues
 
 <a id="LOGIN-H1"></a>
 
@@ -12662,7 +12682,7 @@ telling the user to update their server URL.
 
 ---
 
-### Medium
+### Medium LOGIN Issues
 
 <a id="LOGIN-M1"></a>
 
@@ -12785,7 +12805,7 @@ the user database.
 
 ---
 
-### Low / Informational
+### Low / Informational LOGIN Issues
 
 <a id="LOGIN-L1"></a>
 
@@ -12872,7 +12892,7 @@ severity scale as the authentication section above.
 | [WEBAUTH-L2](#WEBAUTH-L2) | Low | Cache item expiration only refreshed when CACHE logging is active | ✓ |
 | [WEBAUTH-L3](#WEBAUTH-L3) | Low | No user notification when passkeys are cleared by an administrator | ✓ |
 
-### High
+### High WEBAUTH issues
 
 <a id="WEBAUTH-H1"></a>
 
@@ -12930,7 +12950,7 @@ added to all three language files.
 
 ---
 
-### Medium
+### Medium WEBAUTH Issues
 
 <a id="WEBAUTH-M1"></a>
 
@@ -13018,7 +13038,7 @@ has been removed from `storeChallenge`.
 
 ---
 
-### Low / Informational
+### Low / Informational WEBAUTH Issues
 
 <a id="WEBAUTH-L1"></a>
 
@@ -13104,7 +13124,7 @@ authentication and WebAuthn concerns documented above.
 | [HTTP-L1](#HTTP-L1) | Low | User-supplied URL path reflected verbatim in error messages | ✓ |
 | [HTTP-L2](#HTTP-L2) | Low | Request body read after permission check already set a failure status | ✓ |
 
-### High
+### High HTTP Issues
 
 <a id="HTTP-H1"></a>
 
@@ -13201,7 +13221,7 @@ values are configurable via `ego.server.{read.header|read|write|idle}.timeout`.
 
 ---
 
-### Medium
+### Medium HTTP Issues
 
 <a id="HTTP-M1"></a>
 
@@ -13333,7 +13353,7 @@ via `makeHTTPServer()`, which applies all four timeout values.
 
 ---
 
-### Low / Informational
+### Low / Informational HTTP Issues
 
 <a id="HTTP-L1"></a>
 
@@ -13434,7 +13454,7 @@ April 2026.
 | [TABLES-L1](#TABLES-L1) | Low | Raw database error messages returned to clients | ✓ |
 | [TABLES-L2](#TABLES-L2) | Low | SQLite `PRAGMA` statements use unquoted table and index names | ✓ |
 
-### Critical
+### Critical TABLES Issues
 
 <a id="TABLES-C1"></a>
 
@@ -13468,7 +13488,7 @@ Change `CommitHandler` guard from `len(parameters) != 0` to `!= 1`; matches
 
 ---
 
-### High
+### High TABLES Issues
 
 <a id="TABLES-H1"></a>
 
@@ -13541,7 +13561,7 @@ cannot read are filtered out, not those they can.
 
 ---
 
-### Medium
+### Medium TABLES Issues
 
 <a id="TABLES-M1"></a>
 
@@ -13674,7 +13694,7 @@ rows when no limit is specified.
 
 ---
 
-### Low / Informational
+### Low / Informational TABLES Issues
 
 <a id="TABLES-L1"></a>
 
@@ -13760,7 +13780,7 @@ in `server/assets/handler.go`, identified during a code review in April 2026.
 | [ASSET-L1](#ASSET-L1) | Low | Double `os.ReadFile` call in `readAssetFile` | ✓ |
 | [ASSET-L2](#ASSET-L2) | Low | Path normalization uses fragile string removal instead of `filepath.Clean` | ✓ |
 
-### High
+### High ASSET Issues
 
 <a id="ASSET-H1"></a>
 
@@ -13791,7 +13811,7 @@ Clamping added in `readAssetRange` immediately after `totalSize = info.Size()`.
 
 ---
 
-### Medium
+### Medium ASSET Issues
 
 <a id="ASSET-M1"></a>
 
@@ -13848,7 +13868,7 @@ original error (including the real path) continues to be written to the
 
 ---
 
-### Low / Informational
+### Low / Informational ASSET Issues
 
 <a id="ASSET-L1"></a>
 
@@ -13920,7 +13940,7 @@ profile JSON or in the settings database.
 | [PROFILE-H1](#PROFILE-H1) | High | MD5 used to derive the AES encryption key | ✓ |
 | [PROFILE-M1](#PROFILE-M1) | Medium | Legacy ciphertext not re-encrypted on successful read | ✓ |
 
-### High
+### High PROFILE Issues
 
 <a id="PROFILE-H1"></a>
 
@@ -13973,7 +13993,7 @@ for future removal once all stored values have been re-encrypted.
 
 ---
 
-### Medium
+### Medium PROFILE Issues
 
 <a id="PROFILE-M1"></a>
 
@@ -14037,7 +14057,7 @@ above.
 | [CODE-M5](#CODE-M5) | Medium | Language extensions enabled in sandboxed symbol table | |
 | [CODE-L1](#CODE-L1) | Low | Full user-submitted code body written to REST log | ✓ |
 
-### High
+### High CODE Issues
 
 <a id="CODE-H1"></a>
 
@@ -14101,7 +14121,7 @@ evaluates to `true` for any sandboxed context.
 
 ---
 
-### Medium
+### Medium CODE Issues
 
 <a id="CODE-M1"></a>
 
@@ -14348,7 +14368,7 @@ additional sandbox check.
 
 ---
 
-### Low / Informational
+### Low / Informational CODE Issues
 
 <a id="CODE-L1"></a>
 
@@ -14430,7 +14450,7 @@ Issues are rated using the same severity scale as sections above.
 | [OAUTH-L4](#OAUTH-L4) | Low | Internal error details from token exchange and JWT validation returned to browser clients | ✓ |
 | [OAUTH-L5](#OAUTH-L5) | Low | Custom `ego.server.oauth.user.claim` values silently fall back to `sub` | ✓ |
 
-### High
+### High OAUTH Issues
 
 <a id="OAUTH-H1"></a>
 
@@ -14733,7 +14753,7 @@ updated to match the new `newState()` signature.
 
 ---
 
-### Medium
+### Medium OAUTH Issues
 
 <a id="OAUTH-M1"></a>
 
@@ -15245,7 +15265,7 @@ unsupported claim silently degrades to `ego.logon`) added to
 
 ---
 
-### Low / Informational
+### Low / Informational OAUTH Issues
 
 <a id="OAUTH-L1"></a>
 

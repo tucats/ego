@@ -3538,7 +3538,6 @@ output similar to:
     You are running the  /bin/bash  shell program
 ```
 
-
 #### os.ReadFile(filename) ([]byte, error)
 
 The `ReadFile` function reads input from a file. If the filename is "." then the
@@ -3578,7 +3577,6 @@ os.Remove(fn)
 When this program runs, the physical file "NewData.txt" will have been deleted
 from the file system, assuming the current user has permission to delete the
 file.
-
 
 #### os.WriteFile(filename string, data []byte, mode int) error
 
