@@ -479,7 +479,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | ✓ |
 | [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
 | [BUG-35](#BUG-35) | HIGH | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
-| [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | |
+| [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | |
 | [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | |
 | [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
