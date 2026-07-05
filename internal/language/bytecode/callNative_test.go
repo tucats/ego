@@ -760,11 +760,15 @@ func Test_convertFromNative_TimeTime(t *testing.T) {
 	tc.assertTopStack(now)
 }
 
-// Test_convertFromNative_DataList verifies that a data.List result is
-// exploded: a "results" StackMarker is pushed first, then the list items in
-// reverse order so the first item is on top.
-func Test_convertFromNative_DataList(t *testing.T) {
-	tc := newTestContext(t)
+// Test_convertFromNative_DataList_MultiAssignment verifies that a data.List
+// result is exploded when a multi-value assignment is waiting for it: a
+// "results" StackMarker is pushed first, then the list items in reverse
+// order so the first item is on top. This is signaled by a StackCheck
+// instruction immediately following the call (see assignmentTargetList in
+// lvalue.go and pushMultiReturnResult in call.go) — the BUG-32 fix made this
+// full-spread behavior conditional instead of unconditional.
+func Test_convertFromNative_DataList_MultiAssignment(t *testing.T) {
+	tc := newTestContext(t).withNextOpcode(StackCheck)
 	dp := nativeFnReturning(data.IntType)
 
 	list := data.NewList("alpha", "beta", "gamma")
@@ -785,10 +789,30 @@ func Test_convertFromNative_DataList(t *testing.T) {
 	}
 }
 
-// Test_convertFromNative_SliceAny verifies that a []any result is treated the
-// same as a data.List: items pushed with a "results" marker.
-func Test_convertFromNative_SliceAny(t *testing.T) {
+// Test_convertFromNative_DataList_SingleValueContext is the BUG-32
+// regression test: without a following StackCheck (the common case - a
+// cast, a call argument, an operand of an expression, and so on, rather than
+// "a, b, c := ..."), only the primary (first-listed) value is pushed, and
+// nothing else is left on the stack to corrupt whatever instruction runs
+// next.
+func Test_convertFromNative_DataList_SingleValueContext(t *testing.T) {
 	tc := newTestContext(t)
+	dp := nativeFnReturning(data.IntType)
+
+	list := data.NewList("alpha", "beta", "gamma")
+
+	err := convertFromNative(tc.ctx, dp, list)
+
+	tc.assertNoError(err)
+	tc.assertTopStack("alpha")
+	tc.assertStackEmpty()
+}
+
+// Test_convertFromNative_SliceAny verifies that a []any result is treated the
+// same as a data.List: when a StackCheck instruction follows (a multi-value
+// assignment is waiting), items are pushed with a "results" marker.
+func Test_convertFromNative_SliceAny(t *testing.T) {
+	tc := newTestContext(t).withNextOpcode(StackCheck)
 	dp := nativeFnReturning(data.IntType)
 
 	err := convertFromNative(tc.ctx, dp, []any{10, 20})
@@ -802,6 +826,20 @@ func Test_convertFromNative_SliceAny(t *testing.T) {
 	if !isStackMarker(marker, "results") {
 		t.Errorf("expected 'results' StackMarker")
 	}
+}
+
+// Test_convertFromNative_SliceAny_SingleValueContext is the BUG-32
+// regression test for the []any result path: without a following
+// StackCheck, only the first element is pushed.
+func Test_convertFromNative_SliceAny_SingleValueContext(t *testing.T) {
+	tc := newTestContext(t)
+	dp := nativeFnReturning(data.IntType)
+
+	err := convertFromNative(tc.ctx, dp, []any{10, 20})
+
+	tc.assertNoError(err)
+	tc.assertTopStack(10)
+	tc.assertStackEmpty()
 }
 
 // Test_convertFromNative_ArrayReturnType verifies that when the declared

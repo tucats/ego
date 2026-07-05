@@ -190,6 +190,25 @@ func (tc *testContext) withBytecodeSize(size int) *testContext {
 	return tc
 }
 
+// withNextOpcode appends a single instruction to the context's bytecode
+// stream and leaves the program counter pointing at it, as if the run loop
+// were about to execute it next. This is used by tests for
+// pushMultiReturnResult (see call.go) — it needs to distinguish "the next
+// thing that runs is a StackCheck" (an explicit multi-value assignment is
+// waiting for every return value) from every other situation (where only
+// the primary return value should be pushed). Passing bytecode.StackCheck
+// simulates the first case; any other opcode, or not calling this helper at
+// all, simulates the second.
+//
+// Returns tc so calls can be chained.
+func (tc *testContext) withNextOpcode(opcode Opcode) *testContext {
+	tc.t.Helper()
+
+	tc.ctx.bc.Emit(opcode)
+
+	return tc
+}
+
 // ─── Assertion helpers ───────────────────────────────────────────────────────
 
 // assertNoError fails the test if err is non-nil.  Use this when the bytecode

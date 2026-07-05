@@ -394,3 +394,94 @@ func checkForTupleOnStack(c *Context, argc int) (int, bool) {
 
 	return argc, wasTuple
 }
+
+// pushMultiReturnResult pushes the result of a native or runtime-package
+// function call that returned more than one value (the "(value, error)"
+// convention described in this repo's CLAUDE.md). It is shared by
+// callRuntimeFunction.go and callNative.go, which are the two places a
+// native/runtime call's result gets put on the stack.
+//
+// pushOrder holds every returned value in the exact order the caller wants
+// them pushed. The LAST element is always the "primary" result - the actual
+// value a caller normally cares about (a byte slice, a parsed time, and so
+// on) - with earlier elements being secondary values such as the trailing
+// error. Pushing in this order means the primary value naturally ends up on
+// top of the stack.
+//
+// BUG-32: Ego lets code write any of these forms:
+//
+//	b, err := json.Marshal(x)      // (A) explicit multi-value capture
+//	json.Marshal(x)                // (B) bare statement, values discarded
+//	s := string(json.Marshal(x))   // (C) nested, single-value use
+//
+// Form (A) is compiled (see assignmentTargetList in lvalue.go) as the call
+// immediately followed by a "StackCheck N" instruction, which expects to pop
+// N values off a stack marker. Form (B) is compiled (see compileFunctionCall
+// in call.go, the compiler package) as the call immediately followed by a
+// "DropToMarker" instruction, which discards everything down to a marker -
+// but as it does, it also inspects each discarded value and, if one is a
+// non-nil error and ego.runtime.unchecked.errors is enabled (the default),
+// raises it as a normal catchable error instead of silently swallowing it.
+// This is how close() on an already-closed channel can be used as a bare
+// statement and still be caught with try/catch (see builtins/close.go).
+// Both forms need the marker and every value present so their respective
+// consumer can do its job.
+//
+// Form (C) has neither of those instructions after the call - the compiler
+// has no idea Marshal returns two values, it just compiled a normal nested
+// function-call argument. Before this fix, all forms pushed the exact same
+// thing (a marker plus every return value), so form (C) left the marker and
+// the error value stranded on the stack. The *next* Call instruction (for
+// the outer function, e.g. string() or fmt.Println) would then pop what it
+// assumed was its own function pointer and get one of those leftover values
+// instead, producing "invalid function invocation" or worse.
+//
+// The fix: peek at the very next instruction that is about to run. If it is
+// a StackCheck or a DropToMarker, one of forms (A) or (B) is waiting for
+// every value, so push the full marker+values sequence exactly as before.
+// Otherwise (form C, or any other way a call's result can be nested inside
+// a larger expression) push just the primary value, silently discarding the
+// rest. This matches how functions like json.Marshal are documented (see
+// docs/LANGUAGE.md's json.Marshal section, which nests the call directly
+// inside string()) and avoids ever leaving extra items behind to corrupt a
+// later instruction.
+func pushMultiReturnResult(c *Context, pushOrder []any) error {
+	if len(pushOrder) > 1 && !nextInstructionConsumesMarker(c) {
+		return c.push(pushOrder[len(pushOrder)-1])
+	}
+
+	if err := c.push(NewStackMarker("results", len(pushOrder))); err != nil {
+		return err
+	}
+
+	for _, v := range pushOrder {
+		if err := c.push(v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// nextInstructionConsumesMarker reports whether the bytecode instruction the
+// run loop is about to execute (immediately after the call currently being
+// processed) is one that knows how to consume a StackMarker and the values
+// above it: StackCheck (an explicit multi-value assignment) or DropToMarker
+// (a bare statement call, whose abandoned-error check needs to see every
+// value - see the comment on pushMultiReturnResult). This is how
+// pushMultiReturnResult tells those two cases apart from every other way a
+// call's result can be used.
+func nextInstructionConsumesMarker(c *Context) bool {
+	opcodes := c.bc.Opcodes()
+
+	if c.programCounter < 0 || c.programCounter >= len(opcodes) {
+		return false
+	}
+
+	switch opcodes[c.programCounter].Operation {
+	case StackCheck, DropToMarker:
+		return true
+	default:
+		return false
+	}
+}

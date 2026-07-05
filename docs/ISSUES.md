@@ -199,7 +199,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-29](#BUG-29) | BUG | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | BUG | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
 | [BUG-31](#BUG-31) | BUG | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
-| [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
+| [BUG-32](#BUG-32) | BUG | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | ✓ |
 | [BUG-33](#BUG-33) | BUG | Struct field type declarations are never enforced, even in strict mode. | |
 | [BUG-34](#BUG-34) | BUG | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
 | [BUG-35](#BUG-35) | BUG | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
@@ -475,7 +475,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-29](#BUG-29) | CRITICAL | Closing an already-closed channel crashes the entire process instead of returning a catchable error. | ✓ |
 | [BUG-30](#BUG-30) | HIGH | Closures created in a loop all capture the loop variable's final value instead of a per-iteration value. | ✓ |
 | [BUG-31](#BUG-31) | HIGH | A bare `break` inside a `switch` incorrectly targets the enclosing `for` loop instead of the `switch`. | ✓ |
-| [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | |
+| [BUG-32](#BUG-32) | HIGH | Nesting a multi-return native/runtime function call as a single call argument corrupts the interpreter stack. | ✓ |
 | [BUG-33](#BUG-33) | HIGH | Struct field type declarations are never enforced, even in strict mode. | |
 | [BUG-34](#BUG-34) | HIGH | Scalar pointer equality is broken: `==` and `!=` both return `false` for the same pair of pointers. | |
 | [BUG-35](#BUG-35) | HIGH | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
@@ -3273,6 +3273,65 @@ item as the function pointer to invoke — which is the inner call's leftover er
 producing "invalid function invocation: `<nil>`". By contrast, `fmt.Println(userFunc())` for
 a user-defined `func userFunc() (int, error)` correctly spreads both values into `Println`,
 confirming that only the native/runtime `data.List` multi-return path is affected.
+
+**Resolution (July 2026):**  
+Root cause confirmed: `internal/language/bytecode/callRuntimeFunction.go` and
+`internal/language/bytecode/callNative.go` pushed a `StackMarker("results")` with **no
+item count** below every native/runtime multi-return result, unconditionally, regardless of
+how the result was about to be used. `checkForTupleOnStack` (`call.go`), which lets a
+user-defined function's own multi-return marker (which *does* carry a count — see
+`NewStackMarker(name, len(returnVariables))` in `return.go`) get recognized and fully
+consumed when nested as a call argument, requires exactly one `values` entry on the marker
+to do that recognition. Without a count, a native marker nested this way was neither
+consumed as a tuple nor cleanly discarded — it, and the trailing return value(s) above it,
+were simply left on the stack, corrupting whatever ran next.
+
+Simply adding a count to the marker (making `checkForTupleOnStack` treat native results the
+same as user-defined ones) was tried first but rejected: it fixes the crash, but changes the
+*meaning* of `string(json.Marshal(a))` from "cast the primary return value" into "cast the
+full `(value, error)` tuple," which — because `builtins.Cast` treats more than one supplied
+value as an array to be JSON-array-encoded — produces `["<bytes>", <nil>]`-style output
+instead of the plain JSON string `docs/LANGUAGE.md` has always documented for this exact
+example.
+
+The actual fix instead teaches `pushMultiReturnResult` (new shared helper in `call.go`, used
+by both `callRuntimeFunction.go` and `callNative.go`) to look at the *next* bytecode
+instruction before deciding what to push:
+
+- If it is `StackCheck` (an explicit multi-value assignment, `a, err := json.Marshal(x)`) or
+  `DropToMarker` (a bare statement call, `json.Marshal(x)`, whose result is entirely
+  discarded) — push the full `StackMarker("results", N)` plus every value, exactly as
+  before. `DropToMarker`'s existing abandoned-error check (gated by
+  `ego.runtime.unchecked.errors`, on by default) depends on seeing every discarded value;
+  this is also what lets `close(ch)` on an already-closed channel be caught with a bare
+  `try { close(ch) } catch(e) { ... }` per `internal/builtins/close.go`'s documented usage.
+- Otherwise (the call is nested inside a larger expression — a type cast, a call argument,
+  an operand of an operator, and so on) — push **only the primary (first) return value**,
+  silently discarding the rest. This matches the single-value usage `json.Marshal` and
+  similar functions are documented to support, and never leaves anything behind to corrupt
+  the next instruction.
+
+This distinction was necessary because a first attempt at the fix (see above) satisfied the
+crash but broke the double-close/`try`/`catch` interaction with `close()`, which relies on
+the abandoned error surviving all the way to `DropToMarker`'s check.
+
+New tests:
+
+- `internal/language/bytecode/callRuntimeFunction_test.go` and
+  `internal/language/bytecode/callNative_test.go` — each existing "multi-return push" test
+  was split into a `..._MultiAssignment` variant (using a new `withNextOpcode(StackCheck)`
+  test helper in `testhelpers_test.go` to simulate an explicit multi-value assignment, still
+  asserting the full marker+values push) and a new `..._SingleValueContext` variant (the
+  BUG-32 regression case: no `StackCheck`/`DropToMarker` follows, so only the primary value
+  is pushed and the stack ends up empty).
+- `tests/json/marshal.ego` — `"json: Marshal nested directly in string() (BUG-32)"`
+  reproduces the exact `docs/LANGUAGE.md` example and asserts the plain JSON string result;
+  `"json: Marshal nested in fmt.Println (BUG-32)"` covers the variadic-call nesting case.
+- `tests/packages/time.ego` — `"packages: time.Parse nested in fmt.Println (BUG-32)"`
+  reproduces the third bug-report example.
+- The pre-existing `tests/defer/channel.ego` test `"defer: double close is catchable, not a
+  crash"` (BUG-29) now doubles as a non-regression check that the `DropToMarker`
+  abandoned-error path still works after this fix.
 
 ---
 

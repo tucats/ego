@@ -45,7 +45,21 @@
     // Catch error (in this case, bad month)
     t, e = time.ParseAny("Decembre 7, 1959")
     @assert strings.Contains(e.Error(), "month out of range")
-    @assert t == nil 
+    @assert t == nil
+}
+
+@test "packages: time.Parse nested in fmt.Println (BUG-32)"
+{
+    // Regression test for BUG-32 (third reproducer in docs/ISSUES.md).
+    // time.Parse returns two values (time.Time, error) via the same
+    // internal multi-return convention as json.Marshal and
+    // strings.Template. Nesting the call directly as fmt.Println's sole
+    // argument used to corrupt the interpreter stack: the leftover error
+    // value from time.Parse got invoked as if it were fmt.Println itself,
+    // producing "invalid function invocation: <nil>" instead of printing
+    // anything. This must now compile and run without error.
+    pattern := "1/2/2006 15:04"
+    fmt.Println(time.Parse(pattern, "12/7/1960 15:30"))
 }
 
 

@@ -76,17 +76,18 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	result, err = function(functionSymbols, data.NewList(args...))
 
 	if results, ok := result.(data.List); ok {
-		if stackErr := c.push(NewStackMarker("results")); stackErr != nil {
-			return stackErr
+		// BUG-32 fix: build the values in the order they should be pushed
+		// (results.Get(0), the primary value, goes last so it ends up on
+		// top of the stack) and hand off to pushMultiReturnResult, which
+		// decides whether this nests into a multi-value assignment or a
+		// plain single-value expression. See its comment in call.go for the
+		// full explanation.
+		pushOrder := make([]any, results.Len())
+		for i := 0; i < results.Len(); i++ {
+			pushOrder[i] = results.Get(results.Len() - 1 - i)
 		}
 
-		for i := results.Len() - 1; i >= 0; i = i - 1 {
-			if stackErr := c.push(results.Get(i)); stackErr != nil {
-				return stackErr
-			}
-		}
-
-		return nil
+		return pushMultiReturnResult(c, pushOrder)
 	}
 
 	if definition != nil {
@@ -106,9 +107,9 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 
 func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *Context, err error, result any) (bool, error) {
 	if definition.HasErrReturn {
-		_ = c.push(NewStackMarker("results"))
-		_ = c.push(err)
-		_ = c.push(result)
+		// BUG-32 fix: result is the primary value, so it goes last in the
+		// push order (see pushMultiReturnResult in call.go).
+		_ = pushMultiReturnResult(c, []any{err, result})
 
 		return true, err
 	}

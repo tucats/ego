@@ -394,34 +394,18 @@ func convertFromNative(c *Context, dp *data.Function, result any) error {
 		return c.push(actual)
 
 	case *data.List:
-		results := reverseInterfaces(actual.Elements())
-		_ = c.push(NewStackMarker("results"))
-
-		for _, v := range results {
-			if err = c.push(v); err != nil {
-				return err
-			}
-		}
+		// BUG-32 fix: reverseInterfaces puts the primary value (originally
+		// element 0) last, which is exactly the push order
+		// pushMultiReturnResult expects. See its comment in call.go for why
+		// a nested single-value use (e.g. string(json.Marshal(x))) needs
+		// different handling than an explicit "a, err := ..." assignment.
+		return pushMultiReturnResult(c, reverseInterfaces(actual.Elements()))
 
 	case data.List:
-		results := reverseInterfaces(actual.Elements())
-		_ = c.push(NewStackMarker("results"))
-
-		for _, v := range results {
-			if err = c.push(v); err != nil {
-				return err
-			}
-		}
+		return pushMultiReturnResult(c, reverseInterfaces(actual.Elements()))
 
 	case []any:
-		list := reverseInterfaces(actual)
-		_ = c.push(NewStackMarker("results"))
-
-		for _, v := range list {
-			if err = c.push(v); err != nil {
-				return err
-			}
-		}
+		return pushMultiReturnResult(c, reverseInterfaces(actual))
 
 	default:
 		err = c.push(actual)

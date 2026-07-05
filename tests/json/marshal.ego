@@ -383,3 +383,31 @@
     @assert err == nil
     @assert string(b) == `"QUJD"`
 }
+
+@test "json: Marshal nested directly in string() (BUG-32)"
+{
+    // Regression test for BUG-32. json.Marshal returns two values
+    // (a []byte and an error) via the same internal convention every
+    // native/runtime multi-return function uses. Before the fix, nesting
+    // that call as the sole argument to another call - exactly as
+    // docs/LANGUAGE.md's own json.Marshal example does - corrupted the
+    // interpreter stack: the outer call ended up invoking the leftover
+    // error value instead of string(), producing "invalid function
+    // invocation: <nil>" instead of a result.
+    a := {age: 44, name: "Tom"}
+    s := string(json.Marshal(a))
+
+    @assert s == `{"age":44,"name":"Tom"}`
+}
+
+@test "json: Marshal nested in fmt.Println (BUG-32)"
+{
+    // Same root cause as above, but nested inside a variadic call
+    // (fmt.Println) rather than a type-cast, matching the bug report's
+    // second reproducer (with strings.Template). This should not error,
+    // and should print only the primary marshaled value - the trailing
+    // error is silently discarded, exactly as it is for a direct
+    // "s := json.Marshal(a)" single-target assignment.
+    a := {age: 44, name: "Tom"}
+    fmt.Println(string(json.Marshal(a)))
+}

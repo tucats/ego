@@ -135,8 +135,13 @@ func savedDecl(paramCount int, variadic bool, argCount data.Range) *data.Functio
 // data.List result is exploded onto the stack with a "results" StackMarker at
 // the bottom.  The list items are pushed in reverse order so the first element
 // (index 0) ends up on top and is popped first.
-func Test_callRuntimeFunction_DataListResult(t *testing.T) {
-	tc := newTestContext(t)
+// Test_callRuntimeFunction_DataListResult_MultiAssignment covers the
+// "a, err := someFunc()" case: when the instruction immediately following the
+// call is a StackCheck, an explicit multi-value assignment is waiting for
+// every return value, so the full marker+values sequence must still be
+// pushed exactly as before the BUG-32 fix.
+func Test_callRuntimeFunction_DataListResult_MultiAssignment(t *testing.T) {
+	tc := newTestContext(t).withNextOpcode(StackCheck)
 
 	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{})
 
@@ -153,6 +158,32 @@ func Test_callRuntimeFunction_DataListResult(t *testing.T) {
 	if popErr != nil || !isStackMarker(marker, "results") {
 		t.Errorf("expected 'results' StackMarker, got %T %v", marker, marker)
 	}
+}
+
+// Test_callRuntimeFunction_DataListResult_SingleValueContext is the BUG-32
+// regression test: when a multi-return runtime function's call is NOT
+// immediately followed by a StackCheck (i.e. it is being used as a plain
+// single-value expression - a cast argument, a call argument, an operand,
+// and so on, rather than captured by "a, err := ..."), only the primary
+// (index 0) return value must be pushed, with no marker and no trailing
+// error left behind to corrupt whatever runs next.
+//
+// Before the fix, the full marker+values sequence was always pushed
+// regardless of context. Nesting the call as a single argument to another
+// call (e.g. fmt.Println(json.Marshal(a))) left the marker and the error
+// stranded on the stack; the next Call instruction would then pop one of
+// those leftovers instead of its real function pointer, producing "invalid
+// function invocation: <nil>".
+func Test_callRuntimeFunction_DataListResult_SingleValueContext(t *testing.T) {
+	tc := newTestContext(t)
+
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{})
+
+	tc.assertNoError(err)
+
+	// Only the primary value is on the stack - nothing else.
+	tc.assertTopStack(42)
+	tc.assertStackEmpty()
 }
 
 // Test_callRuntimeFunction_ScalarResult verifies that when the runtime
@@ -501,7 +532,7 @@ func Test_callRuntimeFunction_NilSavedDefNoSandboxPanic(t *testing.T) {
 // error are pushed, separated by a "results" marker.  The function returns
 // (true, nil) so callRuntimeFunction returns nil to the run loop.
 func Test_functionReturnedValueAndError_HasErrReturn_NoError(t *testing.T) {
-	tc := newTestContext(t)
+	tc := newTestContext(t).withNextOpcode(StackCheck)
 
 	def := &builtins.FunctionDefinition{HasErrReturn: true}
 
@@ -525,12 +556,35 @@ func Test_functionReturnedValueAndError_HasErrReturn_NoError(t *testing.T) {
 	}
 }
 
+// Test_functionReturnedValueAndError_HasErrReturn_SingleValueContext is the
+// BUG-32 regression test for the HasErrReturn path: without a following
+// StackCheck, only the primary result value should be pushed - the error is
+// silently discarded rather than left stranded on the stack.
+func Test_functionReturnedValueAndError_HasErrReturn_SingleValueContext(t *testing.T) {
+	tc := newTestContext(t)
+
+	def := &builtins.FunctionDefinition{HasErrReturn: true}
+
+	handled, retErr := functionReturnedValueAndError(def, tc.ctx, nil /*err*/, "my-result")
+
+	if !handled {
+		t.Fatal("expected handled=true for HasErrReturn=true")
+	}
+
+	if retErr != nil {
+		t.Errorf("retErr: got %v, want nil", retErr)
+	}
+
+	tc.assertTopStack("my-result")
+	tc.assertStackEmpty()
+}
+
 // Test_functionReturnedValueAndError_HasErrReturn_WithError verifies the
 // HasErrReturn path when the function returned a non-nil error.  Both the
 // result and the error are pushed; the function returns (true, err) so the
 // error is propagated to the run loop (making try/catch work).
 func Test_functionReturnedValueAndError_HasErrReturn_WithError(t *testing.T) {
-	tc := newTestContext(t)
+	tc := newTestContext(t).withNextOpcode(StackCheck)
 
 	def := &builtins.FunctionDefinition{HasErrReturn: true}
 	testErr := errors.ErrAssert
