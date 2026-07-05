@@ -76,7 +76,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	result, err = function(functionSymbols, data.NewList(args...))
 
 	if results, ok := result.(data.List); ok {
-		// BUG-32 fix: build the values in the order they should be pushed
+		// Fix BUG-32: build the values in the order they should be pushed
 		// (results.Get(0), the primary value, goes last so it ends up on
 		// top of the stack) and hand off to pushMultiReturnResult, which
 		// decides whether this nests into a multi-value assignment or a
@@ -107,7 +107,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 
 func functionReturnedValueAndError(definition *builtins.FunctionDefinition, c *Context, err error, result any) (bool, error) {
 	if definition.HasErrReturn {
-		// BUG-32 fix: result is the primary value, so it goes last in the
+		// Fix BUG-32: result is the primary value, so it goes last in the
 		// push order (see pushMultiReturnResult in call.go).
 		_ = pushMultiReturnResult(c, []any{err, result})
 

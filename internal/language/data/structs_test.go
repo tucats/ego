@@ -107,7 +107,7 @@ func TestNewStruct(t *testing.T) {
 // compiler package). The wrapper itself has a nil `fields` map; only the
 // wrapped StructKind type's `fields` map is populated.
 //
-// BUG-33 was caused by code that read the wrapper's own (always nil) fields
+// The BUG-33 was caused by code that read the wrapper's own (always nil) fields
 // map instead of unwrapping to the base type first, so field-type
 // declarations on named struct types were never enforced. These tests
 // exercise data.Struct.Set() directly against a struct built from exactly

@@ -13,15 +13,16 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// TestGetTableNames_SQLiteTableNameIsQuoted is a regression test for a real
-// bug/vulnerability: getTableNames used to build the zero-row "count the
-// columns" query by concatenating the table name between literal quote
-// characters ("SELECT * FROM \"" + name + "\" WHERE 1=0"). name comes from
-// the database's own catalog, but a table created via the admin-only "@sql"
-// raw-SQL endpoint can legally have a '"' embedded in its name (e.g.
-// CREATE TABLE "a""b" (...)), so a crafted table name could break the
-// intended identifier quoting. name must now be run through
-// egostrings.SQLIdentifier instead, which safely doubles the embedded '"'.
+// TestGetTableNames_SQLiteTableNameIsQuoted is a regression test for a
+// real bug/vulnerability: getTableNames used to build the zero-row 
+// "count the columns" query by concatenating the table name between
+// literal quote characters ("SELECT * FROM \"" + name + "\" WHERE 1=0"). 
+// The valeue name comes from the database's own catalog, but a table
+// created via the admin-only "@sql" raw-SQL endpoint can legally have
+// a '"' embedded in its name (e.g. CREATE TABLE "a""b" (...)), so a
+// crafted table name could break the intended identifier quoting. name must
+// now be run through egostrings.SQLIdentifier instead, which safely
+// doubles the embedded '"'.
 //
 // This is verified end to end: a real table is created with a '"' in its
 // name, and getTableNames is fed a single-row *sql.Rows containing that

@@ -91,7 +91,7 @@ func (c *Compiler) compileSwitch() error {
 		return c.compileError(errors.ErrMissingBlock)
 	}
 
-	// BUG-31: push a "switch" entry onto the same stack that "for" loops use
+	// Fix BUG-31: push a "switch" entry onto the same stack that "for" loops use
 	// for tracking break/continue targets. Before this fix, a bare "break"
 	// statement inside a switch's case body had nowhere of its own to attach
 	// to, so compileBreak (in for.go) always resolved it against the nearest
@@ -180,7 +180,7 @@ func (c *Compiler) compileSwitch() error {
 		_ = c.b.SetAddressHere(n)
 	}
 
-	// BUG-31: patch every bare "break" statement found directly inside this
+	// Fix BUG-31: patch every bare "break" statement found directly inside this
 	// switch (collected on c.loops.breaks by compileBreak) so that it also
 	// lands right here, at the same "just past the last case/default body"
 	// address as a normal case miss. This is the point where the switch

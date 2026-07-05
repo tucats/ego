@@ -15,6 +15,8 @@ import (
 const (
 	sqlDialect = 0
 	egoDialect = 1
+
+	invalidNamePlaceholder = "INVALID-NAME"
 )
 
 // SQLEscape validates that source is safe to embed directly in a SQL
@@ -39,7 +41,7 @@ func SQLEscape(source string) (string, error) {
 
 	for idx, ch := range source {
 		if idx > 0 && idx < len(source)-1 && ch == '\'' {
-			return "INVALID-NAME", errors.ErrInvalidSQLName
+			return invalidNamePlaceholder, errors.ErrInvalidSQLName
 		}
 
 		// A literal '"' is just as dangerous as a "'": several call sites
@@ -51,11 +53,11 @@ func SQLEscape(source string) (string, error) {
 		// only an occurrence in the *interior* of the (trimmed) value is
 		// treated as suspicious.
 		if idx > 0 && idx < len(source)-1 && ch == '"' {
-			return "INVALID-NAME", errors.ErrInvalidSQLName
+			return invalidNamePlaceholder, errors.ErrInvalidSQLName
 		}
 
 		if ch == ';' {
-			return "INVALID-NAME", errors.ErrInvalidSQLName
+			return invalidNamePlaceholder, errors.ErrInvalidSQLName
 		}
 
 		result.WriteRune(ch)

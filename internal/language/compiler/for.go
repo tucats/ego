@@ -38,7 +38,7 @@ var indexNameLock = &sync.Mutex{}
 var indexNameCounter int
 
 // ---------------------------------------------------------------------------
-// BUG-30: per-iteration loop variables (Go 1.22+ semantics)
+// Fix BUG-30: per-iteration loop variables (Go 1.22+ semantics)
 //
 // Background for readers unfamiliar with this Go language change: before Go
 // 1.22, a "for" loop's index/value variable(s) were a single variable shared
@@ -472,7 +472,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	// Get new index and value. Destination is as-yet unknown.
 	c.b.Emit(bytecode.RangeNext, 0)
 
-	// BUG-30 fix: RangeNext (above) always updates the index/value names in
+	// Fix BUG-30: RangeNext (above) always updates the index/value names in
 	// this loop's single outer scope, in place, on every iteration - so
 	// without a fresh per-iteration copy, a closure created in the body
 	// would capture that one ever-changing variable instead of a snapshot of
@@ -661,7 +661,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	// BUG-30 fix: give this loop's body a fresh, per-iteration copy of the
+	// Fix BUG-30: give this loop's body a fresh, per-iteration copy of the
 	// loop counter, so that a closure created in the body captures this
 	// iteration's value instead of the one persistent variable the
 	// increment/condition clauses above read and write (see the block
@@ -784,7 +784,7 @@ func (c *Compiler) compileBreak() error {
 // enclosing loop whose iteration to continue. Without a label the innermost
 // loop is used.
 //
-// BUG-31: a "switch" statement pushes a switchLoopType entry onto the same
+// Fix BUG-31: a "switch" statement pushes a switchLoopType entry onto the same
 // stack that "for" loops use (see compileSwitch), so that a bare "break"
 // inside a switch has a place to attach itself to. But real Go has no
 // concept of "continue the switch" - "continue" always means "go to the

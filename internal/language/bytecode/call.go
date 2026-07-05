@@ -408,7 +408,7 @@ func checkForTupleOnStack(c *Context, argc int) (int, bool) {
 // error. Pushing in this order means the primary value naturally ends up on
 // top of the stack.
 //
-// BUG-32: Ego lets code write any of these forms:
+// Fix BUG-32: Ego lets code write any of these forms:
 //
 //	b, err := json.Marshal(x)      // (A) explicit multi-value capture
 //	json.Marshal(x)                // (B) bare statement, values discarded

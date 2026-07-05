@@ -189,7 +189,7 @@ func TestBUG25FallthroughIntoNextCaseStillWorks(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// BUG-31: a bare "break" inside a "switch" incorrectly targeted the
+// Fix BUG-31: a bare "break" inside a "switch" incorrectly targeted the
 // enclosing "for" loop instead of the "switch" itself, and a "switch" with
 // no enclosing loop at all rejected "break" as a compile error even though
 // that is perfectly legal Go. The tests below exercise the fix from several
@@ -237,8 +237,8 @@ func TestBUG31BreakInsideSwitchDoesNotExitEnclosingLoop(t *testing.T) {
 		t.Fatalf("expected 'visited' variable to be set")
 	}
 
-	// The loop must have completed all five iterations (0 through 4); if the
-	// bug were still present, the break would have escaped the loop early
+	// The loop must have completed all five iterations (0 through 4); if
+	// the bug was still present, the break would have escaped the loop early
 	// after i==3 was appended, leaving "visited" with only 4 elements.
 	got := fmt.Sprintf("%v", visited)
 	want := "[0, 1, 2, 3, 4]"

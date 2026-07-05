@@ -144,6 +144,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 		idString := data.String(id)
 		if idString != "" {
 			filterCount++
+			
 			values = append(values, idString)
 
 			rowIDClause := fmt.Sprintf("%s = $%d", egostrings.SQLIdentifier(defs.RowIDName), filterCount)

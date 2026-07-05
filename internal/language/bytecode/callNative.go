@@ -394,7 +394,7 @@ func convertFromNative(c *Context, dp *data.Function, result any) error {
 		return c.push(actual)
 
 	case *data.List:
-		// BUG-32 fix: reverseInterfaces puts the primary value (originally
+		// Fix BUG-32: reverseInterfaces puts the primary value (originally
 		// element 0) last, which is exactly the push order
 		// pushMultiReturnResult expects. See its comment in call.go for why
 		// a nested single-value use (e.g. string(json.Marshal(x))) needs

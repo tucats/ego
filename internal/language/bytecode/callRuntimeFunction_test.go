@@ -556,8 +556,8 @@ func Test_functionReturnedValueAndError_HasErrReturn_NoError(t *testing.T) {
 	}
 }
 
-// Test_functionReturnedValueAndError_HasErrReturn_SingleValueContext is the
-// BUG-32 regression test for the HasErrReturn path: without a following
+// Test_functionReturnedValueAndError_HasErrReturn_SingleValueContext is
+// the BUG-32 regression test for the HasErrReturn path: without a following
 // StackCheck, only the primary result value should be pushed - the error is
 // silently discarded rather than left stranded on the stack.
 func Test_functionReturnedValueAndError_HasErrReturn_SingleValueContext(t *testing.T) {

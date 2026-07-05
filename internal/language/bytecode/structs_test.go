@@ -476,8 +476,8 @@ func Test_storeIndexByteCode_StructNamedTypeDynamicCoercion(t *testing.T) {
 	}
 }
 
-// Test_storeIndexByteCode_StructNamedTypeDynamicNonCoercibleError is a
-// BUG-33 regression test: in dynamic mode, assigning a value that cannot be
+// Test_storeIndexByteCode_StructNamedTypeDynamicNonCoercibleError is
+// a BUG-33 regression test. In dynamic mode, assigning a value that cannot be
 // converted to the field's declared type at all (the string "old" to an int
 // field) must return a catchable runtime error, not silently succeed.
 func Test_storeIndexByteCode_StructNamedTypeDynamicNonCoercibleError(t *testing.T) {

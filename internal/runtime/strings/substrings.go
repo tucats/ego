@@ -3,8 +3,8 @@ package strings
 import (
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/subs"
 )
@@ -19,8 +19,13 @@ func substring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	v := data.String(args.Get(0))
 
 	p1, err := data.Int(args.Get(1)) // Starting character position
-	if err != nil || p1 < 0 {
+	if err != nil {
 		return "", errors.New(err).In("Substring")
+	}
+
+	// Fix BUG-36, invalid starting position is documented as returning an empty string, not an error.
+	if p1 < 0 {
+		return "", nil
 	}
 
 	if p1 < 1 {
@@ -28,11 +33,12 @@ func substring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	p2, err := data.Int(args.Get(2)) // Number of characters
-	if err != nil || p2 < 0 {
+	if err != nil  {
 		return "", errors.New(err).In("Substring")
 	}
 
-	if p2 == 0 {
+	// Fix BUG-36, invalid length is documented as returning an empty string, not an error.
+	if p2 <= 0 {
 		return "", nil
 	}
 
@@ -72,10 +78,12 @@ func leftSubstring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	v := data.String(args.Get(0))
 
 	p, err := data.Int(args.Get(1))
-	if err != nil || p <= 0 {
+	if err != nil {
 		return "", errors.New(err).In("Left")
 	}
 
+	// fix BUG-36, invalid length is documented as returning an empty string, not an error.
+	// Clause removed from previous check for error.
 	if p <= 0 {
 		return "", nil
 	}
@@ -104,10 +112,11 @@ func rightSubstring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	v := data.String(args.Get(0))
 
 	p, err := data.Int(args.Get(1))
-	if err != nil || p <= 0 {
+	if err != nil {
 		return "", errors.New(err).In("Right")
 	}
 
+	// fix BUG-36, invalid length is documented as returning an empty string, not an error.
 	if p <= 0 {
 		return "", nil
 	}

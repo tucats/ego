@@ -382,9 +382,9 @@ func storeIndexByteCode(c *Context, i any) error {
 // checkStructFieldStrictType enforces a struct field's declared type when a
 // new value is about to be assigned to it (e.g. the Ego statement
 // "e.Age = someValue"). This is the struct equivalent of the type check
-// storeInArray performs for typed array elements a few lines above, fixing
-// BUG-33 ("struct field type declarations are never enforced, even in
-// strict mode").
+// storeInArray performs for typed array elements a few lines above,
+// fixing BUG-33 ("struct field type declarations are never enforced,
+// even in strict mode").
 //
 // Only strict mode (--types strict) is checked here: the new value's Go
 // type must already match the field's declared type exactly, with no

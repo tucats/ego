@@ -24,10 +24,11 @@ func TestFunctionLeft(t *testing.T) {
 			want: "Abra",
 		},
 		{
+			// Fix BUG-36: documented behavior is that a negative length returns an empty string, not an error.
 			name:    "negative length test",
 			args:    args{data.NewList("Abraham", -5)},
 			want:    "",
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "length too long test",
@@ -74,10 +75,11 @@ func TestFunctionRight(t *testing.T) {
 			want: "ham",
 		},
 		{
+			// Fix BUG-36: documented behavior is that a negative length returns an empty string, not an error.
 			name:    "length too small test",
 			args:    args{data.NewList("Abraham", -5)},
 			want:    "",
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "length too long test",
@@ -135,10 +137,10 @@ func TestSubstring(t *testing.T) {
 			want: "m",
 		},
 		{
-			name:    "invalid start case",
-			args:    data.NewList("simple", -5, 3),
-			want:    "",
-			wantErr: true,
+			// Fix BUG-36: documented behavior is that a negative length returns an empty string, not an error.
+			name: "invalid start case",
+			args: data.NewList("simple", -5, 3),
+			want: "",
 		},
 		{
 			name: "invalid len case",
