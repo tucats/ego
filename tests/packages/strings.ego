@@ -1,0 +1,57 @@
+// Tests for Ego-specific features of the strings packages
+
+@test "packages: strings.Split(), optional separator"
+{
+    a := strings.Split("first\nsecond\nthird")
+    @assert len(a) == 3
+    @assert a[0] == "first"
+    @assert a[1] == "second"
+    @assert a[2] == "third"
+}
+
+@test "packages: strings.Split, explicit newline separator"
+{
+    a := strings.Split("first\nsecond\nthird", "\n")
+    @assert len(a) == 3
+    @assert a[0] == "first"
+    @assert a[1] == "second"
+    @assert a[2] == "third"
+
+}
+
+
+@test "packages: strings.Split, explicit empty separator"
+{
+    a := strings.Split("first", "")
+    @assert len(a) == 5
+    @assert a[0] == "f"
+    @assert a[1] == "i"
+    @assert a[2] == "r"
+    @assert a[3] == "s"
+    @assert a[4] == "t"
+}
+
+
+
+@test "packages: strings.Split, empty string, text sep"
+{
+    a := strings.Split("", "B")
+    @assert len(a) == 1
+    @assert a[0] == ""
+}
+
+
+@test "packages: strings.Split, empty string, no sep"
+{
+    a := strings.Split("")
+    @assert len(a) == 1
+    @assert a[0] == ""
+}
+
+
+
+@test "packages: strings.Split, empty string, empty sep"
+{
+    a := strings.Split("", "")
+    @assert len(a) == 0
+}

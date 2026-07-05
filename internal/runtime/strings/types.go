@@ -483,10 +483,10 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 					Type: data.StringType,
 				},
 			},
-			Returns: []*data.Type{data.ArrayType(data.StringType)},
+			ArgCount: data.Range{1, 2},
+			Returns:  []*data.Type{data.ArrayType(data.StringType)},
 		},
-		Value:    strings.Split,
-		IsNative: true,
+		Value: split,
 	},
 	"String": data.Function{
 		Declaration: &data.Declaration{
