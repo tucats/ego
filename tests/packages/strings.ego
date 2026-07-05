@@ -55,3 +55,36 @@
     a := strings.Split("", "")
     @assert len(a) == 0
 }
+
+@test "packages: strings.String, multiple int values"
+{
+    a := strings.String(65, 66, 67)
+    @assert a == "ABC"
+}
+
+@test "packages: strings.String, multiple int32 values"
+{
+    a := strings.String(int32(65), int32(66), int32(67))
+    @assert a == "ABC"
+}
+
+
+@test "packages: strings.String, mixed string and ints"
+{
+    a := strings.String(int32(65), "BC", int32(68))
+    @assert a == "ABCD"
+}
+
+
+@test "packages: strings.String, invalid arg type"
+{
+    failed := false
+    try {
+        _ = strings.String(54, true)
+    } catch(e) {
+        failed = true
+        @assert e.Code() == "arg.type"
+    }
+
+    @assert failed == true
+}

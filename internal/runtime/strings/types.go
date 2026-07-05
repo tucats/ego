@@ -490,7 +490,8 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 	},
 	"String": data.Function{
 		Declaration: &data.Declaration{
-			Name: "String",
+			Name:     "String",
+			Variadic: true,
 			Parameters: []data.Parameter{
 				{
 					Name: "any",

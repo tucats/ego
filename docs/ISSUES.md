@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 59 issues (27 resolved)
+- [BUG — General Language Bugs](#area-bug) — 59 issues (28 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -205,7 +205,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-35](#BUG-35) | BUG | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
 | [BUG-36](#BUG-36) | BUG | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | BUG | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
-| [BUG-38](#BUG-38) | BUG | The documented variadic multi-argument form of `strings.String` is not implemented. | |
+| [BUG-38](#BUG-38) | BUG | The documented variadic multi-argument form of `strings.String` is not implemented. | ✓ |
 | [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
 | [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | BUG | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
@@ -481,7 +481,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-35](#BUG-35) | HIGH | An error raised inside a `catch` block escapes all enclosing `try` blocks instead of being caught by them. | |
 | [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
-| [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | |
+| [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | ✓ |
 | [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
 | [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | HIGH | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
@@ -3728,6 +3728,21 @@ Root cause: `internal/runtime/strings/types.go:491-503` declares `String` with e
 required parameter (`{Name: "any", Type: data.InterfaceType}`) and no `ArgCount` range or
 variadic marker — the entire multi-argument use case documented for this function is
 unimplemented. `strings.String(115)` (single argument) correctly returns `"s"`.
+
+**Resolution:**
+The function type declaration was not correctly set to cover variadic values. Additionally,
+the return code should have been invalid argument type, not count.
+
+1. `internal/runtime/strings/types.go` updated to specify that the `String()` function, an
+   _Ego_ extension, was a variadic function.
+
+2. `internal/runtime/strings/conversion.go` updated `toString()` to return correct error
+   when a non-integer or non-string value was found in the variadic list.
+
+3. `tests/packapges/strings.ego` updated to add tests for the Ego-specific `Strings()`
+   function, including verifying it works with different integer types, works with
+   a mixture of integers and strings, and throws argument type error if other types
+   found.
 
 ---
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -111,7 +111,7 @@ func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 			b.WriteRune(rune(a))
 
 		default:
-			return nil, errors.ErrArgumentCount.In("String")
+			return nil, errors.ErrArgumentType.In("String")
 		}
 	}
 
