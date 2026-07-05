@@ -206,7 +206,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-36](#BUG-36) | BUG | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | BUG | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
 | [BUG-38](#BUG-38) | BUG | The documented variadic multi-argument form of `strings.String` is not implemented. | ✓ |
-| [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
+| [BUG-39](#BUG-39) | BUG | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | ✓ |
 | [BUG-40](#BUG-40) | BUG | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | BUG | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
 | [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
@@ -482,7 +482,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-36](#BUG-36) | HIGH | `strings.Left`/`Right`/`Substring` produce a blank, uninformative error for documented edge-case arguments. | ✓ |
 | [BUG-37](#BUG-37) | HIGH | The single-argument (default newline delimiter) form of `strings.Split` is not implemented. | ✓ |
 | [BUG-38](#BUG-38) | HIGH | The documented variadic multi-argument form of `strings.String` is not implemented. | ✓ |
-| [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | |
+| [BUG-39](#BUG-39) | HIGH | `@compile block` corrupts parsing when the block body contains any nested `{ }`. | ✓ |
 | [BUG-40](#BUG-40) | HIGH | `uuid.Parse` on invalid input crashes the program instead of returning a catchable error. | ✓ |
 | [BUG-41](#BUG-41) | HIGH | Multi-line nested struct/map literals fail to parse with "invalid list". | ✓ |
 | [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
@@ -3866,6 +3866,48 @@ non-`block` form only, a compensating single `tokens.Append(tokenizer.BlockEndTo
 happens to paper over exactly one dropped brace, which is why single-top-level-construct
 full-program examples happen to work while anything with a second top-level braced
 construct fails the same way.
+
+**Resolution (July 2026):**  
+`internal/language/compiler/directives.go` (`compileBlockDirective`, brace-counting loop):
+changed the break condition from `braces <= 1` to `braces == 0`, exactly as suggested in the
+root-cause notes above. `braces` starts at 1 because the directive's own opening `{` was
+already consumed before the loop begins; the loop must keep collecting tokens through any
+number of nested `{ }` pairs and only stop once the count returns all the way to 0 — i.e.
+the token that matches the directive's *own* opening brace, not merely the closing brace of
+the first nested construct it happens to encounter.
+
+With that one-line fix in place, the previously-necessary compensating logic immediately
+below it became actively harmful rather than merely redundant, and was removed:
+
+```go
+// removed:
+if !blockMode && !c.t.IsNext(tokenizer.BlockEndToken) {
+    return c.compileError(errors.ErrMissingStatement)
+}
+
+if !blockMode {
+    tokens.Append(tokenizer.BlockEndToken)
+}
+```
+
+This block existed only to patch back the single closing brace that the `braces <= 1` bug
+used to drop from full-program (non-`block`) mode. Once the loop itself stops at the
+correct place, there is no dropped brace left to patch, and no second closing brace left
+in the source to look for — keeping this code would have made the fixed loop's cleanly
+collected tokens incorrect again (an extra, unbalanced closing brace appended to `tokens`)
+and would have raised a spurious `ErrMissingStatement` looking for a brace that no longer
+exists in the stream.
+
+Both the `block` form (a nested `if`, matching the bug's reproducer exactly) and the
+full-program form (two sibling top-level function declarations) now compile and run
+correctly; the previously swallowed `catch(e)` clause, and any code after it, parses as
+ordinary code again. Verified with new Go tests in
+`internal/language/compiler/directives_test.go`
+(`TestCompileBlockDirectiveNestedBraceInBlockMode`,
+`TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode` — both confirmed to fail
+against the pre-fix code and pass against the fix), two new Ego tests in
+`tests/directives/compile.ego`, and a full run of `tools/gotests.sh` plus `ego test` under
+all three typing modes (strict/relaxed/dynamic).
 
 ---
 

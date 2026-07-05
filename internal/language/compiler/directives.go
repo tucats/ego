@@ -980,7 +980,32 @@ func (c *Compiler) compileBlockDirective() error {
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
 	} else {
 		// Traditional brace-delimited mode: collect up all the tokens in
-		// the existing token stream up to the mismatched closing brace.
+		// the existing token stream up to the matching closing brace.
+		//
+		// braces starts at 1 because the directive's own opening "{" was
+		// already consumed above (the "must start with opening braces"
+		// check a few lines up) -- it is not re-counted here. Each "{"
+		// encountered while scanning the block's contents (an "if", "for",
+		// nested "func", etc.) pushes the count up by one; each "}"
+		// pops it back down by one. The token stream is only fully
+		// balanced again -- i.e. we have reached the "}" that matches the
+		// directive's own opening "{" -- when the count returns all the
+		// way to 0, not merely back down to 1.
+		//
+		// fix BUG-39: the original condition was "braces <= 1", which
+		// treated the closing brace of ANY nested block (e.g. the "}" that
+		// ends an "if" body, or the "}" that ends a nested "func" body) as
+		// if it were the directive's own closing brace, because after that
+		// first nested block the count is back down to 1. That silently
+		// truncated the collected token stream partway through the block,
+		// leaving the rest of the source (including a trailing "catch(e)"
+		// clause) to desynchronize the surrounding parse. For the
+		// non-"block" (full-program) form specifically, exactly one
+		// dropped "}" happened to be invisibly patched back on by the
+		// "tokens.Append(tokenizer.BlockEndToken)" a few lines below,
+		// which is why a single top-level construct (one function
+		// declaration) appeared to work while two or more did not: only
+		// one dropped brace can ever be compensated for that way.
 		tokens = tokenizer.New("", true)
 		braces := 1
 
@@ -994,7 +1019,7 @@ func (c *Compiler) compileBlockDirective() error {
 			} else if t.Is(tokenizer.BlockEndToken) {
 				braces--
 
-				if braces <= 1 {
+				if braces == 0 {
 					break
 				}
 			}
@@ -1007,16 +1032,16 @@ func (c *Compiler) compileBlockDirective() error {
 		// With this operation, all tokens for the @compile directive have been
 		// consumed, so the statement tokenizer that called us can continue on to
 		// the next statement.
+		//
+		// Note: with the BUG-39 fix above, the loop now always consumes
+		// exactly the one closing brace that matches the directive's own
+		// opening brace -- for both "block" and full-program mode alike.
+		// There is no second closing brace to look for afterward, and no
+		// dropped brace to patch back onto `tokens`, so the compensating
+		// "require/append one more BlockEndToken" logic that used to
+		// follow this comment (see the git history for BUG-39) has been
+		// removed as dead weight rather than a second, independent bug.
 		_ = c.t.IsNext(tokenizer.SemicolonToken)
-
-		if !blockMode && !c.t.IsNext(tokenizer.BlockEndToken) {
-			return c.compileError(errors.ErrMissingStatement)
-		}
-
-		// We owe the token stream we compile a closing brace.
-		if !blockMode {
-			tokens.Append(tokenizer.BlockEndToken)
-		}
 	}
 
 	// Generate start of a try block. The @compile directive is an implied

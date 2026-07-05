@@ -67,3 +67,96 @@ func TestCompileBlockDirectiveDoesNotLeakUnusedVarsSetting(t *testing.T) {
 		t.Errorf("defs.UnusedVarsSetting leaked: got %v, want false (its value before @compile ran)", got)
 	}
 }
+
+// TestCompileBlockDirectiveNestedBraceInBlockMode is the core BUG-39
+// regression test.
+//
+// compileBlockDirective collects the tokens between an "@compile block {"
+// directive's opening brace and its matching closing brace by counting
+// braces: it starts at 1 (for the opening brace, already consumed) and is
+// supposed to stop only when the count returns to 0. The bug used the
+// condition "braces <= 1", which instead stopped as soon as the count merely
+// returned to 1 -- exactly what happens the moment ANY nested brace pair
+// inside the block (here, an "if" body) closes. That silently truncated the
+// collected token stream partway through the block, leaving the rest of the
+// source -- including the trailing "catch(e) { ... }" clause and anything
+// after it -- to be parsed as if the @compile statement had already ended,
+// which desynchronized the whole remaining parse.
+//
+// Before the fix, running this program failed to compile at all (the
+// "catch" keyword was rejected as an unexpected token). After the fix it
+// must compile and run to completion.
+func TestCompileBlockDirectiveNestedBraceInBlockMode(t *testing.T) {
+	// x is declared INSIDE the block (as in the original BUG-39 reproducer)
+	// rather than mutated from the outer scope: block-mode @compile content
+	// is compiled by an isolated sub-compiler that does not share the outer
+	// scope's static variable knowledge, so an outer variable assigned only
+	// through a nested "if" inside the block trips an unrelated "unused
+	// variable" quirk in that sub-compiler's own scope tracking. That is
+	// not what this test is checking -- it only cares whether the token
+	// stream itself survives a nested brace intact.
+	program := `
+		@compile block {
+			x := 1
+			if true {
+				x = 2
+			}
+			fmt.Println(x)
+		} catch(e) {
+		}
+		y := 99
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("BUG-39: nested brace inside @compile block corrupted parsing: %v", err)
+	}
+
+	// y must be defined and equal to 99: a statement lexically AFTER the
+	// entire "@compile ... catch(e) { ... }" construct must still be seen
+	// and compiled as ordinary code, not corrupted by the truncated token
+	// collection.
+	if v, ok := s.Get("y"); !ok || v != 99 {
+		t.Errorf("y = %v (found=%v), want 99 -- code after @compile...catch must still compile and run", v, ok)
+	}
+}
+
+// TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode is the
+// BUG-39 regression test for the full-program (non-"block") form of
+// @compile, which shares the same brace-counting defect.
+//
+// The notes accompanying BUG-39 explain that the full-program form used to
+// appear to work for a single top-level construct (e.g. one function
+// declaration) only by accident: the same "braces <= 1" bug dropped that
+// construct's own closing brace from the collected tokens, but a
+// compensating "tokens.Append(tokenizer.BlockEndToken)" happened to patch
+// exactly one dropped brace back on. That coincidence breaks down the
+// moment there is a SECOND top-level braced construct, because now there
+// are two dropped closing braces and only one is ever patched back.
+//
+// The fix removes the brace-counting bug (and, with it, the now-unnecessary
+// compensating patch), so both function declarations below must compile
+// correctly and be callable afterward.
+func TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode(t *testing.T) {
+	program := `
+		@compile {
+			func first() int {
+				return 1
+			}
+			func second() int {
+				return 2
+			}
+		} catch(e) {
+		}
+		total := first() + second()
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("BUG-39: two top-level constructs in @compile (full-program mode) corrupted parsing: %v", err)
+	}
+
+	if v, ok := s.Get("total"); !ok || v != 3 {
+		t.Errorf("total = %v (found=%v), want 3 -- both first() and second() must have compiled and run", v, ok)
+	}
+}

@@ -107,3 +107,65 @@
 
     @assert compileFailed == true
 }
+
+
+@test "directives: @compile block nested if (BUG-39)"
+{
+    // BUG-39: the token collector that finds the end of an "@compile block
+    // { ... }" directive counted braces starting at 1 (for the directive's
+    // own opening brace) and incorrectly stopped as soon as the count
+    // returned to 1 -- which happens the moment ANY nested brace pair (here,
+    // the "if" body) closes, not just at the directive's own matching "}".
+    // That silently truncated the block, leaving the trailing "catch(e)"
+    // clause below to be parsed as an unexpected token, so this whole test
+    // file failed to compile at all before the fix.
+    //
+    // x is declared inside the block (as in the original bug reproducer)
+    // rather than mutated from an outer variable: block-mode @compile
+    // content compiles in an isolated sub-compiler that does not share the
+    // outer scope's static variable knowledge, so assigning to an outer
+    // name only through a nested "if" trips an unrelated "unused variable"
+    // quirk in that sub-compiler's own scope tracking -- not what this test
+    // is checking.
+    var reachedEnd bool
+
+    @compile block {
+        x := 1
+        if true {
+            x = 2
+        }
+        fmt.Println(x)
+    } catch(e) {
+        @fail "unexpected compile error: " + e.Error()
+    }
+
+    // Code lexically after the @compile...catch construct must still run.
+    reachedEnd = true
+    @assert reachedEnd
+}
+
+
+@test "directives: @compile two funcs (BUG-39)"
+{
+    // BUG-39 (full-program / non-"block" form): the same brace-counting bug
+    // dropped exactly one closing brace from the collected tokens, which was
+    // invisibly patched by a compensating append -- but that compensation
+    // only ever covers ONE dropped brace. A second top-level braced
+    // construct (a second function declaration here) exposed the bug for
+    // the full-program form too.
+    var compileFailed bool
+
+    @compile {
+        func addOne(n int) int {
+            return n + 1
+        }
+        func addTwo(n int) int {
+            return n + 2
+        }
+    } catch {
+        compileFailed = true
+    }
+
+    @assert compileFailed == false
+    @assert addOne(addTwo(1)) == 4
+}
