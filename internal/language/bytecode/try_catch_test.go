@@ -65,6 +65,17 @@ package bytecode
 //               operands; catchSets[i-1] with i<0 caused a runtime panic.
 //               Fixed: guard extended to `i < 0 || i > len(catchSets)`.
 //               See docs/BYTECODE_ISSUES.md — `TRYCATCH-1`.
+//
+// `BUG-35`      handleCatch only ever inspected c.tryStack[len(c.tryStack)-1].
+//               When an error was raised WHILE a catch block was executing (the
+//               tryInfo entry for that level had already been zeroed by the
+//               first catch), the check `addr > 0` failed and the error was
+//               reported as uncaught even though an enclosing try/catch further
+//               down the stack was still active and able to catch it. Fixed by
+//               searching c.tryStack from the top down for the first frame with
+//               a non-zero addr, and by truncating away now-orphaned inner
+//               frames (whose TryPop will never execute, since control jumps
+//               past them into the enclosing catch). See docs/ISSUES.md — `BUG-35`.
 
 import (
 	"testing"
@@ -818,4 +829,197 @@ func Test_Integration_FlushThenNoMoreCatch(t *testing.T) {
 	if err == nil {
 		t.Error("expected error to pass through after flush, got nil")
 	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 7: BUG-35 — an error raised inside a catch block must escape to the
+// nearest enclosing try/catch instead of being reported as uncaught.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Before the fix, handleCatch only ever inspected c.tryStack[len(c.tryStack)-1].
+// Once a frame's catch block had been entered, handleCatch zeroed that frame's
+// addr (so the same catch could not be re-entered), but left it on top of the
+// stack until its TryPop instruction ran. Any error raised while that catch
+// block was still executing therefore found addr==0 on top and was reported
+// as uncaught, even though an outer try/catch further down c.tryStack (with a
+// live, non-zero addr) was available and should have caught it — exactly like
+// Go's defer/recover: a panic raised while a recover handler is running still
+// unwinds into the next outer recover.
+//
+// These tests reproduce the nested-try scenario from docs/ISSUES.md#BUG-35:
+//
+//	try {                  // outer: catch addr 200
+//	    try {               // inner: catch addr 100
+//	        5 / 0           // err1 — should be caught by inner
+//	    } catch {
+//	        10 / 0          // err2 — raised INSIDE inner's catch; must escape
+//	    }                   //        to the outer try, not be lost
+//	} catch (outer) {
+//	    ...
+//	}
+
+// Test_handleCatch_BUG35_ErrorDuringCatchBlockEscalatesToOuterTry reproduces
+// the full two-level scenario: the inner try catches err1 normally, and then
+// while its catch block is executing, err2 is raised. err2 must be redirected
+// to the outer try's catch address (200), not reported as uncaught.
+func Test_handleCatch_BUG35_ErrorDuringCatchBlockEscalatesToOuterTry(t *testing.T) {
+	tc := newTestContext(t)
+	tc.ctx.running.Store(true)
+
+	// Simulate the compiled layout of the nested try/catch:
+	//   Push StackMarker("try")   ← outer
+	//   Try 200                   ← outer catch address
+	//   Push StackMarker("try")   ← inner
+	//   Try 100                   ← inner catch address
+	_ = tc.ctx.push(NewStackMarker("try")) // outer marker
+	_ = tryByteCode(tc.ctx, 200)           // outer catch addr
+
+	_ = tc.ctx.push(NewStackMarker("try")) // inner marker
+	_ = tryByteCode(tc.ctx, 100)           // inner catch addr
+
+	// err1: division by zero inside the inner try block. The inner frame
+	// (top of tryStack, addr=100) must catch it.
+	err1 := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	tc.assertNoError(err1)
+	tc.assertProgramCounter(100)
+
+	// After catching err1, the inner frame's addr is zeroed (spent) but it is
+	// still on the stack awaiting its TryPop — the outer frame is untouched.
+	if len(tc.ctx.tryStack) != 2 {
+		t.Fatalf("tryStack length after inner catch: got %d, want 2", len(tc.ctx.tryStack))
+	}
+
+	if tc.ctx.tryStack[1].addr != 0 {
+		t.Errorf("inner frame addr after catch: got %d, want 0", tc.ctx.tryStack[1].addr)
+	}
+
+	if tc.ctx.tryStack[0].addr != 200 {
+		t.Errorf("outer frame addr must be untouched: got %d, want 200", tc.ctx.tryStack[0].addr)
+	}
+
+	// err2: raised while the inner catch block is executing (e.g. `10 / 0`
+	// inside `catch { ... }`). This is the BUG-35 regression case: the fix
+	// must find the outer frame (addr=200) since the inner one is spent.
+	err2 := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	tc.assertNoError(err2)
+	tc.assertProgramCounter(200)
+
+	// The spent inner frame must be discarded (its TryPop will never run,
+	// since control jumped past it directly into the outer catch block), and
+	// the outer frame is now itself marked spent (addr==0) pending its own
+	// TryPop once its catch block finishes.
+	if len(tc.ctx.tryStack) != 1 {
+		t.Fatalf("tryStack length after outer catch: got %d, want 1 (inner frame must be discarded)", len(tc.ctx.tryStack))
+	}
+
+	if tc.ctx.tryStack[0].addr != 0 {
+		t.Errorf("outer frame addr after catching err2: got %d, want 0", tc.ctx.tryStack[0].addr)
+	}
+}
+
+// Test_handleCatch_BUG35_NoEnclosingTry_ErrorPassesThrough verifies that when
+// there is no enclosing try/catch left to escalate to (a single try/catch
+// whose catch block itself raises an error), the error correctly passes
+// through as uncaught rather than looping back into the same spent frame.
+func Test_handleCatch_BUG35_NoEnclosingTry_ErrorPassesThrough(t *testing.T) {
+	tc := newTestContext(t)
+	tc.ctx.running.Store(true)
+
+	_ = tc.ctx.push(NewStackMarker("try"))
+	_ = tryByteCode(tc.ctx, 50)
+
+	// First error: caught normally.
+	err1 := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	tc.assertNoError(err1)
+	tc.assertProgramCounter(50)
+
+	// Second error, raised inside the (only) catch block: there is no
+	// enclosing try, so it must pass through uncaught.
+	err2 := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	if err2 == nil {
+		t.Error("expected error raised inside catch block to pass through when no enclosing try exists, got nil")
+	}
+}
+
+// Test_handleCatch_BUG35_DiscardsMultipleOrphanedFrames verifies the general
+// case: if several inner try/catch levels are already spent (addr==0) when a
+// new error arrives, handleCatch must skip all of them, catch at the first
+// live (addr>0) frame found further down the stack, and discard every
+// orphaned frame above it in one step (not just the immediate parent).
+func Test_handleCatch_BUG35_DiscardsMultipleOrphanedFrames(t *testing.T) {
+	tc := newTestContext(t)
+	tc.ctx.running.Store(true)
+
+	_ = tc.ctx.push(NewStackMarker("try")) // stack marker for the live (outer) frame
+
+	tc.ctx.tryStack = []tryInfo{
+		{addr: 300, catches: []error{}}, // outer: still live
+		{addr: 0, catches: []error{}},   // middle: already spent
+		{addr: 0, catches: []error{}},   // inner: already spent
+	}
+
+	err := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	tc.assertNoError(err)
+	tc.assertProgramCounter(300)
+
+	if len(tc.ctx.tryStack) != 1 {
+		t.Fatalf("tryStack length: got %d, want 1 (both orphaned frames discarded)", len(tc.ctx.tryStack))
+	}
+
+	if tc.ctx.tryStack[0].addr != 0 {
+		t.Errorf("surviving (outer) frame addr: got %d, want 0", tc.ctx.tryStack[0].addr)
+	}
+}
+
+// Test_handleCatch_BUG35_SelectiveCatchMismatchEscalatesToOuterTry covers the
+// second, broader variant of the same defect: a LIVE inner frame (addr > 0)
+// with a selective catches list (e.g. the internal try/catch compiled for the
+// `?` optional operator, or a `catch` naming specific error types) that does
+// NOT include the error that occurred. Before this fix, handleCatch only ever
+// examined the innermost frame and, finding no match, reported the error as
+// uncaught — even when an enclosing catch-all try/catch further down the
+// stack was available and should have handled it. The fix must also verify
+// that the inner frame's still-unconsumed "try" StackMarker is correctly
+// skipped so the unwind stops at the OUTER frame's marker, not the inner one.
+func Test_handleCatch_BUG35_SelectiveCatchMismatchEscalatesToOuterTry(t *testing.T) {
+	tc := newTestContext(t)
+	tc.ctx.running.Store(true)
+
+	// Outer: catch-all (empty catches list), catch address 200.
+	_ = tc.ctx.push(NewStackMarker("try")) // outer marker (bottom)
+	_ = tryByteCode(tc.ctx, 200)
+
+	// Inner: selective catch that only catches ErrAssert (e.g. compiled for
+	// `?expr`), catch address 100. Its marker is still on the stack because
+	// its try block never actually reaches its own catch.
+	_ = tc.ctx.push(NewStackMarker("try")) // inner marker (top)
+	_ = tryByteCode(tc.ctx, 100)
+	_ = willCatchByteCode(tc.ctx, errors.ErrAssert)
+
+	// Push a couple of items to simulate partial execution of the inner try
+	// block before the error — these must be discarded during unwind.
+	_ = tc.ctx.push("inner-item-1")
+	_ = tc.ctx.push("inner-item-2")
+
+	// Raise ErrDivisionByZero: NOT in the inner frame's selective catches
+	// list, so the inner frame must be bypassed in favor of the outer,
+	// catch-all frame.
+	err := handleCatch(tc.ctx, errors.ErrDivisionByZero)
+	tc.assertNoError(err)
+	tc.assertProgramCounter(200)
+
+	// The bypassed inner frame is discarded entirely (it was never entered,
+	// so there is nothing to leave behind for a later TryPop).
+	if len(tc.ctx.tryStack) != 1 {
+		t.Fatalf("tryStack length: got %d, want 1 (bypassed inner frame discarded)", len(tc.ctx.tryStack))
+	}
+
+	if tc.ctx.tryStack[0].addr != 0 {
+		t.Errorf("outer frame addr after catch: got %d, want 0", tc.ctx.tryStack[0].addr)
+	}
+
+	// Both the inner frame's marker and the outer frame's marker (plus the
+	// two simulated items) must have been consumed; the execution stack
+	// should now be empty.
+	tc.assertStackEmpty()
 }

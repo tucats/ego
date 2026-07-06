@@ -245,7 +245,7 @@ func Test_TypeOf_FunctionValueReturnsFuncType(t *testing.T) {
 // internally as a *any -- a raw Go pointer to the named symbol's storage
 // slot (see bytecode.addressOfByteCode and symbols.SymbolTable.GetAddress) --
 // regardless of what concrete type is stored in that slot. Before the
-// BUG-34 follow-up fix below, typeOf unconditionally reported every single
+// fix for BUG-34 below, typeOf unconditionally reported every single
 // one of these as the generic data.PointerType(data.InterfaceType) (i.e.
 // "*interface{}"), discarding the pointed-to type entirely: typeof(&someInt)
 // and typeof(&someString) were indistinguishable. The tests in this section

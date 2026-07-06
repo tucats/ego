@@ -121,9 +121,9 @@ func TestCompileBlockDirectiveNestedBraceInBlockMode(t *testing.T) {
 	}
 }
 
-// TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode is the
-// BUG-39 regression test for the full-program (non-"block") form of
-// @compile, which shares the same brace-counting defect.
+// TestCompileBlockDirectiveTwoTopLevelConstructsFullProgramMode is
+// the BUG-39 regression test for the full-program (non-"block")
+// form of @compile, which shares the same brace-counting defect.
 //
 // The notes accompanying BUG-39 explain that the full-program form used to
 // appear to work for a single top-level construct (e.g. one function

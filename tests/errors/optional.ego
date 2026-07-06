@@ -88,3 +88,73 @@
     v := ?m["x"] : -1
     @assert v == 1
 }
+
+@test "errors: BUG-35, optional operator escalates unlisted error to enclosing try"
+{
+    // The `?expr : fallback` optional operator (see internal/language/bytecode/try.go
+    // OptionalCatchSet) is itself implemented as a try/catch whose catches list is
+    // restricted to a small, specific set of errors (nil pointer, invalid type,
+    // unknown member, divide-by-zero, array index, type mismatch, invalid value,
+    // invalid integer/float).
+    //
+    // Regression for the BUG-35 fix: when the expression raises an error that is
+    // NOT in that set (e.g. a user-raised @error), the optional operator's own
+    // (selective) try/catch cannot handle it — but an enclosing try/catch further
+    // out must still get a chance to catch it. Before the fix, handleCatch only
+    // ever inspected the innermost try frame, so a non-matching selective catch
+    // caused the error to be reported as uncaught even with a live outer catch-all
+    // try available.
+    func failer() int {
+        @error "custom.failure"
+
+        return -999
+    }
+
+    outerCaught := false
+    result := 0
+
+    try {
+        result = ?failer() : -1
+    } catch(e) {
+        outerCaught = true
+        @assert e.Is(errors.New("custom.failure"))
+    }
+
+    @assert outerCaught
+    @assert result == 0   // assignment never completed; result keeps its initial value
+}
+
+@test "errors: BUG-35, optional operator nested inside a catch block"
+{
+    // Combines both aspects of the BUG-35 fix: an error is raised while a catch
+    // block is executing (escalation past a spent frame), and the error comes
+    // from a `?:` optional operator whose own selective catch set does not
+    // include it (escalation past a live, non-matching frame). Both must
+    // correctly unwind to the outermost catch-all try.
+    func failer() int {
+        @error "custom.failure"
+
+        return -999
+    }
+
+    outerCaught := false
+
+    try {
+        try {
+            x := 0
+            _ = 5 / x
+        } catch {
+            _ = ?failer() : -1
+        }
+    } catch(e) {
+        outerCaught = true
+        @assert e.Is(errors.New("custom.failure"))
+    }
+
+    @assert outerCaught
+
+    // Sanity: the ordinary (in-set) fallback path is unaffected by the fix.
+    y := 0
+    z := ?(15 / y) : -1
+    @assert z == -1
+}

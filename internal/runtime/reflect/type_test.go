@@ -16,7 +16,7 @@ import (
 // internally as a *any -- a raw Go pointer to the named symbol's storage
 // slot (see bytecode.addressOfByteCode and symbols.SymbolTable.GetAddress) --
 // regardless of what concrete type is stored in that slot. Before the
-// BUG-34 follow-up fix below, describeType unconditionally reported every
+// fix for BUG-34 below, describeType unconditionally reported every
 // single one of these as the generic data.PointerType(data.InterfaceType)
 // (i.e. "*interface{}"), discarding the pointed-to type entirely:
 // reflect.Type(&someInt) and reflect.Type(&someString) were

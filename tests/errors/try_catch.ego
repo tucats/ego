@@ -248,3 +248,89 @@
     }
     @assert caught
 }
+
+@test "errors: BUG-35, error in catch block escalates to outer try"
+{
+    // Regression test for BUG-35 (docs/ISSUES.md#BUG-35).
+    //
+    // An error raised INSIDE a catch block must escape to the nearest
+    // enclosing try/catch, exactly as Go's defer/recover unwinds into the
+    // next outer recover when a panic occurs while a recover handler is
+    // itself running. Before the fix, handleCatch only ever inspected the
+    // top-of-stack try frame; once that frame's catch block was entered it
+    // was marked spent (addr == 0), so a second error raised while it was
+    // executing found no catcher at all and the whole program aborted —
+    // "outer caught" and "done" were never reached.
+    outerCaught := false
+
+    try {
+        try {
+            x := 0
+            _ = 5 / x
+        } catch {
+            y := 0
+            _ = 10 / y   // raised WHILE the inner catch block is executing
+        }
+    } catch (outer) {
+        outerCaught = true
+        @assert outer.Is(errors.New("div.zero"))
+    }
+
+    @assert outerCaught
+}
+
+@test "errors: BUG-35, error escalates through three nested levels"
+{
+    // Extends the BUG-35 scenario to three levels: each catch block's own
+    // error must keep escalating past exhausted inner frames until it
+    // reaches a try that is still live.
+    outerCaught := false
+
+    try {
+        try {
+            try {
+                x := 0
+                _ = 5 / x
+            } catch {
+                y := 0
+                _ = 10 / y   // escalates past the innermost try
+            }
+        } catch {
+            z := 0
+            _ = 20 / z       // escalates past the middle try
+        }
+    } catch (outer) {
+        outerCaught = true
+        @assert outer.Is(errors.New("div.zero"))
+    }
+
+    @assert outerCaught
+}
+
+@test "errors: BUG-35, no enclosing try means error still fatal-catchable-only-once"
+{
+    // A single try/catch whose own catch block raises an error, with no
+    // enclosing try/catch available, must NOT loop back into the same
+    // (already spent) catch block. The function-level catch below is used
+    // to observe that the second error is not silently absorbed twice.
+    func innerOnly() error {
+        try {
+            _ = 5 / 0
+        } catch {
+            _ = 10 / 0   // no enclosing try/catch in this function
+        }
+
+        return nil
+    }
+
+    caught := false
+
+    try {
+        _ = innerOnly()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    @assert caught
+}
