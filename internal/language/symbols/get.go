@@ -46,7 +46,7 @@ func (s *SymbolTable) GetAnyScope(name string) (any, bool) {
 
 		ui.WriteLog(ui.SymbolLogger, "symbols.get.any", ui.A{
 			"table": s.Name,
-			"id":    s.id.String(),
+			"id":    s.id,
 			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
@@ -99,7 +99,7 @@ func (s *SymbolTable) Get(name string) (any, bool) {
 
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
-			"id":    s.id.String(),
+			"id":    s.id,
 			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
@@ -140,7 +140,7 @@ func (s *SymbolTable) GetLocal(name string) (any, bool) {
 
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
-			"id":    s.id.String(),
+			"id":    s.id,
 			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
@@ -187,7 +187,7 @@ func (s *SymbolTable) GetWithAttributes(name string) (any, *SymbolAttribute, boo
 
 		ui.WriteLog(ui.SymbolLogger, "symbols.get", ui.A{
 			"table": s.Name,
-			"id":    s.id.String(),
+			"id":    s.id,
 			"name":  name,
 			"slot":  attr.slot,
 			"value": status})
@@ -231,7 +231,7 @@ func (s *SymbolTable) GetAddress(name string) (any, bool) {
 
 	ui.Log(ui.SymbolLogger, "symbols.get.addr", ui.A{
 		"table": s.Name,
-		"id":    s.id.String(),
+		"id":    s.id,
 		"name":  name})
 
 	return v, found

@@ -2,8 +2,6 @@ package symbols
 
 import (
 	"testing"
-
-	"github.com/google/uuid"
 )
 
 func TestNewSymbolTable(t *testing.T) {
@@ -20,8 +18,8 @@ func TestNewSymbolTable(t *testing.T) {
 		t.Errorf("NewSymbolTable() = %v, want %v", symbols.parent, &RootSymbolTable)
 	}
 
-	if symbols.id == uuid.Nil {
-		t.Errorf("NewSymbolTable() = %v, want non-nil UUID", symbols.id)
+	if symbols.id == 0 {
+		t.Errorf("NewSymbolTable() = %v, want non-zero id", symbols.id)
 	}
 
 	if symbols.shared.Load() != SerializeTableAccess {
@@ -34,7 +32,7 @@ func TestNewChildSymbolTable(t *testing.T) {
 		Name:    "parent",
 		parent:  nil,
 		symbols: map[string]*SymbolAttribute{},
-		id:      uuid.New(),
+		id:      newTableID(),
 	}
 
 	SerializeTableAccess = true
@@ -49,8 +47,8 @@ func TestNewChildSymbolTable(t *testing.T) {
 		t.Errorf("NewChildSymbolTable() = %v, want %v", symbols.parent, parent)
 	}
 
-	if symbols.id == uuid.Nil {
-		t.Errorf("NewChildSymbolTable() = %v, want non-nil UUID", symbols.id)
+	if symbols.id == 0 {
+		t.Errorf("NewChildSymbolTable() = %v, want non-zero id", symbols.id)
 	}
 
 	if symbols.shared.Load() != SerializeTableAccess {
@@ -138,7 +136,7 @@ func TestSymbolTable_Names(t *testing.T) {
 			"foo": {},
 			"baz": {},
 		},
-		id: uuid.New(),
+		id: newTableID(),
 	}
 
 	// Names should return the names in sorted order so the result is always
@@ -166,7 +164,7 @@ func TestSymbolTable_Size(t *testing.T) {
 			"bar": {},
 			"baz": {},
 		},
-		id: uuid.New(),
+		id: newTableID(),
 	}
 
 	expectedSize := 3

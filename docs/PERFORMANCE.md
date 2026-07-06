@@ -1,0 +1,546 @@
+# Ego Interpreter Performance Audit
+
+This document reports the findings of a CPU-profiling audit of the Ego bytecode interpreter
+and runtime, triggered by the observation that a plain 50,000,000-iteration `for` loop (see
+`examples/panic.ego`) takes on the order of 95 seconds to run. It is a survey of *where the
+interpreter actually spends its time*, backed by real `pprof` profiles rather than
+speculation, together with concrete recommendations ranging from one-line fixes to
+significant design changes. Findings are ordered roughly by impact-for-effort, not by where
+they appear in the call graph.
+
+---
+
+## 1. Methodology
+
+Ego's `run` command has a hidden, developer-only `--pprof <file>` flag
+(`internal/commands/run.go`) that wraps program execution in Go's native
+`runtime/pprof` CPU profiler. Three synthetic workloads were profiled with it, each isolating
+a different part of the interpreter:
+
+| Workload | Program | Purpose |
+| - | - | - |
+| **Tight loop** | `count := 0; for i := 0; i < 20000000; i++ { count = count + 1 }` | Isolates loop/scope overhead and scalar arithmetic, with no function calls at all. |
+| **Function calls** | Same loop, but each iteration calls a trivial `func add1(x int) int { return x + 1 }` | Adds function-call overhead (argument binding, scope push/pop, return) on top of the loop cost. |
+| **Native package calls** | Same loop, calling `math.Sqrt(2.0)` each iteration | Isolates the cost of calling into a native-pass-through Go function via reflection. |
+
+```sh
+ego run --pprof /tmp/cpu.prof program.ego
+go tool pprof -top -cum ./ego /tmp/cpu.prof
+```
+
+Timings below are wall-clock (`time ego run ...`) on the development machine used for this
+audit; absolute numbers will vary by hardware, but the *proportions* — which is what matters
+for prioritizing work — should generalize.
+
+| Workload | Iterations | Wall time | CPU samples | % of samples inside `RunFromAddress`'s own subtree |
+| - | - | - | - | - |
+| Tight loop | 20,000,000 | 37.2s | 44.8s (120%\*) | 40.0% |
+| Function calls | 3,000,000 | 17.1s | 23.4s (137%\*) | 23.3% |
+| Native calls | 1,000,000 | 2.9s | 3.3s (113%\*) | 39.5% |
+
+\* Percentages over 100% mean multiple OS threads were executing concurrently during
+profiling (mostly the Go runtime's own background GC workers — see Finding 6).
+
+The single biggest, cross-cutting takeaway, expanded on in Finding 6: **in every workload,
+well under half of total CPU time was spent inside the interpreter's own instruction-dispatch
+loop.** The majority went to Go's garbage collector and scheduler, as a direct consequence of
+how many small heap objects the interpreter allocates per loop iteration and per function
+call. Findings 1–4 are, not coincidentally, all about reducing that allocation rate.
+
+---
+
+## 2. Finding 1 — `uuid.New()` on every scope creation (highest impact, lowest risk)
+
+**Impact:** in both profiled workloads, generating a random UUID accounted for roughly
+**half of the total cost of creating a new symbol-table scope** — and a new scope is created
+on every loop iteration, every function call, and every `if`/block entry.
+
+### Evidence
+
+```
+(tight loop, 20M iterations — /tmp/cpu.prof)
+ROUTINE ==== github.com/tucats/ego/internal/language/symbols.NewChildSymbolTable
+      70ms      4.38s (flat, cum)  9.77% of Total
+         .          .    153:	symbols := SymbolTable{
+         .          .    154:		Name:    name,
+         .      180ms    155:		symbols: map[string]*SymbolAttribute{},
+         .      2.42s    156:		id:      uuid.New(),        <-- 55% of this function's own cost
+         .          .    157:	}
+         .          .    158:	symbols.shared.Store(SerializeTableAccess)
+         .          .    159:
+         .      780ms    160:	symbols.SetParent(parent)
+         .          .    161:	...
+         .      800ms    170:	symbols.initializeValues()
+```
+
+```
+(function-call loop, 3M calls — /tmp/cpu_call.prof)
+ROUTINE ==== github.com/tucats/ego/internal/language/symbols.NewChildSymbolTable
+      10ms      1.88s (flat, cum)  8.04% of Total
+         .          .    156:		id:      uuid.New(),        <-- 1.04s of 1.88s = 55%
+```
+
+`google/uuid.New()` is backed by `crypto/rand`, which on this platform ultimately makes a
+real syscall (`ARC4Random` → `syscall.syscall`) for every single call. That is an expensive
+thing to do on a hot path that runs millions of times per second.
+
+### Root cause
+
+`internal/language/symbols/tables.go` (`NewChildSymbolTable`, line 156; `NewSymbolTable`,
+line 141) and `internal/language/symbols/copy.go` (`NewChildProxy`, line 28; `Clone`, line
+111) each stamp a fresh `uuid.New()` onto every table's `id uuid.UUID` field.
+
+**The ID is used purely for human-readable diagnostics** — every call site that reads it
+(`internal/runtime/runtime.go`, `internal/runtime/util/symbols.go`,
+`internal/language/bytecode/defer.go`, `internal/language/symbols/format.go`) only ever
+passes it to `ui.Log`/`Format` for trace output. It is never compared, hashed as a map key, or
+used for anything security-sensitive. `symbols.(*SymbolTable).ID()` even documents this: it
+exists so callers "can identify a specific table in log output."
+
+`Clone` (`copy.go:111`) is doubly wasteful: it calls `NewChildSymbolTable` (which already
+generates one UUID) and then immediately overwrites `.id` with a **second** `uuid.New()`
+call, discarding the first.
+
+### Recommendation
+
+Replace the cryptographically-random UUID with a cheap, process-unique identifier. Two
+options, in order of preference:
+
+1. **Simplest and fastest:** change `id` to a `uint64` populated from an
+   `atomic.Uint64` counter (`sync/atomic`'s `Add`), formatted as needed only when actually
+   logged. This is a two-line change per call site, is allocation-free, and remains unique for
+   the life of the process — everything the current usage actually needs. The only cost is
+   updating `ID()`'s return type and the handful of call sites that currently expect
+   `uuid.UUID`/`uuid.Nil` (grep shows this is a small, contained set — see
+   `tables_test.go`, `format.go`, `runtime.go`, `util/symbols.go`, `defer.go`).
+2. **Lower-disruption alternative:** keep the `uuid.UUID` type (no signature/test changes)
+   but stop using `uuid.New()`'s crypto-random generator. `google/uuid` supports plugging in
+   a custom `io.Reader` via `uuid.SetRand()`; pointing it at a fast, non-cryptographic PRNG
+   (seeded once at startup) removes the syscall while keeping every existing call site and
+   type unchanged. This is the lower-risk option if a wider signature change is undesirable.
+
+Either fix is small, mechanical, and safe — there is no correctness dependency anywhere on
+these IDs being unpredictable or cryptographically unique, only *distinct enough for a human
+reading a trace log to tell two tables apart*.
+
+Also fix `Clone`'s redundant second `uuid.New()` call while making this change.
+
+### Resolution (July 2026)
+
+Implemented option 1 above (the simplest/fastest one): `SymbolTable.id` is now a plain
+`uint64`, populated from a package-level `atomic.Uint64` counter, rather than a
+`google/uuid.UUID`. Per the design direction given for this fix, no attempt was made to keep
+the value "UUID-shaped" — a small, clearly-legible integer is exactly what the logging use
+case wants, and is arguably *more* readable in a log line than a UUID ever was.
+
+**Files modified:**
+
+- `internal/language/symbols/tables.go` — removed the `github.com/google/uuid` import; added
+  `nextTableID atomic.Uint64` and a `newTableID()` helper (`nextTableID.Add(1)`, documented as
+  never returning 0 so 0 remains available as the "no table" sentinel); changed the `id`
+  field from `uuid.UUID` to `uint64`; updated `NewSymbolTable` and `NewChildSymbolTable` to
+  call `newTableID()` instead of `uuid.New()`; changed `ID()`'s return type to `uint64` and
+  its nil-receiver sentinel from `uuid.Nil` to `0`.
+- `internal/language/symbols/copy.go` — removed the now-unused `uuid` import;
+  `NewChildProxy` calls `newTableID()` instead of `uuid.New()`. See "Bug found" below for the
+  change to `Clone`.
+- `internal/language/symbols/format.go` — two `fmt.Sprintf` call sites and one `ui.Log` call
+  site that rendered `s.id.String()` (or `parent.ID().String()`) now use the `uint64` value
+  directly with a `%d` verb (or no formatting at all for the `ui.A` map case, since `ui.Log`
+  formats any value type).
+- `internal/language/symbols/get.go` — five `ui.Log`/`ui.WriteLog` call sites changed from
+  `s.id.String()` to `s.id` (same reasoning).
+- `internal/runtime/util/symbols.go` — the one call site that exposes a table's ID through
+  Ego's `util.symbols()` builtin (`UtilSymbolTableType`'s `"id"` field is declared as
+  `data.StringType`, so unlike the internal log call sites, this one genuinely needs a
+  string) now uses `strconv.FormatUint(p.ID(), 10)` instead of `p.ID().String()`. This is the
+  only externally-visible (Ego-program-visible) change: a symbol table's reported `"id"` is
+  now a decimal string like `"42"` instead of a UUID string. Nothing in `docs/API.md` or
+  `docs/DASHBOARD.md` documents this field as UUID-formatted, and it is not used as a lookup
+  key anywhere, so this is not considered a breaking change.
+- `internal/runtime/runtime.go` and `internal/language/bytecode/defer.go` — no changes
+  needed; both pass `s.ID()` straight into a `ui.A` map value, which accepts any type.
+- `internal/language/symbols/tables_test.go` and `values_test.go` — removed the `uuid`
+  import; replaced `uuid.New()` in test fixture construction with `newTableID()`, and the two
+  `symbols.id == uuid.Nil` assertions with `symbols.id == 0`.
+
+**Bug found and fixed while doing this work:** `SymbolTable.Clone` (`copy.go`) called
+`NewChildSymbolTable(...)` — which, both before and after this change, already assigns a
+fresh, unique ID to the new table — and then immediately **overwrote** that ID with a second,
+independently generated one a few lines later, silently discarding the first. This was
+always a wasted ID generation (harmless before this fix beyond the wasted `uuid.New()` call;
+still harmless after, since an atomic increment is nearly free, but there is no reason to
+keep pointless code once it's been noticed). The redundant assignment was deleted; `Clone`
+now keeps the ID `NewChildSymbolTable` already gave the new table.
+
+**Re-profiling results:** the same three workloads from Section 1 were re-profiled after the
+change, using the identical programs and the same `--pprof` methodology.
+
+| Metric (tight loop, 20M iterations) | Before | After | Change |
+| - | - | - | - |
+| Wall clock | 37.2s | 31.8s | **-14%** |
+| `uuid.New` (self, anywhere in profile) | 2.4s+ (part of `NewChildSymbolTable`) | *(eliminated — does not appear)* | -100% |
+| `NewChildSymbolTable` (cum) | 4.38s / 9.77% | 0.48s / 1.12% | **-89%** |
+| `pushScopeByteCode` (cum) | 5.60s / 12.49% | 0.79s / 1.84% | **-85%** |
+| `runtime.madvise` (flat) | 10.61s / 23.67% | 0.75s / 1.75% | **-93%** |
+| `runtime.mallocgc` (cum) | 3.54s / 7.90% | 0.93s / 2.17% | **-74%** |
+| `RunFromAddress` (cum — "true interpreter work") | 17.94s / 40.0% | 3.83s / 8.9% | **-79%** (absolute seconds) |
+| `runtime.kevent` (flat) | 11.89s / 26.53% | 12.38s / 28.82% | ~flat |
+
+| Metric (function calls, 3M calls) | Before | After | Change |
+| - | - | - | - |
+| Wall clock | 17.1s | 14.5s | **-15%** |
+| `uuid.New` (cum) | 1.04s / 4.45% | *(eliminated)* | -100% |
+| `NewChildSymbolTable` (cum) | 1.88s / 8.04% | 1.05s / 5.11% | **-44%** |
+| `pushScopeByteCode` (cum) | 1.79s / 7.65% | 1.11s / 5.40% | **-38%** |
+
+**The example that started this audit:** the plain 50,000,000-iteration loop from
+`examples/panic.ego`'s scenario 2 (run standalone, without the goroutine, so it runs to
+completion) dropped from **95.6s to 80.4s wall clock — a 16% reduction** — for the exact
+program that motivated this investigation.
+
+**Honest assessment of the result:** every cost this fix specifically targeted dropped
+dramatically and exactly as predicted — `uuid.New()` is completely gone from the profile,
+`NewChildSymbolTable`'s and `pushScopeByteCode`'s own costs fell by 85-89% on the tight loop,
+and `runtime.madvise` (memory returned to the OS, a direct proxy for allocation churn) fell
+by 93%. However, the **overall wall-clock improvement is a more modest 14-16%**, because —
+exactly as Finding 5 predicted — this was never the only cost, and `runtime.kevent` (OS-level
+thread park/wake overhead, not memory-reclamation) barely moved. That means the GC/scheduler
+tax described in Finding 5 has shifted character: before this fix it was substantially about
+returning freed memory to the OS (`madvise`); after this fix, with less garbage produced per
+scope but still a full scope allocated every single loop iteration, it is now dominated by
+plain goroutine/thread scheduling overhead from how often the collector still needs to run
+at all. This is exactly the reasoning behind Finding 4 (skip per-iteration scope creation
+when a loop body cannot observe it) and Finding 2 (stop the `TypeDeclarations` linear scan) —
+both remain necessary to meaningfully reduce the *rate* of scope/value allocation itself, not
+just the cost of each one, before the next large wall-clock improvement should be expected.
+
+**Test status:** `go build ./...`, `go vet ./...`, and the full `go test ./...` suite are all
+clean after this change, and all 1,142 tests in `ego test tests/` continue to pass. Symbol
+table trace logging (`ego --log symbols run ...`) was manually inspected and now shows table
+identities as small, clearly distinct integers (e.g. `root (0)`, `math (135)`, `main (175)`)
+in place of UUID strings, confirmed against the "id clear in the symbol table logging"
+requirement for this fix.
+
+---
+
+## 3. Finding 2 — `InstanceOfType`'s linear scan for every scalar type coercion
+
+**Impact:** `data.Coerce` (called on essentially every arithmetic operation, comparison, and
+typed assignment in Ego's default dynamic-typing mode) spent **7.7%** of total tight-loop CPU
+time, of which two-thirds was inside `InstanceOfType`, and *that* function's own cost was
+dominated by a **linear scan with a non-trivial comparison function**.
+
+### Evidence
+
+```
+ROUTINE ==== github.com/tucats/ego/internal/language/data.Coerce
+     0.58s  1.29%  1.29%      3.46s  7.72%
+                                             |   data.Coerce
+                                             2.45s 70.81% |     data.InstanceOfType
+                                             0.27s  7.80% |     data.coerceToInt64
+                                             0.16s  4.62% |     data.coerceToInt
+
+ROUTINE ==== github.com/tucats/ego/internal/language/data.InstanceOfType
+     0.90s  2.01%  2.01%      2.45s  5.47%
+                                             1.54s 62.86% |   data.(*Type).IsType   <-- linear scan cost
+```
+
+### Root cause
+
+`data.Coerce` (`internal/language/data/coerce.go:32-34`) does this unconditionally whenever
+its `model` argument is a `*Type` — which is the common case for scalar coercions like
+`data.Int64(x)`:
+
+```go
+if t, ok := model.(*Type); ok {
+    model = InstanceOfType(t)
+}
+```
+
+`InstanceOfType`'s `default` branch (`internal/language/data/instance.go:85-94`), reached for
+every scalar kind (`int`, `int64`, `float64`, `bool`, `string`, ...), does this:
+
+```go
+for _, typeDef := range TypeDeclarations {
+    if typeDef.Kind.IsType(t) {
+        return typeDef.Model
+    }
+}
+```
+
+`TypeDeclarations` (`internal/language/data/declarations.go`) is a **39-entry slice** that
+does double duty as both "the compiler's table of recognized type-token spellings" and "the
+runtime's table of zero-value models" — so every scalar coercion linearly scans up to 39
+entries, calling `(*Type).IsType()` (which itself calls `UnwrapUserType()` twice per
+comparison) on each one, just to find the zero value of a kind the caller almost always
+**already knows** (`t.kind` is sitting right there).
+
+### Recommendation
+
+Replace the linear scan in the scalar branch with a direct dispatch on `t.kind` — a
+`switch`/map keyed by `Kind`, using the exact same package-level model variables
+(`intModel`, `int64Model`, `float64Model`, ...) that `TypeDeclarations` already points at.
+This is a pure performance change with no behavioral difference: same models, same
+fallback-to-nil for unrecognized kinds, just O(1) instead of O(n) with expensive comparisons.
+`TypeDeclarations` itself does not need to change — it can stay as the compiler's
+token-spelling table — only `InstanceOfType`'s lookup strategy needs to change.
+
+As a secondary, smaller improvement: `data.Coerce`'s callers that only need "the zero value
+for this *Kind*" (as opposed to genuinely needing to run the full `InstanceOfType` machinery
+for structs/arrays/maps) could dispatch directly on `t.kind` before ever calling
+`InstanceOfType`, skipping a function call entirely for the scalar fast path.
+
+---
+
+## 4. Finding 3 — `ui.Log` call sites build their argument map before checking if logging is active
+
+**Impact:** proportional to call-site frequency; confirmed to cost **~730ms (1.6% of total)**
+at a single call site (`pushScopeByteCode`) in the tight-loop profile, and a further ~90ms at
+`callBytecodeFunction`'s equivalent call for the function-call profile. Widespread — see
+below — so the aggregate cost across the whole interpreter is almost certainly larger than
+what these two call sites alone show.
+
+### Evidence
+
+```
+ROUTINE ==== github.com/tucats/ego/internal/language/bytecode.pushScopeByteCode
+      80ms      5.60s (flat, cum) 12.49% of Total
+         .          .     77:	newName := "block " + strconv.Itoa(c.blockDepth)
+         .          .    120:	newTable := symbols.NewChildSymbolTable(newName, parent)...
+         .          .    126:	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
+      40ms      730ms    127:		"thread": c.threadID,
+         .       90ms    128:		"name":   c.symbols.Name,
+         .       10ms    129:		"parent": oldName,
+         .          .    130:		"flag":   isBoundary})
+```
+
+### Root cause
+
+`ui.Log(class int, format string, args A)` (`internal/cli/ui/messaging.go:264`) takes its
+`args ui.A` (a `map[string]any`) **by value**, and only checks `loggers[class].active.Load()`
+*inside* `Log`, after the caller has already constructed the map literal. Building a
+multi-entry `map[string]any` is a real heap allocation plus several map inserts — paid on
+every call, regardless of whether `SymbolLogger` (or whichever class) is even turned on,
+which for a normal `ego run` it never is.
+
+This pattern is **inconsistent** across the codebase: some call sites already guard against
+exactly this (e.g. `internal/language/bytecode/catch.go` and `panic.go`, both fixed during
+recent bug work, do `if ui.IsActive(ui.TraceLogger) { ui.Log(...) }`), and `symbols.Get`
+correctly guards its own diagnostic log line the same way (`internal/language/symbols/get.go:89`).
+But a rough count across `internal/language/bytecode`, `internal/language/symbols`, and
+`internal/language/compiler` found **85 `ui.Log` call sites, only ~7 of which are guarded**
+with a preceding `IsActive` check. Not all of the other 78 build expensive argument maps (a
+`nil` args value, or a one-field map, costs relatively little), but every one of them is a
+candidate worth checking, and every one on a genuinely hot path (opcode dispatch functions
+especially) is a real, easy win.
+
+### Recommendation
+
+1. **Immediate, no-risk fix:** wrap the specific hot-path call sites identified above
+   (`pushScopeByteCode`, `callBytecodeFunction`, and their siblings `popScopeByteCode`,
+   `callFramePush`/`callFramePop`) in `if ui.IsActive(ui.SymbolLogger) { ... }`, matching the
+   pattern already established in `catch.go`/`panic.go`/`get.go`.
+2. **Systemic fix:** sweep every `ui.Log` call site in the three packages above (a
+   mechanical, low-risk refactor) and add the same guard wherever the constructed `ui.A` has
+   more than a trivial number of fields, or where any field requires computation (string
+   concatenation, formatting, method calls) rather than a bare variable read.
+3. Also worth fixing while touching this code: `pushScopeByteCode` computes
+   `newName := "block " + strconv.Itoa(c.blockDepth)` (a string concatenation, `internal/language/bytecode/symbols.go:77`)
+   and `callBytecodeFunction` computes `"function "+function.name`
+   (`internal/language/bytecode/callBytecodeFunction.go:102`) **unconditionally on every
+   scope push**, purely to give the new table a human-readable debug name. Consider computing
+   these lazily (only when something actually reads `.Name`, e.g. inside the same
+   `IsActive`-guarded logging block) rather than on every call.
+
+---
+
+## 5. Finding 4 (design-level) — per-iteration loop scopes: correct, but costly, and often unnecessary
+
+**This one is *not* a bug** — it is exactly the kind of "slow but present to support a
+language feature" case worth documenting rather than "fixing" outright.
+
+### What it costs
+
+`pushScopeByteCode` (which, per Finding 1 + 2, mostly means `NewChildSymbolTable` +
+`uuid.New()`) accounted for **12.49% of total tight-loop CPU time** and **7.65%–10.64% of
+total function-call/native-call CPU time**. A `for` loop's body scope is re-entered — meaning
+a brand new child `SymbolTable` (with its own `map[string]*SymbolAttribute`) is allocated —
+**on every single iteration**, not once for the whole loop.
+
+### Why it's there
+
+This is intentional, and exists to correctly implement Go 1.22+'s per-iteration loop variable
+semantics (see `internal/language/compiler/for.go`, the long comment block starting "Fix
+BUG-30: per-iteration loop variables"). Before that fix, a closure created inside a loop body
+that captured the loop variable would see whatever value the variable held when the loop
+*finished*, not the value at the time the closure was created — a well-known class of bug in
+pre-1.22 Go. The fix makes each iteration copy the loop's outer control variable into a
+**fresh, per-iteration scope**, so a closure captures that iteration's own copy.
+
+The mechanism: the loop body's own `PushScope` bytecode instruction is (already, structurally)
+re-executed every time the loop branches back to the top of the body — so BUG-30's fix
+piggybacks on that existing re-entry rather than introducing new bytecode, and just splices a
+three-instruction "copy the outer variable into a new same-named variable in this fresh
+scope" prologue into the body.
+
+### The opportunity
+
+The fresh-scope-per-iteration cost is only *necessary* when the loop body could actually
+observe cross-iteration variable identity — i.e., when it contains a closure (`func literal`,
+`go` statement, or `defer`) that might capture the loop variable and outlive the iteration.
+The overwhelming majority of loop bodies do not do this (`for i := 0; i < n; i++ { sum +=
+a[i] }` has no way to observe whether `i` is a fresh variable each iteration or not). For
+those, the correct, much cheaper behavior is the pre-fix one: reuse a single scope for the
+whole loop.
+
+**Recommendation:** teach the compiler to detect, at the point it compiles a loop body,
+whether that body contains any construct that can capture a variable by reference across
+iterations (a function literal, a `go` statement, or a `defer` of anything other than a
+direct call with already-evaluated arguments). If none is present, skip emitting both the
+per-iteration `PushScope`/`PopScope` pair and the BUG-30 copy-in prologue, falling back to a
+single scope push for the entire loop (exactly as a `for` loop with no scope-sensitive
+constructs behaved before BUG-30). This preserves 100% of the corrected semantics for the
+loops that need it, while removing the dominant cost of this profile for the many loops that
+don't. This is a compiler-level (not runtime-level) change, and is more involved than
+Findings 1–3, but plausibly the single biggest win available without a deeper architectural
+change, *because* it would also proportionally shrink the cost of Finding 1 and Finding 2
+(fewer scope creations means fewer `uuid.New()` calls and — indirectly — fewer coercions
+triggered by re-entering a scope's variable initialization).
+
+---
+
+## 6. Finding 5 (systemic) — garbage-collector and scheduler overhead dominates wall-clock time
+
+**This is the umbrella finding that ties 1–4 together, and the single most important number
+in this report.**
+
+In every workload profiled, **more CPU time was spent in Go's own garbage collector and
+goroutine scheduler than in the Ego interpreter's own instruction-dispatch loop**:
+
+| Workload | % of samples in `RunFromAddress`'s subtree | % of samples in GC/scheduler (`runtime.kevent`, `runtime.madvise`, `gcStart`/`gcDrain`, `park_m`/`findRunnable`, ...) |
+| - | - | - |
+| Tight loop | 40.0% | ~50%+ |
+| Function calls | 23.3% | ~58%+ |
+| Native calls | 39.5% | ~54%+ |
+
+```
+(tight loop)
+    11.89s 26.53% 26.53%     11.89s 26.53%  runtime.kevent
+    10.61s 23.67% 50.20%     10.61s 23.67%  runtime.madvise
+         0     0%  1.49%     11.91s 26.57%  runtime.startTheWorldWithSema
+         0     0%  1.49%     11.90s 26.55%  runtime.gcStart.func4
+```
+
+`runtime.kevent`/`runtime.madvise` are OS-level syscalls the Go runtime makes as part of
+stop-the-world/start-the-world GC pauses and returning freed memory pages to the OS. Their
+sheer volume here is a direct symptom of **allocation rate**: every loop iteration and every
+function call allocates at least one new `SymbolTable` (with its own backing map), forcing
+the garbage collector to run far more often than the actual amount of "real work" being done
+would otherwise require.
+
+A quick, no-code-change experiment confirms the diagnosis directionally: raising `GOGC` (less
+frequent, larger GC cycles) reduced *system* time substantially (3.52s → 0.80s in one run) and
+gave a modest (~5%) wall-clock improvement — real, but not a substitute for reducing the
+underlying allocation rate, which is what Findings 1, 2, and 4 target directly. Tuning
+`GOGC`/`GOMEMLIMIT` as a runtime default for `ego run` may be worth a small, separate
+follow-up experiment, but should be treated as a secondary knob, not the fix.
+
+**Bottom line:** Findings 1 (remove `uuid.New()`), 2 (remove the `TypeDeclarations` linear
+scan), and 4 (skip per-iteration scopes when safe to do so) all reduce the same thing —
+small-object allocation rate in the hottest part of the interpreter — and should be expected
+to compound: each one not only saves its own direct cost, but also reduces how often the
+garbage collector needs to run at all, which by this data is currently *more than half* of
+the total cost of running an Ego program.
+
+---
+
+## 7. Finding 6 (measured, and smaller than expected) — reflection-based native calls
+
+CLAUDE.md documents that "native pass-through" functions (functions registered with
+`IsNative: true`, e.g. `math.Sqrt`, `time.Now`) are invoked via Go's `reflect.Value.Call`,
+which has a well-known reputation for being slow (argument boxing, `[]reflect.Value`
+allocation, runtime type checks). This was expected to show up clearly in the "native calls"
+profile (1,000,000 calls to `math.Sqrt`).
+
+**It did not.** `reflect.Value.call` accounted for only **0.91%** of total samples in that
+profile — a real cost, but a minor one, and dwarfed by the *same* scope/allocation overhead
+already described in Findings 1, 2, and 5 (`pushScopeByteCode` alone was 10.6% of this
+profile, over ten times the reflection cost). This is worth stating explicitly, in the
+interest of not chasing a plausible-sounding but not-actually-dominant cost: **reflection
+overhead for native calls is real but is not, on this evidence, a priority relative to the
+scope/allocation issues above.** It may be worth revisiting with a more call-heavy (rather
+than loop-heavy) workload, or one that calls native functions taking/returning more complex
+argument shapes, before investing engineering effort here.
+
+---
+
+## 8. Finding 7 (architectural, high-effort, high-ceiling) — name-based symbol resolution
+
+Every variable read or write (`symbols.Get`/`Set`) resolves the variable by **string name**
+through a `map[string]*SymbolAttribute` at the current scope, walking up the parent chain on
+a miss:
+
+```
+ROUTINE ==== github.com/tucats/ego/internal/language/symbols.(*SymbolTable).Get
+     160ms      1.20s (flat, cum)  2.68% of Total
+         .      550ms     72:	attr, found := s.symbols[name]     <-- map lookup, per scope in the chain
+         .       30ms     85:		return next.Get(name)          <-- recurse to parent on miss
+```
+
+This costs 1.9%–2.7% of total samples on its own in these profiles (on top of the scope
+*creation* costs already covered above), and — because it is a map lookup, not an array
+index — the cost scales with hashing the name string, not with anything about the variable
+itself.
+
+This is a known, general pattern in interpreter design: resolving a local variable by name at
+every single reference is asking more of the runtime than necessary, because the *set* of
+local variable names in a given function/block is already fully known to the compiler at
+compile time. Compiled/bytecode-VM languages typically resolve locals to a **slot index**
+(an integer offset into the current call frame) during compilation, turning "hash a string,
+probe a map, possibly recurse to a parent table" into "index into an array" — a difference of
+roughly an order of magnitude in raw cost, with no chain-walking needed at all for anything
+declared in the same function.
+
+**This is the highest-ceiling, highest-effort item in this report.** It would require:
+
+- A compile-time "slot allocation" pass (assigning each local variable in a function/block a
+  fixed slot number, tracking which names are still needed by closures and must remain
+  name-addressable for capture).
+- Changing the `Load`/`Store`/`CreateAndStore`/`StoreAlways` bytecode operand from a name
+  string to a slot index (or a hybrid — slot number plus a name for the (rarer) cases that
+  still need dynamic/reflective lookup, e.g. `@global`, debugger variable inspection, or
+  runtime `errors`/`recover` machinery that reads named-return variables by name).
+- Preserving today's fully-dynamic behavior (`ego.compiler.types=dynamic`, the default) where
+  a variable's very existence can depend on runtime control flow — slot allocation is
+  straightforward when a variable's declaration is unconditionally reached, and needs care
+  for variables declared inside conditionally-executed blocks.
+
+This is explicitly the kind of "big new design feature" the audit was asked to flag even
+though it goes well beyond a bug fix — a genuine VM-level redesign, not a tweak. It is not
+recommended as a next step (Findings 1–4 are far cheaper and, per the profiling here, address
+a comparable or larger fraction of total cost), but it is the natural ceiling on how fast a
+tree-walking-by-name symbol table can ultimately get, and worth having on record for anyone
+considering Ego's longer-term performance trajectory (up to and including a JIT, which would
+depend on exactly this kind of compile-time-resolved storage to be worthwhile at all).
+
+---
+
+## 9. Summary table
+
+| # | Finding | Impact (measured) | Effort | Risk | Type | Status |
+| - | - | - | - | - | - | - |
+| 1 | `uuid.New()` per scope creation | ~50% of scope-creation cost; scope creation is 8-12% of total | Low | Low | Implementation bug (wrong tool for the job) | **Fixed** (July 2026) — see Resolution above |
+| 2 | `InstanceOfType` linear scan | ~5.5% of total, ~63% of that is the scan itself | Low | Low | Implementation bug (should be O(1)) | Open |
+| 3 | Eager `ui.Log` argument construction | ~1.6%+ confirmed at 2 call sites; likely more, unaudited | Low (hot spots) / Medium (full sweep) | Low | Implementation inconsistency | Open |
+| 4 | Per-iteration loop scopes | 8-12% of total | Medium-High | Medium (compiler analysis) | Working as designed (BUG-30); optimizable | Open |
+| 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1 — see Resolution above |
+| 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
+| 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
+
+**Suggested order of work:** ~~1~~ → 2 → 3 → 4, in that order, re-profiling after each change
+using the same `--pprof` workloads described in Section 1 to confirm the expected compounding
+effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing. Finding 1 is
+done; re-profiling after it (see its Resolution section) confirms the predicted direct cost
+was eliminated, but also confirms — as Finding 5 warned — that Findings 2 and 4 are still
+needed before overall wall-clock time drops by more than the ~14-16% seen so far.

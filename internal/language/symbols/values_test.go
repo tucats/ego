@@ -2,8 +2,6 @@ package symbols
 
 import (
 	"testing"
-
-	"github.com/google/uuid"
 )
 
 func TestSymbolTable_SetValue(t *testing.T) {
@@ -11,7 +9,7 @@ func TestSymbolTable_SetValue(t *testing.T) {
 		Name:    "test",
 		parent:  nil,
 		symbols: map[string]*SymbolAttribute{},
-		id:      uuid.New(),
+		id:      newTableID(),
 		values: []*[]any{},
 	}
 

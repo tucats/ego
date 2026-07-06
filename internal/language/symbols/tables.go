@@ -6,9 +6,32 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/ui"
 )
+
+// nextTableID is the source of unique symbol-table identifiers (see the
+// SymbolTable.id field and the ID() method below). It is a simple
+// monotonically-increasing counter, not a UUID.
+//
+// PERFORMANCE.md Finding 1: table IDs are read only for human-readable trace
+// logging (ui.Log's "id" field, and one debug-format string) - nothing ever
+// compares, hashes, or otherwise depends on them being unpredictable or
+// globally unique the way a real UUID is. Before this fix, every new symbol
+// table (created on every loop iteration, every function call, and every
+// block/if/switch-case scope) called github.com/google/uuid.New(), which is
+// backed by crypto/rand and made a real syscall on this platform - measured
+// at roughly half the total cost of creating a scope in a tight loop. An
+// atomic counter increment is essentially free by comparison, and is exactly
+// as "unique enough to tell two tables apart in a log" as a UUID was for
+// this table's entire lifetime, which is only ever a single process run.
+var nextTableID atomic.Uint64
+
+// newTableID returns the next unique symbol-table identifier. Never returns
+// 0, so 0 can be used (see ID()) as the "no table" sentinel, mirroring the
+// old uuid.Nil convention.
+func newTableID() uint64 {
+	return nextTableID.Add(1)
+}
 
 // SymbolAllocationSize is the number of symbols that are allocated
 // in each bin of a symbol table. Allocation within a bin is faster
@@ -76,8 +99,9 @@ type SymbolTable struct {
 	// the storage slice the value is stored.
 	values []*[]any
 
-	// A unique identifier for the symbol table.
-	id uuid.UUID
+	// A unique identifier for the symbol table, used only for human-readable
+	// trace logging (see the ID() method below and PERFORMANCE.md Finding 1).
+	id uint64
 
 	// The current size of the symbol table.
 	size int
@@ -138,7 +162,7 @@ func NewSymbolTable(name string) *SymbolTable {
 		Name:    name,
 		parent:  &RootSymbolTable,
 		symbols: map[string]*SymbolAttribute{},
-		id:      uuid.New(),
+		id:      newTableID(),
 		depth:   0,
 	}
 	symbols.shared.Store(SerializeTableAccess)
@@ -153,7 +177,7 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	symbols := SymbolTable{
 		Name:    name,
 		symbols: map[string]*SymbolAttribute{},
-		id:      uuid.New(),
+		id:      newTableID(),
 	}
 	symbols.shared.Store(SerializeTableAccess)
 
@@ -418,10 +442,13 @@ func (s *SymbolTable) SetPackage(name string) {
 	s.forPackage = name
 }
 
-// ID returns the unique identifier for this symbol table.
-func (s *SymbolTable) ID() uuid.UUID {
+// ID returns the unique identifier for this symbol table, for use in trace
+// logging only (see the id field's own comment and PERFORMANCE.md Finding 1).
+// Returns 0 (never a value newTableID() can produce) for a nil receiver,
+// mirroring the old uuid.Nil convention.
+func (s *SymbolTable) ID() uint64 {
 	if s == nil {
-		return uuid.Nil
+		return 0
 	}
 
 	return s.id

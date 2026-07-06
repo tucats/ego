@@ -64,8 +64,8 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 
 	// Show the parent
 	if parent := s.Parent(); parent != nil {
-		b.WriteString(fmt.Sprintf("   Parent table %s (%s)\n",
-			parent.Name, parent.ID().String()))
+		b.WriteString(fmt.Sprintf("   Parent table %s (id %d)\n",
+			parent.Name, parent.ID()))
 	}
 
 	// Iterate over the members to get a list of the keys. Discard invisible
@@ -183,9 +183,9 @@ func getVisibleSymbolNames(s *SymbolTable) []string {
 // the nesting level in a formatted parent-chain display; pass -1 when printing
 // a single table in isolation to omit the level prefix.
 func tableFlagsString(s *SymbolTable, depth int) string {
-	flags := fmt.Sprintf(" <level %d, id %s, ", depth, s.id.String())
+	flags := fmt.Sprintf(" <level %d, id %d, ", depth, s.id)
 	if depth < 0 {
-		flags = fmt.Sprintf("<id %s", s.id.String())
+		flags = fmt.Sprintf("<id %d", s.id)
 	}
 
 	if s.proxy {
@@ -257,7 +257,7 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 	ui.Log(logger, "symbols.log.header", ui.A{
 		"session": session,
 		"name":    name,
-		"id":      s.id.String()})
+		"id":      s.id})
 
 	ui.Log(logger, "symbols.log.attrs", ui.A{
 		"session":  session,

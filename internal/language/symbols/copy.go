@@ -3,7 +3,6 @@ package symbols
 import (
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -25,7 +24,7 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		Name:     "Proxy for " + s.Name,
 		symbols:  s.symbols,
 		values:   s.values,
-		id:       uuid.New(),
+		id:       newTableID(),
 		parent:   parent,
 		depth:    s.depth,
 		boundary: false,
@@ -108,7 +107,14 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 	newTable.shared.Store(false)
 	newTable.boundary = s.boundary
 	newTable.forPackage = s.forPackage
-	newTable.id = uuid.New()
+	// Bug fix (found while implementing PERFORMANCE.md Finding 1): this used
+	// to unconditionally overwrite newTable.id with a second, freshly
+	// generated ID here, discarding the one NewChildSymbolTable (above) had
+	// just assigned. That was always a wasted ID generation - harmless
+	// beyond the waste itself when IDs were cheap uuid.New() values used
+	// only for logging, but there is no reason to keep it now that it's
+	// been noticed, so the id NewChildSymbolTable already assigned is left
+	// alone.
 	newTable.depth = s.depth
 	newTable.isClone = true
 

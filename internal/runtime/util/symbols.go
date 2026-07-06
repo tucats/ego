@@ -164,7 +164,7 @@ func formatTables(s *symbols.SymbolTable, args data.List) (any, error) {
 		item := data.NewStructOfTypeFromMap(t, map[string]any{
 			"depth":        depth,
 			"name":         p.Name,
-			"id":           p.ID().String(),
+			"id":           strconv.FormatUint(p.ID(), 10),
 			"root":         p.IsRoot(),
 			"size":         p.Size(),
 			"shared":       p.IsShared(),
