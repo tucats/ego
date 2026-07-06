@@ -55,36 +55,36 @@ call. Findings 1–4 are, not coincidentally, all about reducing that allocation
 **half of the total cost of creating a new symbol-table scope** — and a new scope is created
 on every loop iteration, every function call, and every `if`/block entry.
 
-### Evidence
+### Evidence - Finding 1
 
-```
+```text
 (tight loop, 20M iterations — /tmp/cpu.prof)
 ROUTINE ==== github.com/tucats/ego/internal/language/symbols.NewChildSymbolTable
       70ms      4.38s (flat, cum)  9.77% of Total
-         .          .    153:	symbols := SymbolTable{
-         .          .    154:		Name:    name,
-         .      180ms    155:		symbols: map[string]*SymbolAttribute{},
-         .      2.42s    156:		id:      uuid.New(),        <-- 55% of this function's own cost
-         .          .    157:	}
-         .          .    158:	symbols.shared.Store(SerializeTableAccess)
+         .          .    153:   symbols := SymbolTable{
+         .          .    154:      Name:    name,
+         .      180ms    155:      symbols: map[string]*SymbolAttribute{},
+         .      2.42s    156:      id:      uuid.New(),        <-- 55% of this function's own cost
+         .          .    157:   }
+         .          .    158:   symbols.shared.Store(SerializeTableAccess)
          .          .    159:
-         .      780ms    160:	symbols.SetParent(parent)
-         .          .    161:	...
-         .      800ms    170:	symbols.initializeValues()
+         .      780ms    160:   symbols.SetParent(parent)
+         .          .    161:   ...
+         .      800ms    170:   symbols.initializeValues()
 ```
 
-```
+```text
 (function-call loop, 3M calls — /tmp/cpu_call.prof)
 ROUTINE ==== github.com/tucats/ego/internal/language/symbols.NewChildSymbolTable
       10ms      1.88s (flat, cum)  8.04% of Total
-         .          .    156:		id:      uuid.New(),        <-- 1.04s of 1.88s = 55%
+         .          .    156:      id:      uuid.New(),        <-- 1.04s of 1.88s = 55%
 ```
 
 `google/uuid.New()` is backed by `crypto/rand`, which on this platform ultimately makes a
 real syscall (`ARC4Random` → `syscall.syscall`) for every single call. That is an expensive
 thing to do on a hot path that runs millions of times per second.
 
-### Root cause
+### Root cause - Finding 1
 
 `internal/language/symbols/tables.go` (`NewChildSymbolTable`, line 156; `NewSymbolTable`,
 line 141) and `internal/language/symbols/copy.go` (`NewChildProxy`, line 28; `Clone`, line
@@ -101,7 +101,7 @@ exists so callers "can identify a specific table in log output."
 generates one UUID) and then immediately overwrites `.id` with a **second** `uuid.New()`
 call, discarding the first.
 
-### Recommendation
+### Recommendation - Finding 1
 
 Replace the cryptographically-random UUID with a cheap, process-unique identifier. Two
 options, in order of preference:
@@ -231,9 +231,9 @@ typed assignment in Ego's default dynamic-typing mode) spent **7.7%** of total t
 time, of which two-thirds was inside `InstanceOfType`, and *that* function's own cost was
 dominated by a **linear scan with a non-trivial comparison function**.
 
-### Evidence
+### Evidence - Finding 2
 
-```
+```text
 ROUTINE ==== github.com/tucats/ego/internal/language/data.Coerce
      0.58s  1.29%  1.29%      3.46s  7.72%
                                              |   data.Coerce
@@ -246,7 +246,7 @@ ROUTINE ==== github.com/tucats/ego/internal/language/data.InstanceOfType
                                              1.54s 62.86% |   data.(*Type).IsType   <-- linear scan cost
 ```
 
-### Root cause
+### Root cause - Finding 2
 
 `data.Coerce` (`internal/language/data/coerce.go:32-34`) does this unconditionally whenever
 its `model` argument is a `*Type` — which is the common case for scalar coercions like
@@ -276,7 +276,7 @@ entries, calling `(*Type).IsType()` (which itself calls `UnwrapUserType()` twice
 comparison) on each one, just to find the zero value of a kind the caller almost always
 **already knows** (`t.kind` is sitting right there).
 
-### Recommendation
+### Recommendation - Finding 2
 
 Replace the linear scan in the scalar branch with a direct dispatch on `t.kind` — a
 `switch`/map keyed by `Kind`, using the exact same package-level model variables
@@ -400,21 +400,21 @@ at a single call site (`pushScopeByteCode`) in the tight-loop profile, and a fur
 below — so the aggregate cost across the whole interpreter is almost certainly larger than
 what these two call sites alone show.
 
-### Evidence
+### Evidence - Finding 3
 
-```
+```text
 ROUTINE ==== github.com/tucats/ego/internal/language/bytecode.pushScopeByteCode
       80ms      5.60s (flat, cum) 12.49% of Total
-         .          .     77:	newName := "block " + strconv.Itoa(c.blockDepth)
-         .          .    120:	newTable := symbols.NewChildSymbolTable(newName, parent)...
-         .          .    126:	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
-      40ms      730ms    127:		"thread": c.threadID,
-         .       90ms    128:		"name":   c.symbols.Name,
-         .       10ms    129:		"parent": oldName,
-         .          .    130:		"flag":   isBoundary})
+         .          .     77:   newName := "block " + strconv.Itoa(c.blockDepth)
+         .          .    120:   newTable := symbols.NewChildSymbolTable(newName, parent)...
+         .          .    126:   ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
+      40ms      730ms    127:      "thread": c.threadID,
+         .       90ms    128:      "name":   c.symbols.Name,
+         .       10ms    129:      "parent": oldName,
+         .          .    130:      "flag":   isBoundary})
 ```
 
-### Root cause
+### Root cause - Finding 3
 
 `ui.Log(class int, format string, args A)` (`internal/cli/ui/messaging.go:264`) takes its
 `args ui.A` (a `map[string]any`) **by value**, and only checks `loggers[class].active.Load()`
@@ -434,7 +434,7 @@ with a preceding `IsActive` check. Not all of the other 78 build expensive argum
 candidate worth checking, and every one on a genuinely hot path (opcode dispatch functions
 especially) is a real, easy win.
 
-### Recommendation
+### Recommendation - Finding 3
 
 1. **Immediate, no-risk fix:** wrap the specific hot-path call sites identified above
    (`pushScopeByteCode`, `callBytecodeFunction`, and their siblings `popScopeByteCode`,
@@ -547,7 +547,7 @@ fixes) because every function call passes through `callBytecodeFunction` and `ca
 per-call path; a plain arithmetic loop only pays the `pushScopeByteCode` cost once per
 iteration, so it benefited somewhat less proportionally, though still substantially.
 
-```
+```text
 (tight loop, after Finding 1+2+3)
      0.61s  2.53%  2.53%      9.40s 38.99%  github.com/tucats/ego/internal/language/bytecode.(*Context).RunFromAddress
      8.83s 36.62% 39.15%      8.83s 36.62%  runtime.kevent
@@ -646,7 +646,7 @@ goroutine scheduler than in the Ego interpreter's own instruction-dispatch loop*
 | Function calls | 23.3% | ~58%+ |
 | Native calls | 39.5% | ~54%+ |
 
-```
+```text
 (tight loop)
     11.89s 26.53% 26.53%     11.89s 26.53%  runtime.kevent
     10.61s 23.67% 50.20%     10.61s 23.67%  runtime.madvise
@@ -703,11 +703,11 @@ Every variable read or write (`symbols.Get`/`Set`) resolves the variable by **st
 through a `map[string]*SymbolAttribute` at the current scope, walking up the parent chain on
 a miss:
 
-```
+```text
 ROUTINE ==== github.com/tucats/ego/internal/language/symbols.(*SymbolTable).Get
      160ms      1.20s (flat, cum)  2.68% of Total
-         .      550ms     72:	attr, found := s.symbols[name]     <-- map lookup, per scope in the chain
-         .       30ms     85:		return next.Get(name)          <-- recurse to parent on miss
+         .      550ms     72:   attr, found := s.symbols[name]     <-- map lookup, per scope in the chain
+         .       30ms     85:      return next.Get(name)          <-- recurse to parent on miss
 ```
 
 This costs 1.9%–2.7% of total samples on its own in these profiles (on top of the scope
