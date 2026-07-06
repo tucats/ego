@@ -442,3 +442,174 @@ func TestBUG31ContinueInsideSwitchWithNoEnclosingLoopIsCompileError(t *testing.T
 		t.Errorf("got error %v, want an ErrInvalidLoopControl error", err)
 	}
 }
+
+// TestBUG44CaseBodyCanShadowSemicolonInitVariable is the exact reproducer
+// from docs/ISSUES.md#BUG-44: a case body declares a new local variable with
+// the same name as the switch's own "init; expr" variable. Before the fix,
+// the case body's ":=" was compiled directly into the switch's own scope
+// (the same scope holding the init variable "v"), so the runtime
+// CreateAndStore rejected it with "symbol already exists: v" -- even though
+// a case clause body is its own implicit nested block in real Go, and
+// shadowing the outer "v" there is perfectly legal.
+func TestBUG44CaseBodyCanShadowSemicolonInitVariable(t *testing.T) {
+	program := `
+		result := 0
+
+		switch v := 1; v {
+		case 1:
+			v := 99
+			result = v
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, found := s.Get("result")
+	if !found || !reflect.DeepEqual(result, 99) {
+		t.Errorf("got result=%v (%T), want 99", result, result)
+	}
+}
+
+// TestBUG44CaseBodyCanShadowNamedInitVariable covers the other named-init
+// spelling that hits the same code path: "switch v := expr { ... }" with no
+// semicolon-separated switch expression (compileSwitchAssignedValue's
+// non-semicolon branch). This form also pushes a scope for "v" that must be
+// shadowable by a case body, same as the semicolon form above.
+func TestBUG44CaseBodyCanShadowNamedInitVariable(t *testing.T) {
+	program := `
+		result := 0
+
+		switch v := 1 {
+		case 1:
+			v := 42
+			result = v
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, found := s.Get("result")
+	if !found || !reflect.DeepEqual(result, 42) {
+		t.Errorf("got result=%v (%T), want 42", result, result)
+	}
+}
+
+// TestBUG44CaseBodyVariableDoesNotLeakToEnclosingScope covers a broader
+// variant of the same root cause than the original bug report described: a
+// PLAIN "switch expr { ... }" with no init clause at all. The bug report
+// claimed this form had "no problem", but before the fix, case bodies were
+// never scoped as their own block regardless of whether the switch had an
+// init clause -- so a variable declared in a case body was created directly
+// in whatever scope enclosed the switch statement, and remained there after
+// the switch ended, exactly like a leaked variable. This test declares "y"
+// in a case body, then declares "y" again in the enclosing scope right
+// after the switch -- which must succeed (the case-scoped "y" must no
+// longer exist once the switch is done), assigning a new, independent value.
+func TestBUG44CaseBodyVariableDoesNotLeakToEnclosingScope(t *testing.T) {
+	program := `
+		x := 1
+		inner := 0
+
+		switch x {
+		case 1:
+			y := 10
+			inner = y
+		}
+
+		y := 20
+		outer := y
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	inner, found := s.Get("inner")
+	if !found || !reflect.DeepEqual(inner, 10) {
+		t.Errorf("got inner=%v (%T), want 10", inner, inner)
+	}
+
+	outer, found := s.Get("outer")
+	if !found || !reflect.DeepEqual(outer, 20) {
+		t.Errorf("got outer=%v (%T), want 20", outer, outer)
+	}
+}
+
+// TestBUG44DefaultBodyCanShadowSwitchInitVariable verifies the fix also
+// covers the "default:" clause, compiled by a separate function
+// (compileSwitchDefaultBlock) from ordinary case clauses.
+func TestBUG44DefaultBodyCanShadowSwitchInitVariable(t *testing.T) {
+	program := `
+		result := 0
+
+		switch v := 1; v {
+		case 2:
+			result = -1
+		default:
+			v := 77
+			result = v
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, found := s.Get("result")
+	if !found || !reflect.DeepEqual(result, 77) {
+		t.Errorf("got result=%v (%T), want 77", result, result)
+	}
+}
+
+// TestBUG44FallthroughDoesNotLeakVariableToNextCase verifies that each case
+// body's new per-case scope is independent even across "fallthrough": a
+// variable declared in a case that falls through must not be visible in the
+// case it falls into, matching real Go (where "fallthrough" jumps to the
+// next case's own block, not into the same block). This declares "y" with
+// two different values in the two cases; if the scopes were incorrectly
+// shared, the second declaration would fail to compile/run at all (BUG-44's
+// own symptom), rather than the values simply differing.
+func TestBUG44FallthroughDoesNotLeakVariableToNextCase(t *testing.T) {
+	program := `
+		firstResult := 0
+		secondResult := 0
+
+		switch 1 {
+		case 1:
+			y := 100
+			firstResult = y
+			fallthrough
+		case 2:
+			y := 200
+			secondResult = y
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	firstResult, _ := s.Get("firstResult")
+	if !reflect.DeepEqual(firstResult, 100) {
+		t.Errorf("got firstResult=%v (%T), want 100", firstResult, firstResult)
+	}
+
+	secondResult, _ := s.Get("secondResult")
+	if !reflect.DeepEqual(secondResult, 200) {
+		t.Errorf("got secondResult=%v (%T), want 200", secondResult, secondResult)
+	}
+}

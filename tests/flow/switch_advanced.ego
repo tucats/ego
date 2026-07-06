@@ -499,3 +499,106 @@ outer:
 
     @assert caught == true
 }
+
+@test "flow: case body can shadow switch init variable (BUG-44)"
+{
+    // The exact reproducer from docs/ISSUES.md#BUG-44: a case body declares
+    // a new local variable with the same name as the switch's own
+    // "init; expr" variable. Before the fix this failed at runtime with
+    // "symbol already exists: v", because the case body's ":=" was compiled
+    // directly into the switch's own scope instead of a nested child scope -
+    // even though a case clause body is its own implicit block in real Go,
+    // just like an "if" or "for" body.
+    result := 0
+
+    switch v := 1; v {
+    case 1:
+        v := 99
+        result = v
+    }
+
+    @assert result == 99
+}
+
+@test "flow: case body can shadow named-init switch variable (BUG-44)"
+{
+    // Same defect, but for the other named-init spelling that does not use
+    // a semicolon: "switch v := expr { ... }".
+    result := 0
+
+    switch v := 1 {
+    case 1:
+        v := 42
+        result = v
+    }
+
+    @assert result == 42
+}
+
+@test "flow: default body can shadow switch init variable (BUG-44)"
+{
+    // The fix must also cover the "default:" clause, which is compiled by a
+    // separate code path from ordinary "case" clauses.
+    result := 0
+
+    switch v := 1; v {
+    case 2:
+        @fail "wrong branch"
+    default:
+        v := 77
+        result = v
+    }
+
+    @assert result == 77
+}
+
+@test "flow: case body variable does not leak past the switch (BUG-44)"
+{
+    // A broader variant of the same root cause than the original bug report
+    // covered: even a PLAIN "switch expr { ... }" with no init clause at all
+    // did not scope its case bodies as their own block, so a variable
+    // declared in a case body leaked into whatever scope enclosed the
+    // switch and remained there after the switch ended. This declares "y"
+    // inside a case body, then declares "y" again right after the switch
+    // ends - which must succeed, and must see the NEW value, proving the
+    // case-scoped "y" is gone once the switch is done.
+    x := 1
+    inner := 0
+
+    switch x {
+    case 1:
+        y := 10
+        inner = y
+    }
+
+    y := 20
+
+    @assert inner == 10
+    @assert y == 20
+}
+
+@test "flow: fallthrough does not leak variable into next case (BUG-44)"
+{
+    // Each case body's scope must be independent even across "fallthrough":
+    // a variable declared in a case that falls through is not visible in
+    // the case it falls into, matching real Go (fallthrough jumps to the
+    // next case's own block, not into the same block). Declaring "y" with
+    // two different values in both cases proves the scopes are separate -
+    // if they were incorrectly shared, this would fail exactly like BUG-44's
+    // own symptom ("symbol already exists").
+    first := 0
+    second := 0
+
+    switch 1 {
+    case 1:
+        y := 100
+        first = y
+        fallthrough
+    case 2:
+        y := 200
+        second = y
+    }
+
+    @assert first == 100
+    @assert second == 200
+}

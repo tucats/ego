@@ -279,6 +279,27 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 		*fallThrough = 0
 	}
 
+	// Fix BUG-44: a "case" clause body is its own implicit block, nested
+	// inside the switch statement's own scope (the scope that, for a
+	// "switch init; expr" or "switch v := expr" form, holds the init
+	// variable). Without this, a case body's ":=" declarations were created
+	// directly in that outer switch scope, so a case body could not declare
+	// a variable with the same name as the switch's init variable (runtime
+	// "symbol already exists" error), and - worse, for a plain "switch expr"
+	// with no init clause at all - a variable declared in a case body leaked
+	// into whatever scope was enclosing the switch statement, colliding with
+	// any later, unrelated declaration of the same name after the switch
+	// ended. Real Go scopes each case body independently of both the switch
+	// and every other case, including across "fallthrough" (a variable
+	// declared in a case that falls through is not visible in the case it
+	// falls into). Pushing a fresh child scope here, popped again right
+	// after the body, matches that: see compileBlock's own PushScope/
+	// PushSymbolScope pair for the same pattern used by brace-delimited
+	// blocks elsewhere in the compiler.
+	c.blockDepth++
+	c.PushSymbolScope()
+	c.b.Emit(bytecode.PushScope)
+
 	for !tokenizer.InList(c.t.Peek(1),
 		tokenizer.CaseToken,
 		tokenizer.DefaultToken,
@@ -287,6 +308,13 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 		if err := c.compileStatement(); err != nil {
 			return nil, err
 		}
+	}
+
+	c.b.Emit(bytecode.PopScope)
+	c.blockDepth--
+
+	if err := c.PopSymbolScope(); err != nil {
+		return nil, err
 	}
 
 	if c.t.IsNext(tokenizer.FallthroughToken) {
@@ -320,10 +348,24 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 	savedBC := c.b
 	c.b = bytecode.New("default switch")
 
+	// Fix BUG-44: the default clause's body is its own implicit block too,
+	// exactly like an ordinary case body - see the matching comment in
+	// compileSwitchCase for the full explanation.
+	c.blockDepth++
+	c.PushSymbolScope()
+	c.b.Emit(bytecode.PushScope)
+
 	for c.t.Peek(1).IsNot(tokenizer.CaseToken) && c.t.Peek(1).IsNot(tokenizer.BlockEndToken) {
 		if err := c.compileStatement(); err != nil {
 			return nil, err
 		}
+	}
+
+	c.b.Emit(bytecode.PopScope)
+	c.blockDepth--
+
+	if err := c.PopSymbolScope(); err != nil {
+		return nil, err
 	}
 
 	defaultBlock = c.b
