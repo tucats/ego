@@ -83,9 +83,71 @@ func InstanceOfType(t *Type) any {
 		}
 
 	default:
-		// For scalar base types (int, float64, string, bool, etc.) scan the
-		// TypeDeclarations table, which was populated at package init time.
-		// Each entry holds a Model field that is already the correct zero value.
+		// Fix (PERFORMANCE.md Finding 2): for scalar base types (int,
+		// float64, string, bool, etc.) dispatch directly on the already-known
+		// t.kind instead of linearly scanning the ~39-entry TypeDeclarations
+		// table and calling (*Type).IsType() - a general-purpose, recursive
+		// type-compatibility check meant for comparing arbitrary structs,
+		// arrays, and maps - on each entry until one happens to match.
+		//
+		// This matters because InstanceOfType is called from data.Coerce on
+		// essentially every scalar arithmetic operation, comparison, and
+		// typed assignment Ego performs in its default dynamic-typing mode,
+		// so this scan used to run millions of times per second in any
+		// arithmetic-heavy program. Profiling a tight loop attributed 62.86%
+		// of InstanceOfType's own cost to IsType() calls made by this scan.
+		//
+		// Every case below returns the exact same package-level Model
+		// variable (declared in declarations.go) that the OLD scan would
+		// eventually have found in TypeDeclarations for that Kind - this is
+		// purely a dispatch-strategy change, not a behavior change. Kinds
+		// that reach this default branch but have no entry in
+		// TypeDeclarations today (e.g. NilKind, PackageKind, FunctionKind)
+		// already fell out of the old scan with no match and got nil; they
+		// fall through this switch's own default case to the same fallback
+		// scan below, so behavior for every possible Kind - matched or not -
+		// is unchanged.
+		switch t.kind {
+		case BoolKind:
+			return boolModel
+		case ByteKind:
+			return byteModel
+		case Int8Kind:
+			return int8Model
+		case Int16Kind:
+			return int16Model
+		case UInt16Kind:
+			return uint16Model
+		case Int32Kind:
+			return int32Model
+		case UInt32Kind:
+			return uint32Model
+		case IntKind:
+			return intModel
+		case UIntKind:
+			return uintModel
+		case Int64Kind:
+			return int64Model
+		case UInt64Kind:
+			return uint64Model
+		case Float32Kind:
+			return float32Model
+		case Float64Kind:
+			return float64Model
+		case StringKind:
+			return stringModel
+		case ChanKind:
+			return chanModel
+		case ErrorKind:
+			return errorModel
+		}
+
+		// Fallback for any Kind not handled by the fast-path switch above.
+		// Nothing reachable through normal Ego program execution is expected
+		// to land here (every scalar Kind that can appear as a Coerce/
+		// InstanceOfType target is listed above), but this preserves the
+		// old, fully general lookup behavior exactly for anything that
+		// isn't - a deliberately defensive safety net, not a hot path.
 		for _, typeDef := range TypeDeclarations {
 			if typeDef.Kind.IsType(t) {
 				return typeDef.Model

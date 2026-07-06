@@ -14,8 +14,11 @@ type TypeDeclaration struct {
 
 // The model variables below hold the zero value of each builtin Go type as
 // a concrete (non-interface) variable.  They are used as the Model field in
-// TypeDeclarations entries so that InstanceOfType can return the correct zero
-// value by reading the entry rather than constructing it each time.
+// TypeDeclarations entries (read by the compiler's type-token parser and,
+// historically, by InstanceOfType's linear scan of this table) AND, since
+// PERFORMANCE.md Finding 2, directly by InstanceOfType's fast-path switch on
+// Kind (see instance.go) - both readers share these exact same variables, so
+// there is only ever one zero-value instance per scalar type, not two.
 var interfaceModel any
 var byteModel byte = 0
 var int32Model int32 = 0
@@ -32,6 +35,7 @@ var float32Model float32 = 0.0
 var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
+var errorModel any = &errors.Error{}
 
 // The Interface variables below are the same zero values boxed inside an any.
 // They are used as models for pointer types (e.g. *int32Interface gives a
@@ -64,7 +68,7 @@ var TypeDeclarations = []TypeDeclaration{
 	},
 	{
 		[]string{ErrorTypeName},
-		&errors.Error{},
+		errorModel,
 		ErrorType,
 	},
 	{

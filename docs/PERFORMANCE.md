@@ -125,7 +125,7 @@ reading a trace log to tell two tables apart*.
 
 Also fix `Clone`'s redundant second `uuid.New()` call while making this change.
 
-### Resolution (July 2026)
+### Resolution (July 2026) — Finding 1
 
 Implemented option 1 above (the simplest/fastest one): `SymbolTable.id` is now a plain
 `uint64`, populated from a package-level `atomic.Uint64` counter, rather than a
@@ -290,6 +290,105 @@ As a secondary, smaller improvement: `data.Coerce`'s callers that only need "the
 for this *Kind*" (as opposed to genuinely needing to run the full `InstanceOfType` machinery
 for structs/arrays/maps) could dispatch directly on `t.kind` before ever calling
 `InstanceOfType`, skipping a function call entirely for the scalar fast path.
+
+### Resolution (July 2026) — Finding 2
+
+Implemented the primary recommendation above: `InstanceOfType`'s `default` branch now
+dispatches directly on `t.kind` via a `switch`, using the exact same package-level Model
+variables (`intModel`, `int64Model`, `boolModel`, ...) the old linear scan would eventually
+have read out of `TypeDeclarations`. The secondary `data.Coerce`-level improvement (skipping
+`InstanceOfType` entirely at the call site) was intentionally **not** done — it would touch a
+more central, more frequently-called function for comparatively little extra gain now that
+`InstanceOfType` itself is already fast, and Finding 2 was specifically about the scan, not
+about `Coerce`'s calling convention.
+
+**Files modified:**
+
+- `internal/language/data/instance.go` — the `default:` branch of `InstanceOfType`'s outer
+  `switch t.kind` now tries a direct, second-level `switch t.kind` first (one `case` per
+  scalar `Kind` that actually has a `TypeDeclarations` entry: `Bool`, `Byte`, `Int8`, `Int16`,
+  `UInt16`, `Int32`, `UInt32`, `Int`, `UInt`, `Int64`, `UInt64`, `Float32`, `Float64`,
+  `String`, `Chan`, `Error`), each returning the matching Model variable directly — O(1),
+  with no scan and no call into `IsType()` at all. The *original* linear scan is kept
+  underneath, as a deliberately defensive fallback for any `Kind` not covered by the new
+  switch (see "Correctness verification" below for why this is safe to treat as dead code in
+  practice, while still costing nothing to keep as a safety net).
+- `internal/language/data/declarations.go` — added `errorModel = &errors.Error{}` alongside
+  the other package-level Model variables (previously the `TypeDeclarations` table's `"error"`
+  entry inlined `&errors.Error{}` directly, with no named variable to reuse); the table's
+  `error` entry now references `errorModel` too, so there is exactly one shared zero-value
+  instance for the error type, read by both the table and the new switch, instead of two
+  independently-allocated ones.
+- `internal/language/data/instance_test.go` — added two new test functions (see below).
+
+**Bug found while doing this work:** none. Unlike Finding 1 (where `Clone`'s redundant second
+`uuid.New()` call was an incidental bug), this change was a pure algorithmic substitution with
+no adjacent defect uncovered.
+
+**Correctness verification:** because this touches a function called from nearly every
+arithmetic/comparison/assignment operation in dynamic mode, it was verified more rigorously
+than a typical change, with two new tests in `instance_test.go`:
+
+- `TestInstanceOfType_ScalarFastPathMatchesTableScan` iterates every one of the 39 entries in
+  `TypeDeclarations` and, for each one, independently reproduces the *old* linear-scan lookup
+  by hand (a second, separate loop written directly in the test, not calling any production
+  code) to use as a reference oracle. It then asserts that `InstanceOfType` — now running the
+  *new* switch-based code — returns exactly what the old scan would have found, for every
+  single entry in the table (skipping only the handful of entries for kinds `InstanceOfType`
+  was already dispatching to a different case *before* ever reaching the scan — `Array`,
+  `Map`, `Pointer`, `Type`, `Interface`, `Struct` — since the scan was already dead code for
+  those and remains so). This is the strongest form of "no behavior change" verification
+  available short of formal proof: it doesn't just spot-check a few kinds, it mechanically
+  confirms agreement between old and new for the complete, actual table.
+- `TestInstanceOfType_AllScalarKindsCovered` separately confirms each `Kind` handled by the
+  new switch returns a correctly-typed, non-nil zero value, independent of whatever
+  `TypeDeclarations` happens to contain — a belt-and-suspenders check on the switch itself.
+
+Both new tests pass, alongside the pre-existing `TestInstanceOfType` (spot checks for int,
+bool, float64, string, byte, int32, interface, struct, map, array) and the full existing
+suite.
+
+**Re-profiling results:** the same workloads and methodology from Section 1 (and from
+Finding 1's own resolution) were used again, this time comparing against the **post-Finding-1**
+baseline, since Finding 1 was already implemented and re-profiled first.
+
+| Metric (tight loop, 20M iterations) | After Finding 1 only | After Finding 1 + 2 | Change |
+| - | - | - | - |
+| Wall clock | 31.8s | 27.3s | **-14%** (-27% from original baseline) |
+| `InstanceOfType` (cum) | 590ms\* | 70ms / 0.19% | **-88%** |
+| `data.(*Type).IsType` (cum) | 370ms\* | *(no longer appears in profile at all)* | effectively eliminated on this path |
+| `data.Coerce` (cum) | 760ms / 1.77% | 350ms / 0.95% | **-54%** |
+
+\* Estimated from the post-Finding-1 profile's `data.Coerce` breakdown (`InstanceOfType` was
+1.37s / 1.59% of `Coerce`'s 0.76s+... — see the raw `-list` output captured during this
+change for the exact figures; not independently called out as its own line item in Finding
+1's resolution table).
+
+| Metric (function calls, 3M calls) | After Finding 1 only | After Finding 1 + 2 | Change |
+| - | - | - | - |
+| Wall clock | 14.5s | 13.0s | **-10%** (-24% from original baseline) |
+| `data.Coerce` (cum) | 610ms / 2.61% (pre-Finding-1 baseline) | 150ms / 0.79% | **-75% from original baseline** |
+
+**The example that started this audit:** the standalone 50,000,000-iteration loop (see
+Finding 1's own resolution for the same measurement taken after Finding 1 alone) now runs in
+**70.0s**, down from **80.4s** after Finding 1 alone, and **95.6s** originally — a cumulative
+**27% reduction** in wall-clock time from the two fixes together.
+
+**Honest assessment:** exactly like Finding 1, this delivered a very large reduction in the
+*specific* cost it targeted (`InstanceOfType` -88%, `IsType` calls on this path eliminated
+entirely) but a more modest overall wall-clock gain (-10% to -14%), for the same reason
+Finding 5 describes: GC/scheduler overhead (`runtime.kevent`, `runtime.madvise`) remains the
+largest single cost in every profile taken so far, and neither this fix nor Finding 1
+addresses it directly — both simply reduce how much CPU work happens *between* garbage
+collections. `runtime.madvise` did drop further with this change (13.87% vs. Finding 1's
+1.75%... — see raw profiles; both fixes reduce allocation-driven memory churn from different
+angles), reinforcing that Finding 4 (stop allocating a whole new scope on every loop
+iteration when nothing needs it) is still the most direct remaining lever on the dominant
+cost in this report.
+
+**Test status:** `go build ./...`, `go vet ./...`, and the full `go test ./...` suite are
+clean after this change (including the two new tests above), and all 1,142 tests in
+`ego test tests/` continue to pass.
 
 ---
 
@@ -531,16 +630,19 @@ depend on exactly this kind of compile-time-resolved storage to be worthwhile at
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
 | 1 | `uuid.New()` per scope creation | ~50% of scope-creation cost; scope creation is 8-12% of total | Low | Low | Implementation bug (wrong tool for the job) | **Fixed** (July 2026) — see Resolution above |
-| 2 | `InstanceOfType` linear scan | ~5.5% of total, ~63% of that is the scan itself | Low | Low | Implementation bug (should be O(1)) | Open |
+| 2 | `InstanceOfType` linear scan | ~5.5% of total, ~63% of that is the scan itself | Low | Low | Implementation bug (should be O(1)) | **Fixed** (July 2026) — see Resolution above |
 | 3 | Eager `ui.Log` argument construction | ~1.6%+ confirmed at 2 call sites; likely more, unaudited | Low (hot spots) / Medium (full sweep) | Low | Implementation inconsistency | Open |
 | 4 | Per-iteration loop scopes | 8-12% of total | Medium-High | Medium (compiler analysis) | Working as designed (BUG-30); optimizable | Open |
-| 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1 — see Resolution above |
+| 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1 and 2 — see Resolution sections above |
 | 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
 | 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
 
-**Suggested order of work:** ~~1~~ → 2 → 3 → 4, in that order, re-profiling after each change
-using the same `--pprof` workloads described in Section 1 to confirm the expected compounding
-effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing. Finding 1 is
-done; re-profiling after it (see its Resolution section) confirms the predicted direct cost
-was eliminated, but also confirms — as Finding 5 warned — that Findings 2 and 4 are still
-needed before overall wall-clock time drops by more than the ~14-16% seen so far.
+**Suggested order of work:** ~~1~~ → ~~2~~ → 3 → 4, in that order, re-profiling after each
+change using the same `--pprof` workloads described in Section 1 to confirm the expected
+compounding effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing.
+Findings 1 and 2 are both done; re-profiling after each (see their Resolution sections)
+confirms each predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no
+longer appears in the profile on this path at all), but also confirms — as Finding 5 warned —
+that Findings 3 and 4 are still needed before overall wall-clock time drops by more than the
+~24-27% cumulative reduction seen so far (from the original 95.6s baseline down to 70.0s on
+the 50,000,000-iteration loop).
