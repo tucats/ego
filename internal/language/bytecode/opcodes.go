@@ -138,6 +138,7 @@ const (
 	TryFlush
 	TypeOf
 	UnWrap
+	ValueCopy
 	Wait
 	WillCatch
 
@@ -271,6 +272,7 @@ var opcodeNames = map[Opcode]string{
 	TryFlush:           "TryFlush",
 	TypeOf:             "TypeOf",
 	UnWrap:             "UnWrap",
+	ValueCopy:          "ValueCopy",
 	Wait:               "Wait",
 	WillCatch:          "WillCatch",
 }
@@ -395,6 +397,7 @@ func initializeDispatch() {
 		dispatchTable[TryPop] = tryPopByteCode
 		dispatchTable[TypeOf] = typeOfByteCode
 		dispatchTable[UnWrap] = unwrapByteCode
+		dispatchTable[ValueCopy] = valueCopyByteCode
 		dispatchTable[Wait] = waitByteCode
 		dispatchTable[WillCatch] = willCatchByteCode
 	}

@@ -289,7 +289,44 @@ func dropByteCode(c *Context, i any) error {
 	return nil
 }
 
-// dupByteCode instruction processor duplicates the top stack item.
+// dupByteCode instruction processor duplicates the top stack item: it pops
+// one value and pushes it back twice (stack depth: N -> N+1). Both copies on
+// the stack afterward are the very same value -- for a *data.Struct (or any
+// other reference-like Ego type) this is a shallow, ALIASING duplicate, not
+// an independent copy. Mutating one of the two duplicates in place (e.g. via
+// a pointer, or a struct field write) is visible through the other. Dup is
+// used wherever the compiler needs to consume a value twice in a row (e.g.
+// a "peek this, then also use it" pattern) and aliasing is either desired or
+// simply irrelevant because both uses just read the value.
+//
+// Contrast with the ValueCopy opcode (valueCopyByteCode in store.go), which
+// makes the opposite trade-off: it does NOT change stack depth (one value in,
+// one value out) but DOES replace a *data.Struct with an independent copy
+// (via copyStructForValueSemantics), leaving every other type aliased.
+// Dup answers "I need this value twice"; ValueCopy answers "I need this
+// value bound to a new name with Go's struct-value-copy semantics" -- the
+// two are not interchangeable substitutes for each other. See
+// valueCopyByteCode's own comment for the full explanation, including the
+// BUG-43 defer-hoisting case that required adding it.
+//
+// Audit note (checked while investigating BUG-43): every current call site
+// that emits Dup in the compiler either (a) only ever duplicates a scalar
+// (int/bool/string) value -- the ++/-- operators, && / || short-circuiting,
+// and a couple of string values in directives/testing -- where aliasing is
+// moot, or (b) is one of the two "single initializer shared across several
+// declared names" paths in compiler/var.go (e.g. "var a, b = S{...}"), where
+// each duplicate is ultimately bound to its own name via the plain Store
+// opcode (never StoreAlways), and Store already applies
+// copyStructForValueSemantics on every write -- so each name still ends up
+// with its own independent struct copy despite the aliasing Dup in between.
+// Verified directly: "var a, b = S{v:1}; a.v = 99" leaves b.v == 1.
+//
+// This means Dup is safe everywhere it's used today, but the safety comes
+// from what happens to the duplicate afterward, not from Dup itself. A
+// *new* Dup call site that ends in StoreAlways (rather than Store,
+// CreateAndStore, or an explicit ValueCopy immediately before StoreAlways)
+// would reintroduce exactly the BUG-43 class of aliasing bug for any
+// struct-valued duplicate.
 func dupByteCode(c *Context, i any) error {
 	v, err := c.Pop()
 	if err != nil {

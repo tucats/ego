@@ -55,6 +55,18 @@ package bytecode
 //   - Empty stack → ErrStackUnderflow (already decorated by Pop).
 //   - NOTE: the compiler never emits this opcode; see STORE-6.
 //
+// valueCopyByteCode (ValueCopy opcode):
+//   - BUG-43 fix. Pops the top-of-stack value, applies
+//     copyStructForValueSemantics to it (an independent copy if it is a
+//     *data.Struct, unchanged otherwise), and pushes the result back — an
+//     in-place transform, so the stack depth is unaffected.
+//   - Used by internal/language/compiler/defer.go's hoistDeferCallArguments
+//     and hoistDeferReceiver to give their StoreAlways-based temp variables
+//     the same struct-value-copy semantics that Store and CreateAndStore get
+//     for free, without requiring the temp variable to not already exist
+//     (which CreateAndStore's c.create(name) would enforce, breaking a
+//     "defer" statement re-executed inside a loop).
+//
 // # Known issues documented here
 //
 //   - STORE-3 (RESOLVED): scalar pointer helpers checked d.(string) in strict/
@@ -74,6 +86,7 @@ package bytecode
 // Section 5: storeAlwaysByteCode
 // Section 6: storeBytecodeByteCode
 // Section 7: receiveChannelByteCode
+// Section 8: valueCopyByteCode
 //
 // All tests use the newTestContext / withXxx / assertXxx helpers from
 // testhelpers_test.go as required by the project testing standards.
@@ -1224,5 +1237,107 @@ func Test_receiveChannelByteCode_StackLayout(t *testing.T) {
 	raw, _ := tc.ctx.Pop()
 	if !isStackMarker(raw, "receive") {
 		t.Errorf("expected StackMarker(\"receive\"), got %T %v", raw, raw)
+	}
+}
+
+// ─── Section 8: valueCopyByteCode ────────────────────────────────────────────
+//
+// valueCopyByteCode is the BUG-43 fix: internal/language/compiler/defer.go's
+// hoistDeferCallArguments and hoistDeferReceiver emit this opcode immediately
+// before StoreAlways when freezing a deferred call's arguments/receiver into
+// a synthetic temp variable, so that a struct value gets the same
+// independent-copy semantics as an ordinary "tempName := value" short
+// variable declaration (which compiles to CreateAndStore, and which already
+// gets this for free via copyStructForValueSemantics — see BUG-26).
+
+// Test_valueCopyByteCode_StructIsIndependentCopy verifies the core fix: for a
+// *data.Struct, the value pushed back is a different object than the one
+// popped, and mutating the field on the ORIGINAL after the copy does not
+// affect the copy sitting on the stack — exactly the guarantee BUG-43 needed
+// for a deferred receiver like "l" in "defer l.Log(msg)".
+func Test_valueCopyByteCode_StructIsIndependentCopy(t *testing.T) {
+	original := data.NewStructFromMap(map[string]any{"prefix": "A"})
+
+	tc := newTestContext(t).withStack(original)
+
+	err := valueCopyByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+
+	copied, popErr := tc.ctx.Pop()
+	if popErr != nil {
+		t.Fatalf("Pop() after valueCopyByteCode: %v", popErr)
+	}
+
+	copiedStruct, ok := copied.(*data.Struct)
+	if !ok {
+		t.Fatalf("expected *data.Struct on stack, got %T", copied)
+	}
+
+	if copiedStruct == original {
+		t.Fatal("valueCopyByteCode did not copy the struct — same pointer returned")
+	}
+
+	// Mutate the ORIGINAL after the copy; the copy must be unaffected. This is
+	// exactly BUG-43's reproducer: "l.prefix = \"B\"" after "defer l.Log(...)"
+	// must not change what the deferred call sees.
+	original.SetAlways("prefix", "B")
+
+	if v, _ := copiedStruct.Get("prefix"); v != "A" {
+		t.Errorf("copy was affected by mutating the original: prefix = %v, want \"A\"", v)
+	}
+}
+
+// Test_valueCopyByteCode_NonStructIsUnchanged verifies that non-struct values
+// (a plain string here) pass through valueCopyByteCode completely unchanged
+// — no error, same value, stack depth unaffected. This matters because
+// hoistDeferCallArguments/hoistDeferReceiver emit ValueCopy unconditionally
+// for every hoisted value, including ordinary scalar arguments.
+func Test_valueCopyByteCode_NonStructIsUnchanged(t *testing.T) {
+	tc := newTestContext(t).withStack("deferred")
+
+	err := valueCopyByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+
+	tc.assertTopStack("deferred")
+	tc.assertStackEmpty()
+}
+
+// Test_valueCopyByteCode_ArrayIsAliased verifies that a *data.Array is left
+// aliased (the very same pointer) rather than being deep-copied — matching
+// Go's own defer semantics, where a slice argument's header is copied but
+// its backing array is shared, so element mutations after "defer" remain
+// visible when the deferred call finally runs.
+func Test_valueCopyByteCode_ArrayIsAliased(t *testing.T) {
+	original := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+
+	tc := newTestContext(t).withStack(original)
+
+	err := valueCopyByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+
+	result, popErr := tc.ctx.Pop()
+	if popErr != nil {
+		t.Fatalf("Pop() after valueCopyByteCode: %v", popErr)
+	}
+
+	resultArray, ok := result.(*data.Array)
+	if !ok {
+		t.Fatalf("expected *data.Array on stack, got %T", result)
+	}
+
+	if resultArray != original {
+		t.Error("valueCopyByteCode unexpectedly copied the array — arrays must stay aliased, like Go slices")
+	}
+}
+
+// Test_valueCopyByteCode_EmptyStack verifies that an empty stack produces the
+// ordinary Pop() underflow error rather than panicking.
+func Test_valueCopyByteCode_EmptyStack(t *testing.T) {
+	tc := newTestContext(t)
+
+	err := valueCopyByteCode(tc.ctx, nil)
+
+	if err == nil {
+		t.Error("expected an error popping an empty stack, got nil")
 	}
 }

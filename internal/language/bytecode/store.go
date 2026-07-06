@@ -42,6 +42,63 @@ func copyStructForValueSemantics(value any) any {
 	return value
 }
 
+// valueCopyByteCode implements the ValueCopy opcode: an in-place transform of
+// the topmost stack value that applies copyStructForValueSemantics to it
+// (replacing it with an independent copy if it is a *data.Struct, leaving
+// every other type -- including *data.Array and *data.Map -- aliased exactly
+// as it was).
+//
+// This is the BUG-43 fix. It exists because StoreAlways (unlike Store and
+// CreateAndStore) intentionally does NOT call copyStructForValueSemantics --
+// most of its callers are compiler-internal bookkeeping where aliasing a
+// live value is fine or even required (see e.g. the "closures stored during
+// a loop" fix, which relies on StoreAlways preserving a shared reference).
+// But two places DO need "bind this value to a brand-new name" (i.e. ":="
+// value-copy) semantics while being unable to use CreateAndStore -- namely
+// internal/language/compiler/defer.go's hoistDeferCallArguments and
+// hoistDeferReceiver, which freeze a deferred call's arguments and receiver
+// into synthetic temp variables at "defer"-statement time. CreateAndStore
+// can't be used there because its c.create(name) step fails with
+// ErrSymbolExists the second time the same compiled "defer" statement runs
+// in the same scope (e.g. a "defer" inside a loop) -- StoreAlways is
+// required for that repeatability, so this opcode is emitted immediately
+// before it instead, to get the missing copy semantics without losing that
+// repeatability.
+//
+// Without this, "defer l.Log(msg)" would freeze $recv := l, but $recv would
+// still be the very same *data.Struct as l, so mutating l.field after the
+// "defer" statement would be visible through $recv too -- exactly the
+// aliasing bug BUG-43 reports, just one level further down than the missing
+// receiver-hoisting itself.
+//
+// Not to be confused with Dup (dupByteCode in stack.go), which sounds
+// similar but does the opposite trade-off:
+//
+//   - Dup changes stack depth (1 item in, 2 out) and never copies -- both
+//     copies alias the very same value, structs included. It exists so the
+//     compiler can consume one value twice in a row (e.g. peek-then-use).
+//   - ValueCopy leaves stack depth unchanged (1 item in, 1 out) and DOES
+//     copy -- but only for *data.Struct. It exists so a value can be bound
+//     to a brand-new name with Go's assignment-copy semantics, exactly like
+//     the CreateAndStore opcode's own struct handling, without requiring
+//     CreateAndStore's "the name must not already exist" behavior.
+//
+// Also distinct from the separate "Copy" opcode (copyByteCode, also in this
+// file), which pushes a second, FULLY deep-copied value (via data.Copy) --
+// including arrays and maps -- rather than the shallower, struct-only,
+// in-place copy ValueCopy performs. Copy is for callers that need a true
+// independent clone of anything; ValueCopy is specifically for reproducing
+// Ego's "structs are copied, arrays/maps/pointers/channels are aliased"
+// value-semantics rule at a single call site.
+func valueCopyByteCode(c *Context, i any) error {
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	return c.push(copyStructForValueSemantics(v))
+}
+
 // copyStructRecursive copies a struct the same way Go itself does: fully,
 // including any fields that are themselves structs, but *not* including the
 // contents of any fields that are slices/maps/pointers/channels (Go only

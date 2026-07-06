@@ -62,3 +62,171 @@
     useMutex()
     @pass
 }
+
+@test "defer: BUG-43, receiver is frozen at defer-statement time"
+{
+    // Regression test for BUG-43 (docs/ISSUES.md#BUG-43): the exact
+    // reproducer from the bug report. "defer l.Log(msg)" must capture the
+    // VALUE of "l" at the point the "defer" statement runs, not re-resolve
+    // "l" from the live symbol table when the deferred call finally
+    // executes. Mutating l.prefix between the "defer" statement and the
+    // function returning must not change what the deferred call observes --
+    // exactly like Go's own defer semantics for a value-receiver method.
+    type Logger struct {
+        prefix string
+    }
+
+    func (l Logger) Log(msg string, out *[]string) {
+        *out = append(*out, l.prefix + " " + msg)
+    }
+
+    func run(out *[]string) {
+        l := Logger{prefix: "A"}
+        defer l.Log("deferred", out)
+        l.prefix = "B"
+        *out = append(*out, "main prefix now " + l.prefix)
+    }
+
+    var out []string
+    run(&out)
+
+    @assert len(out) == 2
+    @assert out[0] == "main prefix now B"
+    @assert out[1] == "A deferred"
+}
+
+@test "defer: BUG-43, no-argument deferred method call also freezes receiver"
+{
+    // Same defect, but for a call with no arguments at all ("defer wg.Done()"
+    // is the canonical real-world example) -- the receiver-freeze fix must
+    // not depend on the call having arguments to hoist.
+    type Tally struct {
+        n int
+    }
+
+    func (t Tally) Report(out *[]int) {
+        *out = append(*out, t.n)
+    }
+
+    func run(out *[]int) {
+        t := Tally{n: 1}
+        defer t.Report(out)
+        t.n = 99
+    }
+
+    var out []int
+    run(&out)
+
+    @assert len(out) == 1
+    @assert out[0] == 1
+}
+
+@test "defer: BUG-43, multi-level receiver chain is frozen as a whole"
+{
+    // "defer o.inner.Show()" -- the receiver chain has more than one dotted
+    // segment. The ENTIRE chain up to (not including) the final method name
+    // must be evaluated and frozen, not just the first identifier.
+    type Inner struct {
+        name string
+    }
+
+    type Outer struct {
+        inner Inner
+    }
+
+    func (i Inner) Show(out *[]string) {
+        *out = append(*out, i.name)
+    }
+
+    func run(out *[]string) {
+        o := Outer{inner: Inner{name: "first"}}
+        defer o.inner.Show(out)
+        o.inner.name = "second"
+    }
+
+    var out []string
+    run(&out)
+
+    @assert len(out) == 1
+    @assert out[0] == "first"
+}
+
+@test "defer: BUG-43, struct-valued argument is also frozen (not just the receiver)"
+{
+    // Related, broadened fix: hoistDeferCallArguments freezes arguments using
+    // the same temp-variable mechanism as the receiver fix, and had the same
+    // missing struct-copy defect -- a struct-valued ARGUMENT (not just a
+    // receiver) must also be an independent snapshot at defer time.
+    type S struct {
+        v int
+    }
+
+    func show(s S, out *[]int) {
+        *out = append(*out, s.v)
+    }
+
+    func run(out *[]int) {
+        s := S{v: 1}
+        defer show(s, out)
+        s.v = 99
+    }
+
+    var out []int
+    run(&out)
+
+    @assert len(out) == 1
+    @assert out[0] == 1
+}
+
+@test "defer: BUG-43, slice argument remains aliased like a real Go slice"
+{
+    // Sanity check for the fix's scope: the struct-copy fix must NOT extend
+    // to arrays/slices/maps. Go's own defer semantics only copy the slice
+    // header, so element mutations made after "defer" are still visible when
+    // the deferred call finally executes -- copying the whole backing array
+    // would be a regression, not a fix.
+    func run(out *[]int) {
+        s := []int{1, 2, 3}
+        defer func() {
+            *out = append(*out, s...)
+        }()
+        s[0] = 99
+    }
+
+    var out []int
+    run(&out)
+
+    @assert len(out) == 3
+    @assert out[0] == 99
+}
+
+@test "defer: BUG-43, repeated defer inside a loop does not error"
+{
+    // The receiver/argument temp variables use StoreAlways (not
+    // CreateAndStore) specifically so the same compiled "defer" statement can
+    // run more than once without a "symbol already exists" error -- e.g. a
+    // "defer" inside a loop. This must keep working after the BUG-43 fix.
+    type Item struct {
+        label string
+    }
+
+    func (i Item) Record(out *[]string) {
+        *out = append(*out, i.label)
+    }
+
+    func run(out *[]string) {
+        for n := 0; n < 3; n++ {
+            item := Item{label: fmt.Sprintf("item-%d", n)}
+            defer item.Record(out)
+        }
+    }
+
+    var out []string
+    run(&out)
+
+    // Deferred calls run in LIFO order.
+    @assert len(out) == 3
+    @assert out[0] == "item-2"
+    @assert out[1] == "item-1"
+    @assert out[2] == "item-0"
+}

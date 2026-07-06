@@ -157,6 +157,16 @@ func (c *Compiler) hoistDeferCallArguments() error {
 			return err
 		}
 
+		// fix BUG-43 (broadened): a struct-valued argument must be an
+		// independent copy, exactly as an ordinary "tempName := arg" short
+		// variable declaration would produce, not an alias of the caller's
+		// variable -- otherwise mutating the original struct after the
+		// "defer" statement would still be visible when the deferred call
+		// finally runs. See ValueCopy's own comment (bytecode/store.go) for
+		// why this is a separate instruction rather than switching to
+		// CreateAndStore.
+		c.b.Emit(bytecode.ValueCopy)
+
 		tempName := data.GenerateName()
 		c.b.Emit(bytecode.StoreAlways, tempName)
 		tempNames = append(tempNames, tempName)
@@ -232,6 +242,141 @@ func (c *Compiler) hoistDeferCallArguments() error {
 	return nil
 }
 
+// hoistDeferReceiver is the fix for BUG-43. It complements
+// hoistDeferCallArguments above: that function freezes a deferred call's
+// ARGUMENTS at "defer"-statement time, but left the RECEIVER of a dotted call
+// (the "l" in "defer l.Log(msg)", or the "wg" in "defer wg.Done()") to be
+// re-resolved from the live symbol table when the deferred call finally runs.
+// That is wrong for the same reason BUG-16/FLOW-M4 was wrong for arguments:
+// real Go evaluates and saves the entire function/method value -- including
+// any receiver or package selector -- at the point "defer" executes, not at
+// the point the deferred call actually happens. Mutating the receiver
+// variable between the "defer" statement and the function returning must not
+// change which receiver the deferred call observes.
+//
+// Must be called AFTER hoistDeferCallArguments, so the call's argument list
+// has already been reduced to a simple "($1, $2, ...)" form of hoisted temp
+// variables; this function only needs to locate the boundary between the
+// receiver chain and the final ".MethodName(...)" suffix, which is
+// unaffected by having already hoisted the arguments.
+//
+// How it works: the receiver of a deferred call is constrained (by the
+// existing validation earlier in compileDefer, which requires the callee to
+// start with a bare identifier) to be a simple dotted identifier chain --
+// "l", "wg.mu", "pkg.Type", etc. -- never an arbitrary expression such as an
+// array index or a parenthesized dereference. That means the receiver chain
+// can always be found by looking for the LAST "." token before the call's
+// opening "(": everything before that dot is the receiver expression;
+// everything from that dot onward ("MethodName(...)") is the call itself and
+// must be left untouched, since re-compiling it inside the later-deferred
+// closure is exactly what causes the runtime's SetThis mechanism (see
+// compileDotReference in expr_reference.go) to correctly bind whatever
+// receiver value it finds at that time -- which will now be our frozen one.
+//
+// The receiver chain's tokens are removed from the stream, compiled right
+// here (in the compiler's normal, non-deferred bytecode stream, exactly like
+// hoistDeferCallArguments does for arguments) so its value is computed NOW,
+// and stored into its own temp variable. The token stream is then rewritten
+// from "receiverChain.MethodName(args)" to "$tempName.MethodName(args)", so
+// the closure-wrapping logic that follows in compileDefer wraps a call whose
+// receiver is a frozen temp variable rather than the original, possibly
+// later-mutated, expression.
+//
+// If there is no "." at all in the callee (a bare "defer namedFunc(args)"
+// call has no receiver to freeze), this function leaves the token stream
+// untouched. That bare-call case is FLOW-M4's own, distinct, still-open gap
+// (lazy re-read of the function reference itself), not this one.
+func (c *Compiler) hoistDeferReceiver() error {
+	startPos := c.t.Mark()
+
+	argsStart := c.findDeferCallArgsStart(startPos)
+	if argsStart >= len(c.t.Tokens) || c.t.Tokens[argsStart].IsNot(tokenizer.StartOfListToken) {
+		// No "(...)" at all -- same guard as hoistDeferCallArguments; leave
+		// this for the existing "must end in a Call instruction" check.
+		c.t.Set(startPos)
+
+		return nil
+	}
+
+	// Find the last "." in the identifier chain before the "(" -- the dot
+	// that separates the receiver (or package qualifier) from the final
+	// method/function name, e.g. the "." right before "Lock" in "wg.mu.Lock".
+	lastDot := -1
+
+	for i := startPos; i < argsStart; i++ {
+		if c.t.Tokens[i].Is(tokenizer.DotToken) {
+			lastDot = i
+		}
+	}
+
+	if lastDot < 0 {
+		// A bare "defer namedFunc(...)" call -- no receiver to freeze.
+		c.t.Set(startPos)
+
+		return nil
+	}
+
+	// methodChainEnd is one token past the matching ")" of the call: the full
+	// extent of "receiverChain.MethodName(args)" that is about to be split
+	// into a frozen receiver plus an untouched call suffix.
+	methodChainEnd := c.findDeferCallEnd(startPos)
+
+	// Save the call suffix -- the final ".MethodName(args)" -- so it can be
+	// reattached, unchanged, after the receiver's frozen replacement.
+	suffix := make([]tokenizer.Token, methodChainEnd-lastDot)
+	copy(suffix, c.t.Tokens[lastDot:methodChainEnd])
+
+	if err := c.t.Delete(lastDot, methodChainEnd); err != nil {
+		return c.compileError(err)
+	}
+
+	// Only the receiver chain itself (e.g. "l" or "wg.mu") remains at
+	// startPos now. Compile it right here, in the compiler's normal
+	// (non-deferred) bytecode stream -- the same "compile now, store to a
+	// temp variable" idiom hoistDeferCallArguments uses for arguments -- so
+	// its value is computed at "defer"-statement time.
+	c.t.Set(startPos)
+
+	if err := c.conditional(); err != nil {
+		return err
+	}
+
+	// This is the crux of BUG-43: the receiver must be an independent copy
+	// when it is a struct value, exactly as "tempName := l" would produce,
+	// not an alias of the live "l" -- otherwise mutating l's fields after
+	// the "defer" statement (the whole point of the bug report) would still
+	// be visible through the frozen receiver when the deferred call finally
+	// runs. See ValueCopy's own comment (bytecode/store.go) for why this is
+	// a separate instruction rather than switching to CreateAndStore.
+	c.b.Emit(bytecode.ValueCopy)
+
+	tempName := data.GenerateName()
+	c.b.Emit(bytecode.StoreAlways, tempName)
+
+	// Replace the (now fully consumed) receiver-chain tokens with a single
+	// reference to the frozen temp variable, then reattach the untouched
+	// ".MethodName(args)" suffix immediately after it.
+	receiverEnd := c.t.Mark()
+
+	if err := c.t.Delete(startPos, receiverEnd); err != nil {
+		return c.compileError(err)
+	}
+
+	replacement := append([]tokenizer.Token{tokenizer.NewIdentifierToken(tempName)}, suffix...)
+
+	if err := c.t.Insert(startPos, replacement...); err != nil {
+		return c.compileError(err)
+	}
+
+	// Put the read position back at the (rewritten) callee's first token, as
+	// hoistDeferCallArguments does, so the rest of compileDefer() sees
+	// "$tempName.MethodName(args)" exactly where it originally saw
+	// "receiverChain.MethodName(args)".
+	c.t.Set(startPos)
+
+	return nil
+}
+
 // compileDefer compiles the "defer" statement. This compiles a statement,
 // and attaches the resulting bytecode to the compilation unit's defer queue.
 // Later, when a return is processed, this queue will be used to generate the
@@ -275,6 +420,15 @@ func (c *Compiler) compileDefer() error {
 		// See hoistDeferCallArguments()'s own comment for the full
 		// explanation of why this is necessary and how it works.
 		if err := c.hoistDeferCallArguments(); err != nil {
+			return err
+		}
+
+		// fixed BUG-43 fix: compile and freeze the call's RECEIVER (e.g. the "l" in
+		// "defer l.Log(msg)"), if any, right now as well -- for the same reason as
+		// above, just applied to the receiver instead of the arguments. Must run
+		// after hoistDeferCallArguments(); see hoistDeferReceiver()'s own comment
+		// for the full explanation.
+		if err := c.hoistDeferReceiver(); err != nil {
 			return err
 		}
 
