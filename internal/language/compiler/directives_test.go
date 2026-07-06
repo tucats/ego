@@ -81,7 +81,7 @@ func TestCompileBlockDirectiveDoesNotLeakUnusedVarsSetting(t *testing.T) {
 // collected token stream partway through the block, leaving the rest of the
 // source -- including the trailing "catch(e) { ... }" clause and anything
 // after it -- to be parsed as if the @compile statement had already ended,
-// which desynchronized the whole remaining parse.
+// which de-synchronized the whole remaining parse.
 //
 // Before the fix, running this program failed to compile at all (the
 // "catch" keyword was rejected as an unexpected token). After the fix it

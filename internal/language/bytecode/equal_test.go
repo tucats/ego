@@ -779,10 +779,9 @@ func Test_notEqualByteCode_PointerVsNonPointerIsUnequal(t *testing.T) {
 }
 
 // Test_equalNotEqual_PointerResultsAreConsistentNegations is the
-// core BUG-34 regression test: for a representative set of 
-// pointer/value pairs, == and != must always disagree (exactly
-// one is true), never both false (the original bug) and never 
-// both true.
+// key BUG-34 regression test: for a representative set of pointer/value
+// pairs, == and != must always disagree (exactly one is true), never
+// both false (the original bug) and never both true.
 func Test_equalNotEqual_PointerResultsAreConsistentNegations(t *testing.T) {
 	a := 5
 	b := 5
