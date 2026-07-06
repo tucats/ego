@@ -364,9 +364,11 @@ func (c *Context) getPackageSymbols() *symbols.SymbolTable {
 	// already in the current symbol table chain. This helps trace calls
 	// into imported packages.
 	if table != nil && !c.inPackageSymbolTable(table.Package()) {
-		ui.Log(ui.TraceLogger, "trace.package.symbols", ui.A{
-			"thread":  c.threadID,
-			"package": table.Package()})
+		if ui.IsActive(ui.TraceLogger) {
+			ui.Log(ui.TraceLogger, "trace.package.symbols", ui.A{
+				"thread":  c.threadID,
+				"package": table.Package()})
+		}
 	}
 
 	return table

@@ -80,15 +80,17 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 	// is called from a root-level context (FindNextScope returns nil);
 	// callFramePush still uses c.symbols as the parent in that case, so
 	// none accurately describes the absent enclosing scope.
-	parentName := none
-	if parentTable != nil {
-		parentName = parentTable.Name
-	}
+	if ui.IsActive(ui.SymbolLogger) {
+		parentName := none
+		if parentTable != nil {
+			parentName = parentTable.Name
+		}
 
-	ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
-		"thread": c.threadID,
-		"name":   c.symbols.Name,
-		"parent": parentName})
+		ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
+			"thread": c.threadID,
+			"name":   c.symbols.Name,
+			"parent": parentName})
+	}
 
 	// For a closure with a captured scope, create the function's symbol table
 	// as a child of the captured scope (not c.symbols) so the closure can find

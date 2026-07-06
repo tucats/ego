@@ -125,9 +125,11 @@ func (c *Compiler) compileImport() error {
 		// For example, "os/exec" is remapped to "exec".
 		filePath := fileName.Spelling()
 		if nativePackageName, found := nativePackageNames[filePath]; found {
-			ui.Log(ui.PackageLogger, "pkg.compiler.remap", ui.A{
-				"gopath":  filePath,
-				"egopath": nativePackageName})
+			if ui.IsActive(ui.PackageLogger) {
+				ui.Log(ui.PackageLogger, "pkg.compiler.remap", ui.A{
+					"gopath":  filePath,
+					"egopath": nativePackageName})
+			}
 
 			filePath = nativePackageName
 		}
@@ -189,8 +191,10 @@ func (c *Compiler) compileImport() error {
 		// import of an already-cached package silently lost its alias and
 		// the alias name was never defined as a usable symbol.
 		if packages.Get(filePath) != nil {
-			ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
-				"name": filePath})
+			if ui.IsActive(ui.PackageLogger) {
+				ui.Log(ui.PackageLogger, "pkg.compiler.import.found", ui.A{
+					"name": filePath})
+			}
 
 			c.DefineGlobalSymbol(localName)
 			c.b.Emit(bytecode.Import, data.NewList(localName, filePath))
@@ -216,25 +220,31 @@ func (c *Compiler) compileImport() error {
 			return err
 		}
 
-		ui.Log(ui.PackageLogger, "pkg.compiler.importing", ui.A{
-			"name": filePath})
+		if ui.IsActive(ui.PackageLogger) {
+			ui.Log(ui.PackageLogger, "pkg.compiler.importing", ui.A{
+				"name": filePath})
+		}
 
 		// If this is an import of the package we're currently importing, no work to do.
 		if packageName == c.activePackageName {
 			continue
 		}
 
-		if !packageDef.Builtins {
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add", ui.A{
-				"name": fileName.Spelling()})
-		} else {
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.already", ui.A{
-				"name": fileName.Spelling()})
+		if ui.IsActive(ui.PackageLogger) {
+			if !packageDef.Builtins {
+				ui.Log(ui.PackageLogger, "pkg.compiler.builtins.add", ui.A{
+					"name": fileName.Spelling()})
+			} else {
+				ui.Log(ui.PackageLogger, "pkg.compiler.builtins.already", ui.A{
+					"name": fileName.Spelling()})
+			}
 		}
 
 		if !packageDef.Builtins {
-			ui.Log(ui.PackageLogger, "pkg.compiler.builtins.none", ui.A{
-				"name": fileName.Spelling()})
+			if ui.IsActive(ui.PackageLogger) {
+				ui.Log(ui.PackageLogger, "pkg.compiler.builtins.none", ui.A{
+					"name": fileName.Spelling()})
+			}
 
 			c.packageMutex.Lock()
 			c.packages[packageName] = data.NewPackage(packageName, fileName.Spelling())
@@ -282,7 +292,7 @@ func (c *Compiler) compileImport() error {
 
 			// If no errors, pop this back off the import package stack
 			c.popImportPath()
-		} else {
+		} else if ui.IsActive(ui.PackageLogger) {
 			ui.Log(ui.PackageLogger, "pkg.compiler.import.already", ui.A{
 				"name": fileName.Spelling()})
 		}
@@ -325,8 +335,10 @@ func (c *Compiler) compileImport() error {
 // constants) are registered. The populated symbol table is attached to the
 // package definition so subsequent imports can reuse it without recompilation.
 func compileImportSource(packageName string, filePath string, c *Compiler, text string, fileName tokenizer.Token, err error, packageDef *data.Package) error {
-	ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
-		"name": packageName})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.compiler.source", ui.A{
+			"name": packageName})
+	}
 
 	importCompiler := New(tokenizer.ImportToken.Spelling() + " " + filePath).
 		SetRoot(c.rootTable).
@@ -398,8 +410,10 @@ func (c *Compiler) readPackageFile(name string) (string, error) {
 		return s, nil
 	}
 
-	ui.Log(ui.PackageLogger, "pkg.compiler.read.file", ui.A{
-		"path": name})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.compiler.read.file", ui.A{
+			"path": name})
+	}
 
 	// Not a directory, try to read the file
 	fn := name
@@ -471,8 +485,10 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 	if !strings.HasPrefix(dirname, path) {
 		dirname = filepath.Join(path, name)
 
-		ui.Log(ui.PackageLogger, "pkg.compiler.apply.path", ui.A{
-			"path": dirname})
+		if ui.IsActive(ui.PackageLogger) {
+			ui.Log(ui.PackageLogger, "pkg.compiler.apply.path", ui.A{
+				"path": dirname})
+		}
 	}
 
 	fi, err := os.ReadDir(dirname)
@@ -480,8 +496,10 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 		return "", errors.New(err)
 	}
 
-	ui.Log(ui.PackageLogger, "pkg.compiler.dir.read", ui.A{
-		"path": name})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.compiler.dir.read", ui.A{
+			"path": name})
+	}
 
 	if len(fi) == 0 {
 		ui.Log(ui.PackageLogger, "pkg.compiler.dir.empty", nil)

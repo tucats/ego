@@ -159,8 +159,10 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	ui.Log(ui.DBLogger, "db.connect", ui.A{
-		"constr": redactURLString(connStr)})
+	if ui.IsActive(ui.DBLogger) {
+		ui.Log(ui.DBLogger, "db.connect", ui.A{
+			"constr": redactURLString(connStr)})
+	}
 
 	_ = s.Set(Database.Name(), Database)
 

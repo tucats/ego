@@ -52,9 +52,11 @@ func goByteCode(c *Context, i any) error {
 		return err
 	} else {
 		// Launch the function call as a separate thread.
-		ui.Log(ui.GoRoutineLogger, "go.launch", ui.A{
-			"function": fx,
-			"thread":   c.threadID})
+		if ui.IsActive(ui.GoRoutineLogger) {
+			ui.Log(ui.GoRoutineLogger, "go.launch", ui.A{
+				"function": fx,
+				"thread":   c.threadID})
+		}
 
 		goRoutineCompletion.Add(1)
 
@@ -174,10 +176,12 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 
 	// If we had an error in the go routine, stop the invoking context execution.
 	if err != nil && !err.Is(errors.ErrStop) {
-		ui.Log(ui.GoRoutineLogger, "go.exit.error", ui.A{
-			"thread": ctx.threadID,
-			"name":   fName,
-			"error":  err})
+		if ui.IsActive(ui.GoRoutineLogger) {
+			ui.Log(ui.GoRoutineLogger, "go.exit.error", ui.A{
+				"thread": ctx.threadID,
+				"name":   fName,
+				"error":  err})
+		}
 
 		// Protect writes to shared parentCtx fields with the context mutex,
 		// since multiple goroutines may attempt to set these concurrently.
@@ -185,7 +189,7 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 		parentCtx.goErr = err
 		parentCtx.running.Store(false)
 		parentCtx.mux.Unlock()
-	} else {
+	} else if ui.IsActive(ui.GoRoutineLogger) {
 		ui.Log(ui.GoRoutineLogger, "go.exit", ui.A{
 			"thread": ctx.threadID,
 			"name":   fName})

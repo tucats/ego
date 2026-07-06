@@ -194,6 +194,9 @@ func AddAgent(r *resty.Request, agentType string) {
 	agent := "Ego " + version + " (" + platform + ") " + agentType
 
 	r.Header.Add("User-Agent", agent)
-	ui.Log(ui.RestLogger, "rest.agent", ui.A{
-		"agent": agent})
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.agent", ui.A{
+			"agent": agent})
+	}
 }

@@ -262,11 +262,13 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 		p = p.parent
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.boundary.skip", ui.A{
-		"table":     s.Name,
-		"depth":     s.depth,
-		"next":      lastBoundaryParent.Name,
-		"nextdepth": lastBoundaryParent.depth})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.boundary.skip", ui.A{
+			"table":     s.Name,
+			"depth":     s.depth,
+			"next":      lastBoundaryParent.Name,
+			"nextdepth": lastBoundaryParent.depth})
+	}
 
 	return lastBoundaryParent
 }
@@ -402,14 +404,16 @@ func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 		return s
 	}
 
-	pName := "<root table>"
-	if p != nil {
-		pName = p.Name
-	}
+	if ui.IsActive(ui.SymbolLogger) {
+		pName := "<root table>"
+		if p != nil {
+			pName = p.Name
+		}
 
-	ui.Log(ui.SymbolLogger, "symbols.set.parent", ui.A{
-		"name":   s.Name,
-		"parent": pName})
+		ui.Log(ui.SymbolLogger, "symbols.set.parent", ui.A{
+			"name":   s.Name,
+			"parent": pName})
+	}
 
 	// Chase the parent chain from the new parent to make sure this symbol table
 	// is not already in the loop.
@@ -491,11 +495,13 @@ func (s *SymbolTable) Root() *SymbolTable {
 		st = st.parent
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.root", ui.A{
-		"name":     s.Name,
-		"id":       s.id,
-		"parent":   st.Name,
-		"parentid": st.id})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.root", ui.A{
+			"name":     s.Name,
+			"id":       s.id,
+			"parent":   st.Name,
+			"parentid": st.id})
+	}
 
 	return st
 }

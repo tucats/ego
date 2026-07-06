@@ -74,9 +74,11 @@ func New(src string, isCode bool) *Tokenizer {
 		t.DumpTokens()
 	}
 
-	ui.Log(ui.TokenLogger, "tokens.complete", ui.A{
-		"count":    len(t.Tokens),
-		"duration": time.Since(start)})
+	if ui.IsActive(ui.TokenLogger) {
+		ui.Log(ui.TokenLogger, "tokens.complete", ui.A{
+			"count":    len(t.Tokens),
+			"duration": time.Since(start)})
+	}
 
 	return &t
 }

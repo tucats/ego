@@ -74,10 +74,12 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 			attr.Readonly = flag
 			s.modified = true
 
-			ui.Log(ui.SymbolLogger, "symbols.set.readonly", ui.A{
-				"name":  name,
-				"table": syms.Name,
-				"flag":  flag})
+			if ui.IsActive(ui.SymbolLogger) {
+				ui.Log(ui.SymbolLogger, "symbols.set.readonly", ui.A{
+					"name":  name,
+					"table": syms.Name,
+					"flag":  flag})
+			}
 
 			return nil
 		}

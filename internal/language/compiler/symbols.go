@@ -98,7 +98,7 @@ func (c *Compiler) PopSymbolScope() error {
 				continue
 			}
 
-			if settings.GetBool(defs.UnusedVarLoggingSetting) {
+			if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 				ui.Log(ui.CompilerLogger, "compiler.usage.error", ui.A{
 					"name":  name,
 					"error": usageError})
@@ -151,12 +151,12 @@ func (c *Compiler) DefineSymbol(name string) error {
 		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = err
 
-		if settings.GetBool(defs.UnusedVarLoggingSetting) {
+		if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 			ui.Log(ui.CompilerLogger, "compiler.usage.create", ui.A{
 				"name":     name,
 				"location": err.GetLocation()})
 		}
-	} else if settings.GetBool(defs.UnusedVarLoggingSetting) {
+	} else if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 		ui.Log(ui.CompilerLogger, "compiler.usage.write", ui.A{
 			"name": name})
 	}
@@ -186,12 +186,12 @@ func (c *Compiler) DefineGlobalSymbol(name string) error {
 		err := c.compileError(errors.ErrUnusedVariable).Context(name)
 		c.scopes[pos].usage[name] = nil
 
-		if settings.GetBool(defs.UnusedVarLoggingSetting) {
+		if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 			ui.Log(ui.CompilerLogger, "compiler.usage.create", ui.A{
 				"name":     name,
 				"location": err.GetLocation()})
 		}
-	} else if settings.GetBool(defs.UnusedVarLoggingSetting) {
+	} else if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 		ui.Log(ui.CompilerLogger, "compiler.usage.write", ui.A{
 			"name": name})
 	}
@@ -272,7 +272,7 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 			c.scopes[i].usage[name] = nil
 			found = true
 
-			if settings.GetBool(defs.UnusedVarLoggingSetting) {
+			if settings.GetBool(defs.UnusedVarLoggingSetting) && ui.IsActive(ui.CompilerLogger) {
 				err := c.compileError(errors.ErrUnusedVariable).Context(name)
 
 				ui.Log(ui.CompilerLogger, "compiler.usage.read", ui.A{
@@ -331,9 +331,12 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 	// It wasn't know to this compilation unit. If it must exist, return an error.
 	if mustExist {
 		err = c.compileError(errors.ErrUnknownSymbol).Context(name)
-		ui.Log(ui.CompilerLogger, "compiler.usage.not.found", ui.A{
-			"error": err,
-			"name":  name})
+
+		if ui.IsActive(ui.CompilerLogger) {
+			ui.Log(ui.CompilerLogger, "compiler.usage.not.found", ui.A{
+				"error": err,
+				"name":  name})
+		}
 
 		// If we don't report this stuff, never mind.
 		if !settings.GetBool(defs.UnknownVarSetting) {

@@ -229,10 +229,12 @@ func (s *SymbolTable) GetAddress(name string) (any, bool) {
 		}
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.get.addr", ui.A{
-		"table": s.Name,
-		"id":    s.id,
-		"name":  name})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.get.addr", ui.A{
+			"table": s.Name,
+			"id":    s.id,
+			"name":  name})
+	}
 
 	return v, found
 }

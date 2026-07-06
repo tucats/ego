@@ -308,8 +308,10 @@ func Bool(v any) (bool, error) {
 func IntOrZero(v2 any) int {
 	b, err := Int(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int", ui.A{
-			"error": err})
+		if ui.IsActive(ui.InternalLogger) {
+			ui.Log(ui.InternalLogger, "runtime.access.int", ui.A{
+				"error": err})
+		}
 
 		return 0
 	}
@@ -321,8 +323,10 @@ func IntOrZero(v2 any) int {
 func Int32OrZero(v2 any) int32 {
 	b, err := Int32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
-			"error": err})
+		if ui.IsActive(ui.InternalLogger) {
+			ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
+				"error": err})
+		}
 
 		return 0
 	}
@@ -334,8 +338,10 @@ func Int32OrZero(v2 any) int32 {
 func Int64OrZero(v2 any) int64 {
 	b, err := Int64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int64", ui.A{
-			"error": err})
+		if ui.IsActive(ui.InternalLogger) {
+			ui.Log(ui.InternalLogger, "runtime.access.int64", ui.A{
+				"error": err})
+		}
 
 		return 0
 	}
@@ -347,8 +353,10 @@ func Int64OrZero(v2 any) int64 {
 func Float64OrZero(v2 any) float64 {
 	b, err := Float64(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.float64", ui.A{
-			"error": err})
+		if ui.IsActive(ui.InternalLogger) {
+			ui.Log(ui.InternalLogger, "runtime.access.float64", ui.A{
+				"error": err})
+		}
 
 		return 0.0
 	}
@@ -360,8 +368,10 @@ func Float64OrZero(v2 any) float64 {
 func Float32OrZero(v2 any) float32 {
 	b, err := Float32(v2)
 	if err != nil {
-		ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
-			"error": err})
+		if ui.IsActive(ui.InternalLogger) {
+			ui.Log(ui.InternalLogger, "runtime.access.int32", ui.A{
+				"error": err})
+		}
 
 		return 0.0
 	}
@@ -372,7 +382,7 @@ func Float32OrZero(v2 any) float32 {
 // BoolOrFalse converts v to bool, returning false on error.
 func BoolOrFalse(v any) bool {
 	b, err := Bool(v)
-	if err != nil {
+	if err != nil && ui.IsActive(ui.InternalLogger) {
 		ui.Log(ui.InternalLogger, "runtime.access.bool", ui.A{
 			"error": err})
 	}

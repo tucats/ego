@@ -452,6 +452,129 @@ especially) is a real, easy win.
    these lazily (only when something actually reads `.Name`, e.g. inside the same
    `IsActive`-guarded logging block) rather than on every call.
 
+### Resolution (July 2026) — Finding 3
+
+Per direction from the project owner, this was done as a **full systemic sweep**, not just the
+hot-path spot fixes originally proposed — deliberately going beyond what the tight-loop/
+function-call profiles alone would have justified, in order to leave the codebase
+consistent: every `ui.Log` call site should follow the same "check `IsActive` before doing
+any work" shape, so a future contributor adding a new one has an unambiguous pattern to
+copy, rather than having to guess whether a given call site was "hot enough to bother."
+
+**Scope.** The sweep covered every package that is part of compiling or executing Ego
+bytecode: `internal/language/{bytecode,data,symbols,compiler,tokenizer}`, `internal/builtins`,
+and `internal/runtime/*` (every native-package implementation Ego programs can call into,
+including I/O-bound ones like `rest`/`sql` — included for the consistency reason above, even
+though their per-call-site win is smaller since network/database latency already dominates
+their cost). Deliberately **excluded**: `internal/server/*`, `internal/router`,
+`internal/cli/*`, `internal/commands`, `internal/dsns`, `internal/caches`,
+`internal/resources` — these run at HTTP-request or CLI-command frequency, not
+per-bytecode-instruction frequency, so guarding them would not show up in any profile of
+"running an Ego program" and was out of scope for this performance audit. One package,
+`internal/language/tokens`, was initially assumed in-scope (it sounded like lexer token
+support) but turned out on inspection to be JWT authentication-token validation code — a
+naming collision with the lexer's "tokens," not part of the interpreter at all — so it was
+excluded for the same reason as the server packages.
+
+**Method.** Within scope, every `ui.Log` call was inspected individually — not just the ones
+with an obviously expensive-looking argument. Each fell into one of four buckets:
+
+1. **`nil` argument, no setup** (89 of the 248 call sites found in-scope) — left untouched, per
+   the explicit carve-out for this case: there is no map to construct and nothing to defer, so
+   an `IsActive` guard would only add a branch for no benefit.
+2. **Already correctly guarded** — either directly (`if ui.IsActive(class) { ui.Log(...) }`,
+   the pattern already established by the BUG-35/BUG-45 fixes in `catch.go`/`panic.go`) or
+   *transitively*, where the enclosing function already has an early return or an outer `if`
+   on the same condition before ever reaching the log call (found in `trace.go`, `flow.go`'s
+   `traceLine`, `disassembler.go`'s `Disasm`, `format.go`'s `Log`, and `methods.go`'s
+   `logRequest`/`logResponse` — all confirmed by tracing the actual control flow, not just
+   proximity of an `IsActive` check in the source text).
+3. **Needed a guard, no other setup to move** — the common case: wrap the call (or, where the
+   `if` body contained *only* the log call, fold `&& ui.IsActive(class)` into the existing
+   condition instead of adding a new nested `if`, which reads more naturally at several call
+   sites, e.g. `internal/language/data/accessor.go`'s `OrZero` family).
+4. **Needed a guard AND had real setup to move inside it** — the interesting case the project
+   owner specifically asked to watch for: a preceding line computes something (a string
+   concatenation, a `.String()`/`.Format()` call, a second field lookup) that is used **only**
+   by the log call. Found and fixed at several sites, e.g.:
+   - `internal/language/bytecode/this.go`'s `getThisByteCode` — `data.Format(v)` (a recursive
+     value formatter) was called on every receiver-method invocation purely to log it.
+   - `internal/language/bytecode/callBytecodeFunction.go` — `parentName` (derived from
+     `parentTable.Name`) was computed on every function call for logging only; `parentTable`
+     itself was **not** moved, since it is also used for real work in the closure-with-
+     captured-scope branch a few lines later (see the code's own comment, quoted in the
+     Root Cause section above) — moving it would have changed behavior, so only the
+     log-exclusive `parentName` derivation was guarded.
+   - `internal/runtime/rest/client.go` — `egostrings.TruncateMiddle(token, 10)` (building a
+     truncated, safe-to-log form of a bearer token) ran on every authenticated REST call
+     whether or not `RestLogger` was active.
+   - `internal/runtime/profile/initialization.go` — a token-truncation call at server startup,
+     same shape as the client.go case.
+
+   Where the same value was genuinely needed for both logging and later functional use (e.g.
+   `create.go`'s `typeString`, used in both a log call and the subsequent error's `.Context()`;
+   `symbols.go`'s `newName`, which becomes the new table's actual `.Name` field, not just a log
+   label), the computation was deliberately **left in place** and only the `ui.Log` call itself
+   was guarded — moving genuinely-dual-purpose work inside a logging-only guard would be a
+   correctness risk for no performance benefit, since that work has to happen regardless of
+   whether logging is active.
+
+**Bugs found while doing this work:** none — this was a mechanical, behavior-preserving sweep
+by construction (every change is "skip constructing something that would have been silently
+discarded by an inactive logger anyway"), and each site was checked individually rather than
+pattern-matched, specifically to avoid introducing one.
+
+**Scale:** 248 `ui.Log` call sites were inspected across the in-scope packages; 89 needed no
+change (nil argument); of the remaining 159, the large majority needed a new or corrected
+guard, and roughly two dozen had genuine setup work that was identified and, where safe,
+moved inside the guard alongside the log call itself.
+
+**Re-profiling results:** the same workloads and methodology from Section 1 were used again,
+this time comparing against the **post-Finding-2** baseline (the state after both prior
+fixes), since Findings 1 and 2 were already implemented and re-profiled in that order.
+
+| Workload | After Finding 1+2 | After Finding 1+2+3 | Change (this fix alone) | Change (cumulative from original) |
+| - | - | - | - | - |
+| Tight loop (20M iterations) | 27.3s | 20.95s | **-23%** | **-44%** |
+| Function calls (3M calls) | 13.0s | 8.46s | **-35%** | **-51%** |
+| 50,000,000-iteration loop (the example that started this audit) | 70.0s | 53.2s | **-24%** | **-44%** |
+
+This is, by a wide margin, the largest single-fix improvement of the three implemented so
+far — notably larger than either Finding 1 or Finding 2 individually, and larger than their
+combined effect. The function-call workload benefited the most (-35% on top of the prior two
+fixes) because every function call passes through `callBytecodeFunction` and `callFramePush`/
+`callFramePop`, each of which had at least one unguarded (or setup-heavy) log call on the
+per-call path; a plain arithmetic loop only pays the `pushScopeByteCode` cost once per
+iteration, so it benefited somewhat less proportionally, though still substantially.
+
+```
+(tight loop, after Finding 1+2+3)
+     0.61s  2.53%  2.53%      9.40s 38.99%  github.com/tucats/ego/internal/language/bytecode.(*Context).RunFromAddress
+     8.83s 36.62% 39.15%      8.83s 36.62%  runtime.kevent
+     0.04s  0.17% 48.03%      1.32s  5.47%  github.com/tucats/ego/internal/language/bytecode.pushScopeByteCode
+     0.04s  0.17% 54.54%      1.08s  4.48%  github.com/tucats/ego/internal/language/symbols.NewChildSymbolTable
+```
+
+**Honest assessment:** unlike Findings 1 and 2 — where the targeted cost dropped by 74-97%
+but overall wall-clock only improved 10-16% — this fix moved the wall-clock number by roughly
+the same proportion as the workload-specific costs it targeted. The likely reason: because
+this fix touched dozens of call sites rather than one or two functions, and several of those
+sites sit on the function-call path specifically (which the earlier two fixes touched only
+indirectly, via the scope-creation machinery those calls also trigger), its aggregate effect
+on total allocation rate was larger relative to its own direct, single-site cost than either
+prior fix — consistent with Finding 5's thesis that allocation rate, not any one hot function,
+is the dominant lever on total run time. `runtime.kevent` (thread scheduling overhead) remains
+the largest single line item in every profile taken across all three fixes, reinforcing that
+Finding 4 (stop allocating a scope at all for loop bodies that don't need one) is still the
+most direct remaining way to move that number.
+
+**Test status:** `go build ./...`, `go vet ./...`, and the full `go test ./...` suite are
+clean after this change, and all 1,142 tests in `ego test tests/` continue to pass. Symbol
+table trace logging was re-verified manually (`ego --log symbols,compiler,bytecode,optimizer
+run ...`) to confirm log output is byte-for-byte unaffected when the relevant logger classes
+are active — over 2,000 log lines were produced for a small three-iteration test program,
+with no missing entries compared to before the sweep.
+
 ---
 
 ## 5. Finding 4 (design-level) — per-iteration loop scopes: correct, but costly, and often unnecessary
@@ -631,18 +754,22 @@ depend on exactly this kind of compile-time-resolved storage to be worthwhile at
 | - | - | - | - | - | - | - |
 | 1 | `uuid.New()` per scope creation | ~50% of scope-creation cost; scope creation is 8-12% of total | Low | Low | Implementation bug (wrong tool for the job) | **Fixed** (July 2026) — see Resolution above |
 | 2 | `InstanceOfType` linear scan | ~5.5% of total, ~63% of that is the scan itself | Low | Low | Implementation bug (should be O(1)) | **Fixed** (July 2026) — see Resolution above |
-| 3 | Eager `ui.Log` argument construction | ~1.6%+ confirmed at 2 call sites; likely more, unaudited | Low (hot spots) / Medium (full sweep) | Low | Implementation inconsistency | Open |
+| 3 | Eager `ui.Log` argument construction | ~1.6%+ confirmed at 2 call sites; 248 sites swept codebase-wide | Low (hot spots) / Medium (full sweep) | Low | Implementation inconsistency | **Fixed** (July 2026) — see Resolution above |
 | 4 | Per-iteration loop scopes | 8-12% of total | Medium-High | Medium (compiler analysis) | Working as designed (BUG-30); optimizable | Open |
-| 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1 and 2 — see Resolution sections above |
+| 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1, 2, and 3 — see Resolution sections above |
 | 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
 | 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → 3 → 4, in that order, re-profiling after each
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → 4, in that order, re-profiling after each
 change using the same `--pprof` workloads described in Section 1 to confirm the expected
 compounding effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing.
-Findings 1 and 2 are both done; re-profiling after each (see their Resolution sections)
+Findings 1, 2, and 3 are all done; re-profiling after each (see their Resolution sections)
 confirms each predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no
-longer appears in the profile on this path at all), but also confirms — as Finding 5 warned —
-that Findings 3 and 4 are still needed before overall wall-clock time drops by more than the
-~24-27% cumulative reduction seen so far (from the original 95.6s baseline down to 70.0s on
-the 50,000,000-iteration loop).
+longer appears in the profile on this path at all; `ui.Log` argument construction is now
+uniformly guarded across 248 inspected call sites), and Finding 3 in particular delivered the
+largest single-fix wall-clock improvement of the three (-23% to -35% on top of Findings 1+2,
+depending on workload) — a cumulative **44-51% reduction from the original baseline**
+(95.6s → 53.2s on the 50,000,000-iteration loop). `runtime.kevent` (thread scheduling
+overhead, not memory reclamation) remains the largest single line item in every profile,
+confirming — as Finding 5 predicted — that Finding 4 is still the most direct remaining lever
+on total allocation rate.

@@ -409,10 +409,12 @@ func addMissingFields(model *data.Struct, structMap map[string]any, c *Context) 
 						structMap[fieldName] = existingValue
 					} else {
 						typeString := data.TypeOf(existingValue).String()
-						ui.Log(ui.TraceLogger, "trace.struct.init", ui.A{
-							"name":    fieldName,
-							"oldtype": typeString,
-							"newtype": ft})
+						if ui.IsActive(ui.TraceLogger) {
+							ui.Log(ui.TraceLogger, "trace.struct.init", ui.A{
+								"name":    fieldName,
+								"oldtype": typeString,
+								"newtype": ft})
+						}
 
 						return c.runtimeError(errors.ErrInvalidType, typeString)
 					}

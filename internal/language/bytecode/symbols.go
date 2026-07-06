@@ -123,11 +123,13 @@ func pushScopeByteCode(c *Context, i any) error {
 	c.symbols = newTable
 	c.mux.Unlock()
 
-	ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
-		"thread": c.threadID,
-		"name":   c.symbols.Name,
-		"parent": oldName,
-		"flag":   isBoundary})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.push.table.boundary", ui.A{
+			"thread": c.threadID,
+			"name":   c.symbols.Name,
+			"parent": oldName,
+			"flag":   isBoundary})
+	}
 
 	// If there was an argument list in our former parent, copy in into the new
 	// current table. This moves argument values across the function call boundary.

@@ -37,8 +37,10 @@ func NewChannel(size int) *Channel {
 		channel: make(chan any, size),
 	}
 
-	ui.Log(ui.TraceLogger, "trace.chan.create", ui.A{
-		"name": c.String()})
+	if ui.IsActive(ui.TraceLogger) {
+		ui.Log(ui.TraceLogger, "trace.chan.create", ui.A{
+			"name": c.String()})
+	}
 
 	return c
 }
@@ -85,8 +87,10 @@ func (c *Channel) Receive() (any, error) {
 		return nil, errors.ErrNilPointerReference
 	}
 
-	ui.Log(ui.TraceLogger, "trace.chan.receive", ui.A{
-		"name": c.String()})
+	if ui.IsActive(ui.TraceLogger) {
+		ui.Log(ui.TraceLogger, "trace.chan.receive", ui.A{
+			"name": c.String()})
+	}
 
 	// Read isOpen under the lock so we get a consistent view. len() on
 	// a channel is safe to call concurrently without a lock.

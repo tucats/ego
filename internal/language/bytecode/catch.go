@@ -131,11 +131,13 @@ func handleCatch(c *Context, err error) error {
 			// If its a call frame, put it back on the stack and then do the formal
 			// pop of a call frame, which updates the state of the context.
 			if f, ok := v.(*CallFrame); ok {
-				ui.Log(ui.TraceLogger, "trace.unwind", ui.A{
-					"thread": c.threadID,
-					"module": f.Module,
-					"line":   f.Line,
-					"frame":  f.symbols.Name})
+				if ui.IsActive(ui.TraceLogger) {
+					ui.Log(ui.TraceLogger, "trace.unwind", ui.A{
+						"thread": c.threadID,
+						"module": f.Module,
+						"line":   f.Line,
+						"frame":  f.symbols.Name})
+				}
 
 				if err := c.push(v); err != nil {
 					return err

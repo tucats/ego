@@ -247,8 +247,10 @@ var FunctionDictionary = map[string]FunctionDefinition{
 // Function names are distinct in the map because they always have the "()"
 // suffix for the key.
 func AddBuiltins(symbolTable *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "pkg.builtins.table", ui.A{
-		"name": symbolTable.Name})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.builtins.table", ui.A{
+			"name": symbolTable.Name})
+	}
 
 	extensions := settings.GetBool(defs.ExtensionsEnabledSetting)
 
@@ -434,7 +436,7 @@ func extensions() bool {
 
 	if v, ok := symbols.RootSymbolTable.Get(defs.ExtensionsVariable); ok {
 		f, err = data.Bool(v)
-		if err != nil {
+		if err != nil && ui.IsActive(ui.InternalLogger) {
 			ui.Log(ui.InternalLogger, "runtime.extensions.error", ui.A{
 				"name":  defs.ExtensionsVariable,
 				"error": err})

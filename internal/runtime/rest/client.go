@@ -53,8 +53,10 @@ func newClient(endpoint string, body any) (*resty.Client, error) {
 
 	if u, err := url.Parse(endpoint); err == nil {
 		if util.InList(u.Path, openServices...) {
-			ui.Log(ui.RestLogger, "rest.no.token", ui.A{
-				"path": endpoint})
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "rest.no.token", ui.A{
+					"path": endpoint})
+			}
 
 			useToken = false
 		}
@@ -86,10 +88,13 @@ func newClient(endpoint string, body any) (*resty.Client, error) {
 			}
 
 			client.SetAuthToken(token)
-			printableToken := egostrings.TruncateMiddle(token, 10)
 
-			ui.Log(ui.RestLogger, "rest.auth.bearer", ui.A{
-				"token": printableToken})
+			if ui.IsActive(ui.RestLogger) {
+				printableToken := egostrings.TruncateMiddle(token, 10)
+
+				ui.Log(ui.RestLogger, "rest.auth.bearer", ui.A{
+					"token": printableToken})
+			}
 		}
 	}
 
@@ -199,8 +204,10 @@ func GetTLSConfiguration() (*tls.Config, error) {
 						tlsConfiguration = &tls.Config{RootCAs: roots}
 					}
 				} else {
-					ui.Log(ui.RestLogger, "rest.cert.read.error", ui.A{
-						"error": err})
+					if ui.IsActive(ui.RestLogger) {
+						ui.Log(ui.RestLogger, "rest.cert.read.error", ui.A{
+							"error": err})
+					}
 
 					tlsConfiguration = &tls.Config{}
 					kind = "using system default config"
@@ -208,8 +215,10 @@ func GetTLSConfiguration() (*tls.Config, error) {
 			}
 		}
 
-		ui.Log(ui.RestLogger, "rest.tls", ui.A{
-			"status": kind})
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.tls", ui.A{
+				"status": kind})
+		}
 	}
 
 	tlsConfigurationMutex.Unlock()

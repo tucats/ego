@@ -69,9 +69,11 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	t, err := tokens.Unwrap(data.String(args.Get(0)), session)
 	if err != nil {
-		ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
-			"session": session,
-			"error":   err})
+		if ui.IsActive(ui.AuthLogger) {
+			ui.Log(ui.AuthLogger, "auth.invalid.encoding", ui.A{
+				"session": session,
+				"error":   err})
+		}
 
 		return nil, errors.New(err)
 	}
@@ -79,9 +81,11 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Has the expiration passed?
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		ui.Log(ui.AuthLogger, "auth.expired", ui.A{
-			"session": session,
-			"id":      t.TokenID})
+		if ui.IsActive(ui.AuthLogger) {
+			ui.Log(ui.AuthLogger, "auth.expired", ui.A{
+				"session": session,
+				"id":      t.TokenID})
+		}
 
 		err = errors.ErrExpiredToken.In("Extract.expired")
 	}

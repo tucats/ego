@@ -42,8 +42,10 @@ func logByteCode(c *Context, i any) error {
 		return err
 	}
 
-	ui.Log(class, "logging.bytecode", ui.A{
-		"message": msg})
+	if ui.IsActive(class) {
+		ui.Log(class, "logging.bytecode", ui.A{
+			"message": msg})
+	}
 
 	return nil
 }

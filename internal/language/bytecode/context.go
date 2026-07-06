@@ -309,7 +309,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	static := defs.NoTypeEnforcement
 
 	if s, found := s.Get(defs.TypeCheckingVariable); found {
-		if static, err = data.Int(s); err != nil {
+		if static, err = data.Int(s); err != nil && ui.IsActive(ui.InternalLogger) {
 			ui.Log(ui.InternalLogger, "runtime.typing.error", ui.A{
 				"name":  defs.TypeCheckingVariable,
 				"error": err})
@@ -328,7 +328,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	extensions := false
 
 	if v, ok := s.Root().Get(defs.ExtensionsVariable); ok {
-		if extensions, err = data.Bool(v); err != nil {
+		if extensions, err = data.Bool(v); err != nil && ui.IsActive(ui.InternalLogger) {
 			ui.Log(ui.InternalLogger, "runtime.extensions.error", ui.A{
 				"name":  defs.ExtensionsVariable,
 				"error": err})
@@ -480,8 +480,10 @@ func (c *Context) SetGlobal(name string, value any) error {
 // os.Stdout (flag=true, the default) or captured in an internal buffer
 // (flag=false). Captured output can be retrieved with GetOutput.
 func (c *Context) EnableConsoleOutput(flag bool) *Context {
-	ui.Log(ui.AppLogger, "app.console.enable", ui.A{
-		"flag": flag})
+	if ui.IsActive(ui.AppLogger) {
+		ui.Log(ui.AppLogger, "app.console.enable", ui.A{
+			"flag": flag})
+	}
 
 	if !flag {
 		c.captureBuffer = &strings.Builder{}
@@ -784,9 +786,11 @@ func (c *Context) popSymbolTable() error {
 	defer c.mux.Unlock()
 
 	if c.symbols.IsRoot() {
-		ui.Log(ui.SymbolLogger, "symbols.nil.parent", ui.A{
-			"thread": c.threadID,
-			"table":  c.symbols.Name})
+		if ui.IsActive(ui.SymbolLogger) {
+			ui.Log(ui.SymbolLogger, "symbols.nil.parent", ui.A{
+				"thread": c.threadID,
+				"table":  c.symbols.Name})
+		}
 
 		return errors.ErrInternalCompiler.Context("Attempt to pop root table")
 	}
@@ -808,10 +812,12 @@ func (c *Context) popSymbolTable() error {
 		c.symbols = c.symbols.Parent()
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.pop.table", ui.A{
-		"thread": c.threadID,
-		"name":   name,
-		"child":  c.symbols.Name})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.pop.table", ui.A{
+			"thread": c.threadID,
+			"name":   name,
+			"child":  c.symbols.Name})
+	}
 
 	return nil
 }

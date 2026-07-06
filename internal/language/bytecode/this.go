@@ -91,9 +91,11 @@ func getThisByteCode(c *Context, i any) error {
 		c.setAlways(this, v)
 		c.symbols.MarkEphemeral(this)
 
-		ui.Log(ui.TraceLogger, "trace.getthis", ui.A{
-			"name":  this,
-			"value": data.Format(v)})
+		if ui.IsActive(ui.TraceLogger) {
+			ui.Log(ui.TraceLogger, "trace.getthis", ui.A{
+				"name":  this,
+				"value": data.Format(v)})
+		}
 	}
 
 	return nil

@@ -307,8 +307,10 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 	}
 
 	if c.flags.closed {
-		ui.Log(ui.CompilerLogger, "compiler.closed", ui.A{
-			"id": c.id})
+		if ui.IsActive(ui.CompilerLogger) {
+			ui.Log(ui.CompilerLogger, "compiler.closed", ui.A{
+				"id": c.id})
+		}
 
 		return nil, nil
 	}
@@ -337,7 +339,7 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 	if c.parent == nil {
 		err = c.Errors()
 
-		if err == nil && !c.flags.silent {
+		if err == nil && !c.flags.silent && ui.IsActive(ui.CompilerLogger) {
 			ui.Log(ui.CompilerLogger, "compiler.success", ui.A{
 				"name":     c.b.Name(),
 				"duration": time.Since(c.started).String()})
@@ -403,8 +405,10 @@ func (c *Compiler) Errors() error {
 		}
 
 		// Report the errors to the log if active.
-		ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
-			"error": err.Error()})
+		if ui.IsActive(ui.CompilerLogger) {
+			ui.Log(ui.CompilerLogger, "compiler.errors", ui.A{
+				"error": err.Error()})
+		}
 	}
 
 	// Reset the deferred error list.
@@ -540,12 +544,14 @@ func (c *Compiler) Compile(name string, t *tokenizer.Tokenizer) (*bytecode.ByteC
 	// Iterate over the tokens, compiling each statement.
 	for !c.t.AtEnd() {
 		if err := c.compileStatement(); err != nil {
-			end := time.Now()
+			if ui.IsActive(ui.CompilerLogger) {
+				end := time.Now()
 
-			ui.Log(ui.CompilerLogger, "compiler.error", ui.A{
-				"name":     name,
-				"error":    err,
-				"duration": end.Sub(start).String()})
+				ui.Log(ui.CompilerLogger, "compiler.error", ui.A{
+					"name":     name,
+					"error":    err,
+					"duration": end.Sub(start).String()})
+			}
 
 			c.t.DumpTokens()
 
@@ -569,8 +575,10 @@ func (c *Compiler) AddBuiltins(packageName string) bool {
 	pkg, _ := bytecode.GetPackage(packageName)
 	syms := symbols.GetPackageSymbolTable(pkg)
 
-	ui.Log(ui.PackageLogger, "pkg.builtins.package.add", ui.A{
-		"name": packageName})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.builtins.package.add", ui.A{
+			"name": packageName})
+	}
 
 	functionNames := make([]string, 0)
 	for k := range builtins.FunctionDictionary {
@@ -698,8 +706,10 @@ func (c *Compiler) Symbols() *symbols.SymbolTable {
 // found in the ego path) are imported, versus just essential
 // packages like "util".
 func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
-	ui.Log(ui.PackageLogger, "pkg.compiler.autoimport", ui.A{
-		"flag": all})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.compiler.autoimport", ui.A{
+			"flag": all})
+	}
 
 	// We do not want to dump tokens during import processing (there are a lot)
 	// so turn of token logging during auto-import, and set it back on when done.
@@ -814,9 +824,11 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 				ui.Log(ui.InternalLogger, "pkg.auto.import", nil)
 			}
 
-			ui.Log(ui.InternalLogger, "pkg.auto.import.error", ui.A{
-				"name":  packageName,
-				"error": err.Error()})
+			if ui.IsActive(ui.InternalLogger) {
+				ui.Log(ui.InternalLogger, "pkg.auto.import.error", ui.A{
+					"name":  packageName,
+					"error": err.Error()})
+			}
 		}
 	}
 

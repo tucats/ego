@@ -103,8 +103,10 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 	rows := rowsVal.(*goSQL.Rows)
 	active := rows.Next()
 
-	ui.Log(ui.DBLogger, "db.rows.next", ui.A{
-		"flag": active})
+	if ui.IsActive(ui.DBLogger) {
+		ui.Log(ui.DBLogger, "db.rows.next", ui.A{
+			"flag": active})
+	}
 
 	return active, nil
 }
@@ -151,8 +153,10 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if err := rows.Scan(rowTemplate...); err != nil {
-		ui.Log(ui.DBLogger, "db.rows.scan.error", ui.A{
-			"err": err.Error()})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.rows.scan.error", ui.A{
+				"err": err.Error()})
+		}
 
 		return data.NewList(nil, errors.New(err)), errors.New(err)
 	}
@@ -164,14 +168,18 @@ func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 			rowMap[v] = rowValues[i]
 		}
 
-		ui.Log(ui.DBLogger, "db.rows.scan.struct", ui.A{
-			"rpw": rowMap})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.rows.scan.struct", ui.A{
+				"rpw": rowMap})
+		}
 
 		return data.NewList(data.NewStructFromMap(rowMap), nil), nil
 	}
 
-	ui.Log(ui.DBLogger, "db.rows.scan.array", ui.A{
-		"row": rowValues})
+	if ui.IsActive(ui.DBLogger) {
+		ui.Log(ui.DBLogger, "db.rows.scan.array", ui.A{
+			"row": rowValues})
+	}
 
 	// If we got arguments that are arrays of pointers, it's the classic (Go) style of
 	// a r.Scan() call. Write the values back to the caller's arguments.

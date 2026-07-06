@@ -91,7 +91,7 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 					nativeName = parts[len(parts)-1]
 				}
 
-				if nativeName != k {
+				if nativeName != k && ui.IsActive(ui.InternalLogger) {
 					ui.Log(ui.InternalLogger, "pkg.map.function.mismatch", ui.A{
 						"package":  name,
 						"expected": k,
@@ -100,7 +100,7 @@ func NewPackageFromMap(name string, items map[string]any) *Package {
 				}
 			}
 
-			if fn.Declaration.Name != k {
+			if fn.Declaration.Name != k && ui.IsActive(ui.InternalLogger) {
 				ui.Log(ui.InternalLogger, "pkg.map.function.mismatch", ui.A{
 					"package":  name,
 					"expected": k,

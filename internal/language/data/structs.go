@@ -214,9 +214,11 @@ func NewStructOfTypeFromMap(t *Type, m map[string]any) *Struct {
 
 				v, err = Coerce(v, InstanceOfType(f))
 				if err != nil {
-					ui.Log(ui.InternalLogger, "runtime.struct.coerce", ui.A{
-						"name":  k,
-						"error": err})
+					if ui.IsActive(ui.InternalLogger) {
+						ui.Log(ui.InternalLogger, "runtime.struct.coerce", ui.A{
+							"name":  k,
+							"error": err})
+					}
 
 					continue
 				}

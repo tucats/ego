@@ -209,7 +209,7 @@ func (b *ByteCode) optimize(count int) (int, error) {
 					// to overlap this address, which is a conservative safe choice.
 					if dest, err := data.Int(i.Operand); err == nil {
 						branchTargets[dest] = true
-					} else {
+					} else if ui.IsActive(ui.OptimizerLogger) {
 						ui.Log(ui.OptimizerLogger, "optimizer.branch.malformed", ui.A{
 							"operand": i.Operand})
 					}
@@ -381,9 +381,11 @@ func (b *ByteCode) optimize(count int) (int, error) {
 						"name": b.name})
 				}
 
-				ui.Log(ui.OptimizerLogger, "optimizer.found", ui.A{
-					"name": b.name,
-					"desc": optimization.Description})
+				if ui.IsActive(ui.OptimizerLogger) {
+					ui.Log(ui.OptimizerLogger, "optimizer.found", ui.A{
+						"name": b.name,
+						"desc": optimization.Description})
+				}
 
 				// Build the concrete replacement instruction list by resolving
 				// any placeholder or register references in the Replacement template.
@@ -726,7 +728,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	for i := 0; i < len(instructions); i++ {
 		if instructions[i].Operation > BranchInstructions {
 			destination, err := data.Int(instructions[i].Operand)
-			if err != nil {
+			if err != nil && ui.IsActive(ui.OptimizerLogger) {
 				ui.Log(ui.OptimizerLogger, "optimizer.dest.error", ui.A{
 					"error": err})
 			}

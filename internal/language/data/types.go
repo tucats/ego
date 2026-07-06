@@ -1186,8 +1186,10 @@ func (t *Type) Embed(name string, embedType *Type) *Type {
 	if t.kind != StructKind {
 		bt := t.BaseType()
 		if bt == nil || bt.kind != StructKind {
-			ui.Log(ui.InfoLogger, "runtime.type.must.be.struct", ui.A{
-				"type": t})
+			if ui.IsActive(ui.InfoLogger) {
+				ui.Log(ui.InfoLogger, "runtime.type.must.be.struct", ui.A{
+					"type": t})
+			}
 
 			return t
 		}

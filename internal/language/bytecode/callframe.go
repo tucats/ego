@@ -98,10 +98,12 @@ func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 
 	_ = c.push(frame)
 
-	ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
-		"thread": c.threadID,
-		"name":   table.Name,
-		"parent": c.symbols.Name})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.push.table", ui.A{
+			"thread": c.threadID,
+			"name":   table.Name,
+			"parent": c.symbols.Name})
+	}
 
 	c.framePointer = c.stackPointer
 	c.result = nil
@@ -138,10 +140,12 @@ func (c *Context) callFramePop() error {
 	}
 
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
-		ui.Log(ui.SymbolLogger, "symbols.pop.table", ui.A{
-			"thread": c.threadID,
-			"name":   c.symbols.Name,
-			"child":  callFrame.symbols.Name})
+		if ui.IsActive(ui.SymbolLogger) {
+			ui.Log(ui.SymbolLogger, "symbols.pop.table", ui.A{
+				"thread": c.threadID,
+				"name":   c.symbols.Name,
+				"child":  callFrame.symbols.Name})
+		}
 
 		// Are any of the call frames we are popping off are clones of
 		// packages where we might need to re-write exported values? If
@@ -216,9 +220,11 @@ func updatePackageFromLocalSymbols(c *Context, st *symbols.SymbolTable) {
 		return
 	}
 
-	ui.Log(ui.SymbolLogger, "symbols.rewrite.pkg", ui.A{
-		"package": packageName,
-		"table":   st.Name})
+	if ui.IsActive(ui.SymbolLogger) {
+		ui.Log(ui.SymbolLogger, "symbols.rewrite.pkg", ui.A{
+			"package": packageName,
+			"table":   st.Name})
+	}
 
 	// Is there a global scope? If not, no action.
 	global := c.symbols.FindNextScope()
@@ -284,12 +290,14 @@ func (c *Context) SetBreakOnReturn() {
 
 	callFrameValue := c.stack[c.framePointer-1]
 	if callFrame, ok := callFrameValue.(*CallFrame); ok {
-		ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
-			"thread": c.threadID})
+		if ui.IsActive(ui.SymbolLogger) {
+			ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
+				"thread": c.threadID})
+		}
 
 		callFrame.breakOnReturn = true
 		c.stack[c.framePointer-1] = callFrame
-	} else {
+	} else if ui.IsActive(ui.SymbolLogger) {
 		ui.Log(ui.SymbolLogger, "symbols.breakreturn.error", ui.A{
 			"thread": c.threadID})
 	}

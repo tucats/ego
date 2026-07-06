@@ -43,9 +43,11 @@ func (c *Context) RunFromAddress(addr int) error {
 	c.programCounter = addr
 	c.running.Store(true)
 
-	ui.Log(ui.TraceLogger, "trace.tracing", ui.A{
-		"name":   c.name,
-		"thread": c.threadID})
+	if ui.IsActive(ui.TraceLogger) {
+		ui.Log(ui.TraceLogger, "trace.tracing", ui.A{
+			"name":   c.name,
+			"thread": c.threadID})
+	}
 
 	// Set a SIGINT trap to stop execution if needed.
 	intChan := make(chan os.Signal, 1)
@@ -69,9 +71,11 @@ func (c *Context) RunFromAddress(addr int) error {
 			c.interrupted.Store(true)
 
 		default:
-			ui.Log(ui.InternalLogger, "signal", ui.A{
-				"thread": c.threadID,
-				"signal": sig.String()})
+			if ui.IsActive(ui.InternalLogger) {
+				ui.Log(ui.InternalLogger, "signal", ui.A{
+					"thread": c.threadID,
+					"signal": sig.String()})
+			}
 		}
 	}(c)
 
@@ -130,9 +134,11 @@ func (c *Context) RunFromAddress(addr int) error {
 
 			// If it's not a flow-of-control signal, trace the error.
 			if !errors.Equals(err, errors.ErrSignalDebugger) && !errors.Equals(err, errors.ErrStop) {
-				ui.Log(ui.TraceLogger, "trace.return", ui.A{
-					"thread": c.threadID,
-					"error":  err})
+				if ui.IsActive(ui.TraceLogger) {
+					ui.Log(ui.TraceLogger, "trace.return", ui.A{
+						"thread": c.threadID,
+						"error":  err})
+				}
 			}
 
 			if err != nil {
@@ -143,9 +149,11 @@ func (c *Context) RunFromAddress(addr int) error {
 		}
 	}
 
-	ui.Log(ui.TraceLogger, "trace.end", ui.A{
-		"name":   c.name,
-		"thread": c.threadID})
+	if ui.IsActive(ui.TraceLogger) {
+		ui.Log(ui.TraceLogger, "trace.end", ui.A{
+			"name":   c.name,
+			"thread": c.threadID})
+	}
 
 	// If we ended successfully, but a go routine we started failed with an error, let's
 	// report that as our error state.

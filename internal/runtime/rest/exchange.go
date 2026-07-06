@@ -41,9 +41,11 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// find the server that should be prepended to the endpoint string to form the full URL
 	url := applyDefaultServer(endpoint)
 
-	ui.Log(ui.RestLogger, "rest.method", ui.A{
-		"method":   strings.ToUpper(method),
-		"endpoint": url})
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.method", ui.A{
+			"method":   strings.ToUpper(method),
+			"endpoint": url})
+	}
 
 	// Initialize and configure a new REST client. This also validates that there is a token if one is
 	// needed, and it (probably) hasn't expired yet.
@@ -57,8 +59,10 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 
 	// If there is a language specified, add it to the request header.
 	if lang := os.Getenv(defs.EgoLangEnv); lang != "" {
-		ui.Log(ui.RestLogger, "rest.language", ui.A{
-			"language": lang})
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.language", ui.A{
+				"language": lang})
+		}
 
 		r.Header.Add("Accept-Language", lang)
 	}
@@ -77,8 +81,10 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		}
 
 		bodyText := string(b)
-		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
-			"body": bodyText})
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+				"body": bodyText})
+		}
 
 		r.SetBody([]byte(egostrings.JSONMinify(bodyText)))
 	}
@@ -107,22 +113,26 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// Execute the request. This could wait for a while...
 	restResponse, err = r.Execute(method, url)
 	if err != nil {
-		status := 0
-		if restResponse != nil {
-			status = restResponse.StatusCode()
-		}
+		if ui.IsActive(ui.RestLogger) {
+			status := 0
+			if restResponse != nil {
+				status = restResponse.StatusCode()
+			}
 
-		ui.Log(ui.RestLogger, "rest.error", ui.A{
-			"error":  err,
-			"status": status})
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
+				"error":  err,
+				"status": status})
+		}
 
 		return errors.New(err)
 	}
 
 	status := restResponse.StatusCode()
 
-	ui.Log(ui.RestLogger, "rest.status", ui.A{
-		"status": status})
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.status", ui.A{
+			"status": status})
+	}
 
 	// Dump out the response headers if we are in REST logging mode.
 	if ui.IsActive(ui.RestLogger) {
@@ -161,9 +171,11 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 					t := reflect.TypeOf(response).String()
 					// We ignore a rest status response on a shutdown. Anything else gets an error
 					if t != "*defs.RestStatusResponse" || status != 503 {
-						ui.Log(ui.RestLogger, "rest.payload.media", ui.A{
-							"type": t,
-							"body": string(bodyBytes)})
+						if ui.IsActive(ui.RestLogger) {
+							ui.Log(ui.RestLogger, "rest.payload.media", ui.A{
+								"type": t,
+								"body": string(bodyBytes)})
+						}
 
 						return errors.New(errors.ErrInvalidType).Context(t)
 					}
@@ -175,8 +187,10 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		if err == nil {
 			// Check for both "msg" and "message" fields
 			if msg, found := errorResponse["msg"]; found {
-				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
-					"body": string(restResponse.Body())})
+				if ui.IsActive(ui.RestLogger) {
+					ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+						"body": string(restResponse.Body())})
+				}
 
 				// Don't throw the server stopped error as a real error. A 503 status
 				// always means the server we just hit is shutting down, regardless of
@@ -189,11 +203,16 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 			}
 
 			if msg, found := errorResponse["message"]; found {
-				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
-					"body": string(restResponse.Body())})
-				ui.Log(ui.InternalLogger, "json.field.error", ui.A{
-					"found":    "message",
-					"expected": "msg"})
+				if ui.IsActive(ui.RestLogger) {
+					ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+						"body": string(restResponse.Body())})
+				}
+
+				if ui.IsActive(ui.InternalLogger) {
+					ui.Log(ui.InternalLogger, "json.field.error", ui.A{
+						"found":    "message",
+						"expected": "msg"})
+				}
 
 				// Don't throw the server stopped error as a real error. See the comment
 				// on the identical check above.
@@ -215,7 +234,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 				} else {
 					t := reflect.TypeOf(response).String()
 					// We ignore a text status response on a shutdown. Anything else gets an error
-					if t != "*defs.RestStatusResponse" || status != 503 {
+					if (t != "*defs.RestStatusResponse" || status != 503) && ui.IsActive(ui.RestLogger) {
 						ui.Log(ui.RestLogger, "rest.payload.media", ui.A{
 							"type": t,
 							"body": string(bodyBytes)})
@@ -246,15 +265,19 @@ func applyMediaTypes(mediaTypes []string, r *resty.Request) {
 	if len(mediaTypes) > 0 {
 		receiveMediaType = mediaTypes[0]
 
-		ui.Log(ui.RestLogger, "rest.apply.media", ui.A{
-			"media": receiveMediaType})
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.apply.media", ui.A{
+				"media": receiveMediaType})
+		}
 	}
 
 	if len(mediaTypes) > 1 {
 		sendMediaType = mediaTypes[1]
 
-		ui.Log(ui.RestLogger, "rest.apply.media", ui.A{
-			"media": sendMediaType})
+		if ui.IsActive(ui.RestLogger) {
+			ui.Log(ui.RestLogger, "rest.apply.media", ui.A{
+				"media": sendMediaType})
+		}
 	}
 
 	r.Header.Add("Content-Type", sendMediaType)

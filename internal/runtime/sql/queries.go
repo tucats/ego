@@ -45,13 +45,17 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	query := data.String(args.Get(0))
 
 	if tx == nil {
-		ui.Log(ui.DBLogger, "db.query.rows", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.query.rows", ui.A{
+				"sql": query})
+		}
 
 		rows, e2 = db.Query(query, args.Elements()[1:]...)
 	} else {
-		ui.Log(ui.DBLogger, "db.tx.query.rows", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.tx.query.rows", ui.A{
+				"sql": query})
+		}
 
 		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
@@ -108,13 +112,17 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	query := data.String(args.Get(0))
 
 	if tx == nil {
-		ui.Log(ui.DBLogger, "db.query.rows", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.query.rows", ui.A{
+				"sql": query})
+		}
 
 		rows, e2 = db.Query(query, args.Elements()[1:]...)
 	} else {
-		ui.Log(ui.DBLogger, "db.tx.query.rows", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.tx.query.rows", ui.A{
+				"sql": query})
+		}
 
 		rows, e2 = tx.Query(query, args.Elements()[1:]...)
 	}
@@ -164,9 +172,11 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 		size = len(mapResult)
 	}
 
-	ui.Log(ui.DBLogger, "db.scan", ui.A{
-		"count": size,
-		"flag":  asStruct})
+	if ui.IsActive(ui.DBLogger) {
+		ui.Log(ui.DBLogger, "db.scan", ui.A{
+			"count": size,
+			"flag":  asStruct})
+	}
 
 	if err := rows.Close(); err != nil {
 		return data.NewList(nil, errors.New(err)), nil
@@ -225,13 +235,17 @@ func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	query := data.String(args.Get(0))
 
 	if tx == nil {
-		ui.Log(ui.DBLogger, "db.exec", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.exec", ui.A{
+				"sql": query})
+		}
 
 		sqlResult, err = db.Exec(query, args.Elements()[1:]...)
 	} else {
-		ui.Log(ui.DBLogger, "db.tx.exec", ui.A{
-			"sql": query})
+		if ui.IsActive(ui.DBLogger) {
+			ui.Log(ui.DBLogger, "db.tx.exec", ui.A{
+				"sql": query})
+		}
 
 		sqlResult, err = tx.Exec(query, args.Elements()[1:]...)
 	}
@@ -244,8 +258,10 @@ func execute(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	this.SetAlways(rowCountFieldName, int(r))
 
-	ui.Log(ui.DBLogger, "db.rows", ui.A{
-		"count": r})
+	if ui.IsActive(ui.DBLogger) {
+		ui.Log(ui.DBLogger, "db.rows", ui.A{
+			"count": r})
+	}
 
 	if err != nil {
 		err = errors.New(err)

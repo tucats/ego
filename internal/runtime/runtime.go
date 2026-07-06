@@ -41,9 +41,11 @@ import (
 // AddPackages adds in the pre-defined package receivers to the given symbol
 // table. Note that these packages _must_ hav already been imported.
 func AddPackages(s *symbols.SymbolTable) {
-	ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
-		"name": s.Name,
-		"id":   s.ID()})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
+			"name": s.Name,
+			"id":   s.ID()})
+	}
 
 	for _, name := range []string{
 		"base64",
@@ -74,8 +76,10 @@ func AddPackages(s *symbols.SymbolTable) {
 	} {
 		pkg := packages.Get(name)
 		if pkg == nil {
-			ui.Log(ui.InternalLogger, "pkg.runtime.packages.missing", ui.A{
-				"name": name})
+			if ui.IsActive(ui.InternalLogger) {
+				ui.Log(ui.InternalLogger, "pkg.runtime.packages.missing", ui.A{
+					"name": name})
+			}
 
 			continue
 		}
@@ -93,10 +97,12 @@ func AddPackage(name string) *data.Package {
 
 	s := symbols.NewRootSymbolTable(name)
 
-	ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
-		"package": name,
-		"name":    s.Name,
-		"id":      s.ID()})
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.runtime.packages", ui.A{
+			"package": name,
+			"name":    s.Name,
+			"id":      s.ID()})
+	}
 
 	switch name {
 	case "base64":
@@ -178,8 +184,10 @@ func AddPackage(name string) *data.Package {
 		p = uuid.UUIDPackage
 
 	default:
-		ui.Log(ui.PackageLogger, "pkg.runtime.unknown", ui.A{
-			"name": name})
+		if ui.IsActive(ui.PackageLogger) {
+			ui.Log(ui.PackageLogger, "pkg.runtime.unknown", ui.A{
+				"name": name})
+		}
 	}
 
 	if p != nil {

@@ -55,11 +55,13 @@ func InitProfileDefaults(class int) error {
 				serverToken = strings.ToLower(hex.EncodeToString(token))
 			}
 
-			shortToken := egostrings.TruncateMiddle(serverToken, 10)
+			if ui.IsActive(ui.AppLogger) {
+				shortToken := egostrings.TruncateMiddle(serverToken, 10)
 
-			ui.Log(ui.AppLogger, "app.new.server.token", ui.A{
-				"token":   shortToken,
-				"profile": settings.ActiveProfileName()})
+				ui.Log(ui.AppLogger, "app.new.server.token", ui.A{
+					"token":   shortToken,
+					"profile": settings.ActiveProfileName()})
+			}
 		}
 	}
 

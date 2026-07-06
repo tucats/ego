@@ -610,8 +610,10 @@ func (m *Map) ToMap() map[string]any {
 		return result
 	}
 
-	ui.Log(ui.InternalLogger, "runtime.map.tomap", ui.A{
-		"type": TypeOf(m.KeyType).String()})
+	if ui.IsActive(ui.InternalLogger) {
+		ui.Log(ui.InternalLogger, "runtime.map.tomap", ui.A{
+			"type": TypeOf(m.KeyType).String()})
+	}
 
 	return nil
 }
