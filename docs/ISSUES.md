@@ -212,7 +212,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-42](#BUG-42) | BUG | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
 | [BUG-43](#BUG-43) | BUG | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | ✓ |
 | [BUG-44](#BUG-44) | BUG | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | ✓ |
-| [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
+| [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | BUG | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
 | [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
@@ -488,7 +488,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-42](#BUG-42) | HIGH | `io.ReadFile`/`io.WriteFile` are documented but do not exist; the real functions live in `os` with different names/signatures. | ✓ |
 | [BUG-43](#BUG-43) | MEDIUM | `defer receiver.Method(args)` eagerly captures its arguments but not the receiver. | ✓ |
 | [BUG-44](#BUG-44) | MEDIUM | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | ✓ |
-| [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | |
+| [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | MEDIUM | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
 | [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
@@ -4531,6 +4531,61 @@ propagating to the parent context
 (`if err != nil && !err.Is(errors.ErrStop)`), so the fatal-panic path and the
 falls-off-the-end-normally path are indistinguishable to the parent, and
 `parentCtx.running.Store(false)` (`goroutine.go:186`) is never reached for the panic case.
+
+**Resolution (July 2026):**  
+Fixed at the root: `unwindPanic()`'s final, unrecovered-panic fallback in
+`internal/language/bytecode/panic.go` now returns a new, distinguishable error —
+`errors.ErrPanicUnhandled` (key `panic.unhandled`, added to `internal/errors/messages.go`
+and localized in all three `messages_*.txt` files) — instead of `errors.ErrStop`. The panic
+message and call-frame dump this function already printed are unchanged; only the *returned
+error value* changed.
+
+No other file needed to change. Every caller that treats an unrecovered panic differently
+from a normal stop already does so purely by checking `errors.Equals(err, errors.ErrStop)`
+(or `err.Is(errors.ErrStop)`); once the fallback stopped returning that literal sentinel,
+each of the following started doing the right thing automatically:
+
+- **`internal/language/bytecode/goroutine.go`'s `GoRoutine`** — `if err != nil &&
+  !err.Is(errors.ErrStop)` now correctly recognizes an unrecovered panic as a real error, sets
+  `parentCtx.goErr`, and calls `parentCtx.running.Store(false)`, stopping the program that
+  launched the goroutine — this was the reported bug.
+- **`internal/commands/run.go`'s `runCompiledCode`** — its own `errors.Equals(err,
+  errors.ErrStop)` check no longer swallows an unrecovered *top-level* (non-goroutine) panic
+  either. This was a closely related defect beyond the literal bug report, found while
+  verifying the fix: `ego run` on a program whose `main()` panics without recovering
+  previously printed the panic message but still exited **0**; it now exits non-zero, matching
+  real Go (`go run` exits 2 on an unrecovered panic).
+- **`internal/language/bytecode/defer.go`'s `invokeDeferredStatements` /
+  `invokePanicDefers`** — both already special-case `errors.ErrStop` as "the deferred call's
+  own mini-context finished normally, don't propagate." A deferred function that itself
+  panics without recovering now correctly propagates as a real error too, instead of being
+  silently absorbed — the same class of bug, one level further down the call stack.
+
+**Tests added:**
+
+- `internal/language/bytecode/panic_test.go` (new file):
+  `Test_unwindPanic_UnrecoveredAtTopLevel_ReturnsPanicUnhandledNotStop` (the core fix, tested
+  in isolation) and `Test_unwindPanic_RecoveredAtTopLevel_StillReturnsErrStop` (confirms the
+  *other*, unrelated `errors.ErrStop` return in the same function — a panic that a deferred
+  `recover()` successfully catches at the outermost frame — was correctly left untouched).
+- `internal/language/bytecode/goroutine_test.go` (new file):
+  `Test_GoRoutine_UnrecoveredPanic_StopsParentContext`,
+  `Test_GoRoutine_OrdinaryError_StopsParentContext` (regression guard for the behavior that
+  was already correct), and `Test_GoRoutine_NormalCompletion_DoesNotStopParentContext`
+  (regression guard for the ordinary success path).
+- `internal/language/compiler/goroutine_test.go` (new file):
+  `TestBUG45UnrecoveredGoroutinePanicStopsMainProgram`, an end-to-end test using the exact
+  reproducer above, compiled and run for real via `RunString`/`runWithTimeout` (the same
+  timeout-guarded helper introduced for BUG-25), confirming the 50,000,000-iteration loop
+  is aborted rather than completing; and
+  `TestBUG45OrdinaryGoroutineErrorStillStopsMainProgram` as a regression guard.
+- `examples/panic.ego` (new file): a runnable, heavily-commented sample program demonstrating
+  both a recovered goroutine panic (no effect on `main()`) and an unrecovered one (halts the
+  whole program before its own long-running loop can finish), added at the user's request in
+  place of an Ego-level `@test` for this scenario — an unrecovered panic's whole *point* is
+  that it stops the running program, which makes it unsuitable to exercise from inside the
+  shared `ego test tests/` suite (it would stop the test runner's own shared top-level context
+  partway through, silently skipping every test that runs after it in file order).
 
 ---
 

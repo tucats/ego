@@ -234,5 +234,27 @@ func (c *Context) unwindPanic() error {
 	fmt.Fprintf(c.output, "panic: %s\n", panicMessage)
 	fmt.Fprint(c.output, c.FormatFrames(IncludeSymbolTableNames))
 
-	return errors.ErrStop
+	// Fix BUG-45: this used to return errors.ErrStop, the same sentinel used
+	// for a context that finished running normally (fell off the end of its
+	// bytecode, or executed an explicit Stop). Every caller up the chain --
+	// most importantly GoRoutine in goroutine.go, which decides whether an
+	// unrecovered error in a goroutine should stop the parent program -- has
+	// always treated ErrStop as "nothing went wrong, don't propagate this."
+	// That made an unrecovered panic in a goroutine indistinguishable from
+	// the goroutine simply finishing its work, so the parent program kept
+	// running to completion instead of stopping, even though real Go
+	// terminates the entire process when any goroutine panics unrecovered --
+	// arguably more severe than an ordinary propagated error, never less.
+	// The same collapse also affected a deferred function that itself panics
+	// without recovering (invokeDeferredStatements / invokePanicDefers in
+	// defer.go both specifically special-case ErrStop as "swallow, don't
+	// propagate") and even the top-level (non-goroutine) program, whose own
+	// run loop wrapper (internal/commands/run.go's runCompiledCode) treats
+	// ErrStop as "the program ended, not an error" and exits 0.
+	//
+	// Returning a distinct, non-ErrStop error here fixes all three call
+	// sites at once, with no changes needed at any of them: each already
+	// only special-cases errors.ErrStop specifically, so anything else
+	// naturally falls through their existing "this is a real error" path.
+	return errors.New(errors.ErrPanicUnhandled).Context(panicMessage)
 }

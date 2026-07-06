@@ -480,6 +480,7 @@ package.set=error interno, intento no válido de almacenar un símbolo en un paq
 package.stmt=declaración de paquete faltante
 panic=pánico
 panic.active=pánico en progreso
+panic.unhandled=pánico no manejado
 param.conflict=parámetros conflictivos especificados
 parens=paréntesis faltante
 parm.count=número incorrecto de parámetros

@@ -473,6 +473,7 @@ package.set=erreur interne, tentative invalide de stocker un symbole dans un paq
 package.stmt=instruction de paquet manquante
 panic=panique
 panic.active=panique en cours
+panic.unhandled=panique non gérée
 param.conflict=paramètres conflictuels spécifiés
 parens=parenthèse manquante
 parm.count=nombre de paramètres incorrect

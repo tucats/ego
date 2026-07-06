@@ -1,0 +1,115 @@
+// panic.ego - sample program
+//
+// This illustrates how panic() and recover() behave when a goroutine
+// (an Ego "go routine", launched with the "go" statement) is involved,
+// which is subtler than the single-threaded case.
+//
+// The short version, matching real Go:
+//
+//   - A panic inside a goroutine that IS recovered (via a deferred
+//     recover() call) only affects that goroutine. The main program,
+//     and any other goroutines, are completely unaffected and keep
+//     running normally.
+//
+//   - A panic inside a goroutine that is NOT recovered is fatal to the
+//     ENTIRE program, not just that one goroutine. Real Go's runtime
+//     terminates the whole process the instant any goroutine panics
+//     without recovering - it does not matter whether the main
+//     goroutine (the "main()" function) itself ever sees an error
+//     returned to it. Ego now matches this behavior: an unrecovered
+//     panic in a goroutine stops the main program too, exactly as if
+//     an ordinary runtime error (like division by zero) had propagated
+//     out of the goroutine - only more severe, never less.
+//
+// Historical note: earlier versions of Ego printed the panic message from
+// an unrecovered goroutine panic, but then let the main program keep
+// running to completion regardless - see docs/ISSUES.md#BUG-45 for the
+// full writeup of that defect and how it was fixed. This example exists
+// to demonstrate (and help guard against ever regressing) the corrected
+// behavior.
+
+import "fmt"
+import "sync"
+
+// worker is used for the FIRST scenario below: it panics, but recovers
+// from its own panic before returning, via a deferred function that
+// calls recover(). Because the panic is recovered, this is no different
+// from the goroutine returning normally - the main program never knows
+// anything went wrong.
+func recoveringWorker(wg *sync.WaitGroup) {
+    defer wg.Done()
+
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("recoveringWorker: recovered from panic:", r)
+        }
+    }()
+
+    fmt.Println("recoveringWorker: about to panic...")
+    panic("panic from recoveringWorker")
+
+    // This line is unreachable - panic() immediately transfers control
+    // to the deferred functions above. It is left here only to make the
+    // point explicit: nothing after panic() in the same function ever runs.
+    fmt.Println("recoveringWorker: this is never printed")
+}
+
+// doomedWorker is used for the SECOND scenario below: it panics and does
+// NOT recover. The "done" channel is used purely to synchronize with
+// main(): it lets main() know the goroutine has actually started (and is
+// about to panic) before main() moves on to its own long-running work,
+// so the example reliably demonstrates that the panic interrupts that
+// work rather than racing against it.
+func doomedWorker(done chan) {
+    done <- true
+
+    fmt.Println("doomedWorker: about to panic, and this time nothing will recover it...")
+    panic("unrecovered panic from doomedWorker")
+}
+
+func main() {
+    // --- Scenario 1: a panic that IS recovered inside the goroutine ---
+    //
+    // Expected output includes "recovered from panic: ..." from the
+    // goroutine, followed by "main: scenario 1 complete" - proving the
+    // panic was fully contained within the goroutine and never affected
+    // main() at all.
+    var wg sync.WaitGroup
+
+    wg.Add(1)
+    go recoveringWorker(&wg)
+    wg.Wait()
+
+    fmt.Println("main: scenario 1 complete - a recovered goroutine panic did not affect main()")
+    fmt.Println()
+
+    // --- Scenario 2: a panic that is NOT recovered inside the goroutine ---
+    //
+    // This is the important, and less obvious, case: watch what happens
+    // to the rest of main() below.
+    done := make(chan, 1)
+    go doomedWorker(done)
+
+    // Wait for confirmation that the goroutine has started (and is about
+    // to panic) before doing more work, so the interruption below is not
+    // a race - it is a reliable demonstration of the fix.
+    _ = <-done
+
+    fmt.Println("main: doomedWorker has started; beginning a long-running loop...")
+
+    // In real Go, and now in Ego, this loop is never allowed to finish:
+    // the unrecovered panic in doomedWorker terminates the whole program
+    // first. If you see "main: loop finished!" printed below, or the
+    // program's exit code is 0, that is BUG-45 all over again.
+    count := 0
+    for i := 0; i < 50000000; i++ {
+        count = count + 1
+    }
+
+    fmt.Println("main: loop finished! count =", count)
+    fmt.Println("main: scenario 2 complete")
+
+    // This point is never reached: the program stops (with a non-zero
+    // exit code) as soon as doomedWorker's panic goes unrecovered - well
+    // before the loop above would ever have completed.
+}
