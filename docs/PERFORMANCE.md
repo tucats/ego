@@ -630,6 +630,125 @@ change, *because* it would also proportionally shrink the cost of Finding 1 and 
 (fewer scope creations means fewer `uuid.New()` calls and — indirectly — fewer coercions
 triggered by re-entering a scope's variable initialization).
 
+### Resolution (July 2026) — Finding 4
+
+Implemented the recommendation above. The compiler now decides, once, at the point it
+compiles each `for` loop's body, whether the body can ever observe cross-iteration variable
+identity. If not, it pushes a single scope for the whole loop (outside the region the loop
+branches back to) instead of letting the loop body's own `PushScope`/`PopScope` re-execute
+every iteration, and skips the BUG-30 copy-in/copy-out prologue/epilogue entirely, since there
+is no per-iteration scope for them to splice into.
+
+**The predicate.** `loopBodyNeedsFreshScopePerIteration` (new, in `for.go`) is a deliberately
+conservative token-level scan of the loop body — not a full semantic analysis — run once at
+compile time, before the body is compiled. It forces the old (always-fresh) behavior whenever
+the body contains, anywhere:
+
+- a function literal, a `go` statement, or a `defer` (the exact BUG-30 closure-capture case), or
+- a `:=` or `var` declaration directly at the body's own top-level (brace-depth 1) scope — reusing
+  one scope for the whole loop would make the second iteration's declaration collide with the
+  first's (`symbols.ErrSymbolExists`).
+
+Being overly cautious here only costs a missed optimization opportunity, never correctness, so
+two safe-but-imprecise cases are deliberately left undetected-as-safe rather than chased for
+full precision: a declaration nested inside an `if`/`switch`/etc. block (actually scoped to
+that nested block, not the loop body, but the depth-1-only check does not special-case it out)
+and a nested `for`/named-init `switch`'s own `:=` sitting at depth 1 before *its own* opening
+brace (actually scoped to the nested construct). Both are simply treated as disqualifying.
+
+**Files modified:**
+
+- `internal/language/compiler/for.go` — added `loopBodyNeedsFreshScopePerIteration` and a
+  large comment block explaining the design; `compileForBody` gained a `perIterationScope
+  bool` parameter (when `false`, it emits no `PushScope`/`PopScope` of its own, and the caller
+  must not pass a prologue/epilogue — enforced with an internal-compiler-error check);
+  `simpleFor`, `rangeFor`, and `iterationFor` each now compute the predicate once, before the
+  loop's repeat point, and either hoist a single `PushScope`/matching `PopScope` pair around
+  the whole loop (skipping the prologue/epilogue) or fall back to the unchanged, always-fresh
+  per-iteration path. `conditionalFor` was deliberately left unmodified — it has its own
+  existing "was the loop body actually empty" check that inspects the last emitted
+  instruction for a `PopScope`, and reworking that check to stay correct under a
+  sometimes-hoisted `PopScope` was judged not worth the risk for one of four loop forms.
+- `internal/language/compiler/for_finding4_test.go` (new) — `TestLoopBodyNeedsFreshScopePerIteration`
+  (10 cases directly exercising the predicate: empty body, arithmetic-only, plain reassignment,
+  top-level `:=`/`var`, a declaration nested inside an `if`, a function literal, `go`, `defer`,
+  a nested `for` loop, and malformed input) and `TestFinding4LocalDeclarationsAcrossIterations`
+  (4 cases confirming a body-local `:=` declaration still computes correctly across iterations
+  for the classic, range, and simple `for{}` forms).
+- `tests/flow/for_shared_scope.ego` (new) — 8 `@test` blocks: local declarations across
+  iterations for all three optimized loop forms, a loop with both a local declaration *and* a
+  closure together (both disqualifying conditions active at once), nested `for` loops each
+  declaring their own local, and a range loop with a local declaration plus a `break`.
+- `docs/ISSUES.md` — new `BUG-63` entry (see below).
+
+**Bug found while doing this work, but *not* fixed as part of this task:** while writing the
+Ego-level regression test for `simpleFor`, a test using a bare `n++` statement produced a
+wrong result. Root-caused to `docs/ISSUES.md` **BUG-63**: `compileAssignment`'s auto-increment
+handling for a simple variable (`internal/language/compiler/assignment.go`) builds its own
+inline `Load, Push 1, Add/Sub, Dup, Store` sequence and returns without ever appending the
+`storeLValue` fragment's `DropToMarker` instruction, permanently leaking a "let" stack marker
+onto the runtime stack every time a bare `x++`/`x--` *statement* executes (as opposed to `i++`
+used inside a classic `for` loop's increment clause, which is compiled through a different,
+unaffected code path in `for.go`). Confirmed, by stashing every Finding 4 change and
+re-running the reproducer against the unmodified compiler, that this bug predates and is
+completely unrelated to Finding 4. Documented in `docs/ISSUES.md` as `BUG-63` rather than
+fixed here, to keep this change scoped and independently reviewable; the new Finding 4 tests
+use `n = n + 1` instead of a bare `n++` statement to avoid it.
+
+**Correctness verification:** beyond the new unit and Ego-level tests described above, the
+full pre-existing BUG-30 regression suite — `internal/language/compiler/for_loopvar_test.go`
+(15 cases) and `tests/flow/for_loopvar.ego` (12 `@test` blocks) — continues to pass unmodified,
+confirming closures still correctly capture distinct per-iteration values in every loop form
+this change touches.
+
+**Re-profiling results:** the same workloads and methodology from Section 1 were used again,
+this time comparing against the **post-Finding-3** baseline (the state after all three prior
+fixes), since Findings 1-3 were already implemented and re-profiled in that order.
+
+| Workload | After Finding 1+2+3 | After Finding 1+2+3+4 | Change (this fix alone) | Change (cumulative from original) |
+| - | - | - | - | - |
+| Tight loop (20M iterations) | 20.95s | 10.83s | **-48%** | **-71%** |
+| Function calls (3M calls) | 8.46s | 6.35s | **-25%** | **-63%** |
+| 50,000,000-iteration loop (the example that started this audit) | 53.2s | 27.25s | **-49%** | **-72%** |
+
+This is the largest single-fix improvement of the four implemented so far, and lines up almost
+exactly with the prediction in "What it costs" above: `pushScopeByteCode` and
+`NewChildSymbolTable` — 12.49% of tight-loop time and 7.65-10.64% of function-call time before
+this change — **no longer appear anywhere in the tight-loop profile at all** (neither function
+shows up even with `-nodefraction=0`, confirming they are now called at most once for the
+entire 20,000,000-iteration loop, not once per iteration). The function-call workload's smaller
+percentage improvement is expected and correct: its loop body (`count = add1(count)`) has no
+closures or top-level declarations, so the *loop's own* scope is eliminated exactly like the
+tight loop — but every call to `add1` still pushes its own, separate, per-call function scope
+(`callBytecodeFunction`/`callFramePush`), which Finding 4 does not touch and was never intended
+to. That remaining, expected cost shows up directly in the post-fix profile:
+`pushScopeByteCode` still accounts for 3.82% (0.32s) of the function-call workload's total, all
+of it now attributable to the function-call machinery rather than the loop.
+
+```text
+(tight loop, after Finding 1+2+3+4 — pushScopeByteCode / NewChildSymbolTable no longer appear)
+     0.55s  5.51%  5.51%      8.64s 86.49%  github.com/tucats/ego/internal/language/bytecode.(*Context).RunFromAddress
+     0.64s  6.41% 42.84%      0.64s  6.41%  runtime.madvise
+     0.18s  1.80% 75.98%      0.18s  1.80%  runtime.kevent
+```
+
+**Honest assessment:** unlike Findings 1-3, where the wall-clock improvement was noticeably
+smaller than the targeted cost's own reduction (a symptom of GC/scheduler overhead dominating,
+per Finding 5), this fix's wall-clock improvement (-48% to -49% on the two loop-only workloads)
+tracks its targeted cost's elimination almost one-to-one. This is consistent with Finding 5's
+thesis in reverse: because `pushScopeByteCode` and `NewChildSymbolTable` were themselves a
+direct *cause* of allocation-driven GC/scheduler pressure (a brand-new `SymbolTable` plus its
+backing `map[string]*SymbolAttribute`, 20,000,000 times over), removing the allocation removes
+its downstream GC cost too, rather than just moving CPU time from one line item to another.
+`runtime.kevent` and `runtime.madvise` remain present in every profile (thread scheduling and
+memory management are not eliminated, just triggered far less often), but neither is anywhere
+near the dominant cost it was in the Finding 3 profile.
+
+**Test status:** `go build ./...`, `go vet ./...`, and the full `go test ./...` suite are clean
+after this change. All 1,150 tests in `ego test tests/` pass (the pre-existing 1,142 plus the 8
+new `tests/flow/for_shared_scope.ego` cases). The new Go unit tests in `for_finding4_test.go`
+pass, alongside the full pre-existing `for_loopvar_test.go` suite (BUG-30 regression coverage).
+
 ---
 
 ## 6. Finding 5 (systemic) — garbage-collector and scheduler overhead dominates wall-clock time
@@ -755,21 +874,23 @@ depend on exactly this kind of compile-time-resolved storage to be worthwhile at
 | 1 | `uuid.New()` per scope creation | ~50% of scope-creation cost; scope creation is 8-12% of total | Low | Low | Implementation bug (wrong tool for the job) | **Fixed** (July 2026) — see Resolution above |
 | 2 | `InstanceOfType` linear scan | ~5.5% of total, ~63% of that is the scan itself | Low | Low | Implementation bug (should be O(1)) | **Fixed** (July 2026) — see Resolution above |
 | 3 | Eager `ui.Log` argument construction | ~1.6%+ confirmed at 2 call sites; 248 sites swept codebase-wide | Low (hot spots) / Medium (full sweep) | Low | Implementation inconsistency | **Fixed** (July 2026) — see Resolution above |
-| 4 | Per-iteration loop scopes | 8-12% of total | Medium-High | Medium (compiler analysis) | Working as designed (BUG-30); optimizable | Open |
+| 4 | Per-iteration loop scopes | 8-12% of total | Medium-High | Medium (compiler analysis) | Working as designed (BUG-30); optimizable | **Fixed** (July 2026) — see Resolution above |
 | 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1, 2, and 3 — see Resolution sections above |
 | 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
 | 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → 4, in that order, re-profiling after each
-change using the same `--pprof` workloads described in Section 1 to confirm the expected
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~, in that order, re-profiling after
+each change using the same `--pprof` workloads described in Section 1 to confirm the expected
 compounding effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing.
-Findings 1, 2, and 3 are all done; re-profiling after each (see their Resolution sections)
-confirms each predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no
-longer appears in the profile on this path at all; `ui.Log` argument construction is now
-uniformly guarded across 248 inspected call sites), and Finding 3 in particular delivered the
-largest single-fix wall-clock improvement of the three (-23% to -35% on top of Findings 1+2,
-depending on workload) — a cumulative **44-51% reduction from the original baseline**
-(95.6s → 53.2s on the 50,000,000-iteration loop). `runtime.kevent` (thread scheduling
-overhead, not memory reclamation) remains the largest single line item in every profile,
-confirming — as Finding 5 predicted — that Finding 4 is still the most direct remaining lever
-on total allocation rate.
+Findings 1-4 are all done; re-profiling after each (see their Resolution sections) confirms
+each predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no longer
+appears in the profile on this path at all; `ui.Log` argument construction is now uniformly
+guarded across 248 inspected call sites; `pushScopeByteCode`/`NewChildSymbolTable` no longer
+appear at all in a loop with no closures or top-level declarations). Finding 4 delivered the
+largest single-fix wall-clock improvement of the four (-48% to -49% on top of Findings 1+2+3,
+depending on workload) — a cumulative **63-72% reduction from the original baseline**
+(95.6s → 27.25s on the 50,000,000-iteration loop). `runtime.kevent` and `runtime.madvise`
+(thread scheduling and memory management) remain present in every profile but are no longer
+anywhere near the dominant cost they were before Finding 4, leaving Finding 7's architectural
+symbol-resolution redesign as the only remaining lever of comparable size — at very
+substantially higher effort and risk than any of the four fixes completed so far.

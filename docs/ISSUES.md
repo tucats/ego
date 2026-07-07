@@ -230,6 +230,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
+| [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -506,6 +507,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
+| [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | |
 
 ---
 
@@ -5438,6 +5440,79 @@ no case for it at all, so the tokenizer's `<-` token simply falls through to "un
 token" wherever it is encountered outside those two call sites. The current workaround is to
 always assign a channel receive to a temporary variable on its own line before using the
 result: `v := <-ch; fmt.Println(v)`.
+
+---
+
+<a id="BUG-63"></a>
+
+### BUG-63 — A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls
+
+**Severity:** HIGH
+
+**Description:**  
+Found while investigating an unexpected result while working on PERFORMANCE.md Finding 4
+(this bug is unrelated to Finding 4 and reproduces identically on an unmodified compiler —
+verified by stashing all Finding 4 changes and re-running the reproducer). A standalone
+`x++` or `x--` statement, where `x` is a plain variable (not an array element or struct
+field), never cleans up a "let" stack marker that was pushed onto the runtime stack while
+compiling it. The marker stays on the stack indefinitely, so a later function call in the
+same scope (or an enclosing one) can receive extra, unexpected values on its argument/return
+stack — most visibly as a "did not return the expected number of values" error, but any
+other stack-shape-sensitive operation downstream of the leaked marker is equally at risk.
+
+**Reproducer:**
+
+```go
+package main
+
+import "fmt"
+
+func run() int {
+    n := 0
+    n++
+
+    return n
+}
+
+func main() {
+    fmt.Println(run())
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 13), function did not return the expected number of values
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+1
+```
+
+**Notes:**  
+Root cause: `internal/language/compiler/assignment.go`, `compileAssignment`'s auto-increment
+handling. `c.assignmentTarget()` (`internal/language/compiler/lvalue.go`) always emits
+`Push, NewStackMarker("let")` directly into `c.b` before returning a separate `storeLValue`
+bytecode fragment; for a simple variable, that fragment is exactly `[Store x, DropToMarker]`
+— the `DropToMarker` is what balances the marker `assignmentTarget` already emitted. In the
+normal (non-auto) assignment path, `storeLValue` is appended in full, so the marker is always
+drained. But in the "isSimpleLValue" branch of the auto-increment case (`assignment.go`,
+around the comment "Simple variable: x++ or x--"), the code builds its own inline
+`Load, Push 1, Add/Sub, Dup, Store` sequence and returns immediately — `storeLValue`,
+containing the only `DropToMarker` for the marker `assignmentTarget` pushed, is discarded
+entirely, only its first instruction's operand (the variable name) is ever read. Every plain
+`x++`/`x--` statement compiled this way leaks one "let" marker onto the runtime stack.
+This is why the increment clause of a classic `for i := 0; i < n; i++ { ... }` loop is
+unaffected: `internal/language/compiler/for.go`'s `iterationFor` does not call
+`compileAssignment` for the increment clause — it calls `c.assignmentTarget()` directly and
+appends the resulting `incrementStore` (Store + DropToMarker) in full itself, so that call
+site was never exposed to this bug. Only a bare `x++`/`x--` used as its own statement (not as
+a for-loop's increment clause) triggers it. The qualified-lvalue branch (`a[i]++`,
+`s.field++`) is unaffected for the same reason: it explicitly appends the full `storeLValue`
+(see the comment "DropToMarker at its end cleans up the 'let' stack marker").
 
 ---
 

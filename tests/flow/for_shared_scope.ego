@@ -1,0 +1,123 @@
+// Tests for PERFORMANCE.md Finding 4: a for-loop body that contains neither
+// a closure-capturing construct (function literal, "go", "defer") nor a
+// top-level ":="/"var" declaration now shares a single runtime scope for the
+// whole loop instead of getting a fresh scope every iteration. See the large
+// comment block above compileForBody in internal/language/compiler/for.go
+// for the full design.
+//
+// These tests specifically guard the correctness risk identified while
+// implementing the optimization: a loop body that DOES declare a local
+// variable every iteration must still work correctly, because
+// loopBodyNeedsFreshScopePerIteration is required to detect that case and
+// fall back to the old (always fresh) per-iteration scope behavior.
+//
+// Note: these tests use "n = n + 1" rather than "n++" as a standalone
+// statement, to avoid an unrelated, pre-existing bug (docs/ISSUES.md
+// BUG-63) where a bare "x++"/"x--" statement leaks a "let" stack marker.
+
+@test "flow: classic for loop, local decl, no closures"
+{
+    total := 0
+    for i := 0; i < 5; i++ {
+        doubled := i * 2
+        total = total + doubled
+    }
+
+    @assert total == 20
+}
+
+@test "flow: range loop, local decl, no closures"
+{
+    items := []int{1, 2, 3, 4}
+    total := 0
+    for _, v := range items {
+        squared := v * v
+        total = total + squared
+    }
+
+    @assert total == 30
+}
+
+@test "flow: simple for{} loop, local decl, no closures"
+{
+    total := 0
+    n := 0
+    for {
+        doubled := n * 2
+        total = total + doubled
+        n = n + 1
+        if n >= 4 {
+            break
+        }
+    }
+
+    @assert total == 12
+}
+
+@test "flow: for loop, no decl, no closures, sums right"
+{
+    total := 0
+    for i := 0; i < 1000; i++ {
+        total = total + i
+    }
+
+    @assert total == 499500
+}
+
+@test "flow: nested if in loop body declares right"
+{
+    total := 0
+    for i := 0; i < 5; i++ {
+        if i%2 == 0 {
+            bonus := i * 10
+            total = total + bonus
+        }
+    }
+
+    @assert total == 60
+}
+
+@test "flow: loop with local decl and closure is right"
+{
+    // Both disqualifying conditions at once: this must still force the old,
+    // always-fresh-per-iteration behavior, so both the closures AND the
+    // repeated local declaration remain correct.
+    var funcs []any
+    for i := 0; i < 3; i++ {
+        doubled := i * 2
+        funcs = append(funcs, func() int { return doubled })
+    }
+
+    @assert funcs[0]() == 0
+    @assert funcs[1]() == 2
+    @assert funcs[2]() == 4
+}
+
+@test "flow: nested for loops, decls in both bodies"
+{
+    total := 0
+    for i := 0; i < 3; i++ {
+        rowBase := i * 100
+        for j := 0; j < 3; j++ {
+            cell := rowBase + j
+            total = total + cell
+        }
+    }
+
+    @assert total == 909
+}
+
+@test "flow: range loop with local decl and break"
+{
+    items := []int{10, 20, 30, 40, 50}
+    total := 0
+    for _, v := range items {
+        if v == 40 {
+            break
+        }
+        tripled := v * 3
+        total = total + tripled
+    }
+
+    @assert total == 180
+}

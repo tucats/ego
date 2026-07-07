@@ -153,6 +153,124 @@ func loopVariableEpilogue(name string) *bytecode.ByteCode {
 	return b
 }
 
+// ---------------------------------------------------------------------------
+// PERFORMANCE.md Finding 4: skip the per-iteration scope when it's safe to
+//
+// Every one of this compiler's four "for" forms gives the loop body its own
+// scope, and - because the body's PushScope instruction sits inside the
+// repeated (branched-back-to) region of the bytecode - that scope is a
+// genuinely new symbols.SymbolTable, freshly allocated, on EVERY iteration.
+// Profiling (see PERFORMANCE.md) showed this is one of the single largest
+// costs in any loop-heavy Ego program: allocating a table plus its backing
+// map, over and over, for loops that never needed distinct per-iteration
+// identity in the first place.
+//
+// A fresh scope every iteration is only ever OBSERVABLE, and therefore only
+// ever necessary, in two situations (see loopBodyNeedsFreshScopePerIteration
+// for the full reasoning):
+//
+//  1. The body creates a closure (a function literal, a "go" statement, or a
+//     "defer") that could capture a loop variable by reference and outlive
+//     the iteration that created it - this is exactly BUG-30/Go 1.22+'s
+//     per-iteration-variable requirement.
+//  2. The body directly declares a new local (":=" or "var") in its own
+//     top-level scope - reusing one scope for the whole loop would make the
+//     second iteration's declaration collide with the first's.
+//
+// When NEITHER applies, this compiler now pushes exactly ONE scope for the
+// entire loop (before the loop starts, popped after it ends) instead of one
+// per iteration - matching, per the recommendation in PERFORMANCE.md, how
+// these same loops behaved before the BUG-30 fix ever existed. The loop
+// control variable is read and written directly from the loop's own outer
+// scope in this case, so the BUG-30 copy-in/copy-out prologue/epilogue are
+// not needed either.
+//
+// This optimization is applied in simpleFor, rangeFor, and iterationFor.
+// conditionalFor is deliberately left unmodified: it has its own delicate
+// "was the loop body actually empty" validation that inspects the LAST
+// bytecode instruction the body emitted and specifically checks whether it
+// was a PopScope, and reworking that check to remain correct under a
+// sometimes-hoisted PopScope was judged not worth the added risk for one of
+// four loop forms.
+// ---------------------------------------------------------------------------
+
+// loopBodyNeedsFreshScopePerIteration decides whether a for-loop's body
+// requires a genuinely new runtime scope on every iteration, or whether it
+// is safe to share a single scope for the entire loop instead. It must be
+// called with the tokenizer positioned exactly as compileForBody expects to
+// be called - i.e. Peek(1) is the body's opening "{" (or the combined "{}"
+// empty-block token).
+//
+// This is a deliberately conservative token-level scan, not a full semantic
+// analysis: being overly cautious here only costs a missed optimization
+// opportunity, never correctness, so a handful of safe-but-hard-to-detect
+// patterns are simply left unoptimized (see the two inline notes below)
+// rather than chasing full precision.
+func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
+	pos := c.t.Mark()
+
+	if pos >= len(c.t.Tokens) {
+		return true
+	}
+
+	// Match compileForBody's own handling: an empty body can't declare
+	// anything or create a closure, so it never needs a fresh scope.
+	if c.t.Tokens[pos].Is(tokenizer.EmptyBlockToken) {
+		return false
+	}
+
+	if !c.t.Tokens[pos].Is(tokenizer.BlockBeginToken) {
+		// Not actually a block - malformed input. Take the safe path here
+		// and let compileForBody's own validation report the real error.
+		return true
+	}
+
+	depth := 0
+
+	for i := pos; i < len(c.t.Tokens); i++ {
+		tok := c.t.Tokens[i]
+
+		switch {
+		case tok.Is(tokenizer.BlockBeginToken):
+			depth++
+
+		case tok.Is(tokenizer.BlockEndToken):
+			depth--
+
+			// depth == 0 means this closed the body's own opening brace -
+			// the whole body has been scanned with nothing disqualifying.
+			if depth == 0 {
+				return false
+			}
+
+		case tok.Is(tokenizer.FuncToken), tok.Is(tokenizer.GoToken), tok.Is(tokenizer.DeferToken):
+			// KNOWN CONSERVATIVE GAP: this flags every "defer", even a plain
+			// "defer namedFunc(alreadyEvaluatedArgs)" that (per BUG-16/
+			// FLOW-M4 and BUG-43) freezes its callee and arguments at defer
+			// time and so does not actually need per-iteration variable
+			// identity. Telling that apart from a closure-capturing
+			// "defer func(){...}()" would require parsing the deferred
+			// expression, not just scanning for the keyword.
+			return true
+
+		case depth == 1 && (tok.Is(tokenizer.DefineToken) || tok.Is(tokenizer.VarToken)):
+			// KNOWN CONSERVATIVE GAP: a nested "for i := range x {...}" or
+			// "switch n := f(); n {...}" starting directly inside this body
+			// has its own ":="/"var" BEFORE its own opening "{", which this
+			// scan sees at depth == 1 even though that name is actually
+			// declared in the NESTED construct's own scope (both "for" and
+			// named-init "switch" push their own scope), not this body's.
+			// Treating it as disqualifying is always safe, just occasionally
+			// unnecessary.
+			return true
+		}
+	}
+
+	// Unbalanced braces: malformed input the tokenizer would already have
+	// rejected elsewhere. Take the safe path.
+	return true
+}
+
 // compileForBody compiles a for-loop's body block (the caller must not have
 // consumed the opening "{" yet), optionally splicing prologue and/or
 // epilogue bytecode immediately inside the body's own scope: prologue runs
@@ -167,11 +285,27 @@ func loopVariableEpilogue(name string) *bytecode.ByteCode {
 // the only place that needs it, keeps the common case (compileBlock with no
 // splicing) simple to read.
 //
+// perIterationScope controls whether THIS call emits its own PushScope/
+// PopScope pair around the body at all (see the Finding-4 comment block
+// above). When false, the caller has already pushed a single scope that
+// will remain open for the entire loop, and will pop it once after the loop
+// ends; compileForBody then emits no scope instructions of its own, and
+// prologue/epilogue must both be nil (there is no per-iteration copy to
+// splice in or out when there is no per-iteration scope).
+//
 // If epilogue is nil, this function emits the ordinary closing PopScope
 // itself, exactly like compileRequiredBlock. If epilogue is non-nil, it MUST
 // contain its own PopScope (see loopVariableEpilogue) - this function will
 // not add a second one.
-func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode) error {
+func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIterationScope bool) error {
+	if !perIterationScope && (prologue != nil || epilogue != nil) {
+		// Programming error in a caller, not a compile-time user error: a
+		// nil prologue/epilogue is what makes it safe to skip the
+		// per-iteration scope in the first place (see the Finding-4 comment
+		// block above compileForBody's doc comment).
+		return c.compileError(errors.ErrInternalCompiler).Context("compileForBody: perIterationScope=false with non-nil prologue/epilogue")
+	}
+
 	// An empty body ("for i := range x {}") has no statements that could
 	// possibly create a closure over the loop variable, or reassign it.
 	// Skip the scope (and the prologue/epilogue) entirely, matching
@@ -186,7 +320,10 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode) error {
 
 	c.blockDepth++
 	c.PushSymbolScope()
-	c.b.Emit(bytecode.PushScope)
+
+	if perIterationScope {
+		c.b.Emit(bytecode.PushScope)
+	}
 
 	if prologue != nil {
 		c.b.Append(prologue)
@@ -207,7 +344,7 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode) error {
 
 	if epilogue != nil {
 		c.b.Append(epilogue)
-	} else {
+	} else if perIterationScope {
 		c.b.Emit(bytecode.PopScope)
 	}
 
@@ -327,12 +464,23 @@ func (c *Compiler) simpleFor() error {
 	// Make a new scope and emit the test expression.
 	c.loopStackPush(forLoopType)
 
+	// Fix (PERFORMANCE.md Finding 4): a bare "for {}" has no loop-control
+	// variable at all, so there is no prologue/epilogue to worry about -
+	// just decide once, up front, whether the body needs a fresh scope
+	// every iteration (see loopBodyNeedsFreshScopePerIteration) or can share
+	// a single scope for the whole loop.
+	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
+
+	if !needsFreshScope {
+		c.b.Emit(bytecode.PushScope)
+	}
+
 	// Remember top of loop. There is no looping or condition code associated
 	// with the top of the loop.
 	b1 := c.b.Mark()
 
 	// Compile loop body
-	if err := c.compileRequiredBlock(false); err != nil {
+	if err := c.compileForBody(nil, nil, needsFreshScope); err != nil {
 		return err
 	}
 
@@ -353,6 +501,10 @@ func (c *Compiler) simpleFor() error {
 	}
 
 	c.loopStackPop()
+
+	if !needsFreshScope {
+		c.b.Emit(bytecode.PopScope)
+	}
 
 	return nil
 }
@@ -466,34 +618,51 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 
 	c.b.Emit(bytecode.RangeInit, indexName, valueName)
 
+	// PERFORMANCE.md Finding 4: decide, once, before the loop's repeat point,
+	// whether the body needs a genuinely fresh scope (and the BUG-30 copy-in
+	// prologue below) on every iteration, or whether a single scope for the
+	// whole loop is safe (see loopBodyNeedsFreshScopePerIteration). When it's
+	// safe, push that single scope here, outside the region the loop
+	// branches back to, instead of letting compileForBody push a new one
+	// every iteration.
+	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
+
+	if !needsFreshScope {
+		c.b.Emit(bytecode.PushScope)
+	}
+
 	// Remember top of loop
 	b1 := c.b.Mark()
 
 	// Get new index and value. Destination is as-yet unknown.
 	c.b.Emit(bytecode.RangeNext, 0)
 
-	// Fix BUG-30: RangeNext (above) always updates the index/value names in
-	// this loop's single outer scope, in place, on every iteration - so
-	// without a fresh per-iteration copy, a closure created in the body
-	// would capture that one ever-changing variable instead of a snapshot of
-	// its value for this particular iteration. Build a prologue that copies
-	// each range variable actually in use into the body's own (freshly
-	// recreated every iteration) scope. There is no epilogue: unlike a
-	// classic "for" loop's index, reassigning a range loop's index or value
-	// variable inside the body has no effect on which element is visited
-	// next in Go, so there is nothing to copy back out.
-	prologue := bytecode.New("range variable copy-in")
+	var prologue *bytecode.ByteCode
 
-	if indexName != "" {
-		prologue.Append(loopVariablePrologue(indexName))
-	}
+	if needsFreshScope {
+		// Fix BUG-30: RangeNext (above) always updates the index/value names in
+		// this loop's single outer scope, in place, on every iteration - so
+		// without a fresh per-iteration copy, a closure created in the body
+		// would capture that one ever-changing variable instead of a snapshot of
+		// its value for this particular iteration. Build a prologue that copies
+		// each range variable actually in use into the body's own (freshly
+		// recreated every iteration) scope. There is no epilogue: unlike a
+		// classic "for" loop's index, reassigning a range loop's index or value
+		// variable inside the body has no effect on which element is visited
+		// next in Go, so there is nothing to copy back out.
+		prologue = bytecode.New("range variable copy-in")
 
-	if valueName != "" {
-		prologue.Append(loopVariablePrologue(valueName))
+		if indexName != "" {
+			prologue.Append(loopVariablePrologue(indexName))
+		}
+
+		if valueName != "" {
+			prologue.Append(loopVariablePrologue(valueName))
+		}
 	}
 
 	// Loop body
-	if err := c.compileForBody(prologue, nil); err != nil {
+	if err := c.compileForBody(prologue, nil, needsFreshScope); err != nil {
 		return err
 	}
 
@@ -514,6 +683,13 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	}
 
 	c.loopStackPop()
+
+	if !needsFreshScope {
+		// Matches the single body-wide PushScope emitted above, before b1.
+		c.b.Emit(bytecode.PopScope)
+	}
+
+	// Matches compileFor's outer "ForScope" PushScope.
 	c.b.Emit(bytecode.PopScope)
 
 	return nil
@@ -651,6 +827,20 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		}
 	}
 
+	// PERFORMANCE.md Finding 4: decide, once, before the loop's repeat point,
+	// whether the body needs a genuinely fresh scope (and, if the counter is
+	// a simple variable, the BUG-30 copy-in/copy-out below) on every
+	// iteration, or whether a single scope for the whole loop is safe (see
+	// loopBodyNeedsFreshScopePerIteration). This is independent of whether
+	// the loop counter itself is a simple variable: it depends only on what
+	// the body does. When it's safe, push that single scope here, before b1,
+	// so it is outside the region the loop branches back to.
+	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
+
+	if !needsFreshScope {
+		c.b.Emit(bytecode.PushScope)
+	}
+
 	// Top of loop body starts here
 	b1 := c.b.Mark()
 
@@ -661,47 +851,49 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	// Fix BUG-30: give this loop's body a fresh, per-iteration copy of the
-	// loop counter, so that a closure created in the body captures this
-	// iteration's value instead of the one persistent variable the
-	// increment/condition clauses above read and write (see the block
-	// comment above loopVariablePrologue for the full explanation).
-	//
-	// This only applies when the loop counter is a plain named variable.
-	// indexStore's shape depends on whether the initializer used ":=" or "=":
-	//
-	//	for i := 0; ...   ->  [0] SymbolCreate "i"   [1] Store "i"
-	//	for i = 0; ...    ->  [0] Store "i"
-	//
-	// (this differs from incrementStore's simple-vs-qualified check further
-	// below, which never sees a SymbolCreate because "i++" cannot declare a
-	// new variable). A qualified lvalue counter (e.g.
-	// "for a[0] = 0; a[0] < n; a[0]++") starts with a Load of the base
-	// container instead, and has no single variable name to copy into a
-	// shadow scope, so it is left exactly as before.
 	var prologue, epilogue *bytecode.ByteCode
 
-	isSimpleIndex := false
+	if needsFreshScope {
+		// Fix BUG-30: give this loop's body a fresh, per-iteration copy of the
+		// loop counter, so that a closure created in the body captures this
+		// iteration's value instead of the one persistent variable the
+		// increment/condition clauses above read and write (see the block
+		// comment above loopVariablePrologue for the full explanation).
+		//
+		// This only applies when the loop counter is a plain named variable.
+		// indexStore's shape depends on whether the initializer used ":=" or "=":
+		//
+		//	for i := 0; ...   ->  [0] SymbolCreate "i"   [1] Store "i"
+		//	for i = 0; ...    ->  [0] Store "i"
+		//
+		// (this differs from incrementStore's simple-vs-qualified check further
+		// below, which never sees a SymbolCreate because "i++" cannot declare a
+		// new variable). A qualified lvalue counter (e.g.
+		// "for a[0] = 0; a[0] < n; a[0]++") starts with a Load of the base
+		// container instead, and has no single variable name to copy into a
+		// shadow scope, so it is left exactly as before.
+		isSimpleIndex := false
 
-	if firstInstr := indexStore.Instruction(0); firstInstr != nil {
-		switch firstInstr.Operation {
-		case bytecode.Store:
-			isSimpleIndex = true
-
-		case bytecode.SymbolCreate:
-			if second := indexStore.Instruction(1); second != nil && second.Operation == bytecode.Store {
+		if firstInstr := indexStore.Instruction(0); firstInstr != nil {
+			switch firstInstr.Operation {
+			case bytecode.Store:
 				isSimpleIndex = true
+
+			case bytecode.SymbolCreate:
+				if second := indexStore.Instruction(1); second != nil && second.Operation == bytecode.Store {
+					isSimpleIndex = true
+				}
 			}
+		}
+
+		if isSimpleIndex {
+			prologue = loopVariablePrologue(indexName)
+			epilogue = loopVariableEpilogue(indexName)
 		}
 	}
 
-	if isSimpleIndex {
-		prologue = loopVariablePrologue(indexName)
-		epilogue = loopVariableEpilogue(indexName)
-	}
-
 	// Loop body goes next
-	if err = c.compileForBody(prologue, epilogue); err != nil {
+	if err = c.compileForBody(prologue, epilogue, needsFreshScope); err != nil {
 		return err
 	}
 
@@ -725,6 +917,12 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		_ = c.b.SetAddressHere(fixAddr)
 	}
 
+	if !needsFreshScope {
+		// Matches the single body-wide PushScope emitted above, before b1.
+		c.b.Emit(bytecode.PopScope)
+	}
+
+	// Matches compileFor's outer "ForScope" PushScope.
 	c.b.Emit(bytecode.PopScope)
 	c.loopStackPop()
 
