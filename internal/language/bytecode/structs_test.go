@@ -165,6 +165,40 @@ func Test_loadIndexByteCode_StructMissingField(t *testing.T) {
 	}
 }
 
+// Test_loadIndexByteCode_PointerToStructKnownField is a BUG-64 regression
+// test: reading a struct field through an Ego pointer (*any, as produced for
+// a pointer receiver or a "*T" parameter — see docs/ISSUES.md BUG-64) must
+// dereference one level and read the field, mirroring what
+// storeIndexByteCode's own *any case already did for writes. Before the fix,
+// loadIndexByteCode had no *any case at all and fell through to
+// ErrInvalidType for every such read.
+func Test_loadIndexByteCode_PointerToStructKnownField(t *testing.T) {
+	s := data.NewStructFromMap(map[string]any{"x": 99})
+	var boxed any = s
+	ptr := &boxed
+
+	tc := newTestContext(t).withStack(ptr, "x")
+
+	err := loadIndexByteCode(tc.ctx, nil)
+
+	tc.assertNoError(err)
+	tc.assertTopStack(99)
+}
+
+// Test_loadIndexByteCode_PointerToNonStruct verifies that an Ego pointer
+// (*any) wrapping anything other than a *data.Struct is rejected with
+// ErrInvalidType, matching storeIndexByteCode's equivalent *any case.
+func Test_loadIndexByteCode_PointerToNonStruct(t *testing.T) {
+	var boxed any = 42
+	ptr := &boxed
+
+	tc := newTestContext(t).withStack(ptr, "x")
+
+	err := loadIndexByteCode(tc.ctx, nil)
+
+	tc.assertError(err, errors.ErrInvalidType)
+}
+
 // Test_loadIndexByteCode_PackageReturnsError verifies that attempting to read
 // from a *data.Package via LoadIndex is always rejected.  Package members must
 // be accessed with the Member opcode, not LoadIndex.

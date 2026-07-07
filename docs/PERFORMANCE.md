@@ -993,23 +993,25 @@ than what it replaced.
   blocks at 1-2 nesting levels (including 500-iteration and 200-call stress cases to catch
   slow scope-depth drift), `continue` inside a `try`/`catch`'s `catch` body (run 300×8 times),
   a `catch` body with its own local, a range-over-map loop nested inside an elided block
-  exited via early `break` (confirming the map's read lock still releases), repeated
+  exited via early `break` (confirming the map's read lock still releases), chained
   pointer-receiver calls inside an elided block, a function body with no locals called 100
   times, a function using `defer` (confirming its scope is never elided), doubly-nested `if`
   with no locals at either level, and a `conditionalFor` loop with an elided body.
 
-**A second, unrelated bug found while writing these tests, also *not* fixed as part of this
-task:** the pointer-receiver test originally chained calls that returned the receiver as its
-own declared pointer type (`b.add("a").add("b")`, each `add` returning `*Builder`). Under
+**A second, unrelated bug found while writing these tests, fixed separately from this task:**
+the pointer-receiver test originally chained calls that returned the receiver as its own
+declared pointer type (`b.add("a").add("b")`, each `add` returning `*Builder`). Under
 `--types strict` this failed with `type mismatch: Builder …, *Builder …` — root-caused to
 `getThisByteCode` (`internal/language/bytecode/this.go`) discarding Ego's pointer-type marker
 when it dereferences a pointer receiver for field-write propagation, so the receiver's runtime
-type no longer matches its declared type once returned. Confirmed pre-existing and unrelated
-to Finding 8 by reproducing it against the unmodified compiler. Documented as
-[BUG-64](ISSUES.md#BUG-64) rather than fixed here; the test was rewritten to call the receiver
-method for its mutation side effect only (no chaining/return), which exercises the same
-elided-block/receiver-stack mechanics this Finding's test suite cares about without depending
-on the unrelated bug being fixed.
+type no longer matched its declared type once returned. Confirmed pre-existing and unrelated
+to Finding 8 by reproducing it against the unmodified compiler; the test was temporarily
+rewritten to call the receiver method for its mutation side effect only (no chaining/return)
+so this Finding's test suite did not depend on it. Documented and subsequently fixed as
+[BUG-64](ISSUES.md#BUG-64) (see its Resolution for the full two-part fix, which also covers a
+second call shape — a pointer-receiver method called on a plain, non-`&` value — and a related
+pre-existing bug in `loadIndexByteCode` it surfaced along the way). With BUG-64 resolved, the
+pointer-receiver test here was restored to its original chained-call form.
 
 **Bug found while doing this work, but *not* fixed as part of this task:** implementing scope
 elision for `switch` `case`/`default` bodies surfaced a genuine, pre-existing defect in how

@@ -74,8 +74,25 @@ func loadThisByteCode(c *Context, i any) error {
 // get the top-most item from the "this" stack and store it in the
 // named value. This is done as part of prologue of a function that
 // has a receiver.
+//
+// The operand is either a plain name (for backward compatibility with any
+// other caller that never needs the BUG-64 fix below), or a two-element
+// []any{name, byValue} as emitted by generateFunctionBytecode in
+// internal/language/compiler/function.go, where byValue reports whether the
+// receiver was declared WITHOUT a pointer (e.g. "func (b Builder) …", as
+// opposed to "func (b *Builder) …").
 func getThisByteCode(c *Context, i any) error {
-	this := data.String(i)
+	var (
+		this    string
+		byValue bool
+	)
+
+	if operands, ok := i.([]any); ok && len(operands) == 2 {
+		this = data.String(operands[0])
+		byValue, _ = operands[1].(bool)
+	} else {
+		this = data.String(i)
+	}
 
 	if v, ok := c.popThis(); ok {
 		// Auto-deref: if the caller passed a pointer variable (&T) as the
@@ -86,6 +103,48 @@ func getThisByteCode(c *Context, i any) error {
 		// work correctly when called on a pointer variable.
 		if ptr, ok := v.(*any); ok && ptr != nil {
 			v = *ptr
+		}
+
+		// BUG-64 fix: a genuine pointer receiver (byValue == false) must end
+		// up bound to a value the Ego type system recognizes as a pointer —
+		// data.TypeOf only recognizes a boxed *any as a pointer type; a bare
+		// *data.Struct (or other reference type) on its own resolves to its
+		// plain (non-pointer) type. Without this, a pointer-receiver method
+		// that returns the receiver as its declared "*T" type would fail a
+		// strict-mode return-type check, because the receiver's runtime type
+		// no longer matched what was declared.
+		//
+		// This covers two call shapes with the same code:
+		//
+		//   - Called via an explicit pointer variable (pb.add(...)): the
+		//     deref above already unwrapped the *any, so v here is the bare
+		//     *data.Struct that was inside it. Re-boxing restores the
+		//     pointer marker.
+		//   - Called via Go's "auto-address" rule, directly on an
+		//     addressable, non-pointer value (b.add(...) where "add" has a
+		//     pointer receiver): v was never *any to begin with (the deref
+		//     above was a no-op), so it is boxed here for the first time —
+		//     matching what Go does implicitly by taking &b at the call.
+		//
+		// Either way, boxing does not change the underlying value's
+		// identity — "boxed" holds the very same *data.Struct (or other
+		// reference type) pointer that field mutation already propagates
+		// through — it only adds the outer *any wrapper that marks it as an
+		// Ego pointer, exactly matching how an ordinary "*T" parameter (not
+		// a receiver) is already represented. Ego's member-access bytecode
+		// already transparently dereferences a boxed *any for field
+		// read/write (this is exactly how mutation through a plain "*T"
+		// parameter has always worked), so this has no effect on mutation
+		// behavior.
+		//
+		// A value receiver (byValue == true) is left as the bare
+		// dereferenced/original value, exactly as before, because the
+		// $new() copy that generateFunctionBytecode emits immediately after
+		// GetThis (see function.go) expects a plain value to copy, not a
+		// boxed pointer.
+		if !byValue {
+			boxed := v
+			v = &boxed
 		}
 
 		c.setAlways(this, v)

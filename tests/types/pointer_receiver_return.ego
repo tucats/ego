@@ -1,0 +1,254 @@
+// Regression tests for docs/ISSUES.md BUG-64: a pointer receiver returned
+// as its own declared "*T" type used to fail a strict-mode type check, and
+// a pointer receiver (or pointer parameter) used with a standalone
+// "x.field++"/"x.field--" statement failed unconditionally.
+//
+// Root cause 1 (return-type check): getThisByteCode
+// (internal/language/bytecode/this.go) binds a method's receiver by popping
+// it off the "this" stack and, if the caller passed a pointer variable,
+// dereferencing Ego's pointer wrapper (*any) down to the underlying value -
+// this is required so pointer-receiver field writes propagate back to the
+// caller. But that dereference also discarded Ego's own marker for "this is
+// a pointer type," so a strict-mode check of the receiver's runtime type
+// (e.g. a declared "*T" return type, checked when the receiver itself is
+// returned) saw the plain, non-pointer type instead. The fix re-boxes the
+// value into a fresh *any for a genuine pointer receiver - covering both a
+// receiver called via an explicit pointer variable (pb.add(...)) and one
+// called on a plain, addressable value relying on Go's implicit
+// auto-address rule (b.add(...) where "add" has a pointer receiver). Value
+// receivers are unaffected: they still get the bare value their internal
+// copy-on-call step ($new()) expects.
+//
+// Root cause 2 (LoadIndex missing an *any case): a standalone
+// "recv.field++"/"recv.field--" statement compiles a hand-rolled
+// Load/LoadIndex/.../StoreIndex sequence (see the "Qualified lvalue"
+// comment in internal/language/compiler/assignment.go) instead of routing
+// through the general Member opcode. storeIndexByteCode
+// (internal/language/bytecode/structs.go) already had a *any case to
+// dereference an Ego pointer before writing a struct field, but
+// loadIndexByteCode - the read half of the same sequence - never had the
+// matching case, so reading a field through *any always failed with
+// "invalid or unsupported data type for this operation". This affected not
+// just pointer receivers but any ordinary "*T" parameter too (see the last
+// two tests below), and was exposed (not caused) by the getThisByteCode fix
+// once pointer receivers started being represented as *any consistently.
+//
+// These tests only fail under "--types strict" if the return-type-check fix
+// regresses (LoadIndex failures reproduce in both modes); run with:
+//   ego test tests/types/pointer_receiver_return.ego
+//   ego test --types strict tests/types/pointer_receiver_return.ego
+//
+// Each test block below declares its own, differently-named type: a "type"
+// declaration is tracked compiler-wide (not scoped per @test block like an
+// ordinary variable), so reusing the same type name across blocks in one
+// file would collide with "duplicate type name" - unrelated to BUG-64.
+
+@test "types: pointer receiver returning itself, single call"
+{
+    type Builder1 struct {
+        text string
+    }
+
+    func (b *Builder1) add(s string) *Builder1 {
+        b.text = b.text + s
+        return b
+    }
+
+    b := &Builder1{text: ""}
+    b2 := b.add("a")
+
+    @assert b.text == "a"
+    @assert b2.text == "a"
+}
+
+@test "types: pointer receiver returning itself, chained calls"
+{
+    type Builder2 struct {
+        text string
+    }
+
+    func (b *Builder2) add(s string) *Builder2 {
+        b.text = b.text + s
+        return b
+    }
+
+    b := &Builder2{text: ""}
+    b.add("a").add("b").add("c")
+
+    @assert b.text == "abc"
+}
+
+@test "types: pointer receiver returning itself, no assignment"
+{
+    // The minimal reproducer for BUG-64: a single call whose return value
+    // is discarded still ran the failing return-type coercion.
+    type Builder3 struct {
+        text string
+    }
+
+    func (b *Builder3) add(s string) *Builder3 {
+        _ = s
+        return b
+    }
+
+    b := &Builder3{text: "x"}
+    b.add("ignored")
+
+    @assert b.text == "x"
+}
+
+@test "types: pointer receiver field mutation still propagates"
+{
+    // Confirms the fix (re-boxing the dereferenced receiver into a fresh
+    // Ego pointer) did not break the underlying reason getThisByteCode
+    // dereferences at all: writes through the receiver must still be
+    // visible to the caller.
+    type Counter1 struct {
+        n int
+    }
+
+    func (c *Counter1) inc() *Counter1 {
+        c.n = c.n + 1
+        return c
+    }
+
+    c := &Counter1{n: 0}
+    c.inc()
+    c.inc()
+    c.inc()
+
+    @assert c.n == 3
+}
+
+@test "types: value receiver via pointer variable still copies"
+{
+    // A value receiver (no "*") called through a pointer variable must
+    // still receive and return an independent copy - the BUG-64 fix only
+    // changes behavior for genuine pointer receivers.
+    type Counter2 struct {
+        n int
+    }
+
+    func (c Counter2) inc() Counter2 {
+        c.n = c.n + 1
+        return c
+    }
+
+    original := &Counter2{n: 0}
+    updated := original.inc()
+
+    @assert original.n == 0
+    @assert updated.n == 1
+}
+
+@test "types: pointer receiver returning itself, auto-address call"
+{
+    // Called on a plain (non-&) struct value rather than an explicit
+    // pointer variable, exercising Go's "auto-address" method-call form -
+    // "add" still has a pointer receiver, so Go (and Ego) implicitly take
+    // the address of "b" itself. Before the fix this failed the same
+    // strict-mode return-type check as the explicit-pointer form; the
+    // mutation must also still be visible on the original "b", not a copy.
+    type Builder4 struct {
+        text string
+    }
+
+    func (b *Builder4) add(s string) *Builder4 {
+        b.text = b.text + s
+        return b
+    }
+
+    b := Builder4{text: ""}
+    b.add("y").add("z")
+
+    @assert b.text == "yz"
+}
+
+@test "types: standalone increment/decrement on a pointer receiver's field"
+{
+    // A bare "recv.field++"/"recv.field--" statement inside a pointer
+    // receiver method takes a different bytecode path (LoadIndex/
+    // StoreIndex) than an ordinary "recv.field = recv.field + 1"
+    // assignment (which goes through the Member opcode). LoadIndex needed
+    // its own fix to handle a boxed pointer receiver.
+    type Counter3 struct {
+        n int
+    }
+
+    func (c *Counter3) inc() {
+        c.n++
+    }
+
+    func (c *Counter3) dec() {
+        c.n--
+    }
+
+    c := &Counter3{n: 5}
+    c.inc()
+    c.inc()
+    c.dec()
+
+    @assert c.n == 6
+}
+
+@test "types: standalone increment on a pointer receiver's field, auto-address call"
+{
+    // Same as above, but the method is called on a plain (non-&) value, so
+    // the receiver is boxed for the first time inside getThisByteCode
+    // rather than dereferenced from an existing pointer.
+    type Counter4 struct {
+        n int
+    }
+
+    func (c *Counter4) inc() {
+        c.n++
+    }
+
+    c := Counter4{n: 0}
+    c.inc()
+    c.inc()
+    c.inc()
+
+    @assert c.n == 3
+}
+
+@test "types: standalone increment on an array element via a pointer receiver"
+{
+    // Exercises the qualified-lvalue auto-increment path one level deeper:
+    // the field itself is an array, and the element being incremented is
+    // reached through the boxed receiver.
+    type Box struct {
+        items []int
+    }
+
+    func (b *Box) decFirst() {
+        b.items[0]--
+    }
+
+    b := Box{items: []int{10, 20}}
+    b.decFirst()
+
+    @assert b.items[0] == 9
+    @assert b.items[1] == 20
+}
+
+@test "types: standalone increment on a field through an ordinary pointer parameter"
+{
+    // Not a receiver at all - an explicit "*T" function parameter. This
+    // already worked for a plain assignment ("p.n = p.n + 1") before this
+    // fix, because that goes through the Member opcode; the standalone
+    // "p.n++" form went through the same LoadIndex gap that pointer
+    // receivers did, so it is fixed by the same LoadIndex change.
+    type Counter5 struct {
+        n int
+    }
+
+    func incParam(p *Counter5) {
+        p.n++
+    }
+
+    c := &Counter5{n: 5}
+    incParam(c)
+
+    @assert c.n == 6
+}

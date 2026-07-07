@@ -174,8 +174,17 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.
+	//
+	// byValue is passed along with the name (see BUG-64 in docs/ISSUES.md)
+	// so getThisByteCode knows whether to restore the receiver's Ego
+	// pointer-type marker after auto-dereferencing it: only a genuine
+	// pointer receiver (byValue == false) needs that; a value receiver
+	// still needs the bare dereferenced value for the $new() copy below.
 	if thisName.IsNot(tokenizer.EmptyToken) {
-		b.Emit(bytecode.GetThis, thisName)
+		// EmitAt only auto-converts a bare tokenizer.Token operand to its
+		// spelling string (see bytecode.go); nested inside this []any, that
+		// conversion never runs, so thisName is converted explicitly here.
+		b.Emit(bytecode.GetThis, []any{thisName.Spelling(), byValue})
 
 		// If it was by value, make a copy of that so the function can't
 		// modify the actual value.

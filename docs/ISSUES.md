@@ -231,7 +231,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
-| [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | |
+| [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -509,7 +509,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
-| [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | |
+| [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 
 ---
 
@@ -5626,7 +5626,7 @@ Regression tests were added at two levels:
 
 <a id="BUG-64"></a>
 
-### BUG-64 — A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`, breaking `--types strict` when the receiver is returned as its own type
+### BUG-64 — A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`, breaking `--types strict` when the receiver is returned as its own type — **Resolved**
 
 **Severity:** MEDIUM
 
@@ -5672,11 +5672,52 @@ Error: terminated with errors
 (no output; program completes successfully)
 ```
 
+**Reproducer 2** (the "auto-address" form — calling a pointer-receiver method directly on a
+plain, non-`&` struct value, which Go and Ego both implicitly treat as taking the value's
+address):
+
+```go
+package main
+
+import "fmt"
+
+type Builder struct {
+    text string
+}
+
+func (b *Builder) add(s string) *Builder {
+    b.text = b.text + s
+    return b
+}
+
+func main() {
+    b := Builder{text: ""} // no "&" here
+    b.add("y").add("z")
+    fmt.Println(b.text)
+}
+```
+
+**Actual output** (both `dynamic` and `--types strict` — this reproducer failed in *both*
+modes, unlike Reproducer 1, because the receiver was never boxed as a pointer at all):
+
+```text
+Error: at add(line 9), type mismatch: Builder struct{text string}, *Builder struct{text string}
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+yz
+```
+
 **Notes:**  
-Does **not** reproduce under the default `dynamic` type mode, only `--types strict`. Also does
-**not** reproduce for an ordinary (non-receiver) `*Builder`-typed parameter returned the same
-way (`func identity(b *Builder) *Builder { return b }` works fine under strict mode) — the bug
-is specific to the *receiver* parameter of a pointer-receiver method.
+Reproducer 1 does **not** reproduce under the default `dynamic` type mode, only
+`--types strict`. Also does **not** reproduce for an ordinary (non-receiver) `*Builder`-typed
+parameter returned the same way (`func identity(b *Builder) *Builder { return b }` works fine
+under strict mode) — the bug is specific to the *receiver* parameter of a pointer-receiver
+method. Reproducer 2 (auto-address) fails in *both* type modes, because unlike Reproducer 1 it
+never even started with a `*any`-wrapped receiver to preserve — see Resolution below for why.
 
 Root cause: `internal/language/bytecode/this.go`, `getThisByteCode` (invoked by the `GetThis`
 instruction that `internal/language/compiler/function.go`'s `generateFunctionBytecode` emits
@@ -5706,19 +5747,93 @@ coercion that `internal/language/compiler/return.go`'s `compileReturn` appends f
 `*Builder` return type) — that coercion compares the receiver's actual (now-unwrapped) runtime
 type against the declared `*Builder` type and fails, because they no longer agree.
 
-A fix would need `getThisByteCode` to preserve pointer-type identity for the *Ego-level* type
-system while still handing pointer-receiver methods a value whose field writes propagate (e.g.
-re-wrapping the dereferenced `*data.Struct` before `c.setAlways`, or teaching the strict-mode
-return-type coercion to recognize a raw `*data.Struct` as satisfying a declared Ego pointer
-type when it originated from a pointer receiver) — deliberately not attempted here to keep
-this finding scoped to a clean report rather than a speculative fix to receiver/pointer-type
-handling, an area with its own existing complexity (see the `data.Array`/pointer-receiver
-auto-dereference notes elsewhere in this document).
+Reproducer 2 (auto-address) fails for a related but distinct reason. `SetThis`
+(`internal/language/compiler/expr_reference.go`'s `compileDotReference`) just pushes whatever
+value "b" currently evaluates to onto the receiver stack, unchanged — it does not know at
+compile time whether "b"'s literal declared type is a pointer, since Ego method dispatch is
+resolved dynamically (`Member`/`getMemberValue` in `internal/language/bytecode/member.go`,
+looked up at runtime). `b := Builder{text: ""}` (no `&`) never goes through
+`internal/language/compiler/expr_atom.go`'s `compileAddressOf` (which is what produces a
+genuine `*any` — see `AddressOf` bytecode, `c.symbols.GetAddress`), so the receiver stack holds
+a bare `*data.Struct` from the very start; `getThisByteCode`'s `*any` check simply never
+matches, and the value is bound to the receiver name completely unchanged — never a pointer
+type, regardless of `--types` mode.
 
-`tests/flow/basic_block_shared_scope.ego`'s pointer-receiver test was written to avoid this
-bug (calls the receiver method for its mutation side effect only, without returning/chaining
-the receiver), with a comment cross-referencing this entry, so PERFORMANCE.md Finding 8's test
-suite does not depend on this unrelated bug being fixed.
+**Resolution (July 2026):**  
+Fixed in two parts.
+
+1. **`getThisByteCode`** (`internal/language/bytecode/this.go`) now re-boxes the receiver into
+   a fresh `*any` for a genuine pointer receiver, covering *both* reproducers with one change:
+   after the existing auto-deref step (which still always runs, so field writes keep
+   propagating exactly as before), `if !byValue { boxed := v; v = &boxed }` runs. For
+   Reproducer 1, `v` at that point is the just-dereferenced `*data.Struct`, so this restores
+   the pointer marker the deref removed. For Reproducer 2, `v` was never `*any` to begin with,
+   so this boxes it for the first time — exactly matching Go's implicit "take the address of
+   an addressable value" rule for calling a pointer-receiver method on a non-pointer variable.
+   A value receiver (`byValue == true`) is left untouched either way, since the `$new()` copy
+   `generateFunctionBytecode` emits immediately after `GetThis` needs a plain value, not a
+   boxed pointer. `byValue` is now threaded through as part of `GetThis`'s operand (changed
+   from a bare name to `[]any{name, byValue}` in `function.go`) so `getThisByteCode` can tell
+   the two receiver kinds apart; a single bare-name operand is still accepted for backward
+   compatibility (with `byValue` defaulting to `false`, i.e. the safer pointer-preserving
+   behavior).
+
+2. **`loadIndexByteCode`** (`internal/language/bytecode/structs.go`) gained a `*any` case,
+   mirroring the one `storeIndexByteCode` already had. This was needed because a standalone
+   `recv.field++`/`recv.field--` statement compiles a hand-rolled `Load`/`LoadIndex`/…/
+   `StoreIndex` sequence (see the "Qualified lvalue" branch of `compileAssignment` in
+   `internal/language/compiler/assignment.go`) instead of routing through the general `Member`
+   opcode that ordinary `recv.field = recv.field + 1` assignments use. `storeIndexByteCode`
+   already handled a boxed `*any` receiver correctly (dereferencing it before writing the
+   field), but `loadIndexByteCode` — the read half of the same sequence, used to fetch the
+   current value before applying `+1`/`-1` — never had the matching case, so it fell through to
+   `ErrInvalidType` ("invalid or unsupported data type for this operation") for *any* boxed
+   pointer, not just receivers. This was a **pre-existing bug independent of fix 1 above**: it
+   already affected a standalone `p.field++` on an ordinary `*T` function parameter (confirmed
+   by reproducing it against the unmodified compiler), and was simply never exercised by the
+   receiver return-type bug until fix 1 started boxing receivers more consistently.
+
+**Files modified:**
+
+- `internal/language/bytecode/this.go` — `getThisByteCode` re-boxes for pointer receivers (see
+  above).
+- `internal/language/compiler/function.go` — `GetThis`'s operand now carries `byValue`
+  alongside the receiver name.
+- `internal/language/bytecode/structs.go` — `loadIndexByteCode` gained a `*any` case.
+- `internal/language/bytecode/this_test.go` (new) — seven unit tests covering both receiver
+  kinds (pointer/value) crossed with both call shapes (explicit pointer/auto-address), plus the
+  backward-compatible bare-name operand and an empty-receiver-stack no-op.
+- `internal/language/bytecode/structs_test.go` — two new `loadIndexByteCode` tests: reading a
+  field through a boxed `*any`, and rejecting a boxed non-struct value.
+- `tests/types/pointer_receiver_return.ego` (new) — ten `@test` blocks: single call, chained
+  calls, discarded return value, mutation propagation, value-receiver-via-pointer still copies,
+  the auto-address form, standalone `++`/`--` on a receiver's field (both call shapes), a
+  standalone `--` on an array element reached through a receiver, and a standalone `++` on an
+  ordinary (non-receiver) pointer parameter's field (the bonus `loadIndexByteCode` fix).
+- `tests/flow/basic_block_shared_scope.ego` — the pointer-receiver test originally rewritten to
+  avoid this bug (see below) was restored to its original chained-call form now that the bug is
+  fixed.
+
+`tests/flow/basic_block_shared_scope.ego`'s pointer-receiver test was initially rewritten to
+avoid this bug (calling the receiver method for its mutation side effect only, without
+returning/chaining the receiver) while it was still open, so PERFORMANCE.md Finding 8's test
+suite did not depend on an unrelated bug being fixed. With BUG-64 now resolved, that test was
+restored to its original chained-call form; `tests/types/pointer_receiver_return.ego` carries
+the dedicated regression coverage for this bug specifically.
+
+**Correctness verification:** `go test ./...`, `go test -race ./...`, and both
+`ego test tests/` and `ego test --types strict tests/` (1184 `@test` blocks each) pass with no
+regressions, including the pre-existing `TestBUG26ReceiverSemanticsUnaffected` Go test (which
+briefly regressed during development — see below — before the `loadIndexByteCode` fix was
+added).
+
+**A regression found and fixed during development, not merely documented:** the first version
+of the `getThisByteCode` fix (re-boxing only when a deref had just occurred) broke
+`TestBUG26ReceiverSemanticsUnaffected`'s `c.N++`-based test, which is exactly what led to
+discovering the `loadIndexByteCode` gap described above. Simplifying the fix to always box for
+`!byValue` (instead of only after a successful deref) both resolved Reproducer 2 and made the
+gap reliably reproducible enough to root-cause and fix directly, rather than requiring a second
+narrower workaround.
 
 ---
 

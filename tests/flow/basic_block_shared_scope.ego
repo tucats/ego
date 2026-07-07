@@ -291,37 +291,30 @@
     @assert m["d"] == 4
 }
 
-// --- repeated pointer-receiver calls inside an elided block ---------------
+// --- chained receiver calls inside an elided block -----------------------
 //
-// Note: this deliberately does NOT chain by returning the receiver itself
-// (e.g. "func (b *Builder) add(s string) *Builder { ...; return b }" called
-// as "b.add("a").add("b")"). That pattern hits a separate, pre-existing bug
-// (see docs/ISSUES.md BUG-64) where a pointer receiver's Ego pointer-type
-// marker is stripped by getThisByteCode's auto-deref, so under
-// "--types strict" the declared "*Builder" return type no longer matches
-// the receiver's actual (unwrapped) runtime type. That bug is unrelated to
-// PERFORMANCE.md Finding 8 (confirmed present on the unmodified compiler)
-// and is tracked separately rather than fixed here. This test still
-// exercises repeated pointer-receiver calls (and therefore the
-// pushThis/popThis "this" stack machinery) against the same receiver inside
-// an elided if body, just without the return-type coercion that triggers
-// the unrelated bug.
+// Note: this exercises docs/ISSUES.md BUG-64 (fixed) - a pointer receiver
+// returned as its own declared "*T" type used to fail under
+// "--types strict" because getThisByteCode's auto-deref stripped the Ego
+// pointer-type marker. See tests/types/pointer_receiver_return.ego for the
+// dedicated regression tests; this one is about elided-block/receiver-stack
+// interaction (PERFORMANCE.md Finding 8), and chaining is exactly the shape
+// that originally surfaced BUG-64, so it is kept here too.
 
-@test "flow: repeated pointer-receiver calls inside an elided if body"
+@test "flow: chained receiver calls inside an elided if body"
 {
     type Builder struct {
         text string
     }
 
-    func (b *Builder) add(s string) {
+    func (b *Builder) add(s string) *Builder {
         b.text = b.text + s
+        return b
     }
 
     if true {
         b := &Builder{text: ""}
-        b.add("a")
-        b.add("b")
-        b.add("c")
+        b.add("a").add("b").add("c")
         @assert b.text == "abc"
     }
 }

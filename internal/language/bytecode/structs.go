@@ -41,6 +41,10 @@ import (
 //     converted to a string field name).  Missing fields push nil.
 //   - *data.Array    — returns the element at the integer index.
 //     Returns ErrArrayIndex when the index is out of bounds.
+//   - *any           — an Ego pointer (e.g. a pointer receiver, see BUG-64
+//     in docs/ISSUES.md). Dereferenced one level and re-dispatched; only a
+//     *data.Struct target is supported, mirroring storeIndexByteCode's own
+//     *any case below.
 //   - any other type — returns ErrInvalidType.
 func loadIndexByteCode(c *Context, i any) error {
 	var (
@@ -132,6 +136,22 @@ func loadIndexByteCode(c *Context, i any) error {
 		v, _ := a.Get(subscript)
 
 		err = c.push(v)
+
+	// BUG-64 fix: a pointer receiver (or any other Ego pointer, "*any")
+	// reaching here — e.g. a standalone "recv.field++"/"recv.field--"
+	// statement, which reads the current field value via LoadIndex before
+	// storeIndexByteCode's own (pre-existing) *any case writes it back —
+	// must be dereferenced the same way storeIndexByteCode already does,
+	// or every such read would fail with ErrInvalidType.
+	case *any:
+		ix := *a
+		if structVal, ok := ix.(*data.Struct); ok {
+			key := data.String(index)
+			v, _ := structVal.Get(key)
+			err = c.push(v)
+		} else {
+			err = c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(ix).String())
+		}
 
 	default:
 		err = c.runtimeError(errors.ErrInvalidType)
