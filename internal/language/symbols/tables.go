@@ -144,6 +144,17 @@ type SymbolTable struct {
 	// symbol dictionary and values storage as the table it proxies.
 	proxy bool
 
+	// nextScope caches the result of FindNextScope() for this table, and
+	// nextScopeCached is true once that result has been computed at least
+	// once. The answer never changes for the lifetime of a table with fixed
+	// boundary/parent values, so it is computed at most once and reused on
+	// every subsequent FindNextScope() call against this same table (see
+	// PERFORMANCE.md Finding 14, Phase 3). Boundary() and SetParent() clear
+	// both fields, since either can change what FindNextScope() would
+	// compute.
+	nextScope       *SymbolTable
+	nextScopeCached bool
+
 	// The synchronization mutex used to serialize access to this table from multiple go routines. Only
 	// used if the shared flag is true.
 	mutex sync.RWMutex
@@ -228,6 +239,13 @@ func (s *SymbolTable) Boundary(flag bool) *SymbolTable {
 
 	s.boundary = flag
 
+	// Boundary status is one of the inputs to FindNextScope()'s walk, so any
+	// cached answer computed under the old value is no longer valid (see
+	// PERFORMANCE.md Finding 14, Phase 3). This is a no-op on the common
+	// path, where Boundary() is called immediately after construction and
+	// nothing has been cached yet.
+	s.invalidateNextScopeCache()
+
 	return s
 }
 
@@ -243,6 +261,13 @@ func (s *SymbolTable) IsBoundary() bool {
 // FindNextScope searches for the next parent scope that can be used within the current scope
 // boundary. If the search hits a scope boundary, then return top of the symbol table tree
 // that is unbounded.
+//
+// The walk below is O(depth) in the current call-stack depth, and — for a
+// boundary table whose own boundary/parent never change — its answer is the
+// same every time. Rather than repeating the walk on every call, the result
+// is cached the first time it is computed and reused after that (see
+// PERFORMANCE.md Finding 14, Phase 3). Boundary() and SetParent() clear the
+// cache, since either can change what this walk would find.
 func (s *SymbolTable) FindNextScope() *SymbolTable {
 	if s == nil || s.parent == nil || s.isRoot {
 		return nil
@@ -253,6 +278,10 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 		return s.parent
 	}
 
+	if next, found := s.cachedNextScope(); found {
+		return next
+	}
+
 	// It's a scope boundary, so we need to find the last boundary
 	// in the chain and return that table's parent.
 	p := s.parent
@@ -261,6 +290,8 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 	for p != nil {
 		// Package symbol tables are always boundaries
 		if p.forPackage != "" {
+			s.setCachedNextScope(p)
+
 			return p
 		}
 
@@ -279,7 +310,59 @@ func (s *SymbolTable) FindNextScope() *SymbolTable {
 			"nextdepth": lastBoundaryParent.depth})
 	}
 
+	s.setCachedNextScope(lastBoundaryParent)
+
 	return lastBoundaryParent
+}
+
+// cachedNextScope returns the cached FindNextScope() answer for this table,
+// if one has been computed. The bool return is true only when a cached
+// answer exists; the cached pointer itself may legitimately be nil.
+//
+// Caching is skipped entirely for shared tables (s.shared == true) — not
+// merely lock-protected, but never populated or consulted at all. Get() and
+// IsConstant() acquire this table's own read lock (via a deferred RUnlock,
+// held for the rest of their call) before calling FindNextScope(); if this
+// table's cache were populated here, that would require acquiring this same
+// table's write lock while the caller's read lock is still held, which
+// self-deadlocks (sync.RWMutex is not reentrant). Shared tables are
+// long-lived package tables reused across concurrent requests/goroutines
+// (see internal/commands/run.go's server startup), not the per-call
+// function scopes this cache targets, so skipping them costs nothing on the
+// hot path this optimization exists for (see PERFORMANCE.md Finding 14,
+// Phase 3, and its "deadlock in server mode" follow-up note).
+func (s *SymbolTable) cachedNextScope() (*SymbolTable, bool) {
+	if s.shared.Load() {
+		return nil, false
+	}
+
+	return s.nextScope, s.nextScopeCached
+}
+
+// setCachedNextScope stores the resolved FindNextScope() answer for later
+// reuse. See cachedNextScope's comment for why shared tables are skipped.
+func (s *SymbolTable) setCachedNextScope(next *SymbolTable) {
+	if s.shared.Load() {
+		return
+	}
+
+	s.nextScope = next
+	s.nextScopeCached = true
+}
+
+// invalidateNextScopeCache clears any cached FindNextScope() answer. It must
+// be called whenever boundary or parent changes on a table that might
+// already have computed and cached a result under the old values (see
+// PERFORMANCE.md Finding 14, Phase 3). Shared tables never populate the
+// cache in the first place (see cachedNextScope's comment), so there is
+// nothing to clear for them.
+func (s *SymbolTable) invalidateNextScopeCache() {
+	if s.shared.Load() {
+		return
+	}
+
+	s.nextScope = nil
+	s.nextScopeCached = false
 }
 
 // Shared marks this symbol table as safe for concurrent access by multiple goroutines.
@@ -440,6 +523,11 @@ func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 
 	s.parent = p
 	s.isRoot = (p == nil)
+
+	// Parent is one of the inputs to FindNextScope()'s walk, so any cached
+	// answer computed under the old parent is no longer valid (see
+	// PERFORMANCE.md Finding 14, Phase 3).
+	s.invalidateNextScopeCache()
 
 	return s
 }

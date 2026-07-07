@@ -452,9 +452,9 @@ func storeGlobalByteCode(c *Context, i any) error {
 			a.SetReadonly(true)
 		}
 
-		c.symbols.Root().SetAlways(name, constantValue)
+		c.rootSymbols.SetAlways(name, constantValue)
 	} else {
-		c.symbols.Root().SetAlways(name, value)
+		c.rootSymbols.SetAlways(name, value)
 	}
 
 	// defs.ExtensionsVariable is also cached directly on the Context as

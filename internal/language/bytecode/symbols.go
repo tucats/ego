@@ -373,7 +373,7 @@ func (c *Context) syncPackageSymbols() error {
 			return errors.New(err)
 		}
 
-		if pkg, ok := c.symbols.Root().Get(packageName); ok {
+		if pkg, ok := c.rootSymbols.Get(packageName); ok {
 			if m, ok := pkg.(*data.Package); ok {
 				for _, k := range packageSymbols.Names() {
 					if egostrings.HasCapitalizedName(k) {

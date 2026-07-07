@@ -95,6 +95,15 @@ type Context struct {
 	// The active symbol table for the current function.
 	symbols *symbols.SymbolTable
 
+	// The root symbol table for this Context's run, cached once at
+	// NewContext time. A table's ancestry is never changed once a program
+	// starts executing (see PERFORMANCE.md Finding 14, Phase 2), so every
+	// symbol table reachable during this run shares this same root — reading
+	// it here avoids an O(depth) symbols.(*SymbolTable).Root() walk on every
+	// call site that needs the root table (e.g. callFramePop, restoring the
+	// global "extensions" setting on every function return).
+	rootSymbols *symbols.SymbolTable
+
 	// The pointer to the tokenizer for the source code being executed. This
 	// is only used for error handling or when the debugger is active.
 	tokenizer *tokenizer.Tokenizer
@@ -325,9 +334,13 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		s = symbols.NewSymbolTable("")
 	}
 
+	// Resolve the root table once here rather than re-deriving it on every
+	// later call site that needs it (see PERFORMANCE.md Finding 14, Phase 2).
+	rootTable := s.Root()
+
 	extensions := false
 
-	if v, ok := s.Root().Get(defs.ExtensionsVariable); ok {
+	if v, ok := rootTable.Get(defs.ExtensionsVariable); ok {
 		if extensions, err = data.Bool(v); err != nil && ui.IsActive(ui.InternalLogger) {
 			ui.Log(ui.InternalLogger, "runtime.extensions.error", ui.A{
 				"name":  defs.ExtensionsVariable,
@@ -348,6 +361,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		line:                 0,
 		output:               os.Stdout,
 		symbols:              s,
+		rootSymbols:          rootTable,
 		fullSymbolScope:      true,
 		receiverStack:        nil,
 		deferStack:           make([]deferStatement, 0),
@@ -473,7 +487,7 @@ func (c *Context) SetPC(pc int) *Context {
 // SetGlobal stores a value in a the global symbol table that is
 // at the top of the symbol table chain.
 func (c *Context) SetGlobal(name string, value any) error {
-	return c.symbols.Root().Set(name, value)
+	return c.rootSymbols.Set(name, value)
 }
 
 // EnableConsoleOutput controls whether program output is sent directly to

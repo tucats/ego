@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`ego` is a Go implementation of the _Ego_ scripting language — an emulated-Go language that closely mirrors Go syntax. It can run programs interactively (REPL-like), execute `.ego` source files, and operate as a REST server with Ego programs as service endpoints. It also includes a web dashboard and a built-in SQL table/database layer.
+`ego` is a Go implementation of the _Ego_ scripting language — an emulated-Go language that closely mirrors Go syntax. It can run programs interactively (REPL-like), execute `.ego` source files, or operate as a REST server with Ego programs as service endpoints. It also includes a web dashboard and a built-in SQL table/database layer.
 
 Module path: `github.com/tucats/ego`
 

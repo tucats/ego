@@ -151,8 +151,24 @@ func (c *Context) callFramePop() error {
 		// packages where we might need to re-write exported values? If
 		// so, this will copy the modified symbols from the table
 		// to the package's private symbol table.
+		//
+		// A single pop can discard more than one scope: a "return" does not
+		// emit a PopScope for each enclosing if/block it's nested inside, so
+		// c.symbols may still be several un-popped block scopes deeper than
+		// callFrame.symbols (the scope active when the call was made). The
+		// loop stops as soon as it reaches that scope, rather than continuing
+		// into the caller's own still-active ancestors — those were already
+		// checked when each was pushed, and will be checked again on their
+		// own eventual pop. For a closure with a captured scope, the two
+		// chains can diverge entirely (the pushed table's parent is where the
+		// closure was defined, not the caller), so callFrame.symbols may never
+		// be reached; the loop then simply walks to nil, exactly as before.
 		for st := c.symbols; st != nil; st = st.Parent() {
 			updatePackageFromLocalSymbols(c, st)
+
+			if st == callFrame.symbols {
+				break
+			}
 		}
 
 		// Now restore the context values from the saved call frame.
@@ -172,9 +188,11 @@ func (c *Context) callFramePop() error {
 		c.module = callFrame.Module
 
 		// Restore the setting for extensions, both in the context and in
-		// the global table.
+		// the global table. c.rootSymbols is cached once at NewContext time
+		// (see PERFORMANCE.md Finding 14, Phase 2) rather than re-derived via
+		// c.symbols.Root() on every return.
 		c.extensions = callFrame.extensions
-		c.symbols.Root().SetAlways(defs.ExtensionsVariable, c.extensions)
+		c.rootSymbols.SetAlways(defs.ExtensionsVariable, c.extensions)
 
 		// Discard any try stack entries created inside the returning function.
 		// During normal execution the RunDefers + Return sequence pops them;
