@@ -1453,7 +1453,419 @@ current, post-Finding-9 cost.
 
 ---
 
-## 14. Summary table
+## 14. New workload — `examples/mandelbrot2.ego` (deep recursion, up to 800 stack levels)
+
+`examples/mandelbrot.ego` (Section 10) computes the same Mandelbrot set iteratively, with no
+recursion. `examples/mandelbrot2.ego` computes it with **pure recursion** instead: each pixel's
+escape-time calculation is one call to `mandelIterate(zr, zi, cr, ci, iter)`, which either hits
+a base case (escape or `iter >= MaxIter`) or tail-calls itself with `iter+1` — meaning a single
+pixel that never escapes recurses **800 levels deep** (`MaxIter = 800`), 3,200 times over (an
+80×40 grid). This workload was profiled specifically to answer a question the earlier,
+iteration-only workloads could not: **does the interpreter's function-call machinery have costs
+that scale with call-stack depth, not just call count?**
+
+```go
+func mandelIterate(zr, zi, cr, ci float64, iter int) int {
+    if zr*zr+zi*zi > 4.0 {
+        return iter
+    }
+    if iter >= MaxIter {
+        return MaxIter
+    }
+    nextZr := zr*zr - zi*zi + cr
+    nextZi := 2*zr*zi + ci
+    return mandelIterate(nextZr, nextZi, cr, ci, iter+1)
+}
+```
+
+```sh
+./ego run --pprof /tmp/cpu.prof examples/mandelbrot2.ego
+go tool pprof -top -cum ./ego /tmp/cpu.prof
+```
+
+| Metric | Value |
+| - | - |
+| Grid | 80×40 pixels, up to 800 recursive calls/pixel |
+| Wall clock (`time ego run ...`) | ~34.1s (three runs: 34.11s, 34.12s, 34.65s user+sys) |
+| CPU samples captured | 31.98s of 34.29s duration (93.25%) |
+
+**The answer is an emphatic yes**, and the effect is far larger than anything found in the
+iterative workloads: **four functions, all of which walk the symbol table's ancestor chain
+from the current scope to (or toward) the root, together account for 70.76% of all CPU-flat-time
+in this profile** — 22.63s of 31.98s, in functions with no other purpose:
+
+| Function | Flat time | Flat % | Triggered by |
+| - | - | - | - |
+| `symbols.(*SymbolTable).SetParent` | 10.18s | 31.83% | Every function call (`NewChildSymbolTable`) |
+| `symbols.(*SymbolTable).FindNextScope` | 8.85s | 27.67% | Every non-local variable read/declaration (`Get`, `IsConstant`) |
+| `symbols.(*SymbolTable).IsRoot` | 2.34s | 7.32% | Every function return (`Root`, called from `callFramePop`) |
+| `symbols.(*SymbolTable).IsClone` | 1.26s | 3.94% | Every function return (`updatePackageFromLocalSymbols`, called from `callFramePop`) |
+
+Each of these four is an **O(depth) operation**, and each fires at least once per function
+call or return. Because `mandelIterate`'s scope chain is exactly as deep as its current
+recursion depth (every call's own scope is chained onto its caller's — see Finding 12's root
+cause for why), the *total* cost of walking that chain across one complete top-to-bottom
+recursive descent to depth *N* is O(1 + 2 + ... + N) = **O(N²)**, not O(N). This is a
+fundamentally different — and much more severe — cost shape than anything the earlier,
+non-recursive workloads exposed: a loop with 10,000,000 flat iterations and a function that
+recurses 800 levels deep can cost the interpreter comparably, because it isn't the *number* of
+calls that dominates here, it's the *depth* each one pays for.
+
+Three new findings below (12, 13, 14) each target one distinct piece of this. Two (12, 13) are
+mechanical, low-risk, high-confidence fixes with a clear "this call is provably unnecessary"
+argument, in the same spirit as Findings 1, 2, and 9. The third (14) is the harder,
+architectural piece — the part of this cost that is legitimately doing correctness-required
+work, just doing it the slow way.
+
+---
+
+## 15. Finding 12 — `SetParent`'s cycle-detection walk is dead code on the hot `NewChildSymbolTable` path (largest single cost in this workload)
+
+**Impact:** **31.83% of total profiled time** (10.18s flat of 31.98s) is spent inside
+`SymbolTable.SetParent`, and essentially all of it (10.18s of 10.60s cum) is a single loop
+whose only job is to detect a cycle that **cannot exist** at this call site. This is, by flat
+time, the single largest cost found anywhere in this report — larger than Finding 9's
+`data.String`/`fmt.Sprintf` cost was in the iterative workload.
+
+### Evidence - Finding 12
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/symbols.(*SymbolTable).SetParent
+    10.18s     10.60s (flat, cum) 33.15% of Total
+         .          .    402:func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
+         .          .    418:   // Chase the parent chain from the new parent to make sure this symbol table
+         .          .    419:   // is not already in the loop.
+         .          .    420:   chain := p
+     2.34s      2.46s    422:       if chain == s {
+     7.84s      8.04s    426:       chain = chain.parent
+         .          .    427:   }
+```
+
+`SetParent` has exactly two callers in the whole codebase: `NewChildSymbolTable`
+(`internal/language/symbols/tables.go:184`) and one compile-time call in
+`internal/language/compiler/compiler.go:474`. Every function call and every scope push in a
+running Ego program goes through the first one — `NewChildSymbolTable` constructs a brand-new
+`SymbolTable{...}` value and, on the very next line, calls `symbols.SetParent(parent)` before
+that new table has been returned to, or become reachable from, anywhere else in the program.
+
+### Root cause - Finding 12
+
+```go
+func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
+    symbols := SymbolTable{ ... }   // brand new, not yet reachable from anywhere
+    ...
+    symbols.SetParent(parent)       // <-- walks parent's ENTIRE existing chain
+    ...
+    return &symbols
+}
+```
+
+`SetParent`'s loop walks from the *new parent* (`p`) up through its entire existing ancestor
+chain, checking whether the *table being reparented* (`s`) already appears in it — a genuine
+and reasonable defensive check *in general*, since `SetParent` is a public method that could,
+in principle, be called to reattach an already-referenced table into a position that creates a
+cycle. But at the `NewChildSymbolTable` call site, `s` (the freshly constructed `symbols`
+value) has existed for exactly one line of code and has not been assigned to any field,
+returned, or stored anywhere — it is *impossible* for it to already appear in `parent`'s chain,
+because that chain was entirely built before this line ever ran. The check can never fire here;
+it exists purely to protect the *other*, rare, compile-time call site.
+
+Because this new child table's parent (`c.symbols`, the caller's own scope) is chained
+directly onto the caller's own parent, and so on up through every enclosing call frame, the
+length of this walk is exactly the current call-stack depth. For `mandelIterate`'s deepest
+calls (depth ~800), each new call pays a ~800-entry walk just to prove something that was
+already structurally guaranteed by construction — and it pays a proportionally shorter walk at
+every shallower depth too, which is why the *total* cost across one recursive descent is O(N²).
+
+### Recommendation - Finding 12
+
+Do not change `SetParent` itself — the compiler.go:474 call site is rare (compile-time, not
+per-call) and may legitimately want the safety check. Instead, give `NewChildSymbolTable` a
+way to set `parent`/`isRoot` directly, without the cycle check or the `Lock()`/`Unlock()` pair
+`SetParent` also does (also unnecessary here, since `symbols` is a stack-local value no other
+goroutine can see yet):
+
+```go
+symbols.parent = parent
+symbols.isRoot = (parent == nil)
+```
+
+replacing the `symbols.SetParent(parent)` call in `NewChildSymbolTable`. This is a
+mechanically verifiable, behavior-preserving change with the same low-risk shape as Finding 1
+(`uuid.New()`) and Finding 9 (`data.String`'s `fmt.Sprintf` fallback): a defensive check that is
+correct in general but provably dead weight at the one call site responsible for virtually all
+of its cost. Given the profile shows this is the single largest cost in the recursive
+workload — and that its cost is structurally tied to call-stack depth, not just call count —
+this is the highest-priority item surfaced by this study.
+
+### Resolution (July 2026) — Finding 12
+
+Implemented the recommendation above exactly as specified: `NewChildSymbolTable`
+(`internal/language/symbols/tables.go`) now sets `symbols.parent` and `symbols.isRoot`
+directly, with a comment explaining why `SetParent`'s cycle check is unreachable here.
+`SetParent` itself was left completely unchanged — its one other caller
+(`internal/language/compiler/compiler.go:474`, a rare, compile-time reparenting call) still
+gets the full cycle-detection walk and locking.
+
+**Files modified:**
+
+- `internal/language/symbols/tables.go` — replaced `symbols.SetParent(parent)` with direct
+  `symbols.parent = parent; symbols.isRoot = (parent == nil)` assignments in
+  `NewChildSymbolTable`, plus a comment recording why this is safe.
+
+**Bug found while doing this work:** none — this was a pure call-site substitution with no
+adjacent defect uncovered, matching Finding 2's and Finding 9's experience.
+
+**Correctness verification:** `go build ./...`, `go vet ./...`, and the full `go test ./...`
+suite are clean, including the existing `SetParent` cycle-detection tests in
+`internal/language/symbols/symbols_test.go` and `tables_test.go` (which call `SetParent`
+directly and are unaffected, since `SetParent` itself was not touched). All 1,193 tests in
+`ego test tests/` continue to pass (0 failures). Symbol table trace logging
+(`ego --log symbols run ...`) was manually re-inspected: the `"Setting parent of table ..."`
+message (`SetParent`'s own log line) no longer appears for ordinary scope pushes and function
+calls, since those no longer go through `SetParent` — but it still appears, correctly, for the
+handful of package-registration tables that go through the compiler's direct `SetParent` call
+(confirmed with a small test program: 15 `"push symbol table"` events during execution, 0 of
+which now log `"Setting parent"`, versus 6 `"Setting parent"` events at program-load time for
+package/root table registration, unchanged from before this fix).
+
+**Re-profiling results:** `examples/mandelbrot2.ego` (Section 14) was re-profiled with the
+identical `--pprof` methodology, after rebuilding with `./tools/build`.
+
+| Metric | Before Finding 12 | After Finding 12 | Change |
+| - | - | - | - |
+| Wall clock (`time ego run ...`, avg of 2 runs) | 34.1s | 20.26s | **-40.6%** |
+| `SetParent` (flat) | 10.18s / 31.83% | *(no longer appears in the profile at all)* | **-100%** |
+| Total CPU samples captured | 31.98s / 34.29s (93.25%) | 19.17s / 20.47s (93.66%) | -40.0% |
+
+```text
+(mandelbrot2, after Finding 12 — SetParent no longer appears anywhere in the profile)
+$ go tool pprof -top ./ego cpu.prof | grep -i setparent
+(no output)
+```
+
+Every prediction from the Recommendation held: `SetParent` is completely gone from the
+profile — not merely reduced — and the wall-clock improvement (-40.6%) tracks its targeted
+cost's elimination even more closely than Finding 9's did on the iterative workload, consistent
+with Finding 5's general thesis that removing an allocation-adjacent, synchronously-executed
+cost (here, a lock acquire/release plus an O(depth) chain walk on every single scope push)
+tends to reduce downstream GC/scheduler pressure roughly in proportion, not just the function's
+own share.
+
+**A secondary effect, consistent with Finding 9's Resolution.** Several other costs *not*
+directly touched by this fix also fell in absolute terms, not just in their share of a smaller
+total — e.g. `FindNextScope` (8.85s flat → 7.59s flat, -14%) and `symbols.Get` (5.16s cum →
+4.16s cum, -19%) — even though `mandelIterate` executes the exact same number of calls, at the
+exact same depths, before and after. As with Finding 9, the most likely explanation is reduced
+cache pollution: removing millions of lock acquisitions and chain walks from the hot call/push
+path leaves less allocation and memory-access churn surrounding the *other* hot operations in
+the interpreter loop. This was not independently isolated with a micro-benchmark and is
+recorded honestly as a plausible, not rigorously proven, secondary effect.
+
+**Findings 13 and 14 remain fully open after this fix**, and now represent a *larger* share of
+a *smaller* total: `FindNextScope` alone is now 40.95% of all profiled time in this workload
+(up from 28.52% before, because the pool it's measured against shrank by 40%, while its own
+absolute cost fell only 14%). The combined cost of `FindNextScope`, `Root`/`IsRoot` (Finding 13),
+and `updatePackageFromLocalSymbols`/`IsClone` (Finding 14) is now **59.5%** of total profiled
+time (11.40s of 19.17s) — reinforcing that Findings 13 and 14 are the next highest-value targets
+in this workload, exactly as the Summary table (Section 18) already recommended.
+
+**Honest assessment:** at -40.6%, this is the single largest wall-clock improvement measured on
+any *workload-specific* baseline in this report (Finding 4's -48/-49% was larger, but measured
+on the original synthetic tight-loop/function-call workloads, not the Mandelbrot programs) —
+delivered by a two-line, mechanically verifiable change with no compiler involvement, no
+behavioral risk, and no adjacent bug. It confirms the Section 14 assessment that deep recursion
+exposes cost shapes (O(depth) work paid on every call, compounding to O(depth²) per descent)
+that the earlier, non-recursive workloads could never have surfaced, and that this class of
+fix — "a chain-walk that's structurally guaranteed to find nothing, done anyway" — is both
+unusually cheap to fix and unusually expensive to leave in place once a program recurses more
+than a few levels deep.
+
+---
+
+## 16. Finding 13 — the `__extensions` flag is redundantly round-tripped through an O(depth) symbol-table walk on every single call and return
+
+**Impact:** **~15.4% of total profiled time** (4.93s: 2.46s on call entry + 2.47s on call
+return) is spent reading and writing one boolean flag — whether Ego language extensions are
+enabled — through the symbol table on every function call and return, even though the *same*
+value is already tracked directly, and correctly, as a field on the executing `Context`.
+
+### Evidence - Finding 13
+
+Read side — `callByteCode`, which runs at the top of *every* `Call` instruction:
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.callByteCode
+         0      6.11s (flat, cum) 19.11% of Total
+         .      2.46s     71:   if v, found := c.symbols.Get(defs.ExtensionsVariable); found {
+         .      3.60s    189:       return callBytecodeFunction(c, function, args)
+```
+
+Write side — `callFramePop`, which runs at the end of *every* function return:
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.(*Context).callFramePop
+     340ms      5.05s (flat, cum) 15.79% of Total
+         .      2.50s    154:   for st := c.symbols; st != nil; st = st.Parent() {
+         .          .    155:       updatePackageFromLocalSymbols(c, st)
+         .          .    156:   }
+         .          .    176:   c.extensions = callFrame.extensions
+         .      2.47s    177:   c.symbols.Root().SetAlways(defs.ExtensionsVariable, c.extensions)
+```
+
+Line 176 already does the correct, O(1) thing — copies the saved flag from the call frame back
+onto the Context. Line 177, immediately after, then pays an O(depth) `Root()` walk (itself
+built on the same O(depth) `IsRoot()` loop shown in Section 14's table) to write that exact
+same value into the symbol table — apparently so that `callByteCode`'s line 71, on the *next*
+call, can read it back out again, at the cost of another O(depth) walk through `Get`'s
+`FindNextScope` fallback.
+
+### Root cause - Finding 13
+
+`c.extensions` is already the Context's live, authoritative record of whether extensions are
+enabled — it is read directly (no symbol table involved) at half a dozen other call sites
+throughout the `bytecode` package (`member.go:167`, `math.go:55/384/400/570`,
+`symbols.go:240/291/316`). `callByteCode`'s line 71 is the outlier: instead of reading
+`c.extensions` directly, it re-derives the identical value via `c.symbols.Get(defs.ExtensionsVariable)`,
+which — since this name is never local to a function's own scope — always falls through to
+`FindNextScope`'s O(depth) walk. `callFramePop`'s line 177 exists, as far as this
+investigation could determine, only to keep that symbol-table copy fresh for line 71 to read.
+
+This value **does** need to live in the symbol table for other reasons — `internal/builtins/length.go`,
+`internal/builtins/functions.go`, and the compiler's directive handling
+(`internal/language/compiler/directives.go:599`) all read or write
+`defs.ExtensionsVariable` through a `*symbols.SymbolTable`, in places that do not have a
+`*bytecode.Context` available. In particular, an `@extensions` directive embedded in Ego source
+compiles to a `StoreGlobal defs.ExtensionsVariable` instruction (`directives.go:599`), meaning
+extensions really can be toggled **mid-program**, at runtime — so simply deleting the
+symbol-table copy is not safe without also making sure a `Context`'s cached `c.extensions`
+still picks up that toggle.
+
+### Recommendation - Finding 13
+
+1. Change `callByteCode`'s line 71 to read `c.extensions` directly instead of calling
+   `c.symbols.Get(defs.ExtensionsVariable)`. This alone removes the read-side O(depth) walk
+   for the overwhelmingly common case (extensions setting unchanged since the `Context` was
+   created).
+2. Update `storeGlobalByteCode` (`internal/language/bytecode/store.go:426`, which implements
+   the `StoreGlobal` opcode `@extensions` compiles to) to also set `c.extensions` when the name
+   being stored is `defs.ExtensionsVariable`, so a mid-program `@extensions` toggle still takes
+   effect immediately for the executing `Context`, without needing `callByteCode` to re-read
+   the symbol table on every subsequent call.
+3. With (1) and (2) in place, `callFramePop`'s line 177 write-back becomes unnecessary for the
+   `bytecode.Context` code path and can likely be removed too — but this needs a check first
+   that nothing else expects the *root symbol table's* copy of `__extensions` to be refreshed
+   on every return specifically (as opposed to only when the Context is created or the value is
+   explicitly toggled), since `internal/builtins/length.go` and `internal/builtins/functions.go`
+   read it from an arbitrary `*symbols.SymbolTable`, not from a `Context`.
+
+This is a smaller, more surgical fix than Finding 12 and touches slightly more call sites, but
+each piece is independently easy to verify, and the underlying claim — "this value is already
+correctly tracked elsewhere; the symbol-table round-trip on the hot path is redundant" — is the
+same shape of argument as Findings 1, 2, 9, and 12.
+
+---
+
+## 17. Finding 14 (architectural) — `FindNextScope` and `callFramePop`'s package-clone check both walk the full ancestor chain on every operation
+
+**Impact:** **28.52% of total profiled time** (9.12s cum) in `FindNextScope` itself, split
+between `Get` (50.66% of calls into it) resolving non-local names like the package-level
+`MaxIter` constant, and `IsConstant` (49.34%) checking whether a brand-new `:=` declaration
+(`nextZr`, `nextZi`) collides with an existing constant. A further **7.82%** (2.50s cum) is
+`callFramePop`'s own, separate full-chain walk checking whether any ancestor scope is a
+modified package clone that needs writing back. Unlike Findings 12 and 13, this cost is not a
+provably-dead check — it is doing correctness-required work, just paying an O(depth) cost to do
+it, every single time, with no memoization.
+
+### Evidence - Finding 14
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/symbols.(*SymbolTable).FindNextScope
+     8.85s      9.12s (flat, cum) 28.52% of Total
+         .          .    249:   p := s.parent
+         .          .    250:   lastBoundaryParent := p
+      20ms       20ms    252:   for p != nil {
+     4.58s      4.68s    254:       if p.forPackage != "" {
+         .          .    255:           return p
+         .          .    256:       }
+     2.44s      2.54s    258:       if p.boundary && p.parent != nil {
+         .          .    259:           lastBoundaryParent = p.parent
+         .          .    260:       }
+     1.80s      1.87s    262:       p = p.parent
+         .          .    263:   }
+```
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.(*Context).callFramePop
+      10ms      40ms    154:   for st := c.symbols; st != nil; st = st.Parent() {
+     290ms      2.50s    155:       updatePackageFromLocalSymbols(c, st)
+         .          .    156:   }
+```
+
+### Root cause - Finding 14
+
+**`FindNextScope`.** Every function-call scope is marked `boundary = true` (so that ordinary
+lexical lookups stop at the caller's own locals rather than leaking into them — correct,
+intentional scoping). But its own scope's *parent* pointer is chained onto the *caller's*
+scope (`callFramePush` uses `c.symbols` — the caller — as the new table's parent), which means
+the chain of ancestor `SymbolTable`s is isomorphic to the dynamic call stack, not to lexical
+nesting. So whenever code inside a deeply-recursed function references a name that isn't
+local (here: the package-level `MaxIter` constant, or checking whether a brand-new local
+shadows an existing constant), resolving "what's the next *lexically* visible scope past all
+these call-stack boundaries" requires walking past every intervening call frame — one by one —
+to reach the package/global scope, even though, for a single connected run of recursive calls
+to the *same* function, the answer is always the *same* scope.
+
+**`callFramePop`'s clone-check loop.** Separately, `callFramePop` walks `c.symbols` all the way
+to `nil` via `st.Parent()` (not just to `callFrame.symbols`, the *one* scope actually being
+restored to), calling `updatePackageFromLocalSymbols(c, st)` at every level, to check whether
+any ancestor is a modified clone of an imported package whose exported values need writing
+back. For an ordinary function-local scope, `updatePackageFromLocalSymbols`'s own first line
+(`if !st.IsClone() || !st.IsModified() { return }`) exits immediately — but the *loop* still
+visits every ancestor to find that out, on every single return, regardless of how many
+(typically one) scopes this particular pop operation is actually discarding. It was not
+possible to determine, within this profiling study, why the loop's bound is "everything up to
+nil" rather than "everything from `c.symbols` down to `callFrame.symbols`" (the exact set of
+scopes being torn down by this one pop) — this needs a closer semantic read of the "call frames
+we are popping off" comment before changing it, since getting the bound wrong could silently
+break package-value write-back rather than just cost more CPU.
+
+### Recommendation - Finding 14
+
+Not designed in detail here — this is the architectural piece of the study, comparable in
+spirit to Finding 7 (name-based symbol resolution) and Finding 11 (loop-body scope reuse), and
+should get the same "needs real design work" caution before implementation:
+
+1. **Cache the resolved "next visible scope" on the boundary table itself**, computed once
+   (lazily, on first `FindNextScope()` call for that table, or eagerly at `callFramePush` time)
+   and reused for the lifetime of that one call frame. This turns *repeated* lookups within a
+   single frame (e.g., both the `MaxIter` `Get` and the `nextZr`/`nextZi` `IsConstant` checks in
+   the same `mandelIterate` invocation) from O(depth) each into O(depth) once, O(1) after — a
+   real but partial win, since each *new* recursive call still starts a fresh frame with no
+   cache yet.
+2. **A larger win, and a real architectural question, not just an implementation tweak:** since
+   a newly-pushed boundary frame's "next visible scope" is provably identical to its *caller's*
+   own "next visible scope past its own boundary" (both ultimately resolve to the same
+   package/global table, for same-function recursion in particular), that pointer could be
+   **inherited directly from the caller's own cached value at `callFramePush` time**, turning
+   the *entire* chain's worth of resolution into O(1) per call, regardless of depth. This would
+   need care for cases where the "next visible scope" genuinely differs between a caller and
+   callee (e.g., calls that cross package boundaries), so it is a real design task, not a
+   mechanical substitution.
+3. **Bound `callFramePop`'s clone-check loop** to the scope(s) actually being popped in that
+   operation (i.e., stop at `callFrame.symbols`, not `nil`) once the "why does this walk past
+   the target frame" question above is answered. If the current, wider walk turns out to be
+   accidental rather than intentional, this is a small, valuable fix on its own; if it is
+   intentional (e.g., to handle multiple stacked block-scopes being collapsed in one pop), the
+   fix needs to bound the walk to exactly those, not the entire remaining call stack.
+
+Given the complexity and the explicit "needs a closer semantic read before changing" caveat on
+item 3, this finding is flagged for future design discussion, not queued for immediate
+implementation the way Findings 12 and 13 are.
+
+---
+
+## 18. Summary table
 
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
@@ -1468,34 +1880,46 @@ current, post-Finding-9 cost.
 | 9 | `data.String()` has no `string` fast path, always calls `fmt.Sprintf` | **15.06% of total** in the Mandelbrot workload (97% of that inside one `fmt.Sprintf` line) | Low | Low | Implementation bug (wrong tool for the job, same shape as Finding 1) | **Fixed** (July 2026) — see Resolution above |
 | 10 | `atLineByteCode` writes `__line`/`__module` into the symbol table every statement | ~3-4% of total in the Mandelbrot workload; consumed almost solely by rare error-construction path | Low-Medium | Low-Medium | Implementation inefficiency (eager work for a rarely-read value) | Open |
 | 11 | Loop bodies with top-level `:=`/`var` still pay per-iteration scope cost; `IsConstant` full-chain walk on new declarations | ~7% combined (scope alloc) + ~3.8% (`IsConstant` walk) in the Mandelbrot workload | Medium-High | Medium-High (touches `:=` creation semantics; needs correctness care) | Extends Finding 4 to a case it deliberately excluded; corroborates Finding 7 | Open — needs design work before implementation |
+| 12 | `SetParent`'s cycle-detection walk is dead code on the hot `NewChildSymbolTable` path | **31.83% of total** in the recursive Mandelbrot workload — largest single flat cost in this report | Low | Low | Implementation bug (defensive check, provably unreachable at this call site) | **Fixed** (July 2026) — see Resolution above |
+| 13 | `__extensions` flag round-trips through an O(depth) symbol-table walk on every call/return | **~15.4% of total** in the recursive Mandelbrot workload (2.46% read + 2.47% write, both O(depth)) | Low-Medium | Low-Medium (one rare runtime-toggle path to preserve) | Implementation inefficiency (duplicates a value already tracked on `Context`) | Open |
+| 14 | `FindNextScope` and `callFramePop`'s clone-check both walk the full ancestor chain per operation | **~36% of total** in the recursive Mandelbrot workload (28.52% + 7.82%), scales O(depth) per call, O(depth²) per recursive descent | High | Medium-High (needs design work; one loop bound is not yet understood) | Architectural — same category as Finding 7, specific to deep recursion | Open — needs design work before implementation |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → **10** → **11**,
-in that order, re-profiling after each change using the same `--pprof` workloads described in
-Section 1 (and, from this point on, also the Mandelbrot workload in Section 10) to confirm the
-expected compounding effect on Finding 5 before deciding whether Finding 7 is ever worth
-pursuing. Findings 1-4, 8, and 9 are all done; re-profiling after each (see their Resolution
-sections) confirms each predicted direct cost was eliminated (`uuid.New` gone entirely;
-`IsType` no longer appears in the profile on this path at all; `ui.Log` argument construction
-is now uniformly guarded across 248 inspected call sites; `pushScopeByteCode`/
-`NewChildSymbolTable` no longer appear at all in a loop with no closures or top-level
-declarations, nor in an if/else nested inside one; `fmt.Sprintf` no longer appears anywhere in
-the Mandelbrot profile). Finding 4 delivered the largest single-fix wall-clock improvement on
-the original synthetic workloads (-48% to -49% on top of Findings 1+2+3, depending on
-workload) — a cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on
-the 50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code
-shaped like conditionals inside loops, a pattern Finding 4 could not reach on its own. Finding
-9 is the largest single-fix wall-clock improvement measured on the Mandelbrot workload
-specifically: **-24.9%** (28.17s → 21.17s), for a three-line, fully mechanical change.
-`runtime.kevent` and `runtime.madvise` (thread scheduling and memory management) remain
-present in every profile but are no longer anywhere near the dominant cost they were before
-Findings 4, 8, and 9 on the workloads each one targeted.
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → **13** →
+**10** → **11** → **14**, in that order, re-profiling after each change using the same
+`--pprof` workloads described in Section 1 (and, from this point on, also the Mandelbrot
+workloads in Sections 10 and 14) to confirm the expected compounding effect on Finding 5 before
+deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, 9, and 12 are all done;
+re-profiling after each (see their Resolution sections) confirms each predicted direct cost was
+eliminated (`uuid.New` gone entirely; `IsType` no longer appears in the profile on this path at
+all; `ui.Log` argument construction is now uniformly guarded across 248 inspected call sites;
+`pushScopeByteCode`/`NewChildSymbolTable` no longer appear at all in a loop with no closures or
+top-level declarations, nor in an if/else nested inside one; `fmt.Sprintf` no longer appears
+anywhere in the Mandelbrot profile; `SetParent` no longer appears anywhere in the recursive
+Mandelbrot profile). Finding 4 delivered the largest single-fix wall-clock improvement on the
+original synthetic workloads (-48% to -49% on top of Findings 1+2+3, depending on workload) — a
+cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on the
+50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code shaped
+like conditionals inside loops, a pattern Finding 4 could not reach on its own. Finding 9 is the
+largest single-fix wall-clock improvement measured on the iterative Mandelbrot workload
+specifically: **-24.9%** (28.17s → 21.17s), for a three-line, fully mechanical change. Finding
+12 is larger still, on the recursive Mandelbrot workload: **-40.6%** (34.1s → 20.26s), for a
+two-line, fully mechanical change. `runtime.kevent` and `runtime.madvise` (thread scheduling and
+memory management) remain present in every profile but are no longer anywhere near the dominant
+cost they were before Findings 4, 8, 9, and 12 on the workloads each one targeted.
 
-With Finding 9 fixed, Findings 10 and 11 are the largest remaining *open* items surfaced by
-the Mandelbrot workload, though both are considerably smaller in absolute terms now that
-Finding 9's cost is gone (see Finding 9's Resolution section for the post-fix profile shape).
-Finding 11 in particular needs real design work (not just a mechanical substitution) before it
-should be attempted, and touches `:=` creation semantics closely enough that it warrants extra
-correctness scrutiny. Finding 7's architectural symbol-resolution redesign remains the only
-remaining lever of comparable *ceiling* to what Finding 9 just delivered, but at very
-substantially higher effort and risk — Findings 10 and 11 are cheaper, lower-risk places to
-look next before committing to a redesign of that scope.
+**Profiling a deeply recursive program (Section 14) surfaced the largest, most severe cost
+shape in this entire report, and Finding 12's fix has already captured the largest single piece
+of it.** Findings 12, 13, and 14 together originally accounted for over **70% of total flat CPU
+time** in that workload; with Finding 12 fixed, Findings 13 and 14 alone now account for
+**59.5%** of a total that has itself shrunk by 40% (see Finding 12's Resolution section). All
+three scale with *how deep the call stack is when they run*, not just how many times something
+runs — a cost shape unique to recursion, and one none of the earlier, non-recursive workloads
+could have surfaced. Finding 13 remains a mechanical, low-risk, high-confidence fix in the same
+family as Findings 1, 2, 9, and 12 (a redundant round-trip through the symbol table for a value
+already tracked correctly elsewhere) and is recommended next, ahead of Findings 10 and 11, both
+because of its larger measured impact and because recursion is a common enough pattern in real
+programs that this cost shape is unlikely to be unique to the Mandelbrot example. Finding 14 is
+the architectural remainder — legitimate, correctness-required work done the slow way — and is
+comparable in spirit and risk to Finding 7, though narrower in scope (specific to deep call
+chains rather than symbol resolution in general); it should follow Finding 13, once that fix
+makes it possible to see how much of Finding 14's cost remains and is worth pursuing further.

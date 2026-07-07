@@ -181,7 +181,16 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 	}
 	symbols.shared.Store(SerializeTableAccess)
 
-	symbols.SetParent(parent)
+	// Set the parent directly rather than going through SetParent. SetParent
+	// exists to safely reparent an already-referenced table, so it walks the
+	// new parent's entire ancestor chain to guard against creating a cycle.
+	// That check can never fire here: "symbols" was constructed on the line
+	// above and has not yet been returned, stored, or made reachable from
+	// anywhere, so it cannot already appear in parent's chain. Skipping
+	// SetParent avoids that O(depth) walk (and an uncontended lock/unlock)
+	// on every single scope push and function call.
+	symbols.parent = parent
+	symbols.isRoot = (parent == nil)
 
 	if parent == nil {
 		symbols.boundary = true
