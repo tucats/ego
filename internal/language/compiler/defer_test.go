@@ -227,9 +227,9 @@ func TestCompiler_compileDefer_ArgumentsHoistedEagerly(t *testing.T) {
 	}
 }
 
-// TestCompiler_compileDefer_ReceiverHoistedEagerly is a regression test for
-// BUG-43. Like TestCompiler_compileDefer_ArgumentsHoistedEagerly above, it
-// inspects the emitted top-level bytecode shape for "defer l.Log(42)" to
+// TestCompiler_compileDefer_ReceiverHoistedEagerly is a regression test
+// for BUG-43. Like TestCompiler_compileDefer_ArgumentsHoistedEagerly above,
+// it inspects the emitted top-level bytecode shape for "defer l.Log(42)" to
 // prove that the RECEIVER ("l") is, like the argument, evaluated and frozen
 // into its own temp variable before the deferred closure is built -- rather
 // than being left embedded in the closure body, where it would be

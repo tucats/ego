@@ -105,7 +105,7 @@ func getThisByteCode(c *Context, i any) error {
 			v = *ptr
 		}
 
-		// BUG-64 fix: a genuine pointer receiver (byValue == false) must end
+		// Fix BUG-64: a genuine pointer receiver (byValue == false) must end
 		// up bound to a value the Ego type system recognizes as a pointer —
 		// data.TypeOf only recognizes a boxed *any as a pointer type; a bare
 		// *data.Struct (or other reference type) on its own resolves to its

@@ -308,8 +308,8 @@ func dropByteCode(c *Context, i any) error {
 // Dup answers "I need this value twice"; ValueCopy answers "I need this
 // value bound to a new name with Go's struct-value-copy semantics" -- the
 // two are not interchangeable substitutes for each other. See
-// valueCopyByteCode's own comment for the full explanation, including the
-// BUG-43 defer-hoisting case that required adding it.
+// valueCopyByteCode's own comment for the full explanation, including
+// the BUG-43 defer-hoisting case that required adding it.
 //
 // Audit note (checked while investigating BUG-43): every current call site
 // that emits Dup in the compiler either (a) only ever duplicates a scalar

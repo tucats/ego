@@ -261,7 +261,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 				x++
 
 				result := triple(x)
-			`,
+			`, 
 			want: 9,
 		},
 		// --- end BUG-63 regression tests ---------------------------------------

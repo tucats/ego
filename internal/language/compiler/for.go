@@ -348,6 +348,7 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIter
 		// c.scopeDepth to match, since that PopScope was not emitted via
 		// emitPopScope (see BUG-61 design comment in block.go).
 		c.b.Append(epilogue)
+
 		c.scopeDepth--
 	} else if perIterationScope {
 		c.emitPopScope()
@@ -521,7 +522,7 @@ func (c *Compiler) simpleFor() error {
 	// missing entirely - simpleFor was the only one of the four loop forms
 	// that never popped compileFor's outer scope, permanently leaking one
 	// scope level every time a bare "for {}" loop ran (found while fixing
-	// BUG-61, since it made c.scopeDepth permanently wrong for any code
+	// issue BUG-61, since it made c.scopeDepth permanently wrong for any code
 	// following such a loop).
 	c.emitPopScope()
 
@@ -988,7 +989,7 @@ func (c *Compiler) findLoop(label string) *loop {
 // however many scopes lie between the current point in the bytecode stream
 // and targetLoop's own boundary, before a break/continue's Branch runs.
 //
-// BUG-61 (docs/ISSUES.md): compileBreak/compileContinue used to emit a bare,
+// Fix BUG-61 (docs/ISSUES.md): compileBreak/compileContinue used to emit a bare,
 // unconditional Branch with no scope cleanup at all, silently leaving open
 // whatever scopes had been pushed by blocks/switch statements/etc. nested
 // between the break/continue and its target loop - the runtime's "current

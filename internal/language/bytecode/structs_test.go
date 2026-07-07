@@ -174,7 +174,9 @@ func Test_loadIndexByteCode_StructMissingField(t *testing.T) {
 // ErrInvalidType for every such read.
 func Test_loadIndexByteCode_PointerToStructKnownField(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"x": 99})
+
 	var boxed any = s
+
 	ptr := &boxed
 
 	tc := newTestContext(t).withStack(ptr, "x")

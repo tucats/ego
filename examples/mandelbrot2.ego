@@ -1,0 +1,51 @@
+package main
+
+import "fmt"
+
+const (
+	Width    = 80
+	Height   = 40
+	MaxIter  = 800
+	MinX     = -2.0
+	MaxX     = 0.5
+	MinY     = -1.2
+	MaxY     = 1.2
+)
+
+func main() {
+	start := time.Now()
+	for y := 0; y < Height; y++ {
+		for x := 0; x < Width; x++ {
+			// Map pixel coordinates to the complex plane
+			cr := MinX + (float64(x)/float64(Width))*(MaxX-MinX)
+			ci := MinY + (float64(y)/float64(Height))*(MaxY-MinY)
+
+			// Start recursion from z = 0 (0 + 0i)
+			_ = mandelIterate(0, 0, cr, ci, 0)
+		}
+	}
+
+	fmt.Println("Completed in ", time.Since(start).String())
+}
+
+// mandelIterate calculates the Mandelbrot escape time using pure recursion.
+// It avoids complex numbers by tracking the real (zr) and imaginary (zi) parts manually.
+func mandelIterate(zr, zi, cr, ci float64, iter int) int {
+	// Base case 1: Escape condition (|z|^2 > 4)
+	if zr*zr+zi*zi > 4.0 {
+		return iter
+	}
+
+	// Base case 2: Max iterations reached
+	if iter >= MaxIter {
+		return MaxIter
+	}
+
+	// Mandelbrot formula: z_next = z^2 + c
+	// (zr + zi*i)^2 = zr^2 - zi^2 + 2*zr*zi*i
+	nextZr := zr*zr - zi*zi + cr
+	nextZi := 2*zr*zi + ci
+
+	// Tail recursive call
+	return mandelIterate(nextZr, nextZi, cr, ci, iter+1)
+}

@@ -118,7 +118,7 @@ func (c *Compiler) compileAssignment() error {
 			//
 			// Emit: Load x, Push 1, Add/Sub, Store x, DropToMarker
 			//
-			// BUG-63 FIX: before this fix, this branch ended right after
+			// Fix BUG-63: before this fix, this branch ended right after
 			// "Store x" and returned immediately -- it never emitted a
 			// DropToMarker. Here is why that mattered:
 			//

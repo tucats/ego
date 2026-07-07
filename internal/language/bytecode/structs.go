@@ -137,7 +137,7 @@ func loadIndexByteCode(c *Context, i any) error {
 
 		err = c.push(v)
 
-	// BUG-64 fix: a pointer receiver (or any other Ego pointer, "*any")
+	// Fix BUG-64: a pointer receiver (or any other Ego pointer, "*any")
 	// reaching here — e.g. a standalone "recv.field++"/"recv.field--"
 	// statement, which reads the current field value via LoadIndex before
 	// storeIndexByteCode's own (pre-existing) *any case writes it back —

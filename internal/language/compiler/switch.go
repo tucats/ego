@@ -106,7 +106,7 @@ func (c *Compiler) compileSwitch() error {
 	// "continue the switch".
 	c.loopStackPush(switchLoopType)
 
-	// BUG-61 (docs/ISSUES.md): record the scope depth right now, which is
+	// Fix BUG-61 (docs/ISSUES.md): record the scope depth right now, which is
 	// exactly the depth a bare "break" inside a case body must land at -
 	// compileSwitchAssignedValue's own scope (always pushed now, for every
 	// form - conditional switches have no test-value scope at all, so
@@ -206,8 +206,8 @@ func (c *Compiler) compileSwitch() error {
 	// If we weren't using conditional cases, pop the scope
 	// compileSwitchAssignedValue pushed for the value used in case matching
 	// (see its own doc comment: a real scope is now pushed uniformly for
-	// every non-conditional form, named-init or anonymous, as part of the
-	// BUG-61 fix - there is no longer a separate SymbolDelete path).
+	// every non-conditional form, named-init or anonymous, as part of
+	// the BUG-61 fix - there is no longer a separate SymbolDelete path).
 	// Conditional switches ("switch { case cond: ... }") never call
 	// compileSwitchAssignedValue at all, so there is nothing to pop here.
 	if !conditional {

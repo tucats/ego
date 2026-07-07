@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
@@ -73,22 +74,62 @@ func Rune(v any) rune {
 // "value" representation — numbers as digits, booleans as "true"/"false",
 // and so on.
 func String(v any) string {
-	if v == nil {
-		return ""
-	}
-
 	v = UnwrapConstant(v)
 
 	if v == nil {
 		return ""
 	}
 
-	// time.RFC822Z produces a human-readable timestamp like "02 Jan 06 15:04 -0700".
-	if t, ok := v.(time.Time); ok {
-		return t.Format(time.RFC822Z)
-	}
+	// There are a number of these that can be done much more quickly that
+	// using fmt.Sprintf, so we special-case them here.
+	switch actual := v.(type) {
+	case string:
+		return actual
 
-	return fmt.Sprintf("%v", v)
+	case bool:
+		if actual {
+			return "true"
+		}
+
+		return "false"
+
+	case int:
+		return strconv.Itoa(actual)
+
+	case int8:
+		return strconv.Itoa(int(actual))
+
+	case int16:
+		return strconv.Itoa(int(actual))
+
+	case int32:
+		return strconv.Itoa(int(actual))
+	case int64:
+		return strconv.FormatInt(actual, 10)
+
+	case uint:
+		return strconv.FormatUint(uint64(actual), 10)
+
+	case uint8:
+		return strconv.FormatUint(uint64(actual), 10)
+
+	case uint16:
+		return strconv.FormatUint(uint64(actual), 10)
+
+	case uint32:
+		return strconv.FormatUint(uint64(actual), 10)
+
+	case uint64:
+		return strconv.FormatUint(actual, 10)
+
+	// time.RFC822Z produces a human-readable timestamp like "02 Jan 06 15:04 -0700".
+	case time.Time:
+		return actual.Format(time.RFC822Z)
+
+	// Anything else will need to use it's own Reflection-based String method.
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // Byte converts any value to a byte (uint8) by delegating to Coerce.

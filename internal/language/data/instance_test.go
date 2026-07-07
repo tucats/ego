@@ -104,8 +104,6 @@ func TestInstanceOfType(t *testing.T) {
 // just the handful spot-checked in TestInstanceOfType above.
 func TestInstanceOfType_ScalarFastPathMatchesTableScan(t *testing.T) {
 	for _, typeDef := range TypeDeclarations {
-		typeDef := typeDef
-
 		t.Run(typeDef.Kind.String(), func(t *testing.T) {
 			// Reproduce the pre-Finding-2 lookup strategy: scan the whole
 			// table (starting fresh, exactly as the old code did) and take

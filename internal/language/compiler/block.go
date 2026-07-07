@@ -189,7 +189,7 @@ func (c *Compiler) scopeElisionScan(isTerminator func(tokenizer.Token) bool) boo
 }
 
 // ---------------------------------------------------------------------------
-// BUG-61: keep c.scopeDepth in lockstep with the actual bytecode
+// Fix BUG-61: keep c.scopeDepth in lockstep with the actual bytecode
 //
 // emitPushScope and emitPopScope are the ONLY places that should ever emit a
 // bytecode.PushScope/PopScope instruction for a block/switch/try scope (loop
@@ -209,6 +209,7 @@ func (c *Compiler) scopeElisionScan(isTerminator func(tokenizer.Token) bool) boo
 // open. Always use this instead of emitting PushScope directly.
 func (c *Compiler) emitPushScope(operands ...any) {
 	c.b.Emit(bytecode.PushScope, operands...)
+
 	c.scopeDepth++
 }
 
@@ -217,6 +218,7 @@ func (c *Compiler) emitPushScope(operands ...any) {
 // directly.
 func (c *Compiler) emitPopScope() {
 	c.b.Emit(bytecode.PopScope)
+	
 	c.scopeDepth--
 }
 

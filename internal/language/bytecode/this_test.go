@@ -30,7 +30,9 @@ import (
 // carries Ego's pointer-type marker.
 func Test_getThisByteCode_PointerReceiverExplicitPointer(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
+
 	var boxed any = s
+
 	ptr := &boxed
 
 	tc := newTestContext(t)
@@ -88,7 +90,9 @@ func Test_getThisByteCode_PointerReceiverAutoAddress(t *testing.T) {
 // plain value to copy.
 func Test_getThisByteCode_ValueReceiverExplicitPointer(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
+
 	var boxed any = s
+	
 	ptr := &boxed
 
 	tc := newTestContext(t)

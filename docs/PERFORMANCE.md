@@ -1066,7 +1066,394 @@ one) remains the dominant remaining cost for call-heavy code.
 
 ---
 
-## 10. Summary table
+## 10. New workload — `examples/mandelbrot.ego` (a real program, not a synthetic loop)
+
+Every workload in Sections 1-9 was a small synthetic program built to isolate one specific
+cost (a bare loop, a loop with a function call, a loop with a native call). This section
+profiles `examples/mandelbrot.ego`, a self-contained, non-trivial example program, to check
+whether the findings and fixes above generalize to something shaped like real Ego code.
+
+The program computes a 200×200-pixel Mandelbrot set (`width`/`height` constants) with up to
+1,000 escape-time iterations per pixel (`maxItr`). `Mandelbrot(cx, cy)` is an ordinary
+(non-recursive) function containing a `for` loop; `GenerateSet()` calls it once per pixel from
+a nested `for` loop (40,000 calls total). Unlike the tight/function-call/native-call workloads,
+it exercises floating-point arithmetic throughout, a function body with several named local
+scalars per call (`x`, `y`, `x2`, `y2`, `i`), and a loop body that itself declares new locals
+on every iteration (`x2, y2 := x*x, y*y`) — a shape none of the earlier synthetic workloads
+happened to cover. It does **not** use recursion, arrays, or matrices, despite an earlier,
+inaccurate description of it — see the actual source for the exact shape being profiled.
+
+```sh
+./tools/build
+./ego run --pprof /tmp/cpu.prof examples/mandelbrot.ego
+go tool pprof -top -cum ./ego /tmp/cpu.prof
+```
+
+| Metric | Value |
+| - | - |
+| Grid / iterations | 200×200 pixels, up to 1,000 iterations/pixel |
+| Reported total iterations | 9,929,677 (`GenerateSet`'s return value) |
+| Wall clock (`time ego run ...`) | 27.98s-28.36s (two runs) |
+| CPU samples captured | 27.09s (96.28% of wall clock) |
+
+This run was taken against the **current** `master` — i.e., *after* all of Findings 1-4 and 8
+were implemented and merged — so every cost identified below is cost that survived those five
+fixes, not cost they already addressed. The findings below are new, not previously documented.
+
+---
+
+## 11. Finding 9 — `data.String()` runs a full reflective `fmt.Sprintf` even when the value is already a `string` (highest impact of this study)
+
+**Impact:** **15.06% of total profiled time** (4.08s of 27.09s) is spent inside
+`data.String()`, of which **3.96s — effectively all of it — is a single line**:
+`return fmt.Sprintf("%v", v)`. This is the largest single item found anywhere in this
+profile, and proportionally larger than any individual fix in Findings 1-4/8's original
+tight-loop audit.
+
+### Evidence - Finding 9
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/data.String
+     170ms      4.08s (flat, cum) 15.06% of Total
+      90ms       90ms     75:func String(v any) string {
+         .          .     80:   v = UnwrapConstant(v)
+      10ms       10ms     87:   if t, ok := v.(time.Time); ok {
+         .          .     88:       return t.Format(time.RFC822Z)
+      50ms      3.96s     91:   return fmt.Sprintf("%v", v)     <-- 97% of this function's own cost
+```
+
+`fmt.Sprintf` has exactly one caller anywhere in this profile — `data.String` — confirmed by
+`pprof -peek`:
+
+```text
+ROUTINE ==== fmt.Sprintf
+     0.25s  0.92%  0.92%      3.91s 14.43%
+                                             3.91s   100% |   github.com/tucats/ego/internal/language/data.String
+```
+
+And the callers of `data.String` are exactly the bytecode instructions that resolve a
+variable's name every time they run — `loadByteCode` (62.0% of `data.String`'s calls),
+`storeByteCode` (24.5%), `symbolCreateIfByteCode` (9.8%), `symbolCreateByteCode` (3.7%):
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.loadByteCode
+     280ms      6.30s (flat, cum) 23.26% of Total
+      30ms      2.56s     11:   name := data.String(i)          <-- 40% of loadByteCode's own total cost
+         .      3.40s     16:   v, found := c.get(name)
+```
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.storeByteCode
+     170ms      2.45s (flat, cum)  9.04% of Total
+      10ms      1.01s    173:   name = data.String(i)           <-- 41% of storeByteCode's own total cost
+```
+
+`ego run --disassemble` confirms the operand passed to every one of these instructions is
+already a plain Go `string` literal baked in at compile time — e.g. `Load "Second"`,
+`Load "e"`, `Load "a"`, `Load "$new"` — never a number, struct, or anything else that would
+actually need general-purpose formatting.
+
+### Root cause - Finding 9
+
+`data.String(v any) string` (`internal/language/data/accessor.go:75-92`) is a general-purpose
+"stringify anything" helper. It correctly special-cases `nil` and `time.Time`, but has **no
+special case for the single most common input type: `string` itself.** Every other type falls
+through to `fmt.Sprintf("%v", v)`, and so does `string` — even though `fmt.Sprintf("%v", s)`
+for a `string` `s` always returns `s` unchanged. Every call pays the full cost of `fmt`'s
+machinery — acquiring a pooled `pp` printer (`fmt.newPrinter`, `sync.Pool.Get`), reflecting
+over the boxed argument (`doPrintf`, `printArg`), building the result through a byte buffer
+(`runtime.slicebytetostring`), and returning the printer to the pool (`fmt.(*pp).free`,
+`sync.Pool.Put`) — purely to hand back the exact string it was given.
+
+Because `data.String` is the standard way every `Load`/`Store`/`SymbolCreate`/
+`SymbolCreateIf` bytecode instruction converts its name operand from `any` to `string`, and
+because those instructions run on essentially every variable reference and every declaration
+in every Ego program, this cost scales with total statements executed — the same shape of
+problem as Findings 1 and 2, just not previously visible because the earlier synthetic
+workloads used only one or two named variables total and so did not stress name resolution as
+heavily as a program with a dozen or more distinct locals in play.
+
+### Recommendation - Finding 9
+
+Add a direct `string` fast path to `data.String`, immediately after `UnwrapConstant`:
+
+```go
+func String(v any) string {
+    if v == nil {
+        return ""
+    }
+
+    v = UnwrapConstant(v)
+
+    if v == nil {
+        return ""
+    }
+
+    if s, ok := v.(string); ok {
+        return s
+    }
+
+    if t, ok := v.(time.Time); ok {
+        return t.Format(time.RFC822Z)
+    }
+
+    return fmt.Sprintf("%v", v)
+}
+```
+
+This is behavior-preserving by construction (`fmt.Sprintf("%v", s) == s` for any `string s`),
+requires no compiler analysis or bytecode changes, and touches exactly one function — the
+same low-risk shape as Finding 1's `uuid.New()` fix. Given that the profile shows the
+overwhelming majority of real-world calls into this function are already-`string` bytecode
+operands, this single change is projected to eliminate close to the full measured 15% of
+wall-clock time in this workload, with likely secondary reduction in GC pressure too (`fmt`'s
+printer pool and intermediate byte buffer are both real allocations happening millions of
+times over).
+
+### Resolution (July 2026) — Finding 9
+
+Implemented the recommendation above exactly as specified: a `string` type-switch case was
+added to `data.String` (`internal/language/data/accessor.go`), immediately after
+`UnwrapConstant` and before the existing `time.Time` case, returning the string unchanged with
+no call into `fmt`.
+
+**Files modified:**
+
+- `internal/language/data/accessor.go` — added the `string` fast-path case to `String`, with a
+  comment explaining why it is safe (`fmt.Sprintf("%v", s) == s` for any string `s`).
+- `internal/language/data/accessor_test.go` (new) — `TestString` (nine cases: nil, empty
+  string, plain string, a string that itself contains `fmt`-verb-like text such as `"%v %d"`
+  — to confirm the fast path does not accidentally re-interpret its input as a format string,
+  an `Immutable`-wrapped string — to confirm `UnwrapConstant` still runs first, plus `int`,
+  `bool` in both states, and `float64`, all still routed through the unchanged `fmt.Sprintf`
+  fallback) and `TestString_Time` (confirms the `time.Time`/RFC822Z case, order-independent of
+  the new string case, is unaffected). No test file previously existed for this function.
+
+**Bug found while doing this work:** none — this was a pure additive fast path with no
+adjacent defect uncovered, matching Finding 2's experience more than Finding 1's.
+
+**Correctness verification:** `go build ./...`, `go vet ./...`, and the full `go test ./...`
+suite are clean, including the two new test functions above. All 1,193 tests in
+`ego test tests/` continue to pass (0 failures).
+
+**Re-profiling results:** `examples/mandelbrot.ego` (Section 10) was re-profiled with the
+identical `--pprof` methodology, after rebuilding with `./tools/build`.
+
+| Metric | Before Finding 9 | After Finding 9 | Change |
+| - | - | - | - |
+| Wall clock (`time ego run ...`, avg of 2 runs) | 28.17s | 21.17s | **-24.9%** |
+| `data.String` (cum) | 4.08s / 15.06% | 0.04s / 0.17% | **-99%** |
+| `fmt.Sprintf` (cum) | 3.91s / 14.43% | *(no longer appears in the profile at all)* | **-100%** |
+| `loadByteCode` (cum) | 6.30s / 23.26% | 0.53s / 2.25% | **-92%** |
+| `storeByteCode` (cum) | 2.45s / 9.04% | 0.26s / 1.10% | **-89%** |
+| `symbolCreateIfByteCode` (cum) | 1.88s / 6.94% | 0.21s / 0.89% | **-89%** |
+| `RunFromAddress` (cum — "true interpreter work") | 18.27s / 67.44% | 2.58s / 10.96% | **-86%** (see caveat below) |
+
+```text
+(mandelbrot, after Finding 9 — data.String no longer shows fmt.Sprintf in its subtree)
+ROUTINE ======================== github.com/tucats/ego/internal/language/data.String
+      40ms       40ms (flat, cum)  0.17% of Total
+      30ms       30ms     75:func String(v any) string {
+      10ms       10ms     80:   v = UnwrapConstant(v)
+```
+
+Every prediction from the Recommendation held: `fmt.Sprintf` is completely gone from the
+profile (not merely reduced), `data.String` itself is now essentially free (0.17% vs. 15.06%),
+and the bytecode instructions that were its heaviest callers (`loadByteCode`, `storeByteCode`,
+`symbolCreateIfByteCode`) all dropped by roughly an order of magnitude in absolute cumulative
+seconds — not just in their share of a smaller total.
+
+**A caveat on the `RunFromAddress` and other secondary numbers.** Several costs *not* directly
+touched by this fix also fell by more than call-count alone would predict — e.g.
+`runtime.mapaccess2_faststr` (3.58s / 13.22% → 0.52s / 2.21%) and `symbols.IsConstant`
+(1.18s / 4.36% → 0.19s / 0.81%), even though the program executes the exact same 9,929,677
+iterations, calling these functions the same number of times, before and after. The most
+likely explanation, consistent with Finding 5's systemic thesis, is a secondary cache-locality
+effect: removing millions of `fmt.Sprintf` calls also removes their pooled-printer
+acquisition, reflection-driven argument boxing, and intermediate byte-buffer allocation — a
+large amount of allocation churn and cache pollution that was surrounding *every other* hot
+operation in the interpreter loop, not just the `data.String` call sites themselves. With that
+churn gone, the surviving hot paths (map lookups, scope pushes) appear to run measurably
+faster per call too, not merely less often. This is a plausible, but not rigorously isolated,
+explanation — it was not independently verified with a separate micro-benchmark — and is
+recorded honestly here rather than overclaimed.
+
+The profile's overall *shape* also changed as a direct consequence: with the dominant
+CPU-bound cost gone, OS-level thread/scheduler overhead (`runtime.pthread_cond_wait` 21.10%,
+`runtime.madvise` 15.03%, `runtime.pthread_cond_signal` 11.68%, `runtime.pthread_kill` 11.17%,
+`runtime.kevent` 9.47%, `runtime.usleep` 6.79% — together roughly 75% of all samples) is now
+overwhelmingly the largest category of remaining cost, and total CPU samples exceeded wall
+clock (111.26%, vs. 96.28% before) — concurrent GC background-mark workers doing real work in
+parallel with the main goroutine, rather than the same amount of GC work being paid for
+synchronously inside `RunFromAddress`'s own call tree (which is why `RunFromAddress`'s
+*cumulative* share fell so much more sharply than the wall clock did: much of what used to be
+counted inside it, via `data.String`'s allocations, is simply gone, not relocated).
+
+**Honest assessment:** the wall-clock improvement (-24.9%) is smaller than the near-total
+elimination of the specific cost this fix targeted (`data.String` -99%, `fmt.Sprintf` -100%),
+for exactly the reason Finding 5 predicts: GC/scheduler overhead was already present
+underneath this cost and now makes up a larger share of what's left. That said, this is
+comfortably the second-largest single-fix wall-clock improvement recorded in this report
+(after Finding 4's -48/-49%), delivered by a three-line, fully mechanical change with no
+compiler involvement and no behavioral risk — confirming the Section 13/14 assessment that
+this was the correct next item to fix ahead of Finding 7's much higher-effort, higher-risk
+architectural redesign. Findings 10 and 11 remain open, and — per the caveat above — the
+remaining GC/scheduler overhead visible in this new profile is exactly the kind of cost
+Finding 7 (and, to a lesser extent, Finding 11) would address, not something a further
+`data.String`-shaped fix could reach.
+
+---
+
+## 12. Finding 10 — `atLineByteCode` writes `__line`/`__module` into the symbol table on every statement, for a feature almost nothing reads
+
+**Impact:** `atLineByteCode` totals **4.91% (1.33s)** of this profile. Of that, **57%
+(0.76s)** is inside `SymbolTable.SetAlways`, and essentially all of `SetAlways`'s own cost in
+this profile (98.7%) comes from this one call site. Including the interface-boxing needed to
+call it (`runtime.convTstring`, 0.22s) and its own downstream map-access cost, roughly 3-4% of
+total wall-clock time in this workload goes toward bookkeeping that is read back almost never.
+
+### Evidence - Finding 10
+
+```text
+ROUTINE ======================== github.com/tucats/ego/internal/language/bytecode.atLineByteCode
+      90ms      1.33s (flat, cum)  4.91% of Total
+                                             0.76s 57.14% |   symbols.(*SymbolTable).SetAlways
+                                             0.22s 16.54% |   runtime.convTstring
+                                             0.14s 10.53% |   data.Int
+```
+
+```text
+ROUTINE ==== symbols.(*SymbolTable).SetAlways
+     0.15s  0.55%  0.55%      0.77s  2.84%
+                                             0.76s 98.70% |   bytecode.atLineByteCode
+```
+
+### Root cause - Finding 10
+
+The compiler emits an `AtLine` bytecode instruction ahead of every source statement (for error
+location tracking, the debugger, and the source tracer). `atLineByteCode`
+(`internal/language/bytecode/flow.go:220+`) unconditionally does, on every one of those
+instructions:
+
+```go
+c.symbols.SetAlways(defs.LineVariable, c.line)
+c.symbols.SetAlways(defs.ModuleVariable, c.bc.name)
+```
+
+`defs.LineVariable` (`__line`) and `defs.ModuleVariable` (`__module`) are written into the
+current symbol table's `map[string]*SymbolAttribute` — a map lookup, an interface-box of an
+`int` and a `string`, and (when the table is shared) a lock check — on every single statement
+execution. A repository-wide grep shows the **only** reader of either symbol is
+`internal/runtime/errors/new.go`, which looks them up solely to attach source-location context
+to a newly constructed Ego runtime error. `c.line` and `c.bc.name` are already ordinary fields
+on the `Context` struct — the symbol-table copies exist purely so that the (rare) error-
+construction path has somewhere to read them from.
+
+### Recommendation - Finding 10
+
+Have `internal/runtime/errors/new.go`'s error-construction path read `c.line`/`c.bc.name`
+directly from the executing `Context` (or an equivalent lightweight channel) instead of from
+the symbol table, and drop the two `SetAlways` calls from `atLineByteCode`'s hot path
+entirely. If `__line`/`__module` must remain independently readable as ordinary Ego symbols
+(e.g. for `util.symbols()` introspection or direct user-code lookups), a narrower alternative
+is to special-case `Load` for exactly these two names to read `c.line`/`c.bc.name` directly,
+still without writing them into the map on every statement. Either approach removes a
+per-statement cost that scales with total statements executed, independent of and additive
+with Finding 9's fix.
+
+---
+
+## 13. Finding 11 (corroborating, extends Finding 4) — loop bodies that declare locals still pay per-iteration scope allocation, and `IsConstant` walks the full parent chain to check a brand-new name
+
+**Impact:** `pushScopeByteCode` (0.83s / 3.06%) + `NewChildSymbolTable` (0.73s / 2.69%) +
+`popScopeByteCode` (0.31s / 1.14%) ≈ **~7% combined** — smaller than the 12%+ these functions
+cost in the pre-Finding-4 tight-loop workloads (Findings 1/2 already made each individual
+scope creation much cheaper), but still a real, repeated cost: roughly 9.9 million scope
+allocations, matching `Mandelbrot`'s reported total-iteration count almost exactly. Separately,
+inside the bytecode that creates each new loop-local, `SymbolTable.IsConstant`'s call costs
+**1.04s (3.8% of total)** on its own, inside `symbolCreateIfByteCode` alone.
+
+### Root cause - Finding 11
+
+`Mandelbrot`'s hot inner loop declares new locals at the loop body's top level every
+iteration:
+
+```go
+for i = 0; i < maxItr; i++ {
+    x2, y2 := x*x, y*y
+    if x2+y2 > 4.0 {
+        break
+    }
+    ...
+}
+```
+
+Finding 4's `loopBodyNeedsFreshScopePerIteration` predicate (`internal/language/compiler/for.go`)
+treats any top-level `:=`/`var` in a loop body as disqualifying for scope-sharing — not
+because of closure-capture risk (there is none here), but because reusing one scope across
+iterations would make the second iteration's `x2, y2 := ...` collide with the first's, since
+the `SymbolCreate`/`SymbolCreateIf` opcodes used for `:=` are built around "this name must not
+already exist in this scope." Loops shaped like this one — declaring simple scalar locals with
+no closures at all — are common, and Finding 4 explicitly, deliberately excludes them from its
+optimization.
+
+A second, distinct cost showed up investigating this: `symbolCreateIfByteCode` (the opcode
+used for `x2, y2 := ...`, a multi-variable declaration) calls `c.isConstant(n)` before
+creating each new local, and `IsConstant` (`internal/language/symbols/get.go:243`) walks the
+**entire parent scope chain to the root**, not just the current scope, on every call. For a
+loop-local variable that is, by construction, brand new in a freshly pushed scope, this walk
+can never find a match — it exists purely to answer "no" as expensively as possible. It is
+worth separately confirming whether this full-chain walk is semantically required here: `:=`
+in Go (and, so far as this investigation could confirm, in Ego) always declares a fresh local
+that *shadows* — rather than checks against — any same-named variable or constant in an
+enclosing scope, which would suggest a local-only existence check ought to be sufficient for
+this particular call site. This needs a more careful semantic check than this profiling study
+performed before changing it, since getting it wrong would be a correctness regression, not
+just a missed optimization.
+
+### Recommendation - Finding 11
+
+Not designed in detail here — flagged for future work, since it is more delicate than
+Finding 4's original all-or-nothing scope decision:
+
+1. For loop bodies that pass a *relaxed* version of Finding 4's predicate (no
+   closure/`go`/`defer`, regardless of top-level declarations), consider keeping a single
+   shared scope for the whole loop (as Finding 4 already does for closure-free, declaration-free
+   bodies) and compiling the loop body's `:=`/`var` declarations to *overwrite* the previous
+   iteration's slot instead of allocating an entirely new `SymbolTable` each time. This needs
+   care around any case where a declaration's reachability differs between iterations (e.g. a
+   `:=` inside a conditionally-taken branch of the loop body) and around whether a slot's
+   type/readonly metadata needs to be reset on redeclaration.
+2. Independently, investigate whether `symbolCreateIfByteCode`'s (and `symbolCreateByteCode`'s)
+   `c.isConstant(n)` check needs to walk the parent chain at all, or whether a `GetLocal`-style
+   current-scope-only check is sufficient for the "is this new declaration name already a
+   constant *in this scope*" question `:=` actually needs answered.
+
+### Also corroborates Finding 7
+
+This workload independently reinforces the open, architectural Finding 7 (name-based symbol
+resolution). The earlier tight-loop/function-call/native-call workloads used essentially one
+named variable throughout; `Mandelbrot` uses over a dozen distinct scalar locals across its two
+functions (`x`, `y`, `x2`, `y2`, `i`, `cx`, `cy`, `dx`, `dy`, `minX`, `minY`, `maxX`, `maxY`,
+`totalIterations`). With more distinct names in play, `runtime.mapaccess2_faststr` becomes the
+single largest interpreter-owned cost category in this profile after Finding 9's `data.String`
+issue — **13.22% (3.58s) cumulative**, split across `symbols.Get` (53.1% of those calls),
+`symbols.IsConstant` (19.3%), `symbols.Set` (17.9%), and `symbols.SetAlways` (8.1%). This does
+not change Finding 7's cost/effort/risk assessment (still "Open," still "Very High" effort),
+but is worth recording as independent evidence, from a second and differently-shaped workload,
+that the bottleneck it describes generalizes beyond single-variable synthetic loops.
+
+**Update, post-Finding-9-fix:** after Finding 9 was implemented (see its Resolution section),
+this same `runtime.mapaccess2_faststr` cost fell further still, from 3.58s/13.22% to
+0.52s/2.21% — a larger drop than call-count alone would predict, for the reasons discussed in
+Finding 9's Resolution (likely reduced cache pollution from `fmt.Sprintf`'s removed
+allocations). The figures above are left as originally measured (pre-Finding-9) since they are
+still the correct evidence for Finding 7's *existence*; they should not be read as Finding 7's
+current, post-Finding-9 cost.
+
+---
+
+## 14. Summary table
 
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
@@ -1078,22 +1465,37 @@ one) remains the dominant remaining cost for call-heavy code.
 | 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
 | 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
 | 8 | Per-execution basic-block scopes (if/else, function bodies, etc.) | -30% on an if/else-in-a-loop workload; -10% on a no-locals function-call workload | Medium-High | Medium (compiler analysis; surfaced BUG-61) | Same category as Finding 4, one level lower | **Fixed** (July 2026) — see Resolution above |
+| 9 | `data.String()` has no `string` fast path, always calls `fmt.Sprintf` | **15.06% of total** in the Mandelbrot workload (97% of that inside one `fmt.Sprintf` line) | Low | Low | Implementation bug (wrong tool for the job, same shape as Finding 1) | **Fixed** (July 2026) — see Resolution above |
+| 10 | `atLineByteCode` writes `__line`/`__module` into the symbol table every statement | ~3-4% of total in the Mandelbrot workload; consumed almost solely by rare error-construction path | Low-Medium | Low-Medium | Implementation inefficiency (eager work for a rarely-read value) | Open |
+| 11 | Loop bodies with top-level `:=`/`var` still pay per-iteration scope cost; `IsConstant` full-chain walk on new declarations | ~7% combined (scope alloc) + ~3.8% (`IsConstant` walk) in the Mandelbrot workload | Medium-High | Medium-High (touches `:=` creation semantics; needs correctness care) | Extends Finding 4 to a case it deliberately excluded; corroborates Finding 7 | Open — needs design work before implementation |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~, in that order, re-profiling
-after each change using the same `--pprof` workloads described in Section 1 to confirm the
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → **10** → **11**,
+in that order, re-profiling after each change using the same `--pprof` workloads described in
+Section 1 (and, from this point on, also the Mandelbrot workload in Section 10) to confirm the
 expected compounding effect on Finding 5 before deciding whether Finding 7 is ever worth
-pursuing. Findings 1-4 and 8 are all done; re-profiling after each (see their Resolution
+pursuing. Findings 1-4, 8, and 9 are all done; re-profiling after each (see their Resolution
 sections) confirms each predicted direct cost was eliminated (`uuid.New` gone entirely;
 `IsType` no longer appears in the profile on this path at all; `ui.Log` argument construction
 is now uniformly guarded across 248 inspected call sites; `pushScopeByteCode`/
 `NewChildSymbolTable` no longer appear at all in a loop with no closures or top-level
-declarations, nor in an if/else nested inside one). Finding 4 delivered the largest single-fix
-wall-clock improvement so far (-48% to -49% on top of Findings 1+2+3, depending on workload) —
-a cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on the
-50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code shaped
-like conditionals inside loops, a pattern Finding 4 could not reach on its own. `runtime.kevent`
-and `runtime.madvise` (thread scheduling and memory management) remain present in every
-profile but are no longer anywhere near the dominant cost they were before Findings 4 and 8,
-leaving Finding 7's architectural symbol-resolution redesign as the only remaining lever of
-comparable size — at very substantially higher effort and risk than any of the fixes completed
-so far.
+declarations, nor in an if/else nested inside one; `fmt.Sprintf` no longer appears anywhere in
+the Mandelbrot profile). Finding 4 delivered the largest single-fix wall-clock improvement on
+the original synthetic workloads (-48% to -49% on top of Findings 1+2+3, depending on
+workload) — a cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on
+the 50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code
+shaped like conditionals inside loops, a pattern Finding 4 could not reach on its own. Finding
+9 is the largest single-fix wall-clock improvement measured on the Mandelbrot workload
+specifically: **-24.9%** (28.17s → 21.17s), for a three-line, fully mechanical change.
+`runtime.kevent` and `runtime.madvise` (thread scheduling and memory management) remain
+present in every profile but are no longer anywhere near the dominant cost they were before
+Findings 4, 8, and 9 on the workloads each one targeted.
+
+With Finding 9 fixed, Findings 10 and 11 are the largest remaining *open* items surfaced by
+the Mandelbrot workload, though both are considerably smaller in absolute terms now that
+Finding 9's cost is gone (see Finding 9's Resolution section for the post-fix profile shape).
+Finding 11 in particular needs real design work (not just a mechanical substitution) before it
+should be attempted, and touches `:=` creation semantics closely enough that it warrants extra
+correctness scrutiny. Finding 7's architectural symbol-resolution redesign remains the only
+remaining lever of comparable *ceiling* to what Finding 9 just delivered, but at very
+substantially higher effort and risk — Findings 10 and 11 are cheaper, lower-risk places to
+look next before committing to a redesign of that scope.

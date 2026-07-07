@@ -107,7 +107,7 @@ func (s *SymbolTable) Clone(parent *SymbolTable) *SymbolTable {
 	newTable.shared.Store(false)
 	newTable.boundary = s.boundary
 	newTable.forPackage = s.forPackage
-	// Bug fix (found while implementing PERFORMANCE.md Finding 1): this used
+	// Fix bug (found while implementing PERFORMANCE.md Finding 1): this used
 	// to unconditionally overwrite newTable.id with a second, freshly
 	// generated ID here, discarding the one NewChildSymbolTable (above) had
 	// just assigned. That was always a wasted ID generation - harmless
