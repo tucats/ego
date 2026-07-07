@@ -66,13 +66,15 @@ func callByteCode(c *Context, i any) error {
 
 	// Determine if language extensions are supported. This is required
 	// for variable length argument lists that are not variadic.
-	extensions := false
-
-	if v, found := c.symbols.Get(defs.ExtensionsVariable); found {
-		if extensions, err = data.Bool(v); err != nil {
-			return err
-		}
-	}
+	//
+	// c.extensions is the Context's own live copy of this setting, kept in
+	// sync by callFramePush/callFramePop and by storeGlobalByteCode (when an
+	// "@extensions" directive assigns defs.ExtensionsVariable at runtime).
+	// Reading it directly avoids an O(depth) symbol-table walk on every call
+	// (defs.ExtensionsVariable is never a local, so the old
+	// c.symbols.Get(...) always fell through to FindNextScope's full
+	// ancestor-chain search).
+	extensions := c.extensions
 
 	// If the arg count is one, search the stack to see if this is a tuple on
 	// the stack, delimited by a marker with a count value that matches the number

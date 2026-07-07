@@ -457,6 +457,15 @@ func storeGlobalByteCode(c *Context, i any) error {
 		c.symbols.Root().SetAlways(name, value)
 	}
 
+	// defs.ExtensionsVariable is also cached directly on the Context as
+	// c.extensions, so callByteCode can read it without an O(depth)
+	// symbol-table walk on every call (see Finding 13 in PERFORMANCE.md).
+	// An "@extensions" directive compiles to a StoreGlobal of this name, so
+	// keep the cached copy in sync when that happens.
+	if name == defs.ExtensionsVariable {
+		c.extensions = data.BoolOrFalse(value)
+	}
+
 	return err
 }
 

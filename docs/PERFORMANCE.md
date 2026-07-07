@@ -1764,6 +1764,85 @@ each piece is independently easy to verify, and the underlying claim — "this v
 correctly tracked elsewhere; the symbol-table round-trip on the hot path is redundant" — is the
 same shape of argument as Findings 1, 2, 9, and 12.
 
+### Resolution (July 2026) — Finding 13
+
+Implemented recommendations (1) and (2) above. Recommendation (3) — removing `callFramePop`'s
+write-back entirely — was investigated and **deliberately not implemented**, because the check
+called for in (3) turned up a real correctness dependency on it.
+
+**Why the write-back had to stay.** `callFramePop`'s comment ("Restore the setting for
+extensions, both in the context and in the global table") describes real, load-bearing
+behavior, not just cache-freshening: an `@extensions` directive can appear *inside* a function
+body, not only at file scope (`directives.go` emits a `StoreGlobal defs.ExtensionsVariable` for
+it wherever it appears), so a callee can toggle extensions mid-execution. `c.extensions` is
+correctly scoped to unwind that toggle on return (`callFrame.extensions`, saved at call time, is
+copied back at line 176) — but `internal/builtins/length.go` and
+`internal/builtins/functions.go` read `defs.ExtensionsVariable` from an arbitrary
+`*symbols.SymbolTable`, not from a `Context`, and have no way to observe `c.extensions` at all.
+Without line 177's write-back, a callee's mid-function toggle would correctly un-apply to
+`c.extensions` on return, but would **leak** into the symbol table for any code reachable only
+through those two builtins-package call sites, until something else happened to overwrite it.
+Removing the write-back would trade a real, if narrow, correctness risk for a second O(depth)
+walk's worth of savings — not a trade worth making without a broader redesign of how
+`defs.ExtensionsVariable` is tracked (e.g., giving those two builtins a way to reach the owning
+`Context` instead of an arbitrary symbol table). That redesign is out of scope for this fix and
+is not recommended as a follow-up unless Finding 14's broader architectural work is undertaken
+anyway.
+
+**Files modified:**
+
+- `internal/language/bytecode/call.go` — `callByteCode` now reads `c.extensions` directly
+  instead of calling `c.symbols.Get(defs.ExtensionsVariable)`, with a comment explaining why
+  this is safe and cross-referencing how `c.extensions` is kept in sync.
+- `internal/language/bytecode/store.go` — `storeGlobalByteCode` now also updates `c.extensions`
+  whenever the name being stored is `defs.ExtensionsVariable`, so a mid-program `@extensions`
+  toggle (which compiles to exactly this opcode) still takes effect immediately for
+  `callByteCode`'s new direct read.
+- `internal/language/bytecode/callframe.go` — unchanged; `callFramePop`'s write-back (line 177)
+  was kept, per the correctness finding above.
+
+**Bug found while doing this work:** none — both changes are additive/substitutive with no
+adjacent defect uncovered. The correctness dependency discovered while investigating
+recommendation (3) was pre-existing design intent (as documented by the code's own comment), not
+a bug — it just meant one part of the original three-part recommendation should not be carried
+out as proposed.
+
+**Correctness verification:** `go build ./...`, `go vet ./...`, and the full `go test ./...`
+suite are clean. All 1,193 tests in `ego test tests/` continue to pass (0 failures), including
+`tests/flow/panic_recover.ego`, which uses a file-scoped `@extensions true` directive. Manually
+verified a mid-function `@extensions true` directive (toggling extensions inside a function
+body, then calling a variadic function both inside and after that function returns) continues
+to produce correct argument-count behavior in both positions.
+
+**Re-profiling results:** `examples/mandelbrot2.ego` (Section 14) was re-profiled with the
+identical `--pprof` methodology, comparing against the post-Finding-12 baseline (Finding 12 was
+already implemented and re-profiled first).
+
+| Metric | After Finding 12 only | After Finding 12 + 13 | Change |
+| - | - | - | - |
+| Wall clock (`time ego run ...`, avg of 2 runs) | 20.26s | 17.27s | **-14.8%** |
+| `callByteCode` (cum) | 2.07s / 10.80% | 0.21s / 1.29% | **-90%** |
+| `c.symbols.Get(defs.ExtensionsVariable)` call site (call.go:71) | 2.46s (pre-Finding-12 measurement; see Finding 13's own Evidence) | *(line removed — no longer exists)* | **-100%** |
+| `symbols.Get` (cum) | 4.16s / 21.70% | 2.37s / 14.58% | -43% |
+| `Root`/`IsRoot` (cum, write-side — unchanged as designed) | 2.54s / 13.25% | 2.20s / 13.54% | ~flat |
+
+`callByteCode`'s own cumulative cost dropped by 90% — from 2.07s to 0.21s — confirming the read
+side is now essentially free, exactly as predicted. `Root`/`IsRoot` (the write-side, in
+`callFramePop`) stayed essentially flat in absolute terms, as expected, since that call site was
+deliberately left unmodified.
+
+**Honest assessment:** the wall-clock improvement (-14.8%) is smaller than Finding 12's
+(-40.6%), consistent with this fix removing only *half* of the two-sided round-trip Finding 13
+originally identified (the read side; ~7.7% of the pre-Finding-12 profile) rather than the full
+~15.4%. This is the expected, correctly-scoped outcome once the correctness investigation ruled
+out removing the write side too — a smaller but still real and safe win, delivered without
+taking on the risk the full original recommendation would have required. Findings 13's
+remaining, unaddressed cost (the write-side `Root()`/`IsRoot()` walk in `callFramePop`) is now
+effectively folded into Finding 14's territory: it is architecturally the same shape of problem
+(an O(depth) ancestor-chain walk on every return), and any future fix to it should be considered
+alongside Finding 14's broader `FindNextScope`/`callFramePop` redesign, not as a standalone
+follow-up to this fix.
+
 ---
 
 ## 17. Finding 14 (architectural) — `FindNextScope` and `callFramePop`'s package-clone check both walk the full ancestor chain on every operation
@@ -1881,45 +1960,51 @@ implementation the way Findings 12 and 13 are.
 | 10 | `atLineByteCode` writes `__line`/`__module` into the symbol table every statement | ~3-4% of total in the Mandelbrot workload; consumed almost solely by rare error-construction path | Low-Medium | Low-Medium | Implementation inefficiency (eager work for a rarely-read value) | Open |
 | 11 | Loop bodies with top-level `:=`/`var` still pay per-iteration scope cost; `IsConstant` full-chain walk on new declarations | ~7% combined (scope alloc) + ~3.8% (`IsConstant` walk) in the Mandelbrot workload | Medium-High | Medium-High (touches `:=` creation semantics; needs correctness care) | Extends Finding 4 to a case it deliberately excluded; corroborates Finding 7 | Open — needs design work before implementation |
 | 12 | `SetParent`'s cycle-detection walk is dead code on the hot `NewChildSymbolTable` path | **31.83% of total** in the recursive Mandelbrot workload — largest single flat cost in this report | Low | Low | Implementation bug (defensive check, provably unreachable at this call site) | **Fixed** (July 2026) — see Resolution above |
-| 13 | `__extensions` flag round-trips through an O(depth) symbol-table walk on every call/return | **~15.4% of total** in the recursive Mandelbrot workload (2.46% read + 2.47% write, both O(depth)) | Low-Medium | Low-Medium (one rare runtime-toggle path to preserve) | Implementation inefficiency (duplicates a value already tracked on `Context`) | Open |
+| 13 | `__extensions` flag round-trips through an O(depth) symbol-table walk on every call/return | **~15.4% of total** in the recursive Mandelbrot workload (2.46% read + 2.47% write, both O(depth)) | Low-Medium | Low-Medium (one rare runtime-toggle path to preserve) | Implementation inefficiency (duplicates a value already tracked on `Context`) | **Partially fixed** (July 2026) — read side only; write side kept for correctness — see Resolution |
 | 14 | `FindNextScope` and `callFramePop`'s clone-check both walk the full ancestor chain per operation | **~36% of total** in the recursive Mandelbrot workload (28.52% + 7.82%), scales O(depth) per call, O(depth²) per recursive descent | High | Medium-High (needs design work; one loop bound is not yet understood) | Architectural — same category as Finding 7, specific to deep recursion | Open — needs design work before implementation |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → **13** →
-**10** → **11** → **14**, in that order, re-profiling after each change using the same
-`--pprof` workloads described in Section 1 (and, from this point on, also the Mandelbrot
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → ~~13
+(partial)~~ → **10** → **11** → **14**, in that order, re-profiling after each change using the
+same `--pprof` workloads described in Section 1 (and, from this point on, also the Mandelbrot
 workloads in Sections 10 and 14) to confirm the expected compounding effect on Finding 5 before
-deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, 9, and 12 are all done;
-re-profiling after each (see their Resolution sections) confirms each predicted direct cost was
-eliminated (`uuid.New` gone entirely; `IsType` no longer appears in the profile on this path at
-all; `ui.Log` argument construction is now uniformly guarded across 248 inspected call sites;
+deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, and 9 are fully done;
+Finding 12 is fully done; Finding 13 is done on its read side only, by design (see its
+Resolution section for why the write side was deliberately kept). Re-profiling after each (see
+their Resolution sections) confirms each predicted direct cost was eliminated (`uuid.New` gone
+entirely; `IsType` no longer appears in the profile on this path at all; `ui.Log` argument
+construction is now uniformly guarded across 248 inspected call sites;
 `pushScopeByteCode`/`NewChildSymbolTable` no longer appear at all in a loop with no closures or
 top-level declarations, nor in an if/else nested inside one; `fmt.Sprintf` no longer appears
 anywhere in the Mandelbrot profile; `SetParent` no longer appears anywhere in the recursive
-Mandelbrot profile). Finding 4 delivered the largest single-fix wall-clock improvement on the
-original synthetic workloads (-48% to -49% on top of Findings 1+2+3, depending on workload) — a
-cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on the
+Mandelbrot profile; `callByteCode`'s cumulative cost fell 90% once its extensions check stopped
+walking the symbol table). Finding 4 delivered the largest single-fix wall-clock improvement on
+the original synthetic workloads (-48% to -49% on top of Findings 1+2+3, depending on workload)
+— a cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on the
 50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code shaped
 like conditionals inside loops, a pattern Finding 4 could not reach on its own. Finding 9 is the
 largest single-fix wall-clock improvement measured on the iterative Mandelbrot workload
-specifically: **-24.9%** (28.17s → 21.17s), for a three-line, fully mechanical change. Finding
-12 is larger still, on the recursive Mandelbrot workload: **-40.6%** (34.1s → 20.26s), for a
-two-line, fully mechanical change. `runtime.kevent` and `runtime.madvise` (thread scheduling and
-memory management) remain present in every profile but are no longer anywhere near the dominant
-cost they were before Findings 4, 8, 9, and 12 on the workloads each one targeted.
+specifically: **-24.9%** (28.17s → 21.17s), for a three-line, fully mechanical change. On the
+recursive Mandelbrot workload, Finding 12 delivered **-40.6%** (34.1s → 20.26s) and Finding 13's
+read-side fix added a further **-14.8%** on top of that (20.26s → 17.27s) — a cumulative
+**49.3% reduction** from the two fixes together (34.1s → 17.27s). `runtime.kevent` and
+`runtime.madvise` (thread scheduling and memory management) remain present in every profile but
+are no longer anywhere near the dominant cost they were before Findings 4, 8, 9, 12, and 13 on
+the workloads each one targeted.
 
 **Profiling a deeply recursive program (Section 14) surfaced the largest, most severe cost
-shape in this entire report, and Finding 12's fix has already captured the largest single piece
-of it.** Findings 12, 13, and 14 together originally accounted for over **70% of total flat CPU
-time** in that workload; with Finding 12 fixed, Findings 13 and 14 alone now account for
-**59.5%** of a total that has itself shrunk by 40% (see Finding 12's Resolution section). All
-three scale with *how deep the call stack is when they run*, not just how many times something
-runs — a cost shape unique to recursion, and one none of the earlier, non-recursive workloads
-could have surfaced. Finding 13 remains a mechanical, low-risk, high-confidence fix in the same
-family as Findings 1, 2, 9, and 12 (a redundant round-trip through the symbol table for a value
-already tracked correctly elsewhere) and is recommended next, ahead of Findings 10 and 11, both
-because of its larger measured impact and because recursion is a common enough pattern in real
-programs that this cost shape is unlikely to be unique to the Mandelbrot example. Finding 14 is
-the architectural remainder — legitimate, correctness-required work done the slow way — and is
-comparable in spirit and risk to Finding 7, though narrower in scope (specific to deep call
-chains rather than symbol resolution in general); it should follow Finding 13, once that fix
-makes it possible to see how much of Finding 14's cost remains and is worth pursuing further.
+shape in this entire report, and Findings 12 and 13 have already captured the largest pieces of
+it.** Findings 12, 13, and 14 together originally accounted for over **70% of total flat CPU
+time** in that workload. Finding 12 is fully fixed. Finding 13 is fixed on its read side, which
+was the piece that could be removed outright; its write side turned out, on investigation, to be
+load-bearing — correctly unwinding a callee's mid-function `@extensions` toggle for code that
+can only observe that flag through the symbol table, not through `Context` — so it was
+deliberately left in place and its remaining cost was folded into Finding 14's scope, since it
+is architecturally the same shape of problem (an O(depth) ancestor-chain walk on every return).
+Finding 14 is now the sole remaining piece of the "cost scales with call-stack depth" story:
+legitimate, correctness-required work (`FindNextScope`'s boundary-skip walk, `callFramePop`'s
+package-clone-check loop, and the surviving `Root()`/`IsRoot()` write from Finding 13) done the
+slow way. It is comparable in spirit and risk to Finding 7 — architectural, needs real design
+work, higher effort than any fix completed so far in this report — though narrower in scope
+(specific to deep call chains rather than symbol resolution in general). Findings 10 and 11
+remain open, smaller, independent items from the iterative Mandelbrot workload, not superseded
+by any of this.
