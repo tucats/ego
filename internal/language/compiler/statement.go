@@ -155,9 +155,10 @@ func (c *Compiler) compileStatement() error {
 	// (functionDepth > 0 means we are inside at least one function).
 	if c.functionDepth > 0 {
 		switch {
-		// An opening brace starts an anonymous nested block with its own scope.
+		// An opening brace starts an anonymous nested block with its own scope
+		// (eligible for PERFORMANCE.md Finding 8 scope elision).
 		case verb.Is(tokenizer.BlockBeginToken):
-			return c.compileBlock(false)
+			return c.compileBlock(false, true)
 
 		// assert(expr) is an extension that panics when the expression is false.
 		case verb.Is(tokenizer.AssertToken):

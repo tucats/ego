@@ -547,11 +547,12 @@ func (c *Compiler) conditionalFor() error {
 
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	// Compile loop body
+	// Compile loop body. Eligible for PERFORMANCE.md Finding 8 scope
+	// elision.
 	opCount := c.b.Mark()
 	statementCount := c.statementCount
 
-	if err = c.compileRequiredBlock(false); err != nil {
+	if err = c.compileRequiredBlock(false, true); err != nil {
 		return err
 	}
 
@@ -561,10 +562,19 @@ func (c *Compiler) conditionalFor() error {
 		return c.compileError(errors.ErrLoopBody)
 	}
 
-	// Uglier test, but also needs doing. If there was a statement, but
-	// it was a block that did not contain any statements, also empty body.
-	wasBlock := c.b.Opcodes()[len(c.b.Opcodes())-1]
-	if wasBlock.Operation == bytecode.PopScope && statementCount == c.statementCount {
+	// Also catch the case where there was a statement, but it was a block
+	// that did not contain any actual statements of its own (e.g. a body
+	// that reduces to a single nested empty block) - also an empty body.
+	//
+	// This used to also require the last emitted instruction to be a
+	// PopScope, as a way of confirming "yes, a block was really compiled
+	// here." That is no longer a safe assumption now that a body block may
+	// have zero net statements AND have had its own PushScope/PopScope
+	// elided by Finding 8, in which case there would be no PopScope at all
+	// to find. statementCount alone is sufficient and was always the
+	// substantive part of the check: it directly counts real statements
+	// compiled, independent of whatever scope bytecode (if any) wraps them.
+	if statementCount == c.statementCount {
 		return c.compileError(errors.ErrLoopBody)
 	}
 

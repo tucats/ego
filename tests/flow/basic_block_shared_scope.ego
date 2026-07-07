@@ -1,0 +1,400 @@
+// Regression tests for PERFORMANCE.md Finding 8: a brace-enclosed block
+// (an "if"/"else" body, a function body, a "try"/"catch" body, or a bare
+// "{ ... }" statement) that declares nothing of its own now skips its
+// PushScope/PopScope pair entirely, instead of getting a fresh runtime
+// scope every time it executes. See the large comment block above
+// blockBodyNeedsOwnScope in internal/language/compiler/block.go for the
+// full design.
+//
+// These tests specifically guard the correctness risks found while
+// implementing the optimization:
+//
+//   - A block that DOES declare something ("var", ":=", "const", "type")
+//     must still get its own scope, or a second execution collides with
+//     the first. This bit twice during development: first for a "var i"
+//     inside a for-loop's own conditional-body form, and then, more
+//     seriously, for "const" - a block containing only a "const"
+//     declaration has no ":=" or "var" token at all, so it was initially
+//     (wrongly) treated as declaration-free. "ego test" runs every test
+//     file in one process against a single shared root symbol table, so a
+//     leaked immutable constant from one test collided with an unrelated,
+//     later variable of the same name in a completely different test.
+//   - "break"/"continue" inside a now-scope-less block must still correctly
+//     unwind back to the enclosing loop. This is exercised at several
+//     nesting depths, including inside a loop whose own body ALSO shares a
+//     single scope for its entire lifetime (PERFORMANCE.md Finding 4), and
+//     with enough iterations to catch any slow scope-depth drift, not just
+//     an off-by-one on the very first iteration.
+//   - A "try" body's scope must never be elided (an error jumps directly
+//     to the catch handler mid-block, leaving the try body's scope
+//     deliberately open so the catch clause can store its error variable
+//     into it - see the comment in compileTry). Only the separate catch
+//     body's own scope layer is eligible for elision.
+//   - A range-over-map loop nested inside an elided block must still
+//     release its read lock on early exit (break), or a later write to
+//     the same map would deadlock/error.
+
+// --- Plain if/else with no locals --------------------------------------
+
+@test "flow: if/else body with no locals computes correctly"
+{
+    x := 3
+    result := ""
+
+    if x < 5 {
+        result = "small"
+    } else {
+        result = "large"
+    }
+
+    @assert result == "small"
+}
+
+@test "flow: if body with a local still isolates across iterations"
+{
+    // The if-block here DOES declare a local ("doubled"), so it must keep
+    // its own scope; repeating this many times must never collide.
+    total := 0
+
+    for i := 0; i < 50; i++ {
+        if i%2 == 0 {
+            doubled := i * 2
+            total = total + doubled
+        }
+    }
+
+    @assert total == 1200
+}
+
+// --- const/type declarations inside an otherwise-elidable block --------
+
+@test "flow: const declared inside a block does not leak out"
+{
+    result := 0
+
+    if true {
+        const factor = 10
+        result = factor * 4
+    }
+
+    @assert result == 40
+}
+
+@test "flow: const inside a function body used across many calls"
+{
+    func withConst() int {
+        const base = 7
+        return base
+    }
+
+    total := 0
+    for i := 0; i < 20; i++ {
+        total = total + withConst()
+    }
+
+    @assert total == 140
+}
+
+// This is deliberately the same shape that originally surfaced the bug:
+// one test declares "a" via "const" inside an otherwise-empty block, and a
+// LATER, unrelated test in the same file declares its own ordinary "a".
+// Under "ego test" both run against the same shared root symbol table, so
+// if the const's name had leaked out of its own (elided) block, this
+// second test would fail with "item is read-only".
+@test "flow: const-only block, part 1"
+{
+    const a = 1
+    @assert a == 1
+}
+
+@test "flow: const-only block, part 2 (unrelated 'a')"
+{
+    a := 99
+    a = a + 1
+    @assert a == 100
+}
+
+// --- break/continue inside elided blocks --------------------------------
+
+@test "flow: continue inside an elided if body reaches the loop"
+{
+    var visited []int
+
+    for i := 0; i < 6; i++ {
+        if i == 2 || i == 4 {
+            continue
+        }
+        visited = append(visited, i)
+    }
+
+    @assert len(visited) == 4
+    @assert visited[0] == 0
+    @assert visited[3] == 5
+}
+
+@test "flow: break inside a doubly-nested elided if body"
+{
+    count := 0
+
+    for i := 0; i < 10; i++ {
+        if true {
+            if i == 3 {
+                break
+            }
+        }
+        count++
+    }
+
+    @assert count == 3
+}
+
+@test "flow: continue inside nested elided if bodies, many iterations"
+{
+    // Enough iterations to catch a slow scope-depth drift, not just an
+    // off-by-one on the first pass through the loop.
+    total := 0
+
+    for i := 0; i < 500; i++ {
+        if true {
+            if i%3 == 0 {
+                continue
+            }
+        }
+        total++
+    }
+
+    @assert total == 333
+}
+
+@test "flow: continue inside an elided if body, function called repeatedly"
+{
+    func countNonMultiples(n int) int {
+        total := 0
+        for i := 0; i < n; i++ {
+            if i%5 == 0 {
+                continue
+            }
+            total++
+        }
+        return total
+    }
+
+    sum := 0
+    for k := 0; k < 200; k++ {
+        sum = sum + countNonMultiples(11)
+    }
+
+    // i ranges 0..10 (11 values); multiples of 5 in that range are 0, 5,
+    // and 10 (3 values skipped by "continue"), leaving 8.
+    @assert countNonMultiples(11) == 8
+    @assert sum == 1600
+}
+
+// --- try/catch: try body always scoped, catch body eligible ------------
+
+@test "flow: continue inside a catch body reaches the enclosing loop"
+{
+    func risky(i int) int {
+        if i%3 == 2 {
+            return 1 / 0
+        }
+        return i
+    }
+
+    sum := 0
+
+    for i := 0; i < 9; i++ {
+        try {
+            sum = sum + risky(i)
+        } catch {
+            continue
+        }
+    }
+
+    // i = 2, 5, 8 are skipped by the catch's continue.
+    @assert sum == 21
+}
+
+@test "flow: catch body with its own local still works"
+{
+    func risky() int {
+        return 1 / 0
+    }
+
+    result := 0
+
+    try {
+        result = risky()
+    } catch {
+        // This catch body declares its own local, so it must keep its own
+        // scope (the predicate must still catch ":=" here).
+        msg := "recovered"
+        @assert len(msg) > 0
+        result = -1
+    }
+
+    @assert result == -1
+}
+
+@test "flow: try/catch inside a loop, repeated many times"
+{
+    func risky(i int) int {
+        if i%4 == 3 {
+            return 1 / 0
+        }
+        return i
+    }
+
+    func attempt() int {
+        sum := 0
+        for i := 0; i < 8; i++ {
+            try {
+                sum = sum + risky(i)
+            } catch {
+                continue
+            }
+        }
+        return sum
+    }
+
+    total := 0
+    for k := 0; k < 300; k++ {
+        total = total + attempt()
+    }
+
+    @assert attempt() == 18
+    @assert total == 5400
+}
+
+// --- range-over-map nested inside an elided block, exited via break -----
+
+@test "flow: range over map inside elided if, early break releases lock"
+{
+    m := map[string]int{"a": 1, "b": 2, "c": 3}
+    seen := 0
+
+    if true {
+        for k, v := range m {
+            seen++
+            if v == 2 {
+                break
+            }
+            _ = k
+        }
+    }
+
+    // If the map's read lock were not released by the early break, this
+    // write would deadlock or fail.
+    m["d"] = 4
+
+    @assert seen > 0
+    @assert m["d"] == 4
+}
+
+// --- repeated pointer-receiver calls inside an elided block ---------------
+//
+// Note: this deliberately does NOT chain by returning the receiver itself
+// (e.g. "func (b *Builder) add(s string) *Builder { ...; return b }" called
+// as "b.add("a").add("b")"). That pattern hits a separate, pre-existing bug
+// (see docs/ISSUES.md BUG-64) where a pointer receiver's Ego pointer-type
+// marker is stripped by getThisByteCode's auto-deref, so under
+// "--types strict" the declared "*Builder" return type no longer matches
+// the receiver's actual (unwrapped) runtime type. That bug is unrelated to
+// PERFORMANCE.md Finding 8 (confirmed present on the unmodified compiler)
+// and is tracked separately rather than fixed here. This test still
+// exercises repeated pointer-receiver calls (and therefore the
+// pushThis/popThis "this" stack machinery) against the same receiver inside
+// an elided if body, just without the return-type coercion that triggers
+// the unrelated bug.
+
+@test "flow: repeated pointer-receiver calls inside an elided if body"
+{
+    type Builder struct {
+        text string
+    }
+
+    func (b *Builder) add(s string) {
+        b.text = b.text + s
+    }
+
+    if true {
+        b := &Builder{text: ""}
+        b.add("a")
+        b.add("b")
+        b.add("c")
+        @assert b.text == "abc"
+    }
+}
+
+// --- function bodies with no locals, called repeatedly ------------------
+
+@test "flow: function body with no locals, no defer, called repeatedly"
+{
+    func double(v int) int {
+        return v * 2
+    }
+
+    total := 0
+    for i := 0; i < 100; i++ {
+        total = total + double(i)
+    }
+
+    @assert double(21) == 42
+    @assert total == 9900
+}
+
+@test "flow: function using defer keeps its own scope"
+{
+    // A function body containing "defer" must never have its own scope
+    // elided (blockBodyNeedsOwnScope treats "defer" as disqualifying
+    // regardless of nesting depth). This only checks that the deferred
+    // closure still correctly observes and modifies "result" through a
+    // stable, shared scope - it is not a statement about exactly when an
+    // unnamed return value is snapshotted relative to defer (a separate,
+    // pre-existing Ego behavior, unaffected by this change).
+    func withDefer() int {
+        result := 0
+        defer func() {
+            result = result + 1
+        }()
+        result = 10
+        return result
+    }
+
+    @assert withDefer() == 11
+}
+
+// --- nested if-in-if, both eligible for elision --------------------------
+
+@test "flow: doubly-nested if with no locals at either level"
+{
+    x := 7
+    matched := false
+
+    if x > 0 {
+        if x < 10 {
+            matched = true
+        }
+    }
+
+    @assert matched == true
+}
+
+// --- conditionalFor with an elided body ----------------------------------
+
+@test "flow: conditional for loop with elided body"
+{
+    // "for cond { ... }" (conditionalFor) with a body that has no
+    // top-level declarations - exercises the fixed empty-body check in
+    // for.go, which no longer assumes the body's last instruction is a
+    // PopScope.
+    n := 0
+    sum := 0
+
+    for n < 5 {
+        sum = sum + n
+        n = n + 1
+    }
+
+    @assert sum == 10
+}

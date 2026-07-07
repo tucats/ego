@@ -59,8 +59,9 @@ func (c *Compiler) compileIf() error {
 	b1 := c.b.Mark()
 	c.b.Emit(bytecode.BranchFalse, 0)
 
-	// Compile the "true" body — requires a block enclosed in "{}".
-	if err := c.compileRequiredBlock(false); err != nil {
+	// Compile the "true" body — requires a block enclosed in "{}". Eligible
+	// for PERFORMANCE.md Finding 8 scope elision.
+	if err := c.compileRequiredBlock(false, true); err != nil {
 		return err
 	}
 
@@ -79,7 +80,7 @@ func (c *Compiler) compileIf() error {
 				return err
 			}
 		} else {
-			if err := c.compileRequiredBlock(false); err != nil {
+			if err := c.compileRequiredBlock(false, true); err != nil {
 				return err
 			}
 		}

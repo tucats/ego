@@ -228,9 +228,10 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-58](#BUG-58) | BUG | The `uint8()` cast function is not recognized despite being documented. | |
 | [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | |
 | [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
-| [BUG-61](#BUG-61) | BUG | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
+| [BUG-61](#BUG-61) | BUG | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
+| [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -505,9 +506,10 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-58](#BUG-58) | LOW | The `uint8()` cast function is not recognized despite being documented. | |
 | [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | |
 | [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
-| [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
+| [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
+| [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | |
 
 ---
 
@@ -5312,7 +5314,7 @@ was discovered incidentally rather than through a dedicated investigation.
 
 <a id="BUG-61"></a>
 
-### BUG-61 — `break`/`continue` inside a nested block, in a top-level fragment, leaves the runtime scope one level too deep
+### BUG-61 — `break`/`continue` skips scope cleanup for blocks it jumps out of, leaving the runtime scope one level too deep
 
 **Severity:** MEDIUM
 
@@ -5325,7 +5327,17 @@ inside an `if` block, any variable declared by a statement *after* the loop ends
 inaccessible from outside that compile-and-run call, because the runtime's "current scope"
 pointer is left one level deeper than it should be.
 
-**Reproducer** (Go, using the compiler package directly — see Notes for why this does not
+Originally this looked like a narrow, Go-harness-only issue (see the first reproducer and the
+original Notes below), because in the common case of a `break`/`continue` nested only inside
+plain `{ }` blocks, the leaked scope level happens to be silently absorbed by the loop's own
+trailing cleanup code (see "Reproducer 2" below for the mechanism and a directly
+`ego run`-reproducible case, found while implementing PERFORMANCE.md Finding 8). That
+absorption is coincidental, not a real fix, and breaks down as soon as something *other* than
+a plain block sits between the `break`/`continue` and the loop — most notably a `switch`
+statement with a named init clause (`switch v := expr; v { ... }`), where a `continue` inside
+any `case`/`default` body leaks the switch's own init-variable scope every time it fires.
+
+**Reproducer 1** (Go, using the compiler package directly — see Notes for why this does not
 reproduce through the ordinary `ego` CLI):
 
 ```go
@@ -5363,30 +5375,98 @@ loop) is present and correct (`total, _ := s.Get("total")` returns `3`).
 <nil> true true
 ```
 
+**Reproducer 2** (plain `ego run`, no Go harness needed — found while implementing
+PERFORMANCE.md Finding 8):
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    count := 0
+    for i := 0; i < 6; i++ {
+        switch v := i; v {
+        case 2, 4:
+            continue
+        }
+        count++
+    }
+
+    v := "after the loop"
+    fmt.Println("count:", count, "v:", v)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 15), symbol already exists: v
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+count: 4 v: after the loop
+```
+
 **Notes:**  
-This does **not** reproduce through `ego run` (a `.ego` file compiled that way requires a
-`func main()`, and returning from a function unconditionally discards all of that function's
-scopes regardless of exactly how many `PopScope` instructions actually ran), the interactive
-REPL (each line is compiled and run as its own separate call, so a scope left over from one
-line cannot affect the next), or `ego test` (each `@test { ... }` block's own brace-delimited
-block scope appears to absorb the discrepancy). It was only found by calling
+Reproducer 1 does **not** reproduce through `ego run` (a `.ego` file compiled that way
+requires a `func main()`, and returning from a function unconditionally discards all of that
+function's scopes regardless of exactly how many `PopScope` instructions actually ran), the
+interactive REPL (each line is compiled and run as its own separate call, so a scope left
+over from one line cannot affect the next), or `ego test` (each `@test { ... }` block's own
+brace-delimited block scope appears to absorb the discrepancy). It was only found by calling
 `compiler.RunString()` directly with a multi-statement program containing no function
 wrapper at all — which is exactly the shape of several existing Go-level compiler tests, and
 is why the BUG-30 unit tests in `internal/language/compiler/for_loopvar_test.go` that need
 `break`/`continue` wrap the relevant code in a small named function rather than using it at
-the bare top level. Root cause: `compileBreak`/`compileContinue`
+the bare top level.
+
+Reproducer 2, by contrast, reproduces with a completely ordinary `func main()` program run
+through the normal `ego run` CLI path — no special harness, REPL, or test mode involved. The
+difference is *what* sits between the `continue` and the loop's own boundary. A `switch`
+statement with a named init clause (`switch v := expr; v { ... }`) pushes its own extra scope
+to hold `v`, on top of (and structurally unrelated to) the `for` loop's own scope(s); see
+`compileSwitchAssignedValue` in `internal/language/compiler/switch.go`. When a plain `{ }`
+block is what's skipped, the leaked level happens to line up with a `PopScope` the loop's own
+trailing code already needed to execute for its own purposes, so it is masked — a coincidence
+of the specific bytecode layout involved, not a real fix, and not something later code should
+ever rely on. The switch's extra scope has no such lucky counterpart waiting downstream, so it
+is never popped: `v` stays permanently declared in whatever scope the loop body shares, and
+the very next attempt to declare an unrelated `v` in that same scope (here, the line right
+after the loop) fails with `symbol already exists`. The same leak also affects a `continue`
+inside a `case`/`default` body of an *anonymous* `switch expr { ... }` (no named init): there,
+instead of leaking a named variable, it skips the `SymbolDelete` that normally removes the
+switch's internal synthetic test-value symbol at the end of the statement (see
+`compileSwitch`), leaking that placeholder into the enclosing scope on every iteration where
+`continue` fires. This was found to matter in practice while investigating whether a switch
+`case`/`default` body could safely skip its own scope when it declares nothing of its own
+(PERFORMANCE.md Finding 8): doing so removes the coincidental masking for the *plain-block*
+case without fixing the underlying issue, making the pre-existing bug immediately and
+reliably reproducible (`ego test` runs every test file against one shared, persistent root
+symbol table, so the leaked synthetic name from an early test collided with an unrelated
+variable in a completely different, later test file). Scope elision was therefore **not**
+applied to switch `case`/`default` bodies at all, keeping the coincidental masking intact
+there until this bug has a real fix.
+
+Root cause (both reproducers): `compileBreak`/`compileContinue`
 (`internal/language/compiler/for.go`) emit a bare, unconditional `Branch` with no
-accompanying `PopScope`, regardless of how many block scopes (each pushed by
-`compileBlock` for its own `{ }`, per `internal/language/compiler/block.go`) lie between the
-`break`/`continue` statement and the loop's own boundary. `popScopeByteCode`
-(`internal/language/bytecode/symbols.go`) walks up exactly one parent per `PopScope`
-executed (or exactly `N` when given an explicit `PopScope, N` count, which nothing currently
-supplies for this case), so a `break`/`continue` nested one or more blocks deep leaves that
-many scopes un-popped when it lands at the loop's exit/continue point, which only pops the
-loop's own single scope. `internal/language/compiler/compiler.go`'s `blockDepth` field
-already tracks exactly how many block levels deep the compiler is at any point during
-compilation, which is what a fix would most likely use to compute and emit the correct
-`PopScope, N` before each `break`/`continue`'s branch.
+accompanying `PopScope`, regardless of how many scopes (each pushed by `compileBlock` for its
+own `{ }`, by `compileSwitchAssignedValue` for a switch's named init clause, or by the
+anonymous-switch synthetic-symbol path) lie between the `break`/`continue` statement and the
+loop's own boundary. `popScopeByteCode` (`internal/language/bytecode/symbols.go`) walks up
+exactly one parent per `PopScope` executed (or exactly `N` when given an explicit
+`PopScope, N` count, which nothing currently supplies for this case), so a `break`/`continue`
+nested one or more scopes deep leaves that many scopes un-popped (or, for the anonymous-switch
+case, one synthetic symbol un-deleted) when it lands at the loop's exit/continue point, which
+only accounts for the loop's own scope(s). `internal/language/compiler/compiler.go`'s
+`blockDepth` field already tracks exactly how many block levels deep the compiler is at any
+point during compilation, which is what a fix would most likely use to compute and emit the
+correct `PopScope, N` before each `break`/`continue`'s branch; the anonymous-switch
+synthetic-symbol case would need the equivalent `SymbolDelete` emitted along that same exit
+path, or reworked to use scope-based cleanup instead of an explicit delete.
 
 ---
 
@@ -5541,6 +5621,104 @@ Regression tests were added at two levels:
   the bug end-to-end through the real CLI compilation/execution path used by
   `ego run`/`ego test` (confirmed to fail with "function did not return the expected
   number of values" against the pre-fix compiler, and to pass after the fix).
+
+---
+
+<a id="BUG-64"></a>
+
+### BUG-64 — A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`, breaking `--types strict` when the receiver is returned as its own type
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while writing an Ego regression test for PERFORMANCE.md Finding 8 (unrelated to that
+change — confirmed present on the unmodified compiler by stashing all Finding 8 changes and
+re-running the reproducer). A method with a pointer receiver (`func (b *Builder) …`) that
+returns the receiver itself as the declared `*Builder` return type fails to compile/run under
+`--types strict`, even though nothing about the method's logic is wrong. This breaks the
+common Go "fluent builder" pattern (`b.add("a").add("b")`) under strict typing, though the
+bug does not actually require chaining — a single call is enough to reproduce it, and simply
+mutating the receiver without returning it works fine.
+
+**Reproducer:**
+
+```go
+package main
+
+type Builder struct {
+    text string
+}
+
+func (b *Builder) add(s string) *Builder {
+    return b
+}
+
+func main() {
+    b := &Builder{text: ""}
+    b.add("a")
+}
+```
+
+**Actual output** (`ego run --types strict`):
+
+```text
+Error: at add(line 8), type mismatch: Builder struct{text string}, *Builder struct{text string}
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+(no output; program completes successfully)
+```
+
+**Notes:**  
+Does **not** reproduce under the default `dynamic` type mode, only `--types strict`. Also does
+**not** reproduce for an ordinary (non-receiver) `*Builder`-typed parameter returned the same
+way (`func identity(b *Builder) *Builder { return b }` works fine under strict mode) — the bug
+is specific to the *receiver* parameter of a pointer-receiver method.
+
+Root cause: `internal/language/bytecode/this.go`, `getThisByteCode` (invoked by the `GetThis`
+instruction that `internal/language/compiler/function.go`'s `generateFunctionBytecode` emits
+at the top of every method body to bind the receiver parameter). When a method is called on a
+pointer variable, the value pushed onto the "this" stack is Ego's own pointer wrapper (`*any`,
+matching the `&Builder{}` value in the reproducer). `getThisByteCode` unconditionally
+dereferences it:
+
+```go
+if ptr, ok := v.(*any); ok && ptr != nil {
+    v = *ptr
+}
+```
+
+The comment above this explains the *intent* correctly: value receivers need something they
+can copy via `$new`, and pointer receivers need field writes to propagate through the
+underlying Go `*data.Struct` pointer — both of which this deref achieves, and mutation through
+the receiver (`b.text = b.text + s`, in the original chained-call reproducer this bug was
+found from) works correctly either way. The problem is that the deref also **discards Ego's
+own pointer-type marker**: after this runs, the value bound to the receiver name is a bare
+`*data.Struct`, indistinguishable at the Ego type-system level from a plain (non-pointer)
+struct value — `typeof(b)` inside the method body now reports `Builder`, not `*Builder`,
+regardless of how the receiver was declared. In `dynamic` mode nothing checks this, so the
+method works correctly end-to-end. In `strict` mode, `return b` runs the declared-return-type
+coercion that `internal/language/compiler/return.go`'s `compileReturn` appends from
+`c.coercions` (built by `compileReturnTypes` in `function.go` from the method's declared
+`*Builder` return type) — that coercion compares the receiver's actual (now-unwrapped) runtime
+type against the declared `*Builder` type and fails, because they no longer agree.
+
+A fix would need `getThisByteCode` to preserve pointer-type identity for the *Ego-level* type
+system while still handing pointer-receiver methods a value whose field writes propagate (e.g.
+re-wrapping the dereferenced `*data.Struct` before `c.setAlways`, or teaching the strict-mode
+return-type coercion to recognize a raw `*data.Struct` as satisfying a declared Ego pointer
+type when it originated from a pointer receiver) — deliberately not attempted here to keep
+this finding scoped to a clean report rather than a speculative fix to receiver/pointer-type
+handling, an area with its own existing complexity (see the `data.Array`/pointer-receiver
+auto-dereference notes elsewhere in this document).
+
+`tests/flow/basic_block_shared_scope.ego`'s pointer-receiver test was written to avoid this
+bug (calls the receiver method for its mutation side effect only, without returning/chaining
+the receiver), with a comment cross-referencing this entry, so PERFORMANCE.md Finding 8's test
+suite does not depend on this unrelated bug being fixed.
 
 ---
 

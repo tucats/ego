@@ -319,8 +319,16 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
-	// Pass true for "runDefers" flag, since this block can support defer statements.
-	if err = cx.compileRequiredBlock(true); err != nil {
+	// Pass true for "runDefers" flag, since this block can support defer
+	// statements. Also eligible for PERFORMANCE.md Finding 8 scope elision:
+	// this is the function BODY's own scope layer, separate from (and
+	// nested inside) the call-boundary/parameter scope pushed above by
+	// generateFunctionBytecode's own PushScope - eliding this layer never
+	// touches parameter binding. A body containing a top-level "defer" is
+	// automatically excluded from elision (blockBodyNeedsOwnScope treats
+	// any "defer" as disqualifying), so a function that actually uses
+	// defer/RunDefers keeps its own scope exactly as before.
+	if err = cx.compileRequiredBlock(true, true); err != nil {
 		return nil, nil, err
 	}
 

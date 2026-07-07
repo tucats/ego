@@ -6,6 +6,119 @@ import (
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
+// ---------------------------------------------------------------------------
+// PERFORMANCE.md Finding 8: skip the scope for a block that declares nothing
+//
+// PERFORMANCE.md Finding 4 already stopped the compiler from re-allocating a
+// fresh runtime scope on every iteration of a for-loop whose body never
+// declares a local and never captures a variable by reference. This section
+// applies the exact same idea one level lower: to any brace-enclosed block,
+// wherever it appears (an "if"/"else" body, a function body, a switch
+// "case"/"default" body, a "try"/"catch" body, or a bare "{ ... }" statement).
+//
+// A PushScope/PopScope pair exists for exactly one reason: to give a block's
+// own ":="/"var" declarations a home that is discarded when the block exits,
+// so a second execution of the same block (e.g. because it sits inside a
+// loop, or the enclosing function is called again) does not collide with the
+// first. When a block declares nothing of its own, there is nothing that
+// needs that isolation: any variable a nested closure captures belongs to
+// SOME enclosing construct (a function call or a for-loop body), and that
+// construct is already responsible for giving ITS OWN scope the correct
+// lifetime. Removing an empty pass-through scope layer in between changes
+// nothing about which names are visible or how long they live.
+//
+// scopeElisionDisqualified (below) is a deliberately conservative token-level
+// scan - not a full semantic analysis - matching the spirit of Finding 4's own
+// predicate. It disqualifies a block from scope elision, forcing the always
+// -scoped behavior, whenever the block contains, anywhere:
+//
+//   - a function literal, a "go" statement, or a "defer" (kept as a
+//     precaution even though a block with no local declarations of its own
+//     has nothing scope-identity-sensitive for a closure to capture; erring
+//     conservative here costs nothing but a missed optimization), or
+//   - a ":=", "var", "const", "type", "import", or "package" declaration
+//     directly at the block's own top level (brace-depth 0 relative to the
+//     block itself) - statement.go's compileStatement() dispatches all six
+//     of these as legal both at the top level AND inside a function body,
+//     and every one of them binds a new name into whatever scope is
+//     current at the time (a runtime StoreAlways/Store, not merely
+//     compile-time bookkeeping). This is the one case that would actually
+//     be unsafe to elide: without the block's own scope, that name is
+//     created directly in the enclosing scope instead, where it can
+//     collide with (or shadow, undetected) an unrelated, later declaration
+//     of the same name once the block that "should" have owned it is gone.
+//     A "const" declaration with no matching scope is what originally
+//     surfaced this: internal/language/compiler's own test harness runs
+//     many independent Ego programs against one shared root symbol table,
+//     and a leaked immutable constant from one program collided with an
+//     unrelated later variable of the same name in another.
+//
+// Being overly cautious only costs a missed optimization opportunity, never
+// correctness: a nested block's own "if x := f(); ... {}" init-clause ":="
+// sitting at depth 0 (before ITS OWN opening brace) is treated as
+// disqualifying even though it is actually scoped to the nested construct,
+// exactly like the equivalent gap already documented for Finding 4.
+// ---------------------------------------------------------------------------
+
+// blockBodyNeedsOwnScope decides whether a brace-delimited block (an
+// "if"/"else" body, a function body, a "try"/"catch" body, or a bare
+// "{ ... }" statement) needs its own runtime scope. It must be called with
+// the tokenizer positioned exactly as compileBlock expects to be called -
+// i.e. the block's opening "{" has already been consumed, so the current
+// position is the first token of the block's body.
+//
+// The scan tracks nested-brace depth so that declarations properly scoped to
+// a NESTED block (if/for/switch/etc. inside this one) do not disqualify this
+// block itself; it stops as soon as it reaches, at its own top level (depth
+// 0), the block's own matching "}".
+//
+// Switch "case"/"default" bodies are deliberately NOT covered by this
+// function - see the comment in compileSwitchCase for a genuine, pre-existing
+// bug (tracked separately) that scope elision would make newly reproducible
+// there.
+func (c *Compiler) blockBodyNeedsOwnScope() bool {
+	pos := c.t.Mark()
+
+	if pos >= len(c.t.Tokens) {
+		return true
+	}
+
+	depth := 0
+
+	for i := pos; i < len(c.t.Tokens); i++ {
+		tok := c.t.Tokens[i]
+
+		switch {
+		case tok.Is(tokenizer.BlockBeginToken):
+			depth++
+
+		case tok.Is(tokenizer.BlockEndToken):
+			// depth == 0 means this is OUR OWN closing brace - the whole
+			// body has been scanned with nothing disqualifying found.
+			if depth == 0 {
+				return false
+			}
+
+			depth--
+
+		case tok.Is(tokenizer.FuncToken), tok.Is(tokenizer.GoToken), tok.Is(tokenizer.DeferToken):
+			return true
+
+		case depth == 0 && (tok.Is(tokenizer.DefineToken) ||
+			tok.Is(tokenizer.VarToken) ||
+			tok.Is(tokenizer.ConstToken) ||
+			tok.Is(tokenizer.TypeToken) ||
+			tok.Is(tokenizer.ImportToken) ||
+			tok.Is(tokenizer.PackageToken)):
+			return true
+		}
+	}
+
+	// Unbalanced braces / ran off the end of the token stream: malformed
+	// input the parser would already reject elsewhere. Take the safe path.
+	return true
+}
+
 // compileBlock compiles a brace-enclosed statement block. The caller must have
 // already consumed the opening "{" token before calling this function.
 //
@@ -15,9 +128,17 @@ import (
 // start and a PopScope at the end; the runtime interpreter creates and destroys
 // a child symbol table to match.
 //
+// mayElideScope opts this call site in to PERFORMANCE.md Finding 8: when
+// true, and blockBodyNeedsOwnScope() finds nothing that requires a runtime
+// scope, the PushScope/PopScope pair is skipped entirely. Compile-time
+// bookkeeping (blockDepth, PushSymbolScope/PopSymbolScope, and therefore
+// unused-variable detection) always happens regardless, exactly as it does
+// for every other block - only the runtime bytecode is conditional. Passing
+// false preserves the exact previous behavior (always scoped).
+//
 // Semicolons between statements are silently consumed. If the token stream ends
 // before a closing "}" is found, a compile error is returned.
-func (c *Compiler) compileBlock(runDefers bool) error {
+func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
 	parsing := true
 	c.blockDepth++
 
@@ -25,9 +146,16 @@ func (c *Compiler) compileBlock(runDefers bool) error {
 	// can detect variables that are declared but never read.
 	c.PushSymbolScope()
 
+	needsScope := true
+	if mayElideScope {
+		needsScope = c.blockBodyNeedsOwnScope()
+	}
+
 	// At runtime, PushScope creates a child symbol table so that variables
 	// declared inside this block shadow but do not overwrite outer variables.
-	c.b.Emit(bytecode.PushScope)
+	if needsScope {
+		c.b.Emit(bytecode.PushScope)
+	}
 
 	for parsing {
 		// A closing "}" ends the block.
@@ -49,14 +177,20 @@ func (c *Compiler) compileBlock(runDefers bool) error {
 	}
 
 	// If this block supports `defer` statements, run them now as we exit
-	// the block.
+	// the block. This is unconditional on runDefers, independent of
+	// needsScope: a block that qualifies for scope elision can never
+	// contain a "defer" in the first place (blockBodyNeedsOwnScope treats
+	// any "defer" as disqualifying), so RunDefers here is a correctly-timed
+	// no-op for elided blocks and unchanged behavior for scoped ones.
 	if runDefers {
 		c.b.Emit(bytecode.RunDefers)
 	}
 
 	// Emit the matching PopScope so the runtime destroys the child symbol
 	// table when execution leaves the block.
-	c.b.Emit(bytecode.PopScope)
+	if needsScope {
+		c.b.Emit(bytecode.PopScope)
+	}
 
 	c.blockDepth--
 
@@ -74,9 +208,12 @@ func (c *Compiler) compileBlock(runDefers bool) error {
 // from the block to emit RunDefers which runs any pending defers for this
 // call frame.
 //
+// mayElideScope is passed straight through to compileBlock - see its doc
+// comment for what it controls.
+//
 // This helper is used by if, for, func, switch, try, and other statements
 // that are always followed by a block body.
-func (c *Compiler) compileRequiredBlock(runDefers bool) error {
+func (c *Compiler) compileRequiredBlock(runDefers bool, mayElideScope bool) error {
 	// An empty block ({}) is legal and generates no code.
 	if c.t.IsNext(tokenizer.EmptyBlockToken) {
 		return nil
@@ -87,5 +224,5 @@ func (c *Compiler) compileRequiredBlock(runDefers bool) error {
 		return c.compileError(errors.ErrMissingBlock)
 	}
 
-	return c.compileBlock(runDefers)
+	return c.compileBlock(runDefers, mayElideScope)
 }

@@ -867,7 +867,204 @@ depend on exactly this kind of compile-time-resolved storage to be worthwhile at
 
 ---
 
-## 9. Summary table
+## 9. Finding 8 (design-level) — per-execution basic-block scopes: same idea as Finding 4, one level lower
+
+**This one is also *not* a bug** — same category as Finding 4: a runtime scope that exists to
+correctly support a language feature (block-local `:=`/`var`/`const`/`type` isolation), paid
+for on every execution even when that feature is never actually used.
+
+### What it costs - Finding 8
+
+Finding 4 stopped a `for` loop from re-allocating a fresh scope on every *iteration* when the
+loop's own body never needed one. It did not touch the scopes pushed by constructs *nested
+inside* that body. An `if`/`else` whose branches declare nothing still pushed and popped a
+scope every single time either branch ran — including every iteration of a loop whose own
+body scope Finding 4 had already eliminated:
+
+```go
+for i := 0; i < 20000000; i++ {
+    if i % 2 == 0 {
+        sum = sum + i
+    } else {
+        sum = sum - i
+    }
+}
+```
+
+Before this fix, `pushScopeByteCode`/`NewChildSymbolTable` reappear in this profile (despite
+Finding 4 already having eliminated them from an *unconditional*-body version of the same
+loop), because the `if`/`else` bodies are a completely separate pair of `PushScope`/`PopScope`
+instructions that Finding 4 never analyzed.
+
+### Why it's there - Finding 8
+
+Same reason as Finding 4: a block's `PushScope`/`PopScope` pair exists to give any `:=`/`var`
+declarations inside it an isolated home that is discarded when the block exits, so a second
+execution of the same block (because it's inside a loop, or its enclosing function is called
+again) does not collide with the first. This is necessary machinery for blocks that declare
+something — but the *overwhelming majority* of `if`/`else` bodies, and a great many function
+bodies, declare nothing at their own top level at all.
+
+### The opportunity / Recommendation
+
+Identical shape to Finding 4's, applied to any brace-delimited block, not just loop bodies:
+detect, once, at the point the compiler is about to compile a block's body, whether that body
+declares anything (`:=`, `var`, `const`, `type`, `import`, or `package`) at its own top level,
+or contains a closure-capturing construct (function literal, `go`, `defer`). If none of those
+is present, skip the block's `PushScope`/`PopScope` pair entirely — unlike Finding 4, there is
+no "loop variable" forcing at least one scope to remain, so a qualifying block needs **zero**
+scopes, not one shared scope.
+
+### Resolution (July 2026) — Finding 8
+
+Implemented the recommendation above.
+
+**The predicate.** `blockBodyNeedsOwnScope` (new, in `internal/language/compiler/block.go`) is
+a deliberately conservative token-level scan of the block body — not a full semantic analysis,
+matching Finding 4's own predicate in spirit — run once at compile time, before the block is
+compiled. It forces the old (always-scoped) behavior whenever the block contains, anywhere, a
+function literal/`go`/`defer`, or, directly at its own top level (brace-depth 0 relative to
+itself), a `:=`, `var`, `const`, `type`, `import`, or `package` declaration.
+
+**Where it's applied.** `compileBlock`/`compileRequiredBlock` gained a `mayElideScope bool`
+parameter; when true and the predicate finds nothing disqualifying, the runtime
+`PushScope`/`PopScope` instructions are skipped (compile-time bookkeeping — `blockDepth`,
+`PushSymbolScope`/`PopSymbolScope`, and therefore unused-variable detection — always still
+happens, exactly as Finding 4's `compileForBody` already established as the right pattern).
+Enabled at: `if`/`else` bodies (`if.go`), a bare `{ ... }` statement (`statement.go`), the
+`@compile` directive's catch block (`directives.go`), a `for cond { ... }` loop's body
+(`conditionalFor`, `for.go` — previously excluded by Finding 4 for an unrelated reason, fixed
+here, see below), a function's own body (`function.go` — the scope layer *inside* the
+call-boundary/parameter scope, which is untouched), and a `try`/`catch` statement's `catch`
+body only (`try.go`).
+
+**Two call sites were deliberately left unmodified**, each for a specific, verified reason
+rather than general caution:
+
+- **`try`'s own body** (not its `catch` body) must always keep its scope. When an error occurs
+  partway through the try body, control jumps directly to the catch handler *without* running
+  the try body's own normal-exit `PopScope`, leaving that scope deliberately open — the catch
+  clause stores its error variable into that still-open scope, and an explicit extra
+  `PopScope` (see `compileTry`) closes it once the catch body finishes. Eliding the try body's
+  own scope would remove the table that mechanism depends on. The separate, nested `catch`
+  body scope has no such dependency and was confirmed independently elidable.
+- **`switch` `case`/`default` bodies** are not covered at all. Investigating this call site
+  surfaced a genuine, pre-existing bug — now folded into
+  [BUG-61](ISSUES.md#BUG-61) — where `continue` inside a case body already skips scope/symbol
+  cleanup the switch statement depends on. That is silently masked today whenever the case
+  body pushes its own (always-present) scope, because `continue`'s skip *also* leaves that
+  scope's own `PopScope` unexecuted, which coincidentally shifts later same-switch iterations
+  into a fresh table where the stale name is shadowed rather than collided with. Eliding this
+  scope removes that accidental masking and makes the bug reliably reproducible instead of
+  merely latent. Scope elision was therefore withheld from this one call site until BUG-61 has
+  a real fix, rather than bundling an unrelated correctness fix into a performance change.
+
+**A structural side effect required a small, independent fix.** `conditionalFor`
+(`for.go`) had its own "was the loop body actually empty" check that inspected whether the
+*last emitted instruction* was a `PopScope` — a check that would have silently stopped working
+(or worse, started rejecting legitimate non-empty loop bodies) the moment a qualifying body's
+`PopScope` was elided. It was replaced with a check based purely on `statementCount` (a
+compile-time counter of real statements compiled), which was already being tracked alongside
+the old check and needed no scope bytecode to exist at all — strictly more robust, and simpler
+than what it replaced.
+
+**Files modified:**
+
+- `internal/language/compiler/block.go` — added `blockBodyNeedsOwnScope` and a large comment
+  block explaining the design; `compileBlock`/`compileRequiredBlock` gained the
+  `mayElideScope bool` parameter.
+- `internal/language/compiler/if.go`, `statement.go`, `directives.go`, `function.go`,
+  `try.go` — enabled elision at the call sites described above.
+- `internal/language/compiler/for.go` — enabled elision for `conditionalFor`'s body; replaced
+  the `PopScope`-sniffing empty-body check with a `statementCount`-only comparison.
+- `internal/language/compiler/switch.go` — investigated and explicitly left unmodified (see
+  above); the surfaced bug is documented, not fixed, in `docs/ISSUES.md` BUG-61.
+- `internal/language/compiler/block_finding8_test.go` (new) —
+  `TestBlockBodyNeedsOwnScope` (11 cases directly exercising the predicate: no declarations,
+  plain assignment, top-level `:=`/`var`/`const`/`type`, a declaration nested inside an `if`
+  at depth 2, a function literal, `go`, `defer`, a nested block with its own declaration not
+  disqualifying the outer block, and malformed input) and
+  `TestFinding8ConstInElidedBlockDoesNotLeak` (a same-program regression test for the `const`
+  bug described next).
+- `tests/flow/basic_block_shared_scope.ego` (new) — 19 `@test` blocks covering: plain
+  if/else with no locals, an if body with a local repeated across 50 loop iterations, `const`
+  declared inside an elided block (both a bare block and a function body, plus the exact
+  two-test-file shape that originally surfaced the leak), `break`/`continue` inside elided
+  blocks at 1-2 nesting levels (including 500-iteration and 200-call stress cases to catch
+  slow scope-depth drift), `continue` inside a `try`/`catch`'s `catch` body (run 300×8 times),
+  a `catch` body with its own local, a range-over-map loop nested inside an elided block
+  exited via early `break` (confirming the map's read lock still releases), repeated
+  pointer-receiver calls inside an elided block, a function body with no locals called 100
+  times, a function using `defer` (confirming its scope is never elided), doubly-nested `if`
+  with no locals at either level, and a `conditionalFor` loop with an elided body.
+
+**A second, unrelated bug found while writing these tests, also *not* fixed as part of this
+task:** the pointer-receiver test originally chained calls that returned the receiver as its
+own declared pointer type (`b.add("a").add("b")`, each `add` returning `*Builder`). Under
+`--types strict` this failed with `type mismatch: Builder …, *Builder …` — root-caused to
+`getThisByteCode` (`internal/language/bytecode/this.go`) discarding Ego's pointer-type marker
+when it dereferences a pointer receiver for field-write propagation, so the receiver's runtime
+type no longer matches its declared type once returned. Confirmed pre-existing and unrelated
+to Finding 8 by reproducing it against the unmodified compiler. Documented as
+[BUG-64](ISSUES.md#BUG-64) rather than fixed here; the test was rewritten to call the receiver
+method for its mutation side effect only (no chaining/return), which exercises the same
+elided-block/receiver-stack mechanics this Finding's test suite cares about without depending
+on the unrelated bug being fixed.
+
+**Bug found while doing this work, but *not* fixed as part of this task:** implementing scope
+elision for `switch` `case`/`default` bodies surfaced a genuine, pre-existing defect in how
+`break`/`continue` interact with a switch statement's own scope/symbol cleanup — see the
+"Reproducer 2" addition to `docs/ISSUES.md` BUG-61 for the full root-cause writeup and a
+directly `ego run`-reproducible case (a `continue` inside a named-init `switch`'s case body,
+in a loop, causes a later unrelated variable of the same name to fail with
+`symbol already exists`). Confirmed pre-existing and unrelated to this change by reproducing
+it against the unmodified compiler. Scope elision was withheld from switch case/default bodies
+specifically because of this finding, keeping this change scoped to a genuine, uncontroversial
+performance win rather than bundling in an unrelated correctness fix.
+
+**A second, more subtle correctness bug was found and fixed during development, not merely
+documented:** an early version of `blockBodyNeedsOwnScope` checked only for `:=` and `var`,
+missing `const` (and `type`/`import`/`package`) entirely. A block containing only a `const`
+declaration has no `:=`/`var` token at all, so it was wrongly treated as declaration-free and
+elided. Since `ego test` runs every test file in one process against a single shared root
+symbol table, a leaked immutable constant from one test file collided with an unrelated,
+later variable of the same name in a completely different test file
+(`item is read-only`) — caught by the full `ego test tests/` regression run before this change
+was considered complete, root-caused, and fixed by adding all five remaining
+declaration-introducing keywords to the predicate.
+
+**Correctness verification:** beyond the new unit and Ego-level tests described above, the
+full existing suite continues to pass unmodified: `go test ./...`, `go test -race ./...`
+(1170+ Go tests across the repository), and `ego test tests/` (1174 `@test` blocks, up from
+1155 before this change).
+
+**Re-profiling results:** two workloads not previously improved by Findings 1-4, since neither
+has an unconditional loop body:
+
+| Workload | Before Finding 8 | After Finding 8 | Change |
+| - | - | - | - |
+| If/else in a tight loop (20M iterations, `if i%2==0 { sum += i } else { sum -= i }`) | 23.32s | 16.42s | **-30%** |
+| Function calls with a no-locals body (3M calls to `func add1(x int) int { return x + 1 }`) | 6.70s | 6.00s | **-10%** |
+
+(Wall-clock `time ego run`, averaged over 2 runs each; `ego run --pprof` profiles taken
+alongside confirm `pushScopeByteCode`/`NewChildSymbolTable`/`popScopeByteCode` no longer
+appear anywhere in the if/else workload's profile at all, matching Finding 4's own evidence
+pattern for the equivalent loop-body case.) The smaller function-call improvement is expected
+and correct, for the same reason Finding 4's function-call workload showed a smaller gain than
+its tight-loop workload: `add1`'s own body scope is eliminated, but each call still pushes its
+own, separate call-boundary/parameter scope, which this change does not touch and was never
+intended to.
+
+**Honest assessment:** the if/else workload's -30% is a genuine, standalone win on top of
+everything Findings 1-4 already delivered — this is exactly the "basic block nested inside an
+already-optimized loop" case Finding 4 explicitly did not cover. The function-call workload's
+smaller -10% is consistent with (and roughly comparable to) Finding 4's own function-call
+result, for the identical reason: the per-call boundary scope (Finding 7's territory, not this
+one) remains the dominant remaining cost for call-heavy code.
+
+---
+
+## 10. Summary table
 
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
@@ -878,19 +1075,23 @@ depend on exactly this kind of compile-time-resolved storage to be worthwhile at
 | 5 | GC/scheduler overhead | >50% of total wall time in every workload | N/A (symptom) | N/A | Systemic consequence of 1, 2, 4 | Partially addressed by fixing 1, 2, and 3 — see Resolution sections above |
 | 6 | Reflection-based native calls | ~0.9% measured — smaller than expected | N/A | N/A | Investigated, deprioritized by evidence | Not planned |
 | 7 | Name-based symbol resolution | ~2-3% of total, on top of scope-creation costs | Very High | High | Architectural / VM redesign | Open |
+| 8 | Per-execution basic-block scopes (if/else, function bodies, etc.) | -30% on an if/else-in-a-loop workload; -10% on a no-locals function-call workload | Medium-High | Medium (compiler analysis; surfaced BUG-61) | Same category as Finding 4, one level lower | **Fixed** (July 2026) — see Resolution above |
 
-**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~, in that order, re-profiling after
-each change using the same `--pprof` workloads described in Section 1 to confirm the expected
-compounding effect on Finding 5 before deciding whether Finding 7 is ever worth pursuing.
-Findings 1-4 are all done; re-profiling after each (see their Resolution sections) confirms
-each predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no longer
-appears in the profile on this path at all; `ui.Log` argument construction is now uniformly
-guarded across 248 inspected call sites; `pushScopeByteCode`/`NewChildSymbolTable` no longer
-appear at all in a loop with no closures or top-level declarations). Finding 4 delivered the
-largest single-fix wall-clock improvement of the four (-48% to -49% on top of Findings 1+2+3,
-depending on workload) — a cumulative **63-72% reduction from the original baseline**
-(95.6s → 27.25s on the 50,000,000-iteration loop). `runtime.kevent` and `runtime.madvise`
-(thread scheduling and memory management) remain present in every profile but are no longer
-anywhere near the dominant cost they were before Finding 4, leaving Finding 7's architectural
-symbol-resolution redesign as the only remaining lever of comparable size — at very
-substantially higher effort and risk than any of the four fixes completed so far.
+**Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~, in that order, re-profiling
+after each change using the same `--pprof` workloads described in Section 1 to confirm the
+expected compounding effect on Finding 5 before deciding whether Finding 7 is ever worth
+pursuing. Findings 1-4 and 8 are all done; re-profiling after each (see their Resolution
+sections) confirms each predicted direct cost was eliminated (`uuid.New` gone entirely;
+`IsType` no longer appears in the profile on this path at all; `ui.Log` argument construction
+is now uniformly guarded across 248 inspected call sites; `pushScopeByteCode`/
+`NewChildSymbolTable` no longer appear at all in a loop with no closures or top-level
+declarations, nor in an if/else nested inside one). Finding 4 delivered the largest single-fix
+wall-clock improvement so far (-48% to -49% on top of Findings 1+2+3, depending on workload) —
+a cumulative **63-72% reduction from the original baseline** (95.6s → 27.25s on the
+50,000,000-iteration loop). Finding 8 adds a further **-30%** on top of that for code shaped
+like conditionals inside loops, a pattern Finding 4 could not reach on its own. `runtime.kevent`
+and `runtime.madvise` (thread scheduling and memory management) remain present in every
+profile but are no longer anywhere near the dominant cost they were before Findings 4 and 8,
+leaving Finding 7's architectural symbol-resolution redesign as the only remaining lever of
+comparable size — at very substantially higher effort and risk than any of the fixes completed
+so far.

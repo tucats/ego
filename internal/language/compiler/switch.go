@@ -296,6 +296,21 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 	// after the body, matches that: see compileBlock's own PushScope/
 	// PushSymbolScope pair for the same pattern used by brace-delimited
 	// blocks elsewhere in the compiler.
+	// NOT eligible for PERFORMANCE.md Finding 8 scope elision - see the long
+	// comment above scopeElisionDisqualified in block.go's design notes.
+	// Investigating this call site surfaced a genuine, pre-existing bug
+	// (tracked separately, not fixed here to keep this change scoped):
+	// "continue" inside a case body jumps directly to the enclosing loop's
+	// increment clause, skipping the switch's own cleanup of its synthetic
+	// test-value symbol (a SymbolDelete emitted at the switch's normal exit
+	// point). Today that is silently masked whenever the case body pushes
+	// its own scope, because "continue" also leaves THAT scope's PopScope
+	// unexecuted, which happens to shift subsequent same-switch iterations
+	// into a fresh, still-empty table where the stale test-value name is
+	// simply shadowed rather than collided with. Eliding this scope removes
+	// that accidental masking and makes the underlying bug reproducible
+	// ("symbol already exists") on the very next loop iteration. Until that
+	// is fixed properly, this scope must always be pushed.
 	c.blockDepth++
 	c.PushSymbolScope()
 	c.b.Emit(bytecode.PushScope)
@@ -350,7 +365,9 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 
 	// Fix BUG-44: the default clause's body is its own implicit block too,
 	// exactly like an ordinary case body - see the matching comment in
-	// compileSwitchCase for the full explanation.
+	// compileSwitchCase for the full explanation. NOT eligible for
+	// PERFORMANCE.md Finding 8 scope elision, for the same continue/
+	// SymbolDelete reason documented in compileSwitchCase.
 	c.blockDepth++
 	c.PushSymbolScope()
 	c.b.Emit(bytecode.PushScope)

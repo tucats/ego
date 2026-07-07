@@ -17,8 +17,15 @@ func (c *Compiler) compileTry() error {
 	c.b.Emit(bytecode.Try, 0)
 	c.b.Emit(bytecode.Push, tryMarker)
 
-	// Statement to try
-	if err := c.compileRequiredBlock(false); err != nil {
+	// Statement to try. NOT eligible for PERFORMANCE.md Finding 8 scope
+	// elision: if an error occurs partway through the try body, control
+	// jumps directly to the catch handler below WITHOUT running this
+	// block's own normal-exit PopScope, leaving its scope deliberately
+	// still open. The catch clause below stores its error variable into
+	// that still-open scope, and an explicit extra PopScope (see below)
+	// closes it once the catch body finishes. Eliding this block's own
+	// scope would remove the very table that mechanism depends on.
+	if err := c.compileRequiredBlock(false, false); err != nil {
 		return err
 	}
 
@@ -55,7 +62,15 @@ func (c *Compiler) compileTry() error {
 		c.DefineSymbol(errName.Spelling())
 	}
 
-	if err := c.compileRequiredBlock(false); err != nil {
+	// The catch body has its own, separate scope layer (this call), nested
+	// inside the try body's still-open scope (see above). Eliding THIS
+	// layer, when the catch body itself declares nothing, is safe: the
+	// error variable "e" was already stored into the try body's scope,
+	// above, before this scope would even be pushed, so it is unaffected
+	// either way -- and the extra PopScope below always closes exactly the
+	// try body's scope, regardless of whether this call pushed one of its
+	// own in between.
+	if err := c.compileRequiredBlock(false, true); err != nil {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block

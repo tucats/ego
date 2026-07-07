@@ -1147,7 +1147,7 @@ func (c *Compiler) compileBlockDirective() error {
 		c.DefineSymbol(errName.Spelling())
 	}
 
-	if err := c.compileRequiredBlock(false); err != nil {
+	if err := c.compileRequiredBlock(false, true); err != nil {
 		return err
 	}
 	// Need extra PopScope because we're still running in the scope of the try{} block
