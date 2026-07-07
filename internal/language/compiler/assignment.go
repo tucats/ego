@@ -87,8 +87,9 @@ func (c *Compiler) compileAssignment() error {
 	//
 	//  1. Simple variable:   x++  or  x--
 	//     The storeLValue has exactly two instructions: Store "x" followed
-	//     by DropToMarker.  We emit Load + Push 1 + Add/Sub + Dup + Store
-	//     directly into c.b, matching the existing behavior.
+	//     by DropToMarker.  We emit Load + Push 1 + Add/Sub + Store +
+	//     DropToMarker directly into c.b (see BUG-63 in docs/ISSUES.md for
+	//     why the DropToMarker step matters).
 	//
 	//  2. Qualified lvalue:  a[i]++  or  s.field++
 	//     The storeLValue contains a load path (Load base, <index exprs>),
@@ -115,12 +116,41 @@ func (c *Compiler) compileAssignment() error {
 		if isSimpleLValue {
 			// --- Simple variable: x++ or x-- ---
 			//
-			// Emit: Load x, Push 1, Add/Sub, Dup, Store x
+			// Emit: Load x, Push 1, Add/Sub, Store x, DropToMarker
 			//
-			// The Dup leaves a copy of the new value on the stack (below the
-			// "let" marker that assignmentTarget pushed) so the result is
-			// available to callers that treat ++ as an expression. The stack
-			// is cleaned up by the next DropToMarker in the generated code.
+			// BUG-63 FIX: before this fix, this branch ended right after
+			// "Store x" and returned immediately -- it never emitted a
+			// DropToMarker. Here is why that mattered:
+			//
+			// A few lines above (inside c.assignmentTarget(), called at the
+			// very top of compileAssignment), the compiler already emitted
+			// "Push StackMarker(let)" into c.b. Think of a StackMarker as a
+			// sentinel value pushed onto the runtime value stack purely so
+			// that later code can find its way back to "the stack depth we
+			// started at" -- like a bookmark. Every other path through this
+			// function honors the contract that whoever placed that bookmark
+			// is responsible for removing it again with a matching
+			// "DropToMarker" instruction (which pops values off the stack
+			// until it finds and removes the bookmark). The qualified-lvalue
+			// branch just below this one does that correctly, because it
+			// appends the full storeLValue bytecode fragment, which always
+			// ends in DropToMarker.
+			//
+			// This branch, however, built its own hand-rolled Load/Push/
+			// Add-or-Sub/Store sequence instead of using storeLValue, and
+			// returned without ever emitting the matching DropToMarker. The
+			// bookmark was left on the stack permanently. A statement like
+			// "x++" is supposed to leave the stack exactly as it found it --
+			// the same way "x = x + 1" does -- but instead it grew the stack
+			// by one leaked marker every time it ran. A later function call
+			// in the same scope (or an enclosing one) would then see that
+			// stray marker mixed in with its own arguments or return values,
+			// typically surfacing as "function did not return the expected
+			// number of values".
+			//
+			// The fix is the DropToMarker call below: it removes the exact
+			// "let" marker that assignmentTarget() pushed, restoring the
+			// stack to the depth it had before this statement began.
 			t := data.String(firstInstr.Operand)
 
 			if err = c.ReferenceSymbol(t); err != nil {
@@ -130,8 +160,8 @@ func (c *Compiler) compileAssignment() error {
 			c.b.Emit(bytecode.Load, t)
 			c.b.Emit(bytecode.Push, 1)
 			c.b.Emit(autoMode)
-			c.b.Emit(bytecode.Dup)
 			c.b.Emit(bytecode.Store, t)
+			c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
 
 			return nil
 		}

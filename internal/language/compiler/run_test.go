@@ -172,6 +172,100 @@ func TestArbitraryCodeFragments(t *testing.T) {
 		},
 		// --- end BUG-06 regression tests -------------------------------------
 
+		// --- BUG-63 regression tests: standalone x++/x-- leaked a "let" -------
+		// stack marker, corrupting later function calls in the same scope.
+		//
+		// Background for the novice reader: the compiler uses temporary
+		// "marker" values pushed onto the runtime value stack as bookmarks,
+		// so that cleanup code later can pop everything back down to a known
+		// point. Before the BUG-63 fix, compiling a bare "x++" or "x--"
+		// statement (used on its own, not as a for-loop's increment clause)
+		// pushed one of these bookmarks but never popped it back off. The
+		// leftover bookmark stayed on the stack forever, so any function
+		// call compiled afterward in the same scope would see one extra,
+		// unexpected item mixed in with its own arguments/return values --
+		// most visibly reported as "function did not return the expected
+		// number of values". See docs/ISSUES.md, BUG-63, for the full
+		// root-cause writeup.
+		{
+			// This is the exact reproducer from the bug report: a function
+			// whose body contains a bare "n++" followed by "return n". Before
+			// the fix, the leaked marker made the function's own "return"
+			// appear to hand back too many values, and the call below failed
+			// with "did not return the expected number of values" instead of
+			// simply returning 1.
+			name: "standalone increment inside function body (BUG-63)",
+			text: `
+				func run() int {
+					n := 0
+					n++
+
+					return n
+				}
+
+				result := run()
+			`,
+			want: 1,
+		},
+		{
+			// This mirrors the reproducer above but uses "--" and starts the
+			// counter above zero, so a sign error in the arithmetic (Add vs
+			// Sub) would also be caught, not just the stack-marker leak.
+			name: "standalone decrement inside function body (BUG-63)",
+			text: `
+				func run() int {
+					n := 5
+					n--
+
+					return n
+				}
+
+				result := run()
+			`,
+			want: 4,
+		},
+		{
+			// The clearest demonstration of "corrupts a LATER function call":
+			// the leaked marker from a bare "x++" statement is left sitting
+			// on the stack, and then an unrelated function call happens
+			// immediately afterward, in the same scope. Before the fix, the
+			// stray marker was mistaken for one of double()'s own return
+			// values, and the call itself would fail even though double()
+			// has nothing to do with the earlier increment.
+			name: "increment followed by unrelated function call (BUG-63)",
+			text: `
+				func double(v int) int {
+					return v * 2
+				}
+
+				x := 1
+				x++
+
+				result := double(x)
+			`,
+			want: 4,
+		},
+		{
+			// Multiple bare increments in a row must each clean up their own
+			// marker; if even one leaked, this would compound the stack
+			// corruption and the final call would fail.
+			name: "multiple standalone increments before a function call (BUG-63)",
+			text: `
+				func triple(v int) int {
+					return v * 3
+				}
+
+				x := 0
+				x++
+				x++
+				x++
+
+				result := triple(x)
+			`,
+			want: 9,
+		},
+		// --- end BUG-63 regression tests ---------------------------------------
+
 		// --- end BUG-07 regression tests -------------------------------------
 		{
 			name: "octal integer assignment",

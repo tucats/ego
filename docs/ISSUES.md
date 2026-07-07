@@ -230,7 +230,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
-| [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | |
+| [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -507,7 +507,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` nested inside a block, in top-level fragment code with no enclosing function, leaves the runtime scope one level too deep. | |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
-| [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | |
+| [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
 
 ---
 
@@ -5445,7 +5445,7 @@ result: `v := <-ch; fmt.Println(v)`.
 
 <a id="BUG-63"></a>
 
-### BUG-63 — A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls
+### BUG-63 — A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls — **Resolved**
 
 **Severity:** HIGH
 
@@ -5513,6 +5513,34 @@ site was never exposed to this bug. Only a bare `x++`/`x--` used as its own stat
 a for-loop's increment clause) triggers it. The qualified-lvalue branch (`a[i]++`,
 `s.field++`) is unaffected for the same reason: it explicitly appends the full `storeLValue`
 (see the comment "DropToMarker at its end cleans up the 'let' stack marker").
+
+**Resolution (July 2026):**  
+`internal/language/compiler/assignment.go` — `compileAssignment`'s "isSimpleLValue"
+branch (the `x++`/`x--` case) now emits an explicit `DropToMarker` for the `"let"`
+marker immediately after the `Store` instruction, instead of returning right after
+`Store`. This mirrors what the qualified-lvalue branch already does by appending the
+full `storeLValue` fragment, and restores the "every statement leaves the stack the
+way it found it" invariant that the rest of `compileAssignment` relies on. The
+previously-emitted `Dup` instruction (which left an extra, never-consumed copy of the
+new value on the stack) was removed at the same time — `compileAssignment` is only
+ever invoked as a full statement (from `statement.go` and as an `if`-statement init
+clause in `if.go`), never as a value-producing expression, so nothing read that extra
+copy; a separate code path (`compileSymbolValue` in `expr_atom.go`, gated behind
+`extensionsEnabled`) already handles `x++` used as an expression atom and is
+unaffected by this change.
+
+Regression tests were added at two levels:
+
+- `internal/language/compiler/run_test.go` — four new cases in
+  `TestArbitraryCodeFragments` (tagged `BUG-63`) compile and run small Ego snippets
+  containing a bare `x++`/`x--` followed by a function call, and assert on the
+  resulting value. Note: these Go-level cases pass even without the fix, because the
+  `RunString` test harness does not reproduce the failure mode — see the Ego-language
+  tests below for the tests that actually catch the regression.
+- `tests/flow/simple_increment_stack_leak.ego` — five `ego test` cases that reproduce
+  the bug end-to-end through the real CLI compilation/execution path used by
+  `ego run`/`ego test` (confirmed to fail with "function did not return the expected
+  number of values" against the pre-fix compiler, and to pass after the fix).
 
 ---
 

@@ -1,0 +1,111 @@
+// Regression tests for BUG-63 (see docs/ISSUES.md).
+//
+// Background for the novice reader: the Ego compiler generates bytecode
+// that runs on a single runtime value stack (a last-in-first-out list of
+// values). Some constructs push a temporary "marker" value onto that stack
+// as a bookmark -- a way to remember "the stack depth we started at" -- and
+// later pop everything back down to (and including) that bookmark with a
+// "DropToMarker" instruction. If code ever forgets to emit the matching
+// DropToMarker, the bookmark is left behind forever, silently growing the
+// stack. Because every function call in a program shares that same runtime
+// stack, a single leaked bookmark can make a *later, completely unrelated*
+// function call misbehave -- most visibly as the runtime error "function
+// did not return the expected number of values".
+//
+// BUG-63 was exactly this: a standalone "x++" or "x--" statement (used on
+// its own, not as a for-loop's increment clause) compiled a hand-written
+// load/increment/store sequence that skipped the DropToMarker step
+// entirely. Every such statement leaked one bookmark. These tests exercise
+// that exact shape -- a bare "x++"/"x--" followed later by a function call
+// in the same scope -- to make sure the bookmark is always cleaned up.
+
+// --- Bug's own reproducer: increment immediately before a "return" -----------
+
+@test "flow: standalone increment before return"
+{
+    // Before the BUG-63 fix, this exact shape ("n := 0; n++; return n")
+    // caused run() itself to appear to return the wrong number of values,
+    // so the call below would fail rather than yielding 1.
+    func run() int {
+        n := 0
+        n++
+
+        return n
+    }
+
+    @assert run() == 1
+}
+
+@test "flow: standalone decrement before return"
+{
+    // Mirrors the increment case above, but with "--" and a starting value
+    // above zero, so a sign mistake (Add instead of Sub) would also show up
+    // as a wrong result, not just a stack-marker leak.
+    func run() int {
+        n := 5
+        n--
+
+        return n
+    }
+
+    @assert run() == 4
+}
+
+// --- Leaked marker corrupting a *later*, unrelated function call -------------
+
+@test "flow: increment followed by unrelated function call"
+{
+    // This is the clearest demonstration of "corrupts a later call": the
+    // bookmark leaked by "x++" is left on the stack, and then an entirely
+    // unrelated function is called afterward in the same scope. Before the
+    // fix, double()'s call would fail even though double() has nothing to
+    // do with the earlier increment -- the stray bookmark was mistaken for
+    // one of double()'s own return values.
+    func double(v int) int {
+        return v * 2
+    }
+
+    x := 1
+    x++
+
+    @assert double(x) == 4
+}
+
+@test "flow: multiple standalone increments before a function call"
+{
+    // Each bare "x++" must clean up its own bookmark. If even one leaked,
+    // repeating the statement would compound the corruption.
+    func triple(v int) int {
+        return v * 3
+    }
+
+    x := 0
+    x++
+    x++
+    x++
+
+    @assert triple(x) == 9
+}
+
+// --- Increment inside a loop body (not the loop's increment clause) ----------
+
+@test "flow: standalone increment inside a loop body followed by a call"
+{
+    // The for-loop's own increment clause (the third part of
+    // "for init; cond; incr") was never affected by BUG-63, because the
+    // compiler handles that clause through a different code path. This test
+    // instead puts a bare "count++" inside the loop *body*, which does go
+    // through the buggy path, followed by a function call after the loop.
+    func square(v int) int {
+        return v * v
+    }
+
+    count := 0
+
+    for i := 0; i < 3; i++ {
+        count++
+    }
+
+    @assert count == 3
+    @assert square(count) == 9
+}
