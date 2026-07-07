@@ -71,12 +71,75 @@ import (
 // a NESTED block (if/for/switch/etc. inside this one) do not disqualify this
 // block itself; it stops as soon as it reaches, at its own top level (depth
 // 0), the block's own matching "}".
-//
-// Switch "case"/"default" bodies are deliberately NOT covered by this
-// function - see the comment in compileSwitchCase for a genuine, pre-existing
-// bug (tracked separately) that scope elision would make newly reproducible
-// there.
 func (c *Compiler) blockBodyNeedsOwnScope() bool {
+	return c.scopeElisionScan(nil)
+}
+
+// switchCaseBodyNeedsOwnScope is the switch "case"/"default" body
+// equivalent of blockBodyNeedsOwnScope. Unlike an ordinary block, a case
+// body is not brace-delimited - it runs until the next "case", "default",
+// "fallthrough", or the switch's own closing "}" (see compileSwitchCase and
+// compileSwitchDefaultBlock). It must be called with the tokenizer
+// positioned at the first token of the case body (immediately after the
+// clause's ":").
+//
+// Until BUG-61 (docs/ISSUES.md) was fixed, this call site was deliberately
+// excluded from scope elision: eliding a case body's scope removed an
+// accidental masking of a separate bug (a "continue" inside a case body
+// skipped the switch's own synthetic-symbol/scope cleanup), making that bug
+// immediately reproducible instead of merely latent. With BUG-61's general
+// fix - compileBreak/compileContinue now correctly unwind however many
+// scopes they jump over, and the switch's own test-value scope is always
+// real, never a bare SymbolDelete - that masking is no longer needed, and
+// case/default bodies are safe to elide like any other block.
+func (c *Compiler) switchCaseBodyNeedsOwnScope() bool {
+	return c.scopeElisionScan(func(tok tokenizer.Token) bool {
+		return tok.Is(tokenizer.CaseToken) ||
+			tok.Is(tokenizer.DefaultToken) ||
+			tok.Is(tokenizer.FallthroughToken)
+	})
+}
+
+// scopeElisionScan is the shared token-level scan behind
+// blockBodyNeedsOwnScope and switchCaseBodyNeedsOwnScope: a deliberately
+// conservative scan - not a full semantic analysis - matching the spirit of
+// PERFORMANCE.md Finding 4's own predicate. It disqualifies a block from
+// scope elision, forcing the always-scoped behavior, whenever the body
+// contains, anywhere:
+//
+//   - a function literal, a "go" statement, or a "defer" (kept as a
+//     precaution even though a block with no local declarations of its own
+//     has nothing scope-identity-sensitive for a closure to capture; erring
+//     conservative here costs nothing but a missed optimization), or
+//   - a ":=", "var", "const", "type", "import", or "package" declaration
+//     directly at the body's own top level (brace-depth 0 relative to the
+//     body itself) - statement.go's compileStatement() dispatches all six
+//     of these as legal both at the top level AND inside a function body,
+//     and every one of them binds a new name into whatever scope is
+//     current at the time (a runtime StoreAlways/Store, not merely
+//     compile-time bookkeeping). This is the one case that would actually
+//     be unsafe to elide: without the body's own scope, that name is
+//     created directly in the enclosing scope instead, where it can
+//     collide with (or shadow, undetected) an unrelated, later declaration
+//     of the same name once the body that "should" have owned it is gone.
+//     A "const" declaration with no matching scope is what originally
+//     surfaced this: internal/language/compiler's own test harness runs
+//     many independent Ego programs against one shared root symbol table,
+//     and a leaked immutable constant from one program collided with an
+//     unrelated later variable of the same name in another.
+//
+// Being overly cautious only costs a missed optimization opportunity, never
+// correctness: a nested block's own "if x := f(); ... {}" init-clause ":="
+// sitting at depth 0 (before ITS OWN opening brace) is treated as
+// disqualifying even though it is actually scoped to the nested construct,
+// exactly like the equivalent gap already documented for Finding 4.
+//
+// The scan stops as soon as it reaches, at its own top level (depth 0),
+// either the body's own matching "}" or - for a non-brace-delimited body,
+// such as a switch case - a token for which isTerminator returns true. Pass
+// a nil isTerminator when the body is always brace-delimited (the "}" check
+// alone is sufficient).
+func (c *Compiler) scopeElisionScan(isTerminator func(tokenizer.Token) bool) bool {
 	pos := c.t.Mark()
 
 	if pos >= len(c.t.Tokens) {
@@ -93,8 +156,9 @@ func (c *Compiler) blockBodyNeedsOwnScope() bool {
 			depth++
 
 		case tok.Is(tokenizer.BlockEndToken):
-			// depth == 0 means this is OUR OWN closing brace - the whole
-			// body has been scanned with nothing disqualifying found.
+			// depth == 0 means this is OUR OWN closing brace (for a
+			// brace-delimited body) - the whole body has been scanned with
+			// nothing disqualifying found.
 			if depth == 0 {
 				return false
 			}
@@ -111,12 +175,49 @@ func (c *Compiler) blockBodyNeedsOwnScope() bool {
 			tok.Is(tokenizer.ImportToken) ||
 			tok.Is(tokenizer.PackageToken)):
 			return true
+
+		case depth == 0 && isTerminator != nil && isTerminator(tok):
+			// A non-brace-delimited body (a switch case/default) ends here,
+			// with nothing disqualifying found.
+			return false
 		}
 	}
 
 	// Unbalanced braces / ran off the end of the token stream: malformed
 	// input the parser would already reject elsewhere. Take the safe path.
 	return true
+}
+
+// ---------------------------------------------------------------------------
+// BUG-61: keep c.scopeDepth in lockstep with the actual bytecode
+//
+// emitPushScope and emitPopScope are the ONLY places that should ever emit a
+// bytecode.PushScope/PopScope instruction for a block/switch/try scope (loop
+// scopes are the one exception - see for.go's own bookkeeping, which mirrors
+// this same pattern for the ForScope and per-iteration/shared body scopes).
+// Every caller that used to write "c.b.Emit(bytecode.PushScope, ...)"/
+// "c.b.Emit(bytecode.PopScope)" directly has been converted to call these
+// instead, so that c.scopeDepth - a running count of how many scopes are
+// open at any given point in the bytecode being generated - never drifts out
+// of sync with reality. compileBreak/compileContinue (for.go) depend on that
+// accuracy to compute how many scopes to explicitly pop before branching out
+// of however many nested constructs separate them from their target loop.
+// ---------------------------------------------------------------------------
+
+// emitPushScope emits a bytecode.PushScope instruction (with optional
+// operands, e.g. bytecode.ForScope) and records that one more scope is now
+// open. Always use this instead of emitting PushScope directly.
+func (c *Compiler) emitPushScope(operands ...any) {
+	c.b.Emit(bytecode.PushScope, operands...)
+	c.scopeDepth++
+}
+
+// emitPopScope emits a bytecode.PopScope instruction and records that the
+// matching scope has closed. Always use this instead of emitting PopScope
+// directly.
+func (c *Compiler) emitPopScope() {
+	c.b.Emit(bytecode.PopScope)
+	c.scopeDepth--
 }
 
 // compileBlock compiles a brace-enclosed statement block. The caller must have
@@ -154,7 +255,7 @@ func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
 	// At runtime, PushScope creates a child symbol table so that variables
 	// declared inside this block shadow but do not overwrite outer variables.
 	if needsScope {
-		c.b.Emit(bytecode.PushScope)
+		c.emitPushScope()
 	}
 
 	for parsing {
@@ -189,7 +290,7 @@ func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
 	// Emit the matching PopScope so the runtime destroys the child symbol
 	// table when execution leaves the block.
 	if needsScope {
-		c.b.Emit(bytecode.PopScope)
+		c.emitPopScope()
 	}
 
 	c.blockDepth--

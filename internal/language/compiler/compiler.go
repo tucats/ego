@@ -54,6 +54,19 @@ type loop struct {
 	// the addresses that must be fixed up with a target address
 	// pointing to the start of the loop.
 	continues []int
+
+	// scopeDepth is a snapshot of the compiler's c.scopeDepth counter,
+	// captured once, at the point this loop's (or switch's) own persistent
+	// wrapper scope(s) have all been pushed - e.g. right where a classic
+	// for-loop marks the address its condition test branches back to. This
+	// is exactly the scope depth that will be active wherever break's and
+	// continue's branch targets land (see the loop-form-specific comments
+	// in for.go for why those two addresses always share this same depth).
+	// compileBreak/compileContinue subtract this from the CURRENT
+	// c.scopeDepth (at the point the break/continue statement itself
+	// appears) to compute how many scopes must be explicitly popped before
+	// branching out - see BUG-61 in docs/ISSUES.md.
+	scopeDepth int
 }
 
 // flagSet contains flags that generally identify the state of
@@ -122,6 +135,23 @@ type Compiler struct {
 	scopes            []scope                  // Nested symbol table scopes for this compilation
 	functionDepth     int                      // Current nested function declaration depth
 	blockDepth        int                      // Current nested statement block  depth
+	// scopeDepth counts how many runtime PushScope instructions are
+	// currently open at this exact point in the bytecode stream being
+	// generated - i.e., the number of matching PopScope instructions that
+	// would need to run, right now, to get back to the top level. This is
+	// DELIBERATELY separate from blockDepth above: blockDepth counts
+	// lexical/structural nesting and increments unconditionally for every
+	// block, even one whose PushScope/PopScope pair PERFORMANCE.md Finding
+	// 8 elided because the block declares nothing - scopeDepth only counts
+	// a nesting level when a PushScope was ACTUALLY emitted. It must only
+	// ever be changed via emitPushScope/emitPopScope (see block.go), which
+	// keep it in lockstep with the real bytecode. See BUG-61 in
+	// docs/ISSUES.md: compileBreak/compileContinue (for.go) use the
+	// difference between this value and the value captured on the target
+	// loop (loop.scopeDepth) to emit the correct "PopScope, N" before
+	// branching out of however many scopes separate them, instead of the
+	// bare, unconditional Branch that used to skip scope cleanup silently.
+	scopeDepth int
 	// functionLocalScopeStart is the index in scopes at which the CURRENT named function's
 	// own body-scope variables will begin (i.e., len(scopes) right after the clone is made,
 	// before the body block pushes its own scope). Scopes at indices < functionLocalScopeStart

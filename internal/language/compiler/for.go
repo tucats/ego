@@ -322,7 +322,7 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIter
 	c.PushSymbolScope()
 
 	if perIterationScope {
-		c.b.Emit(bytecode.PushScope)
+		c.emitPushScope()
 	}
 
 	if prologue != nil {
@@ -343,9 +343,14 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIter
 	}
 
 	if epilogue != nil {
+		// epilogue (loopVariableEpilogue) contains its own embedded
+		// PopScope, matching the emitPushScope call above - update
+		// c.scopeDepth to match, since that PopScope was not emitted via
+		// emitPopScope (see BUG-61 design comment in block.go).
 		c.b.Append(epilogue)
+		c.scopeDepth--
 	} else if perIterationScope {
-		c.b.Emit(bytecode.PopScope)
+		c.emitPopScope()
 	}
 
 	c.blockDepth--
@@ -381,7 +386,7 @@ func (c *Compiler) compileFor() error {
 		return c.compileError(errors.ErrLoopExit)
 	}
 
-	c.b.Emit(bytecode.PushScope, bytecode.ForScope)
+	c.emitPushScope(bytecode.ForScope)
 
 	// Is this a for{} with no conditional or iterator?
 	if c.t.Peek(1).Is(tokenizer.BlockBeginToken) {
@@ -472,11 +477,16 @@ func (c *Compiler) simpleFor() error {
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
 	if !needsFreshScope {
-		c.b.Emit(bytecode.PushScope)
+		c.emitPushScope()
 	}
 
 	// Remember top of loop. There is no looping or condition code associated
-	// with the top of the loop.
+	// with the top of the loop. This is also the scope depth that both
+	// "break" and "continue" targets land at (see BUG-61 in docs/ISSUES.md):
+	// the loop's own outer ForScope, plus the shared body scope above if it
+	// was pushed, but not yet anything the body itself pushes per-visit.
+	c.loops.scopeDepth = c.scopeDepth
+
 	b1 := c.b.Mark()
 
 	// Compile loop body
@@ -503,8 +513,17 @@ func (c *Compiler) simpleFor() error {
 	c.loopStackPop()
 
 	if !needsFreshScope {
-		c.b.Emit(bytecode.PopScope)
+		// Matches the single body-wide PushScope emitted above, before b1.
+		c.emitPopScope()
 	}
+
+	// Matches compileFor's outer "ForScope" PushScope. This was previously
+	// missing entirely - simpleFor was the only one of the four loop forms
+	// that never popped compileFor's outer scope, permanently leaking one
+	// scope level every time a bare "for {}" loop ran (found while fixing
+	// BUG-61, since it made c.scopeDepth permanently wrong for any code
+	// following such a loop).
+	c.emitPopScope()
 
 	return nil
 }
@@ -538,8 +557,12 @@ func (c *Compiler) conditionalFor() error {
 	// Make a new scope and emit the test expression.
 	c.loopStackPush(conditionalLoopType)
 
-	// Remember top of loop and generate test
+	// Remember top of loop and generate test. This is also the scope depth
+	// both "break" and "continue" targets land at (see BUG-61 in
+	// docs/ISSUES.md): compileFor's outer ForScope, and nothing the body
+	// itself pushes per-visit.
 	b1 := c.b.Mark()
+	c.loops.scopeDepth = c.scopeDepth
 
 	c.b.Append(bc)
 
@@ -596,7 +619,8 @@ func (c *Compiler) conditionalFor() error {
 		_ = c.b.SetAddressHere(fixAddr)
 	}
 
-	c.b.Emit(bytecode.PopScope)
+	// Matches compileFor's outer "ForScope" PushScope.
+	c.emitPopScope()
 	c.loopStackPop()
 
 	return nil
@@ -638,11 +662,15 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
 	if !needsFreshScope {
-		c.b.Emit(bytecode.PushScope)
+		c.emitPushScope()
 	}
 
-	// Remember top of loop
+	// Remember top of loop. This is also the scope depth both "break" and
+	// "continue" targets land at (see BUG-61 in docs/ISSUES.md): the loop's
+	// own outer ForScope, plus the shared body scope above if it was
+	// pushed, but not yet anything the body itself pushes per-visit.
 	b1 := c.b.Mark()
+	c.loops.scopeDepth = c.scopeDepth
 
 	// Get new index and value. Destination is as-yet unknown.
 	c.b.Emit(bytecode.RangeNext, 0)
@@ -696,11 +724,11 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 
 	if !needsFreshScope {
 		// Matches the single body-wide PushScope emitted above, before b1.
-		c.b.Emit(bytecode.PopScope)
+		c.emitPopScope()
 	}
 
 	// Matches compileFor's outer "ForScope" PushScope.
-	c.b.Emit(bytecode.PopScope)
+	c.emitPopScope()
 
 	return nil
 }
@@ -848,11 +876,16 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
 	if !needsFreshScope {
-		c.b.Emit(bytecode.PushScope)
+		c.emitPushScope()
 	}
 
-	// Top of loop body starts here
+	// Top of loop body starts here. This is also the scope depth both
+	// "break" and "continue" targets land at (see BUG-61 in
+	// docs/ISSUES.md): the loop's own outer ForScope, plus the shared body
+	// scope above if it was pushed, but not yet anything the body itself
+	// pushes per-visit.
 	b1 := c.b.Mark()
+	c.loops.scopeDepth = c.scopeDepth
 
 	// Emit the test condition
 	c.b.Append(condition)
@@ -929,11 +962,11 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 
 	if !needsFreshScope {
 		// Matches the single body-wide PushScope emitted above, before b1.
-		c.b.Emit(bytecode.PopScope)
+		c.emitPopScope()
 	}
 
 	// Matches compileFor's outer "ForScope" PushScope.
-	c.b.Emit(bytecode.PopScope)
+	c.emitPopScope()
 	c.loopStackPop()
 
 	return nil
@@ -949,6 +982,36 @@ func (c *Compiler) findLoop(label string) *loop {
 	}
 
 	return nil
+}
+
+// emitScopeUnwindTo emits a "PopScope, N" instruction, if needed, to close
+// however many scopes lie between the current point in the bytecode stream
+// and targetLoop's own boundary, before a break/continue's Branch runs.
+//
+// BUG-61 (docs/ISSUES.md): compileBreak/compileContinue used to emit a bare,
+// unconditional Branch with no scope cleanup at all, silently leaving open
+// whatever scopes had been pushed by blocks/switch statements/etc. nested
+// between the break/continue and its target loop - the runtime's "current
+// scope" pointer ended up one or more levels too deep after the branch,
+// corrupting later variable lookups and declarations. targetLoop.scopeDepth
+// was captured once, when the loop was set up (see the loop-form-specific
+// comments in simpleFor/conditionalFor/rangeFor/iterationFor), at exactly
+// the scope depth that will be active wherever this break/continue's branch
+// target lands. c.scopeDepth, read here, is the depth right now, at the
+// break/continue statement itself. The difference is exactly how many
+// scopes must be explicitly popped first - popScopeByteCode
+// (internal/language/bytecode/symbols.go) accepts a count operand for
+// exactly this purpose.
+//
+// This never touches c.scopeDepth itself: the compiler's own bookkeeping
+// must keep reflecting the LEXICAL nesting the compiler is still walking
+// through to compile whatever statement (reachable or not) comes textually
+// after this break/continue - only the bytecode emitted along this one
+// branch's path needs the correction.
+func (c *Compiler) emitScopeUnwindTo(targetLoop *loop) {
+	if delta := c.scopeDepth - targetLoop.scopeDepth; delta > 0 {
+		c.b.Emit(bytecode.PopScope, delta)
+	}
 }
 
 // compileBreak compiles a break statement. This is a branch whose destination
@@ -975,10 +1038,12 @@ func (c *Compiler) compileBreak() error {
 		}
 	}
 
+	c.emitScopeUnwindTo(targetLoop)
+
 	fixAddr := c.b.Mark()
 
 	c.b.Emit(bytecode.Branch, 0)
-	
+
 	targetLoop.breaks = append(targetLoop.breaks, fixAddr)
 
 	return nil
@@ -1035,6 +1100,8 @@ func (c *Compiler) compileContinue() error {
 			return c.compileError(errors.ErrInvalidLoopControl)
 		}
 	}
+
+	c.emitScopeUnwindTo(targetLoop)
 
 	targetLoop.continues = append(targetLoop.continues, c.b.Mark())
 

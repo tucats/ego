@@ -53,7 +53,6 @@ func (c *Compiler) compileSwitch() error {
 		// bytecode stream is not known until the whole switch has been parsed.
 		fallThroughToDefault int
 		conditional          bool
-		hasScope             bool
 		next                 int
 		switchTestValueName  string
 		err                  error
@@ -79,7 +78,7 @@ func (c *Compiler) compileSwitch() error {
 		var err error
 
 		// Do we have a symbol to store the value?
-		switchTestValueName, hasScope, err = c.compileSwitchAssignedValue()
+		switchTestValueName, err = c.compileSwitchAssignedValue()
 		if err != nil {
 			return err
 		}
@@ -106,6 +105,15 @@ func (c *Compiler) compileSwitch() error {
 	// looking for a genuine enclosing for loop, since Go has no notion of
 	// "continue the switch".
 	c.loopStackPush(switchLoopType)
+
+	// BUG-61 (docs/ISSUES.md): record the scope depth right now, which is
+	// exactly the depth a bare "break" inside a case body must land at -
+	// compileSwitchAssignedValue's own scope (always pushed now, for every
+	// form - conditional switches have no test-value scope at all, so
+	// c.scopeDepth here already correctly reflects "no extra scope" for
+	// them) has already been pushed above, and nothing the switch's own
+	// case/default bodies push is included yet.
+	c.loops.scopeDepth = c.scopeDepth
 
 	// Iterate over each case or default selector in the switch block.
 	for !c.t.IsNext(tokenizer.BlockEndToken) {
@@ -195,16 +203,15 @@ func (c *Compiler) compileSwitch() error {
 
 	c.loopStackPop()
 
-	// If we weren't using conditional cases, clean up the symbol used for
-	// the value used for case matching. If we were given one by the source
-	// code, we can just delete the scope. Otherwise, it was a unique
-	// generated symbol name and code is emitted to delete it.
+	// If we weren't using conditional cases, pop the scope
+	// compileSwitchAssignedValue pushed for the value used in case matching
+	// (see its own doc comment: a real scope is now pushed uniformly for
+	// every non-conditional form, named-init or anonymous, as part of the
+	// BUG-61 fix - there is no longer a separate SymbolDelete path).
+	// Conditional switches ("switch { case cond: ... }") never call
+	// compileSwitchAssignedValue at all, so there is nothing to pop here.
 	if !conditional {
-		if hasScope {
-			c.b.Emit(bytecode.PopScope)
-		} else {
-			c.b.Emit(bytecode.SymbolDelete, switchTestValueName)
-		}
+		c.emitPopScope()
 	}
 
 	return nil
@@ -296,24 +303,19 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 	// after the body, matches that: see compileBlock's own PushScope/
 	// PushSymbolScope pair for the same pattern used by brace-delimited
 	// blocks elsewhere in the compiler.
-	// NOT eligible for PERFORMANCE.md Finding 8 scope elision - see the long
-	// comment above scopeElisionDisqualified in block.go's design notes.
-	// Investigating this call site surfaced a genuine, pre-existing bug
-	// (tracked separately, not fixed here to keep this change scoped):
-	// "continue" inside a case body jumps directly to the enclosing loop's
-	// increment clause, skipping the switch's own cleanup of its synthetic
-	// test-value symbol (a SymbolDelete emitted at the switch's normal exit
-	// point). Today that is silently masked whenever the case body pushes
-	// its own scope, because "continue" also leaves THAT scope's PopScope
-	// unexecuted, which happens to shift subsequent same-switch iterations
-	// into a fresh, still-empty table where the stale test-value name is
-	// simply shadowed rather than collided with. Eliding this scope removes
-	// that accidental masking and makes the underlying bug reproducible
-	// ("symbol already exists") on the very next loop iteration. Until that
-	// is fixed properly, this scope must always be pushed.
+	// Eligible for PERFORMANCE.md Finding 8 scope elision now that BUG-61
+	// (docs/ISSUES.md) is fixed: compileBreak/compileContinue correctly
+	// unwind however many scopes they jump over, so a "continue" inside a
+	// declaration-free case body no longer needs this scope to exist purely
+	// to accidentally mask the switch's own cleanup being skipped - see
+	// switchCaseBodyNeedsOwnScope in block.go for the detailed history.
 	c.blockDepth++
 	c.PushSymbolScope()
-	c.b.Emit(bytecode.PushScope)
+
+	needsScope := c.switchCaseBodyNeedsOwnScope()
+	if needsScope {
+		c.emitPushScope()
+	}
 
 	for !tokenizer.InList(c.t.Peek(1),
 		tokenizer.CaseToken,
@@ -325,7 +327,10 @@ func (c *Compiler) compileSwitchCase(conditional bool, switchTestValueName strin
 		}
 	}
 
-	c.b.Emit(bytecode.PopScope)
+	if needsScope {
+		c.emitPopScope()
+	}
+
 	c.blockDepth--
 
 	if err := c.PopSymbolScope(); err != nil {
@@ -365,12 +370,16 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 
 	// Fix BUG-44: the default clause's body is its own implicit block too,
 	// exactly like an ordinary case body - see the matching comment in
-	// compileSwitchCase for the full explanation. NOT eligible for
-	// PERFORMANCE.md Finding 8 scope elision, for the same continue/
-	// SymbolDelete reason documented in compileSwitchCase.
+	// compileSwitchCase for the full explanation. Also eligible for
+	// PERFORMANCE.md Finding 8 scope elision now that BUG-61 is fixed - see
+	// switchCaseBodyNeedsOwnScope in block.go.
 	c.blockDepth++
 	c.PushSymbolScope()
-	c.b.Emit(bytecode.PushScope)
+
+	needsScope := c.switchCaseBodyNeedsOwnScope()
+	if needsScope {
+		c.emitPushScope()
+	}
 
 	for c.t.Peek(1).IsNot(tokenizer.CaseToken) && c.t.Peek(1).IsNot(tokenizer.BlockEndToken) {
 		if err := c.compileStatement(); err != nil {
@@ -378,7 +387,10 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 		}
 	}
 
-	c.b.Emit(bytecode.PopScope)
+	if needsScope {
+		c.emitPopScope()
+	}
+
 	c.blockDepth--
 
 	if err := c.PopSymbolScope(); err != nil {
@@ -395,8 +407,8 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 // compared against each case clause in a value switch. Three sub-forms exist:
 //
 //  1. Named init (Ego form):  switch x := expr { ... }
-//     The identifier and ":=" have been peeked at; a new scope is pushed and
-//     the init variable is also used as the switch test value (hasScope == true).
+//     The identifier and ":=" have been peeked at, and the init variable is
+//     also used as the switch test value (hasScope == true).
 //
 //  2. Semicolon-separated init (Go-compatible):  switch x := f(); expr { ... }
 //     The init clause is evaluated and stored under x; then a separate switch
@@ -406,32 +418,49 @@ func (c *Compiler) compileSwitchDefaultBlock() (*bytecode.ByteCode, error) {
 //     also handled: the side-effect-only init result is discarded with Drop.
 //
 //  3. Anonymous expression:  switch expr { ... }
-//     A synthetic unique name is generated to hold the value (hasScope == false).
+//     A synthetic unique name is generated to hold the value (hasScope ==
+//     false - there is no NAMED init variable in this form, but see below).
 //
 // In all cases the expression is compiled and stored so that case clauses can
 // load it by name for comparison. The returned name is what case bodies use
-// for the Load instruction; hasScope signals whether a PopScope is needed at
-// the end of the switch.
-func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
+// for the Load instruction. hasScope (local only - no longer returned, see
+// below) reports whether there is a user-visible named init variable; this
+// affects only how the semicolon-separated form above is compiled, further
+// down.
+//
+// A scope is ALWAYS pushed here, for all three forms, regardless of
+// hasScope - compileSwitch always pops it at the end, so hasScope no longer
+// needs to be part of this function's return value. Before BUG-61
+// (docs/ISSUES.md) was fixed, only the named-init forms got a real scope;
+// the anonymous form's synthetic test-value name was instead created
+// directly in the enclosing scope and cleaned up with an explicit
+// SymbolDelete at the switch's own normal exit point - a "continue" inside
+// a case body could skip that SymbolDelete, leaking the placeholder. Now
+// that compileBreak/compileContinue correctly unwind any scope they jump
+// over, using a real, uniform scope for every form is both simpler and
+// removes that leak entirely: the scope's own PopScope handles it exactly
+// like any other case.
+func (c *Compiler) compileSwitchAssignedValue() (string, error) {
 	var (
 		hasScope            bool
 		initVarName         string
 		switchTestValueName string
 	)
 
+	c.emitPushScope()
+
 	if c.t.Peek(1).IsIdentifier() && c.t.Peek(2).Is(tokenizer.DefineToken) {
 		initVarName = c.t.Next().Spelling()
 		switchTestValueName = initVarName
 		hasScope = true
 
-		c.b.Emit(bytecode.PushScope)
 		c.t.Advance(1)
 	} else {
 		switchTestValueName = data.GenerateName()
 	}
 
 	if err := c.emitExpression(); err != nil {
-		return "", false, err
+		return "", err
 	}
 
 	// Handle the Go semicolon-separated init form: switch x := f(); expr { ... }
@@ -453,7 +482,7 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 		c.flags.disallowStructInits = true
 
 		if err := c.emitExpression(); err != nil {
-			return "", false, err
+			return "", err
 		}
 
 		c.DefineSymbol(switchTestValueName)
@@ -461,7 +490,7 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 		c.flags.disallowStructInits = false
 		c.flags.hasUnwrap = false
 
-		return switchTestValueName, hasScope, nil
+		return switchTestValueName, nil
 	}
 
 	c.DefineSymbol(switchTestValueName)
@@ -478,5 +507,5 @@ func (c *Compiler) compileSwitchAssignedValue() (string, bool, error) {
 	c.flags.disallowStructInits = false
 	c.flags.hasUnwrap = false
 
-	return switchTestValueName, hasScope, nil
+	return switchTestValueName, nil
 }

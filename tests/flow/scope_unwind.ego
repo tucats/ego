@@ -1,0 +1,261 @@
+// Regression tests for docs/ISSUES.md BUG-61: a "break" or "continue"
+// branching out of a "for" loop used to leave open however many scopes had
+// been pushed by nested blocks/switch statements/try-catch between it and
+// the loop's own boundary, instead of correctly closing them first. See the
+// large design comments on c.scopeDepth (compiler.go) and emitScopeUnwindTo
+// (for.go) for the full mechanism.
+//
+// Most of these tests declare a variable AFTER the affected loop/switch and
+// assert it holds the expected value - a scope leak would either make that
+// declaration collide with a stale, still-open scope ("symbol already
+// exists") or make the declaration land in the wrong place entirely.
+
+// --- Reproducer 2 shape: named-init switch + continue -----------------
+
+@test "flow: continue inside a named-init switch case does not leak its scope"
+{
+    count := 0
+
+    for i := 0; i < 6; i++ {
+        switch v := i; v {
+        case 2, 4:
+            continue
+        }
+        count++
+    }
+
+    // If the switch's own scope (holding "v") had leaked on either
+    // "continue", this declaration would fail with "symbol already exists".
+    v := 1000
+
+    @assert count == 4
+    @assert v == 1000
+}
+
+// --- Anonymous switch + continue ---------------------------------------
+
+@test "flow: continue inside an anonymous switch case runs correctly many times"
+{
+    func attempt(n int) int {
+        count := 0
+        for i := 0; i < 9; i++ {
+            switch i {
+            case 2, 5, 8:
+                continue
+            }
+            count++
+        }
+        return count + n
+    }
+
+    total := 0
+    for k := 0; k < 300; k++ {
+        total = total + attempt(k)
+    }
+
+    // attempt(n): i=0..8 (9 values), 3 skipped by continue (2,5,8) -> count=6.
+    // total = sum over k=0..299 of (6+k) = 300*6 + sum(0..299) = 1800+44850.
+    @assert attempt(0) == 6
+    @assert total == 46650
+}
+
+// --- Declaring if-block + break/continue (still a real scope even with
+// PERFORMANCE.md Finding 8's elision of non-declaring blocks) ------------
+
+@test "flow: break out of a declaring if body leaves no leftover scope"
+{
+    total := 0
+
+    for i := 0; i < 5; i++ {
+        if i == 3 {
+            marker := true
+            _ = marker
+            break
+        }
+        total = total + i
+    }
+
+    result := total == 3
+    @assert result == true
+}
+
+@test "flow: continue nested two levels inside declaring if bodies"
+{
+    total := 0
+
+    for i := 0; i < 6; i++ {
+        if true {
+            if i%2 == 0 {
+                marker := i
+                _ = marker
+                continue
+            }
+        }
+        total = total + i
+    }
+
+    // i = 0,2,4 skipped by continue; total = 1 + 3 + 5 = 9.
+    @assert total == 9
+}
+
+// --- Bare "for {}" must close its own outer scope -----------------------
+
+@test "flow: sequential bare for loops each close their own scope"
+{
+    a := 0
+    for {
+        a = a + 1
+        if a >= 3 {
+            break
+        }
+    }
+
+    b := 0
+    for {
+        b = b + 1
+        if b >= 5 {
+            break
+        }
+    }
+
+    result := a + b
+    @assert result == 8
+}
+
+// --- try/catch: continue/break from inside the catch body --------------
+
+@test "flow: continue inside a catch body with no local reaches the loop"
+{
+    func risky(i int) int {
+        if i%3 == 2 {
+            return 1 / 0
+        }
+        return i
+    }
+
+    sum := 0
+
+    for i := 0; i < 9; i++ {
+        try {
+            sum = sum + risky(i)
+        } catch {
+            continue
+        }
+    }
+
+    // i = 2, 5, 8 are skipped by the catch's continue.
+    @assert sum == 21
+}
+
+@test "flow: continue inside a catch body with its own local reaches the loop"
+{
+    // The catch body here DOES declare a local, so it keeps its own scope.
+    // The "risky" errors are all raised inside a called function, so the
+    // runtime's own exception-unwind (handleCatch popping risky's call
+    // frame while searching for the try marker) already restores the
+    // scope pointer to the try body's own scope before the catch body ever
+    // runs - see docs/ISSUES.md BUG-61's try/catch discussion for why this
+    // fix does not need its own separate mechanism for that. This test
+    // still exercises unwinding out of the catch body's OWN (real) scope
+    // via the general fix, on top of that.
+    func risky(i int) int {
+        if i%3 == 2 {
+            return 1 / 0
+        }
+        return i
+    }
+
+    sum := 0
+
+    for i := 0; i < 9; i++ {
+        try {
+            sum = sum + risky(i)
+        } catch(e) {
+            msg := "skipped"
+            _ = msg
+            _ = e
+            continue
+        }
+    }
+
+    @assert sum == 21
+
+    // A variable declared after the loop, reusing a name used inside the
+    // catch body above, must not collide.
+    msg := "after the loop"
+    @assert msg == "after the loop"
+}
+
+// --- Labeled break/continue across mixed nesting ------------------------
+
+@test "flow: labeled continue and break through if/switch/try/nested-for"
+{
+    func risky(v int) int {
+        if v%7 == 0 {
+            return 1 / 0
+        }
+        return v
+    }
+
+    var found []int
+
+outer:
+    for i := 0; i < 6; i++ {
+        for j := 0; j < 6; j++ {
+            if true {
+                switch j {
+                case 3, 4:
+                    try {
+                        _ = risky(i*10 + j)
+                    } catch {
+                        continue outer
+                    }
+                    if i == 4 {
+                        break outer
+                    }
+                }
+            }
+            found = append(found, i*10+j)
+        }
+    }
+
+    // See internal/language/compiler/for_bug61_test.go's
+    // TestBUG61LabeledBreakContinueAcrossMixedNesting for the full
+    // iteration-by-iteration trace this expected value is derived from.
+    @assert len(found) == 25
+    @assert found[len(found)-1] == 42
+
+    // Declared after everything above, reusing a name ("j") used as a loop
+    // control variable inside the nested constructs, to confirm no drift.
+    j := "tail value"
+    @assert j == "tail value"
+}
+
+// --- Sequential (non-nested) constructs must not accumulate drift -------
+
+@test "flow: repeated sequential if/switch/continue across many iterations"
+{
+    total := 0
+
+    for i := 0; i < 20; i++ {
+        if i%2 == 0 {
+            total++
+        }
+
+        switch i {
+        case 3, 6, 9, 12:
+            total += 10
+        }
+
+        if i == 15 {
+            continue
+        }
+
+        total++
+    }
+
+    x := "final"
+
+    @assert total == 10 + 40 + 19
+    @assert x == "final"
+}
