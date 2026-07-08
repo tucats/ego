@@ -218,6 +218,14 @@ func (c *Compiler) compileStatement() error {
 		case verb.Is(tokenizer.SwitchToken):
 			return c.compileSwitch()
 
+		// throw is an extension that raises its operand as a trappable error,
+		// if it is non-nil. Catchable by an enclosing try/catch, same as any
+		// other runtime error.
+		case verb.Is(tokenizer.ThrowToken):
+			if c.flags.extensionsEnabled {
+				return c.compileThrow()
+			}
+
 		// try/catch is an extension for structured error handling.
 		case verb.Is(tokenizer.TryToken):
 			if c.flags.extensionsEnabled {

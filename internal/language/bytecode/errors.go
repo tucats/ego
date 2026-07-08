@@ -67,3 +67,43 @@ func signalByteCode(c *Context, i any) error {
 
 	return c.runtimeError(errors.Message(data.String(i)))
 }
+
+// Implement the Throw bytecode, used by the "throw" statement extension
+// (see compileThrow). It pops a value from the stack that is expected to be
+// an error. Unlike Signal (used by the @error test directive, which always
+// raises whatever is on the stack, converting non-error values into an
+// error message), Throw treats a nil -- or zero-value -- error as "nothing
+// to throw" and lets execution continue normally. This collapses Go's
+// "if err != nil { return err }" idiom into a single statement: "throw err"
+// only raises a trappable, catchable error (exactly like a genuine runtime
+// error) when err actually represents an error condition.
+//
+// data.IsNil is used rather than a plain "v == nil" comparison because
+// Ego's zero-value error (e.g. the receiver of "var e error" with no
+// initializer) is a non-nil *errors.Error with an empty inner error, which
+// is nonetheless considered "no error" throughout the language (see
+// docs/LANGUAGE.md's error section and BUG-65 in docs/ISSUES.md).
+func throwByteCode(c *Context, i any) error {
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	if isStackMarker(v) {
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
+	}
+
+	if data.IsNil(v) {
+		return nil
+	}
+
+	if e, ok := v.(*errors.Error); ok {
+		return c.runtimeError(e)
+	}
+
+	if e, ok := v.(error); ok {
+		return c.runtimeError(errors.New(e))
+	}
+
+	return c.runtimeError(errors.ErrArgumentType).Context(data.TypeOf(v).String())
+}

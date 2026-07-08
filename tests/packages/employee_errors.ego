@@ -1,10 +1,68 @@
 // Tests for error handling across the tests/packages/employee.ego package
-// boundary: a genuine runtime error raised inside a package method and
-// caught by the caller's try/catch, and an error value returned (not
+// boundary: a package method that uses "throw" to raise a meaningful error
+// caught by the caller's try/catch, a genuine (unrelated) runtime error
+// raised from inside a package method, and an error value returned (not
 // thrown) by a package method and checked by the caller.
 
-@test "packages: employee, runtime error inside package method caught by caller"
+@test "packages: employee, throw inside package method caught by caller"
 import "tests/packages/employee"
+{
+    // ThrowIfInvalid uses the new "throw" language extension (see
+    // docs/LANGUAGE.md) to raise Employee.Validate()'s error, if any, as a
+    // catchable runtime error -- a direct illustration of the feature,
+    // rather than the div-by-zero trick Divide() uses further below.
+    e := employee.Employee{Id: 0, Name: ""}
+    caught := false
+
+    try {
+        e.ThrowIfInvalid()
+        @fail "statement after throw should not execute"
+    } catch(err) {
+        caught = true
+        @assert err.Is(errors.New("employee.name.required"))
+    }
+
+    @assert caught
+}
+
+@test "packages: employee, throw propagates through nested package call"
+{
+    // half wraps a call into the imported package's method; the thrown
+    // error originates two calls deep (test -> half -> employee.ThrowIfInvalid)
+    // and must still be caught here.
+    func half(id int) {
+        e := employee.Employee{Id: id, Name: ""}
+        e.ThrowIfInvalid()
+    }
+
+    caught := false
+
+    try {
+        half(20)
+    } catch(err) {
+        caught = true
+        @assert err.Is(errors.New("employee.name.required"))
+    }
+
+    @assert caught
+}
+
+@test "packages: employee, throw of a valid employee is a no-op"
+{
+    e := employee.Employee{Id: 30, Name: "Liam"}
+    reached := false
+
+    try {
+        e.ThrowIfInvalid()
+        reached = true
+    } catch {
+        @fail "a valid employee should not be caught"
+    }
+
+    @assert reached
+}
+
+@test "packages: employee, genuine runtime error inside package method caught by caller"
 {
     e := employee.Employee{Id: 10}
     caught := false
@@ -22,28 +80,6 @@ import "tests/packages/employee"
     // pre-try value (mirrors tests/errors/try_catch.ego's "value not
     // mutated when try body errors" case).
     @assert result == -1
-}
-
-@test "packages: employee, error propagates through nested package call"
-{
-    // half wraps a call into the imported package's method; the div/zero
-    // error originates two calls deep (test -> half -> employee.Divide)
-    // and must still be caught here.
-    func half(id int) int {
-        e := employee.Employee{Id: id}
-        return e.Divide(0)
-    }
-
-    caught := false
-
-    try {
-        _ = half(20)
-    } catch(err) {
-        caught = true
-        @assert err.Is(errors.New("div.zero"))
-    }
-
-    @assert caught
 }
 
 @test "packages: employee, successful package call does not trigger catch"

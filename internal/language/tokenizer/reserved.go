@@ -189,6 +189,9 @@ var (
 	// "test" token.
 	TestToken = NewIdentifierToken("test")
 
+	// "throw" token.
+	ThrowToken = NewReservedToken("throw")
+
 	// "type" token.
 	TypeToken = NewReservedToken("type")
 
@@ -449,6 +452,7 @@ var ExtendedReservedWords = map[Token]bool{
 	CallToken:  true,
 	CatchToken: true,
 	PrintToken: true,
+	ThrowToken: true,
 	TryToken:   true,
 	ExitToken:  true,
 }

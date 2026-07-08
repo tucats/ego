@@ -133,6 +133,7 @@ const (
 	SymbolDelete
 	SymbolOptCreate
 	Template
+	Throw
 	Timer
 	TryPop
 	TryFlush
@@ -266,6 +267,7 @@ var opcodeNames = map[Opcode]string{
 	SymbolDelete:       "SymbolDelete",
 	SymbolOptCreate:    "SymbolOptCreate",
 	Template:           "Template",
+	Throw:              "Throw",
 	Timer:              "Timer",
 	Try:                "Try",
 	TryPop:             "TryPop",
@@ -391,6 +393,7 @@ func initializeDispatch() {
 		dispatchTable[SymbolDelete] = symbolDeleteByteCode
 		dispatchTable[SymbolOptCreate] = symbolCreateIfByteCode
 		dispatchTable[Template] = templateByteCode
+		dispatchTable[Throw] = throwByteCode
 		dispatchTable[Timer] = timerByteCode
 		dispatchTable[Try] = tryByteCode
 		dispatchTable[TryFlush] = tryFlushByteCode

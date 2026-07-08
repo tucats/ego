@@ -283,6 +283,53 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			want: -1,
 		},
 		{
+			// throw of a nil error is a no-op; execution continues normally.
+			// mayFail returns nil unconditionally here (this harness has no
+			// package imports available, so the "false" branch is never taken
+			// -- only compiled -- to keep the fragment package-free).
+			name: "throw statement, nil error is a no-op",
+			text: `
+				func mayFail(n int) error {
+					if n < 0 {
+						var e error
+						return e
+					}
+					return nil
+				}
+
+				throw mayFail(5)
+				result := "reached"
+			`,
+			want: "reached",
+		},
+		{
+			// throw of a non-nil error raises it as a catchable runtime error,
+			// caught here by an enclosing try/catch. The error is obtained via
+			// a genuine division-by-zero (rather than errors.New, which needs
+			// the "errors" package -- unavailable in this bare-symbol-table
+			// harness) and then re-thrown from a held variable.
+			name: "throw statement, non-nil error is caught by try/catch",
+			text: `
+				var captured error
+
+				try {
+					_ = 5 / 0
+				} catch(e) {
+					captured = e
+				}
+
+				result := "not caught"
+
+				try {
+					throw captured
+					result = "not caught"
+				} catch(e) {
+					result = e.Code()
+				}
+			`,
+			want: "div.zero",
+		},
+		{
 			name: "Conditional expression",
 			text: `result := true?"yes":"no"`,
 			want: "yes",

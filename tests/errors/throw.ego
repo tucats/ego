@@ -1,0 +1,162 @@
+// Tests for the "throw" statement, a language extension similar in spirit
+// to try/catch:
+//
+//   throw expr
+//
+// If expr evaluates to a non-nil error, it is raised as a trappable runtime
+// error -- exactly like a genuine runtime error (division by zero, an
+// out-of-bounds index, etc.) -- catchable by an enclosing try/catch. If expr
+// evaluates to nil (or Ego's zero-value error), nothing happens and
+// execution continues with the next statement. This collapses Go's
+// "if err != nil { return err }" idiom into a single statement when the
+// intent is purely to propagate an error condition.
+//
+// See docs/LANGUAGE.md's try/throw section and docs/ISSUES.md for the
+// language extensions this builds on (BUG-65: nil is a valid error value;
+// BUG-66: error-derivation methods must not mutate a shared receiver).
+
+@test "throw: non-nil error is caught by an enclosing try/catch"
+{
+    func mayFail(n int) error {
+        if n < 0 {
+            return errors.New("negative")
+        }
+
+        return nil
+    }
+
+    caught := false
+
+    try {
+        throw mayFail(-1)
+        @fail "statement after throw should not execute"
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("negative"))
+    }
+
+    @assert caught
+}
+
+@test "throw: nil error is a no-op, execution continues"
+{
+    func mayFail(n int) error {
+        if n < 0 {
+            return errors.New("negative")
+        }
+
+        return nil
+    }
+
+    reached := false
+
+    try {
+        throw mayFail(5)
+        reached = true
+    } catch {
+        @fail "should not have been caught"
+    }
+
+    @assert reached
+}
+
+@test "throw: zero-value error (var e error, no initializer) is a no-op"
+{
+    var e error
+
+    reached := false
+
+    try {
+        throw e
+        reached = true
+    } catch {
+        @fail "zero-value error should not be caught"
+    }
+
+    @assert reached
+}
+
+@test "throw: a directly-constructed error is caught"
+{
+    caught := false
+
+    try {
+        throw errors.New("boom")
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("boom"))
+    }
+
+    @assert caught
+}
+
+@test "throw: error propagates through a nested function call"
+{
+    func inner() error {
+        return errors.New("inner failure")
+    }
+
+    func outer() {
+        throw inner()
+    }
+
+    caught := false
+
+    try {
+        outer()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("inner failure"))
+    }
+
+    @assert caught
+}
+
+@test "throw: a caught error can be re-thrown by an outer try/catch"
+{
+    var captured error
+
+    try {
+        _ = 5 / 0
+    } catch(e) {
+        captured = e
+    }
+
+    outerCaught := false
+
+    try {
+        throw captured
+    } catch(e) {
+        outerCaught = true
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    @assert outerCaught
+}
+
+@test "throw: throwing a non-error value is itself a catchable error"
+{
+    caught := false
+
+    try {
+        throw 42
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+}
+
+@test "throw: value not mutated when a preceding statement throws"
+{
+    y := 42
+
+    try {
+        throw errors.New("boom")
+        y = 99
+    } catch {
+        // error caught; y was never reassigned
+    }
+
+    @assert y == 42
+}

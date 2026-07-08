@@ -134,3 +134,14 @@ func RunningTotal(amounts []float64, index int) float64 {
 func (e *Employee) Divide(n int) int {
     return e.Id / n
 }
+
+// ThrowIfInvalid uses the "throw" language extension (see docs/LANGUAGE.md's
+// throw section) to raise Validate()'s error, if any, as a catchable
+// runtime error. This is a more direct illustration of a package function
+// signaling failure across a package boundary than Divide()'s div-by-zero
+// trick above: Validate() already knows exactly what is wrong and returns a
+// specific, meaningful error value; throw simply propagates it as a
+// trappable error without an intervening "if err != nil { ... }" check.
+func (e *Employee) ThrowIfInvalid() {
+    throw e.Validate()
+}
