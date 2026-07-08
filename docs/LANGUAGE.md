@@ -2690,6 +2690,52 @@ return the next error that is chained on this error. Errors from the system may
 contain a list of errors. The `Next()` function gets the next error in the list
 from the current error. If there is no next error, it returns `nil`.
 
+#### (e error) Context(v any) error
+
+The `Context()` function can be used with any error as the receiver value, and
+returns a new error with the context value set to `v`. This is an alternate way
+of attaching the context value described under `errors.New()` above -- useful
+when the context is not known until after the error was created. Any previous
+context value on the error is replaced. Like all of the error-derivation
+functions on this page, `Context()` does not modify the receiver; it returns a
+distinct error value, leaving the original unchanged.
+
+```go
+e := errors.New("not found")
+e2 := e.Context("foobar.txt")
+
+fmt.Println(e.Error())   // "not found"
+fmt.Println(e2.Error())  // "not found: foobar.txt"
+```
+
+#### (e error) In(name string) error
+
+The `In()` function can be used with any error as the receiver value, and
+returns a new error with the location name set to `name`. This is typically
+the name of a source file, package, or function, and is displayed as part of
+the formatted error message. `In()` does not modify the receiver; it returns a
+distinct error value.
+
+```go
+e := errors.New("not found")
+e2 := e.In("readFile")
+
+fmt.Println(e2.Error())  // "in readFile, not found"
+```
+
+#### (e error) At(line int) error
+
+The `At()` function can be used with any error as the receiver value, and
+returns a new error with the location line number set to `line`. This is
+combined with the location name (see `In()`) when the error is formatted.
+`At()` does not modify the receiver; it returns a distinct error value.
+
+```go
+e := errors.New("not found").In("readFile").At(42)
+
+fmt.Println(e.Error())  // "at readFile(line 42), not found"
+```
+
 ### exec <a name="exec"></a>
 
 The `exec` package is a subset of the Go package that supports executing a command as

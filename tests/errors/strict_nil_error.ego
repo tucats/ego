@@ -1,0 +1,92 @@
+// Regression tests for docs/ISSUES.md BUG-65: under `ego test --types strict`,
+// a nil value destined for the built-in "error" type (a function/method
+// return, a variable declaration, or a function parameter) was corrupted
+// instead of staying nil, and a legitimate non-nil error value passed to an
+// error-typed parameter lost its identity. Run this file with both the
+// default (dynamic) and --types strict to confirm both modes agree.
+
+@test "errors: BUG-65, function declared to return error can return nil"
+{
+    func ok(n int) error {
+        if n < 0 {
+            return errors.New("negative")
+        }
+
+        return nil
+    }
+
+    @assert ok(5) == nil
+
+    err := ok(-1)
+    @assert err != nil
+    @assert err.Is(errors.New("negative"))
+}
+
+@test "errors: BUG-65, pointer receiver method can return nil error"
+{
+    type Thing struct {
+        N int
+    }
+
+    func (t *Thing) Validate() error {
+        if t.N < 0 {
+            return errors.New("negative")
+        }
+
+        return nil
+    }
+
+    t := Thing{N: 5}
+    @assert t.Validate() == nil
+
+    bad := Thing{N: -1}
+    @assert bad.Validate() != nil
+}
+
+@test "errors: BUG-65, var declared as error with explicit nil initializer"
+{
+    var e error = nil
+    @assert e == nil
+
+    e = errors.New("negative")
+    @assert e != nil
+    @assert e.Is(errors.New("negative"))
+}
+
+@test "errors: BUG-65, nil literal passed to an error-typed parameter"
+{
+    func accepts(e error) bool {
+        return e == nil
+    }
+
+    @assert accepts(nil)
+    @assert !accepts(errors.New("negative"))
+}
+
+@test "errors: BUG-65, real error passed to an error-typed parameter keeps identity"
+{
+    func isDivZero(e error) bool {
+        return e.Is(errors.New("div.zero"))
+    }
+
+    caught := false
+    var captured error
+
+    try {
+        _ = 5 / 0
+    } catch(e) {
+        caught = true
+        captured = e
+    }
+
+    @assert caught
+    @assert isDivZero(captured)
+    // Before the fix, passing ANY value (nil or otherwise) to a
+    // parameter declared "error" under strict mode replaced it with
+    // errors.ErrPanic.Context(v), so isDivZero would incorrectly return
+    // false and strings.Contains(...) below would fail because the
+    // rendered message became "panic: <the original message>" instead
+    // of the original div-by-zero message.
+    @assert strings.Contains(captured.Error(), "division by zero")
+    @assert !strings.Contains(captured.Error(), "panic")
+}

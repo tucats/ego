@@ -1,0 +1,49 @@
+// Regression tests for docs/ISSUES.md BUG-66: (e error) In(name) and
+// (e error) At(line) used to mutate the receiver error in place and return
+// the very same value, unlike Context() (which already returned a distinct
+// copy). Any error value referenced by more than one variable would have
+// every reference's formatted message silently altered by a single call to
+// In() or At() through any one of them.
+
+@test "errors: BUG-66, In() does not mutate the original error"
+{
+    base := errors.New("not found")
+
+    derived := base.In("readFile")
+
+    @assert strings.Contains(derived.Error(), "readFile")
+    @assert !strings.Contains(base.Error(), "readFile")
+}
+
+@test "errors: BUG-66, At() does not mutate the original error"
+{
+    base := errors.New("not found")
+
+    derived := base.At(42)
+
+    @assert strings.Contains(derived.Error(), "42")
+    @assert !strings.Contains(base.Error(), "42")
+}
+
+@test "errors: BUG-66, two callers deriving from the same error do not interfere"
+{
+    shared := errors.New("not found")
+
+    e1 := shared.In("readFile")
+    e2 := shared.In("writeFile")
+
+    @assert strings.Contains(e1.Error(), "readFile")
+    @assert !strings.Contains(e1.Error(), "writeFile")
+
+    @assert strings.Contains(e2.Error(), "writeFile")
+    @assert !strings.Contains(e2.Error(), "readFile")
+}
+
+@test "errors: BUG-66, In() and At() still chain correctly on a fresh error"
+{
+    e := errors.New("not found").In("readFile").At(42)
+
+    @assert strings.Contains(e.Error(), "readFile")
+    @assert strings.Contains(e.Error(), "42")
+    @assert e.Is(errors.New("not found"))
+}

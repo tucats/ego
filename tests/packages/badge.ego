@@ -1,0 +1,16 @@
+// Note, this is not a test file (no @test) so it will not be run from an
+// ego test command. Instead, it is a small secondary package that the
+// "employee" package (tests/packages/employee.ego) imports and calls
+// internally, so that tests/packages/*.ego can verify Ego code works
+// correctly across more than one package boundary at a time -- i.e. a test
+// imports "employee", which in turn imports this package, and the call
+// chain test -> employee -> badge must all resolve correctly.
+
+package badge
+
+const Prefix = "EMP-"
+
+// Format returns a badge string for a given employee id, e.g. "EMP-1001".
+func Format(id int) string {
+    return Prefix + strconv.Itoa(id)
+}

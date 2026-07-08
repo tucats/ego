@@ -7,11 +7,16 @@ import (
 )
 
 // In specifies the location name. This can be the name of
-// a source code module, or a function name.
+// a source code module, or a function name. Like Context(), this
+// clones the receiver first so the original error (which may be a
+// shared package-level error value, or aliased elsewhere) is left
+// unmodified.
 func (e *Error) In(name string) *Error {
 	if e == nil {
 		return nil
 	}
+
+	e = e.Clone()
 
 	if e.location == nil {
 		e.location = &location{}
@@ -35,11 +40,15 @@ func (e *Error) HasIn() bool {
 // At specifies a line number and column position related to
 // the error. The line number is always present, the column
 // is typically only set during compilation; if it is zero then
-// it is not displayed.
+// it is not displayed. Like Context(), this clones the receiver
+// first so the original error (which may be a shared package-level
+// error value, or aliased elsewhere) is left unmodified.
 func (e *Error) At(line int, column int) *Error {
 	if e == nil {
 		return nil
 	}
+
+	e = e.Clone()
 
 	if e.location == nil {
 		e.location = &location{}

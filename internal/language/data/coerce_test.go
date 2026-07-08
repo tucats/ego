@@ -2,6 +2,8 @@ package data
 
 import (
 	"testing"
+
+	"github.com/tucats/ego/internal/errors"
 )
 
 func TestCoerce(t *testing.T) {
@@ -590,6 +592,18 @@ func TestCoerce(t *testing.T) {
 				model: false,
 			},
 			want: false,
+		},
+		{
+			// Regression test: coercing a nil value to the *errors.Error
+			// model (the "error" type) must stay nil, matching Go's zero
+			// value for error. Before the fix, this produced a non-nil
+			// error whose message was the literal string "<nil>".
+			name: "test with nil error model stays nil",
+			args: args{
+				v:     nil,
+				model: &errors.Error{},
+			},
+			want: nil,
 		},
 	}
 

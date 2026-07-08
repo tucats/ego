@@ -1,16 +1,136 @@
 // Note, this is not a test file (no @test) so it will
 // not be run from an ego test command. Instead, it will
 // be available for import by other tests.
+//
+// This package intentionally exercises a broad range of language features
+// so that tests/packages/*.ego can verify cross-package behavior:
+// constants, package-level variables (read and write, from both inside and
+// outside the package), value vs. pointer receivers, callbacks supplied by
+// the caller, a second imported package (tests/packages/badge) used
+// internally, catchable errors returned from a package function, and a
+// panic raised inside the package that the caller can recover.
 
 package employee
 
+import "tests/packages/badge"
+
 const ManagerID = 100
+const DefaultDepartment = "General"
+
+// HeadCount is a package variable that callers can both read and write
+// directly (employee.HeadCount), and that NewEmployee/ResetHeadCount also
+// update as a side effect of calling into the package.
+var HeadCount int
+
+// nextID is package state private in spirit (Ego has no export/visibility
+// rules based on case, but the convention is followed anyway). It is used
+// to confirm that state cached in the package's own symbol table survives
+// correctly across repeated calls, and across calls made from different
+// test files that import the same package.
+var nextID int = 1000
 
 type Employee struct {
-    Id int
-    Name string
+    Id         int
+    Name       string
+    Salary     float64
+    Department string
 }
 
-func (e *Employee) SetName( s string ) {
+// SetName is a pointer receiver: it must mutate the caller's Employee.
+func (e *Employee) SetName(s string) {
     e.Name = s
+}
+
+// Rename is a value receiver: changes must NOT be visible to the caller,
+// since the receiver is a copy of the struct.
+func (e Employee) Rename(s string) {
+    e.Name = s
+}
+
+// Badge uses the secondary "badge" package to format the employee's badge
+// string, exercising a package-to-package call that does not originate
+// directly from test code.
+func (e *Employee) Badge() string {
+    return badge.Format(e.Id)
+}
+
+// NewEmployee allocates a new Employee, reading and updating package-level
+// state (nextID, HeadCount) that must be correctly retained between calls.
+func NewEmployee(name string) *Employee {
+    nextID = nextID + 1
+    HeadCount = HeadCount + 1
+
+    return &Employee{Id: nextID, Name: name, Department: DefaultDepartment}
+}
+
+// ResetHeadCount resets the HeadCount package var back to zero; tests use
+// this to avoid depending on execution order between test blocks/files.
+func ResetHeadCount() {
+    HeadCount = 0
+}
+
+// ApplyRaise accepts a callback function supplied by the caller and invokes
+// it to compute the new salary. Ego does not support function types (e.g.
+// func(float64) float64) as formal parameter annotations -- the callback
+// must be declared as interface{} and dispatched via a type switch, as is
+// done throughout tests/functions/firstclass.ego.
+func (e *Employee) ApplyRaise(calc interface{}) {
+    switch fn := calc.(type) {
+    default:
+        e.Salary = fn(e.Salary)
+    }
+}
+
+// Validate returns a catchable error (rather than panicking) when the
+// employee data is not well-formed, exercising try/catch across a package
+// boundary.
+func (e *Employee) Validate() error {
+    if e.Name == "" {
+        return errors.New("employee.name.required")
+    }
+
+    if e.Id <= 0 {
+        return errors.New("employee.id.invalid")
+    }
+
+    return nil
+}
+
+// MustValidate panics (rather than returning an error) when the employee is
+// not valid, exercising panic()/recover() across a package boundary.
+func (e *Employee) MustValidate() {
+    if err := e.Validate(); err != nil {
+        panic(err)
+    }
+}
+
+// Total sums a slice of salaries with a simple loop, exercising looping
+// inside a package function called from test code.
+func Total(amounts []float64) float64 {
+    sum := 0.0
+
+    for _, amount := range amounts {
+        sum = sum + amount
+    }
+
+    return sum
+}
+
+// RunningTotal computes the same sum via recursion, exercising call-stack
+// depth for a package function invoked (recursively) from test code.
+func RunningTotal(amounts []float64, index int) float64 {
+    if index >= len(amounts) {
+        return 0.0
+    }
+
+    return amounts[index] + RunningTotal(amounts, index+1)
+}
+
+// Divide returns the employee's Id divided by n. A zero divisor triggers
+// Ego's built-in division-by-zero runtime error from inside this package
+// function, exercising a genuine (not @error-directive-based) catchable
+// runtime error raised across a package boundary and caught by the
+// caller's try/catch.
+func (e *Employee) Divide(n int) int {
+    return e.Id / n
 }

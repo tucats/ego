@@ -1,0 +1,52 @@
+// Tests for passing a caller-supplied closure into an imported package and
+// having the package call back into it (tests/packages/employee.ego's
+// ApplyRaise). Confirms both a simple closure and one that captures/mutates
+// outer scope work correctly across the package boundary.
+
+@test "packages: employee, package calls back a simple closure"
+import "tests/packages/employee"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    e := employee.Employee{Id: 1, Name: "Dana", Salary: 1000.0}
+
+    e.ApplyRaise(func(s float64) float64 { return s * 1.10 })
+
+    @assert near(e.Salary, 1100.0)
+}
+
+@test "packages: employee, callback closure captures outer scope"
+{
+    bonus := 50.0
+
+    e := employee.Employee{Id: 2, Name: "Evan", Salary: 2000.0}
+    e.ApplyRaise(func(s float64) float64 { return s + bonus })
+
+    @assert e.Salary == 2050.0
+
+    // Mutate the captured variable and apply again -- the closure must see
+    // the updated value, confirming capture-by-reference across the
+    // package boundary (not a snapshot taken when the closure was built).
+    bonus = 500.0
+    e.ApplyRaise(func(s float64) float64 { return s + bonus })
+
+    @assert e.Salary == 2550.0
+}
+
+@test "packages: employee, named function passed as callback"
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    func raiseTenPercent(s float64) float64 {
+        return s * 1.10
+    }
+
+    e := employee.Employee{Id: 3, Name: "Frank", Salary: 3000.0}
+    e.ApplyRaise(raiseTenPercent)
+
+    @assert near(e.Salary, 3300.0)
+}

@@ -23,9 +23,9 @@ func (c *Compiler) compileError(err error, args ...any) *errors.Error {
 	e := errors.New(err).Context(token)
 
 	if c.activePackageName != "" {
-		e.In(c.activePackageName)
+		e = e.In(c.activePackageName)
 	} else if c.sourceFile != "" {
-		e.In(c.sourceFile)
+		e = e.In(c.sourceFile)
 	}
 
 	// Get the line and column info from the

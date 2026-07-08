@@ -1,0 +1,43 @@
+// Tests for package-level constants and package-level variables, exercised
+// through tests/packages/employee.ego. Verifies that a caller can read a
+// package constant, read a package variable, write a package variable
+// directly, and observe that a package function's own writes to the same
+// variable are visible afterward.
+
+@test "packages: employee, read a package constant"
+import "tests/packages/employee"
+{
+    @assert employee.ManagerID == 100
+    @assert employee.DefaultDepartment == "General"
+}
+
+@test "packages: employee, read and write a package variable directly"
+{
+    employee.ResetHeadCount()
+    @assert employee.HeadCount == 0
+
+    employee.HeadCount = 42
+    @assert employee.HeadCount == 42
+
+    // Reset again so later tests in this file/suite are not order-dependent.
+    employee.ResetHeadCount()
+    @assert employee.HeadCount == 0
+}
+
+@test "packages: employee, package function writes are visible to caller"
+{
+    employee.ResetHeadCount()
+
+    e1 := employee.NewEmployee("Alice")
+    e2 := employee.NewEmployee("Bob")
+
+    // Each call increments the package var HeadCount as a side effect.
+    @assert employee.HeadCount == 2
+
+    // nextID is package-private state; confirm it is not reset between
+    // calls (both employees received distinct, increasing ids).
+    @assert e2.Id == e1.Id+1
+
+    employee.ResetHeadCount()
+    @assert employee.HeadCount == 0
+}

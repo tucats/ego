@@ -1,0 +1,110 @@
+// Tests for panic()/recover() across the tests/packages/employee.ego
+// package boundary: MustValidate() panics with the underlying error value
+// when the receiver is invalid, and the caller recovers it via a deferred
+// recover(), mirroring tests/errors/panic_recover.ego's patterns but with
+// the panic originating inside an imported package.
+
+@test "packages: employee, panic inside package method is recovered by caller"
+import "tests/packages/employee"
+{
+    var recovered any
+
+    func run() {
+        defer func() {
+            recovered = recover()
+        }()
+
+        e := employee.Employee{Id: 0, Name: ""}
+        e.MustValidate()
+    }
+
+    run()
+
+    @assert recovered != nil
+}
+
+@test "packages: employee, recovered panic value is the package's own error"
+{
+    var recovered any
+
+    func run() {
+        defer func() {
+            recovered = recover()
+        }()
+
+        e := employee.Employee{Id: 0, Name: ""}
+        e.MustValidate()
+    }
+
+    run()
+
+    switch err := recovered.(type) {
+    default:
+        @assert err.Is(errors.New("employee.name.required"))
+    }
+}
+
+@test "packages: employee, valid data does not panic"
+{
+    var recovered any = "unset"
+
+    func run() {
+        defer func() {
+            recovered = recover()
+        }()
+
+        e := employee.Employee{Id: 1, Name: "Karen"}
+        e.MustValidate()
+    }
+
+    run()
+
+    @assert recovered == nil
+}
+
+@test "packages: employee, code after package panic does not execute"
+{
+    reached := false
+
+    func run() {
+        defer func() {
+            recover()
+        }()
+
+        e := employee.Employee{Id: 0, Name: ""}
+        e.MustValidate()
+        reached = true
+    }
+
+    run()
+
+    @assert !reached
+}
+
+@test "packages: employee, unrecovered panic from package method propagates to outer recover"
+{
+    var outerRecovered any
+
+    func inner() {
+        // No recover here; the panic must propagate up to outer().
+        e := employee.Employee{Id: 0, Name: ""}
+        e.MustValidate()
+    }
+
+    func outer() {
+        defer func() {
+            outerRecovered = recover()
+        }()
+
+        inner()
+    }
+
+    outer()
+
+    @assert outerRecovered != nil
+
+    switch err := outerRecovered.(type) {
+    default:
+        @assert err.Is(errors.New("employee.name.required"))
+    }
+}

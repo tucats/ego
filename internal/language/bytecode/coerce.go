@@ -174,7 +174,11 @@ func requireMatch(c *Context, t *data.Type, v any) error {
 	}
 
 	// If the type is a pointer of some kind, and the value is nil, we allow it.
-	if t.IsPointer() && v == nil {
+	// The built-in "error" type gets the same treatment: its Kind is
+	// data.ErrorKind (not data.InterfaceKind, so the IsInterface() check above
+	// does not catch it), but a nil error is exactly Go's zero value for an
+	// error-typed return, parameter, or variable.
+	if v == nil && (t.IsPointer() || t.Kind() == data.ErrorKind) {
 		return c.push(v)
 	}
 

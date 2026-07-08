@@ -1,0 +1,113 @@
+// Tests for scope, looping, call-stack depth, and package-context caching
+// through tests/packages/employee.ego. These target the areas most likely
+// to be affected by changes to package proxy symbol tables and scope
+// caching: repeated calls into the same imported package from different
+// test blocks (and, by construction of the test suite, different files)
+// must see a single, consistently-updated package instance rather than a
+// fresh one per call or per file.
+
+@test "packages: employee, looping inside a package function"
+import "tests/packages/employee"
+{
+    amounts := []float64{100.0, 200.0, 300.0, 400.0}
+
+    @assert employee.Total(amounts) == 1000.0
+    @assert employee.Total([]float64{}) == 0.0
+}
+
+@test "packages: employee, recursion inside a package function"
+{
+    amounts := []float64{1.0, 2.0, 3.0, 4.0, 5.0}
+
+    @assert employee.RunningTotal(amounts, 0) == 15.0
+    @assert employee.RunningTotal(amounts, 0) == employee.Total(amounts)
+}
+
+@test "packages: employee, package state persists across separate test blocks"
+{
+    // This block intentionally does not reset HeadCount first: it relies
+    // on the package-level symbol table (shared across every import of
+    // "employee" for the life of the ego test run) still holding the
+    // value left behind by the last test in this suite that touched it.
+    // If package state were incorrectly reinitialized per test block or
+    // per file, this would observe HeadCount == 0 even after prior
+    // NewEmployee() calls elsewhere in the suite.
+    before := employee.HeadCount
+
+    e := employee.NewEmployee("Leo")
+
+    @assert employee.HeadCount == before+1
+    @assert e.Id > 0
+
+    employee.ResetHeadCount()
+    @assert employee.HeadCount == 0
+}
+
+@test "packages: employee, loop of calls into the package accumulates correctly"
+{
+    employee.ResetHeadCount()
+
+    names := []string{"Mia", "Noah", "Olga", "Pete", "Quinn"}
+    ids := []int{}
+
+    for _, name := range names {
+        e := employee.NewEmployee(name)
+        ids = append(ids, e.Id)
+    }
+
+    @assert employee.HeadCount == len(names)
+
+    // Each call must have produced a distinct, increasing id -- confirms
+    // the package's internal counter is not being reset or corrupted by
+    // repeated calls within a loop.
+    for i := 1; i < len(ids); i++ {
+        @assert ids[i] == ids[i-1]+1
+    }
+
+    employee.ResetHeadCount()
+}
+
+@test "packages: employee, deep call stack through package and local functions"
+{
+    // Interleave package-function recursion with local (test-scope)
+    // recursion to exercise call-frame bookkeeping across the boundary
+    // between "this file's" bytecode and the imported package's bytecode.
+    func localSum(n int) int {
+        if n <= 0 {
+            return 0
+        }
+
+        return n + localSum(n-1)
+    }
+
+    amounts := []float64{}
+    for i := 1; i <= 10; i++ {
+        amounts = append(amounts, float64(i))
+    }
+
+    packageSum := employee.RunningTotal(amounts, 0)
+    localTotal := localSum(10)
+
+    @assert int(packageSum) == localTotal
+}
+
+@test "packages: employee, struct value copy semantics survive a package call"
+{
+    // Passing an Employee by value into a value-receiver method, then
+    // separately mutating the original via a pointer-receiver method,
+    // must not cross-contaminate -- each call gets its own copy per Go's
+    // (and Ego's, per BUG-26) value-semantics rules.
+    original := employee.Employee{Id: 1, Name: "Ray", Salary: 100.0}
+
+    original.Rename("ShouldNotStick")
+    @assert original.Name == "Ray"
+
+    original.SetName("Rachel")
+    @assert original.Name == "Rachel"
+
+    copy := original
+    copy.SetName("CopyOnly")
+
+    @assert original.Name == "Rachel"
+    @assert copy.Name == "CopyOnly"
+}

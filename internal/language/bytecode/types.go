@@ -336,8 +336,12 @@ func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 	t := data.TypeOf(i)
 	// If it's not interface type, check it out...
 	if !t.IsInterface() {
-		if t.IsKind(data.ErrorKind) {
-			v = errors.ErrPanic.Context(v)
+		// A nil value is a valid zero value for the built-in "error" type
+		// (Go's nil error), so let it through unchanged. Anything else
+		// destined for an error-typed parameter/return falls through to the
+		// normal actualType.IsType(t) conformance check below.
+		if t.IsKind(data.ErrorKind) && v == nil {
+			return v, nil
 		}
 
 		if _, ok := v.(*ByteCode); ok {

@@ -45,6 +45,12 @@ func Coerce(value any, model any) (any, error) {
 		return nil, errors.ErrInvalidValue.Context(value)
 
 	case *errors.Error:
+		// A nil value coerced to the "error" type must stay nil (Go's zero
+		// value for error is nil, not an error whose message is "<nil>").
+		if value == nil {
+			return nil, nil
+		}
+
 		return errors.Message(fmt.Sprintf("%v", value)), nil
 
 	case *Type:

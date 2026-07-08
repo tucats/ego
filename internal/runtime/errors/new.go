@@ -21,11 +21,11 @@ func newError(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if verbose {
 		if module, found := s.Get(defs.ModuleVariable); found {
-			_ = result.In(data.String(module))
+			result = result.In(data.String(module))
 		}
 
 		if line, found := s.Get(defs.LineVariable); found {
-			_ = result.At(data.IntOrZero(line), 0)
+			result = result.At(data.IntOrZero(line), 0)
 		}
 	}
 

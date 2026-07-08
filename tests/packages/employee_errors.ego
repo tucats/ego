@@ -1,0 +1,85 @@
+// Tests for error handling across the tests/packages/employee.ego package
+// boundary: a genuine runtime error raised inside a package method and
+// caught by the caller's try/catch, and an error value returned (not
+// thrown) by a package method and checked by the caller.
+
+@test "packages: employee, runtime error inside package method caught by caller"
+import "tests/packages/employee"
+{
+    e := employee.Employee{Id: 10}
+    caught := false
+    result := -1
+
+    try {
+        result = e.Divide(0)
+    } catch(err) {
+        caught = true
+        @assert err.Is(errors.New("div.zero"))
+    }
+
+    @assert caught
+    // The assignment inside try never completed, so result keeps its
+    // pre-try value (mirrors tests/errors/try_catch.ego's "value not
+    // mutated when try body errors" case).
+    @assert result == -1
+}
+
+@test "packages: employee, error propagates through nested package call"
+{
+    // half wraps a call into the imported package's method; the div/zero
+    // error originates two calls deep (test -> half -> employee.Divide)
+    // and must still be caught here.
+    func half(id int) int {
+        e := employee.Employee{Id: id}
+        return e.Divide(0)
+    }
+
+    caught := false
+
+    try {
+        _ = half(20)
+    } catch(err) {
+        caught = true
+        @assert err.Is(errors.New("div.zero"))
+    }
+
+    @assert caught
+}
+
+@test "packages: employee, successful package call does not trigger catch"
+{
+    e := employee.Employee{Id: 20}
+    caught := false
+    result := 0
+
+    try {
+        result = e.Divide(4)
+    } catch {
+        caught = true
+    }
+
+    @assert !caught
+    @assert result == 5
+}
+
+@test "packages: employee, returned error value checked by caller"
+{
+    invalid := employee.Employee{Id: -1, Name: "Ivan"}
+
+    err := invalid.Validate()
+    @assert err != nil
+    @assert err.Is(errors.New("employee.id.invalid"))
+
+    valid := employee.Employee{Id: 1, Name: "Judy"}
+    @assert valid.Validate() == nil
+}
+
+@test "packages: employee, missing name produces distinct error identity"
+{
+    e := employee.Employee{Id: 1, Name: ""}
+
+    err := e.Validate()
+    @assert err != nil
+    @assert err.Is(errors.New("employee.name.required"))
+    @assert !err.Is(errors.New("employee.id.invalid"))
+}

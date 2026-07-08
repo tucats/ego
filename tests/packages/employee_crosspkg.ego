@@ -1,0 +1,22 @@
+// Tests that exercise a call chain spanning more than one package boundary:
+// this test imports "employee", which internally imports "badge"
+// (tests/packages/badge.ego) and calls it from Employee.Badge(). The test
+// also imports "badge" directly to confirm both the direct and the
+// indirect (via employee) paths resolve to the same package instance and
+// produce consistent results.
+
+@test "packages: employee, method calls into a second imported package"
+import "tests/packages/employee"
+import "tests/packages/badge"
+{
+    e := employee.Employee{Id: 1234, Name: "Grace"}
+
+    @assert e.Badge() == "EMP-1234"
+    @assert e.Badge() == badge.Format(1234)
+}
+
+@test "packages: employee, second package's constant is independently visible"
+{
+    @assert badge.Prefix == "EMP-"
+    @assert badge.Format(1) == badge.Prefix+"1"
+}

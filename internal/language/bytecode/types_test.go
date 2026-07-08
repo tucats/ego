@@ -568,6 +568,58 @@ func Test_requiredTypeByteCode_BoolMatches_Strict(t *testing.T) {
 	tc.assertTopStack(true)
 }
 
+// Test_requiredTypeByteCode_NilForError_Strict verifies that a nil value
+// passes the RequiredType check when the operand is the built-in "error"
+// type in strict mode. error's Kind is data.ErrorKind, not
+// data.InterfaceKind, so it needs its own nil bypass in
+// strictConformanceCheck; before the fix, strictConformanceCheck
+// unconditionally rewrote ANY value destined for an error-typed
+// parameter/return into errors.ErrPanic.Context(v), turning a legitimate
+// nil error into a non-nil "panic: <nil>" error.
+func Test_requiredTypeByteCode_NilForError_Strict(t *testing.T) {
+	tc := newTestContext(t).withStack(nil).
+		withTypeStrictness(defs.StrictTypeEnforcement)
+
+	err := requiredTypeByteCode(tc.ctx, data.ErrorType)
+
+	tc.assertNoError(err)
+	tc.assertTopStack(nil)
+}
+
+// Test_requiredTypeByteCode_RealErrorForError_Strict verifies that an actual
+// error value passed to an error-typed parameter/return retains its
+// identity (Is() still matches) in strict mode, rather than being corrupted
+// into an errors.ErrPanic wrapper by the same bug described above.
+func Test_requiredTypeByteCode_RealErrorForError_Strict(t *testing.T) {
+	original := errors.ErrDivisionByZero.Clone()
+
+	tc := newTestContext(t).withStack(original).
+		withTypeStrictness(defs.StrictTypeEnforcement)
+
+	err := requiredTypeByteCode(tc.ctx, data.ErrorType)
+
+	tc.assertNoError(err)
+
+	result, ok := tc.ctx.Pop()
+	if ok != nil {
+		t.Fatalf("failed to pop result: %v", ok)
+	}
+
+	resultErr, isErr := result.(*errors.Error)
+	if !isErr {
+		t.Fatalf("expected *errors.Error, got %T (%v)", result, result)
+	}
+
+	// Code() reports just the localization key ("div.zero"), independent of
+	// message formatting -- the most direct way to confirm the value passed
+	// through unmodified rather than being rewritten as an ErrPanic wrapper
+	// (whose Code() would be "panic" instead).
+	if resultErr.Code() != errors.ErrDivisionByZero.Code() {
+		t.Errorf("expected error identity to be preserved: got Code() = %q, want %q",
+			resultErr.Code(), errors.ErrDivisionByZero.Code())
+	}
+}
+
 // Test_requiredTypeByteCode_StackMarker returns ErrFunctionReturnedVoid when
 // a StackMarker is on the stack.
 func Test_requiredTypeByteCode_StackMarker(t *testing.T) {

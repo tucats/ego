@@ -645,6 +645,21 @@ func Test_requireMatch_PointerTypeWithNilValue(t *testing.T) {
 	tc.assertTopStack(nil)
 }
 
+// Test_requireMatch_ErrorTypeWithNilValue verifies that a nil value is
+// accepted when the target type is the built-in "error" type. error's Kind is
+// data.ErrorKind rather than data.InterfaceKind, so it is not caught by the
+// IsInterface() check above; before this fix, a nil error return/parameter
+// under strict type enforcement failed with ErrTypeMismatch even though nil
+// is Go's zero value for error.
+func Test_requireMatch_ErrorTypeWithNilValue(t *testing.T) {
+	tc := newTestContext(t)
+
+	err := requireMatch(tc.ctx, data.ErrorType, nil)
+
+	tc.assertNoError(err)
+	tc.assertTopStack(nil)
+}
+
 // Test_requireMatch_MatchingConcreteType verifies that when the value's type
 // matches the target type exactly, the value is pushed and nil is returned.
 func Test_requireMatch_MatchingConcreteType(t *testing.T) {
