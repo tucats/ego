@@ -5422,6 +5422,46 @@ y := factor.IntFact(55)
 
 This calls the function `IntFact()` defined in the `factor` package.
 
+### init()
+
+A package can define a function named `init` that takes no arguments and
+returns no values. If present, it is run automatically, exactly once, the
+first time the package is imported — you never call it yourself. This
+mirrors Go's package `init()` behavior, and is useful for one-time setup
+such as populating a lookup table or setting a package variable to a
+computed default.
+
+```go
+package factor
+
+var table map[string]int
+
+func init() {
+    table = map[string]int{}
+    table["one"] = 1
+    table["two"] = 2
+}
+```
+
+Any program that does `import "factor"` will have `init()` run before the
+`import` statement completes, so `table` is guaranteed to already be
+populated the first time any code references it.
+
+A few things to keep in mind:
+
+- `init()` runs only the first time the package is imported anywhere in the
+  running program. If the same package is imported again — by another file,
+  under an alias, or from a different part of the program — the cached
+  package is reused and `init()` does not run again.
+- Because `init` is a lowercase (unexported) name, it cannot be called
+  directly by other code, even with the package prefix (`factor.init()` is
+  not a valid reference). It exists solely as an automatic one-time
+  initializer.
+- If `init()` itself generates a runtime error (for example, a division by
+  zero), the `import` statement that triggered it fails with that error.
+- A package is not required to have an `init()` function; most packages
+  won't need one.
+
 &nbsp;
 &nbsp;
 

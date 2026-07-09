@@ -1542,6 +1542,7 @@ pkg.runtime.package=Ajout du paquet d'exécution {{package}} à la table de symb
 pkg.auto.import=Lors de l'auto-importation des paquets,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Paquet {{name}} déjà importé, passage ignoré
+pkg.compiler.init.run=+++ Exécution de init() pour le paquet {{name}}
 pkg.runtime.packages.missing=Impossible d'activer le paquet {{name}} car il n'a pas été importé
 pkg.map.function.mismatch=Déclaration de fonction incompatible pour {{package}}.{{expected}}, déclarée comme {{actual}}
 pkg.runtime.unknown=Paquet {{name}} pas encore défini

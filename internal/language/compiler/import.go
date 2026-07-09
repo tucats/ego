@@ -400,6 +400,60 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	packageDef.Set(data.SymbolsMDKey, importSymbols)
 	packageDef.SetImported(true)
 
+	// If the package declares an init() function, run it now, exactly once, the
+	// first time the package is imported -- mirroring Go's package init() semantics.
+	if err := runPackageInit(packageName, importSymbols, packageDef); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// runPackageInit invokes a package's init() function, if it has one and it has
+// not already been run. This is called once, immediately after a package's
+// source has been compiled and executed for the first time; later imports of
+// the same package reuse the cached *data.Package and never reach this code
+// again, so packageDef.Initialized is mostly a defensive guard against
+// re-entrant/concurrent imports of the same package.
+func runPackageInit(packageName string, importSymbols *symbols.SymbolTable, packageDef *data.Package) error {
+	if packageDef.IsInitialized() {
+		return nil
+	}
+
+	initFn, found := importSymbols.Get(defs.InitFunctionName)
+	if !found {
+		return nil
+	}
+
+	fn, ok := initFn.(*bytecode.ByteCode)
+	if !ok {
+		return nil
+	}
+
+	if ui.IsActive(ui.PackageLogger) {
+		ui.Log(ui.PackageLogger, "pkg.compiler.init.run", ui.A{
+			"name": packageName})
+	}
+
+	initSymbols := symbols.NewChildSymbolTable(defs.InitFunctionName+" "+packageName, importSymbols)
+	initSymbols.SetAlways(defs.ArgumentListVariable, data.NewArrayFromInterfaces(data.InterfaceType))
+
+	// The compiled init() body starts with an InPackage opcode (like every
+	// package-level function) that resolves packageName back to this same
+	// *data.Package so unqualified references to sibling package symbols
+	// work. Normally that binding is created by the Import opcode, which
+	// hasn't run yet at this point -- init() runs before the package is
+	// even fully registered with the caller -- so bind it here directly.
+	initSymbols.SetAlways(packageName, packageDef)
+
+	ctx := bytecode.NewContext(initSymbols, fn)
+
+	if err := ctx.Run(); err != nil && !errors.Equals(err, errors.ErrStop) {
+		return err
+	}
+
+	packageDef.SetInitialized(true)
+
 	return nil
 }
 

@@ -1,0 +1,28 @@
+// Note, this is not a test file (no @test) so it will not be run from an
+// ego test command. Instead, it is a small secondary package that
+// tests/packages/init_test.ego imports, so that test can verify that a
+// package-level init() function is run automatically the first time the
+// package is imported, exactly once, mirroring Go's package init()
+// semantics.
+
+package initpkg
+
+var ran bool
+var runCount int
+
+func init() {
+    ran = true
+    runCount = runCount + 1
+}
+
+// Ran reports whether init() has run.
+func Ran() bool {
+    return ran
+}
+
+// RunCount reports how many times init() has run. It must always be 1,
+// no matter how many times the package is imported (directly, aliased,
+// or transitively).
+func RunCount() int {
+    return runCount
+}

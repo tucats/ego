@@ -1549,6 +1549,7 @@ pkg.runtime.package=Agregando paquete de tiempo de ejecución {{package}} a la t
 pkg.auto.import=Mientras se importaban automáticamente los paquetes,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Paquete {{name}} ya importado, omitiendo
+pkg.compiler.init.run=+++ Ejecutando init() para el paquete {{name}}
 pkg.runtime.packages.missing=No se puede activar el paquete {{name}} porque no ha sido importado
 pkg.map.function.mismatch=Declaración de función no coincidente para {{package}}.{{expected}}, declarada como {{actual}}
 pkg.runtime.unknown=Paquete {{name}} aún no definido

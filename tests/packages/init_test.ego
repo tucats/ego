@@ -1,0 +1,18 @@
+// Tests for automatic package init() invocation, exercised through
+// tests/packages/initpkg.ego. Verifies that init() runs the first time a
+// package is imported, and runs exactly once even if the package is
+// imported again (including under an alias) later in the same program.
+
+@test "packages: init() runs on first import"
+import "tests/packages/initpkg"
+{
+    @assert initpkg.Ran() == true
+    @assert initpkg.RunCount() == 1
+}
+
+@test "packages: init() runs only once"
+import initpkg2 "tests/packages/initpkg"
+{
+    @assert initpkg.RunCount() == 1
+    @assert initpkg2.RunCount() == 1
+}

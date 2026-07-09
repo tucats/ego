@@ -41,6 +41,11 @@ type Package struct {
 	// Constants is true if the package includes one or more const declarations.
 	Constants bool
 
+	// Initialized is true once this package's init() function (if it has one) has
+	// been run. It is set at most once per package, the first time the package is
+	// imported, mirroring Go's package init() semantics.
+	Initialized bool
+
 	// Items contains map of named constants, types, and functions for this package.
 	items map[string]any
 }
@@ -168,6 +173,39 @@ func (p *Package) SetImported(f bool) *Package {
 	p.Source = f
 
 	return p
+}
+
+// SetInitialized marks the package as having had its init() function (if any)
+// run. It returns the same *Package it received, so this can be chained with
+// other "set" functions.
+func (p *Package) SetInitialized(f bool) *Package {
+	// Serialize the operation.
+	packageLock.Lock()
+	defer packageLock.Unlock()
+
+	if p == nil {
+		ui.Log(ui.InternalLogger, "runtime.pkg.nil.write", nil)
+
+		return nil
+	}
+
+	p.Initialized = f
+
+	return p
+}
+
+// IsInitialized reports whether this package's init() function (if any) has
+// already been run.
+func (p *Package) IsInitialized() bool {
+	// Serialize the operation.
+	packageLock.RLock()
+	defer packageLock.RUnlock()
+
+	if p == nil {
+		return false
+	}
+
+	return p.Initialized
 }
 
 // HasTypes returns true if the package contains one ore more Type

@@ -84,6 +84,11 @@ const (
 	Dynamic = "dynamic"
 	Main    = "main"
 
+	// InitFunctionName is the name of the optional package-level function that,
+	// if present, is invoked automatically the first time a package is imported
+	// (mirroring Go's package init() semantics).
+	InitFunctionName = "init"
+
 	// Iota is the spelling of Go's predeclared "iota" identifier. It is not a
 	// reserved word in Ego (there is no dedicated token for it); the compiler
 	// recognizes it by comparing an identifier's spelling against this

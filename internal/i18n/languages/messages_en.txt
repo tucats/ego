@@ -1562,6 +1562,7 @@ pkg.runtime.package=Adding runtime package {{package}} to symbol table {{name}}(
 pkg.auto.import=While auto-importing packages,
 pkg.auto.import.error=  {{name|%-10s}} {{error}}
 pkg.compiler.import.found=Package {{name}} already imported, skipping
+pkg.compiler.init.run=+++ Running init() for package {{name}}
 pkg.runtime.packages.missing=Unable to activate package {{name}} because it has not been imported
 pkg.map.function.mismatch=Mismatched function declaration for {{package}}.{{expected}}, declared as {{actual}}
 pkg.runtime.unknown=Package {{name}} not yet defined
