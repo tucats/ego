@@ -1119,12 +1119,34 @@ func bitOrByteCode(c *Context, i any) error {
 	return c.push(x1 | x2)
 }
 
+// bitShiftByteCode implements the << and >> operators. The shift direction is
+// supplied by the compiler as the instruction operand `i`: a boolean `true`
+// means shift left (<<) and `false` means shift right (>>). A nil operand is
+// treated as a right shift, which keeps older unit tests (and any caller that
+// passes nil) behaving as an ordinary >> operation.
+//
+// The two operands are popped from the stack:
+//
+//	v1 (top of stack) = the shift amount (how many bits to shift)
+//	v2               = the value being shifted
+//
+// Because the direction now travels in the opcode rather than being encoded in
+// the sign of the shift amount, `shift` here is always the user's literal
+// value. That lets us reject a negative shift the way Go does, instead of
+// silently reinterpreting it as a shift in the opposite direction. (BUG-47)
 func bitShiftByteCode(c *Context, i any) error {
+	// Decode the shift direction from the instruction operand. data.BoolOrFalse
+	// returns false for a nil operand, so an absent operand defaults to a
+	// right shift.
+	shiftLeft := data.BoolOrFalse(i)
+
+	// v1 is the top of the stack: the number of bits to shift by.
 	v1, err := c.Pop()
 	if err != nil {
 		return err
 	}
 
+	// v2 is the value that will be shifted.
 	v2, err := c.Pop()
 	if err != nil {
 		return err
@@ -1149,13 +1171,32 @@ func bitShiftByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
-	if shift < -64 || shift > 63 {
-		return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
+	// Go treats a negative shift amount as a runtime error ("negative shift
+	// amount"). Reproduce that here rather than silently flipping the shift
+	// direction, which is exactly the divergence BUG-47 describes.
+	if shift < 0 {
+		return c.runtimeError(errors.ErrNegativeShift).Context(shift)
 	}
 
-	if shift < 0 {
-		value = value << -shift
+	// Apply the shift in the direction requested by the compiler.
+	//
+	// The upper bound on the shift amount differs by direction, matching the
+	// range Ego accepted before this fix. A left shift may move a bit all the
+	// way out of a 64-bit value (shift of 64 yields 0), so left shifts allow up
+	// to 64. A right shift only has 63 meaningful positions for a signed value,
+	// so right shifts are capped at 63. Amounts past these bounds have no useful
+	// result and return the existing ErrInvalidBitShift.
+	if shiftLeft {
+		if shift > 64 {
+			return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
+		}
+
+		value = value << shift
 	} else {
+		if shift > 63 {
+			return c.runtimeError(errors.ErrInvalidBitShift).Context(shift)
+		}
+
 		value = value >> shift
 	}
 

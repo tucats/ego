@@ -1,0 +1,85 @@
+// Tests for BUG-47: a negative shift amount must raise an error rather than
+// silently reversing the shift direction. Real Go panics with "negative shift
+// amount" for a non-constant negative shift; Ego now returns a catchable error.
+
+@test "datamodel: bit shift positive amounts"
+{
+    // Ordinary shifts by a positive amount work in both directions. The shift
+    // operand is a variable here so the runtime bit-shift path is exercised
+    // (not compile-time constant folding). Results are int64, so compare
+    // against int64() literals to stay valid in strict type-checking mode.
+    x := 20
+    n := 2
+
+    @assert x<<n == int64(80) // 20 << 2  == 80
+    @assert x>>n == int64(5)  // 20 >> 2  == 5
+    @assert 1<<10 == int64(1024)
+    @assert 256>>4 == int64(16)
+}
+
+@test "datamodel: bit shift by zero is identity"
+{
+    // Shifting by zero returns the value unchanged in either direction.
+    v := 42
+
+    @assert v<<0 == int64(42)
+    @assert v>>0 == int64(42)
+}
+
+@test "datamodel: bit shift boundary amounts"
+{
+    // A left shift of 63 lands the bit in the sign position (smallest int64),
+    // and a left shift of 64 moves the bit entirely out of the 64-bit value,
+    // yielding zero. The math package relies on the "shift out to zero"
+    // behavior for MaxUint64 = uint64(1<<64)-1.
+    hi := 63
+    out := 64
+
+    @assert 1<<hi == int64(-1<<63) // 1 << 63 is the most-negative int64
+    @assert 1<<out == int64(0)     // 1 << 64 overflows to 0
+}
+
+@test "datamodel: negative right shift errors"
+{
+    // BUG-47: `x >> n` with n < 0 must error, not silently become `x << |n|`.
+    // If the shift were still silently reversed, no error would be thrown and
+    // the @fail below would run and fail the test.
+    n := -2
+
+    try {
+        _ = 20 >> n
+        @fail "negative right shift did not raise an error"
+    } catch {}
+}
+
+@test "datamodel: negative left shift errors"
+{
+    // BUG-47: `x << n` with n < 0 must error, not silently become `x >> |n|`.
+    n := -2
+
+    try {
+        _ = 20 << n
+        @fail "negative left shift did not raise an error"
+    } catch {}
+}
+
+@test "datamodel: negative shift error is the right error"
+{
+    // Confirm the caught error is specifically the "negative shift amount"
+    // error, so a future refactor cannot accidentally satisfy the test with an
+    // unrelated failure (e.g. a stack underflow).
+    n := -3
+
+    var captured error
+    try {
+        _ = 8 << n
+    } catch(e) {
+        captured = e
+    }
+
+    // errors.New(key) builds an error keyed by the i18n message key, and Is()
+    // compares by that key (not the rendered English text), so match against
+    // the "negative.shift" key rather than the human-readable string.
+    @assert captured != nil
+    @assert captured.Is(errors.New("negative.shift"))
+}

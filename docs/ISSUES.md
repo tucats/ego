@@ -214,7 +214,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-44](#BUG-44) | BUG | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | ✓ |
 | [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | BUG | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
-| [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
+| [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
 | [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
@@ -494,7 +494,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-44](#BUG-44) | MEDIUM | In `switch init; expr`, a `case` body cannot shadow the switch's init variable. | ✓ |
 | [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | MEDIUM | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
-| [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | |
+| [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
 | [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
@@ -4689,6 +4689,27 @@ already-negative `n` flips it positive, which the runtime then reads as "shift r
 silently reversing the operator's semantics instead of raising the existing
 `ErrInvalidBitShift` (which only fires for `shift < -64 || shift > 63`, not for an ordinary
 negative shift that Go rejects).
+
+**Resolution (July 2026):**  
+The shift direction is no longer encoded in the sign of the shift amount. The
+compiler (`internal/language/compiler/expr_operators.go`) now emits the
+`BitShift` opcode with a boolean operand — `true` for `<<`, `false` for `>>` —
+instead of the old `Negate` + `BitShift` sequence for left shifts. Because the
+direction travels in the opcode, the runtime
+(`internal/language/bytecode/math.go:bitShiftByteCode`) sees the user's literal
+shift amount and can validate it:
+
+- A negative amount returns the new `ErrNegativeShift` error (`negative shift
+  amount`), matching Go's runtime panic, and is catchable via `try/catch`.
+- The pre-existing upper bounds are preserved: a left shift accepts an amount up
+  to 64 (so `1 << 64 == 0`, which `lib/packages/math` relies on for
+  `MaxUint64`), and a right shift up to 63; larger amounts still return
+  `ErrInvalidBitShift`.
+
+Go-level tests were added in `internal/language/bytecode/math_test.go` (both
+directions, boundary amounts, and negative-shift errors), and Ego-level tests in
+`tests/datamodel/bitshift.ego`. `docs/LANGUAGE.md` now documents the operators'
+non-negative shift-amount requirement.
 
 ---
 

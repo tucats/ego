@@ -449,6 +449,7 @@ mutex.not.locked=attempt to unlock a mutex that is not currently locked
 named.return.values=return values with named return values in function definition
 native.call.panic=recovered from an unexpected error in a native function call
 native.unknown.field=unknown field or method name for this object type
+negative.shift=negative shift amount
 nested.function.scope=nested named function cannot access enclosing function variable
 nil=nil pointer reference
 nil.map.write=assignment to entry in nil map

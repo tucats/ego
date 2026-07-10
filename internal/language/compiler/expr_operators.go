@@ -114,14 +114,25 @@ func (c *Compiler) addSubtract() error {
 			case op.Is(tokenizer.OrToken):
 				c.b.Emit(bc.BitOr)
 
-			// Left shift is encoded as Negate + BitShift so that the runtime
-			// instruction can distinguish shift direction from a single operand.
+			// Shift operators. The direction of the shift is carried in the
+			// BitShift instruction's operand: `true` means shift left (<<)
+			// and `false` means shift right (>>).
+			//
+			// Historically the compiler encoded a left shift as Negate +
+			// BitShift, letting the runtime infer the direction from the *sign*
+			// of the shift amount (a negative amount meant "shift left"). That
+			// trick conflated the compiler's internal encoding with a genuinely
+			// negative shift amount supplied by the user (e.g. `x << -2`):
+			// negating the already-negative value flipped it positive, so the
+			// runtime silently reversed the operator's direction instead of
+			// reporting an error. Encoding the direction explicitly in the
+			// opcode keeps the user's shift amount untouched, so the runtime can
+			// reject a negative amount the way Go does. (BUG-47)
 			case op.Is(tokenizer.ShiftLeftToken):
-				c.b.Emit(bc.Negate)
-				c.b.Emit(bc.BitShift)
+				c.b.Emit(bc.BitShift, true)
 
 			case op.Is(tokenizer.ShiftRightToken):
-				c.b.Emit(bc.BitShift)
+				c.b.Emit(bc.BitShift, false)
 			}
 		} else {
 			parsing = false

@@ -946,8 +946,8 @@ precedes the operator and one of which follows the operator.
 | ^ | 2^n | Calculate `2` to the power `n` |
 | & | a&b | Bitwise AND of two integer values |
 | \| | a\|b | Bitwise OR of two integer values |
-| << | a<<n | Shift `a` left by `n` bits |
-| >> | a>>n | Shift `a` right by `n` bits |
+| << | a<<n | Shift `a` left by `n` bits (`n` must be `>= 0`) |
+| >> | a>>n | Shift `a` right by `n` bits (`n` must be `>= 0`) |
 | && | a&&b | Logical AND of two boolean values (short-circuit: if `a` is false, `b` is not evaluated) |
 | \|\| | a\|\|b | Logical OR of two boolean values (short-circuit: if `a` is true, `b` is not evaluated) |
 
@@ -965,6 +965,15 @@ so `10.0/3.0` results in `3.333333333` as the result.
 
 The modulo operator is only valid on integer types, and the divisor
 cannot be zero.
+
+The bit-shift operators `<<` and `>>` operate on integer values and shift
+the left operand by the number of bits given in the right operand. The shift
+amount must be non-negative; as in Go, shifting by a negative amount is a
+runtime error (`negative shift amount`) rather than a shift in the opposite
+direction. A left shift accepts an amount up to 64 (shifting a bit entirely
+out of a 64-bit value yields `0`), and a right shift accepts an amount up to
+63; larger amounts are a runtime error. The result of a shift is a 64-bit
+integer.
 
 Expressions can be combined together, and follow normal mathematical
 order of precedence (multiplication and division are done before

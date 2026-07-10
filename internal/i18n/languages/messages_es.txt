@@ -450,6 +450,7 @@ mutex.not.locked=intento de desbloquear un mutex que no está actualmente bloque
 named.return.values=valores de retorno con valores de retorno nombrados en la definición de función
 native.call.panic=error inesperado recuperado durante una llamada a función nativa
 native.unknown.field=nombre de campo o método desconocido para este tipo de objeto
+negative.shift=cantidad de desplazamiento negativa
 nested.function.scope=la función nombrada anidada no puede acceder a la variable de la función envolvente; use un cierre
 nil=referencia a puntero nulo
 nil.map.write=asignación a una entrada en un mapa nulo

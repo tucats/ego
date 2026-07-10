@@ -1551,11 +1551,17 @@ func Test_bitOrByteCode_StackUnderflow_One(t *testing.T) {
 // bitShiftByteCode
 //
 // Pops two values: v1 (top) = shift amount, v2 = value to shift.
-// Positive shift → right shift (>>).  Negative shift → left shift (<<).
-// The valid shift range is [-64, 63]; outside returns ErrInvalidBitShift.
+// The shift *direction* comes from the instruction operand, NOT the sign of the
+// shift amount: operand true = left shift (<<), false/nil = right shift (>>).
+// The shift amount must be non-negative; a negative amount returns
+// ErrNegativeShift (matching Go). The upper bound depends on direction: a left
+// shift allows up to 64 (a bit can shift all the way out of a 64-bit value),
+// while a right shift allows up to 63. Amounts past those bounds return
+// ErrInvalidBitShift.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Test_bitShiftByteCode_RightShift verifies a two-bit right shift: 12 >> 2 = 3.
+// A nil operand defaults to a right shift.
 func Test_bitShiftByteCode_RightShift(t *testing.T) {
 	// withStack(value, shift): v2=value on bottom, v1=shift on top.
 	tc := newTestContext(t).withStack(12, 2) // 12 >> 2
@@ -1564,12 +1570,20 @@ func Test_bitShiftByteCode_RightShift(t *testing.T) {
 	tc.assertTopStack(int64(3))
 }
 
-// Test_bitShiftByteCode_LeftShift verifies a three-bit left shift via negative
-// shift amount: 5 << 3 = 40.
+// Test_bitShiftByteCode_RightShiftFalseOperand verifies that an explicit false
+// operand also selects a right shift: 12 >> 2 = 3.
+func Test_bitShiftByteCode_RightShiftFalseOperand(t *testing.T) {
+	tc := newTestContext(t).withStack(12, 2) // 12 >> 2
+	err := bitShiftByteCode(tc.ctx, false)
+	tc.assertNoError(err)
+	tc.assertTopStack(int64(3))
+}
+
+// Test_bitShiftByteCode_LeftShift verifies a three-bit left shift. The direction
+// is selected by the true operand and the shift amount is positive: 5 << 3 = 40.
 func Test_bitShiftByteCode_LeftShift(t *testing.T) {
-	// A negative shift amount means left shift.
-	tc := newTestContext(t).withStack(5, -3) // 5 << 3
-	err := bitShiftByteCode(tc.ctx, nil)
+	tc := newTestContext(t).withStack(5, 3) // 5 << 3
+	err := bitShiftByteCode(tc.ctx, true)
 	tc.assertNoError(err)
 	tc.assertTopStack(int64(40))
 }
@@ -1583,41 +1597,65 @@ func Test_bitShiftByteCode_ZeroShift(t *testing.T) {
 	tc.assertTopStack(int64(42))
 }
 
-// Test_bitShiftByteCode_MaxRightShift verifies the maximum valid positive shift
-// of 63 (the boundary just inside the valid range).
+// Test_bitShiftByteCode_MaxRightShift verifies a valid large positive shift.
 func Test_bitShiftByteCode_MaxRightShift(t *testing.T) {
-	// 1 << 63 (as signed int64) followed by >> 63 should give -1 >> 63 = -1
-	// (arithmetic shift).  Use a simpler value: a large power of 2.
 	tc := newTestContext(t).withStack(1<<32, 32) // (1<<32) >> 32 = 1
-	err := bitShiftByteCode(tc.ctx, nil)
+	err := bitShiftByteCode(tc.ctx, false)
 	tc.assertNoError(err)
 	tc.assertTopStack(int64(1))
 }
 
-// Test_bitShiftByteCode_MaxLeftShift verifies the maximum valid negative shift
-// of -64 (the boundary just inside the valid range).
+// Test_bitShiftByteCode_MaxLeftShift verifies the maximum valid left shift of 63
+// (the boundary just inside the valid range). 1 << 63 is the smallest int64.
 func Test_bitShiftByteCode_MaxLeftShift(t *testing.T) {
-	// shift = -64 means left-shift by 64; valid per the guard: -64 >= -64.
-	tc := newTestContext(t).withStack(1, -64) // 1 << 64 overflows int64 → 0
-	err := bitShiftByteCode(tc.ctx, nil)
+	tc := newTestContext(t).withStack(1, 63) // 1 << 63 = math.MinInt64
+	err := bitShiftByteCode(tc.ctx, true)
 	tc.assertNoError(err)
-	tc.assertTopStack(int64(0)) // overflows int64
+	tc.assertTopStack(int64(-1 << 63)) // 1<<63 as a signed int64
 }
 
-// Test_bitShiftByteCode_InvalidPositiveShift verifies that a shift amount of 64
-// (outside the valid range of [−64, 63]) returns ErrInvalidBitShift.
+// Test_bitShiftByteCode_InvalidPositiveShift verifies that a right shift of 64
+// (past the right-shift bound of 63) returns ErrInvalidBitShift.
 func Test_bitShiftByteCode_InvalidPositiveShift(t *testing.T) {
-	tc := newTestContext(t).withStack(5, 64) // 64 > 63 → invalid
-	err := bitShiftByteCode(tc.ctx, nil)
+	tc := newTestContext(t).withStack(5, 64) // 64 > 63 → invalid for >>
+	err := bitShiftByteCode(tc.ctx, false)
 	tc.assertError(err, errors.ErrInvalidBitShift)
 }
 
-// Test_bitShiftByteCode_InvalidNegativeShift verifies that a shift of -65
-// (outside the valid range) returns ErrInvalidBitShift.
-func Test_bitShiftByteCode_InvalidNegativeShift(t *testing.T) {
-	tc := newTestContext(t).withStack(5, -65) // -65 < -64 → invalid
-	err := bitShiftByteCode(tc.ctx, nil)
+// Test_bitShiftByteCode_LeftShift64 verifies that a left shift of 64 is allowed
+// (a bit shifted entirely out of a 64-bit value) and yields 0. This is the
+// boundary the math package relies on for MaxUint64 = uint64(1<<64)-1.
+func Test_bitShiftByteCode_LeftShift64(t *testing.T) {
+	tc := newTestContext(t).withStack(1, 64) // 1 << 64 overflows int64 → 0
+	err := bitShiftByteCode(tc.ctx, true)
+	tc.assertNoError(err)
+	tc.assertTopStack(int64(0))
+}
+
+// Test_bitShiftByteCode_InvalidLeftShift65 verifies that a left shift past the
+// left-shift bound of 64 returns ErrInvalidBitShift.
+func Test_bitShiftByteCode_InvalidLeftShift65(t *testing.T) {
+	tc := newTestContext(t).withStack(1, 65) // 65 > 64 → invalid for <<
+	err := bitShiftByteCode(tc.ctx, true)
 	tc.assertError(err, errors.ErrInvalidBitShift)
+}
+
+// Test_bitShiftByteCode_NegativeShiftRight verifies that a negative shift amount
+// on a right shift returns ErrNegativeShift rather than silently shifting left.
+// This is the core of the BUG-47 fix.
+func Test_bitShiftByteCode_NegativeShiftRight(t *testing.T) {
+	tc := newTestContext(t).withStack(20, -2) // 20 >> -2 must error, not << 2
+	err := bitShiftByteCode(tc.ctx, false)
+	tc.assertError(err, errors.ErrNegativeShift)
+}
+
+// Test_bitShiftByteCode_NegativeShiftLeft verifies that a negative shift amount
+// on a left shift also returns ErrNegativeShift rather than silently shifting
+// right. This is the other half of the BUG-47 fix.
+func Test_bitShiftByteCode_NegativeShiftLeft(t *testing.T) {
+	tc := newTestContext(t).withStack(20, -2) // 20 << -2 must error, not >> 2
+	err := bitShiftByteCode(tc.ctx, true)
+	tc.assertError(err, errors.ErrNegativeShift)
 }
 
 // Test_bitShiftByteCode_NilFirst_Error verifies ErrInvalidType when the shift
