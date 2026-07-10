@@ -4,9 +4,9 @@ import (
 	"math"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 /******************************************\
@@ -1133,7 +1133,7 @@ func bitOrByteCode(c *Context, i any) error {
 // Because the direction now travels in the opcode rather than being encoded in
 // the sign of the shift amount, `shift` here is always the user's literal
 // value. That lets us reject a negative shift the way Go does, instead of
-// silently reinterpreting it as a shift in the opposite direction. (BUG-47)
+// silently reinterpreting it as a shift in the opposite direction. (BUG-47).
 func bitShiftByteCode(c *Context, i any) error {
 	// Decode the shift direction from the instruction operand. data.BoolOrFalse
 	// returns false for a nil operand, so an absent operand defaults to a
