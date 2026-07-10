@@ -25,7 +25,5 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 		m[k] = v
 	}
 
-	formatted := subs.SubstituteMap(msg, m)
-
-	return formatted, nil
+	return subs.SubstituteMap(msg, m)
 }

@@ -44,7 +44,7 @@ func TestTokenize(t *testing.T) {
 		want []string
 	}{
 		{
-			// BUG-51: "{}" and "<-" must each be a single compound token,
+			// foxed BUG-51: "{}" and "<-" must each be a single compound token,
 			// not split into individual characters.
 			name: "compound tokens are merged",
 			src:  "x{} <- f(3, 4)",

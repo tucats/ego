@@ -130,7 +130,7 @@ func translate(lang, key string, valueMap ...map[string]any) string {
 	}
 
 	if len(valueMap) > 0 {
-		text = subs.SubstituteMap(text, valueMap[0])
+		text, _ = subs.SubstituteMap(text, valueMap[0])
 	}
 
 	return text

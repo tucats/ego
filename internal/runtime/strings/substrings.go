@@ -33,7 +33,7 @@ func substring(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	p2, err := data.Int(args.Get(2)) // Number of characters
-	if err != nil  {
+	if err != nil {
 		return "", errors.New(err).In("Substring")
 	}
 
@@ -186,10 +186,12 @@ func length(symbols *symbols.SymbolTable, args data.List) (any, error) {
 // the second argument. The operators use Ego's JSON query expression syntax for
 // the value items, optionally followed by additional formatting options.
 func substitution(symbols *symbols.SymbolTable, args data.List) (any, error) {
+	var err error
+
 	text := data.String(args.Get(0))
 	value := args.Get(1)
 
-	text = subs.Substitution(text, value)
+	text, err = subs.Substitution(text, value)
 
-	return text, nil
+	return data.NewList(text, err), err
 }

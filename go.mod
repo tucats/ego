@@ -14,7 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.11.1
 	github.com/tucats/jaxon v0.1.2
-	github.com/tucats/subs v0.1.2
+	github.com/tucats/subs v1.0.0
 	github.com/tucats/termgen v0.1.0
 	github.com/tucats/validator v0.1.11
 	golang.org/x/crypto v0.51.0
