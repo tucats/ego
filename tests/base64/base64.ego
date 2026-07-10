@@ -1,0 +1,45 @@
+// Tests for base64.Encode and base64.Decode.
+//
+// Encode(data string) string has no error case (any string can be encoded).
+// Decode(data string) (string, error) supports two-value assignment, and
+// returns a catchable error for invalid Base64 input rather than the
+// single-value-only, uncatchable-abort behavior of BUG-49.
+
+@test "base64: Encode basic values"
+{
+    @assert base64.Encode("a") == "YQ=="
+    @assert base64.Encode("") == ""
+    @assert base64.Encode("Hello, World!") == "SGVsbG8sIFdvcmxkIQ=="
+}
+
+@test "base64: Decode two-value return"
+{
+    d, err := base64.Decode("SGVsbG8sIFdvcmxkIQ==")
+    @assert err == nil
+    @assert d == "Hello, World!"
+}
+
+@test "base64: Decode single-value return still works"
+{
+    d := base64.Decode("SGVsbG8sIFdvcmxkIQ==")
+    @assert d == "Hello, World!"
+}
+
+@test "base64: Encode and Decode round-trip"
+{
+    for _, v := range []string{"a", "", "Hello, World!", "!@#$%^&*()", "こんにちは世界"} {
+        encoded := base64.Encode(v)
+        decoded, err := base64.Decode(encoded)
+        @assert err == nil
+        @assert decoded == v
+    }
+}
+
+@test "base64: Decode returns an error for invalid input, no abort"
+{
+    // Before the BUG-49 fix, invalid input triggered an uncatchable runtime
+    // abort because Decode's declaration only had a single return value.
+    // The two-value form must now work directly, with no try/catch needed.
+    _, err := base64.Decode("not-valid-base64!!!")
+    @assert err != nil
+}

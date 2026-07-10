@@ -15,14 +15,16 @@ func encode(s *symbols.SymbolTable, args data.List) (any, error) {
 	return base64.StdEncoding.EncodeToString([]byte(text)), nil
 }
 
-// decode encodes a string as a BASE64 string using standard encoding rules.
+// decode decodes a BASE64-encoded string using standard encoding rules.
+// Returns a data.List of (string, error) so callers can use two-value
+// assignment: s, err := base64.Decode(data)
 func decode(s *symbols.SymbolTable, args data.List) (any, error) {
 	text := data.String(args.Get(0))
 
 	b, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {
-		return nil, errors.New(err)
+		return data.NewList(nil, errors.New(err)), nil
 	}
 
-	return string(b), nil
+	return data.NewList(string(b), nil), nil
 }

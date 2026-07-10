@@ -14,7 +14,7 @@ var Base64Package = data.NewPackageFromMap("base64", map[string]any{
 					Type: data.StringType,
 				},
 			},
-			Returns:  []*data.Type{data.StringType},
+			Returns:  []*data.Type{data.StringType, data.ErrorType},
 			ArgCount: data.Range{1, 1},
 		},
 		Value: decode,

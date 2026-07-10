@@ -216,7 +216,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-46](#BUG-46) | BUG | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
-| [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
+| [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
 | [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
@@ -496,7 +496,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-46](#BUG-46) | MEDIUM | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
-| [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
+| [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
 | [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
@@ -4766,7 +4766,7 @@ arguments (BUG-48)`).
 
 ### BUG-49 — `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `docs/LANGUAGE.md` documents `base64.Decode(data string) (string, error)`. In practice,
@@ -4784,7 +4784,7 @@ func main() {
 }
 ```
 
-**Actual output:**
+**Actual output (before fix):**
 
 ```text
 Error: at main(line 4), incorrect number of return values
@@ -4796,13 +4796,30 @@ Error: at main(line 4), incorrect number of return values
 Hello, World! <nil>
 ```
 
-**Notes:**  
-`internal/runtime/base64/types.go` declares `Returns: []*data.Type{data.StringType}` (a
-single value) although the docs and `internal/runtime/base64/encoding.go`'s `decode`
-implementation itself follow the `(any, error)` Go-idiom signature. On invalid input, the
-resulting error becomes an uncatchable-by-default runtime abort unless wrapped in
-`try`/`catch` (confirmed catchable inside `try`), which is inconsistent with the documented
-two-return-value error-handling contract.
+**Fix:**  
+`internal/runtime/base64/types.go` declared `Returns: []*data.Type{data.StringType}` (a
+single value) although the docs describe an `(any, error)` Go-idiom signature. Per the
+`callRuntimeFunction` dispatch rules (see `CLAUDE.md`), a wrapper whose declaration has more
+than one return value must return its result as a `data.List` — returning a bare
+`(value, error)` Go tuple instead causes any non-nil error to become an uncatchable runtime
+abort rather than a normal catchable return value, which was the underlying cause of the
+"incorrect number of return values" failure and of the abort-on-invalid-input behavior noted
+below.
+
+Fixed by:
+
+- Changing the declaration's `Returns` to `[]*data.Type{data.StringType, data.ErrorType}`.
+- Changing `decode` (`internal/runtime/base64/encoding.go`) to return
+  `data.NewList(string(b), nil), nil` on success and `data.NewList(nil, errors.New(err)), nil`
+  on failure, matching the established pattern used by `strconv.Itor`/`strconv.Rtoi`
+  (`internal/runtime/strconv/roman.go`).
+
+`base64.Encode` was left unchanged — it has no error case and its documented signature is a
+single string return.
+
+Go-level tests updated/added in `internal/runtime/base64/encoding_test.go`, and Ego-level
+tests added in `tests/base64/base64.ego` (previously no Ego-level coverage existed for this
+package).
 
 ---
 
