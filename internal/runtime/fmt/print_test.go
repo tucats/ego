@@ -27,9 +27,14 @@ func Test_stringPrintFormat(t *testing.T) {
 			want: "hello",
 		},
 		{
-			name: "Empty arg list returns zero",
-			// stringPrintFormat returns int(0) when args is empty, not a string.
-			// We test separately below for that case.
+			// fixed BUG-48: %% must collapse to a literal % even when the
+			// call has no substitution arguments (format string only).
+			name: "%% collapses with format string only, no values",
+			args: data.NewList("Progress: 50%%"),
+			want: "Progress: 50%",
+		},
+		{
+			name: "Single string substitution",
 			args: data.NewList("%s", "world"),
 			want: "world",
 		},
@@ -104,9 +109,6 @@ func Test_stringPrintFormat(t *testing.T) {
 			want: "   1.500",
 		},
 		{
-			// With at least one format argument the string goes through fmt.Sprintf,
-			// which converts %% to a literal %. The format-only path (args.Len()==1)
-			// returns the raw string and does not perform that conversion.
 			name: "%% produces a literal percent when Sprintf is called",
 			args: data.NewList("100%% done, n=%d", 3),
 			want: "100% done, n=3",

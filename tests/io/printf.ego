@@ -47,3 +47,11 @@
     @assert T.Equal(n, 6)
     @assert T.Nil(e)
 }
+
+@test "io: Sprintf collapses %% with no substitution arguments (BUG-48)"
+{
+    // Regression test for BUG-48: a format string containing %% but no
+    // substitution arguments must still collapse %% to a literal %.
+    @assert fmt.Sprintf("Progress: 50%%") == "Progress: 50%"
+    @assert fmt.Sprintf("no percent here") == "no percent here"
+}

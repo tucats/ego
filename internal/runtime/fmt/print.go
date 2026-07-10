@@ -63,10 +63,6 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	fmtString := data.String(args.Get(0))
 
-	if args.Len() == 1 {
-		return fmtString, nil
-	}
-
 	// We can't support extended %v formats
 	fmtString = strings.ReplaceAll(fmtString, "%#v", "%v")
 

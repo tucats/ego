@@ -39,19 +39,20 @@ func Test_grammarMissingActions(t *testing.T) {
 		// unique to the subject-verb grammar, so there is an exclude list
 		// here we honor as well.
 		var excludeActions = map[string]bool{
-			"internal/commands.TableRevoke":                true,
-			"internal/cli/config.SetAction":               true,
-			"internal/commands.LoggingFile":               true,
-			"internal/commands.LoggingStatus":             true,
-			"internal/commands.RevokeUser":                true,
-			"internal/cli/app.VersionAction":              true,
-			"internal/cli/config.ListAction":              true,
-			"internal/cli/config.ShowAction":              true,
-			"internal/cli/config.DescribeAction":          true,
-			"internal/cli/config.DeleteProfileAction":     true,
-			"internal/cli/config.DeleteAction":            true,
-			"internal/cli/config.SetDescriptionAction":    true,
-			"internal/cli/config.SetOutputAction":         true,
+			"internal/commands.TableRevoke":            true,
+			"internal/cli/config.SetAction":            true,
+			"internal/commands.LoggingFile":            true,
+			"internal/commands.LoggingStatus":          true,
+			"internal/commands.RevokeUser":             true,
+			"internal/cli/app.VersionAction":           true,
+			"internal/cli/config.ListAction":           true,
+			"internal/cli/config.ShowAction":           true,
+			"internal/cli/config.DescribeAction":       true,
+			"internal/cli/config.DeleteProfileAction":  true,
+			"internal/cli/config.DeleteAction":         true,
+			"internal/cli/config.SetDescriptionAction": true,
+			"internal/cli/config.SetOutputAction":      true,
+			"internal/commands.FormatJSON":             true,
 		}
 
 		for key, count2 := range a2 {

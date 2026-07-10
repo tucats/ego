@@ -215,7 +215,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-45](#BUG-45) | BUG | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | BUG | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
-| [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
+| [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
@@ -495,7 +495,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-45](#BUG-45) | MEDIUM | An unrecovered `panic()` inside a goroutine does not stop the main program. | ✓ |
 | [BUG-46](#BUG-46) | MEDIUM | A typed array silently degrades to `[]interface{}` on an out-of-type index assignment in dynamic mode. | |
 | [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
-| [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | |
+| [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | |
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
@@ -4717,7 +4717,7 @@ non-negative shift-amount requirement.
 
 ### BUG-48 — `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `fmt.Printf`/`fmt.Sprintf` with a format string containing `%%` but no substitution
@@ -4732,7 +4732,7 @@ func main() {
 }
 ```
 
-**Actual output:**
+**Actual output (before fix):**
 
 ```text
 Progress: 50%%
@@ -4744,12 +4744,21 @@ Progress: 50%%
 Progress: 50%
 ```
 
-**Notes:**  
-Root cause in `internal/runtime/fmt/print.go:59-68`, `stringPrintFormat`: when
+**Fix:**  
+Root cause was in `internal/runtime/fmt/print.go`, `stringPrintFormat`: when
 `args.Len() == 1` (i.e. the format string only, no substitution values), the function
-returns `fmtString` verbatim without ever calling Go's `fmt.Sprintf` or running the `%%`
-preprocessing loop. Confirmed working correctly once at least one substitution argument is
-present (e.g. `fmt.Printf("%d%%\n", 5)` → `5%`).
+returned `fmtString` verbatim without ever calling Go's `fmt.Sprintf` or running the `%%`
+preprocessing loop. The `args.Len() == 1` short-circuit was removed so the format string
+always flows through to the final `fmt.Sprintf(fmtString, args.Elements()[1:]...)` call,
+which correctly collapses `%%` (and applies any other formatting) even when there are no
+substitution arguments — matching the behavior of `strings.Format`
+(`internal/runtime/strings/conversion.go`), which never had this short-circuit and was
+already correct.
+
+Go-level regression test added in `internal/runtime/fmt/print_test.go`
+(`Test_stringPrintFormat/%%_collapses_with_format_string_only,_no_values`), and an
+Ego-level test in `tests/io/printf.ego` (`io: Sprintf collapses %% with no substitution
+arguments (BUG-48)`).
 
 ---
 
