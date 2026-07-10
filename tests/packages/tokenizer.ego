@@ -4,11 +4,53 @@
 	a := "3 <- x"
 	b := strings.Tokenize(a)
 
-	@assert len(b) == 4
+	// "<-" is a single compound token in the language, not two separate
+	// "<" and "-" tokens (BUG-51).
+	@assert len(b) == 3
 	@assert b[0].kind == "Integer"
 	@assert b[0].spelling == "3"
 	@assert b[1].kind == "Special"
-	@assert b[1].spelling == "<"
-	@assert b[3].kind == "Identifier"
-	@assert b[3].spelling == "x"
+	@assert b[1].spelling == "<-"
+	@assert b[2].kind == "Identifier"
+	@assert b[2].spelling == "x"
+}
+
+@test "packages: strings.Tokenizer merges compound tokens (BUG-51)"
+{
+	// Worked example from docs/LANGUAGE.md: "{}" and "<-" are each a single
+	// token, so this tokenizes to 9 tokens, not 11.
+	t := strings.Tokenize("x{} <- f(3, 4)")
+
+	@assert len(t) == 9
+	@assert t[0].kind == "Identifier"
+	@assert t[0].spelling == "x"
+	@assert t[1].kind == "Special"
+	@assert t[1].spelling == "{}"
+	@assert t[2].kind == "Special"
+	@assert t[2].spelling == "<-"
+	@assert t[3].kind == "Identifier"
+	@assert t[3].spelling == "f"
+	@assert t[8].kind == "Special"
+	@assert t[8].spelling == ")"
+}
+
+@test "packages: strings.Tokenizer does not leak auto-inserted semicolons"
+{
+	// Merging compound tokens requires tokenizing in "code" mode, which also
+	// enables Go-style automatic semicolon insertion at the end of lines.
+	// Those synthetic semicolons are an artifact of that mode and must not
+	// appear in Tokenize's result -- only semicolons the caller actually
+	// typed should show up.
+	single := strings.Tokenize("x{} <- f(3, 4)")
+	@assert len(single) == 9
+
+	multi := strings.Tokenize("x := 1\ny := 2")
+	@assert len(multi) == 6
+	@assert multi[5].kind == "Integer"
+	@assert multi[5].spelling == "2"
+
+	explicit := strings.Tokenize("a; b")
+	@assert len(explicit) == 3
+	@assert explicit[1].kind == "Special"
+	@assert explicit[1].spelling == ";"
 }

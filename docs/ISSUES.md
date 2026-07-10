@@ -218,7 +218,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
-| [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
+| [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
 | [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
 | [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | |
@@ -498,7 +498,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
-| [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | |
+| [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
 | [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
 | [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | |
@@ -4874,7 +4874,7 @@ leaving the `{{marker}}` untouched.
 
 ### BUG-51 — `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) as documented
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `docs/LANGUAGE.md` gives a worked example stating that `{}` and `<-` are each considered a
@@ -4893,7 +4893,7 @@ func main() {
 }
 ```
 
-**Actual output:**
+**Actual output (before fix):**
 
 ```text
 11
@@ -4907,13 +4907,30 @@ func main() {
 9
 ```
 
-**Notes:**  
-Root cause: `internal/runtime/strings/parse.go:12` calls `tokenizer.New(src, false)`. Per
-the doc comment on `tokenizer.New` (`internal/language/tokenizer/tokenizer.go:50-58`),
-passing `isCode=false` disables "crushing" of multi-character operator tokens (`:=`, `<=`,
-`&&`, `...`, and by extension `{}`/`<-`) into single tokens — that flag is intended for
-non-code strings such as SQL. Since `strings.Tokenize` is documented as tokenizing "based on
-the Ego language rules," it should be calling `tokenizer.New(src, true)`.
+**Fix:**  
+`internal/runtime/strings/parse.go`'s `tokenize` called `tokenizer.New(src, false)`. Per the
+doc comment on `tokenizer.New` (`internal/language/tokenizer/tokenizer.go:50-58`), passing
+`isCode=false` disables "crushing" of multi-character operator tokens (`:=`, `<=`, `&&`,
+`...`, and by extension `{}`/`<-`) into single tokens — that flag is intended for non-code
+strings such as SQL. Since `strings.Tokenize` is documented as tokenizing "based on the Ego
+language rules," it now calls `tokenizer.New(src, true)`.
+
+That flag has a second effect, though: it also enables Go-style automatic semicolon
+insertion at line ends, which is meant for compiling whole programs and is not part of
+`Tokenize`'s documented contract. Left unhandled, `strings.Tokenize("x{} <- f(3, 4)")` would
+correctly merge to 9 real tokens but then gain a 10th, synthetic trailing `;` that the caller
+never typed. `tokenize` now filters these out via a new `isSyntheticSemicolon` helper: an
+auto-inserted semicolon's column position always falls beyond the end of the tokenizer's
+`GetLine(line)` text (which has the synthetic `"  ;"` suffix already stripped), whereas a
+semicolon the caller actually typed always falls within it. This distinguishes and drops only
+the synthetic ones — an explicit `;` in the input (e.g. `"a; b"`) is preserved.
+
+Go-level tests added in `internal/runtime/strings/parse_test.go` (`TestTokenize`, covering
+compound-token merging, explicit-semicolon preservation, and no-synthetic-semicolon-leak on
+both single- and multi-line input). The pre-existing Ego-level test in
+`tests/packages/tokenizer.ego` was updated to expect the merged `<-` token (it previously
+encoded the buggy split-token behavior), and two new Ego-level tests were added there for the
+documented `docs/LANGUAGE.md` worked example and for synthetic-semicolon stripping.
 
 ---
 
