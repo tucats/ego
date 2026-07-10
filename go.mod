@@ -17,7 +17,7 @@ require (
 	github.com/tucats/subs v1.0.0
 	github.com/tucats/termgen v0.1.0
 	github.com/tucats/validator v0.1.11
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/term v0.43.0
 	gopkg.in/resty.v1 v1.12.0
 	modernc.org/sqlite v1.50.1
