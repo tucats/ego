@@ -145,6 +145,20 @@ func callByteCode(c *Context, i any) error {
 		return nil
 	}
 
+	// BUG-55 fix: same special case as above, but for a bare array-typed
+	// field accessed with call syntax, e.g. reflect.Reflect(v).Members()
+	// or .Functions(). Both are plain []string fields on the Reflection
+	// struct (docs/LANGUAGE.md documents them as callable pseudo-methods,
+	// alongside genuine methods like .String()), not registered functions,
+	// so there is no Function/ByteCode/native callable to dispatch to --
+	// the field's array value _is_ the result, exactly as with the string
+	// case above.
+	if arr, ok := functionPointer.(*data.Array); ok && argc == 0 {
+		_ = c.push(arr)
+
+		return nil
+	}
+
 	// if we didn't get a function pointer, that's an error. Also, if the
 	// function pointer is a stack marker, that's an error.
 	if functionPointer == nil {

@@ -34,6 +34,43 @@
     @assert index(r.Members, "year") >= 0
 }
 
+@test "reflect: Members() and Functions() callable with parentheses (BUG-55)"
+{
+    // docs/LANGUAGE.md documents Members() and Functions() as callable
+    // methods (with parentheses), alongside genuine methods like String().
+    // Both are plain []string fields on the Reflection struct, not
+    // registered functions, so calling them used to raise
+    // "invalid function invocation" -- only the parenthesis-free field
+    // access (r.Members, r.Functions) worked. Both forms must now agree.
+    type Roadster struct { make string; model string; year int }
+
+    func (c Roadster) Description() string {
+        return c.make + " " + c.model
+    }
+
+    v := Roadster{ make: "Ford", model: "Mustang", year: 1969 }
+    r := reflect.Reflect(v)
+
+    @assert len(r.Members()) == 3
+    @assert index(r.Members(), "make") >= 0
+    @assert index(r.Members(), "model") >= 0
+    @assert index(r.Members(), "year") >= 0
+
+    // Members()/Functions() called with parens must match the bare-field
+    // form exactly.
+    @assert r.Members() == r.Members
+    @assert r.Functions() == r.Functions
+
+    found := false
+    for _, fn := range r.Functions() {
+        if strings.Index(fn, "Description()") >= 0 {
+            found = true
+        }
+    }
+    @assert found
+}
+
+
 @test "reflect: Reflect() struct with methods"
 {
     // time.Time is a well-known type with methods

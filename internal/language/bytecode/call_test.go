@@ -148,6 +148,42 @@ func Test_callByteCode_StringFunctionNonZeroArgs(t *testing.T) {
 	tc.assertError(err, errors.ErrInvalidFunctionCall)
 }
 
+// Test_callByteCode_ArrayFunctionZeroArgs is the BUG-55 regression test: it
+// verifies the special case where the "function" on the stack is a
+// *data.Array and argc == 0. This represents an array-typed pseudo-method
+// such as reflect.Reflect(v).Members() or .Functions() -- both are plain
+// []string fields on the Reflection struct, not registered functions, so
+// there is no callable to dispatch to. The array is pushed back and
+// returned as the "call result", mirroring the pre-existing string special
+// case immediately above.
+func Test_callByteCode_ArrayFunctionZeroArgs(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.StringType, "X", "Y")
+
+	tc := newTestContext(t).
+		withStack(arr)
+
+	err := callByteCode(tc.ctx, 0)
+
+	tc.assertNoError(err)
+	tc.assertTopStack(arr)
+}
+
+// Test_callByteCode_ArrayFunctionNonZeroArgs verifies that the array
+// special-case only applies when there are no arguments, exactly like the
+// string special case. With args the array falls through to the default
+// handler and returns ErrInvalidFunctionCall.
+func Test_callByteCode_ArrayFunctionNonZeroArgs(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.StringType, "X", "Y")
+
+	// Stack: fn=arr, arg0=1  (arg0 on top)
+	tc := newTestContext(t).
+		withStack(arr, 1)
+
+	err := callByteCode(tc.ctx, 1)
+
+	tc.assertError(err, errors.ErrInvalidFunctionCall)
+}
+
 // Test_callByteCode_NilFunctionPointer verifies that a nil function pointer
 // returns ErrInvalidFunctionCall.
 func Test_callByteCode_NilFunctionPointer(t *testing.T) {

@@ -303,7 +303,7 @@ func Test_scanner(t *testing.T) {
 			err:    errors.ErrScanEOF,
 		},
 		{
-			// BUG-52 primary reproducer: fmt.Sscanf("5", "%d %d", &c, &d)
+			// Reproduce BUG-52 primary issue: fmt.Sscanf("5", "%d %d", &c, &d)
 			// must report a non-nil error (real Go: io.EOF) instead of
 			// silently returning nil.
 			name:   "BUG-52: second verb runs out of data entirely",
@@ -313,7 +313,7 @@ func Test_scanner(t *testing.T) {
 			err:    errors.ErrScanEOF,
 		},
 		{
-			// BUG-52 secondary reproducer: fmt.Sscanf("wrong 35", "age %d", &a)
+			// Reproduce BUG-52 secondary issue: fmt.Sscanf("wrong 35", "age %d", &a)
 			// must report a non-nil error (real Go: "input does not match
 			// format") instead of silently returning nil.
 			name:   "BUG-52: literal text mismatch",

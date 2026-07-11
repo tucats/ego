@@ -106,8 +106,8 @@ func TestCompileBlockDirectiveUnusedFalseSuppressesError(t *testing.T) {
 }
 
 // TestCompileBlockDirectiveUnusedTrueStillReportsError is the companion to
-// TestCompileBlockDirectiveUnusedFalseSuppressesError: it confirms the
-// BUG-54 fix (gating Errors()'s sweep of the block's own top-level scope on
+// TestCompileBlockDirectiveUnusedFalseSuppressesError: it confirms the BUG-54
+// fix (gating Errors()'s sweep of the block's own top-level scope on
 // c.flags.unusedVars) did not disable unused-variable detection altogether --
 // only honored an explicit unused=false override. With unused=true, the
 // compile error must still be caught.
