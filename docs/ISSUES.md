@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 59 issues (29 resolved)
+- [BUG — General Language Bugs](#area-bug) — 60 issues (29 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -234,6 +234,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | BUG | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | BUG | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
+| [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -514,6 +515,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | HIGH | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | MEDIUM | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
+| [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | |
 
 ---
 
@@ -6545,6 +6547,94 @@ Verified against `go test ./...`, `go test -race ./...`, and both `ego test test
 `ego test --types strict tests/` (1229 `@test` blocks each, including a manual check that
 compiler error messages still correctly show the offending package name and source
 line/column after the `compileError` fix) with no regressions.
+
+---
+
+<a id="BUG-67"></a>
+
+### BUG-67 — `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while implementing named scalar type identity (`type buzz int32`) and adding tests for
+it under `--types strict`. Two related, narrower-int-typed boundaries both reject a bare `int`
+literal/expression where Go itself would happily convert an untyped constant: (1) returning
+the result of `int32 * int-literal` arithmetic from a function declared to return `int32`, and
+(2) passing a bare integer literal to a parameter declared `int32`. Neither reproducer involves
+a user-defined type — both fail identically with plain built-in `int32`, so this is a
+pre-existing gap in strict-mode return/argument type-checking, not something introduced by the
+named-scalar-types feature. Notably, `==`/`!=`/ordered comparisons already have special-cased
+handling for a compile-time-constant operand (`getComparisonTerms` in
+`internal/language/bytecode/equal.go`, which coerces a literal up/down to match the other
+operand's kind even in strict mode) — the return-value and argument-passing boundaries have no
+equivalent leniency.
+
+**Reproducer (return value):**
+
+```go
+func doubled(b int32) int32 {
+    return b * 2
+}
+
+func main() {
+    fmt.Println(doubled(int32(7)))
+}
+```
+
+Run with `ego --types strict run`.
+
+**Actual output:**
+
+```text
+Error: at doubled(line 2), type mismatch: int, int32
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+14
+```
+
+**Reproducer (argument passing):**
+
+```go
+func f(x int32) int32 {
+    return x
+}
+
+func main() {
+    fmt.Println(f(4))
+}
+```
+
+Run with `ego --types strict run`.
+
+**Actual output:**
+
+```text
+Error: at f(line 6), incorrect function argument type: argument 1: int
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+4
+```
+
+**Notes:**  
+Not yet root-caused to a specific line. Likely locations: the return-value case is presumably
+a strict-mode kind check somewhere in the `Return` opcode's return-type conformance check
+(possibly `internal/language/bytecode/types.go`'s `strictConformanceCheck`, though that
+function's `*Type`-only special-casing suggested it wasn't the culprit during a brief look);
+the argument-passing case is `internal/language/bytecode/arg.go`'s `argByteCode`, which gates
+its `data.Coerce` call behind `!data.TypeOf(v).IsType(argType)` with no separate allowance for
+a literal/constant value the way `getComparisonTerms` has. Discovered incidentally rather than
+through a dedicated investigation, so severity and exact scope (does it affect every narrower
+int kind — `int8`, `int16`, `byte` — or just `int32`? does `float32` have the same gap against
+a `float64`-shaped literal?) have not been fully mapped.
 
 ---
 

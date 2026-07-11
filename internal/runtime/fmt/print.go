@@ -198,8 +198,18 @@ func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 // object type passed in, if it is a typed struct. Otherwise, it
 // just returns the Unquoted format value.
 func formatUsingString(s *symbols.SymbolTable, v any) string {
-	if m, ok := v.(*data.Struct); ok {
-		if f := m.Type().Function("String"); f != nil {
+	var typeDef *data.Type
+
+	switch m := v.(type) {
+	case *data.Struct:
+		typeDef = m.Type()
+
+	case *data.Scalar:
+		typeDef = m.Type()
+	}
+
+	if typeDef != nil {
+		if f := typeDef.Function("String"); f != nil {
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args data.List) (any, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				local.SetAlways(defs.ThisVariable, v)

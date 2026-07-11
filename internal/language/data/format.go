@@ -35,6 +35,9 @@ func FormatUnquoted(arg any) string {
 	case string:
 		return v
 
+	case *Scalar:
+		return FormatUnquoted(v.value)
+
 	default:
 		return Format(v)
 	}
@@ -111,6 +114,9 @@ func FormatWithType(element any) string {
 
 	case *Map:
 		return actual.StringWithType()
+
+	case *Scalar:
+		return actual.typeDef.String() + "(" + Format(actual.value) + ")"
 	}
 
 	fmtString := Format(element)
@@ -249,6 +255,9 @@ func Format(element any) string {
 		return formatPackageAsString(v)
 
 	case *Struct:
+		return v.String()
+
+	case *Scalar:
 		return v.String()
 
 	case *Array:

@@ -86,6 +86,9 @@ func String(v any) string {
 	case string:
 		return actual
 
+	case *Scalar:
+		return String(actual.value)
+
 	case bool:
 		if actual {
 			return "true"

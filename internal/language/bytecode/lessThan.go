@@ -27,6 +27,14 @@ func lessThanByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
+	// A named scalar type decays to its underlying value for comparison. This
+	// must happen before the strict-mode branch below, which (once IsType
+	// confirms kind compatibility) assumes v1/v2 are already concrete Go
+	// scalar values and switches on them directly without ever calling
+	// data.Coerce/data.Normalize.
+	v1 = unwrapScalar(v1)
+	v2 = unwrapScalar(v2)
+
 	// Handle nil cases
 	if v1 == nil || v2 == nil {
 		_ = c.push(false)

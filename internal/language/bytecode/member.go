@@ -144,6 +144,9 @@ func getMemberValue(c *Context, m any, name string) (any, error) {
 		case *data.Struct:
 			return getStructMemberValue(c, actual, name)
 
+		case *data.Scalar:
+			return getScalarMemberValue(c, actual, name)
+
 		case *data.Type:
 			// For a TypeDefinition, BaseType() returns the underlying type.
 			// If actual is a nil *data.Type, BaseType() returns nil — add an
@@ -174,6 +177,9 @@ func getMemberValue(c *Context, m any, name string) (any, error) {
 
 	case *data.Struct:
 		return getStructMemberValue(c, mv, name)
+
+	case *data.Scalar:
+		return getScalarMemberValue(c, mv, name)
 
 	case *data.Package:
 		// MEMBERS-5 fix: the dead v and found parameters were removed from
@@ -409,5 +415,27 @@ func getStructMemberValue(c *Context, mv *data.Struct, name string) (any, error)
 
 	// Strip any Immutable (read-only constant) wrapper before returning so
 	// callers receive the plain underlying value.
+	return data.UnwrapConstant(v), nil
+}
+
+// getScalarMemberValue resolves a receiver method (name) on a named scalar
+// type value, e.g. func (b buzz) String() string {...}. Named scalar types
+// have no fields, only methods, so this is a simplified version of
+// getStructMemberValue that skips straight to the receiver-function lookup.
+func getScalarMemberValue(c *Context, mv *data.Scalar, name string) (any, error) {
+	v := data.TypeOf(mv).Function(name)
+	found := v != nil
+
+	// A data.Function with both Declaration == nil and Value == nil is a
+	// stub entry (placeholder with no implementation).  Treat it as absent
+	// so callers get ErrUnknownMember rather than a useless nil function.
+	if decl, ok := v.(data.Function); ok {
+		found = (decl.Declaration != nil) || decl.Value != nil
+	}
+
+	if !found {
+		return nil, c.runtimeError(errors.ErrUnknownMember).Context(name)
+	}
+
 	return data.UnwrapConstant(v), nil
 }

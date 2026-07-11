@@ -14,8 +14,22 @@ import (
 // integer (rune) values, etc. It is called from within the Call
 // bytecode when the target function is really a type.
 func Cast(s *symbols.SymbolTable, args data.List) (any, error) {
-	// Target t is the type of the last parameter
-	t := data.TypeOf(args.Get(args.Len() - 1))
+	// The last parameter is the cast target. The compiler pushes the actual
+	// *data.Type descriptor for the target (see compileTypeCast), so use it
+	// directly when present. This matters for a named type (e.g. "type buzz
+	// int32"): data.TypeOf(), when handed a *data.Type describing a TypeKind
+	// wrapper, unwraps it to the underlying base type -- correct when asking
+	// "what is the type of this Type value", but wrong here, where the
+	// *data.Type IS the requested target and must not be unwrapped, or a
+	// cast like buzz(5) would silently target int32 and lose the type
+	// identity the whole point of the cast is to attach.
+	var t *data.Type
+
+	if tt, ok := data.UnwrapConstant(args.Get(args.Len() - 1)).(*data.Type); ok {
+		t = tt
+	} else {
+		t = data.TypeOf(args.Get(args.Len() - 1))
+	}
 
 	// If there is a list of operand values, create an array from them to
 	// use as the source.

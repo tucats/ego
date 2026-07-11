@@ -1474,6 +1474,9 @@ func KindOf(i any) int {
 	case *Struct:
 		return StructKind
 
+	case *Scalar:
+		return KindOf(i.(*Scalar).value)
+
 	case *Channel:
 		return PointerKind
 
@@ -1494,6 +1497,9 @@ func IsNumeric(i any) bool {
 	case int8, int16, uint16, int32, uint32, int, uint, int64, uint64, byte, float32, float64:
 		return true
 
+	case *Scalar:
+		return IsNumeric(actual.value)
+
 	case *Type:
 		if actual.kind == ByteKind ||
 			actual.kind == IntKind ||
@@ -1512,6 +1518,14 @@ func IsNumeric(i any) bool {
 // Basically, this tests to see if a type is a scalar type. You can't
 // meaningfully coerce complex types.
 func IsCoercible(t *Type) bool {
+	// A named type (e.g. "type buzz int32") is coercible exactly when its
+	// underlying base type is; this recursion intentionally does NOT make
+	// named struct/map/array types coercible, since their BaseType() kind
+	// (StructKind, etc.) is not in the list below.
+	if t.kind == TypeKind {
+		return IsCoercible(t.BaseType())
+	}
+
 	kind := t.Kind()
 	coercibleKinds := []int{
 		BoolKind, ByteKind, Int8Kind,
@@ -1660,6 +1674,9 @@ func TypeOf(i any) *Type {
 		return v.Type()
 
 	case *Struct:
+		return v.typeDef
+
+	case *Scalar:
 		return v.typeDef
 
 	case *Array:

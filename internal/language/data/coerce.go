@@ -27,10 +27,30 @@ func Coerce(value any, model any) (any, error) {
 		value = errors.New(e)
 	}
 
+	// A named scalar type (e.g. "type buzz int32") decays to its underlying
+	// value for coercion, arithmetic, and comparison purposes.
+	if sv, ok := value.(*Scalar); ok {
+		value = sv.Value()
+	}
+
 	// If the model is a type specification, create an instance of that type to
 	// use as the model.
 	if t, ok := model.(*Type); ok {
 		model = InstanceOfType(t)
+	}
+
+	// If the model is itself a named scalar type, coerce value to the
+	// underlying type and re-wrap the result so the target's type identity
+	// is preserved. This is what makes an explicit cast like buzz(5)
+	// (which resolves to Coerce(5, <zero-value buzz instance>)) produce a
+	// properly-tagged *Scalar rather than a bare int32.
+	if sm, ok := model.(*Scalar); ok {
+		coerced, err := Coerce(value, sm.Value())
+		if err != nil {
+			return nil, err
+		}
+
+		return NewScalar(sm.typeDef, coerced), nil
 	}
 
 	switch mt := model.(type) {
@@ -1209,6 +1229,21 @@ func coerceToByte(v any) (any, error) {
 func Normalize(v1 any, v2 any) (any, any, error) {
 	var err error
 
+	// A named scalar type decays to its underlying value here, same as in
+	// Coerce. This must happen before the kind1 == kind2 fast path below:
+	// KindOf() already unwraps *Scalar to report the underlying kind, so two
+	// same-named-type operands (e.g. two "buzz" values) would otherwise take
+	// that fast path and be returned still-wrapped, which callers such as
+	// greaterThanByteCode -- that switch on the concrete Go type after
+	// Normalize -- do not know how to handle.
+	if sv, ok := v1.(*Scalar); ok {
+		v1 = sv.Value()
+	}
+
+	if sv, ok := v2.(*Scalar); ok {
+		v2 = sv.Value()
+	}
+
 	kind1 := KindOf(v1)
 	kind2 := KindOf(v2)
 
@@ -1258,6 +1293,20 @@ func Normalize(v1 any, v2 any) (any, any, error) {
 // are returned unchanged.
 func (t Type) Coerce(v any) (any, error) {
 	switch t.kind {
+	case TypeKind:
+		// Only a named type built on a scalar base (e.g. "type buzz int32")
+		// is coerced here, producing a properly identity-wrapped *Scalar.
+		// A named struct/map/array type (e.g. "type Point struct{...}")
+		// falls through to the same no-op passthrough it always has --
+		// package-level Coerce has no model case for *Struct/*Map/*Array, so
+		// routing those through it here would error instead of passing v
+		// through unchanged.
+		if IsCoercible(t.BaseType()) {
+			return Coerce(v, InstanceOfType(&t))
+		}
+
+		return v, nil
+
 	case ByteKind:
 		return Byte(v)
 

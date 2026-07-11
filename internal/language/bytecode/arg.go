@@ -105,7 +105,16 @@ func argByteCode(c *Context, i any) error {
 	// they are already same type, or it is a channel; some types don't take
 	// kindly to questions...
 	if argType != nil && data.IsCoercible(argType) {
-		if !data.TypeOf(v).IsType(argType) {
+		// A named scalar type (e.g. "buzz") and its underlying type (e.g.
+		// int32) are considered the same type by IsType (it unwraps user
+		// types for compatibility checks), but they are represented
+		// differently at the value level: a *data.Scalar carries type
+		// identity that a bare int32 does not. So a *data.Scalar argument
+		// must always pass through Coerce to decay/re-wrap it to match the
+		// declared parameter type, even when IsType reports a match.
+		_, isScalarValue := v.(*data.Scalar)
+
+		if isScalarValue || !data.TypeOf(v).IsType(argType) {
 			oldValue := v
 
 			v, err = data.Coerce(v, data.InstanceOfType(argType))

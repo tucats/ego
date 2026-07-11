@@ -62,6 +62,14 @@ func NewInstanceOf(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	case *data.Map:
 		return data.DeepCopy(actual), nil
+
+	case *data.Scalar:
+		// A named scalar type receiver (e.g. a value-receiver method call on
+		// "type buzz int32") is copied the same way a struct value receiver
+		// is: Scalar itself is immutable, so this just produces a fresh
+		// wrapper with the same identity and value rather than aliasing the
+		// caller's pointer.
+		return data.NewScalar(actual.Type(), actual.Value()), nil
 	}
 
 	// Otherwise, make a deep copy of the item ourselves.

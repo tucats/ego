@@ -222,6 +222,16 @@ func (t *Type) InstanceOf(superType *Type) any {
 		return t.valueType.InstanceOf(nil)
 
 	default:
+		// If superType is a named user type distinct from this scalar base
+		// (e.g. "type buzz int32" instantiating its Int32Kind valueType),
+		// wrap the zero value so the type identity travels with it, mirroring
+		// how the StructKind case above uses superType for the same purpose.
+		// Plain "var x int32" is unaffected: there superType == t (both are
+		// the shared builtin Int32Type), so no wrapping occurs.
+		if superType != t && superType.kind == TypeKind {
+			return NewScalar(superType, InstanceOfType(t))
+		}
+
 		return InstanceOfType(t)
 	}
 }

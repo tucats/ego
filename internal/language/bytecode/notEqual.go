@@ -36,6 +36,13 @@ func notEqualByteCode(c *Context, i any) error {
 		return c.runtimeError(err)
 	}
 
+	// A named scalar type decays to its underlying value for comparison, the
+	// same way it does for arithmetic (data.Coerce). Without this, a *Scalar
+	// is a Go pointer and would incorrectly fall into the native-pointer
+	// identity comparison in the default case below (isPointerValue).
+	v1 = unwrapScalar(v1)
+	v2 = unwrapScalar(v2)
+
 	// If only one side is nil, they are not equal by definition.
 	if !data.IsNil(v1) && data.IsNil(v2) ||
 		data.IsNil(v1) && !data.IsNil(v2) {

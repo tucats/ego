@@ -43,6 +43,13 @@ func equalByteCode(c *Context, i any) error {
 		return err
 	}
 
+	// A named scalar type decays to its underlying value for comparison, the
+	// same way it does for arithmetic (data.Coerce). Without this, a *Scalar
+	// is a Go pointer and would incorrectly fall into the native-pointer
+	// identity comparison in the default case below (isPointerValue).
+	v1 = unwrapScalar(v1)
+	v2 = unwrapScalar(v2)
+
 	// If both are nil, then they match.
 	if data.IsNil(v1) && data.IsNil(v2) {
 		return c.push(true)
@@ -171,6 +178,23 @@ func equalByteCode(c *Context, i any) error {
 // notEqualByteCode each have a dedicated, earlier case for those types that
 // compares structural (deep) equality instead of address identity, which is
 // the correct semantics for them (see BUG-26).
+// unwrapScalar decays a named scalar type value (e.g. "type buzz int32") to
+// its underlying value for comparison purposes, mirroring data.Coerce's
+// decay-on-operation semantics for arithmetic. Comparison opcodes need their
+// own explicit unwrap because several of them (equalByteCode, notEqualByteCode,
+// and the strict-mode branch of the ordered comparisons) inspect the operand's
+// concrete Go type directly instead of always routing through data.Coerce/
+// data.Normalize, and a *data.Scalar is itself a Go pointer that would
+// otherwise be misidentified as a native pointer value or fail to match any
+// concrete-type case at all.
+func unwrapScalar(v any) any {
+	if sv, ok := v.(*data.Scalar); ok {
+		return sv.Value()
+	}
+
+	return v
+}
+
 func isPointerValue(v any) bool {
 	if v == nil {
 		return false

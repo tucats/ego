@@ -1,0 +1,150 @@
+// Tests for named scalar types retaining type identity, e.g.
+//
+//	type buzz int32
+//	var a buzz
+//
+// "a" is now a distinct buzz-typed value (not a bare int32), and that
+// identity survives plain assignment, but decays to the underlying type
+// when used in arithmetic -- matching Go's rules for named scalar types.
+//
+// Type names are apparently registered file-wide (not per @test block), so
+// each block below uses its own distinct type name to avoid collisions.
+
+@test "types: named scalar zero value has identity"
+{
+    type buzz1 int32
+
+    var a buzz1
+    @assert reflect.Type(a) == buzz1
+}
+
+@test "types: named scalar identity survives assignment"
+{
+    type buzz2 int32
+
+    a := buzz2(10)
+    b := a
+    @assert reflect.Type(a) == buzz2
+    @assert reflect.Type(b) == buzz2
+    @assert int32(b) == 10
+}
+
+@test "types: named scalar decays in arithmetic"
+{
+    type buzz3 int32
+
+    a := buzz3(10)
+    c := a + 5
+    @assert reflect.Type(c) != buzz3
+    @assert int(c) == 15
+}
+
+@test "types: named scalar explicit cast round trip"
+{
+    type buzz4 int32
+
+    d := buzz4(7)
+    @assert reflect.Type(d) == buzz4
+    @assert int32(d) == 7
+}
+
+@test "types: named scalar equality and ordering"
+{
+    type buzz5 int32
+
+    a := buzz5(10)
+    b := buzz5(10)
+    c := buzz5(20)
+
+    @assert reflect.Type(a) == buzz5
+    @assert a == b
+    @assert a != c
+    @assert a == 10
+    @assert c > a
+    @assert a < c
+}
+
+@test "types: method dispatch on named scalar receiver"
+{
+    type buzz6 int32
+
+    // Return type is "int", not "int32": returning the result of int32*int
+    // arithmetic from a function declared to return int32 hits a pre-existing,
+    // unrelated strict-mode return-type coercion gap (reproducible with plain
+    // int32, no named types involved), so this test avoids it to stay focused
+    // on scalar receiver method dispatch.
+    func (b buzz6) doubled() int {
+        return int(b) * 2
+    }
+
+    d := buzz6(7)
+    @assert reflect.Type(d) == buzz6
+    @assert d.doubled() == 14
+}
+
+@test "types: named scalar prints as its underlying value"
+{
+    // fmt.Println has no Stringer support for Ego-defined receiver methods
+    // today (true for struct types too, not something introduced by named
+    // scalar types), so this checks the behavior that matters here: a named
+    // scalar prints as its plain decayed value, e.g. "7", not as some
+    // internal wrapper representation.
+    type Weekday int32
+
+    day := Weekday(7)
+    @assert reflect.Type(day) == Weekday
+
+    @capture output := {
+        fmt.Println(day)
+    }
+
+    @assert output == "7\n"
+}
+
+@test "types: named string type identity and decay"
+{
+    type Name string
+
+    n := Name("Alice")
+    @assert reflect.Type(n) == Name
+
+    m := n
+    @assert reflect.Type(m) == Name
+    @assert string(n) == "Alice"
+
+    s := n + " Smith"
+    @assert reflect.Type(s) != Name
+    @assert s == "Alice Smith"
+}
+
+@test "types: named bool type identity and decay"
+{
+    type Flag bool
+
+    f := Flag(true)
+    @assert reflect.Type(f) == Flag
+    @assert bool(f) == true
+
+    g := f == true
+    @assert reflect.Type(g) != Flag
+    @assert g == true
+}
+
+@test "types: named scalar as function parameter"
+{
+    type buzz7 int32
+
+    // Return type is "int", not "int32" -- see the comment in the method
+    // dispatch test above for why.
+    func triple(x buzz7) int {
+        return int(x) * 3
+    }
+
+    a := buzz7(4)
+    @assert reflect.Type(a) == buzz7
+    @assert triple(a) == 12
+    // Note: triple(4) (a bare int literal, not a buzz7 value) is deliberately
+    // not tested here -- passing a plain literal to a narrower-typed parameter
+    // (e.g. int to an int32 parameter) already fails under --types strict
+    // even with no named types involved, a pre-existing, unrelated limitation.
+}
