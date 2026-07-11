@@ -13,7 +13,7 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 const (
@@ -92,7 +92,7 @@ func InitProfileDefaults(class int) error {
 		defs.TableServerPartialInsertError: {ServerDefaults, defs.True},
 		defs.SymbolTableAllocationSetting:  {RuntimeDefaults, "32"},
 		defs.ExecPermittedSetting:          {RuntimeDefaults, defs.False},
-		defs.PrecisionErrorSetting:         {RuntimeDefaults, defs.True},
+		defs.PrecisionErrorSetting:         {RuntimeDefaults, defs.False},
 		defs.RestClientTimeoutSetting:      {RuntimeDefaults, "10s"},
 		defs.TableAutoParseDSNSetting:      {ServerDefaults, defs.True},
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},

@@ -399,7 +399,7 @@ func strictConformanceCheck(c *Context, i any, v any, valueIsConst bool) (any, e
 		}
 
 		if !actualType.IsType(t) {
-			// BUG-67 leniency: a numeric constant literal adapts to the
+			// Fix BUG-67 leniency: a numeric constant literal adapts to the
 			// declared numeric parameter type instead of being rejected
 			// outright -- but, per BUG-68, only when doing so loses no
 			// information, exactly mirroring variable assignment's existing

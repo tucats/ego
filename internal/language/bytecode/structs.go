@@ -310,6 +310,7 @@ func storeIndexByteCode(c *Context, i any) error {
 	}
 
 	vIsConst := false
+	
 	if imm, ok := v.(data.Immutable); ok {
 		v = imm.Value
 		vIsConst = true

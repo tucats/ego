@@ -10,7 +10,7 @@ import (
 var TimeType = data.TypeDefinition("Time", data.StructType).
 	SetNativeName("time.Time").
 	SetPackage("time").
-	// BUG-56 fix: without a format function, data.Format()'s default case
+	// Fix BUG-56: without a format function, data.Format()'s default case
 	// falls back to reflection-based formatting of the native Go struct
 	// layout (e.g. "time.Time struct{wall: uint64, ...} = ...") instead of
 	// the human-readable string that .String() and %v already produce.
@@ -110,7 +110,7 @@ var TimeType = data.TypeDefinition("Time", data.StructType).
 var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 	SetNativeName(defs.TimeDurationTypeName).
 	SetPackage("time").
-	// BUG-56 fix: same reasoning as TimeType above -- without this, printing
+	// Fix BUG-56: same reasoning as TimeType above -- without this, printing
 	// a bare time.Duration shows "time.Duration int64 1h30m0s" instead of
 	// "1h30m0s".
 	SetFormatFunc(func(v any) string {

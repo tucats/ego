@@ -601,7 +601,7 @@ func TestTimeString_OutputParsesBack(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// BUG-56 regression tests
+// Regression tests for BUG-56
 // ---------------------------------------------------------------------------
 //
 // fmt.Println/fmt.Print (internal/runtime/fmt's formatUsingString) fall back

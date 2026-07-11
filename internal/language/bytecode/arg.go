@@ -80,7 +80,7 @@ func argByteCode(c *Context, i any) error {
 		}
 	}
 
-	// BUG-67: was this argument a compile-time constant literal at the call
+	// Fix BUG-67: was this argument a compile-time constant literal at the call
 	// site? If so, strictConformanceCheck below is allowed to let it adapt to
 	// a narrower declared numeric parameter type. Defaults to false if the
 	// const-list is missing or malformed, which just means the leniency does

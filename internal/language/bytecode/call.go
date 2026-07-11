@@ -110,6 +110,7 @@ func callByteCode(c *Context, i any) error {
 		}
 
 		isConst := false
+
 		if imm, ok := v.(data.Immutable); ok {
 			v = imm.Value
 			isConst = true
@@ -163,7 +164,7 @@ func callByteCode(c *Context, i any) error {
 		return nil
 	}
 
-	// BUG-55 fix: same special case as above, but for a bare array-typed
+	// Fix BUG-55: same special case as above, but for a bare array-typed
 	// field accessed with call syntax, e.g. reflect.Reflect(v).Members()
 	// or .Functions(). Both are plain []string fields on the Reflection
 	// struct (docs/LANGUAGE.md documents them as callable pseudo-methods,

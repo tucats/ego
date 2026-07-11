@@ -174,9 +174,9 @@ func TestCaptureDirective_AssignToUndeclaredVariable(t *testing.T) {
 	}
 }
 
-// TestCaptureDirective_DiscardTwiceSameScope is a regression test for a real
-// bug found during development: using "@capture _ := { ... }" twice in the
-// same scope used to fail at RUNTIME with "stack underflow: EndCapture".
+// TestCaptureDirective_DiscardTwiceSameScope is a regression test for a
+// real bug found during development: using "@capture _ := { ... }" twice
+// in the same scope used to fail at RUNTIME with "stack underflow: EndCapture".
 //
 // The root cause: captureDirective originally always emitted a SymbolCreate
 // instruction for the ":=" form, even when the variable name was "_". Every

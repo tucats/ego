@@ -108,7 +108,7 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any, argsConst 
 		data.NewArrayFromInterfaces(data.InterfaceType, args...),
 	)
 
-	// BUG-67: a parallel array recording which arguments were compile-time
+	// Fix BUG-67: a parallel array recording which arguments were compile-time
 	// constants at the call site, consulted by the Arg opcode so a constant
 	// can adapt to a narrower declared parameter type even in strict mode.
 	argsConstAsAny := make([]any, len(argsConst))
