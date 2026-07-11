@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 60 issues (29 resolved)
+- [BUG — General Language Bugs](#area-bug) — 61 issues (30 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -234,7 +234,8 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | BUG | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | BUG | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
-| [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | |
+| [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
+| [BUG-68](#BUG-68) | BUG | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -515,7 +516,8 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | HIGH | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | MEDIUM | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
-| [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | |
+| [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
+| [BUG-68](#BUG-68) | LOW | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | |
 
 ---
 
@@ -6552,7 +6554,7 @@ line/column after the `compileError` fix) with no regressions.
 
 <a id="BUG-67"></a>
 
-### BUG-67 — `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary
+### BUG-67 — `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary — **Resolved**
 
 **Severity:** MEDIUM
 
@@ -6625,16 +6627,173 @@ Error: terminated with errors
 ```
 
 **Notes:**  
-Not yet root-caused to a specific line. Likely locations: the return-value case is presumably
-a strict-mode kind check somewhere in the `Return` opcode's return-type conformance check
-(possibly `internal/language/bytecode/types.go`'s `strictConformanceCheck`, though that
-function's `*Type`-only special-casing suggested it wasn't the culprit during a brief look);
-the argument-passing case is `internal/language/bytecode/arg.go`'s `argByteCode`, which gates
-its `data.Coerce` call behind `!data.TypeOf(v).IsType(argType)` with no separate allowance for
-a literal/constant value the way `getComparisonTerms` has. Discovered incidentally rather than
-through a dedicated investigation, so severity and exact scope (does it affect every narrower
-int kind — `int8`, `int16`, `byte` — or just `int32`? does `float32` have the same gap against
-a `float64`-shaped literal?) have not been fully mapped.
+Root-caused to two independent bugs, not one shared cause.
+
+**Resolution (July 2026):**
+
+The two reproducers turned out to have different root causes, both fixed:
+
+- **Return-value case** — `internal/language/data/coerce.go`'s `Normalize` always promoted
+  the *narrower-kind* operand up to the *wider-kind* one (`int32`, kind 6, is less than `int`,
+  kind 8, so `int32` was promoted to `int`), regardless of which operand was a literal constant
+  and which was a real, typed value. Go's actual rule is the reverse: an *untyped constant*
+  adapts to the *other*, typed operand. `Normalize` now takes a `v1Const`/`v2Const` flag per
+  operand; when exactly one operand is a constant and both are numeric, the constant adapts to
+  match the other operand's kind instead of the kind-ordering promotion. `b * 2` (`b` an
+  `int32`) now correctly stays `int32`, and the return-boundary check
+  (`requireMatch` in `internal/language/bytecode/coerce.go`) — which already did an exact
+  `vt.IsType(t)` match — now passes unmodified, since it was never wrong; it was just being
+  handed a wrongly-promoted value. The constant-flags are threaded through `getDiadicValues`
+  (and `moduloByteCode`'s inline duplicate of the same pop/unwrap logic, which turned out to
+  have a latent bug of its own: it called the auto-unwrapping `c.Pop()` instead of
+  `c.PopWithoutUnwrapping()`, so its own `data.Immutable` check could never fire and modulo's
+  `coerceOk` was always `false`) into every `data.Normalize` call site. The six comparison
+  opcodes (`equal.go`, `notEqual.go`, `greaterThan.go`, `greaterThanorEqual.go`, `lessThan.go`,
+  `lessThanorEqual.go`) and the compile-time constant-folding optimizer needed only a mechanical
+  signature update — their output is always a `bool` or a folded constant, so the promotion
+  direction never affected their correctness.
+
+- **Argument-passing case** — `internal/language/bytecode/types.go`'s `strictConformanceCheck`
+  required an *exact* kind match for every argument value with no leniency for constants at
+  all, unlike `getComparisonTerms` (`equal.go`), which already special-cases "either operand is
+  a constant and both are numeric" for `==`. The "was this a constant" information was
+  discarded even earlier than `arg.go`: `callByteCode`'s argument-collection loop
+  (`internal/language/bytecode/call.go`) unconditionally unwrapped `data.Immutable` via
+  `c.Pop()` before arguments were packed into the `__args` array shared by every kind of
+  function call (bytecode, native, runtime). A new parallel array,
+  `defs.ArgumentConstListVariable` (`"__argsconst"`), is now populated alongside `__args` for
+  Ego-bytecode-function calls only (native/runtime call paths are untouched), and consumed by
+  `arg.go` to pass a `valueIsConst` flag into a new `requiredTypeByteCodeWithConst`, which
+  `strictConformanceCheck` uses to let a numeric constant adapt to a narrower declared
+  parameter type — falling through to the coercion switch that already existed just below the
+  check. `requiredTypeByteCode` itself (used for variadic parameters and `throw.go`) is
+  unchanged: it now delegates to the same shared implementation with `valueIsConst` hardcoded
+  to `false`, preserving its exact prior behavior.
+
+Both fixes reuse the same "constant adapts to context" pattern already established by
+`getComparisonTerms`, rather than introducing a new concept. A non-constant value of the wrong
+kind (e.g. two `int32`/`int` *variables* added together, or a string constant passed where an
+`int32` is expected) is still correctly rejected in strict mode — see the regression tests
+below.
+
+Regression tests: `tests/types/bug67_constant_narrowing.ego` — both reproducers, plus two
+guard tests confirming the leniency does not over-relax strict mode for non-constant or
+non-numeric mismatches.
+
+Verified against `go test ./...`, `go test -race ./internal/language/... ./internal/runtime/math/...`,
+and both `ego test tests/` and `ego test --types strict tests/` (1292 `@test` blocks each,
+including `tests/types/named_scalar_types.ego` from the prior BUG-fix session, which depends
+on `Normalize`'s `*data.Scalar`-unwrap behavior surviving the signature change) with no
+regressions. Also manually spot-checked that a typed variadic call
+(`func f(args ...int32) ...; f(int32(1), int32(2))`) and a `try`/`catch`-caught runtime error
+still work, since `call.go`'s argument-collection loop and `requiredTypeByteCode`'s shared
+implementation were both touched.
+
+---
+
+<a id="BUG-68"></a>
+
+### BUG-68 — Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths
+
+**Severity:** LOW
+
+**Description:**  
+Found while documenting type-coercion rules in `docs/LANGUAGE.md` after the BUG-67 fix, which
+made a constant literal adapt to a narrower numeric type in expressions, function arguments,
+and return values under `--types strict` (matching Go's untyped-constant rule). Verifying that
+fix surfaced two related, pre-existing inconsistencies in how "does this conversion lose
+information" is checked, neither of which BUG-67 introduced:
+
+1. **Boundary inconsistency.** Plain variable assignment (`internal/language/bytecode/context.go`'s
+   `checkType`) always rejects a `strict`-mode constant conversion that would lose a fractional
+   part, regardless of the `ego.runtime.precision.error` setting — this is deliberate, explicit,
+   in-code-documented behavior. But the other three boundaries (expressions via
+   `data.Normalize`, function arguments via `strictConformanceCheck`, and return values via
+   `coerceByteCode`) never check for lost precision at all by default, and — see point 2 below
+   — mostly don't check for it even when `ego.runtime.precision.error=true` is set. A developer
+   relying on `strict` mode to catch a lossy narrowing conversion will find it caught at
+   assignment but silently allowed everywhere else.
+2. **Per-width inconsistency in the coercion helpers themselves**
+   (`internal/language/data/coerce.go`). Of all the `coerceToIntN`/`coerceFloat64ToIntN`
+   helpers, only the `int64` target (`coerceToInt64`'s `float64` case) checks whether a
+   float value has a fractional part (`value != math.Trunc(value)`) before truncating, and only
+   does so when `ego.runtime.precision.error=true`. Every other integer width — `int8`,
+   `int16`, `int32`, `uint16`, `uint32`, `uint`, `uint64`, and plain `int` — only ever checks
+   for *magnitude* overflow against that width's max value; none of them ever check for a lost
+   fractional part, no matter how the setting is configured. This looks like an oversight where
+   the fractional check was added for `int64` and never propagated to its sibling functions,
+   rather than an intentional design choice.
+
+**Reproducer (boundary inconsistency — assignment rejects, expression silently truncates):**
+
+```go
+func main() {
+    var w int32 = 5
+    w = 3.7 // assignment: always rejected in strict mode
+    fmt.Println("after w = 3.7:", w)
+}
+```
+
+Run with `ego --types strict run`. **Actual output:**
+
+```text
+Error: at main(line 4), conversion results in data loss: 3.7
+Error: terminated with errors
+```
+
+Compare to the same kind of truncation via an expression, which is never rejected, in any
+mode, with any `ego.runtime.precision.error` setting:
+
+```go
+func main() {
+    var a int32 = 10
+    c := a + 2.7 // expression: never rejected, in any mode
+    fmt.Println("a + 2.7 =", c)
+}
+```
+
+Run with `ego --types strict run`. **Actual output:**
+
+```text
+a + 2.7 = 12
+```
+
+**Expected output:** Either both reject the lossy conversion, or both accept it — whichever is
+chosen, the four boundaries (assignment, expression, argument, return) should be consistent
+with each other.
+
+**Reproducer (per-width inconsistency — `int64` checks, `int32` does not):**
+
+```go
+_ = int64(3.9) // errors when ego.runtime.precision.error=true
+r := int32(3.9) // never errors, at any setting
+```
+
+Run with `ego --set ego.runtime.precision.error=true test`. **Actual output:**
+
+```text
+int64(3.9) error: in int64, conversion results in data loss: 3.9
+int64(3.9) caught: true
+int32(3.9) caught: false result: 3
+```
+
+**Expected output:** If `ego.runtime.precision.error=true` is meant to catch fractional-part
+loss on narrowing float-to-integer conversions, it should do so consistently for every integer
+width, not just `int64`.
+
+**Notes:**  
+Not yet root-caused to a fix plan — this is filed as a future cleanup task, not something to
+fix reactively. A reasonable approach would be: (a) decide the intended behavior for
+expression/argument/return boundaries under `ego.runtime.precision.error` (most likely: extend
+the existing fractional-part check from `coerceToInt64`'s `float64` case to every other
+`coerceToIntN`/`coerceFloat64ToIntN` helper, so the setting behaves consistently across all
+integer widths), and (b) decide whether assignment's unconditional (setting-independent)
+rejection should become consistent with the other three boundaries, or whether the other three
+should instead be brought in line with assignment's stricter, always-on behavior. Either choice
+changes runtime behavior for existing programs that may be relying on the current silent
+truncation, so this needs its own dedicated investigation and test-suite pass rather than a
+quick patch. See `docs/LANGUAGE.md`'s "Type Conversions" section (added alongside this bug
+report) for the currently-documented, if inconsistent, behavior.
 
 ---
 

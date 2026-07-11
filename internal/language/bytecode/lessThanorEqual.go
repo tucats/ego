@@ -60,8 +60,10 @@ func lessThanOrEqualByteCode(c *Context, i any) error {
 					Context(data.TypeOf(v2).String() + ", " + data.TypeOf(v1).String())
 			}
 		} else {
-			// Otherwise, normalize the types to the same type.
-			v1, v2, err = data.Normalize(v1, v2)
+			// Otherwise, normalize the types to the same type. The comparison
+			// result is always a bool, so the promotion direction never
+			// affects correctness here; constant-ness is irrelevant.
+			v1, v2, err = data.Normalize(v1, false, v2, false)
 			if err != nil {
 				return c.runtimeError(err)
 			}

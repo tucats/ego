@@ -87,10 +87,20 @@ func callByteCode(c *Context, i any) error {
 	}
 
 	args := make([]any, argc)
+	// argsConst[n] reports whether args[n] came from a compile-time constant
+	// literal at the call site (BUG-67). It is threaded through to Ego
+	// bytecode functions only (see the *ByteCode case below), so a constant
+	// argument can adapt to a narrower declared parameter type even in
+	// strict mode, mirroring what data.Normalize now does for arithmetic.
+	argsConst := make([]bool, argc)
 
-	// iterate backwards through the stack to get the arguments.
+	// iterate backwards through the stack to get the arguments. Use
+	// PopWithoutUnwrapping (not Pop) so a data.Immutable wrapper can be
+	// detected and recorded in argsConst before being stripped; the value
+	// stored in args[n] is still the fully unwrapped value, exactly as
+	// before this change.
 	for n := 0; n < argc; n = n + 1 {
-		v, err := c.Pop()
+		v, err := c.PopWithoutUnwrapping()
 		if err != nil {
 			return err
 		}
@@ -99,7 +109,14 @@ func callByteCode(c *Context, i any) error {
 			return c.runtimeError(errors.ErrFunctionReturnedVoid)
 		}
 
+		isConst := false
+		if imm, ok := v.(data.Immutable); ok {
+			v = imm.Value
+			isConst = true
+		}
+
 		args[(argc-n)-1] = v
+		argsConst[(argc-n)-1] = isConst
 	}
 
 	// If this was a tuple, we have stack marker to pop off.
@@ -116,6 +133,7 @@ func callByteCode(c *Context, i any) error {
 		// Tuples are in reverse order on the stack. So reverse the args array.
 		for i, j := 0, len(args)-1; i < j; i, j = i+1, j-1 {
 			args[i], args[j] = args[j], args[i]
+			argsConst[i], argsConst[j] = argsConst[j], argsConst[i]
 		}
 	}
 
@@ -202,7 +220,7 @@ func callByteCode(c *Context, i any) error {
 
 	case *ByteCode:
 		// Push a call frame on the stack and redirect the flow to the new function.
-		return callBytecodeFunction(c, function, args)
+		return callBytecodeFunction(c, function, args, argsConst)
 
 	case func(*symbols.SymbolTable, data.List) (any, error):
 		// Call an Ego runtime

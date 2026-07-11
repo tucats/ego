@@ -1,0 +1,86 @@
+// Regression tests for BUG-67 (docs/ISSUES.md): under @type strict, a
+// compile-time constant literal now adapts to a narrower numeric type at
+// two boundaries where it previously did not:
+//
+//   1. Arithmetic: "int32Var * 2" used to promote to plain int (discarding
+//      the int32 width) because data.Normalize always promoted the
+//      lower-kind operand up to the higher-kind one, regardless of which
+//      side was a constant. It now keeps int32, since the constant (2)
+//      adapts to the typed operand instead.
+//   2. Function arguments: a bare int literal passed to an int32 parameter
+//      used to be rejected outright by strictConformanceCheck. It now
+//      adapts, the same way an untyped constant does in Go.
+
+@test "types: strict mode constant arithmetic keeps narrower type (BUG-67)"
+{
+    @type strict
+
+    func doubled(b int32) int32 {
+        return b * 2
+    }
+
+    @assert doubled(int32(7)) == 14
+    @assert string(typeof(doubled(int32(7)))) == "int32"
+
+    @type dynamic
+}
+
+@test "types: strict mode constant argument adapts to param type (BUG-67)"
+{
+    @type strict
+
+    func triple(x int32) int32 {
+        return x * 3
+    }
+
+    @assert triple(4) == 12
+
+    @type dynamic
+}
+
+@test "types: strict mode still rejects a non-constant type mismatch"
+{
+    // Regression guard: the BUG-67 leniency must only apply to constants,
+    // not to arbitrary numeric-kind mismatches between two real variables.
+    @type strict
+
+    func addInt32(a int32, b int32) int32 {
+        return a + b
+    }
+
+    n := 5 // a plain int variable, not a constant
+    caught := false
+
+    try {
+        _ = addInt32(int32(1), n)
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    @type dynamic
+}
+
+@test "types: strict mode still rejects a non-numeric constant mismatch"
+{
+    // Regression guard: the BUG-67 leniency is numeric-only; a string
+    // constant passed where an int32 is declared must still be rejected.
+    @type strict
+
+    func needsInt32(x int32) int32 {
+        return x
+    }
+
+    caught := false
+
+    try {
+        _ = needsInt32("not a number")
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    @type dynamic
+}

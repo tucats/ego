@@ -53,7 +53,7 @@ const none = "<none>"
 // updatePackageFromLocalSymbols logic in callFramePop, which walks the whole
 // parent chain regardless of which call path created the frame.  No separate
 // clone path is required here.
-func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
+func callBytecodeFunction(c *Context, function *ByteCode, args []any, argsConst []bool) error {
 	var parentTable *symbols.SymbolTable
 
 	isLiteral := function.IsLiteral()
@@ -106,6 +106,18 @@ func callBytecodeFunction(c *Context, function *ByteCode, args []any) error {
 
 	c.setAlways(defs.ArgumentListVariable,
 		data.NewArrayFromInterfaces(data.InterfaceType, args...),
+	)
+
+	// BUG-67: a parallel array recording which arguments were compile-time
+	// constants at the call site, consulted by the Arg opcode so a constant
+	// can adapt to a narrower declared parameter type even in strict mode.
+	argsConstAsAny := make([]any, len(argsConst))
+	for i, v := range argsConst {
+		argsConstAsAny[i] = v
+	}
+
+	c.setAlways(defs.ArgumentConstListVariable,
+		data.NewArrayFromInterfaces(data.BoolType, argsConstAsAny...),
 	)
 
 	return nil

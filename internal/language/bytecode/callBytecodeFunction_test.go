@@ -71,7 +71,7 @@ func Test_callBytecodeFunction_AlwaysReturnsNil(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "testFunc"}
 
-	err := callBytecodeFunction(tc.ctx, fn, []any{})
+	err := callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	tc.assertNoError(err)
 }
@@ -89,7 +89,7 @@ func Test_callBytecodeFunction_StoresArgsInSymbolTable(t *testing.T) {
 	fn := &ByteCode{name: "f"}
 	args := []any{42, "hello", true}
 
-	_ = callBytecodeFunction(tc.ctx, fn, args)
+	_ = callBytecodeFunction(tc.ctx, fn, args, nil)
 
 	v, found := tc.ctx.symbols.Get(defs.ArgumentListVariable)
 	if !found {
@@ -126,7 +126,7 @@ func Test_callBytecodeFunction_EmptyArgs(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "noArgs"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	v, found := tc.ctx.symbols.Get(defs.ArgumentListVariable)
 	if !found {
@@ -150,7 +150,7 @@ func Test_callBytecodeFunction_NilArgs(t *testing.T) {
 	fn := &ByteCode{name: "nilArgs"}
 
 	// data.NewArrayFromInterfaces with a nil variadic receives zero elements.
-	_ = callBytecodeFunction(tc.ctx, fn, nil)
+	_ = callBytecodeFunction(tc.ctx, fn, nil, nil)
 
 	v, found := tc.ctx.symbols.Get(defs.ArgumentListVariable)
 	if !found {
@@ -178,7 +178,7 @@ func Test_callBytecodeFunction_PushesCallFrame(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "f"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	// After callFramePush, framePointer points to the slot just AFTER the
 	// CallFrame.  The frame itself is at framePointer-1.
@@ -200,7 +200,7 @@ func Test_callBytecodeFunction_SetsPCToZero(t *testing.T) {
 	tc.ctx.programCounter = 99 // simulate being mid-execution somewhere
 	fn := &ByteCode{name: "f"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	tc.assertProgramCounter(0)
 }
@@ -212,7 +212,7 @@ func Test_callBytecodeFunction_SetsBCToFunction(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "target"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	if tc.ctx.bc != fn {
 		t.Errorf("c.bc: got %p (%s), want %p (%s)", tc.ctx.bc, tc.ctx.bc.name, fn, fn.name)
@@ -231,7 +231,7 @@ func Test_callBytecodeFunction_NamedFunction_IsBoundary(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "namedFn", literal: false}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	if !tc.ctx.symbols.IsBoundary() {
 		t.Error("named function symbol table: expected IsBoundary()=true, got false")
@@ -245,7 +245,7 @@ func Test_callBytecodeFunction_NamedFunction_SymbolTableName(t *testing.T) {
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "compute"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	got := tc.ctx.symbols.Name
 	want := "function compute"
@@ -262,7 +262,7 @@ func Test_callBytecodeFunction_NamedFunction_SavedArgsAreAccessible(t *testing.T
 	tc := newTestContext(t)
 	fn := &ByteCode{name: "withArgs"}
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{10, 20, 30})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{10, 20, 30}, nil)
 
 	v, found := tc.ctx.symbols.Get(defs.ArgumentListVariable)
 	if !found {
@@ -287,7 +287,7 @@ func Test_callBytecodeFunction_LiteralFunction_IsNotBoundary(t *testing.T) {
 	tc := newTestContext(t)
 	fn := (&ByteCode{name: "closureFn"}).Literal(true) // literal=true, capturedScope=nil
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	if tc.ctx.symbols.IsBoundary() {
 		t.Error("literal function symbol table: expected IsBoundary()=false, got true")
@@ -303,7 +303,7 @@ func Test_callBytecodeFunction_LiteralFunction_ParentIsCallerSymbols(t *testing.
 	callerSymbols := tc.ctx.symbols // capture before the call changes c.symbols
 	fn := (&ByteCode{name: "closureFn"}).Literal(true)
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	// callFramePush creates the new table as a child of c.symbols (the caller's
 	// table), so the parent of the new scope should be the caller's table.
@@ -328,7 +328,7 @@ func Test_callBytecodeFunction_CapturedScope_IsNotBoundary(t *testing.T) {
 	capturedScope := symbols.NewChildSymbolTable("captured", tc.ctx.symbols)
 	fn := (&ByteCode{name: "deepClosure"}).Literal(true).CaptureScope(capturedScope)
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	if tc.ctx.symbols.IsBoundary() {
 		t.Error("captured-scope closure table: expected IsBoundary()=false, got true")
@@ -346,7 +346,7 @@ func Test_callBytecodeFunction_CapturedScope_ParentIsCapturedScope(t *testing.T)
 	capturedScope := symbols.NewChildSymbolTable("outer-closure", tc.ctx.symbols)
 	fn := (&ByteCode{name: "deepClosure"}).Literal(true).CaptureScope(capturedScope)
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	parent := tc.ctx.symbols.Parent()
 	if parent != capturedScope {
@@ -368,7 +368,7 @@ func Test_callBytecodeFunction_CapturedScope_CanSeeCapturedVariables(t *testing.
 
 	fn := (&ByteCode{name: "readOuter"}).Literal(true).CaptureScope(capturedScope)
 
-	_ = callBytecodeFunction(tc.ctx, fn, []any{})
+	_ = callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	// The function's new scope is a child of capturedScope, so Get should
 	// traverse up and find "outerVar" in capturedScope.
@@ -403,7 +403,7 @@ func Test_callBytecodeFunction_NilFindNextScope_StillSucceeds(t *testing.T) {
 
 	fn := &ByteCode{name: "callee", literal: false}
 
-	err := callBytecodeFunction(ctx, fn, []any{"arg0"})
+	err := callBytecodeFunction(ctx, fn, []any{"arg0"}, nil)
 
 	if err != nil {
 		t.Errorf("unexpected error with nil FindNextScope: %v", err)
@@ -438,7 +438,7 @@ func Test_callBytecodeFunction_PackageMethod_UsesCallFramePush(t *testing.T) {
 
 	fn := &ByteCode{name: "Sin", literal: false}
 
-	err := callBytecodeFunction(tc.ctx, fn, []any{})
+	err := callBytecodeFunction(tc.ctx, fn, []any{}, nil)
 
 	tc.assertNoError(err)
 
@@ -537,7 +537,7 @@ func Test_callBytecodeFunction_PackageMethod_CanAccessGlobalPackages(t *testing.
 
 	fn := &ByteCode{name: "Factor", literal: false}
 
-	err := callBytecodeFunction(tc.ctx, fn, []any{10})
+	err := callBytecodeFunction(tc.ctx, fn, []any{10}, nil)
 
 	tc.assertNoError(err)
 

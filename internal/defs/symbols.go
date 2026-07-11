@@ -44,6 +44,13 @@ const (
 	// This is an array of values that contain the argument passed to a function.
 	ArgumentListVariable = InvisiblePrefix + "args"
 
+	// This is a parallel array of bools, one per element of
+	// ArgumentListVariable, reporting whether the corresponding argument was
+	// a compile-time constant literal at the call site. It is consulted by
+	// the Arg opcode to allow a constant to adapt to a narrower declared
+	// parameter type even in strict mode (BUG-67).
+	ArgumentConstListVariable = InvisiblePrefix + "argsconst"
+
 	// This is an array of strings the command line arguments passed to the Ego invocation
 	// by the shell.
 	CLIArgumentListVariable = InvisiblePrefix + "cli_args"

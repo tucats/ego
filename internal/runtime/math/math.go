@@ -11,7 +11,7 @@ import (
 // normalize coerces a value to match the type of a model value. The
 // (possibly modified) value is returned as the function value.
 func normalize(s *symbols.SymbolTable, args data.List) (any, error) {
-	v1, v2, err := data.Normalize(args.Get(0), args.Get(1))
+	v1, v2, err := data.Normalize(args.Get(0), false, args.Get(1), false)
 
 	return data.NewList(v1, v2), err
 }

@@ -1219,14 +1219,25 @@ func coerceToByte(v any) (any, error) {
 // Normalize whenever it evaluates a binary expression where the two operands
 // have different types.
 //
-// The promotion follows the kind ordering defined at the top of types.go —
-// lower-numbered kinds are less precise, so the less-precise value is coerced
-// up to match the more-precise one.  For example:
+// v1Const/v2Const report whether the corresponding operand came from a
+// compile-time constant literal (a data.Immutable-wrapped value at the point
+// it was popped off the stack). When exactly one operand is a constant and
+// both are numeric, the constant adapts to match the other (real, typed)
+// operand's kind — mirroring Go's untyped-constant conversion rule, e.g.
+// "int32Var * 2" stays int32 because the literal 2 adapts to int32, not the
+// other way around. This is the same "constant is lenient" leniency
+// getComparisonTerms already grants for ==, applied to the promotion
+// direction instead of just permitting the comparison.
+//
+// In every other case (both or neither operand is a constant, or either is
+// non-numeric), the promotion follows the kind ordering defined at the top of
+// types.go — lower-numbered kinds are less precise, so the less-precise value
+// is coerced up to match the more-precise one.  For example:
 //   - int32 (kind 6) + float64 (kind 13) → both become float64
 //   - bool (kind 1) + int (kind 8)       → both become int
 //
 // If v1 and v2 already have the same kind, they are returned unchanged.
-func Normalize(v1 any, v2 any) (any, any, error) {
+func Normalize(v1 any, v1Const bool, v2 any, v2Const bool) (any, any, error) {
 	var err error
 
 	// A named scalar type decays to its underlying value here, same as in
@@ -1268,6 +1279,22 @@ func Normalize(v1 any, v2 any) (any, any, error) {
 				return v1, v2, nil
 			}
 		}
+	}
+
+	// Exactly one operand is a constant: it adapts to the other (real,
+	// typed) operand's kind, regardless of kind-ordering magnitude.
+	if v1Const != v2Const && IsNumeric(v1) && IsNumeric(v2) {
+		if v1Const {
+			v1, err = Coerce(v1, v2)
+		} else {
+			v2, err = Coerce(v2, v1)
+		}
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return v1, v2, nil
 	}
 
 	if kind1 < kind2 {

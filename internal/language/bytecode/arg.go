@@ -80,12 +80,27 @@ func argByteCode(c *Context, i any) error {
 		}
 	}
 
+	// BUG-67: was this argument a compile-time constant literal at the call
+	// site? If so, strictConformanceCheck below is allowed to let it adapt to
+	// a narrower declared numeric parameter type. Defaults to false if the
+	// const-list is missing or malformed, which just means the leniency does
+	// not apply -- exact-match strict-mode behavior is unaffected.
+	valueIsConst := false
+
+	if constContainer, found := c.get(defs.ArgumentConstListVariable); found {
+		if constList, ok := constContainer.(*data.Array); ok && constList.Len() > argIndex {
+			if cv, err := constList.Get(argIndex); err == nil {
+				valueIsConst = data.BoolOrFalse(cv)
+			}
+		}
+	}
+
 	if err = c.push(value); err != nil {
 		return c.runtimeError(err)
 	}
 
 	if argType != nil {
-		if err = requiredTypeByteCode(c, argType); err != nil {
+		if err = requiredTypeByteCodeWithConst(c, argType, valueIsConst); err != nil {
 			// Flesh out the error a bit to show the expected type.
 			position := i18n.L("argument", map[string]any{"position": argIndex + 1})
 			typeString := data.TypeOf(value).String()

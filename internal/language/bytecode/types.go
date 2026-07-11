@@ -264,18 +264,43 @@ func staticTypingByteCode(c *Context, i any) error {
 // It pops a value from the stack, verifies that it conforms to the type
 // described by the operand, and pushes the (possibly coerced) value back.
 //
-// The check is delegated to one of two helper functions based on the active
-// type-strictness level:
-//
-//   - Non-strict: relaxedConformanceCheck — tries to coerce the value.
-//   - Strict:     strictConformanceCheck  — requires an exact type match.
-//
-// On error, the helper returns a non-nil error which is propagated immediately
-// (the value is NOT pushed in that case).
+// This is used for variadic parameters (compileFunctionParameters) and thrown
+// values (throw.go), where there is no way to know whether the value being
+// checked came from a compile-time constant, so it always calls
+// requiredTypeCheckValue with valueIsConst=false. arg.go's non-variadic
+// parameter path calls requiredTypeByteCodeWithConst instead, which does know
+// (BUG-67).
 //
 // The operand `i` can be a *data.Type, a reflect.Type, a string type name, or
 // an integer that represents an expected Go primitive type.
 func requiredTypeByteCode(c *Context, i any) error {
+	return requiredTypeByteCodeImpl(c, i, false)
+}
+
+// requiredTypeByteCodeWithConst behaves exactly like requiredTypeByteCode,
+// except the caller (arg.go, for a non-variadic named parameter) reports
+// whether the value being checked came from a compile-time constant literal
+// at the call site. strictConformanceCheck uses this to let a numeric
+// constant adapt to a narrower declared parameter type in strict mode
+// (BUG-67), the same leniency getComparisonTerms already grants for ==.
+func requiredTypeByteCodeWithConst(c *Context, i any, valueIsConst bool) error {
+	return requiredTypeByteCodeImpl(c, i, valueIsConst)
+}
+
+// requiredTypeByteCodeImpl pops a value from the stack, verifies that it
+// conforms to the type described by operand i, and pushes the (possibly
+// coerced) value back.
+//
+// The check is delegated to one of two helper functions based on the active
+// type-strictness level:
+//
+//   - Non-strict: relaxedConformanceCheck — tries to coerce the value.
+//   - Strict:     strictConformanceCheck  — requires an exact type match,
+//     except for a numeric constant adapting to a numeric target (BUG-67).
+//
+// On error, the helper returns a non-nil error which is propagated immediately
+// (the value is NOT pushed in that case).
+func requiredTypeByteCodeImpl(c *Context, i any, valueIsConst bool) error {
 	v, err := c.Pop()
 	if err == nil {
 		if isStackMarker(v) {
@@ -308,7 +333,7 @@ func requiredTypeByteCode(c *Context, i any) error {
 				return err
 			}
 		} else {
-			v, err = strictConformanceCheck(c, i, v)
+			v, err = strictConformanceCheck(c, i, v, valueIsConst)
 			if err != nil {
 				return err
 			}
@@ -328,9 +353,17 @@ func requiredTypeByteCode(c *Context, i any) error {
 // type, a full interface-conformity check is performed (the value's type must
 // implement all of the interface's declared methods).
 //
+// valueIsConst reports whether v came from a compile-time constant literal at
+// the call site (currently only meaningful for non-variadic function
+// arguments, see requiredTypeByteCodeWithConst). When true and both v and t
+// are numeric, a kind mismatch that would otherwise be rejected is instead
+// allowed to fall through to the coercion below -- mirroring Go's
+// untyped-constant conversion rule (e.g. f(4) where f's parameter is int32)
+// and the same leniency getComparisonTerms already grants for == (BUG-67).
+//
 // Returns the (possibly identity-coerced) value and nil on success, or
 // (nil, error) if the types do not match.
-func strictConformanceCheck(c *Context, i any, v any) (any, error) {
+func strictConformanceCheck(c *Context, i any, v any, valueIsConst bool) (any, error) {
 	var err error
 
 	t := data.TypeOf(i)
@@ -366,7 +399,14 @@ func strictConformanceCheck(c *Context, i any, v any) (any, error) {
 		}
 
 		if !actualType.IsType(t) {
-			return nil, c.runtimeError(errors.ErrArgumentType)
+			// BUG-67 leniency: a numeric constant literal adapts to the
+			// declared numeric parameter type instead of being rejected
+			// outright. When this applies, execution falls through to the
+			// coercion switch below, which already knows how to convert v to
+			// t.Kind() -- no additional coercion logic needed here.
+			if !(valueIsConst && data.IsNumeric(v) && data.IsNumeric(t)) {
+				return nil, c.runtimeError(errors.ErrArgumentType)
+			}
 		}
 
 		// Perform a canonical coercion so the value's Go type precisely

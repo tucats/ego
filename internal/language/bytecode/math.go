@@ -20,9 +20,10 @@ import (
 // variable is incremented by the value.
 func incrementByteCode(c *Context, i any) error {
 	var (
-		err       error
-		symbol    string
-		increment any
+		err            error
+		symbol         string
+		increment      any
+		incrementConst bool
 	)
 
 	if operands, ok := i.([]any); ok && len(operands) == 2 {
@@ -31,6 +32,7 @@ func incrementByteCode(c *Context, i any) error {
 		increment = operands[1]
 		if c, ok := increment.(data.Immutable); ok {
 			increment = c.Value
+			incrementConst = true
 		}
 	} else {
 		return c.runtimeError(errors.ErrInvalidOperand)
@@ -69,9 +71,10 @@ func incrementByteCode(c *Context, i any) error {
 		return c.set(symbol, a)
 	}
 
-	// Normalize the values and add them.
+	// Normalize the values and add them. v is the variable's current value
+	// (never a constant); increment may be, per the Immutable unwrap above.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v, increment, err = data.Normalize(v, increment)
+		v, increment, err = data.Normalize(v, false, increment, incrementConst)
 		if err != nil {
 			return c.runtimeError(err)
 		}
@@ -370,13 +373,15 @@ func notByteCode(c *Context, i any) error {
 // concatenates the two items. For a struct, it merges the addend into the
 // first struct.
 func addByteCode(c *Context, i any) error {
-	// Get the two values we will operate on. This includes a flag
-	// indicating that one or both of the items are constants, so
-	// type coercion is permitted even in strict mode.
-	v1, v2, coerceOk, err := getDiadicValues(c)
+	// Get the two values we will operate on. This includes a flag per
+	// operand indicating whether it is a constant, so type coercion is
+	// permitted even in strict mode.
+	v1, v2, v1Const, v2Const, err := getDiadicValues(c)
 	if err != nil {
 		return c.runtimeError(err)
 	}
+
+	coerceOk := v1Const || v2Const
 
 	// Some special cases. If v1 is an array, then we are being
 	// asked to append an element to the array. This is only
@@ -418,7 +423,7 @@ func addByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -429,7 +434,7 @@ func addByteCode(c *Context, i any) error {
 
 		// All other types are scalar math.
 	default:
-		v1, v2, err = data.Normalize(v1, v2)
+		v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 		if err != nil {
 			return c.runtimeError(err)
 		}
@@ -556,13 +561,15 @@ func orByteCode(c *Context, i any) error {
 // subtraction. For an array, the item to be subtracted is removed
 // from the array (in any array location it is found).
 func subtractByteCode(c *Context, i any) error {
-	// Get the two values we will operate on. This includes a flag
-	// indicating that one or both of the items are constants, so
-	// type coercion is permitted even in strict mode.
-	v1, v2, coerceOk, err := getDiadicValues(c)
+	// Get the two values we will operate on. This includes a flag per
+	// operand indicating whether it is a constant, so type coercion is
+	// permitted even in strict mode.
+	v1, v2, v1Const, v2Const, err := getDiadicValues(c)
 	if err != nil {
 		return c.runtimeError(err)
 	}
+
+	coerceOk := v1Const || v2Const
 
 	// Some special cases. If v1 is an array, then we are being
 	// asked to delete an element from the array. This is only
@@ -574,9 +581,9 @@ func subtractByteCode(c *Context, i any) error {
 			x2 := v2
 
 			// If we don't require strict types, see if we can coerce
-			// the types together.
+			// the types together. Array elements are never constants.
 			if c.typeStrictness != defs.StrictTypeEnforcement {
-				x1, x2, err = data.Normalize(v, v2)
+				x1, x2, err = data.Normalize(v, false, v2, v2Const)
 				if err != nil {
 					return c.runtimeError(err)
 				}
@@ -596,7 +603,7 @@ func subtractByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -653,13 +660,15 @@ func subtractByteCode(c *Context, i any) error {
 
 // multiplyByteCode bytecode instruction processor.
 func multiplyByteCode(c *Context, i any) error {
-	// Get the two values we will operate on. This includes a flag
-	// indicating that one or both of the items are constants, so
-	// type coercion is permitted even in strict mode.
-	v1, v2, coerceOk, err := getDiadicValues(c)
+	// Get the two values we will operate on. This includes a flag per
+	// operand indicating whether it is a constant, so type coercion is
+	// permitted even in strict mode.
+	v1, v2, v1Const, v2Const, err := getDiadicValues(c)
 	if err != nil {
 		return c.runtimeError(err)
 	}
+
+	coerceOk := v1Const || v2Const
 
 	// Nope, plain old math multiply, so normalize the values.
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
@@ -668,7 +677,7 @@ func multiplyByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -823,13 +832,15 @@ func exponentByteCode(c *Context, i any) error {
 
 // divideByteCode bytecode instruction processor.
 func divideByteCode(c *Context, i any) error {
-	// Get the two values we will operate on. This includes a flag
-	// indicating that one or both of the items are constants, so
-	// type coercion is permitted even in strict mode.
-	v1, v2, coerceOk, err := getDiadicValues(c)
+	// Get the two values we will operate on. This includes a flag per
+	// operand indicating whether it is a constant, so type coercion is
+	// permitted even in strict mode.
+	v1, v2, v1Const, v2Const, err := getDiadicValues(c)
 	if err != nil {
 		return c.runtimeError(err)
 	}
+
+	coerceOk := v1Const || v2Const
 
 	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
@@ -837,7 +848,7 @@ func divideByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -929,18 +940,21 @@ func divideByteCode(c *Context, i any) error {
 
 // moduloByteCode bytecode instruction processor.
 func moduloByteCode(c *Context, i any) error {
-	var coerceOk bool
+	var v1Const, v2Const bool
 
 	if c.stackPointer < 1 {
 		return c.runtimeError(errors.ErrStackUnderflow)
 	}
 
-	v2, err := c.Pop()
+	// PopWithoutUnwrapping (not Pop) is required here: Pop auto-unwraps
+	// data.Immutable, which would make the Immutable checks below always
+	// see already-unwrapped values and never detect a constant operand.
+	v2, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
 
-	v1, err := c.Pop()
+	v1, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
 	}
@@ -954,23 +968,23 @@ func moduloByteCode(c *Context, i any) error {
 		return c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
+	if imm, ok := v1.(data.Immutable); ok {
+		v1 = imm.Value
+		v1Const = true
 	}
 
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+	if imm, ok := v2.(data.Immutable); ok {
+		v2 = imm.Value
+		v2Const = true
 	}
 
-	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
+	if !(v1Const || v2Const) && c.typeStrictness == defs.StrictTypeEnforcement {
 		if data.KindOf(v1) != data.KindOf(v2) {
 			return c.runtimeError(errors.ErrTypeMismatch).Context(data.TypeOf(v1).String() + ", " + data.TypeOf(v2).String())
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -1204,42 +1218,42 @@ func bitShiftByteCode(c *Context, i any) error {
 }
 
 // Pop two values from the stack to be used for standard diadic operators
-// (addition, subtraction, multiplication, etc). Also returns a flag if
-// either is a constant, which would mean the caller is free to coerce the
-// values even in strict type-checking mode. The error indicates either a
-// stack underflow, or value like a stack marker or a nil value that cannot
-// be used with a math operation.
-func getDiadicValues(c *Context) (any, any, bool, error) {
-	var coerceOk bool
-
-	v2, err := c.PopWithoutUnwrapping()
+// (addition, subtraction, multiplication, etc). Also returns, per operand,
+// whether it is a constant, which would mean the caller is free to coerce
+// that operand's value even in strict type-checking mode -- both for the
+// strict-mode kind-mismatch pre-check (compute coerceOk := v1Const ||
+// v2Const) and for data.Normalize's constant-adapts-to-type promotion. The
+// error indicates either a stack underflow, or value like a stack marker or
+// a nil value that cannot be used with a math operation.
+func getDiadicValues(c *Context) (v1 any, v2 any, v1Const bool, v2Const bool, err error) {
+	v2, err = c.PopWithoutUnwrapping()
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, false, false, err
 	}
 
-	v1, err := c.PopWithoutUnwrapping()
+	v1, err = c.PopWithoutUnwrapping()
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, false, false, err
 	}
 
 	if isStackMarker(v1) || isStackMarker(v2) {
-		return nil, nil, false, c.runtimeError(errors.ErrFunctionReturnedVoid)
+		return nil, nil, false, false, c.runtimeError(errors.ErrFunctionReturnedVoid)
 	}
 
 	// Cannot do math on a nil value
 	if data.IsNil(v1) || data.IsNil(v2) {
-		return nil, nil, false, c.runtimeError(errors.ErrInvalidType).Context("nil")
+		return nil, nil, false, false, c.runtimeError(errors.ErrInvalidType).Context("nil")
 	}
 
-	if c, ok := v1.(data.Immutable); ok {
-		v1 = c.Value
-		coerceOk = true
+	if imm, ok := v1.(data.Immutable); ok {
+		v1 = imm.Value
+		v1Const = true
 	}
 
-	if c, ok := v2.(data.Immutable); ok {
-		v2 = c.Value
-		coerceOk = true
+	if imm, ok := v2.(data.Immutable); ok {
+		v2 = imm.Value
+		v2Const = true
 	}
 
-	return v1, v2, coerceOk, nil
+	return v1, v2, v1Const, v2Const, nil
 }

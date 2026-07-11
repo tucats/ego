@@ -573,7 +573,10 @@ func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
 		return nil, false
 	}
 
-	v1, v2, err = data.Normalize(v1, v2)
+	// This is compile-time constant folding: both v1 and v2 are always
+	// literal constants here by construction, so this falls straight through
+	// to Normalize's unchanged kind-ordering promotion.
+	v1, v2, err = data.Normalize(v1, true, v2, true)
 	if err != nil {
 		return nil, false
 	}

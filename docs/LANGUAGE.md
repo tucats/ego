@@ -101,7 +101,7 @@ types, and control-flow statements are intentionally close to Go.
 The sections below call out the most important differences so you
 know where to watch out.
 
-### Key differences from Go
+### Key differences from Go <a name="go-differences"></a>
 
 | Go | Ego |
 | :--- | :--- |
@@ -115,6 +115,7 @@ know where to watch out.
 | Missing map key returns the zero value of the value type | In Ego, **a missing map key always returns `nil`**, regardless of the declared value type. Use the two-value form `v, ok := m[key]` to distinguish missing from present. |
 | `var p *T` declares a nil pointer of type `*T` | In Ego, **`var p *T` produces the zero value of `T`**, not a nil pointer. Use `p := &x` to obtain a real pointer, or return `nil` explicitly from a function with pointer return type. |
 | Go does not allow nested named function declarations inside another function | Ego **allows nested named functions**, but they do **not** capture the enclosing function's scope. A nested named function can only access its own parameters, its own locals, and package/global names — not the enclosing function's parameters or locals. Use a function literal (closure) when you need the enclosing scope. |
+| An untyped constant adapts to the type it's combined with, but the compiler statically rejects one that would overflow or truncate (e.g. `var w int32 = 5; w = 3.7` is a compile error) | Ego's `strict` mode gives a constant the same "adapts to context" leniency in expressions, function arguments, and return values, but does **not** check for lost precision at those three boundaries by default — `anInt32Var + 3.7` or `f(3.7)` (`f` taking an `int32`) silently truncate to `anInt32Var + 3` / `3` rather than erroring. Plain variable assignment is the one boundary where Ego does check, and always rejects the same truncation. See [Type Conversions](#typeConversion) for the full boundary-by-boundary breakdown. |
 
 In addition, _Ego_ offers a conditional expression shorthand (`?expr : default`) for supplying
 a fallback value when an expression would otherwise produce an error — this has no Go equivalent.
@@ -1079,6 +1080,96 @@ such that `false` is converted to `0.0` and `true` is converted to
  `1.0`. Similarly, if a numeric or boolean value is needed as a string,
 the string value is the formatted version of the original value. So a
 value of `123.5` as a float64 becomes the string `"123.5"`.
+
+#### How much conversion happens depends on the type-checking mode
+
+How much of this automatic conversion happens — and how much you must manage
+explicitly yourself — depends on two things: the active **type-checking mode**
+(`dynamic`, `relaxed`, or `strict`, set via the `ego.compiler.types` setting,
+the `--types` command-line flag, or temporarily overridden with the
+[`@type`](#at-type) directive), and **which of four boundaries** the
+conversion happens at:
+
+1. Assigning a value to a variable (`x = value`)
+2. Combining two values in an expression (`a + b`, `a == b`, and so on)
+3. Passing a value as a function argument
+4. Returning a value from a function
+
+For a one-line summary of the most surprising part of this — that `strict`
+mode is not quite as strict as Go for constants outside of assignment — see
+the [Key differences from Go](#go-differences) table.
+
+These four boundaries do not all follow identical rules. The differences
+mostly matter in `strict` mode, where Go-like rigor applies to real (non-constant)
+values, but a **compile-time constant literal** (like `5` or `3.7` written directly
+in your source) is given some of the same leeway Go itself gives an untyped constant.
+
+##### Assigning to a variable
+
+| Mode | A non-constant value of a different type | A constant literal of a different type |
+| :--- | :--- | :--- |
+| `dynamic` (default) | The variable's type changes to match the new value. | Same — the variable's type changes to match. |
+| `relaxed` | Converted automatically to the variable's existing type. An error is raised only if the value genuinely cannot be converted at all (e.g. the string `"abc"` into an `int`). | Same as a non-constant value: converted automatically, even if the conversion loses information — `w = 3.7` on an `int` variable silently becomes `3`. |
+| `strict` | **Rejected.** Cast explicitly first: `w = int(f)`. | Converted automatically, but **only if no information is lost**. `var w int = 5; w = 3` succeeds; `w = 3.7` is rejected, because truncating the fractional part would lose information — even though `3.7` is itself a constant. **This check always applies in strict mode**, regardless of the `ego.runtime.precision.error` setting described below (that setting governs the other three boundaries, not assignment). |
+
+See [`@type`](#at-type) for the complete set of strict-mode assignment rules,
+including array constants and struct member creation.
+
+##### Combining values in an expression
+
+When both operands already have the same type, no conversion is needed. When
+they differ:
+
+| Mode | Two non-constant values of different types | One constant, one non-constant |
+| :--- | :--- | :--- |
+| `dynamic` / `relaxed` | Both operands are converted to whichever type loses the least precision — e.g. `anInt32 + anInt64` promotes both to `int64`. | The constant adapts to match the non-constant operand's type — e.g. `anInt32 + 2` stays `int32`, even though a bare `2` would otherwise be treated as the "wider" plain `int` kind. |
+| `strict` | **Rejected** with a type-mismatch error. Combine values of the same type, or cast one side explicitly first. | Same leniency as `dynamic`/`relaxed`: the constant adapts to the non-constant operand's type, mirroring Go's own rule that an untyped constant adapts to whatever it is combined with. |
+
+The constant-adapts-to-context behavior does **not** check for lost precision:
+`anInt32 + 2.7` silently produces the same result as `anInt32 + 2` (the
+fractional part of `2.7` is simply dropped) in every mode, including `strict`.
+This is a real difference from variable assignment, which — in `strict` mode
+— always rejects that same kind of loss. If you need Go's stricter behavior
+here, cast explicitly (`anInt32 + int32(2.7)`, which itself does not error
+either — see the note on `int32()` truncation below — so validate the value
+yourself first if the distinction matters to your program).
+
+##### Passing a function argument, and returning a value from a function
+
+These two boundaries follow the same rules as each other, and closely mirror
+the "combining values in an expression" rules above:
+
+| Mode | A non-constant argument/return value of a different type than the parameter/declared return type | A constant literal argument/return value of a different type |
+| :--- | :--- | :--- |
+| `dynamic` / `relaxed` | Converted automatically to the declared type. | Converted automatically to the declared type. |
+| `strict` | **Rejected** with an argument-type or type-mismatch error. Cast explicitly first. | Adapts to the declared type — `func f(x int32) int32 {...}; f(4)` and `return x * 2` (where `x` is `int32`) both work, the same leniency Go gives an untyped constant. As with expressions, this adaptation does **not** check for lost precision by default; see below. |
+
+##### The `ego.runtime.precision.error` setting
+
+This setting (default `false`) controls whether a conversion that would lose
+information raises a runtime error instead of silently truncating or
+wrapping, for the three boundaries above where a constant is allowed to
+narrow (expressions, arguments, and return values — **not** plain variable
+assignment, which is always strict about this regardless of the setting, as
+noted above). With the default `false`:
+
+- An integer conversion that overflows the target width silently wraps
+  (`int32(99999999999)` — or the equivalent argument/expression coercion —
+  produces whatever value 64-bit-to-32-bit truncation yields, with no error).
+- A float-to-integer conversion that has a fractional part is truncated
+  toward zero with no error, for every integer width **except `int64`**,
+  which does check for a fractional part regardless of this inconsistency
+  with its sibling widths (a known rough edge — `int8`, `int16`, `int32`,
+  and plain `int` targets only ever check for magnitude overflow, never a
+  lost fractional part, no matter how this setting is configured).
+
+Setting `ego.runtime.precision.error=true` makes an out-of-range integer
+conversion (of any width) raise a catchable runtime error instead of
+silently wrapping, and additionally makes an `int64` target specifically also
+reject a fractional part — but, per the note above, does **not** add
+fractional-part checking to any other integer width. Explicit casts
+(`int32(x)`, `byte(x)`, etc.) use this exact same per-width coercion
+machinery, so the same rules and the same rough edge apply to them too.
 
 ### Builtin Functions<a name="builtInFunctions"></a>
 
@@ -5954,6 +6045,11 @@ global value can only be used with template functions.
 
 You can temporarily change the language settings control when type
 checking is strict, relaxed, or dynamic.
+
+The rules below cover variable **assignment**. Combining values in an
+expression, passing function arguments, and returning values from a function
+each follow their own related-but-not-identical rules under these same three
+modes; see [Type Conversions](#typeConversion) for the complete picture.
 
 When in strict mode, assignment follows Go's own assignability rules:
 
