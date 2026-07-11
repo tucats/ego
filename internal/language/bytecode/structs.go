@@ -298,9 +298,21 @@ func storeIndexByteCode(c *Context, i any) error {
 		return err
 	}
 
-	v, err := c.Pop()
+	// PopWithoutUnwrapping (not Pop) so a data.Immutable wrapper can be
+	// detected and recorded in vIsConst before being stripped -- needed so a
+	// compile-time constant literal can adapt losslessly to a struct field's
+	// declared type in strict mode (BUG-69), the same leniency variable
+	// assignment, expressions, function arguments, and return values already
+	// have (BUG-67/68).
+	v, err := c.PopWithoutUnwrapping()
 	if err != nil {
 		return err
+	}
+
+	vIsConst := false
+	if imm, ok := v.(data.Immutable); ok {
+		v = imm.Value
+		vIsConst = true
 	}
 
 	if isStackMarker(destination) || isStackMarker(index) || isStackMarker(v) {
@@ -339,7 +351,14 @@ func storeIndexByteCode(c *Context, i any) error {
 		// Persisting it there made two otherwise-identical structs compare
 		// as different merely because one of them had a field assigned to
 		// it while running in strict mode.
-		if err := checkStructFieldStrictType(c, a, key, v); err != nil {
+		//
+		// fix BUG-69: a compile-time constant literal (vIsConst) may still
+		// adapt losslessly to the field's declared type, exactly like
+		// variable assignment, expressions, function arguments, and return
+		// values already do (BUG-67/68) -- checkStructFieldStrictType
+		// returns the (possibly coerced) value to use below.
+		v, err = checkStructFieldStrictType(c, a, key, v, vIsConst)
+		if err != nil {
 			return c.runtimeError(err)
 		}
 
@@ -366,8 +385,10 @@ func storeIndexByteCode(c *Context, i any) error {
 
 			// fix BUG-33: same strict-mode field-type check as the direct
 			// *data.Struct case above, reached here via a pointer-to-interface
-			// indirection.
-			if err := checkStructFieldStrictType(c, ax, key, v); err != nil {
+			// indirection. fix BUG-69: same constant-adapts-losslessly
+			// leniency as the direct case above.
+			v, err = checkStructFieldStrictType(c, ax, key, v, vIsConst)
+			if err != nil {
 				return c.runtimeError(err)
 			}
 
@@ -408,9 +429,19 @@ func storeIndexByteCode(c *Context, i any) error {
 //
 // Only strict mode (--types strict) is checked here: the new value's Go
 // type must already match the field's declared type exactly, with no
-// coercion attempted. A mismatch returns ErrInvalidType.
+// coercion attempted -- UNLESS valueIsConst is true and the mismatch is
+// purely numeric, in which case value is allowed to adapt to the field's
+// type, but only losslessly (via data.CoerceLossless). This is the same
+// "constant adapts to context, but only losslessly" rule already applied to
+// variable assignment, expressions, function arguments, and return values
+// (BUG-67/68); struct fields were the one remaining boundary missing it
+// (BUG-69). A non-constant mismatch, or a non-numeric one, still returns
+// ErrInvalidType.
 //
-// In relaxed and dynamic mode this function always returns nil (no error).
+// Returns the value to use for the subsequent data.Struct.Set call -- either
+// value unchanged, or the losslessly-coerced replacement.
+//
+// In relaxed and dynamic mode this function always returns (value, nil).
 // Those modes still get type enforcement, just later and more leniently:
 // data.Struct.Set (called by the caller right after this check) attempts to
 // coerce the value to the field's declared type -- e.g. converting the
@@ -419,25 +450,34 @@ func storeIndexByteCode(c *Context, i any) error {
 //
 // If the field's declared type cannot be determined at all (for example, a
 // dynamically-built struct with no associated type information), this
-// function returns nil and no enforcement happens for that field, matching
-// the struct's pre-existing, untyped behavior.
-func checkStructFieldStrictType(c *Context, s *data.Struct, key string, value any) error {
+// function returns (value, nil) and no enforcement happens for that field,
+// matching the struct's pre-existing, untyped behavior.
+func checkStructFieldStrictType(c *Context, s *data.Struct, key string, value any, valueIsConst bool) (any, error) {
 	if c.typeStrictness != defs.StrictTypeEnforcement {
-		return nil
+		return value, nil
 	}
 
 	fieldType, err := s.Type().BaseType().Field(key)
 	if err != nil {
 		// No declared type for this field (e.g. an untyped/dynamic struct).
 		// There is nothing to enforce, so allow the write.
-		return nil
+		return value, nil
 	}
 
 	if !data.IsType(value, fieldType) {
-		return errors.ErrInvalidType.Context(data.TypeOf(value).String())
+		if !(valueIsConst && data.IsNumeric(value) && data.IsNumeric(fieldType)) {
+			return nil, errors.ErrInvalidType.Context(data.TypeOf(value).String())
+		}
+
+		coerced, err := data.CoerceLossless(value, data.InstanceOfType(fieldType))
+		if err != nil {
+			return nil, err
+		}
+
+		return coerced, nil
 	}
 
-	return nil
+	return value, nil
 }
 
 // storeInMap writes a key/value pair into a map and pushes the updated map

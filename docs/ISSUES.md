@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 61 issues (31 resolved)
+- [BUG — General Language Bugs](#area-bug) — 62 issues (32 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -236,6 +236,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-66](#BUG-66) | BUG | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
 | [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
 | [BUG-68](#BUG-68) | BUG | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
+| [BUG-69](#BUG-69) | BUG | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -518,6 +519,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-66](#BUG-66) | MEDIUM | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
 | [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
 | [BUG-68](#BUG-68) | LOW | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
+| [BUG-69](#BUG-69) | LOW | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 
 ---
 
@@ -6848,6 +6850,81 @@ ways — with the ambient (developer-machine) `ego.runtime.precision.error=true`
 again with `--set ego.runtime.precision.error=false` forced explicitly — with no regressions in
 any configuration. `tests/types/bug67_constant_narrowing.ego` was also re-verified in both modes
 (its constants are all exact-fitting, so none should be newly rejected by this stricter check).
+
+---
+
+<a id="BUG-69"></a>
+
+### BUG-69 — Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule — **Resolved**
+
+**Severity:** LOW
+
+**Description:**  
+Found while confirming, at the user's request, that the `ego.runtime.precision.error` setting
+and the BUG-67/68 fixes together produce Go-like behavior in `--types strict` regardless of the
+setting. Four boundaries were verified consistent (variable assignment, expressions, function
+arguments, return values), but a fifth — struct field assignment (`p.X = value`) — was not: it
+predates BUG-67/68 and was never updated to allow a compile-time constant literal to adapt
+losslessly to the field's declared type. `internal/language/data/structs.go`'s `Struct.Set` and
+its bytecode-level gatekeeper, `checkStructFieldStrictType` in
+`internal/language/bytecode/structs.go`, rejected **any** kind mismatch in strict mode
+unconditionally — even a literal that would fit exactly, which every other boundary already
+allowed.
+
+**Reproducer:**
+
+```go
+func main() {
+    type Point struct {
+        X int32
+    }
+
+    p := Point{X: int32(1)}
+    var v int32 = 1
+
+    p.X = 5 // struct field: rejected
+    v = 5   // plain variable: succeeds
+}
+```
+
+Run with `ego --types strict run`. **Actual output:**
+
+```text
+Error: at main(line 8), invalid or unsupported data type for this operation: int
+Error: terminated with errors
+```
+
+**Expected output:** the identical conversion (`int` literal `5` into a declared `int32`)
+should behave the same regardless of whether the destination is a struct field or a plain
+variable — both should succeed, matching the plain-variable case, which was already correct.
+
+**Notes:**  
+Not a new class of bug — the same shape as BUG-67/68 (a coercion boundary missing the shared
+`data.CoerceLossless` leniency), just a fifth location neither of those passes touched.
+
+**Resolution (July 2026):**
+
+- `internal/language/bytecode/structs.go`'s `storeIndexByteCode` — the `Store` opcode handler for
+  `p.X = value` — now pops the value with `PopWithoutUnwrapping` instead of `Pop`, recording
+  whether it was a `data.Immutable`-wrapped compile-time constant, for both the direct
+  `*data.Struct` destination case and the `*any` pointer-indirection case (reached through a
+  pointer receiver).
+- `checkStructFieldStrictType` now takes that `valueIsConst` flag and returns `(any, error)`
+  instead of just `error`: when the field-type check fails and the value is a numeric constant,
+  it calls `data.CoerceLossless(value, data.InstanceOfType(fieldType))` and returns the coerced
+  value for the caller to pass to `Struct.Set`, instead of rejecting outright. A non-constant
+  mismatch, or a non-numeric constant, is still rejected exactly as before (BUG-33's original
+  enforcement is unaffected).
+
+Regression tests: `tests/types/bug69_struct_field_constant.ego` — a lossless constant now
+succeeds and matches the plain-variable case exactly; a lossy constant, a non-constant
+mismatch, and a non-numeric constant are all still rejected (guard tests); and the
+pointer-receiver (`*any` indirection) code path is exercised separately from the direct
+`*data.Struct` path, since both needed the identical fix.
+
+Verified against `go test ./...` and `ego test tests/` / `ego test --types strict tests/`
+(1305 `@test` blocks each, up from 1299 after BUG-68) with no regressions, including the
+pre-existing BUG-33 struct field-enforcement tests.
 
 ---
 

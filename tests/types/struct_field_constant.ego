@@ -1,0 +1,153 @@
+// Regression tests for BUG-69 (docs/ISSUES.md): struct field assignment
+// (p.X = value) was the one coercion boundary BUG-67/68 missed -- it
+// rejected any kind mismatch in strict mode, even a compile-time constant
+// literal that would fit losslessly, unlike plain variable assignment,
+// expressions, function arguments, and return values. Struct field
+// assignment now follows the exact same "constant adapts, but only
+// losslessly" rule as those four boundaries.
+//
+// Type names are apparently registered file-wide, not per @test block (see
+// tests/types/named_scalar_types.ego), so each block below uses a distinct
+// type name to avoid collisions.
+
+@test "types: struct field accepts a lossless constant (BUG-69)"
+{
+    @type strict
+
+    type Bug69Point1 struct {
+        X int32
+    }
+
+    p := Bug69Point1{X: int32(1)}
+    p.X = 5
+
+    @assert p.X == 5
+
+    @type dynamic
+}
+
+@test "types: struct field matches plain variable assignment (BUG-69)"
+{
+    // The exact same conversion (int literal 5 into an int32) must behave
+    // identically whether the destination is a struct field or a plain
+    // variable -- that was the discrepancy BUG-69 fixed.
+    @type strict
+
+    type Bug69Point2 struct {
+        X int32
+    }
+
+    p := Bug69Point2{X: int32(1)}
+    var v int32 = 1
+
+    p.X = 5
+    v = 5
+
+    @assert p.X == 5
+    @assert v == 5
+
+    @type dynamic
+}
+
+@test "types: struct field still rejects a lossy constant (BUG-69)"
+{
+    // Regression guard: the leniency is lossless-only, matching assignment.
+    @type strict
+
+    type Bug69Point3 struct {
+        X int32
+    }
+
+    p := Bug69Point3{X: int32(1)}
+    caught := false
+
+    try {
+        p.X = 2.7
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert p.X == 1
+
+    @type dynamic
+}
+
+@test "types: struct field still rejects a non-constant mismatch (BUG-69)"
+{
+    // Regression guard: BUG-33's original enforcement (a real variable of
+    // the wrong kind is always rejected) must be unaffected.
+    @type strict
+
+    type Bug69Point4 struct {
+        X int32
+    }
+
+    p := Bug69Point4{X: int32(1)}
+    var y int64 = 5
+    caught := false
+
+    try {
+        p.X = y
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert p.X == 1
+
+    @type dynamic
+}
+
+@test "types: struct field still rejects a non-numeric constant (BUG-69)"
+{
+    // Regression guard: the leniency is numeric-only, matching the other
+    // three boundaries.
+    @type strict
+
+    type Bug69Point5 struct {
+        X int32
+    }
+
+    p := Bug69Point5{X: int32(1)}
+    caught := false
+
+    try {
+        p.X = "not a number"
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert p.X == 1
+
+    @type dynamic
+}
+
+@test "types: struct field via pointer receiver also accepts a lossless constant (BUG-69)"
+{
+    // Inside a pointer-receiver method, the receiver is reached through the
+    // *any pointer-indirection case in storeIndexByteCode, a separate code
+    // path from the direct *data.Struct case exercised by the tests above --
+    // it needs the identical fix.
+    @type strict
+
+    type Bug69Point6 struct {
+        X int32
+    }
+
+    // The literal 5 is assigned directly inside the method (not forwarded
+    // through a parameter, which would already be coerced to int32 by the
+    // time it arrived -- see BUG-67 -- and so would no longer exercise the
+    // constant-literal path this test targets).
+    func (p *Bug69Point6) setX() {
+        p.X = 5
+    }
+
+    p := &Bug69Point6{X: int32(1)}
+    p.setX()
+
+    @assert p.X == 5
+
+    @type dynamic
+}
