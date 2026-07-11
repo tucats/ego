@@ -574,9 +574,12 @@ func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
 	}
 
 	// This is compile-time constant folding: both v1 and v2 are always
-	// literal constants here by construction, so this falls straight through
-	// to Normalize's unchanged kind-ordering promotion.
-	v1, v2, err = data.Normalize(v1, true, v2, true)
+	// literal constants here by construction, so v1Const == v2Const is always
+	// true and Normalize's constant-adaptation branch never fires; this
+	// falls straight through to the unchanged kind-ordering promotion, and
+	// the strict argument is therefore moot (no type-strictness context is
+	// available at this compile-time-only call site).
+	v1, v2, err = data.Normalize(v1, true, v2, true, false)
 	if err != nil {
 		return nil, false
 	}

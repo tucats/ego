@@ -799,21 +799,17 @@ func (c *Context) checkType(name string, value any) (any, error) {
 			return nil, c.runtimeError(errors.ErrInvalidVarType)
 		}
 
-		coerced, err := data.Coerce(value, existingValue)
-		if err != nil {
-			return nil, c.runtimeError(err)
-		}
-
 		// Reject the conversion if it lost information (e.g. 3.7 -> int),
 		// exactly as Go rejects a truncating untyped-constant conversion at
 		// compile time. This check is independent of the
 		// ego.runtime.precision.error setting, which only governs explicit
-		// runtime conversions (casts), not implicit constant assignment.
-		original, err1 := data.Float64(value)
-		roundTrip, err2 := data.Float64(coerced)
-
-		if err1 == nil && err2 == nil && original != roundTrip {
-			return nil, c.runtimeError(errors.ErrLossOfPrecision).Context(value)
+		// runtime conversions (casts), not implicit constant assignment or
+		// (as of BUG-68) constant adaptation in expressions, function
+		// arguments, or return values -- see data.CoerceLossless, the shared
+		// implementation of this same rule across all four boundaries.
+		coerced, err := data.CoerceLossless(value, existingValue)
+		if err != nil {
+			return nil, c.runtimeError(err)
 		}
 
 		return coerced, nil

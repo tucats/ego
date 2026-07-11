@@ -1,0 +1,186 @@
+// Regression tests for BUG-68 (docs/ISSUES.md): precision-loss checking is
+// now consistent across all four type-coercion boundaries in strict mode
+// (assignment, expressions, function arguments, return values), and across
+// all integer widths when ego.runtime.precision.error is enabled.
+//
+// Type names are apparently registered file-wide, not per @test block (see
+// tests/types/named_scalar_types.ego), so each block below that defines a
+// function uses a distinct function name to avoid collisions.
+
+@test "types: strict expression rejects lossy constant (BUG-68)"
+{
+    @type strict
+
+    var a int32 = 10
+    caught := false
+
+    try {
+        _ = a + 2.7
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    @type dynamic
+}
+
+@test "types: strict argument rejects lossy constant (BUG-68)"
+{
+    @type strict
+
+    func bug68f1(x int32) int32 {
+        return x
+    }
+
+    caught := false
+
+    try {
+        _ = bug68f1(2.7)
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    @type dynamic
+}
+
+@test "types: strict return value rejects lossy constant (BUG-68)"
+{
+    @type strict
+
+    func bug68f2() int32 {
+        return 2.7
+    }
+
+    caught := false
+
+    try {
+        _ = bug68f2()
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    @type dynamic
+}
+
+@test "types: strict boundaries still accept exact constants (BUG-68)"
+{
+    // Regression guard: the BUG-68 fix must not reject a constant that fits
+    // exactly, only one that would lose information.
+    @type strict
+
+    var a int32 = 10
+    c := a + 2
+    @assert c == 12
+
+    func bug68f3(x int32) int32 {
+        return x
+    }
+    @assert bug68f3(4) == 4
+
+    func bug68f4() int32 {
+        return 4
+    }
+    @assert bug68f4() == 4
+
+    @type dynamic
+}
+
+@test "types: relaxed/dynamic boundaries still truncate silently (BUG-68)"
+{
+    // Regression guard: the BUG-68 fix is strict-mode only. This test does
+    // not rely on ego.runtime.precision.error's ambient/persisted value
+    // (which may be "true" in a given developer's saved profile) -- it
+    // forces the setting to its documented default so the assertions below
+    // reflect what every developer sees out of the box.
+    profile.Set("ego.runtime.precision.error", "false")
+
+    @type relaxed
+
+    var a int32 = 10
+    c := a + 2.7
+    @assert c == 12
+
+    func bug68f5(x int32) int32 {
+        return x
+    }
+    @assert bug68f5(2.7) == 2
+
+    @type dynamic
+
+    var b int32 = 10
+    d := b + 2.7
+    @assert d == 12
+}
+
+@test "types: precision setting now consistent across integer widths (BUG-68)"
+{
+    profile.Set("ego.runtime.precision.error", "true")
+
+    caught := false
+    try { _ = int8(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = int16(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = uint16(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = int32(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = uint32(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = uint64(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = uint(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = int(2.9) } catch { caught = true }
+    @assert caught
+
+    caught = false
+    try { _ = byte(2.9) } catch { caught = true }
+    @assert caught
+
+    // int64 already had this check before BUG-68; confirm it still works.
+    caught = false
+    try { _ = int64(2.9) } catch { caught = true }
+    @assert caught
+
+    profile.Set("ego.runtime.precision.error", "false")
+}
+
+@test "types: default precision setting still truncates all widths (BUG-68)"
+{
+    // Regression guard: with the default (false) setting, every width must
+    // still silently truncate, exactly as before this fix. Forced explicitly
+    // rather than relying on a prior test's cleanup, for the same reason as
+    // the relaxed/dynamic test above.
+    profile.Set("ego.runtime.precision.error", "false")
+
+    @assert int8(2.9) == 2
+    @assert int16(2.9) == 2
+    @assert uint16(2.9) == 2
+    @assert int32(2.9) == 2
+    @assert uint32(2.9) == 2
+    @assert uint64(2.9) == 2
+    @assert uint(2.9) == 2
+    @assert int(2.9) == 2
+    @assert byte(2.9) == 2
+    @assert int64(2.9) == 2
+}

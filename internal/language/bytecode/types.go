@@ -401,12 +401,22 @@ func strictConformanceCheck(c *Context, i any, v any, valueIsConst bool) (any, e
 		if !actualType.IsType(t) {
 			// BUG-67 leniency: a numeric constant literal adapts to the
 			// declared numeric parameter type instead of being rejected
-			// outright. When this applies, execution falls through to the
-			// coercion switch below, which already knows how to convert v to
-			// t.Kind() -- no additional coercion logic needed here.
+			// outright -- but, per BUG-68, only when doing so loses no
+			// information, exactly mirroring variable assignment's existing
+			// rule (and real Go's static rejection of a lossy untyped
+			// constant). This returns directly rather than falling through
+			// to the coercion switch below, since CoerceLossless already
+			// produces the canonically-coerced value on success.
 			if !(valueIsConst && data.IsNumeric(v) && data.IsNumeric(t)) {
 				return nil, c.runtimeError(errors.ErrArgumentType)
 			}
+
+			coerced, err := data.CoerceLossless(v, data.InstanceOfType(t))
+			if err != nil {
+				return nil, c.runtimeError(err)
+			}
+
+			return coerced, nil
 		}
 
 		// Perform a canonical coercion so the value's Go type precisely

@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 61 issues (30 resolved)
+- [BUG — General Language Bugs](#area-bug) — 61 issues (31 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -235,7 +235,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-65](#BUG-65) | BUG | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | BUG | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
 | [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
-| [BUG-68](#BUG-68) | BUG | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | |
+| [BUG-68](#BUG-68) | BUG | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -517,7 +517,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-65](#BUG-65) | HIGH | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
 | [BUG-66](#BUG-66) | MEDIUM | `(e error) In(name)` and `(e error) At(line)` mutate the receiver in place instead of returning a clone, unlike `Context()`. | ✓ |
 | [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
-| [BUG-68](#BUG-68) | LOW | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | |
+| [BUG-68](#BUG-68) | LOW | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
 
 ---
 
@@ -6693,7 +6693,7 @@ implementation were both touched.
 
 <a id="BUG-68"></a>
 
-### BUG-68 — Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths
+### BUG-68 — Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths — **Resolved**
 
 **Severity:** LOW
 
@@ -6782,18 +6782,72 @@ loss on narrowing float-to-integer conversions, it should do so consistently for
 width, not just `int64`.
 
 **Notes:**  
-Not yet root-caused to a fix plan — this is filed as a future cleanup task, not something to
-fix reactively. A reasonable approach would be: (a) decide the intended behavior for
-expression/argument/return boundaries under `ego.runtime.precision.error` (most likely: extend
-the existing fractional-part check from `coerceToInt64`'s `float64` case to every other
-`coerceToIntN`/`coerceFloat64ToIntN` helper, so the setting behaves consistently across all
-integer widths), and (b) decide whether assignment's unconditional (setting-independent)
-rejection should become consistent with the other three boundaries, or whether the other three
-should instead be brought in line with assignment's stricter, always-on behavior. Either choice
-changes runtime behavior for existing programs that may be relying on the current silent
-truncation, so this needs its own dedicated investigation and test-suite pass rather than a
-quick patch. See `docs/LANGUAGE.md`'s "Type Conversions" section (added alongside this bug
-report) for the currently-documented, if inconsistent, behavior.
+Root-caused and fixed; both parts turned out to be independently fixable without a large
+redesign.
+
+**Resolution (July 2026):**
+
+Per explicit product decision, boundary consistency (point 1) was resolved by *tightening*
+expressions, arguments, and return values to match assignment's existing behavior — not by
+relaxing assignment — since real Go also statically rejects an untyped constant that can't be
+represented exactly in the type it's adapting to (`x + 2.7` where `x` is `int32` is a compile
+error in Go). This completes what BUG-67 started: a constant adapts to context, but only
+losslessly.
+
+- **New shared helper**: `internal/language/data/coerce.go` gained `CoerceLossless(value,
+  model)`, extracting the round-trip-through-`float64` technique `checkType`
+  (`internal/language/bytecode/context.go`) already used for assignment — coerce, then compare
+  the coerced result and the original value as `float64`; a mismatch means information was lost.
+  This works for any numeric kind pairing with no per-width special-casing, and is independent
+  of `ego.runtime.precision.error` (that setting governs a separate, second mechanism — see
+  below). `checkType` itself was refactored to call this shared helper instead of duplicating
+  the logic inline.
+- **Expressions**: `data.Normalize` gained a 5th parameter, `strict bool`. In the BUG-67
+  constant-adaptation branch, it now calls `CoerceLossless` instead of `Coerce` when `strict` is
+  true, so `anInt32Var + 2.7` is rejected in strict mode (previously silently produced
+  `anInt32Var + 2`). All 14 existing call sites (from BUG-67: `math.go`'s arithmetic ops, the
+  six comparison opcodes, `optimizer.go`'s constant folding, and `runtime/math/math.go`'s
+  `math.Normalize()`) were updated to pass the caller's actual strict-mode state, or `false`
+  where the leniency branch can never fire (comparisons always pass `false, false`/`v1Const,
+  v2Const` such that `v1Const != v2Const` is never true; constant folding always passes
+  `true, true` for the same reason) — a mechanical, behavior-preserving update for those sites.
+- **Function arguments**: `strictConformanceCheck`'s (`internal/language/bytecode/types.go`)
+  BUG-67 leniency branch now calls `data.CoerceLossless(v, data.InstanceOfType(t))` and returns
+  its result directly, instead of falling through to the existing coercion switch with no
+  precision check.
+- **Return values**: `coerceByteCode`'s (`internal/language/bytecode/coerce.go`) strict-mode
+  path now routes a numeric constant through `CoerceLossless` before falling through to the
+  general coercion switch; a non-constant value still goes through `requireMatch` as before
+  (unaffected — that path already required an exact kind match).
+
+For the per-width inconsistency (point 2), the fractional-part check
+(`value != math.Trunc(value)`, gated by `precisionError()`) already present in
+`coerceToInt64`'s `float64` case was added to every sibling coercion path that lacked it:
+`coerceToInt8`, `coerceToInt16`, `coerceToUInt16`, `coerceToInt`, `coerceFloat64ToInt32`,
+`coerceFloat64ToUInt32`, `coerceFloat64ToUInt64`, and `coerceFloat64ToByte` (covering both their
+`float32` and `float64` cases where both exist). `coerceToInt64` itself was left unchanged.
+This mechanism is deliberately separate from `CoerceLossless` above: it governs
+`ego.runtime.precision.error`'s effect on ordinary (non-constant, non-assignment) coercions and
+explicit casts (`int32(x)`, `byte(x)`, etc.), which the setting now catches consistently across
+every integer width instead of only `int64`.
+
+Regression tests: `tests/types/bug68_precision_consistency.ego` — all three previously-lenient
+boundaries with a lossy constant (now rejected), the same three with an exact-fitting constant
+(still succeed), `relaxed`/`dynamic` mode with a lossy constant (still silently truncates, since
+this fix is strict-mode only), all nine previously-inconsistent integer widths with
+`ego.runtime.precision.error=true` (now all reject a fractional part, matching `int64`), and the
+same nine widths with the setting at its default (still silently truncate, no regression for
+the common case). The `relaxed`/`dynamic` and default-setting tests explicitly force
+`ego.runtime.precision.error` via `profile.Set()` rather than relying on its ambient/persisted
+value, since a developer's saved profile can have it set to `true` (as this repo's did during
+development of this fix) — the tests must hold regardless of that ambient state.
+
+Verified against `go test ./...`, `go test -race ./internal/language/... ./internal/runtime/math/...`,
+and `ego test tests/` / `ego test --types strict tests/` (1299 `@test` blocks each) run three
+ways — with the ambient (developer-machine) `ego.runtime.precision.error=true` setting, and
+again with `--set ego.runtime.precision.error=false` forced explicitly — with no regressions in
+any configuration. `tests/types/bug67_constant_narrowing.ego` was also re-verified in both modes
+(its constants are all exact-fitting, so none should be newly rejected by this stricter check).
 
 ---
 

@@ -221,7 +221,7 @@ func genericEqualCompare(c *Context, v1 any, v2 any) error {
 		// Otherwise, normalize the types to the same type. The comparison
 		// result is always a bool, so the promotion direction never affects
 		// correctness here; constant-ness is irrelevant to this call.
-		v1, v2, err = data.Normalize(v1, false, v2, false)
+		v1, v2, err = data.Normalize(v1, false, v2, false, false)
 		if err != nil {
 			return err
 		}

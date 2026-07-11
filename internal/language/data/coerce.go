@@ -141,6 +141,37 @@ func Coerce(value any, model any) (any, error) {
 	return nil, errors.ErrInvalidValue.Context(value)
 }
 
+// CoerceLossless coerces value to match model's type, the same as Coerce,
+// but returns an error if the conversion loses information (a lost
+// fractional part or magnitude overflow), by round-tripping the coerced
+// result back through float64 and comparing it to the original. This works
+// for any numeric kind pairing without per-width special-casing, and is
+// independent of the ego.runtime.precision.error setting (which only governs
+// ordinary, non-constant coercions and explicit casts -- see the per-width
+// coerceToIntN/coerceFloat64ToIntN helpers below).
+//
+// This is the shared "a compile-time constant may adapt to context, but only
+// losslessly" rule strict mode applies at every boundary: assignment,
+// expressions, function arguments, and return values (BUG-68). Variable
+// assignment (checkType, in the bytecode package) was the original
+// implementation of this rule; the other three boundaries adopted it via
+// this shared helper so all four stay consistent.
+func CoerceLossless(value any, model any) (any, error) {
+	coerced, err := Coerce(value, model)
+	if err != nil {
+		return nil, err
+	}
+
+	original, err1 := Float64(value)
+	roundTrip, err2 := Float64(coerced)
+
+	if err1 == nil && err2 == nil && original != roundTrip {
+		return nil, errors.ErrLossOfPrecision.Context(value)
+	}
+
+	return coerced, nil
+}
+
 func coerceBool(value any) (any, error) {
 	switch actual := value.(type) {
 	case nil:
@@ -467,10 +498,22 @@ func coerceToInt8(v any) (any, error) {
 			}
 		}
 
+		if float64(value) != math.Trunc(float64(value)) {
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
 		return int8(value), nil
 
 	case float64:
 		if math.Abs(value) > math.MaxInt8 {
+			if precisionError() {
+				return nil, errors.ErrLossOfPrecision.Context(value)
+			}
+		}
+
+		if value != math.Trunc(value) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)
 			}
@@ -569,14 +612,14 @@ func coerceToInt16(v any) (any, error) {
 		return int16(value), nil
 
 	case float32:
-		if int64(value) > math.MaxInt16 && precisionError() {
+		if precisionError() && (int64(value) > math.MaxInt16 || float64(value) != math.Trunc(float64(value))) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return int16(value), nil
 
 	case float64:
-		if int64(value) > math.MaxInt16 && precisionError() {
+		if precisionError() && (int64(value) > math.MaxInt16 || value != math.Trunc(value)) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
@@ -669,14 +712,14 @@ func coerceToUInt16(v any) (any, error) {
 		return uint16(value), nil
 
 	case float32:
-		if int64(value) > math.MaxUint16 && precisionError() {
+		if precisionError() && (int64(value) > math.MaxUint16 || float64(value) != math.Trunc(float64(value))) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return uint16(value), nil
 
 	case float64:
-		if int64(value) > math.MaxUint16 && precisionError() {
+		if precisionError() && (int64(value) > math.MaxUint16 || value != math.Trunc(value)) {
 			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
@@ -757,19 +800,15 @@ func coerceToInt(v any) (any, error) {
 		return value, nil
 
 	case float32:
-		if math.Abs(float64(value)) > math.MaxInt {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
+		if precisionError() && (math.Abs(float64(value)) > math.MaxInt || float64(value) != math.Trunc(float64(value))) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return int(value), nil
 
 	case float64:
-		if math.Abs(value) > math.MaxInt {
-			if precisionError() {
-				return nil, errors.ErrLossOfPrecision.Context(value)
-			}
+		if precisionError() && (math.Abs(value) > math.MaxInt || value != math.Trunc(value)) {
+			return nil, errors.ErrLossOfPrecision.Context(value)
 		}
 
 		return int(value), nil
@@ -1229,6 +1268,17 @@ func coerceToByte(v any) (any, error) {
 // getComparisonTerms already grants for ==, applied to the promotion
 // direction instead of just permitting the comparison.
 //
+// strict reports whether the caller is running under strict type
+// enforcement. When true, the constant-adaptation case above uses
+// CoerceLossless instead of Coerce, so a lossy conversion (e.g. "anInt32 +
+// 2.7") is rejected instead of silently truncated — matching Go, which
+// statically rejects an untyped constant that can't be represented exactly
+// in the type it's adapting to, and matching variable assignment's existing
+// strict-mode behavior (BUG-68). When strict is false, callers get the
+// original, lenient, truncating behavior; pass false for any caller that has
+// no notion of type-strictness (e.g. compile-time constant folding, where
+// both operands are always constants and this branch never fires anyway).
+//
 // In every other case (both or neither operand is a constant, or either is
 // non-numeric), the promotion follows the kind ordering defined at the top of
 // types.go — lower-numbered kinds are less precise, so the less-precise value
@@ -1237,7 +1287,7 @@ func coerceToByte(v any) (any, error) {
 //   - bool (kind 1) + int (kind 8)       → both become int
 //
 // If v1 and v2 already have the same kind, they are returned unchanged.
-func Normalize(v1 any, v1Const bool, v2 any, v2Const bool) (any, any, error) {
+func Normalize(v1 any, v1Const bool, v2 any, v2Const bool, strict bool) (any, any, error) {
 	var err error
 
 	// A named scalar type decays to its underlying value here, same as in
@@ -1282,12 +1332,18 @@ func Normalize(v1 any, v1Const bool, v2 any, v2Const bool) (any, any, error) {
 	}
 
 	// Exactly one operand is a constant: it adapts to the other (real,
-	// typed) operand's kind, regardless of kind-ordering magnitude.
+	// typed) operand's kind, regardless of kind-ordering magnitude. In
+	// strict mode the adaptation must be lossless (BUG-68).
 	if v1Const != v2Const && IsNumeric(v1) && IsNumeric(v2) {
+		coerce := Coerce
+		if strict {
+			coerce = CoerceLossless
+		}
+
 		if v1Const {
-			v1, err = Coerce(v1, v2)
+			v1, err = coerce(v1, v2)
 		} else {
-			v2, err = Coerce(v2, v1)
+			v2, err = coerce(v2, v1)
 		}
 
 		if err != nil {
@@ -1425,30 +1481,24 @@ func coerceUInt64ToUInt32(value uint64) (uint32, error) {
 }
 
 func coerceFloat64ToInt32(value float64) (int32, error) {
-	if math.Abs(float64(value)) > math.MaxInt32 {
-		if precisionError() {
-			return 0, errors.ErrLossOfPrecision.Context(value)
-		}
+	if precisionError() && (math.Abs(float64(value)) > math.MaxInt32 || value != math.Trunc(value)) {
+		return 0, errors.ErrLossOfPrecision.Context(value)
 	}
 
 	return int32(value), nil
 }
 
 func coerceFloat64ToUInt32(value float64) (uint32, error) {
-	if math.Abs(float64(value)) > math.MaxInt32+1 {
-		if precisionError() {
-			return 0, errors.ErrLossOfPrecision.Context(value)
-		}
+	if precisionError() && (math.Abs(float64(value)) > math.MaxInt32+1 || value != math.Trunc(value)) {
+		return 0, errors.ErrLossOfPrecision.Context(value)
 	}
 
 	return uint32(value), nil
 }
 
 func coerceFloat64ToUInt64(value float64) (uint64, error) {
-	if math.Abs(float64(value)) > math.MaxInt64+1 {
-		if precisionError() {
-			return 0, errors.ErrLossOfPrecision.Context(value)
-		}
+	if precisionError() && (math.Abs(float64(value)) > math.MaxInt64+1 || value != math.Trunc(value)) {
+		return 0, errors.ErrLossOfPrecision.Context(value)
 	}
 
 	return uint64(value), nil
@@ -1475,10 +1525,8 @@ func coerceUInt64ToByte(value uint64) (byte, error) {
 }
 
 func coerceFloat64ToByte(value float64) (byte, error) {
-	if value < 0.0 || value > 255.0 {
-		if precisionError() {
-			return 0, errors.ErrLossOfPrecision.Context(value)
-		}
+	if precisionError() && (value < 0.0 || value > 255.0 || value != math.Trunc(value)) {
+		return 0, errors.ErrLossOfPrecision.Context(value)
 	}
 
 	return byte(value), nil

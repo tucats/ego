@@ -27,8 +27,22 @@ func coerceByteCode(c *Context, i any) error {
 	}
 
 	// If we are in static mode, we don't do any coercions and require a match
-	if !coerceOk && c.typeStrictness == defs.StrictTypeEnforcement {
-		return requireMatch(c, t, v)
+	// -- except for a numeric constant, which is allowed to adapt to the
+	// declared return type the same way it does for assignment, expressions,
+	// and function arguments, but only losslessly (BUG-68).
+	if c.typeStrictness == defs.StrictTypeEnforcement {
+		if !coerceOk {
+			return requireMatch(c, t, v)
+		}
+
+		if data.IsNumeric(v) && data.IsNumeric(t) {
+			coerced, err := data.CoerceLossless(v, data.InstanceOfType(t))
+			if err != nil {
+				return c.runtimeError(err)
+			}
+
+			return c.push(coerced)
+		}
 	}
 
 	// Some types cannot be coerced, so must match.

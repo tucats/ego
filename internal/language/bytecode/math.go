@@ -74,7 +74,7 @@ func incrementByteCode(c *Context, i any) error {
 	// Normalize the values and add them. v is the variable's current value
 	// (never a constant); increment may be, per the Immutable unwrap above.
 	if c.typeStrictness != defs.StrictTypeEnforcement {
-		v, increment, err = data.Normalize(v, false, increment, incrementConst)
+		v, increment, err = data.Normalize(v, false, increment, incrementConst, false)
 		if err != nil {
 			return c.runtimeError(err)
 		}
@@ -423,7 +423,7 @@ func addByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -434,7 +434,7 @@ func addByteCode(c *Context, i any) error {
 
 		// All other types are scalar math.
 	default:
-		v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+		v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 		if err != nil {
 			return c.runtimeError(err)
 		}
@@ -583,7 +583,7 @@ func subtractByteCode(c *Context, i any) error {
 			// If we don't require strict types, see if we can coerce
 			// the types together. Array elements are never constants.
 			if c.typeStrictness != defs.StrictTypeEnforcement {
-				x1, x2, err = data.Normalize(v, false, v2, v2Const)
+				x1, x2, err = data.Normalize(v, false, v2, v2Const, false)
 				if err != nil {
 					return c.runtimeError(err)
 				}
@@ -603,7 +603,7 @@ func subtractByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -677,7 +677,7 @@ func multiplyByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -848,7 +848,7 @@ func divideByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -984,7 +984,7 @@ func moduloByteCode(c *Context, i any) error {
 		}
 	}
 
-	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const)
+	v1, v2, err = data.Normalize(v1, v1Const, v2, v2Const, c.typeStrictness == defs.StrictTypeEnforcement)
 	if err != nil {
 		return c.runtimeError(err)
 	}
