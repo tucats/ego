@@ -68,6 +68,70 @@ func TestCompileBlockDirectiveDoesNotLeakUnusedVarsSetting(t *testing.T) {
 	}
 }
 
+// TestCompileBlockDirectiveUnusedFalseSuppressesError is the primary BUG-54
+// regression test.
+//
+// "@compile ... unused=false" is documented (docs/LANGUAGE.md) to disable
+// unused-variable checking for the compiled block, but in practice the
+// compile error was still reported. Root cause: Compiler.Errors() swept
+// every still-open scope's usage errors into c.symbolErrors unconditionally,
+// without checking c.flags.unusedVars. PopSymbolScope (called for every
+// nested scope: if/else arms, loop bodies, etc.) honors the flag correctly,
+// but the compiled block's own top-level scope is never popped by
+// PopSymbolScope -- it is only ever swept up by Errors() itself, at Close()
+// -- so unused=false had no effect on exactly the scope most tests exercise.
+//
+// Before the fix, this program's catch(e) block would run because the
+// compile failed with "variable created but never used: neverUsed", even
+// though unused=false was given.
+func TestCompileBlockDirectiveUnusedFalseSuppressesError(t *testing.T) {
+	program := `
+		caught := false
+
+		@compile block unused=false {
+			neverUsed := 42
+		} catch(e) {
+			caught = true
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error running program: %v", err)
+	}
+
+	if v, ok := s.Get("caught"); !ok || v != false {
+		t.Errorf("caught = %v (found=%v), want false -- unused=false must suppress the compile error", v, ok)
+	}
+}
+
+// TestCompileBlockDirectiveUnusedTrueStillReportsError is the companion to
+// TestCompileBlockDirectiveUnusedFalseSuppressesError: it confirms the
+// BUG-54 fix (gating Errors()'s sweep of the block's own top-level scope on
+// c.flags.unusedVars) did not disable unused-variable detection altogether --
+// only honored an explicit unused=false override. With unused=true, the
+// compile error must still be caught.
+func TestCompileBlockDirectiveUnusedTrueStillReportsError(t *testing.T) {
+	program := `
+		caught := false
+
+		@compile block unused=true {
+			neverUsed := 42
+		} catch(e) {
+			caught = true
+		}
+	`
+
+	s := symbols.NewRootSymbolTable(t.Name())
+	if err := RunString(t.Name(), s, program); !errors.Nil(err) {
+		t.Fatalf("unexpected error running program: %v", err)
+	}
+
+	if v, ok := s.Get("caught"); !ok || v != true {
+		t.Errorf("caught = %v (found=%v), want true -- unused=true must still report the compile error", v, ok)
+	}
+}
+
 // TestCompileBlockDirectiveNestedBraceInBlockMode is the core BUG-39
 // regression test.
 //

@@ -221,7 +221,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
 | [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | ✓ |
-| [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | |
+| [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | ✓ |
 | [BUG-55](#BUG-55) | BUG | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
 | [BUG-56](#BUG-56) | BUG | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
 | [BUG-57](#BUG-57) | BUG | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
@@ -501,7 +501,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
 | [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | ✓ |
-| [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | |
+| [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | ✓ |
 | [BUG-55](#BUG-55) | MEDIUM | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
 | [BUG-56](#BUG-56) | MEDIUM | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
 | [BUG-57](#BUG-57) | MEDIUM | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | |
@@ -2458,10 +2458,10 @@ with entries added to all three localization files
 the `@compile` test directive, read and restored the wrong settings key when computing the
 default "unused variable" enforcement for a `@compile` block — it used
 `defs.UnusedVarLoggingSetting` (a verbose-logging toggle) instead of `defs.UnusedVarsSetting`
-(the actual error-enforcement flag). This is one of the two root causes already tracked as
-[BUG-54](#BUG-54); see that entry for the remaining, still-open part of the bug. Fixing the
-key mismatch here was necessary to write reliable `@compile`-based regression tests for
-BUG-25 without them tripping over unrelated stale global settings.
+(the actual error-enforcement flag). This is one of the two root causes tracked as
+[BUG-54](#BUG-54) (now fully fixed; see that entry). Fixing the key mismatch here was
+necessary to write reliable `@compile`-based regression tests for BUG-25 without them
+tripping over unrelated stale global settings.
 
 **Files changed:**
 
@@ -5089,9 +5089,7 @@ with `Error: at Primes(line N), invalid function argument: -5`; wrapped in `try/
 
 ### BUG-54 — `@compile ... unused=false` does not suppress "unused variable" errors
 
-**Severity:** MEDIUM  
-**Status:** Partially fixed — see the update below; the primary symptom (`unused=false` not
-suppressing the error) is still open.
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `docs/LANGUAGE.md` documents that `@compile`'s `unused=` flag, when set, overrides the
@@ -5147,9 +5145,42 @@ enforcement on or off process-wide. A regression test,
 `internal/language/compiler/directives_test.go`, sets the two settings to different values,
 runs a `@compile` block, and confirms `defs.UnusedVarsSetting` is unchanged afterward.
 
-The primary reported symptom — `@compile ... unused=false` still reporting the error — is
-**not** fixed by this change, since it is caused by the first root cause (`Compiler.Errors()`
-ignoring `c.flags.unusedVars` for the block's own top-level scope), which remains open.
+The primary reported symptom — `@compile ... unused=false` still reporting the error — was
+**not** fixed by the above change, since it is caused by the first root cause
+(`Compiler.Errors()` ignoring `c.flags.unusedVars` for the block's own top-level scope).
+
+**Fix (primary symptom):**  
+`Compiler.Errors()` (`internal/language/compiler/compiler.go`) now gates its sweep of
+still-open scopes on `c.flags.unusedVars`, the same flag `PopSymbolScope` already checks
+for every other scope:
+
+```go
+if c.flags.unusedVars {
+    for _, scope := range c.scopes {
+        for v, e := range scope.usage {
+            ...
+        }
+    }
+}
+```
+
+The reason the bug only affected the compiled block's own top-level scope: nested scopes
+(if/else arms, loop bodies, function bodies, ...) are closed by explicit `PopSymbolScope`
+calls as compilation proceeds, and that function already honored the flag correctly. The
+block's own outermost scope, however, is lazily created by the first `DefineSymbol` call
+and is never popped by anything — it is only ever swept up when the sub-compiler closes and
+`Errors()` runs, which is exactly the code path that was ignoring `c.flags.unusedVars`.
+Since `@compile`'s `unused=` flag is written directly
+into the sub-compiler's `c.flags.unusedVars` before compilation starts, this single check
+fixes the override for both the explicit `unused=false` case and the default (no `unused=`
+given, falling back to whatever `defs.UnusedVarsSetting` already was) case alike.
+
+Verified against the documented reproducer (now prints only `done`, with no error caught)
+and the inverse case (`unused=true`, and the default with no flag at all, both still catch
+the error correctly). Regression tests: `TestCompileBlockDirectiveUnusedFalseSuppressesError`
+and `TestCompileBlockDirectiveUnusedTrueStillReportsError` in
+`internal/language/compiler/directives_test.go`, plus two new `@test` cases in
+`tests/directives/compile.ego`.
 
 ---
 

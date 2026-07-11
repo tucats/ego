@@ -400,16 +400,24 @@ func (c *Compiler) Errors() error {
 	// to be complete programs.
 	if !c.flags.fragment {
 		// Do we have unprocessed symbol scope errors hanging out? If so, now's the
-		// time to add them to the errors table.
-		for _, scope := range c.scopes {
-			for v, e := range scope.usage {
-				// Skip over symbols marked as optionally used.
-				if len(c.optionalUsage) > 0 && c.optionalUsage[v] {
-					continue
-				}
+		// time to add them to the errors table -- unless unused-variable checking
+		// is disabled for this compilation, matching the same c.flags.unusedVars
+		// check that PopSymbolScope applies to every other scope. Without this
+		// check, a compile unit's own top-level scope (which is never popped by
+		// PopSymbolScope, only swept up here) would report "unused variable"
+		// errors even when the caller explicitly disabled that check, e.g. via
+		// "@compile ... unused=false" (BUG-54).
+		if c.flags.unusedVars {
+			for _, scope := range c.scopes {
+				for v, e := range scope.usage {
+					// Skip over symbols marked as optionally used.
+					if len(c.optionalUsage) > 0 && c.optionalUsage[v] {
+						continue
+					}
 
-				if e != nil {
-					c.symbolErrors[v] = e
+					if e != nil {
+						c.symbolErrors[v] = e
+					}
 				}
 			}
 		}

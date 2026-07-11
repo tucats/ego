@@ -145,6 +145,43 @@
 }
 
 
+@test "directives: @compile unused=false suppresses unused variable error (BUG-54)"
+{
+    // BUG-54: the "unused=false" flag on @compile is documented to disable
+    // unused-variable checking for the compiled block, but the compile
+    // error was reported regardless. Root cause: the compiled block's own
+    // top-level scope is never popped via PopSymbolScope (which does honor
+    // the unused-vars flag) -- it is only swept up, unconditionally, by
+    // Compiler.Errors() when the sub-compiler closes.
+    var caught bool
+
+    @compile block unused=false {
+        neverUsed := 42
+    } catch {
+        caught = true
+    }
+
+    @assert caught == false
+}
+
+
+@test "directives: @compile unused=true still reports unused variable error"
+{
+    // Companion to the BUG-54 test above: confirms the fix didn't disable
+    // unused-variable detection altogether, only honored unused=false.
+    var caught bool
+
+    @compile block unused=true {
+        neverUsed := 42
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "var.unused"
+    }
+
+    @assert caught == true
+}
+
+
 @test "directives: @compile two funcs (BUG-39)"
 {
     // BUG-39 (full-program / non-"block" form): the same brace-counting bug
