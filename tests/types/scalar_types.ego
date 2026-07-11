@@ -61,8 +61,21 @@
     @assert reflect.Type(b) == byte
 }
 
-// NOTE: uint8 is listed in LANGUAGE.md but is not a recognized type keyword
-// in the current Ego implementation. Use byte (uint8 alias) instead.
+@test "types: uint8 zero value"
+{
+    // uint8 is Go's real name for byte -- both spellings name the same
+    // type (BUG-58).
+    var u uint8
+    @assert int(u) == 0
+    @assert reflect.Type(u) == byte
+}
+
+@test "types: uint8 cast function is recognized (BUG-58)"
+{
+    @assert uint8(240) == 240
+    @assert uint8(240) == byte(240)
+    @assert reflect.Type(uint8(240)) == byte
+}
 
 @test "types: uint16 zero value"
 {

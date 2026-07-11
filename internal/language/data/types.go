@@ -148,6 +148,7 @@ const (
 	InterfaceTypeName = "interface{}"
 	BoolTypeName      = "bool"
 	ByteTypeName      = "byte"
+	UInt8TypeName     = "uint8"
 	IntTypeName       = "int"
 	Int8TypeName      = "int8"
 	Int16TypeName     = "int16"

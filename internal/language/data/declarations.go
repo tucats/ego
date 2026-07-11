@@ -127,6 +127,14 @@ var TypeDeclarations = []TypeDeclaration{
 		ByteType,
 	},
 	{
+		// "uint8" is Go's real name for "byte" -- both spellings name the
+		// exact same type, so this shares ByteType/byteModel rather than
+		// defining a distinct type (BUG-58).
+		[]string{UInt8TypeName},
+		byteModel,
+		ByteType,
+	},
+	{
 		[]string{Int8TypeName},
 		int8Model,
 		Int8Type,
