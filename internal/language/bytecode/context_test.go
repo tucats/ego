@@ -736,6 +736,100 @@ func Test_Context_checkType_Immutable_UnwrappedBeforeCheck(t *testing.T) {
 	}
 }
 
+// Test_Context_checkType_RelaxedMode_CoercesConstant_KeepsType is the BUG-57
+// regression test: a literal constant of a different numeric type must be
+// coerced to the existing variable's type in relaxed mode, not silently
+// change the variable's type.
+func Test_Context_checkType_RelaxedMode_CoercesConstant_KeepsType(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+	tc.ctx.setAlways("w", 5) // int
+
+	got, err := tc.ctx.checkType("w", data.Immutable{Value: 3.7})
+	if err != nil {
+		t.Fatalf("checkType relaxed float constant → int: unexpected error: %v", err)
+	}
+
+	if v, ok := got.(int); !ok || v != 3 {
+		t.Errorf("checkType relaxed: expected coerced int 3, got %v (%T)", got, got)
+	}
+}
+
+// Test_Context_checkType_RelaxedMode_CoercesVariable_KeepsType verifies the
+// same coercion applies when the incoming value is a non-constant variable,
+// not just a literal.
+func Test_Context_checkType_RelaxedMode_CoercesVariable_KeepsType(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+	tc.ctx.setAlways("w", 5) // int
+
+	got, err := tc.ctx.checkType("w", 3.9) // not wrapped in Immutable
+	if err != nil {
+		t.Fatalf("checkType relaxed float variable → int: unexpected error: %v", err)
+	}
+
+	if v, ok := got.(int); !ok || v != 3 {
+		t.Errorf("checkType relaxed: expected coerced int 3, got %v (%T)", got, got)
+	}
+}
+
+// Test_Context_checkType_RelaxedMode_Uncoercible_Error verifies that relaxed
+// mode still returns an error when the value genuinely cannot be converted
+// to the existing variable's type.
+func Test_Context_checkType_RelaxedMode_Uncoercible_Error(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+	tc.ctx.setAlways("n", 1) // int
+
+	_, err := tc.ctx.checkType("n", "not a number")
+	if err == nil {
+		t.Error("checkType relaxed uncoercible: expected error, got nil")
+	}
+}
+
+// Test_Context_checkType_StrictMode_LossyConstant_Error verifies that a
+// literal constant whose conversion would lose information (e.g. 3.7 → int)
+// is rejected in strict mode, mirroring Go's compile-time rejection of a
+// truncating untyped-constant assignment.
+func Test_Context_checkType_StrictMode_LossyConstant_Error(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement)
+	tc.ctx.setAlways("w", 5) // int
+
+	_, err := tc.ctx.checkType("w", data.Immutable{Value: 3.7})
+	if err == nil {
+		t.Error("checkType strict lossy constant: expected error, got nil")
+	}
+}
+
+// Test_Context_checkType_StrictMode_LosslessConstant_OK verifies that a
+// literal constant whose conversion loses no information (e.g. int 5 → an
+// existing float64 variable) is allowed in strict mode, matching Go's
+// untyped-constant convertibility rule.
+func Test_Context_checkType_StrictMode_LosslessConstant_OK(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement)
+	tc.ctx.setAlways("f", 1.0) // float64
+
+	got, err := tc.ctx.checkType("f", data.Immutable{Value: 5})
+	if err != nil {
+		t.Fatalf("checkType strict lossless constant: unexpected error: %v", err)
+	}
+
+	if v, ok := got.(float64); !ok || v != 5.0 {
+		t.Errorf("checkType strict: expected coerced float64 5, got %v (%T)", got, got)
+	}
+}
+
+// Test_Context_checkType_StrictMode_NonConstantCrossType_Error verifies that
+// a non-constant value of a different type is always rejected in strict
+// mode, even when the conversion would itself be lossless -- Go requires an
+// explicit cast for any non-constant expression of a mismatched type.
+func Test_Context_checkType_StrictMode_NonConstantCrossType_Error(t *testing.T) {
+	tc := newTestContext(t).withTypeStrictness(defs.StrictTypeEnforcement)
+	tc.ctx.setAlways("w", 5) // int
+
+	_, err := tc.ctx.checkType("w", 3.0) // not wrapped in Immutable; exactly representable
+	if err == nil {
+		t.Error("checkType strict non-constant cross-type: expected error, got nil")
+	}
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section: Symbol helpers (set / setAlways / delete / create)
 // ─────────────────────────────────────────────────────────────────────────────

@@ -5955,20 +5955,33 @@ global value can only be used with template functions.
 You can temporarily change the language settings control when type
 checking is strict, relaxed, or dynamic.
 
-When in strict mode,
+When in strict mode, assignment follows Go's own assignability rules:
 
 - All values in an array constant must be of the same type
-- You cannot store a value in a variable of a different type
 - You cannot create or delete structure members
+- A non-constant value of a different type than the receiving variable is always rejected —
+  cast it explicitly first (e.g. `w = int(f)`)
+- A literal constant (e.g. `w = 5`) may still convert implicitly, but only when doing so
+  loses no information — `var f float64 = 1.0; f = 5` and `var w int = 5; w = 3` both
+  succeed, but `w = 3.7` is rejected because truncating it would lose the fractional part,
+  even though `3.7` is itself a constant
 
 When in relaxed mode,
 
-- If possible a value will be converted before being stored to match the type of the receiving variable
+- A value is always converted before being stored to match the type of the receiving
+  variable, whether it comes from a literal or a variable — the receiving variable's type
+  never changes as a result of an assignment. This is effectively an automatic version of
+  the explicit cast strict mode requires you to write by hand.
+- An error is only raised if the value genuinely cannot be converted at all (e.g. assigning
+  the string `"abc"` to an `int` variable)
 - In expressions, data types will automatically be promoted to the most complex type in the expression
 
 When in dynamic mode,
 
 - Any value will be converted to the required type for any operation, automatically
+- Storing a value of a different type into an existing variable changes that variable's
+  type to match, rather than converting the value — this is the only mode where a
+  variable's type can change after it is first assigned
 
 This mode is effective only within the current statement block
 (demarcated by "{" and "}" characters). When the block finishes,

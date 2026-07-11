@@ -1,0 +1,110 @@
+@test "types: @type relaxed coerces to the existing type, never changes it"
+
+{
+    @type relaxed
+
+    // A literal (constant) value of a different numeric type is coerced
+    // down to the existing variable's type instead of changing it.
+    var w int = 5
+    w = 3.7
+    @assert w == 3
+    @assert string(typeof(w)) == "int"
+
+    // Same, but the incoming value comes from a variable, not a literal.
+    var x float64 = 3.9
+    w = x
+    @assert w == 3
+    @assert string(typeof(w)) == "int"
+
+    // Coercion goes both directions and across kinds (number <-> string).
+    var s string = "hi"
+    s = 42
+    @assert s == "42"
+    @assert string(typeof(s)) == "string"
+
+    var n int = 1
+    n = "99"
+    @assert n == 99
+    @assert string(typeof(n)) == "int"
+
+    @type dynamic
+}
+
+@test "types: @type relaxed still errors when a value truly cannot be coerced"
+
+{
+    @type relaxed
+
+    var n int = 1
+    caught := false
+
+    try {
+        n = "not a number"
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert n == 1 // unchanged after the failed coercion
+
+    @type dynamic
+}
+
+@test "types: @type strict allows a lossless constant conversion"
+
+{
+    @type strict
+
+    var f float64 = 1.0
+    f = 5
+    @assert f == 5.0
+    @assert string(typeof(f)) == "float64"
+
+    var w int = 5
+    w = 3
+    @assert w == 3
+    @assert string(typeof(w)) == "int"
+
+    @type dynamic
+}
+
+@test "types: @type strict rejects a lossy constant conversion"
+
+{
+    @type strict
+
+    var w int = 5
+    caught := false
+
+    try {
+        w = 3.7
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert w == 5 // unchanged after the rejected conversion
+
+    @type dynamic
+}
+
+@test "types: @type strict rejects a non-constant cross-type assignment"
+
+{
+    @type strict
+
+    var w int = 5
+    var y float64 = 3.0 // exactly representable as an int, but not a constant
+    caught := false
+
+    try {
+        w = y
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+    @assert w == 5
+
+    @type dynamic
+}

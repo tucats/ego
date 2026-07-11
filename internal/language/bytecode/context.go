@@ -727,92 +727,114 @@ func (c *Context) push(value any) error {
 	return nil
 }
 
-// checkType is a utility function used to determine if a given value
-// could be stored in a named symbol. When the value is nil or dynamic
-// type checking is enabled (the default) then no action occurs.
+// checkType is a utility function used to determine if a given value could
+// be stored in a named symbol, and coerces it if needed and permitted by the
+// active type-enforcement mode:
 //
-// Otherwise, the symbol name is used to look up the current value (if
-// any) of the symbol. If it exists, then the type of the value being
-// proposed must match the type of the existing value.
+//   - dynamic (NoTypeEnforcement): no check at all. Variables may freely
+//     change type from one assignment to the next; this is the default.
+//   - relaxed (RelaxedTypeEnforcement): the incoming value is always coerced
+//     to match the *existing* variable's type, so the variable's type never
+//     changes. An error is only returned when the value genuinely cannot be
+//     converted (e.g. storing "abc" into an int variable) -- this mode does
+//     automatically what strict mode requires the caller to do by hand with
+//     an explicit cast.
+//   - strict (StrictTypeEnforcement): follows Go's own assignability rules.
+//     A non-constant value of a different type is always rejected -- the
+//     caller must cast explicitly. A literal constant (e.g. "w = 5") may
+//     convert implicitly, but only when the conversion loses no information,
+//     mirroring Go's untyped-constant convertibility rule -- so "w = 3.7"
+//     for an int w is still an error, even though "w = 3" (or "f = 5" for a
+//     float64 f) is not.
+//
+// When the value is nil, or the named symbol does not yet exist (or holds
+// symbols.UndefinedValue, i.e. is declared but not yet assigned), no check
+// is performed and the value is returned unchanged. Likewise, a destination
+// currently holding an interface{} value can accept any concrete type
+// without coercion or error, in any enforcement mode.
 func (c *Context) checkType(name string, value any) (any, error) {
-	var (
-		canCoerce bool
-		err       error
-	)
+	isConstant := false
 
 	if constant, ok := value.(data.Immutable); ok {
 		value = constant.Value
-		canCoerce = true
+		isConstant = true
 	}
 
 	if c.typeStrictness == defs.NoTypeEnforcement || value == nil {
 		return value, nil
 	}
 
-	if existingValue, ok := c.get(name); ok {
-		if existingValue == nil {
-			return value, nil
-		}
-
-		// If we are writing to an interface value, then coercion is allowed.
-		if data.TypeOf(existingValue).Kind() == data.InterfaceKind {
-			canCoerce = true
-		}
-
-		if _, ok := existingValue.(symbols.UndefinedValue); ok {
-			return value, nil
-		}
-
-		if c.typeStrictness == defs.RelaxedTypeEnforcement {
-			if canCoerce {
-				return value, nil
-			}
-
-			newT := data.TypeOf(value)
-			oldT := data.TypeOf(existingValue)
-
-			if newT.IsIntegerType() && oldT.IsIntegerType() {
-				value, err = data.Coerce(value, existingValue)
-				if err != nil {
-					return nil, c.runtimeError(err)
-				}
-			}
-
-			if newT.IsFloatType() && oldT.IsFloatType() {
-				value, err = data.Coerce(value, existingValue)
-				if err != nil {
-					return nil, c.runtimeError(err)
-				}
-			}
-		} else if c.typeStrictness == defs.StrictTypeEnforcement && canCoerce {
-			newT := data.TypeOf(value)
-			ok := newT.IsFloatType() || newT.IsIntegerType()
-
-			oldT := data.TypeOf(existingValue)
-
-			if ok && (oldT.IsIntegerType() || oldT.IsFloatType()) {
-				value, err = data.Coerce(value, existingValue)
-				if err != nil {
-					return nil, c.runtimeError(err)
-				}
-			}
-
-			if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-				rt := data.KindOf(existingValue)
-				if rt != data.InterfaceKind {
-					return nil, c.runtimeError(errors.ErrInvalidVarType)
-				}
-
-				return any(value), nil
-			}
-		}
-
-		if reflect.TypeOf(value) != reflect.TypeOf(existingValue) {
-			return nil, c.runtimeError(errors.ErrInvalidVarType)
-		}
+	existingValue, ok := c.get(name)
+	if !ok || existingValue == nil {
+		return value, nil
 	}
 
-	return value, nil
+	if _, ok := existingValue.(symbols.UndefinedValue); ok {
+		return value, nil
+	}
+
+	if data.TypeOf(existingValue).Kind() == data.InterfaceKind {
+		return value, nil
+	}
+
+	if reflect.TypeOf(value) == reflect.TypeOf(existingValue) {
+		return value, nil
+	}
+
+	switch c.typeStrictness {
+	case defs.RelaxedTypeEnforcement:
+		coerced, err := data.Coerce(value, existingValue)
+		if err != nil {
+			return nil, c.runtimeError(err)
+		}
+
+		return coerced, nil
+
+	case defs.StrictTypeEnforcement:
+		if !isConstant {
+			return nil, c.runtimeError(errors.ErrInvalidVarType)
+		}
+
+		if !isNumericKind(data.KindOf(value)) || !isNumericKind(data.KindOf(existingValue)) {
+			return nil, c.runtimeError(errors.ErrInvalidVarType)
+		}
+
+		coerced, err := data.Coerce(value, existingValue)
+		if err != nil {
+			return nil, c.runtimeError(err)
+		}
+
+		// Reject the conversion if it lost information (e.g. 3.7 -> int),
+		// exactly as Go rejects a truncating untyped-constant conversion at
+		// compile time. This check is independent of the
+		// ego.runtime.precision.error setting, which only governs explicit
+		// runtime conversions (casts), not implicit constant assignment.
+		original, err1 := data.Float64(value)
+		roundTrip, err2 := data.Float64(coerced)
+
+		if err1 == nil && err2 == nil && original != roundTrip {
+			return nil, c.runtimeError(errors.ErrLossOfPrecision).Context(value)
+		}
+
+		return coerced, nil
+	}
+
+	return nil, c.runtimeError(errors.ErrInvalidVarType)
+}
+
+// isNumericKind reports whether the given data.Kind is one of Ego's scalar
+// numeric kinds (any integer width, signed or unsigned, or either floating
+// point width). Used by checkType's strict-mode literal-constant coercion
+// path to decide whether an implicit conversion should even be attempted.
+func isNumericKind(kind int) bool {
+	switch kind {
+	case data.ByteKind, data.Int8Kind, data.Int16Kind, data.UInt16Kind,
+		data.Int32Kind, data.UInt32Kind, data.IntKind, data.UIntKind,
+		data.Int64Kind, data.UInt64Kind, data.Float32Kind, data.Float64Kind:
+		return true
+	default:
+		return false
+	}
 }
 
 func (c *Context) Result() any {
