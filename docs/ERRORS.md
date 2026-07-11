@@ -6,6 +6,11 @@ function call within an Ego program to generate an instance of this error code.
 
 | Code | Message |
 | :--- | :------ |
+| error.admin.run.session.invalid | invalid session id |
+| error.admin.run.too.large | code payload too large |
+| error.admin.server.stopped | Server stopped |
+| error.admin.session.invalid | Invalid session id value: {{value}} |
+| error.admin.tail.invalid | Invalid tail integer value: {{value}} |
 | error.ambiguous.permission | permission name conflicts with reserved name, or was misspelled |
 | error.arg.count | incorrect function argument count |
 | error.arg.list | internal error: invalid local function argument list |
@@ -21,9 +26,13 @@ function call within an Ego program to generate an instance of this error code.
 | error.asset | no such asset |
 | error.asset.range.header | Invalid range header: {{header}} |
 | error.assignment | missing '=' or ':=' |
+| error.assignment.count | assignment mismatch |
 | error.auth.db.sqlite.permissions | SQLite3 credential database has insecure file permissions |
 | error.auth.file.permissions | credential database file has insecure permissions |
+| error.auth.forbidden | not authorized |
+| error.auth.rate.limited | too many failed login attempts |
 | error.auth.type | invalid authentication type |
+| error.auth.unauthenticated | not authorized |
 | error.auto.import | Unable to auto-import: {{err}} |
 | error.bit.shift | invalid bit shift specification |
 | error.blacklisted | Token invalid due to blacklisting |
@@ -48,8 +57,12 @@ function call within an Ego program to generate an instance of this error code.
 | error.cli.option | unknown command line option |
 | error.cli.parms | too many parameters on command line |
 | error.cli.subcommand | unexpected parameter or invalid subcommand |
+| error.cluster.auth.invalid | invalid or missing cluster token or admin credentials |
 | error.cluster.no.nodes.started | no cluster nodes were started successfully |
+| error.cluster.node.id.required | node_id query parameter is required |
+| error.cluster.not.running | server is not running in cluster mode |
 | error.cluster.peer.http | cluster peer returned an unexpected HTTP status |
+| error.cluster.token.invalid | invalid or missing cluster token |
 | error.colon | missing ':' |
 | error.column.count | incorrect number of columns |
 | error.column.name | invalid column name |
@@ -59,6 +72,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.conditional.bool | invalid conditional expression type |
 | error.config | while processing configuration |
 | error.constant | invalid constant expression file |
+| error.copy.depth | maximum copy depth exceeded |
 | error.credentials | invalid credentials |
 | error.credentials.missing | no credentials provided |
 | error.database.not.open | database connection is not open |
@@ -85,6 +99,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.empty.column | empty column list |
 | error.endpoint | invalid endpoint path string |
 | error.entry.not.found | undefined entrypoint name |
+| error.eof.marker | @compile eof marker not found before end of source |
 | error.equals | missing '=' |
 | error.expected.subcommand | expected one of |
 | error.expired | expired token |
@@ -144,6 +159,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.invalid.catch.set | invalid catch set {{index}} |
 | error.invalid.dsn | invalid DSN string |
 | error.invalid.duration | invalid duration string |
+| error.invalid.fallthrough | cannot fallthrough final case in switch |
 | error.invalid.filter | invalid SQL filter |
 | error.invalid.http.method | invalid HTTP method |
 | error.invalid.named.return.values | Invalid use of named and non-named return values |
@@ -210,14 +226,19 @@ function call within an Ego program to generate an instance of this error code.
 | error.max.debug.sessions | Maximum number of active debug sessions exceeded |
 | error.max.symbol.sessions | Maximum number of Code sessions exceeded |
 | error.media.type | invalid media type |
+| error.media.unsupported | unsupported media type |
 | error.missing.dsn | must use dot-notation or --dsn option for table name |
 | error.missing.else | missing 'else' token |
 | error.missing.endpoint | missing endpoint specification |
 | error.missing.item | missing item name |
+| error.mutex.not.locked | attempt to unlock a mutex that is not currently locked |
 | error.named.return.values | return values with named return values in function definition |
+| error.native.call.panic | recovered from an unexpected error in a native function call |
 | error.native.unknown.field | unknown field or method name for this object type |
+| error.negative.shift | negative shift amount |
 | error.nested.function.scope | nested named function cannot access enclosing function variable |
 | error.nil | nil pointer reference |
+| error.nil.map.write | assignment to entry in nil map |
 | error.no.database | the server is not configured with a default database connection (use a data source name) |
 | error.no.info | no information for item |
 | error.no.main.package | no main package found |
@@ -225,15 +246,20 @@ function call within an Ego program to generate an instance of this error code.
 | error.no.symbol.table | no symbol table available |
 | error.not.assignment.list | not an assignment list |
 | error.not.channel | neither source or destination is a channel |
+| error.not.copyable | value cannot be copied |
 | error.not.found | not found |
 | error.not.json.log | not a valid JSON log file |
 | error.not.json.log.valid | Invalid JSON object at line |
 | error.not.pointer | not a pointer |
 | error.not.service | not running as a service |
 | error.not.type | not a type |
+| error.oauth.as.body.parse | could not parse request body |
 | error.oauth.as.client.load.failed | failed to load OAuth2 client registry |
+| error.oauth.as.code.generate | could not generate authorization code |
+| error.oauth.as.csrf.generate | could not generate CSRF token |
 | error.oauth.as.csrf.invalid | invalid or missing CSRF token |
 | error.oauth.as.disabled | OAuth2 Authorization Server is not enabled |
+| error.oauth.as.form.parse | could not parse form |
 | error.oauth.as.invalid.client | invalid OAuth2 client credentials |
 | error.oauth.as.invalid.code | authorization code is invalid or expired |
 | error.oauth.as.invalid.grant | unsupported grant type |
@@ -242,13 +268,20 @@ function call within an Ego program to generate an instance of this error code.
 | error.oauth.as.invalid.refresh | refresh token is invalid or expired |
 | error.oauth.as.invalid.scope | requested scope is not permitted for this client |
 | error.oauth.as.key.load.failed | failed to load or generate OAuth2 signing key |
+| error.oauth.as.key.not.initialized | OAuth2 signing key not initialized |
+| error.oauth.as.missing.bearer | missing Bearer token |
 | error.oauth.as.missing.client_id | missing required parameter: client_id |
 | error.oauth.as.missing.issuer | OAuth2 AS issuer URL must be configured |
 | error.oauth.as.missing.redirect_uri | missing required parameter: redirect_uri |
 | error.oauth.as.missing.response_type | missing required parameter: response_type |
+| error.oauth.as.no.subject | token has no subject (not a user token) |
+| error.oauth.as.not.initialized | OAuth2 Authorization Server not initialized |
 | error.oauth.as.pkce.required | public clients must use PKCE (code_challenge required) |
+| error.oauth.as.token.create | could not create access token |
 | error.oauth.as.token.revoked.error | token has been revoked |
+| error.oauth.as.token.serialize | could not serialize token response |
 | error.oauth.as.unsupported.response_type | response_type must be "code" |
+| error.oauth.as.userinfo.serialize | could not serialize userinfo response |
 | error.oauth.callback.listener | error starting OAuth2 callback listener |
 | error.oauth.client.hash | error hashing OAuth2 client secret |
 | error.oauth.client.parse | error parsing OAuth2 client registry file |
@@ -280,6 +313,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.oauth.token.read | error reading OAuth2 token response |
 | error.oauth.token.request | error building OAuth2 token request |
 | error.oauth.token.sign | error signing OAuth2 token |
+| error.oauth.token.size | OAuth2 token exchange response exceeds the maximum allowed size |
 | error.oauth.too.many.flows | too many pending OAuth2 authorization flows |
 | error.oidc.discovery.fetch | error fetching OIDC discovery document |
 | error.oidc.discovery.field | OIDC discovery document is missing a required field |
@@ -305,12 +339,14 @@ function call within an Ego program to generate an instance of this error code.
 | error.paging.start.invalid | start parameter must be a non-negative integer |
 | error.panic | panic |
 | error.panic.active | panic in progress |
+| error.panic.unhandled | unhandled panic |
 | error.param.conflict | conflicting parameters specified |
 | error.parens | missing parenthesis |
 | error.parm.count | incorrect number of parameters |
 | error.parm.value.count | wrong number of parameter values |
 | error.passkey.register.error | Passkey registration failed: {{err}} |
 | error.perm.admin | User does not have admin permission |
+| error.perm.delete | User does not have delete permission |
 | error.perm.privilege | User does not have privilege {{permission}} to access this endpoint |
 | error.perm.read | User does not have read permission |
 | error.perm.update | User does not have update permission |
@@ -331,6 +367,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.readonly.addressable | cannot take address of read-only item |
 | error.readonly.write | invalid attempt to modify a read-only value |
 | error.request | invalid request or content |
+| error.request.too.large | request body too large |
 | error.reserved.name | reserved profile setting name |
 | error.resource.handle | internal error, invalid use of nil resource handle |
 | error.rest.closed | rest client closed |
@@ -339,10 +376,15 @@ function call within an Ego program to generate an instance of this error code.
 | error.roman.numeral | invalid Roman numeral |
 | error.roman.range | Roman integers must be in range of 1..3999 |
 | error.route.duplicate | duplicate route definition |
+| error.route.forbidden | forbidden |
 | error.route.method.invalid | invalid route method |
+| error.route.not.found | not found |
 | error.row.number | invalid row number |
 | error.rune.value | invalid rune value |
 | error.sandbox.path | invalid sandbox path |
+| error.scan.eof | EOF |
+| error.scan.expected.integer | expected integer |
+| error.scan.mismatch | input does not match format |
 | error.scope.invalid | invalid or non-existent symbol table scope |
 | error.semicolon | missing ';' |
 | error.server.down | server is down or not accepting connections |
@@ -356,7 +398,6 @@ function call within an Ego program to generate an instance of this error code.
 | error.spacing | invalid spacing value |
 | error.sql.commit.error | Error committing transaction: {{err}} |
 | error.sql.execute.error | Error in SQL execute: {{err}} |
-| error.sql.injection | possible SQL injection violation |
 | error.sql.name | invalid SQL name |
 | error.sql.payload.empty | Empty request payload |
 | error.sql.payload.invalid | Invalid SQL payload: {{err}} |
@@ -377,10 +418,13 @@ function call within an Ego program to generate an instance of this error code.
 | error.table.closed | table closed |
 | error.table.column.name.empty | Missing or empty column name |
 | error.table.column.names | Error reading column names: {{err}} |
+| error.table.column.parameter | invalid COLUMN rest parameter: {{name}} |
 | error.table.column.types | Error reading column types: {{err}} |
 | error.table.create.payload | Invalid table create payload: {{err}} |
 | error.table.delete.error | Database table delete error |
 | error.table.delete.query | Error constructing table deletion query: {{err}} |
+| error.table.dsn.metadata.error | Error reading DSN schema metadata: {{err}} |
+| error.table.filter.empty | operation invalid with empty filter |
 | error.table.insert.error | Insert error: {{err}} |
 | error.table.insert.payload | Invalid INSERT payload: {{err}} |
 | error.table.metadata.error | Database table metadata error: {{err}} |
@@ -392,6 +436,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.table.query.build | error building table metadata query |
 | error.table.query.error | Error executing query: {{err}} |
 | error.table.row.data | Error reading row data: {{err}} |
+| error.table.row.not.found | no matching rows found |
 | error.table.rowcount.param | Invalid row count parameter: {{value}} |
 | error.table.rows.no.changes | no rows were affected by operation |
 | error.table.schema.create | Error creating schema: {{err}} |
@@ -418,6 +463,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.try.stack | try/catch stack error |
 | error.tx.active | transaction already active |
 | error.tx.commit | Database commit failed |
+| error.tx.decode | transaction request decode error; {{error}} |
 | error.tx.expiration | Invalid expiration time format |
 | error.tx.max | Too many active transactions |
 | error.tx.not.active | no transaction active |
@@ -453,6 +499,12 @@ function call within an Ego program to generate an instance of this error code.
 | error.var.type | invalid type for this variable |
 | error.var.unused | variable created but never used |
 | error.version.parse | Unable to process version number {{v}}; count={{c}}, err={{err}} |
+| error.webauthn.capacity | server busy |
+| error.webauthn.disabled | passkeys not enabled |
 | error.webauthn.missing.cookie | missing WebAuthn challenge cookie |
+| error.webauthn.not.permitted | account not permitted to log in |
+| error.webauthn.rate.limited | too many requests |
 | error.webauthn.session.expired | WebAuthn session has expired or was not found |
 | error.webauthn.session.invalid | invalid WebAuthn session data in cache |
+| error.webauthn.unavailable | WebAuthn not available: {{error}} |
+| error.webauthn.verify.failed | passkey verification failed |
