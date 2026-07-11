@@ -22,6 +22,7 @@ import (
 const (
 	AssertDirective        = "assert"
 	AuthenticatedDirective = "authenticated"
+	CaptureDirective       = "capture"
 	CompileDirective       = "compile"
 	DebugDirective         = "debug"
 	DefineDirective        = "define"
@@ -82,6 +83,9 @@ func (c *Compiler) compileDirective() error {
 
 	case AuthenticatedDirective:
 		return c.authenticatedDirective()
+
+	case CaptureDirective:
+		return c.captureDirective()
 
 	case CompileDirective:
 		return c.compileBlockDirective()

@@ -54,6 +54,39 @@
     @assert t3.Month().String() == "July"
 }
 
+@test "time: fmt.Println formats a Time like String() (BUG-56)"
+{
+    // Before the fix, fmt.Println(t) fell back to data.Format's generic
+    // reflection-based formatter and printed the internal Go struct layout
+    // (e.g. "time.Time struct{wall: uint64, ext: int64, loc: *time.Location}
+    // = ...") instead of the clean timestamp that .String() and %v already
+    // produced correctly. @capture lets this test compare the exact printed
+    // text directly instead of only its length.
+    t := time.ParseAny("Dec 7, 1959")
+
+    @capture printed := {
+        fmt.Println(t)
+    }
+
+    @assert printed == t.String() + "\n"
+}
+
+@test "time: fmt.Println formats a Month like String() (BUG-56)"
+{
+    // Same root cause as the Time/Duration cases above: time.Month is a
+    // native Go value with its own String() method, but had no format
+    // function registered, so fmt.Println(m) printed "time.Month int July"
+    // instead of "July".
+    t := time.ParseAny("July 4, 1776")
+    m := t.Month()
+
+    @capture printed := {
+        fmt.Println(m)
+    }
+
+    @assert printed == m.String() + "\n"
+}
+
 @test "time: Time Add and Sub"
 {
     func near(a, b float64) bool {

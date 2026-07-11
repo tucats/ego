@@ -408,6 +408,17 @@
     // and should print only the primary marshaled value - the trailing
     // error is silently discarded, exactly as it is for a direct
     // "s := json.Marshal(a)" single-target assignment.
+    //
+    // @capture confirms this precisely: it's not enough for BUG-32 to just
+    // not crash (an uncaught error would already fail this test on its
+    // own) -- the printed text itself must be exactly the marshaled JSON,
+    // with no leftover error text or stray characters from the discarded
+    // second return value.
     a := {age: 44, name: "Tom"}
-    fmt.Println(string(json.Marshal(a)))
+
+    @capture printed := {
+        fmt.Println(string(json.Marshal(a)))
+    }
+
+    @assert printed == "{\"age\":44,\"name\":\"Tom\"}\n"
 }

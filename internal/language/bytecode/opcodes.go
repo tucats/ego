@@ -44,6 +44,7 @@ const (
 	ArgCheck
 	Arg
 	Array
+	BeginCapture
 	BitAnd
 	BitOr
 	BitShift
@@ -62,6 +63,7 @@ const (
 	DumpPackages
 	DumpSymbols
 	Dup
+	EndCapture
 	EntryPoint
 	Equal
 	Exp
@@ -132,6 +134,7 @@ const (
 	SymbolCreate
 	SymbolDelete
 	SymbolOptCreate
+	SyncOutputWriter
 	Template
 	Throw
 	Timer
@@ -173,6 +176,7 @@ var opcodeNames = map[Opcode]string{
 	Arg:                "Arg",
 	Array:              "Array",
 	AtLine:             "AtLine",
+	BeginCapture:       "BeginCapture",
 	BitAnd:             "BitAnd",
 	BitOr:              "BitOr",
 	BitShift:           "BitShift",
@@ -194,6 +198,7 @@ var opcodeNames = map[Opcode]string{
 	DumpPackages:       "DumpPackages",
 	DumpSymbols:        "DumpSymbols",
 	Dup:                "Dup",
+	EndCapture:         "EndCapture",
 	EntryPoint:         "EntryPoint",
 	Equal:              "Equal",
 	Exp:                "Exp",
@@ -266,6 +271,7 @@ var opcodeNames = map[Opcode]string{
 	SymbolCreate:       "SymbolCreate",
 	SymbolDelete:       "SymbolDelete",
 	SymbolOptCreate:    "SymbolOptCreate",
+	SyncOutputWriter:   "SyncOutputWriter",
 	Template:           "Template",
 	Throw:              "Throw",
 	Timer:              "Timer",
@@ -300,6 +306,7 @@ func initializeDispatch() {
 		dispatchTable[Arg] = argByteCode
 		dispatchTable[Array] = arrayByteCode
 		dispatchTable[AtLine] = atLineByteCode
+		dispatchTable[BeginCapture] = beginCaptureByteCode
 		dispatchTable[BitAnd] = bitAndByteCode
 		dispatchTable[BitOr] = bitOrByteCode
 		dispatchTable[BitShift] = bitShiftByteCode
@@ -321,6 +328,7 @@ func initializeDispatch() {
 		dispatchTable[Dup] = dupByteCode
 		dispatchTable[DumpPackages] = dumpPackagesByteCode
 		dispatchTable[DumpSymbols] = dumpSymbolsByteCode
+		dispatchTable[EndCapture] = endCaptureByteCode
 		dispatchTable[EntryPoint] = entryPointByteCode
 		dispatchTable[Equal] = equalByteCode
 		dispatchTable[Exp] = exponentByteCode
@@ -392,6 +400,7 @@ func initializeDispatch() {
 		dispatchTable[SymbolCreate] = symbolCreateByteCode
 		dispatchTable[SymbolDelete] = symbolDeleteByteCode
 		dispatchTable[SymbolOptCreate] = symbolCreateIfByteCode
+		dispatchTable[SyncOutputWriter] = syncOutputWriterByteCode
 		dispatchTable[Template] = templateByteCode
 		dispatchTable[Throw] = throwByteCode
 		dispatchTable[Timer] = timerByteCode

@@ -1,0 +1,174 @@
+// Tests for the "@capture" directive:
+//
+//	@capture <var> := { statements }
+//	@capture <var> =  { statements }
+//
+// @capture redirects everything the block would otherwise have printed
+// (via fmt.Println, fmt.Printf, etc.) into <var>, as a plain string, so it
+// can be checked directly with @assert instead of only comparing lengths
+// or eyeballing console output. See internal/language/compiler/capture.go
+// and internal/language/bytecode/capture.go for the full implementation
+// notes.
+//
+// "_" can be used in place of <var> (with either ":=" or "=") when a test
+// only needs the console kept quiet and has no use for the captured text
+// itself -- see the "discard" tests below.
+
+@test "capture: basic := capture matches exact printed text"
+{
+    @capture output := {
+        fmt.Println("Hello")
+        fmt.Printf("%d\n", 53)
+    }
+
+    @assert output == "Hello\n53\n"
+}
+
+
+@test "capture: = reuses an existing variable instead of declaring a new one"
+{
+    var output string
+
+    @capture output = {
+        fmt.Println("reused")
+    }
+
+    @assert output == "reused\n"
+}
+
+
+@test "capture: nested @capture blocks each get only their own text"
+{
+    @capture outer := {
+        fmt.Println("outer-before")
+
+        @capture inner := {
+            fmt.Println("inner-text")
+        }
+
+        @assert inner == "inner-text\n"
+
+        fmt.Println("outer-after")
+    }
+
+    @assert outer == "outer-before\nouter-after\n"
+}
+
+
+@test "capture: output before, inside, and after @capture all land correctly"
+{
+    // This is the single most important regression test for @capture: it
+    // proves the directive composes correctly with the "@test"/"@pass"
+    // machinery's own output-capturing (every @test block already gathers
+    // up everything it prints into one "TEST: ... (PASS)" line). Before
+    // this test was written, an earlier version of the implementation
+    // could have left @test's own capture buffer corrupted after an
+    // @capture block ended, which would show up here as output "leaking"
+    // between this test and the next one, or this test's own later prints
+    // silently disappearing.
+    fmt.Println("before capture")
+
+    @capture result := {
+        fmt.Println("inside capture")
+    }
+
+    @assert result == "inside capture\n"
+
+    fmt.Println("after capture")
+}
+
+
+@test "capture: a following, unrelated test still behaves normally"
+{
+    // Companion to the test above: if @capture had left any global state
+    // corrupted, this otherwise-unremarkable test (which does not use
+    // @capture at all) would be the one to notice.
+    fmt.Println("unrelated output")
+    @assert 1 + 1 == 2
+}
+
+
+@test "capture: an error inside the block is rethrown and observable outside"
+{
+    var output string
+    caught := false
+
+    try {
+        @capture output = {
+            fmt.Println("before the error")
+            _ = 5 / 0
+            fmt.Println("never reached")
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    @assert caught
+
+    // Even though the block never finished, whatever it printed BEFORE
+    // the error must still have been saved into "output" -- @capture must
+    // not silently discard partial output when something goes wrong.
+    @assert output == "before the error\n"
+}
+
+
+@test "capture: discarding with _ suppresses console output with no variable needed"
+{
+    // Use "_" when a test only cares about a call's return value, not what
+    // it printed -- the console is still kept quiet, but nothing is stored.
+    n, err := fmt.Printf("hello %d\n", 42)
+
+    @capture _ := {
+        fmt.Println("this text is thrown away, not stored anywhere")
+    }
+
+    @assert n == 9
+    @assert err == nil
+}
+
+
+@test "capture: _ can be used twice in the same scope with := or ="
+{
+    // Regression guard: unlike a real variable, "_" is never actually
+    // declared, so re-using "@capture _ := { ... }" (or "=") repeatedly in
+    // the same scope must not trip a "symbol already exists" error the way
+    // a real "output := { ... }" used twice with ":=" would.
+    @capture _ := {
+        fmt.Println("first")
+    }
+
+    @capture _ := {
+        fmt.Println("second")
+    }
+
+    @capture _ = {
+        fmt.Println("third")
+    }
+
+    @assert true
+}
+
+
+@test "capture: an error inside a discarded (_) block is still rethrown"
+{
+    // Companion to the named-variable error test above: discarding the
+    // captured text on success must not weaken error handling. The error
+    // still needs to be cleanly rethrown and observable by a real
+    // enclosing try/catch, even though there is no variable to check for
+    // partial output afterward.
+    caught := false
+
+    try {
+        @capture _ := {
+            fmt.Println("before the error")
+            _ = 5 / 0
+            fmt.Println("never reached")
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("div.zero"))
+    }
+
+    @assert caught
+}

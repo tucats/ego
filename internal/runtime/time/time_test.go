@@ -599,3 +599,65 @@ func TestTimeString_OutputParsesBack(t *testing.T) {
 		t.Errorf("round-trip mismatch: got %v, want %v", parsed, fixed)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// BUG-56 regression tests
+// ---------------------------------------------------------------------------
+//
+// fmt.Println/fmt.Print (internal/runtime/fmt's formatUsingString) fall back
+// to data.Format for any value that isn't a *data.Struct with a registered
+// Ego-level "String" function. Before this fix, TimeType, TimeDurationType,
+// TimeLocationType, and TimeMonthType had no data.Type.format function
+// registered (via SetFormatFunc), so data.Format's default case reflected
+// over the raw Go value and printed its internal struct layout (e.g.
+// "time.Duration int64 1h30m0s") instead of calling the value's own
+// String() method, even though .String() and %v already produced the
+// correct human-readable text. The fix registers a format function for
+// each of the four types so data.Format agrees with .String()/%v.
+
+func TestFormat_TimeDuration_MatchesString(t *testing.T) {
+	d := 90 * time.Minute
+
+	got := data.Format(d)
+	want := d.String()
+
+	if got != want {
+		t.Errorf("data.Format(time.Duration) = %q, want %q (to match .String())", got, want)
+	}
+}
+
+func TestFormat_TimeTime_MatchesString(t *testing.T) {
+	tm := time.Date(2024, time.July, 4, 8, 0, 0, 0, time.UTC)
+
+	got := data.Format(tm)
+	want := tm.String()
+
+	if got != want {
+		t.Errorf("data.Format(time.Time) = %q, want %q (to match .String())", got, want)
+	}
+}
+
+func TestFormat_TimeLocation_MatchesString(t *testing.T) {
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		t.Fatalf("unexpected error loading location: %v", err)
+	}
+
+	got := data.Format(loc)
+	want := loc.String()
+
+	if got != want {
+		t.Errorf("data.Format(*time.Location) = %q, want %q (to match .String())", got, want)
+	}
+}
+
+func TestFormat_TimeMonth_MatchesString(t *testing.T) {
+	m := time.July
+
+	got := data.Format(m)
+	want := m.String()
+
+	if got != want {
+		t.Errorf("data.Format(time.Month) = %q, want %q (to match .String())", got, want)
+	}
+}

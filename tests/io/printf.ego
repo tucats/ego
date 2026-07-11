@@ -1,51 +1,72 @@
 @test "io: Printf two-value return"
 {
-    n, err := fmt.Printf("hello %d\n", 42)
-    @assert T.Equal(n, 9)
-    @assert T.Nil(err)
+    @capture printed := {
+        n, err := fmt.Printf("hello %d\n", 42)
+        @assert T.Equal(n, 9)
+        @assert T.Nil(err)
+    }
+    @assert printed == "hello 42\n"
 }
 
 @test "io: Printf single-value return still works"
 {
-    n := fmt.Printf("hello %d\n", 42)
-    @assert T.Equal(n, 9)
+    @capture printed := {
+        n := fmt.Printf("hello %d\n", 42)
+        @assert T.Equal(n, 9)
+    }
+    @assert printed == "hello 42\n"
 }
 
 @test "io: Print two-value return"
 {
-    n, err := fmt.Print("hello", "world")
-    @assert T.Equal(n, 11)
-    @assert T.Nil(err)
+    @capture printed := {
+        n, err := fmt.Print("hello", "world")
+        @assert T.Equal(n, 11)
+        @assert T.Nil(err)
+    }
+    @assert printed == "hello world"
 }
 
 @test "io: Print single-value return still works"
 {
-    n := fmt.Print("hello", "world")
-    @assert T.Equal(n, 11)
+    @capture printed := {
+        n := fmt.Print("hello", "world")
+        @assert T.Equal(n, 11)
+    }
+    @assert printed == "hello world"
 }
 
 @test "io: Println two-value return"
 {
-    n, err := fmt.Println("hello")
-    @assert T.Equal(n, 6)
-    @assert T.Nil(err)
+    @capture printed := {
+        n, err := fmt.Println("hello")
+        @assert T.Equal(n, 6)
+        @assert T.Nil(err)
+    }
+    @assert printed == "hello\n"
 }
 
 @test "io: Println single-value return still works"
 {
-    n := fmt.Println("hello")
-    @assert T.Equal(n, 6)
+    @capture printed := {
+        n := fmt.Println("hello")
+        @assert T.Equal(n, 6)
+    }
+    @assert printed == "hello\n"
 }
 
 @test "io: Printf return values reused across calls"
 {
-    n, e := fmt.Printf("a=%d\n", 1)
-    @assert T.Equal(n, 4)
-    @assert T.Nil(e)
+    @capture printed := {
+        n, e := fmt.Printf("a=%d\n", 1)
+        @assert T.Equal(n, 4)
+        @assert T.Nil(e)
 
-    n, e = fmt.Printf("bb=%d\n", 22)
-    @assert T.Equal(n, 6)
-    @assert T.Nil(e)
+        n, e = fmt.Printf("bb=%d\n", 22)
+        @assert T.Equal(n, 6)
+        @assert T.Nil(e)
+    }
+    @assert printed == "a=1\nbb=22\n"
 }
 
 @test "io: Sprintf collapses %% with no substitution arguments (BUG-48)"

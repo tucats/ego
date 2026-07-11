@@ -91,6 +91,23 @@
     @assert d2.Nanoseconds()  == int64(1000000000)
 }
 
+@test "time: fmt.Println formats a Duration like String() (BUG-56)"
+{
+    // Before the fix, fmt.Println(d) fell back to data.Format's generic
+    // reflection-based formatter and printed the internal Go struct layout
+    // (e.g. "time.Duration int64 1h30m0s") instead of the compact string
+    // that .String() and %v already produced correctly. @capture lets this
+    // test compare the exact printed text directly instead of only its
+    // length.
+    d, _ := time.ParseDuration("90m")
+
+    @capture printed := {
+        fmt.Println(d)
+    }
+
+    @assert printed == d.String() + "\n"
+}
+
 @test "time: Duration equality and comparison"
 {
     // Two durations parsed from equivalent strings must be equal

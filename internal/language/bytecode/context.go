@@ -152,6 +152,30 @@ type Context struct {
 	// GetOutput, ClearOutput, and sayByteCode.
 	captureBuffer *strings.Builder
 
+	// outputStack backs the "@capture" directive (see compiler package's
+	// captureDirective and this package's capture.go). Every time a
+	// "@capture" block starts, the CURRENT value of the "output" field above
+	// is pushed onto this slice -- like setting a bookmark -- and a brand
+	// new buffer is installed in its place. When the "@capture" block ends,
+	// the bookmark is popped back off and "output" is restored to exactly
+	// what it was before, whatever that happened to be.
+	//
+	// This is a completely separate mechanism from captureBuffer/
+	// EnableConsoleOutput above. Those implement a single on/off switch used
+	// by the "@test"/"@pass" directives to gather up everything a single
+	// test prints and show it as one tidy line; that switch has no memory of
+	// "what it was before" (turning it back on always means "go back to the
+	// real terminal", full stop). If "@capture" reused that same switch, an
+	// "@capture" block used INSIDE an "@test" (the whole point of this
+	// feature) would clobber the test's own in-progress buffer and leave the
+	// rest of the test's output going to the real terminal instead of being
+	// gathered up neatly. Keeping a dedicated, stacked bookmark here lets
+	// "@capture" nest correctly inside itself AND inside "@test", because
+	// restoring always means "go back to whatever the previous layer was" --
+	// the real terminal, an enclosing "@test", or an enclosing "@capture" --
+	// never a hard-coded value.
+	outputStack []io.Writer
+
 	// The function result is stored here if there is a return statement with a
 	// result value. If there are multiple return values, this is an array slice
 	// of values.

@@ -58,8 +58,18 @@
     // value from time.Parse got invoked as if it were fmt.Println itself,
     // producing "invalid function invocation: <nil>" instead of printing
     // anything. This must now compile and run without error.
+    //
+    // @capture confirms this precisely: it's not enough for BUG-32 to just
+    // not crash (an uncaught error would already fail this test on its
+    // own) -- the printed text itself must be exactly the parsed
+    // timestamp, with the discarded nil error contributing nothing extra.
     pattern := "1/2/2006 15:04"
-    fmt.Println(time.Parse(pattern, "12/7/1960 15:30"))
+
+    @capture printed := {
+        fmt.Println(time.Parse(pattern, "12/7/1960 15:30"))
+    }
+
+    @assert printed == "1960-12-07 15:30:00 +0000 UTC\n"
 }
 
 

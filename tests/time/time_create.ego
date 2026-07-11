@@ -68,6 +68,23 @@
     @assert err3 != nil
 }
 
+@test "time: fmt.Println formats a Location like String() (BUG-56)"
+{
+    // Before the fix, fmt.Println(loc) fell back to data.Format's generic
+    // reflection-based formatter and dumped *time.Location's entire internal
+    // zone transition table instead of the short name that .String() and
+    // %v already produced correctly. @capture lets this test compare the
+    // exact printed text directly instead of only its length.
+    loc, err := time.LoadLocation("UTC")
+    @assert err == nil
+
+    @capture printed := {
+        fmt.Println(loc)
+    }
+
+    @assert printed == loc.String() + "\n"
+}
+
 @test "time: Date construction"
 {
     // time.Date constructs a time from individual components.

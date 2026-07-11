@@ -10,6 +10,15 @@ import (
 var TimeType = data.TypeDefinition("Time", data.StructType).
 	SetNativeName("time.Time").
 	SetPackage("time").
+	// BUG-56 fix: without a format function, data.Format()'s default case
+	// falls back to reflection-based formatting of the native Go struct
+	// layout (e.g. "time.Time struct{wall: uint64, ...} = ...") instead of
+	// the human-readable string that .String() and %v already produce.
+	SetFormatFunc(func(v any) string {
+		t, _ := v.(time.Time)
+
+		return t.String()
+	}).
 	DefineNativeFunction("Add",
 		&data.Declaration{
 			Name: "Add",
@@ -101,6 +110,14 @@ var TimeType = data.TypeDefinition("Time", data.StructType).
 var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 	SetNativeName(defs.TimeDurationTypeName).
 	SetPackage("time").
+	// BUG-56 fix: same reasoning as TimeType above -- without this, printing
+	// a bare time.Duration shows "time.Duration int64 1h30m0s" instead of
+	// "1h30m0s".
+	SetFormatFunc(func(v any) string {
+		d, _ := v.(time.Duration)
+
+		return d.String()
+	}).
 	DefineFunction("String",
 		&data.Declaration{
 			Name: "String",
@@ -154,6 +171,18 @@ var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.StructureType())).
 	SetNativeName(defs.TimeLocationTypeName).
 	SetPackage("time").
+	// Same BUG-56 root cause as TimeType/TimeDurationType above, found during
+	// the same survey: *time.Location is handed around as a pointer, so
+	// without this the default formatter dumps its entire internal zone
+	// table instead of calling its own String() method.
+	SetFormatFunc(func(v any) string {
+		l, _ := v.(*time.Location)
+		if l == nil {
+			return ""
+		}
+
+		return l.String()
+	}).
 	DefineNativeFunction("String",
 		&data.Declaration{
 			Name:    "String",
@@ -164,6 +193,14 @@ var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.Str
 var TimeMonthType = data.TypeDefinition("Month", data.StructureType()).
 	SetNativeName(defs.TimeMonthTypeName).
 	SetPackage("time").
+	// Same BUG-56 root cause as above, found during the same survey:
+	// without this, printing a bare time.Month shows "time.Month int July"
+	// instead of "July".
+	SetFormatFunc(func(v any) string {
+		m, _ := v.(time.Month)
+
+		return m.String()
+	}).
 	DefineNativeFunction("String",
 		&data.Declaration{
 			Name:    "String",

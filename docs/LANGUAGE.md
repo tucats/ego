@@ -74,6 +74,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [The `package` statement](#package)
 
 1. [Directives](#directives)
+   1. [@capture](#at-capture)
    1. [@compile](#at-compile)
    1. [@error](#at-error)
    1. [@global](#at-global)
@@ -5479,6 +5480,125 @@ A few things to keep in mind:
 Directives are special _Ego_ statements that perform special functions
 outside the normal language syntax, often to influence the runtime
 environment of the program or give instructions to the compiler itself.
+
+### @capture \<var\> := | = { code } <a name="at-capture"></a>
+
+The `@capture` directive redirects everything a block of code prints (via
+`fmt.Println`, `fmt.Printf`, `fmt.Print`, or the `print` language extension)
+into a string variable, instead of letting it appear on the console. This
+is mainly useful inside `@test`/`@assert` blocks, so a test can check
+exactly what a piece of code prints, not just what it returns — and so
+routine test output doesn't clutter the console while `ego test` is running.
+
+```go
+@capture output := {
+    fmt.Println("Hello")
+    fmt.Printf("%d\n", 53)
+}
+fmt.Println(output)
+```
+
+Running this prints `Hello` and `53` exactly once, because the two prints
+inside the `@capture` block are captured into `output` rather than shown
+directly; the final `fmt.Println(output)` is what actually displays them.
+After the block finishes, `output` holds the string `"Hello\n53\n"`.
+
+#### `:=` versus `=`
+
+Like an ordinary Ego assignment, `@capture` supports two forms:
+
+| Form | Meaning |
+| ---- | ------- |
+| `@capture x := { ... }` | Declares a brand new variable `x` in the current scope, the same as an ordinary `x := 5`. It is an error to use `:=` if `x` already exists in the current scope. |
+| `@capture x = { ... }` | Assigns to an existing variable `x`. Unlike ordinary `x = 5` (which only fails at _runtime_ if `x` was never declared), `@capture x = { ... }` checks at _compile time_ that `x` already exists, giving a clearer error for a typo'd variable name. |
+
+#### Discarding the output with `_`
+
+Sometimes a block is only wrapped in `@capture` to keep it from cluttering the
+console, and nothing needs to inspect the printed text itself — for example, a
+test that already checks `fmt.Printf`'s returned byte count and error value has
+no further use for the text. Use Ego's ordinary "discard" name in place of a
+real variable:
+
+```go
+@capture _ := {
+    n, err := fmt.Printf("hello %d\n", 42)
+    // n == 9, err == nil
+}
+```
+
+`_` can be used with either `:=` or `=`, exactly as with an ordinary
+assignment — both behave identically, and (unlike a real variable) `_` can be
+reused as many times as needed in the same scope without an "already
+declared" error, since Ego never actually declares or stores anything named
+`_` anywhere in the language. Discarding on success doesn't mean "never show
+me this," though: if the block raises an error, the captured text is still
+printed to the console with the usual `"@capture _:"` heading — only the
+success-path bookkeeping is skipped.
+
+#### Error handling
+
+A `@capture` block behaves like an implicit `try` around its statements. If
+an error occurs partway through the block:
+
+- Capturing is always turned off cleanly before the error is allowed to
+  continue — later code (including the rest of an enclosing `@test` body)
+  is never left accidentally writing into an abandoned buffer.
+- `<var>` still receives whatever text _was_ captured before the error
+  occurred, so a partial result is never silently discarded.
+- The captured text is printed to the console (or, if running inside
+  `ego test`, into that test's own output) with a heading naming the
+  variable, e.g.:
+
+  ```text
+  @capture output:
+  Hello
+  ```
+
+  so that if a test fails or a program crashes unexpectedly, whatever the
+  block had already printed remains visible instead of vanishing along with
+  the error.
+- The error itself is then re-raised (rethrown), exactly as if the code
+  inside the block had never been wrapped in `@capture` at all. A real,
+  user-written `try`/`catch` around the `@capture` block (or further out)
+  can still catch it normally; if nothing catches it, it terminates the
+  program the same way any other uncaught error would.
+
+```go
+var output string
+caught := false
+
+try {
+    @capture output = {
+        fmt.Println("before the error")
+        _ = 5 / 0
+    }
+} catch(e) {
+    caught = true
+    // output == "before the error\n" -- the partial text is still there.
+}
+```
+
+**Known limitation:** `@fail` and an unrecovered `panic()` both intentionally
+bypass `try`/`catch` entirely elsewhere in the language (there is no way to
+`catch` either one — by design, both are meant to be unconditionally fatal).
+Since `@capture`'s error handling is built on the same `try`/`catch`
+mechanism, it inherits this limitation: if `@fail` runs, or a `panic()`
+inside the block is never recovered, the cleanup/flush behavior described
+above does not run, and whatever had been captured so far is lost. In
+practice this is rarely noticeable, because the whole program is already
+terminating in both of those cases.
+
+#### Implementation note
+
+`@capture` does not introduce a new output mechanism — it reuses the same
+`io.Writer`-based redirection that both `fmt.Println` and the `print`
+language extension already write through, temporarily swapping in a
+string buffer and then restoring exactly what was there before (which
+could be the real console, an enclosing `@capture` block's own buffer, or
+`ego test`'s own per-test output-gathering buffer). This is why `@capture`
+blocks can be nested, and can be used freely inside `@test` blocks without
+interfering with `ego test`'s own reporting of each test's output.
 
 ### @compile [block] { code } <a name="at=compile"></a>
 

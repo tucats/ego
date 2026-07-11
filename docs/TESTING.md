@@ -61,9 +61,11 @@ Below is additional information about each of the individual test directives.
 All unit tests must start with the `@test` directive, which is followed by a string
 expression (usually a quoted string constant) that labels the test. The label cannot
 be longer than 48 ASCII characters in length or an error is generated. This directive
-also creates an additional package in the running program called "testing" which contains
-functions needed by the other test directives. If you use the other directives without
-first specifying `@test` they will fail.  
+creates an instance of a built-in `Testing` struct type and stores it in a variable
+named `T`, which provides the `assert`/`Fail`/`Nil`/`NotNil`/`True`/`False`/`Equal`/
+`NotEqual` methods that `@assert` and the other test-related directives compile into
+calls on. If you use the other directives without first specifying `@test` they will
+fail.  
 
 A single file can contain more than one `@test`; each test gets it's own name and is
 reported to the console as a new test execution.
@@ -79,6 +81,55 @@ The `@assert` accepts a single expression that must be resolvable to a boolean v
 If the expression resolves to `true`, no error is flagged and execution continues.
 If the expression resolves to `false`, the test stops executing and the source text of
 the expression itself is printed as the error message on the console.
+
+### @capture
+
+`@assert` can only check values a test already has in hand — it can't check what a
+piece of code *prints*. `@capture` fills that gap by redirecting everything a block
+of statements would otherwise print (`fmt.Println`, `fmt.Printf`, `fmt.Print`, or the
+`print` language extension) into a string variable, so it can be checked directly with
+`@assert` instead of only being eyeballed on the console:
+
+```go
+@capture output := {
+    fmt.Println("Hello")
+    fmt.Printf("%d\n", 53)
+}
+@assert output == "Hello\n53\n"
+```
+
+Use `:=` to declare a brand-new variable, or `=` to assign into one already declared —
+the same distinction as an ordinary assignment. As a bonus, wrapping otherwise-noisy
+`fmt.Println` calls in `@capture` also keeps them from cluttering the console while
+`ego test` runs, since the printed text ends up in the variable instead of in the
+test's own output block.
+
+If a test only cares about a call's return value and has no further use for what it
+printed — for example, a `fmt.Printf` byte-count/error test like the ones in
+`tests/io/printf.ego` — use `_` in place of a variable name to keep the console quiet
+without bothering to name (or assert against) the captured text:
+
+```go
+@capture _ := {
+    n, err := fmt.Printf("hello %d\n", 42)
+    @assert n == 9
+}
+```
+
+`_` works with either `:=` or `=`, and — unlike a real variable — can be reused as many
+times as needed in the same scope, since Ego never actually declares anything named `_`
+anywhere in the language. Discarding on success doesn't affect error handling: if the
+block raises an error, the partial output is still printed to the console with the usual
+heading, exactly as it would be for a named variable.
+
+If something inside the block raises an error, `@capture` still turns capturing off
+cleanly, saves whatever was printed before the error into the variable (so a partial
+result is never silently lost), prints that partial text to the console with a
+`"@capture <var>:"` heading so it isn't missed during test development, and then lets
+the error keep propagating outward exactly as if `@capture` weren't there — an
+enclosing `try`/`catch` can still catch it normally. See the `@capture` entry in
+`docs/LANGUAGE.md`'s Directives section for the full details, including a known
+limitation around `@fail` and unrecovered `panic()`.
 
 ### @error
 
@@ -126,9 +177,27 @@ writing tests that use `panic()`, `recover()`, goroutines, or multi-value return
 | Feature | `ego run` | `ego test` |
 | :------ | :-------- | :--------- |
 | Entry point | Requires a `func main()` | No `main()` required; `@test` blocks run at the top level |
-| Type-checking mode | Default (`dynamic`) unless overridden | Same defaults; `ego test --types=strict` activates strict mode |
-| Extensions | Off by default | Off by default; `@extensions true` enables them |
-| Auto-import | Controlled by `ego.compiler.auto-import` | Same |
+| Type-checking mode | Default (`dynamic`) unless overridden | Same defaults; `ego test --types strict` activates strict mode |
+| Extensions | Off by default; controlled by `ego.compiler.extensions` | **Always on**, unconditionally (see below) |
+| Auto-import | Off by default; controlled by `ego.compiler.import` | **Always on**, unconditionally (see below) |
+
+**Extensions are always on in `ego test`.** `TestAction` (`internal/commands/test.go`)
+unconditionally sets `ego.compiler.extensions=true` before compiling any test file,
+regardless of the profile setting or any command-line flag — there is no way to make
+`ego test` run with extensions off. A file can still narrow this back down for part of
+itself with an explicit `@extensions false` directive if a test specifically needs to
+verify extensions-off behavior.
+
+**Auto-import is always on in `ego test`, regardless of the `ego.compiler.import`
+setting.** `TestAction` unconditionally calls `comp.AutoImport(true, ...)` before
+compiling — it does not consult `ego.compiler.import` at all (that setting only affects
+`ego run`, where it defaults to off and can be turned on with `--import`). This means
+every test file gets roughly twenty packages (`errors`, `fmt`, `math`, `os`, `strings`,
+`time`, and others — see the `all` branch of `AutoImport` in
+`internal/language/compiler/compiler.go` for the full list) with no `import` statement
+needed at all. This does **not** extend to library source under `lib/packages/*.ego`,
+which is compiled through the normal import path and must still `import` whatever
+packages it uses.
 
 ### Runtime / execution differences
 
@@ -148,18 +217,31 @@ is no enclosing function frame. This means:
   correctly, but the stack layout after recovery is shallower than in the
   `ego run` + `main()` case.
 
-**Output capture.** The test runner calls `ctx.EnableConsoleOutput(false)`,
-which redirects `fmt.Print*` output from `os.Stdout` to an internal capture
-buffer that is replayed to the console at test completion. Code that writes
-directly to `os.Stderr` or uses `ui.Log` is not affected.
+**Output capture.** This is driven per-test, not once for the whole file. Each
+`@test "..."` directive compiles to code that turns capture on (the `Console`
+opcode, backed by `ctx.EnableConsoleOutput(false)`) and prints a "TEST: ..."
+header into the resulting buffer; the implicit or explicit `@pass` that ends the
+test appends the "(PASS)"/timing text to that same buffer and then flushes the
+whole thing to the console in one shot (the `Say` opcode) before resetting
+output back to the real console. So everything a single test prints —
+its header, whatever the test body itself printed, and its result line — is
+gathered into one buffer and shown as one contiguous block, which is why
+`ego test`'s output shows each test's own prints immediately above its
+"(PASS)" line rather than scattered across the run. Code that writes directly
+to `os.Stderr` or uses `ui.Log` is not affected. See also the `@capture`
+directive above, which uses a related but independent mechanism to redirect
+a specific block's output into a variable instead of the console.
 
 **Error handling.** Errors returned by the bytecode run loop cause both
 environments to terminate with an error message. In `ego test` the error is
 prefixed with the test name so it is clear which test failed.
 
-**Symbol tables.** The test runner pre-populates the symbol table with the `T`
-struct (the testing object) and the built-in test directives. These names are
-reserved in test mode and cannot be redefined by test code.
+**Symbol tables.** The `T` variable (the testing object) isn't pre-populated by
+the Go-level test runner itself — it's created at runtime by the compiled
+`@test` directive, which stores a fresh `Testing` struct instance into `T` each
+time it runs (see `testDirective` in `internal/language/compiler/testing.go`).
+In practice this means `T` is reserved and cannot usefully be redefined by test
+code, since the next `@test` (or the implicit one before the first) overwrites it.
 
 **Global scope.** Functions and variables declared outside any `@test` block
 are compiled into the same top-level bytecode as the `@test` blocks. They share
