@@ -220,7 +220,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
-| [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
+| [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | ✓ |
 | [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | |
 | [BUG-55](#BUG-55) | BUG | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
 | [BUG-56](#BUG-56) | BUG | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
@@ -500,7 +500,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
-| [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
+| [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | ✓ |
 | [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | |
 | [BUG-55](#BUG-55) | MEDIUM | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
 | [BUG-56](#BUG-56) | MEDIUM | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | |
@@ -5023,7 +5023,7 @@ regression cases in `internal/runtime/fmt/fmt_test.go` and `tests/io/sscanf.ego`
 
 ### BUG-53 — `math.Primes` with a negative argument crashes instead of returning an empty result
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `math.Primes(0)` gracefully returns an empty list, but `math.Primes` with a negative
@@ -5054,6 +5054,34 @@ validation error naming `Primes`, not `make`.
 **Notes:**  
 Root cause: `lib/packages/math/primes.ego:6` — `t := make([]bool, size+1)` performs no
 validation that `size >= 0` before passing a negative length straight into `make()`.
+
+**Fix:**  
+`lib/packages/math/primes.ego` now validates its argument before doing any work:
+`math.Primes` documents that it "accepts a positive integer value" (see
+`lib/help_en.txt`), so any `size < 1` — this includes `0`, which previously returned a
+silent empty result rather than erroring — now raises a catchable, argument-specific
+error instead of falling through to `make()`'s confusing internal failure:
+
+```go
+import "errors"
+
+func Primes(size int) []int {
+    @extensions true
+
+    if size < 1 {
+        throw errors.New("func.arg").Context(size)
+    }
+    ...
+```
+
+`throw` is a language extension gated on `c.flags.extensionsEnabled` at compile time, so
+`Primes` sets `@extensions true` for its own function body — this makes `throw` compile
+and work correctly even when the caller's process has `ego.compiler.extensions` set to
+`false` (verified with `ego --set ego.compiler.extensions=false run ...`). The thrown
+error is caught the same way as any other runtime error: uncaught, it aborts the program
+with `Error: at Primes(line N), invalid function argument: -5`; wrapped in `try/catch`,
+`e.Is(errors.New("func.arg"))` matches. Regression tests added to
+`tests/math/aggregate.ego`.
 
 ---
 

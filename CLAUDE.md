@@ -675,6 +675,19 @@ ego test tests/math/trig.ego  # single file
 
 A single file may contain multiple `@test` blocks. Variables declared outside a `{}` block are shared across blocks in the same file — use unique names to avoid collisions.
 
+### Auto-imported packages — do not add explicit imports in `tests/*.ego`
+
+`ego test` (`internal/commands/test.go`) always calls `comp.AutoImport(true, symbolTable)` — the "import all" variant — for every test compilation, regardless of the `ego.compiler.import` setting (which defaults to `false` and only affects `ego run`). This means `.ego` files under `tests/` can reference the following packages with **no `import` statement**:
+
+```text
+base64, cipher, errors, exec, filepath, fmt, io, json, math, os,
+profile, reflect, rest, sort, sql, strconv, strings, tables, time, util, uuid
+```
+
+For example, `tests/errors/throw.ego` and `tests/math/aggregate.ego` call `errors.New(...)` with no `import "errors"` — this is not an oversight, the package is already in scope. Don't add an import for anything in this list when writing a new test file; it's just noise.
+
+This does **not** apply to library source under `lib/packages/*.ego` (e.g. `lib/packages/math/primes.ego`, `lib/packages/http/http.ego`). Those are compiled via the normal import path and must explicitly `import` any package they use, except the small `requiredPackages` set (`os`, `cipher`, `profile`) which are always injected everywhere. It also doesn't apply to `ego run` on a plain script, which respects `ego.compiler.import` (default `false`) unless overridden with `--import` or the equivalent config setting.
+
 ### Directives
 
 | Directive | Behavior |

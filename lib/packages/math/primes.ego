@@ -1,7 +1,14 @@
 package math
 
+import "errors"
+
 /* Classic prime number search using sieve method */
 func Primes(size int) []int {
+	@extensions true
+
+	if size < 1 {
+		throw errors.New("func.arg").Context(size)
+	}
 
 	t := make([]bool, size+1)
 	r := make([]int, 0)

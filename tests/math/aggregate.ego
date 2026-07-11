@@ -123,4 +123,29 @@
     for i := 1; i < len(p2); i++ {
         @assert p2[i] > p2[i-1]
     }
+
+    // BUG-53: Primes with an argument less than 1 (including 0 and negative
+    // values) must throw a catchable "invalid function argument" error naming
+    // the offending value, instead of crashing inside make().
+    caught := false
+
+    try {
+        math.Primes(0)
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("func.arg"))
+    }
+
+    @assert caught
+
+    caught = false
+
+    try {
+        math.Primes(-5)
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("func.arg"))
+    }
+
+    @assert caught
 }
