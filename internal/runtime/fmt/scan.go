@@ -59,13 +59,10 @@ func stringScan(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	// Do the scan, returning an array of values
+	// Do the scan, returning an array of values. Even if the scan stopped
+	// early due to an error, keep whatever values were successfully parsed
+	// before the failure, matching Go's partial-scan semantics.
 	items, err := scanner(dataString, formatString.String())
-	if err != nil {
-		err = errors.New(err).In("Scan")
-
-		return data.NewList(0, err), err
-	}
 
 	// Stride over the return value pointers, assigning as many
 	// items as we got.
@@ -77,7 +74,11 @@ func stringScan(s *symbols.SymbolTable, args data.List) (any, error) {
 		*p = items[idx]
 	}
 
-	return data.NewList(len(items), nil), nil
+	if err != nil {
+		err = errors.New(err).In("Scan")
+	}
+
+	return data.NewList(len(items), err), err
 }
 
 // stringScanFormat implements the fmt.Sscanf() function. It accepts a source
@@ -104,11 +105,10 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	// Do the scan, returning an array of values
+	// Do the scan, returning an array of values. Even if the scan stopped
+	// early due to an error, keep whatever values were successfully parsed
+	// before the failure, matching Go's partial-scan semantics.
 	items, err := scanner(dataString, formatString)
-	if err != nil {
-		return data.NewList(0, err), errors.New(err).In("Sscanf")
-	}
 
 	// Stride over the return value pointers, assigning as many
 	// items as we got.
@@ -120,7 +120,7 @@ func stringScanFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 		*p = items[idx]
 	}
 
-	return data.NewList(len(items), nil), nil
+	return data.NewList(len(items), err), err
 }
 
 // scanner is the core parsing engine shared by stringScan and stringScanFormat.
@@ -170,9 +170,12 @@ func scanner(data, format string) ([]any, error) {
 				return result, errors.New(errors.ErrInvalidFormatVerb)
 			}
 
-			// Skip any leading blanks. If we hit the end of the data, we're done.
+			// Skip any leading blanks. If we hit the end of the data before
+			// satisfying this verb, the scan is incomplete.
 			if dataPos = skipSpaces(data, dataPos); dataPos >= len(data) {
-				break
+				err = errors.New(errors.ErrScanEOF)
+
+				return result, err
 			}
 
 			// Consume any digits for the width specifier
@@ -226,14 +229,19 @@ func scanner(data, format string) ([]any, error) {
 				}
 
 				if strData == "" || strData == "-" {
-					err = errors.New(errors.ErrInvalidValue)
+					err = errors.New(errors.ErrScanExpectedInteger)
 
-					break
+					return result, err
 				}
 
-				n, err := nativeFormat.Sscanf(strData, fmtString, &value)
-				if err != nil || n != 1 {
-					break
+				var n int
+
+				if n, err = nativeFormat.Sscanf(strData, fmtString, &value); err != nil || n != 1 {
+					if err == nil {
+						err = errors.New(errors.ErrScanExpectedInteger)
+					}
+
+					return result, err
 				}
 
 				result = append(result, value)
@@ -283,7 +291,7 @@ func scanner(data, format string) ([]any, error) {
 
 					value, err = strconv.ParseFloat(strData, 64)
 					if err != nil {
-						break
+						return result, err
 					}
 				} else {
 					// Allow a leading minus sign for negative floats.
@@ -301,12 +309,12 @@ func scanner(data, format string) ([]any, error) {
 					if strData == "" || strData == "-" {
 						err = errors.New(errors.ErrInvalidValue)
 
-						break
+						return result, err
 					}
 
 					value, err = strconv.ParseFloat(strData, 64)
 					if err != nil {
-						break
+						return result, err
 					}
 				}
 
@@ -361,6 +369,12 @@ func scanner(data, format string) ([]any, error) {
 			}
 
 			if count == 0 {
+				if dataPos >= len(data) {
+					err = errors.New(errors.ErrScanEOF)
+				} else {
+					err = errors.New(errors.ErrScanMismatch)
+				}
+
 				break
 			}
 		}

@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
 )
 
 func Test_scanner(t *testing.T) {
@@ -49,7 +51,7 @@ func Test_scanner(t *testing.T) {
 			data:   "thirty",
 			format: "%d",
 			want:   []any{},
-			err:    errors.ErrInvalidValue,
+			err:    errors.ErrScanExpectedInteger,
 		},
 		{
 			name:   "Negative integer",
@@ -63,7 +65,7 @@ func Test_scanner(t *testing.T) {
 			data:   "- 5",
 			format: "%d",
 			want:   []any{},
-			err:    errors.ErrInvalidValue,
+			err:    errors.ErrScanExpectedInteger,
 		},
 
 		// --- hexadecimal verb ---
@@ -125,7 +127,7 @@ func Test_scanner(t *testing.T) {
 			data:   "89",
 			format: "%o",
 			want:   []any{},
-			err:    errors.ErrInvalidValue,
+			err:    errors.ErrScanExpectedInteger,
 		},
 
 		// --- float verb ---
@@ -262,11 +264,11 @@ func Test_scanner(t *testing.T) {
 			err:    nil,
 		},
 		{
-			name:   "Const mismatch stops scan without error",
+			name:   "Const mismatch stops scan with a mismatch error",
 			data:   "Hello Tom",
 			format: "Name %s",
 			want:   []any{},
-			err:    nil,
+			err:    errors.ErrScanMismatch,
 		},
 
 		// --- invalid format verbs ---
@@ -285,20 +287,54 @@ func Test_scanner(t *testing.T) {
 			err:    errors.ErrInvalidFormatVerb,
 		},
 
-		// --- data exhausted before format ends ---
+		// --- data exhausted before format ends (BUG-52) ---
 		{
 			name:   "Data exhausted before second verb",
 			data:   "42",
 			format: "%d %d",
 			want:   []any{42},
-			err:    nil,
+			err:    errors.ErrScanEOF,
 		},
 		{
 			name:   "Empty data with integer format",
 			data:   "",
 			format: "%d",
 			want:   []any{},
-			err:    nil,
+			err:    errors.ErrScanEOF,
+		},
+		{
+			// BUG-52 primary reproducer: fmt.Sscanf("5", "%d %d", &c, &d)
+			// must report a non-nil error (real Go: io.EOF) instead of
+			// silently returning nil.
+			name:   "BUG-52: second verb runs out of data entirely",
+			data:   "5",
+			format: "%d %d",
+			want:   []any{5},
+			err:    errors.ErrScanEOF,
+		},
+		{
+			// BUG-52 secondary reproducer: fmt.Sscanf("wrong 35", "age %d", &a)
+			// must report a non-nil error (real Go: "input does not match
+			// format") instead of silently returning nil.
+			name:   "BUG-52: literal text mismatch",
+			data:   "wrong 35",
+			format: "age %d",
+			want:   []any{},
+			err:    errors.ErrScanMismatch,
+		},
+		{
+			name:   "BUG-52: data runs out mid-literal is treated as EOF",
+			data:   "wro",
+			format: "wrong %d",
+			want:   []any{},
+			err:    errors.ErrScanEOF,
+		},
+		{
+			name:   "BUG-52: genuine integer parse error propagates",
+			data:   "5 abc",
+			format: "%d %d",
+			want:   []any{5},
+			err:    errors.ErrScanExpectedInteger,
 		},
 	}
 
@@ -314,4 +350,69 @@ func Test_scanner(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Test_stringScanFormat_BUG52 exercises fmt.Sscanf's wrapper (stringScanFormat)
+// end-to-end with the two BUG-52 reproducers, verifying that the returned
+// count and error match Go's partial-scan semantics: values scanned before
+// the failure are still assigned to their pointers, and the error return is
+// non-nil rather than silently swallowed.
+func Test_stringScanFormat_BUG52(t *testing.T) {
+	st := symbols.NewSymbolTable("test")
+
+	t.Run("second verb runs out of data entirely", func(t *testing.T) {
+		var c, d any = 0, 0
+
+		result, err := stringScanFormat(st, data.NewList("5", "%d %d", &c, &d))
+		if err == nil {
+			t.Fatal("expected a non-nil error")
+		}
+
+		list, ok := result.(data.List)
+		if !ok {
+			t.Fatalf("expected result to be a data.List, got %T", result)
+		}
+
+		if n, _ := list.GetInt(0); n != 1 {
+			t.Errorf("expected count 1, got %v", list.Get(0))
+		}
+
+		if !errors.Equals(err, errors.ErrScanEOF) {
+			t.Errorf("expected ErrScanEOF, got %v", err)
+		}
+
+		if c != 5 {
+			t.Errorf("expected c == 5, got %v", c)
+		}
+
+		if d != 0 {
+			t.Errorf("expected d to be left untouched at 0, got %v", d)
+		}
+	})
+
+	t.Run("literal text mismatch", func(t *testing.T) {
+		var a any = 0
+
+		result, err := stringScanFormat(st, data.NewList("wrong 35", "age %d", &a))
+		if err == nil {
+			t.Fatal("expected a non-nil error")
+		}
+
+		list, ok := result.(data.List)
+		if !ok {
+			t.Fatalf("expected result to be a data.List, got %T", result)
+		}
+
+		if n, _ := list.GetInt(0); n != 0 {
+			t.Errorf("expected count 0, got %v", list.Get(0))
+		}
+
+		if !errors.Equals(err, errors.ErrScanMismatch) {
+			t.Errorf("expected ErrScanMismatch, got %v", err)
+		}
+
+		if a != 0 {
+			t.Errorf("expected a to be left untouched at 0, got %v", a)
+		}
+	})
 }

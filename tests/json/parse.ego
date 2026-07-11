@@ -66,9 +66,9 @@ parseMixedObj    := `{"title": "Report", "values": [10, 20, 30], "meta": {"count
 
 @test "json: Parse - dot on null"
 {
-    // jaxon formats Go nil (JSON null) as "<nil>" via fmt.Sprintf("%v", nil).
+    // jaxon formats Go nil (JSON null) as "null" via fmt.Sprintf("%v", nil).
     a := json.Parse("null", ".")
-    @assert a == "<nil>"
+    @assert a == "null"
 }
 
 @test "json: Parse - object simple field"

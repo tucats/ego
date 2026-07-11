@@ -219,7 +219,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
-| [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
+| [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
 | [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
 | [BUG-54](#BUG-54) | BUG | `@compile ... unused=false` does not suppress "unused variable" errors. | |
 | [BUG-55](#BUG-55) | BUG | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
@@ -499,7 +499,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
 | [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
-| [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
+| [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | ✓ |
 | [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
 | [BUG-54](#BUG-54) | MEDIUM | `@compile ... unused=false` does not suppress "unused variable" errors. | |
 | [BUG-55](#BUG-55) | MEDIUM | `reflect.Reflect(v).Members()`/`.Functions()` crash when called with parentheses as documented. | |
@@ -4946,7 +4946,7 @@ documented `docs/LANGUAGE.md` worked example and for synthetic-semicolon strippi
 
 ### BUG-52 — `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 Real Go's `fmt.Sscanf` returns a non-nil error (e.g. `io.EOF`, or a "does not match format"
@@ -4986,6 +4986,36 @@ out of the loop without ever setting the shared `err` variable declared earlier 
 function (~line 145). Additionally, the integer-parsing case (`'d'`, `'x'`, `'b'`, `'o'`)
 shadows the outer `err` via `n, err := nativeFormat.Sscanf(...)` (`:=` at ~line 234), so even
 a genuine parse error in that branch never propagates to the function's return value either.
+
+**Fix:**  
+`internal/runtime/fmt/scan.go`'s `scanner()` now sets and returns a non-nil error at every
+point where it stops scanning early:
+
+- Running out of data before a verb can be satisfied (either at a `%verb` boundary or
+  mid-way through matching literal text) now returns the new `errors.ErrScanEOF` ("EOF"),
+  matching real Go's `io.EOF`.
+- A literal-text mismatch (data present but does not match the format string) now returns
+  the new `errors.ErrScanMismatch` ("input does not match format").
+- An empty/invalid digit string for the `%d`/`%x`/`%b`/`%o` verbs, and a genuine parse
+  failure from the previously-shadowed `nativeFormat.Sscanf(...)` call (fixed to assign
+  through the outer `err` with `=` instead of shadowing it with `:=`), now return the new
+  `errors.ErrScanExpectedInteger` ("expected integer").
+
+Every error branch in `scanner()` was also changed from a bare `break` (which only exited
+the enclosing `switch`, letting the outer format-string loop silently continue) to an
+immediate `return result, err`, so a failure stops the scan rather than masking the error
+on a later, unrelated success.
+
+`stringScan` (`fmt.Scan`) and `stringScanFormat` (`fmt.Sscanf`) no longer discard partial
+results when `scanner()` returns an error: values successfully parsed before the failure
+are still assigned to their pointer arguments, and the returned count reflects how many
+values were actually scanned — matching Go's partial-scan behavior (e.g. the reproducer
+above now returns `1 EOF 5 0`, not `0 EOF 5 0`).
+
+New i18n keys `scan.eof`, `scan.expected.integer`, and `scan.mismatch` were added to
+`internal/errors/messages.go` and all three language files. Verified against both
+documented reproducers (byte-for-byte match with real Go's error text) plus additional
+regression cases in `internal/runtime/fmt/fmt_test.go` and `tests/io/sscanf.ego`.
 
 ---
 

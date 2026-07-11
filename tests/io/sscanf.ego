@@ -1,9 +1,12 @@
+import "errors"
+
 @test "io: Sscanf"
 {
     x := 0
     n, e := fmt.Sscanf("name 35", "age %d", &x)
     @assert T.Equal(n, 0)
     @assert T.Equal(x, 0)
+    @assert e.Is(errors.New("scan.mismatch"))
 
     n, e = fmt.Sscanf("age 35", "age %d", &x)
     @assert T.Equal(n, 1)
@@ -27,8 +30,30 @@
     n, e := fmt.Sscanf("thirty", "%d", &x)
     @assert T.Equal(n, 0)
     @assert T.True(e != nil )
+    @assert e.Is(errors.New("scan.expected.integer"))
     @assert T.Equal(x, 5)
-    
+
+    // BUG-52 regression: running out of data before the second verb must
+    // report a non-nil error (real Go returns io.EOF here), while still
+    // keeping the value(s) that were successfully scanned before the
+    // shortfall.
+    y, z := 0, 0
+    n, e = fmt.Sscanf("5", "%d %d", &y, &z)
+    @assert T.Equal(n, 1)
+    @assert T.Equal(y, 5)
+    @assert T.Equal(z, 0)
+    @assert e.Is(errors.New("scan.eof"))
+
+    // BUG-52 regression: a genuine parse error partway through a scan
+    // (second verb fails, first succeeded) must also report a non-nil
+    // error while preserving the earlier successful assignment.
+    y, z = 0, 0
+    n, e = fmt.Sscanf("5 abc", "%d %d", &y, &z)
+    @assert T.Equal(n, 1)
+    @assert T.Equal(y, 5)
+    @assert T.Equal(z, 0)
+    @assert e.Is(errors.New("scan.expected.integer"))
+
 	var (
 		s string
         i int
