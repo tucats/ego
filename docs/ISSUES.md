@@ -217,7 +217,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-47](#BUG-47) | BUG | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | BUG | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | BUG | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
-| [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
+| [BUG-50](#BUG-50) | BUG | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | BUG | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | BUG | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
 | [BUG-53](#BUG-53) | BUG | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
@@ -497,7 +497,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-47](#BUG-47) | MEDIUM | Negative shift amounts silently flip the shift operator's direction instead of erroring. | ✓ |
 | [BUG-48](#BUG-48) | MEDIUM | `fmt.Printf`/`Sprintf` do not collapse `%%` when the call has no substitution arguments. | ✓ |
 | [BUG-49](#BUG-49) | MEDIUM | `base64.Decode` is declared with only a single return value despite its documented `(string, error)` signature. | ✓ |
-| [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | |
+| [BUG-50](#BUG-50) | MEDIUM | `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged. | ✓ |
 | [BUG-51](#BUG-51) | MEDIUM | `strings.Tokenize` does not merge compound tokens (`{}`, `<-`) into single tokens as documented. | ✓ |
 | [BUG-52](#BUG-52) | MEDIUM | `fmt.Sscanf` silently returns a `nil` error on literal-text mismatch or insufficient input. | |
 | [BUG-53](#BUG-53) | MEDIUM | `math.Primes` with a negative argument crashes instead of returning an empty result. | |
@@ -4827,7 +4827,7 @@ package).
 
 ### BUG-50 — `strings.Substitution` leaks an internal error string instead of leaving unmatched markers unchanged
 
-**Severity:** MEDIUM
+**Severity:** MEDIUM  **Status:** Fixed
 
 **Description:**  
 `docs/LANGUAGE.md` documents that "any marker whose key is not found in `values` is left
@@ -4867,6 +4867,14 @@ Reproduces identically with a `map[string]interface{}` value. Root cause:
 `github.com/tucats/subs` package's `Substitution()`, whose "key not found" error
 (`jaxon.json.element.not.found`) is substituted verbatim into the output text instead of
 leaving the `{{marker}}` untouched.
+
+**Fix:**  
+Fixed upstream in `github.com/tucats/subs` (bumped to v1.0.0); `Substitution()` now leaves
+an unmatched `{{marker}}` unchanged in the output instead of embedding its internal
+"key not found" error text. `internal/runtime/strings/substrings.go`'s `substitution()` was
+updated to match the new two-return-value signature (`text, err := subs.Substitution(...)`).
+Verified both the struct and `map[string]interface{}` reproducers now produce
+`Hello, Tom {{Missing}}!`.
 
 ---
 
