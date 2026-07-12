@@ -5910,8 +5910,30 @@ variable `e`. This could contain an error if `bbo` is not a known symbol,
 for example. If `bob` does exist, then the compilation may not have an error,
 and the code will run as if it was compiled inline.
 
-The keyword `block` is one of the options that can be set on the compilation
-unit, that do not affect the rest of the program's compilation.
+If you omit the `catch` statement, if the compilation generated an error,
+that error is signalled instead.
+
+```go
+@compile blocok {
+    pring "Hello"
+}
+```
+
+When executed, this will generate an error indicating that `pring` is not
+a valid verb. The catch block is required to prevent this from stopping
+the program. You can generate an empty catch block if your intent is to test
+invalid Ego code without stopping teh program.
+
+```go
+@compile blocok {
+    pring "Hello"
+} catch {}
+```
+
+This use of `@compile` will silently fail and exexcution continues. In all
+the above examples, the keyword `block` is one of the options that can be
+set on the compilation unit, that do not affect the rest of the program's
+compilation.
 
 | Keyword | Values | Description |
 | ------- | ------ | ----------- |

@@ -883,6 +883,7 @@ func (c *Compiler) isUnnamedParameterList() bool {
 		switch {
 		case tok.Is(tokenizer.StartOfListToken), tok.Is(tokenizer.StartOfArrayToken), tok.Is(tokenizer.BlockBeginToken):
 			depth++
+
 			continue
 
 		case tok.Is(tokenizer.EndOfListToken):
@@ -895,10 +896,12 @@ func (c *Compiler) isUnnamedParameterList() bool {
 			}
 
 			depth--
+
 			continue
 
 		case tok.Is(tokenizer.EndOfArrayToken), tok.Is(tokenizer.BlockEndToken):
 			depth--
+			
 			continue
 		}
 

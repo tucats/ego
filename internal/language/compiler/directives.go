@@ -1088,13 +1088,13 @@ func (c *Compiler) compileBlockDirective() error {
 	c.b.Emit(bytecode.Push, tryMarker)
 
 	// Compile the block of code.
-	bc, err := subCompiler.Compile("@compile", tokens)
-	if err == nil {
-		err = subCompiler.Errors()
+	bc, compileError := subCompiler.Compile("@compile", tokens)
+	if compileError == nil {
+		compileError = subCompiler.Errors()
 	}
 
-	if err != nil {
-		c.b.Emit(bytecode.Push, err)
+	if compileError != nil {
+		c.b.Emit(bytecode.Push, compileError)
 		c.b.Emit(bytecode.Signal, nil)
 	} else {
 		// If the compilation succeeded, add the compiled code to the
@@ -1169,6 +1169,14 @@ func (c *Compiler) compileBlockDirective() error {
 	if !c.t.IsNext(tokenizer.CatchToken) {
 		_ = c.b.SetAddressHere(b1)
 		c.b.Emit(bytecode.TryPop)
+
+		// If there was a compile-time error, but no catch block was given, the
+		// throw from there will be lost in the empty catch block. So now lets
+		// raise the flag of the compile error here, so it gets seen by the user.
+		if compileError != nil {
+			c.b.Emit(bytecode.Push, compileError)
+			c.b.Emit(bytecode.Signal, nil)
+		}
 
 		return nil
 	}
