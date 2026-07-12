@@ -114,6 +114,7 @@ execStmt       ::= assertStmt           (* extension *)
                  | printStmt            (* extension *)
                  | returnStmt
                  | switchStmt
+                 | throwStmt            (* extension *)
                  | tryStmt              (* extension *)
 ```
 
@@ -601,6 +602,21 @@ exitStmt       ::= "exit" [ expression ]
 Available in interactive/REPL mode only. Terminates the process with the given
 integer status code (default 0).
 
+### 11.7 throw
+
+```ebnf
+throwStmt      ::= "throw" expression
+```
+
+The expression must evaluate to an `error` value. If it is non-nil, it is
+raised as a catchable runtime error — exactly as if a genuine runtime error
+(such as division by zero) had occurred — so it can be caught by an
+enclosing `try`/`catch`. If the expression evaluates to `nil` (or an Ego
+zero-value error), nothing happens and execution continues with the next
+statement. This lets `throw err` stand in for Go's `if err != nil { return
+err }` idiom, collapsed into a single statement, when the intent is purely
+to propagate an error condition.
+
 ---
 
 ## 12. Directives
@@ -617,6 +633,8 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | --------- | --------- | ------- |
 | `@assert` | `expression` | Assertion in test mode |
 | `@authenticated` | `user` \| `admin` \| `any` | Require authentication (server mode) |
+| `@capture` | `IDENT ( ":=" \| "=" ) block` | Capture a block's console output into a variable — see [12.1](#121-capture) |
+| `@compile` | `{ flag } ( block \| eof-delimited code ) [ catch ]` | Compile a block or program fragment in an isolated sub-compiler — see [12.2](#122-compile) |
 | `@debug` | — | Enable debug logging |
 | `@define` | `IDENT { "," IDENT }` | Pre-declare global variables |
 | `@endpoint` | `STRING` | Declare service endpoint path |
@@ -643,6 +661,76 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | `@type` | `strict` \| `relaxed` \| `dynamic` | Set type-checking mode |
 | `@validation` | `dump` | Dump validation information |
 | `@wait` | — | Block until all goroutines have finished |
+
+### 12.1 @capture
+
+```ebnf
+captureDirective ::= "@" "capture" IDENTIFIER ( ":=" | "=" ) block
+```
+
+Runs `block` and collects everything its statements would otherwise have
+printed to the console (via `fmt.Println`, `fmt.Printf`, the `print`
+extension statement, etc.) into a single string, instead of letting it reach
+the console. On success, the collected string is stored into `IDENTIFIER`:
+`":="` declares a new variable (an error if it already exists in the current
+scope, exactly as ordinary `:=` requires); `"="` assigns to an existing
+variable and is checked for existence at compile time. `IDENTIFIER` may be
+`_`, in which case the captured text is discarded on success rather than
+stored anywhere — this is a shorthand for tests that only wrap a block to
+keep its output out of the console/log, with nothing to inspect afterward.
+
+If `block` raises a runtime error, capturing stops, the text collected up
+to that point is printed to the console (headed `@capture output:`, or
+`@capture _:` when the variable is `_`) so it isn't silently lost, and the
+same error is re-raised (as if by [`throw`](#117-throw)) so it continues
+propagating to any enclosing `try`/`catch`.
+
+### 12.2 @compile
+
+```ebnf
+compileDirective ::= "@" "compile" { compileFlag } compileBody [ catchClause ]
+
+compileFlag      ::= "block"
+                    | "bytecode" | "disasm"
+                    | "unused" "=" boolLiteral
+                    | "unknown" "=" boolLiteral
+                    | "optimize" "=" optimizeLevel
+                    | "eof" "=" STRING
+
+boolLiteral      ::= "true" | "false" | "on" | "off" | "1" | "0"
+optimizeLevel    ::= "off" | "false" | "low" | "high" | INTEGER
+
+compileBody      ::= block
+                    | { token }
+
+catchClause      ::= "catch" [ "(" IDENTIFIER ")" ] block
+```
+
+Compiles `compileBody` in an isolated sub-compiler and, if compilation
+succeeds, splices the resulting bytecode inline; the directive acts like a
+`try`/`catch` wrapped around compilation itself, so `catchClause` (if
+present) runs on a compile error instead of the compile error aborting the
+whole program. This is used mainly to write unit tests for the compiler.
+
+`compileBody`'s form depends on whether the `eof=` flag was given: with no
+`eof=` flag, `compileBody` is the usual brace-delimited `block`. With
+`eof=` given, there are no braces at all — `compileBody` is every token
+that follows, up to (but not including) a run of tokens whose spellings,
+concatenated together, exactly match the marker string. This lets a test
+exercise code with intentionally mismatched braces, which brace-counting
+could never delimit correctly.
+
+The flags, which may appear in any combination and order before
+`compileBody`:
+
+| Flag | Values | Description |
+| ---- | ------ | ----------- |
+| `block` | _(bare)_ | The code is a statement block rather than a full program (no `package`/`func main` prolog required). |
+| `bytecode` (alias `disasm`) | _(bare)_ | Print a disassembly of the bytecode generated for this block once it compiles successfully. |
+| `unused` | `boolLiteral` | Override the "unused variable is a compile error" setting for this compilation only. |
+| `unknown` | `boolLiteral` | Override the "unknown symbol is a compile error" setting for this compilation only. |
+| `optimize` | `optimizeLevel` | Override the compiler optimization level for this compilation only. `off`/`false`/`0` disables it, `low`/`1` optimizes conditionally, `high`/`2` always optimizes. |
+| `eof` | `STRING` | Delimit `compileBody` with a text marker instead of `{ }` braces (see above). |
 
 ---
 
@@ -880,7 +968,19 @@ printStmt        ::= "print" [ expression { "," expression } [ "," ] ]
 callStmt         ::= "call" funcCallExpr
 assertStmt       ::= "assert" "(" expression [ "," expression ] ")"
 exitStmt         ::= "exit" [ expression ]
+throwStmt        ::= "throw" expression
 
 (* --- Directives --- *)
 directive        ::= "@" IDENTIFIER { directiveArg }
+captureDirective ::= "@" "capture" IDENTIFIER ( ":=" | "=" ) block
+compileDirective ::= "@" "compile" { compileFlag } compileBody [ catchClause ]
+compileFlag      ::= "block" | "bytecode" | "disasm"
+                   | "unused" "=" boolLiteral
+                   | "unknown" "=" boolLiteral
+                   | "optimize" "=" optimizeLevel
+                   | "eof" "=" STRING
+boolLiteral      ::= "true" | "false" | "on" | "off" | "1" | "0"
+optimizeLevel    ::= "off" | "false" | "low" | "high" | INTEGER
+compileBody      ::= block | { token }
+catchClause      ::= "catch" [ "(" IDENTIFIER ")" ] block
 ```
