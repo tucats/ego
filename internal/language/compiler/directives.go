@@ -772,7 +772,10 @@ func (c *Compiler) compileBlockDirective() error {
 		// can exercise both settings in isolation without having to save and
 		// restore the profile setting via the profile package. See
 		// checkTypeShadowing in symbols.go.
+		//
+		// We allow camel-case or non-camelcase versions.
 		typeShadowingFlag = "typeShadowing"
+		typeshadowingFlag = "typeshadowng"
 	)
 
 	var (
@@ -876,7 +879,7 @@ func (c *Compiler) compileBlockDirective() error {
 				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
 			}
 
-		case typeShadowingFlag:
+		case typeShadowingFlag, typeshadowingFlag:
 			c.t.Advance(1)
 
 			if !c.t.IsNext(tokenizer.AssignToken) {
