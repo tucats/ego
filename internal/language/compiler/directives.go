@@ -923,15 +923,22 @@ func (c *Compiler) compileBlockDirective() error {
 
 	// Load up the other values from the @compile directive flags, which may
 	// just hold the original unchanged values...
+	//
+	// NOTE: the optimizer override must be written to defs.OptimizerSetting
+	// ("ego.compiler.optimize"), which is the key bytecode.go's Seal() actually
+	// reads via settings.GetInt(). A previous version of this code wrote to
+	// defs.OptimizerOption ("optimize"), an unrelated CLI-grammar-option
+	// constant that nothing reads for this purpose, so the "optimize=N" flag
+	// silently had no effect on compilation (BUG-59).
 	settings.SetDefault(defs.UnusedVarsSetting, strconv.FormatBool(unusedVars))
 	settings.SetDefault(defs.UnknownVarSetting, strconv.FormatBool(unknownVars))
-	settings.SetDefault(defs.OptimizerOption, strconv.Itoa(optimize))
+	settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(optimize))
 
 	// Make sure we put everything back when we're done.
 	defer func() {
 		settings.SetDefault(defs.UnusedVarsSetting, strconv.FormatBool(savedUnusedVars))
 		settings.SetDefault(defs.UnknownVarSetting, strconv.FormatBool(savedUnknownVars))
-		settings.SetDefault(defs.OptimizerOption, strconv.Itoa(savedOptimize))
+		settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(savedOptimize))
 	}()
 
 	// If block mode was enabled in the @compile directive, the code in

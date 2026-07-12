@@ -226,7 +226,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-56](#BUG-56) | BUG | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | ✓ |
 | [BUG-57](#BUG-57) | BUG | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | ✓ |
 | [BUG-58](#BUG-58) | BUG | The `uint8()` cast function is not recognized despite being documented. | ✓ |
-| [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | |
+| [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | ✓ |
 | [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
@@ -509,7 +509,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-56](#BUG-56) | MEDIUM | `fmt.Println` of a `time.Duration`/`time.Time` prints the internal Go struct layout instead of the formatted string. | ✓ |
 | [BUG-57](#BUG-57) | MEDIUM | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | ✓ |
 | [BUG-58](#BUG-58) | LOW | The `uint8()` cast function is not recognized despite being documented. | ✓ |
-| [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | |
+| [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | ✓ |
 | [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
@@ -5611,6 +5611,19 @@ read by `bytecode.go:332`) to *capture* the saved value, but *writes* the overri
 `defs.OptimizerOption` (`"optimize"` — an unrelated CLI-grammar-option constant from
 `internal/defs/constants.go`, never read anywhere for this purpose). The override is dead
 code.
+
+**Fix:**  
+`compileBlockDirective` in `internal/language/compiler/directives.go` now writes the
+`optimize=N` override (and its restore-on-exit) to `defs.OptimizerSetting` instead of
+`defs.OptimizerOption`, so the value the sub-compiler's bytecode actually reads via
+`settings.GetInt(defs.OptimizerSetting)` in `bytecode.go:332` is the one the directive sets.
+Verified with `--log optimizer`: a block compiled with `optimize=2` now shows the optimizer
+finding and applying patches for that block specifically (e.g. "Found 4 optimizations for a
+net change of 6 instructions"), while a block compiled with `optimize=0` shows "Optimizations
+disabled by configuration setting" and no patches, and the setting is correctly restored to
+its prior value once the block finishes compiling. `defs.OptimizerOption` remains in use
+elsewhere (the `--optimize` CLI flag in `internal/grammar/traditional.go`), so it was not
+removed — only the directive's misuse of that constant was corrected.
 
 ---
 
