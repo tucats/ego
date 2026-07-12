@@ -699,12 +699,30 @@ This does **not** apply to library source under `lib/packages/*.ego` (e.g. `lib/
 | `@pass` | Records a pass if no errors have occurred |
 | `@optimizer on` | Enables the optimizer for subsequently compiled code |
 | `@optimizer off` | Disables the optimizer for subsequently compiled code |
+| `@compile [flags] { code } [catch [(e)] {...}]` | Compiles `code` in an isolated sub-compiler; see below |
+| `@capture var := { code }` | Runs `code` and captures its console output into `var`; see below |
 
 `ego test` always runs with the optimizer off (it incurs a startup cost that outweighs any benefit for single-use test programs). Use `@optimizer on` in a test file only when testing optimizer-specific behavior. The `@optimizer` state persists until changed again or until compilation ends.
 
 **`@assert` takes exactly one boolean expression — no second "message" argument.** The expression source text becomes the error message automatically.
 
 **`@test` name constraints:** The descriptive string must be no longer than 48 characters and must contain only ASCII characters — no em-dashes, smart quotes, or other Unicode. Use a plain hyphen or comma instead of an em-dash.
+
+### `@compile` — writing tests that exercise compile errors
+
+`@compile [flags] { code }` compiles `code` in an isolated sub-compiler and splices the result inline on success. Flags (any combination, any order, all optional): `block` (bare — `code` is a statement block, not a full program), `unused=true|false`, `unknown=true|false`, `optimize=off|false|low|high|0|1|2`, `bytecode`/`disasm` (bare — print a disassembly of `code`'s bytecode once it compiles, regardless of `--log bytecode`), `eof="marker"` (delimit `code` with a text marker instead of `{ }`, so a test can exercise intentionally mismatched braces).
+
+**As of July 2026, if `code` fails to compile and no `catch` clause is present, the compile error is signalled (raised) at runtime instead of being silently discarded.** If you are deliberately compiling broken code and don't care about the error, you must write an explicit empty catch block:
+
+```ego
+@compile block {
+    pring "Hello"     // typo — invalid verb
+} catch {}            // required to swallow the error silently
+```
+
+Without the empty `catch {}`, the above raises a catchable runtime error (which will fail the test unless wrapped in an outer `try`/`catch`, or crash `ego run`). To inspect the error instead of swallowing it, use `catch(e) { ... }` as usual — see the existing examples in `tests/directives/compile.ego`.
+
+**`ByteCode.Disasm(force bool, ranges ...int)`** is what the `bytecode`/`disasm` flag calls. By default (`force=false`) it only prints when the `ui.ByteCodeLogger` class is active (`--log bytecode`) — this is the fast path used everywhere else in the compiler and is called constantly, so it must stay cheap when the logger is off. `force=true` bypasses that check by using `ui.WriteLog` instead of `ui.Log`, **not** by toggling `ui.Active(ui.ByteCodeLogger, ...)` — that flag is process-global and shared by every goroutine, so flipping it would race with any other goroutine concurrently compiling or disassembling code. If you add another caller that wants unconditional output, pass `force=true`; do not reach for the toggle-the-global-flag pattern even though `internal/language/bytecode/optimizer.go`'s `Patch` function still does exactly that (pre-existing, not yet fixed — don't copy it).
 
 ### Common gotchas
 
@@ -720,11 +738,13 @@ This does **not** apply to library source under `lib/packages/*.ego` (e.g. `lib/
 
 3. **Package extensions live in `lib/packages/{pkg}/*.ego`**, not in `internal/runtime/`. For `math`, the extra constants and functions (`Pi`, `E`, `Phi`, `Sqrt2`, `SqrtE`, `SqrtPi`, `Ln2`, `Ln10`, `Log2E`, `Log10E`, `MaxInt`, `MinInt`, fixed-width int bounds, float bounds, `Factor`, `Primes`) are defined in `lib/packages/math/`.
 
-4. **`var f func() int` is not valid Ego syntax.** To declare a variable of function type, initialize it with a placeholder literal:
+4. **`var f func() int` is valid Ego syntax** (fixed BUG-70, July 2026) — both the parameterless form and a parameterized one, in either Go's named (`func(a, b int) int`) or type-only unnamed (`func(int, int) int`) spelling, all now work as a `var` declaration's type, a struct/interface field type, or a type-assertion target (`x.(func(int, int) int)`):
 
    ```ego
-   f := func() int { return 0 }   // correct
-   var f func() int                // ERROR: invalid type specification
+   var f func(int, int) int
+   f = func(a, b int) int { return a + b }   // correct, and has always been
+
+   g := func() int { return 0 }               // also still fine
    ```
 
 5. **Type aliases create distinct types in strict mode.** In strict mode, `type FuncType func() int` and `func() int` are not interchangeable. Appending a `func() int` literal to a `[]FuncType` slice fails with `"wrong array value type"`. Either avoid the alias or cast explicitly. Tests that must pass in both modes should avoid typed-slice patterns for function types.
@@ -815,6 +835,37 @@ Ego's type cast syntax `T(value)` calls `builtins.Cast`, which routes to `data.C
 - **Float-to-integer truncation** is toward zero (Go semantics): `int(-3.9) == -3`, not `-4`.
 - **`[]int("ABC")`** → `[]int{65, 66, 67}` (string to rune array). **`string([]int{65,66,67})`** → `"ABC"` (round-trips).
 - **`[]byte("ABC")`** → byte slice of UTF-8 bytes. **`string([]byte{...})`** → string.
+
+---
+
+## Type Assertions and Function Type Specs (`internal/language/compiler/unwrap.go`, `type.go`, `typeCompiler.go`)
+
+Fixed BUG-60/BUG-70/BUG-71 (July 2026); these notes cover the resulting architecture and its remaining known gap, so future work here doesn't have to re-derive them.
+
+### `x.(T)` — two different operand shapes on the `UnWrap` bytecode
+
+`compileUnwrap` tries two forms for the assertion target, in order:
+
+1. **A single IDENTIFIER token** immediately followed by `)` — covers a plain type name (user-defined type, primitive like `int`, `any`, or the `type` keyword used by `switch v := x.(type)`). The raw token is passed as the `UnWrap` operand; `unwrapByteCode` (`internal/language/bytecode/types.go`) resolves it **by name** at runtime, first against `data.TypeDeclarations`, then the symbol table.
+2. **Anything else** is retried via `c.parseType("", true)` — the same parser type-cast expressions (`T(value)`) use. This is what makes a compound target (pointer, slice, map, struct, `interface{}` literal, or function type like `func() int`) work as an assertion target. Since a compound type has no name to look up, the resolved `*data.Type` itself is passed as the `UnWrap` operand; `unwrapByteCode` checks for a `*data.Type` operand and uses it directly, bypassing the by-name lookup entirely.
+
+Do not collapse these into a single path — the by-name lookup is what lets a user-defined type registered only in the runtime symbol table (not `c.types` at compile time) resolve correctly, and changing it risks re-breaking that.
+
+**Known gap (BUG-71, not yet fixed):** the single-value form (`v := x.(T)`) only gets its bool-check-and-drop cleanup when it is the direct RHS of a `:=`/`=` assignment **statement** (wired up in `assignment.go` via `c.flags.hasUnwrap`). Used inline in a larger expression — `x.(int) + 1`, or calling the result immediately, `x.(func())()` — it leaves a stray boolean on the stack and corrupts whatever runs next. When writing or generating Ego code (tests, examples, docs), always assign a single-value assertion to a variable on its own line first; never chain it inline.
+
+### `data.TypeOf()` can't type-switch on `*bytecode.ByteCode` — duck-type instead
+
+`internal/language/data` cannot import `internal/language/bytecode` (bytecode already imports data — that would be a cycle). A compiled Ego function/closure value is a `*bytecode.ByteCode` at runtime, so `data.TypeOf()` used to fall through to its `default: return InterfaceType` case for every function value, misreporting it as `interface{}` (this also broke `reflect.TypeOf(f)`). Fixed by structurally detecting any value exposing `Declaration() *Declaration` — which `*bytecode.ByteCode` has — via `i.(interface{ Declaration() *Declaration })`, and building a `FunctionKind` type from it. If you ever need to recognize another `bytecode` package type from within `data`, use this same duck-typing pattern rather than trying to import `bytecode`.
+
+### `parseTypeSpec` (var declarations) vs. `parseType` (everything else)
+
+Two separate, non-shared type parsers exist. `parseType` (`typeCompiler.go`) is the general one — used by type casts, type assertions, struct/interface field types — and handles `func`, `struct`, `interface{...}`, `map`, arrays, pointers, primitives, and user types. `parseTypeSpec` (`type.go`) is a narrower parser used **only** by `var` declarations (`compileVar`), and historically only covered pointer/array/map/primitives/user-types — it had no `func` case at all until the BUG-70 fix added one that delegates to the same `ParseFunctionDeclaration` call `parseType` uses. **If a type form ever fails specifically in a `var` declaration while working fine in a cast or assertion, suspect `parseTypeSpec` is simply missing that case** — check it before assuming the bug is in the shared `parseType`/`ParseFunctionDeclaration` machinery. (`struct{...}` used directly as a `var`'s type is a known, separate, still-open gap: `var x struct { A int }` fails with an unrelated "unexpected token" parse error, not yet investigated.)
+
+### `parseParameterDeclaration`'s `defineSymbols` flag — don't let a type spec's parameter names get "unused variable" errors
+
+`parseParameterDeclaration(defineSymbols bool)` parses a function's parameter list and is reachable from two fundamentally different contexts: a **real function body** (`compileFunctionDefinition`, always passes `true` — a parameter the body never references should still be flagged unused) and a **bare type spec with no body at all** (every path through `ParseFunctionDeclaration`: struct/interface fields, type casts, type assertions, `parseTypeSpec`'s `func` case — all pass `false`). Passing `true` from a type-spec-only caller makes named parameters like `var f func(a, b int) int` falsely report `a`/`b` as unused, since nothing will ever reference them. When adding a new caller that parses a function type with no body, always pass `false`.
+
+Unnamed parameter lists (`func(int, int) int`, Go's type-only form) are detected by `isUnnamedParameterList`, a read-only `Peek`-only lookahead in `function.go` — it never mutates tokenizer state, so it's safe to call speculatively before choosing which real parser to run.
 
 ---
 
