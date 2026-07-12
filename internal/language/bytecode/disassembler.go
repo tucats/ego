@@ -13,7 +13,25 @@ import (
 var maxInstructionNameWidth = 0
 
 // Disasm prints out a representation of the bytecode for debugging purposes.
-func (b *ByteCode) Disasm(ranges ...int) {
+//
+// By default (force=false) this only produces output when the bytecode
+// logger (ui.ByteCodeLogger) is active process-wide, since formatting and
+// printing every instruction is expensive and this is called frequently
+// during normal compilation. Passing force=true bypasses that check and
+// always prints the disassembly, regardless of whether the logger is
+// active -- this is for callers such as the @compile directive's
+// "bytecode"/"disasm" option, which want output for one specific call site
+// without affecting anything else.
+//
+// force must NOT be implemented by temporarily toggling the logger's
+// active flag (e.g. ui.Active(ui.ByteCodeLogger, true) then restoring it)
+// around the call. That flag is process-global and shared by every
+// goroutine; flipping it here would race with, and could unexpectedly
+// enable or suppress bytecode logging for, any other goroutine compiling
+// or disassembling code concurrently. Instead, force selects ui.WriteLog
+// (which always emits) in place of ui.Log (which emits only when the class
+// is active), so the global flag itself is never touched.
+func (b *ByteCode) Disasm(force bool, ranges ...int) {
 	var (
 		usingRange bool
 		start      int
@@ -35,42 +53,56 @@ func (b *ByteCode) Disasm(ranges ...int) {
 		end = ranges[1]
 	}
 
-	// Do not do the following if the bytecode logger is not active. This saves
-	// a lot of time in the compiler.
-	if ui.IsActive(ui.ByteCodeLogger) {
-		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "bytecode.disasm", ui.A{
-				"name": b.name})
+	// Skip the (possibly expensive) formatting and iteration work entirely
+	// if we're not forced and the bytecode logger is not active. This
+	// preserves the original fast-path behavior for the normal, non-forced
+	// case, which is called frequently during compilation.
+	if !force && !ui.IsActive(ui.ByteCodeLogger) {
+		return
+	}
+
+	// log is the write function to use for every line below: WriteLog
+	// always emits regardless of the logger's active state (needed when
+	// force is true, since the logger may genuinely not be active), while
+	// Log emits only when the class is active (the original, non-forced
+	// behavior).
+	log := ui.Log
+	if force {
+		log = ui.WriteLog
+	}
+
+	if !usingRange {
+		log(ui.ByteCodeLogger, "bytecode.disasm", ui.A{
+			"name": b.name})
+	}
+
+	scopePad := 0
+
+	// Iterate over the instructions, printing them out.
+	for n := start; n < end; n++ {
+		i := b.instructions[n]
+		if i.Operation == PopScope && scopePad > 0 {
+			scopePad = scopePad - 1
 		}
 
-		scopePad := 0
+		op, operand := FormatInstruction(i)
 
-		// Iterate over the instructions, printing them out.
-		for n := start; n < end; n++ {
-			i := b.instructions[n]
-			if i.Operation == PopScope && scopePad > 0 {
-				scopePad = scopePad - 1
-			}
+		log(ui.ByteCodeLogger, "bytecode.instruction", ui.A{
+			"addr":    n,
+			"depth":   scopePad,
+			"op":      strings.TrimSpace(op),
+			"operand": operand})
 
-			op, operand := FormatInstruction(i)
-
-			ui.Log(ui.ByteCodeLogger, "bytecode.instruction", ui.A{
-				"addr":    n,
-				"depth":   scopePad,
-				"op":      strings.TrimSpace(op),
-				"operand": operand})
-
-			if i.Operation == PushScope {
-				scopePad = scopePad + 1
-			}
+		if i.Operation == PushScope {
+			scopePad = scopePad + 1
 		}
+	}
 
-		// If we were not given a range, add a summary line indicating how many
-		// instructions were disassembled.
-		if !usingRange {
-			ui.Log(ui.ByteCodeLogger, "bytecode.count", ui.A{
-				"count": end - start})
-		}
+	// If we were not given a range, add a summary line indicating how many
+	// instructions were disassembled.
+	if !usingRange {
+		log(ui.ByteCodeLogger, "bytecode.count", ui.A{
+			"count": end - start})
 	}
 }
 

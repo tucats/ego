@@ -161,7 +161,7 @@ func TestAction(c *cli.Context) error {
 
 				os.Stderr.Write([]byte(msg))
 			} else {
-				b.Disasm()
+				b.Disasm(false)
 
 				// Run the compiled code
 				ctx := bytecode.NewContext(symbolTable, b)

@@ -751,11 +751,20 @@ func (c *Compiler) compileBlockDirective() error {
 		unusedVarsFlag  = "unused"
 		unknownVarsFlag = "unknown"
 		optimizeFlag    = "optimize"
+		optFlag         = "opt"
 		eofFlag         = "eof"
 		trueFlag        = "true"
 		falseFlag       = "false"
 		onFlag          = "on"
 		offFlag         = "off"
+
+		// bytecodeFlag (and its alias disasmFlag) are bare keywords -- like
+		// "block" -- that request a disassembly listing of the bytecode
+		// generated for this @compile block, printed as a debugging aid once
+		// the block finishes compiling. There is no option value, matching
+		// the "block" keyword's own bare-flag style.
+		bytecodeFlag = "bytecode"
+		disasmFlag   = "disasm"
 	)
 
 	var (
@@ -767,6 +776,11 @@ func (c *Compiler) compileBlockDirective() error {
 		unknownVars = savedUnknownVars
 		optimize    = savedOptimize
 		blockMode   = false
+
+		// showBytecode is set to true when the "bytecode" (or "disasm")
+		// flag is present on the directive; see bytecodeFlag/disasmFlag
+		// above.
+		showBytecode = false
 
 		// eofMarker holds the value of an "eof=" option, e.g.
 		// @compile eof="$EOF". It stays empty ("") unless that option is
@@ -794,6 +808,15 @@ func (c *Compiler) compileBlockDirective() error {
 			// "block" means this is block of code and doesn't require
 			// a full program prolog and main function.
 			blockMode = true
+
+			c.t.Advance(1)
+
+		case bytecodeFlag, disasmFlag:
+			// "bytecode" (alias "disasm") requests a disassembly listing of
+			// the bytecode generated for this @compile block, printed once
+			// the block finishes compiling successfully. Like "block", this
+			// is a bare flag with no "=" value.
+			showBytecode = true
 
 			c.t.Advance(1)
 
@@ -835,7 +858,7 @@ func (c *Compiler) compileBlockDirective() error {
 				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
 			}
 
-		case optimizeFlag:
+		case optimizeFlag, optFlag:
 			c.t.Advance(1)
 
 			if !c.t.IsNext(tokenizer.AssignToken) {
@@ -850,7 +873,7 @@ func (c *Compiler) compileBlockDirective() error {
 			case "low":
 				optimize = 1
 
-			case "high":
+			case "high", "full", "all":
 				optimize = 2
 
 			default:
@@ -1077,6 +1100,19 @@ func (c *Compiler) compileBlockDirective() error {
 		// If the compilation succeeded, add the compiled code to the
 		// current bytecode stream.
 		c.b.Append(bc)
+
+		// If the "bytecode"/"disasm" flag was given, print a disassembly of
+		// the bytecode generated for this block as a debugging aid. This is
+		// independent of the "--log bytecode" command-line logger: the flag
+		// is a one-off, per-directive request, not a request to turn on
+		// bytecode logging for the rest of the program. The force=true
+		// argument tells Disasm to print unconditionally without touching
+		// the process-global ByteCodeLogger active flag, which would
+		// otherwise race with any other goroutine concurrently compiling or
+		// disassembling code.
+		if showBytecode {
+			bc.Disasm(true)
+		}
 
 		// For full-program mode (@compile without "block"), propagate the names
 		// declared at the top level of the sub-compilation into the OUTER

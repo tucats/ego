@@ -639,7 +639,7 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 	}
 
 	// Disassemble the bytecode if requested.
-	b.Disasm()
+	b.Disasm(false)
 
 	// Run the compiled code from a new context, configured with the symbol table,
 	// token stream, and scope/debug settings.

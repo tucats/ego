@@ -369,7 +369,7 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	}
 
 	// If we are disassembling, do it now for the imported definitions.
-	importCompiler.b.Disasm()
+	importCompiler.b.Disasm(false)
 
 	// If after the import we ended with mismatched block markers, complain
 	if importCompiler.blockDepth != 0 {

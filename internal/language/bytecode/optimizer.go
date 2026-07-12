@@ -710,7 +710,7 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	if ui.IsActive(ui.OptimizerLogger) {
 		ui.Active(ui.ByteCodeLogger, true)
 		ui.Log(ui.OptimizerLogger, "optimizer.existing.code", nil)
-		b.Disasm(start, start+deleteSize)
+		b.Disasm(false, start, start+deleteSize)
 	}
 
 	// Save the tail independently BEFORE any appending that might modify the
@@ -751,6 +751,6 @@ func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
 	if ui.IsActive(ui.OptimizerLogger) {
 		ui.Active(ui.ByteCodeLogger, true)
 		ui.Log(ui.OptimizerLogger, "optimizer.new.code", nil)
-		b.Disasm(start, start+len(insert))
+		b.Disasm(false, start, start+len(insert))
 	}
 }

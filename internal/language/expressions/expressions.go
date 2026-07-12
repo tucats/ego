@@ -94,7 +94,7 @@ func (e *Expression) Error() error {
 
 // Disasm calls the bytecode disassembler.
 func (e *Expression) Disasm() {
-	e.b.Disasm()
+	e.b.Disasm(false)
 }
 
 // GetBytecode returns the active bytecode for the expression.
