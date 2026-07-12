@@ -35,7 +35,10 @@ A test has a basic structure:
 
 Each test should be written so it can run alone, or be part of a test suite. Because it
 could run along with other tests, any variable declared outside the scope of each sub-test
-must be a unique name across all tests.
+must be a unique name across all tests. This also applies to `type` declarations made in
+that same outer position — but a `type` declared *inside* a test's own `{}` block (or a
+nested sub-block) is private to that block and can reuse the same name freely across
+different tests. See "Type scoping" under "Runtime / execution differences" below.
 
 ## The test command
 
@@ -247,6 +250,25 @@ code, since the next `@test` (or the implicit one before the first) overwrites i
 are compiled into the same top-level bytecode as the `@test` blocks. They share
 a single symbol table for the whole file — there is no isolation between tests
 unless values are declared inside `{}` blocks.
+
+**Type scoping.** A `type X ...` declaration follows the same scoping rule as a
+`var`: it is private to the `{}` block it's declared in, and disappears once
+that block ends — including the outermost `{}` that forms a `@test`'s own body.
+Since `ego test` compiles an entire file (every `@test` block in it) as a
+single compilation unit, this is what lets two unrelated `@test` blocks each
+declare their own `type box struct { ... }` — with completely different
+fields — without a "duplicate type name" error, and without having to invent
+artificial per-test names (`box1`, `box2`, `senderBox`, ...) just to keep them
+from colliding. The same applies to nested sub-blocks within a single test:
+each one gets its own type namespace, layered on top of its enclosing block's.
+
+This scoping only kicks in for a `{}` block. A `type` declared in the "common
+values" position between a `@test "name"` directive and its opening `{` (the
+same outer position `shared := 0` occupies in the closures example under
+[`tests/functions/closures.ego`](../tests/functions/closures.ego)) is not
+inside any block, so it behaves like a top-level `var` or `func`: it is
+visible for the rest of the file and must have a name that doesn't collide
+with any other top-level declaration in the same file.
 
 ### Practical implications for test authors
 
