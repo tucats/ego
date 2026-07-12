@@ -69,7 +69,7 @@
 
 @test "flow: struct field channel with a goroutine sender (BUG-73)"
 {
-	type senderBox struct {
+	type box struct {
 		ch chan
 	}
 
@@ -79,7 +79,7 @@
 		close(c)
 	}
 
-	b := senderBox{ch: make(chan, 2)}
+	b := box{ch: make(chan, 2)}
 	go producer(b.ch)
 
 	@assert <-b.ch == 1
@@ -88,45 +88,48 @@
 
 @test "flow: struct field channel through a pointer receiver (BUG-73)"
 {
-	type ptrBox struct {
+	type box struct {
 		ch chan
 	}
 
-	b := &ptrBox{ch: make(chan, 1)}
+	b := &box{ch: make(chan, 1)}
 	b.ch <- 42
 	@assert <-b.ch == 42
 }
 
 @test "flow: channel in a nested struct field (BUG-73)"
 {
-	// Note: the nested field is deliberately NOT named "box" -- that name
-	// collides with the unrelated "type box struct" declared earlier in
-	// this file and triggers a completely separate, pre-existing bug
-	// ("Duplicate field name ch" / "invalid field name for type: box")
-	// where a struct field name colliding with an unrelated type name
-	// elsewhere in the same compilation corrupts type registration. Not
+	// Note: the nested field is deliberately not named after either type
+	// declared here ("inner" or "box") -- a struct field named the same as
+	// ANY type name still live in the same scope triggers a separate,
+	// pre-existing bug ("Duplicate field name ch" / "invalid field name
+	// for type: X") where the collision corrupts type registration. Not
 	// investigated further here -- unrelated to BUG-73's channel/lvalue
-	// work; tracked as BUG-76 in docs/ISSUES.md.
+	// work; tracked as BUG-76 in docs/ISSUES.md. Unlike the box1/box2/box3-
+	// style renaming this file needed throughout for *type* names (fixed by
+	// scoping c.types to each block, docs/ISSUES.md BUG-77), this one is a
+	// same-scope field-vs-type collision that block-scoping does not help
+	// with, since both names are alive in the same block here.
 	type inner struct {
 		ch chan
 	}
 
-	type outer struct {
+	type box struct {
 		content inner
 	}
 
-	o := outer{content: inner{ch: make(chan, 1)}}
+	o := box{content: inner{ch: make(chan, 1)}}
 	o.content.ch <- 7
 	@assert <-o.content.ch == 7
 }
 
 @test "flow: multiple sends and receives through a struct field (BUG-73)"
 {
-	type multiBox struct {
+	type box struct {
 		ch chan
 	}
 
-	b := multiBox{ch: make(chan, 3)}
+	b := box{ch: make(chan, 3)}
 	b.ch <- 1
 	b.ch <- 2
 	b.ch <- 3
@@ -200,15 +203,15 @@
 
 @test "flow: pointer-receiver ordinary field assignment still works (BUG-73 regression)"
 {
-	type bumpPoint struct {
+	type point struct {
 		x int
 	}
 
-	func bump(p *bumpPoint) {
+	func bump(p *point) {
 		p.x = p.x + 1
 	}
 
-	p := &bumpPoint{x: 5}
+	p := &point{x: 5}
 	bump(p)
 	@assert p.x == 6
 }

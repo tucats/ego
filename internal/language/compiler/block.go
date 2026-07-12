@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -239,6 +240,10 @@ func (c *Compiler) emitPopScope() {
 // for every other block - only the runtime bytecode is conditional. Passing
 // false preserves the exact previous behavior (always scoped).
 //
+// A "type X ..." declaration inside the block is also scoped to it, exactly
+// like a variable declared with ":="/"var" -- see the c.types snapshot/
+// restore below, and BUG-77 in docs/ISSUES.md for the leak this fixes.
+//
 // Semicolons between statements are silently consumed. If the token stream ends
 // before a closing "}" is found, a compile error is returned.
 func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
@@ -248,6 +253,28 @@ func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
 	// Tell the symbol-usage tracker that we are entering a new scope so it
 	// can detect variables that are declared but never read.
 	c.PushSymbolScope()
+
+	// Snapshot the set of known type names so any "type X ..." declared in
+	// this block is discarded when the block ends, matching Go's own rule
+	// that a type declaration is scoped exactly like a variable declaration.
+	//
+	// Unlike c.scopes (pushed/popped per block above), c.types is a single,
+	// flat map for the entire compilation with no scoping of its own. Left
+	// unscoped, a type declared inside one block -- an "if" body, a
+	// function, or, most visibly, one "@test { ... }" block in an Ego test
+	// file (every @test in one file is compiled as a single unit, so all
+	// its blocks share one c.types) -- stayed permanently visible, and
+	// WORSE, collided if a later, unrelated block declared another type
+	// with the same name ("duplicate type name: X"), even when the two
+	// were otherwise completely unconnected -- forcing test authors to
+	// invent unique names (box1, box2, box3, ...) across unrelated @test
+	// blocks in the same file (BUG-77). This is a shallow copy: only the
+	// map's name->type associations are duplicated, not the *data.Type
+	// values themselves, which are treated as immutable once created.
+	savedTypes := make(map[string]*data.Type, len(c.types))
+	for name, t := range c.types {
+		savedTypes[name] = t
+	}
 
 	needsScope := true
 	if mayElideScope {
@@ -296,6 +323,11 @@ func (c *Compiler) compileBlock(runDefers bool, mayElideScope bool) error {
 	}
 
 	c.blockDepth--
+
+	// Discard any "type X ..." declared inside this block, restoring the
+	// set of type names known to the enclosing scope -- see the snapshot
+	// comment above.
+	c.types = savedTypes
 
 	// PopSymbolScope checks for any variables that were declared but never
 	// referenced, reporting them as errors when unused-variable checking is on.
