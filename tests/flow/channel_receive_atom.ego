@@ -1,0 +1,181 @@
+// Regression tests for BUG-62: a channel receive ("<-ch") only compiled as
+// the direct right-hand side of an assignment statement (v := <-ch, v, ok
+// := <-ch). Using it anywhere else -- a function-call argument, an operand
+// of an arithmetic operator, an array-literal element, and so on -- was a
+// compile error ("unexpected token: Special <-"), because the general
+// expression-atom parser (compileUnwrap's sibling, expressionAtom in
+// expr_atom.go) had no case for the "<-" token at all; only
+// assignment.go/lvalue.go, which are specific to compiling an assignment
+// statement's right-hand side, recognized it.
+//
+// The fix adds a case to expressionAtom for tokenizer.ChannelReceiveToken,
+// compiling the channel operand via reference() (so a suffix chain like
+// "getChan()" still works, and so "<-" binds tightly rather than swallowing
+// a trailing operator) and then collapsing ReceiveChannel's three-item
+// result ([marker, ok, datum]) down to just the received value with the
+// same store-in-temp / DropToMarker / reload idiom the "?:" optional-catch
+// operator (optional() in expr_atom.go) already uses for equivalent stack
+// cleanup.
+//
+// Fixing this exposed a second, related bug in assignment.go/lvalue.go:
+// when "<-" was the very first token of an assignment statement's
+// right-hand side, a pre-existing special case (needed only for the
+// two-value comma-ok form, v, ok := <-ch) greedily treated *everything*
+// after the "<-" as a single channel expression -- so an unparenthesized
+// "x := <-ch + 1" misparsed as "<-(ch + 1)" instead of "(<-ch) + 1". That
+// special case is now only applied when the left-hand side is genuinely a
+// comma-separated multi-target list (c.flags.multipleTargets), which is the
+// only shape where Go's own grammar requires the receive to be the entire
+// right-hand side anyway. The ordinary single-value form no longer bakes a
+// receive into the assignment's store code at all (lvalue.go's
+// assignmentTarget no longer special-cases "<-" for a plain ":="/"="); it
+// is compiled as an ordinary expression, which already handles "<-"
+// correctly wherever it appears via the expressionAtom fix above.
+//
+// The two-value comma-ok form is unaffected by either part of this fix --
+// see tests/flow/two_value_receive.ego for its own regression tests, and
+// the "existing ... form still works" tests below for direct confirmation.
+
+@test "flow: channel receive as a function-call argument (BUG-62)"
+{
+    // This is the exact reproducer from the bug report.
+    ch := make(chan, 1)
+    ch <- 5
+
+    @capture out := {
+        fmt.Println(<-ch)
+    }
+
+    @assert out == "5\n"
+}
+
+@test "flow: channel receive as an arithmetic operand (BUG-62)"
+{
+    ch := make(chan, 1)
+    ch <- 10
+
+    total := 10 + <-ch
+    @assert total == 20
+}
+
+@test "flow: channel receive as an assignment RHS, followed by an operator (BUG-62)"
+{
+    // This exact shape ("<-" as the first token of an assignment's RHS,
+    // followed by more expression) used to misparse as "<-(ch + 10)"
+    // instead of "(<-ch) + 10" -- see the file header comment.
+    ch := make(chan, 1)
+    ch <- 10
+
+    total := <-ch + 10
+    @assert total == 20
+}
+
+@test "flow: multiple channel receives in one assignment RHS respect precedence (BUG-62)"
+{
+    // "<-" must bind tighter than "+" -- this must compute (<-ch)+(<-ch)+(<-ch),
+    // draining three distinct values (1, 2, 3), not misparse the trailing
+    // "+ <-ch + <-ch" as part of a single receive's channel operand.
+    ch := make(chan, 3)
+    ch <- 1
+    ch <- 2
+    ch <- 3
+
+    sum := <-ch + <-ch + <-ch
+    @assert sum == 6
+}
+
+@test "flow: channel receive as an array literal element (BUG-62)"
+{
+    ch := make(chan, 1)
+    ch <- 7
+
+    arr := []int{<-ch, 1, 2}
+    @assert arr[0] == 7
+    @assert arr[1] == 1
+    @assert arr[2] == 2
+}
+
+@test "flow: channel receive as a user function-call argument (BUG-62)"
+{
+    func double(n int) int {
+        return n * 2
+    }
+
+    ch := make(chan, 1)
+    ch <- 21
+
+    @assert double(<-ch) == 42
+}
+
+@test "flow: channel receive as an expression atom with goroutine sender (BUG-62)"
+{
+    ch := make(chan, 2)
+
+    go func() {
+        ch <- 100
+        ch <- 200
+    }()
+
+    func double(n int) int {
+        return n * 2
+    }
+
+    first := double(<-ch)
+    second := double(<-ch)
+
+    @assert first == 200
+    @assert second == 400
+}
+
+@test "flow: channel receive with reassignment (=) and goroutine sender (BUG-62)"
+{
+    // Regression guard for the lvalue.go change: "=" (not just ":=") must
+    // still work, including when the receive is combined with a following
+    // operator.
+    ch := make(chan, 2)
+
+    go func() {
+        ch <- 100
+        ch <- 200
+    }()
+
+    var total int
+    total = <-ch
+    total = total + <-ch
+
+    @assert total == 300
+}
+
+@test "flow: channel send statement still works (BUG-62 regression)"
+{
+    // Regression guard: "ch <- value" (a channel SEND, where "<-" plays
+    // the role of the assignment operator itself) is a completely
+    // different code path from a receive and must be unaffected.
+    ch := make(chan, 1)
+    ch <- 99
+    @assert <-ch == 99
+}
+
+@test "flow: existing single-value assignment form still works (BUG-62 regression)"
+{
+    ch := make(chan, 1)
+    ch <- 1
+
+    v := <-ch
+    @assert v == 1
+}
+
+@test "flow: existing comma-ok assignment form still works (BUG-62 regression)"
+{
+    ch := make(chan, 1)
+    ch <- 1
+    close(ch)
+
+    v1, ok1 := <-ch
+    @assert ok1 == true
+    @assert v1 == 1
+
+    v2, ok2 := <-ch
+    @assert ok2 == false
+    @assert v2 == nil
+}

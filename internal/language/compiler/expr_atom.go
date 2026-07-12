@@ -89,6 +89,14 @@ func (c *Compiler) expressionAtom() error {
 		return c.compilePointerDereference()
 	}
 
+	// Is this a channel receive used as a general expression atom, e.g.
+	// fmt.Println(<-ch) or 10 + <-ch, as opposed to the direct right-hand
+	// side of an assignment statement (v := <-ch, v, ok := <-ch), which
+	// assignment.go/lvalue.go already handled before this fix (BUG-62)?
+	if t.Is(tokenizer.ChannelReceiveToken) {
+		return c.compileChannelReceive()
+	}
+
 	// Is this a parenthesis expression?
 	if done, err := c.compileSubExpressions(t); done {
 		return err
@@ -536,6 +544,46 @@ func (c *Compiler) compileAddressOf() error {
 		c.b.Emit(bytecode.StoreAlways, tempName)
 		c.b.Emit(bytecode.AddressOf, tempName)
 	}
+
+	return nil
+}
+
+// compileChannelReceive compiles a channel receive ("<-ch") appearing as a
+// general expression atom -- e.g. fmt.Println(<-ch), or 10 + <-ch -- rather
+// than as the direct right-hand side of an assignment statement. The single-
+// and two-value assignment forms (v := <-ch, v, ok := <-ch) are unaffected;
+// they are handled separately in assignment.go/lvalue.go and do not call
+// this function. The "<-" token has already been peeked, but not consumed,
+// by the caller (expressionAtom).
+//
+// c.reference() -- not a full c.Expression -- is used to compile the channel
+// operand, so that "<-" binds as tightly as Go's own grammar requires: it
+// parses an atom plus any suffix chain (chans[i], obj.ch, getChan()) but
+// stops before a following binary operator, so "10 + <-ch" compiles as
+// "10 + (<-ch)" rather than swallowing a trailing "+ ..." into the channel
+// expression itself.
+func (c *Compiler) compileChannelReceive() error {
+	c.t.Advance(1)
+
+	if err := c.reference(); err != nil {
+		return err
+	}
+
+	// ReceiveChannel pops the channel object left on the stack by the
+	// reference() call above, and pushes three items:
+	// [StackMarker("receive"), ok, datum] (datum on top). That shape exists
+	// to satisfy the two-value comma-ok assignment form's StackCheck; as a
+	// plain expression atom we only want the received value itself, so
+	// collapse the three items down to just datum using the same
+	// store-in-temp / DropToMarker / reload idiom optional() uses for the
+	// same kind of stack cleanup (see optional(), later in this file).
+	c.b.Emit(bytecode.ReceiveChannel)
+
+	tempName := data.GenerateName()
+	c.b.Emit(bytecode.CreateAndStore, tempName)
+	c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("receive"))
+	c.b.Emit(bytecode.Load, tempName)
+	c.b.Emit(bytecode.SymbolDelete, tempName)
 
 	return nil
 }

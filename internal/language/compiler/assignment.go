@@ -291,18 +291,30 @@ func (c *Compiler) compileAssignment() error {
 	}
 
 	// Detect whether the right-hand side begins with a channel-receive
-	// operator (<-).  We need to know this before parsing the expression
-	// so we can choose the right code-generation path below.
+	// operator (<-), but ONLY for the two-value form (v, ok := <-ch;
+	// multipleTargets is true). That form's storeLValue was built expecting
+	// the [StackMarker("receive"), ok, datum] shape the ReceiveChannel
+	// opcode produces (see below) -- and Go's own grammar requires a
+	// two-value receive's right-hand side to be bare "<-ch" with nothing
+	// else, so greedily treating "the rest of the RHS" as the channel
+	// expression is always correct here.
 	//
-	// After AnyNext consumed the assignment operator (:= or =) above, the
-	// tokenizer is now positioned at the first token of the RHS.  For
-	//
-	//   x := <-ch       (single-value receive)
-	//   v, ok := <-ch   (two-value receive)
-	//
-	// the current token is "<-".  IsNext checks for it and advances past
-	// it if found, leaving the tokenizer at the channel expression (ch).
-	isChannelReceive := c.t.IsNext(tokenizer.ChannelReceiveToken)
+	// The single-value form (x := <-ch) is deliberately NOT special-cased
+	// here anymore (BUG-62/BUG-72, July 2026): "<-" is left untouched and
+	// handled by the ordinary expression parser below, which recognizes it
+	// as a general expression atom (expressionAtom in expr_atom.go) and
+	// already leaves a plain received value on the stack. That's what
+	// makes "x := <-ch + 1" work -- treating the whole remainder as one
+	// channel expression here would have misparsed it as "<-(ch + 1)"
+	// instead of "(<-ch) + 1". storeLValue no longer bakes in a channel
+	// receive for this form either (see the isChan comment in
+	// lvalue.go's assignmentTarget), so an ordinary Store is all that's
+	// needed regardless of whether "<-" appears in the expression at all.
+	isChannelReceive := false
+
+	if c.flags.multipleTargets {
+		isChannelReceive = c.t.IsNext(tokenizer.ChannelReceiveToken)
+	}
 
 	// Seems like a simple assignment at this point, so parse the expression
 	// to be assigned, emit the code for that expression, and then emit the code
@@ -340,8 +352,10 @@ func (c *Compiler) compileAssignment() error {
 	// follows then stores datum → v and ok → ok in the correct order.
 	//
 	// Single-value receive (v := <-ch) does NOT reach this branch because
-	// multipleTargets is false.  That path uses the StoreChan opcode which
-	// was already baked into the storeLValue by assignmentTarget/patchStore.
+	// isChannelReceive is never set to true unless multipleTargets already
+	// is (see above) -- it is compiled as an ordinary expression instead,
+	// via expressionAtom's ChannelReceiveToken case, which leaves a plain
+	// received value on the stack for the ordinary Store below to consume.
 	if isChannelReceive && c.flags.multipleTargets {
 		c.b.Emit(bytecode.ReceiveChannel)
 		c.b.Append(storeLValue)

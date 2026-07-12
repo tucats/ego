@@ -176,7 +176,7 @@ listed here.
 | `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
 | `float64` | -153.35 | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
 | `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
-| `chan` | chan int | any | A channel, used to communicate values between threads. Requires an element type, e.g. `chan string` |
+| `chan` | chan | any | A channel, used to communicate values between threads. Ego channels do not take an element type — always write `chan` alone, not `chan string` |
 
 _Note that the numeric range values shown are approximate._ The types `int` and `uint`
 are generalized values for "the most efficient integer type for this architecture." In
@@ -1259,7 +1259,7 @@ size is optional.
 ```go
 a := make([]int, 5)
 a := make(map[string]int)
-b := make(chan string, 10)
+b := make(chan, 10)
 ```
 
 The first example creates an `array` of 5 elements, each of which is of type `int`,
@@ -1272,9 +1272,11 @@ The second example creates a `map` with a type that specifies a `string` key and
 can use it as a hint for storage allocation. Currently, _Ego_ ignores the size
 value.
 
-The third example creates a `channel` capable of holding up to 10 `string` messages.
-Creating a `channel` like this is required if the `channel` is shared among many
-threads. If a `channel` variable is declared by default, it holds a single message.
+The third example creates a `channel` capable of holding up to 10 messages. Note that,
+unlike Go, Ego channels do not take an element type — `make(chan, 10)`, not
+`make(chan string, 10)`. Creating a `channel` like this is required if the `channel`
+is shared among many threads. If a `channel` variable is declared by default, it
+holds a single message.
 This means that before a thread can send a value, another thread must read the
 value; if there are multiple threads waiting to send they are effectively going to
 run one-at-a-time. By creating a `channel` that can hold multiple messages, up to 10
@@ -2797,13 +2799,13 @@ passed _back_ from the go routine) using channels. Here's a modified
 version of the program:
 
 ```go
-func beepLater(duration string, c chan string) {
+func beepLater(duration string, c chan) {
     d, _ := time.ParseDuration(duration)
     time.Sleep(d)
     c <- "BEEP"
 }
 
-var xc chan string
+var xc chan
 go beepLater("1s", xc)
 
 m := <- xc
@@ -2834,13 +2836,13 @@ many times to read the channel, or can use a `for...range` operation
 on the channel to simply keep receiving data until done.
 
 ```go
-func beepLater(count int, c chan string) {
+func beepLater(count int, c chan) {
     for i := 0; i < count; i = i + 1 {
         c <- "Item " + string(i)
     }
 }
 
-var xc chan string
+var xc chan
 go beepLater(5, xc)
 
 for msg := range xc {
@@ -2857,6 +2859,26 @@ The goroutine can also explicitly tell the main program that it is
 done by using the `close()` function on the channel. When this happens,
 the range loop exits. Note that both the main program and the goroutine
 will continue executing to the end even after the channel is closed.
+
+A receive can also tell you whether the channel is still open, using the
+two-value ("comma-ok") form:
+
+```go
+value, ok := <-xc
+```
+
+`ok` is `false` when the channel has been closed and fully drained (in which
+case `value` is the zero value), and `true` otherwise. This is the usual way
+to detect channel closure without relying on `for...range`.
+
+`<-xc` is not limited to being the entire right-hand side of an assignment —
+it works anywhere a value is expected, such as a function-call argument or an
+operand of another operator:
+
+```go
+fmt.Println(<-xc)              // pass the received value directly to a function
+greeting := "Got: " + <-xc     // use it as an operand
+```
 
 &nbsp;
 &nbsp;

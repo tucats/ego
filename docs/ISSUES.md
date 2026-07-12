@@ -229,7 +229,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | ✓ |
 | [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | ✓ |
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
-| [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
+| [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | ✓ |
 | [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
 | [BUG-64](#BUG-64) | BUG | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | BUG | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
@@ -239,6 +239,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-69](#BUG-69) | BUG | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 | [BUG-70](#BUG-70) | BUG | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | ✓ |
 | [BUG-71](#BUG-71) | BUG | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
+| [BUG-72](#BUG-72) | BUG | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -514,7 +515,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | ✓ |
 | [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | ✓ |
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
-| [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
+| [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | ✓ |
 | [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
 | [BUG-64](#BUG-64) | MEDIUM | A pointer receiver's Ego pointer-type marker is stripped by `getThisByteCode`'s auto-deref, so returning the receiver as its own declared pointer type fails under `--types strict`. | ✓ |
 | [BUG-65](#BUG-65) | HIGH | The built-in `error` type is not treated as nil-compatible in three separate coercion/conformance-check paths (strict-mode return values, any-mode `var ... error = nil`, strict-mode parameters). | ✓ |
@@ -524,6 +525,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-69](#BUG-69) | LOW | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 | [BUG-70](#BUG-70) | MEDIUM | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | ✓ |
 | [BUG-71](#BUG-71) | MEDIUM | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
+| [BUG-72](#BUG-72) | LOW | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | |
 
 ---
 
@@ -6029,7 +6031,7 @@ regressions.
 
 <a id="BUG-62"></a>
 
-### BUG-62 — Channel receive (`<-ch`) is not supported as a general expression atom
+### BUG-62 — Channel receive (`<-ch`) is not supported as a general expression atom — **Resolved**
 
 **Severity:** MEDIUM
 
@@ -6077,6 +6079,53 @@ no case for it at all, so the tokenizer's `<-` token simply falls through to "un
 token" wherever it is encountered outside those two call sites. The current workaround is to
 always assign a channel receive to a temporary variable on its own line before using the
 result: `v := <-ch; fmt.Println(v)`.
+
+**Resolution (July 2026):**
+
+Two changes were needed — the second was discovered while verifying the first, and the user
+explicitly approved folding it into this fix rather than tracking it separately.
+
+- **`<-ch` as a general expression atom** — `internal/language/compiler/expr_atom.go`'s
+  `expressionAtom()` gained a case for `tokenizer.ChannelReceiveToken`, dispatching to a new
+  `compileChannelReceive()`. It compiles the channel operand via `c.reference()` (not a full
+  `c.Expression()`), so a suffix chain like `getChan()` or `chans[i]` still resolves, and so
+  `<-` binds only as tightly as Go's own grammar requires — `10 + <-ch` compiles as
+  `10 + (<-ch)`, not `10 + <-(ch)`. The existing `ReceiveChannel` opcode (used by the two-value
+  comma-ok assignment form) pops the channel and pushes three items,
+  `[StackMarker("receive"), ok, datum]`; since a plain expression atom only wants `datum`, the
+  three items are collapsed to one with the same store-in-temp / `DropToMarker` / reload idiom
+  the `?:` optional-catch operator (`optional()`, same file) already uses for equivalent stack
+  cleanup — no new bytecode opcode was needed.
+- **Leading `<-` on an assignment's right-hand side swallowed a trailing operator** — found
+  while testing the fix above: `x := <-ch + 1` compiled (a regression-in-waiting, since before
+  this fix it was a compile error) but evaluated as `<-(ch + 1)` instead of `(<-ch) + 1`,
+  because a pre-existing special case in `assignment.go`/`lvalue.go` — needed only for the
+  two-value form, `v, ok := <-ch`, whose right-hand side Go's own grammar requires to be bare
+  `<-ch` with nothing else — unconditionally treated *any* leading `<-` on an assignment's
+  right-hand side the same way, greedily parsing everything after it as one channel expression.
+  Fixed by gating that special case on `c.flags.multipleTargets` (`assignment.go`): the
+  single-value form no longer pre-consumes `<-` at all, letting the ordinary expression parser
+  (and the new `expressionAtom` case above) handle it correctly wherever it appears. `lvalue.go`'s
+  `assignmentTarget()` had a matching hack — peeking past the not-yet-consumed `:=`/`=` to detect
+  a following `<-` and pre-baking a `StoreChan` instruction into the assignment's store code —
+  which was removed outright; `StoreChan` is still emitted for the unrelated channel-*send*
+  statement form (`ch <- value`, where `<-` itself plays the role of the assignment operator),
+  which was unaffected by either change.
+
+Regression tests: a new file, `tests/flow/channel_receive_atom.ego`, with 11 `@test` blocks
+covering the original reproducer, a channel receive as an arithmetic operand (both a bare
+operand and as the first token of an assignment's right-hand side, with and without a trailing
+operator), multiple receives in one expression, an array-literal element, a user function-call
+argument, a goroutine sender, `=` reassignment combined with a trailing operator, and explicit
+regression guards for the channel-send statement and both pre-existing assignment forms
+(single-value and comma-ok). Verified against `go test ./...` and `ego test tests/` /
+`ego test --types strict tests/` / `ego test --types relaxed tests/` (1332 `@test` blocks, up
+from 1321) with no regressions.
+
+A separate, pre-existing bug found incidentally while double-checking this fix's documentation
+examples is tracked as [BUG-72](#BUG-72): Ego channels do not actually support a Go-style
+element type (`chan string`) anywhere, despite `docs/LANGUAGE.md`'s own examples using that
+syntax before this fix.
 
 ---
 
@@ -7148,6 +7197,65 @@ relying on a later, position-specific pass in `assignment.go` to notice `c.flags
 after the fact, which only runs for a bare assignment statement. Recorded here rather than
 fixed opportunistically alongside BUG-60 to avoid conflating two unrelated code paths in one
 change.
+
+---
+
+<a id="BUG-72"></a>
+
+### BUG-72 — Channels do not support a Go-style element type (`chan string`)
+
+**Severity:** LOW
+
+**Description:**  
+Found incidentally while verifying the BUG-62 fix's documentation examples. Go channels are
+always written with an element type — `chan string`, `chan int`, and so on. `docs/LANGUAGE.md`'s
+own pre-existing channel examples used exactly this syntax (`c chan string`, `var xc chan
+string`, `make(chan string, 10)`), but none of it actually works: Ego's `chan` type accepts no
+element type anywhere it can be written — a `var` declaration, a function parameter, or
+`make()`'s first argument — and each context fails with a different error.
+
+**Reproducer:**
+
+```go
+func main() {
+    var xc chan string
+    _ = xc
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 2:13, unexpected token: Type "string"
+Error: terminated with errors
+```
+
+**Expected output:**
+
+Either `chan string` should compile (matching Go), or — at minimum — the three different
+contexts should fail the same, clearly-worded way rather than three different ones.
+
+**Notes:**  
+Three distinct failure shapes were observed, suggesting three separate parsing paths each lack
+a case for a channel element type, similar in spirit to the `parseTypeSpec`/`parseType` split
+found during BUG-70:
+
+- `var xc chan string` → `unexpected token: Type "string"` (`internal/language/compiler/type.go`'s
+  `parseTypeSpec`, used by `var` declarations)
+- `func f(c chan string)` → `no such type` (the function-parameter type parser)
+- `make(chan string, 10)` → not independently confirmed as a distinct error, but CLAUDE.md
+  already documents this exact case as unsupported by design ("Channels use no type argument in
+  `make`. Ego syntax is `make(chan, N)`, not `make(chan int, N)`. There is no per-channel
+  element type in Ego channels.")
+
+Plain, untyped `chan` works correctly everywhere (`var xc chan`, `func f(c chan)`,
+`make(chan, N)`), and `docs/LANGUAGE.md`'s examples were corrected to use that form as part of
+the BUG-62 fix. Whether Ego channels are intended to ever carry a static element type at all —
+or whether "untyped, dynamically-typed messages" is the deliberate design (consistent with
+`ego.compiler.types` defaulting to `dynamic`) — was not determined; if the latter, the right fix
+may be documentation-only (updating the base-types table and `CLAUDE.md` to state plainly that
+`chan` never takes an element type, and treating `chan string` as a permanent parse error by
+design rather than a bug to fix in the compiler).
 
 ---
 

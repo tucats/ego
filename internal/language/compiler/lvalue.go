@@ -270,16 +270,27 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	if name.Spelling() == defs.DiscardedVariable {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
-		// If its the case of x := <-c  then skip the assignment
-		if tokenizer.InList(c.t.Peek(1), tokenizer.AssignToken, tokenizer.DefineToken) && c.t.Peek(2).Is(tokenizer.ChannelReceiveToken) {
-			c.t.Advance(1)
-		}
-
 		if c.t.Peek(1).Is(tokenizer.DefineToken) {
 			bc.Emit(bytecode.SymbolCreate, name)
 			c.DefineSymbol(name.Spelling())
 		}
 
+		// isChan (channel SEND, "ch <- value") is true here exactly when
+		// "<-" is the very next token, which only happens when "<-" is
+		// itself playing the role of the assignment operator (there is no
+		// ":="/"=" in a send statement at all). A single-value channel
+		// RECEIVE ("x := <-c") used to be detected here too, via a small
+		// hack that peeked past the still-unconsumed ":="/"=" to see the
+		// "<-" beyond it and skip past the operator early -- but doing so
+		// made this lvalue's store code hard-wire the receive (StoreChan)
+		// into the assignment itself, which only worked when "<-ch" was the
+		// *entire* right-hand side ("x := <-ch + 1" broke, since the
+		// receive can't be separated from the "+ 1" that way). Now that
+		// "<-" is a general expression atom (expressionAtom in
+		// expr_atom.go, BUG-62/BUG-72), the receive is compiled as part of
+		// the ordinary right-hand-side expression instead, which already
+		// leaves a plain received value on the stack -- so this lvalue no
+		// longer needs to special-case receives at all, only sends.
 		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1).Is(tokenizer.ChannelReceiveToken))
 	}
 

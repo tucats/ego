@@ -358,6 +358,7 @@ atom           ::= macroInvocation
                  | funcLiteral
                  | "&" addressTarget
                  | "*" atom
+                 | "<-" reference                       (* channel receive *)
                  | "(" expression ")"
                  | arrayLiteral
                  | mapLiteral
@@ -768,14 +769,37 @@ succeeded, or the zero value and `false` if it did not.
 ## 15. Channels
 
 ```ebnf
-channelSend    ::= lvalue "<-" expression
+channelSend       ::= lvalue "<-" expression
 
-channelReceive ::= lvalue ":=" "<-" expression
-                 | lvalue "="  "<-" expression
+channelReceive     ::= lvalue ":=" "<-" reference
+                     | lvalue "="  "<-" reference
+
+channelReceiveOK   ::= lvalue "," lvalue ":=" "<-" reference
+
+channelReceiveAtom ::= "<-" reference
 ```
 
 Channel operations use the same `<-` operator syntax as Go. Channels are
 created with `make(chan type)`.
+
+`<-` also works as a general expression atom (`channelReceiveAtom`, part of
+the `atom` production in [9.1](#91-atoms)) — as a function-call argument, an
+operand of another operator, an array-literal element, and so on — not just
+as the direct right-hand side of an assignment statement:
+
+```go
+fmt.Println(<-ch)          // as a function-call argument
+total := 10 + <-ch         // as an operand
+total := <-ch + 10         // "<-" binds tighter than "+"
+arr := []int{<-ch, 1, 2}   // as an array-literal element
+```
+
+In every position, `<-` binds only as tightly as `reference` (an atom plus
+any `.member`/`[index]`/`(args)` suffix chain) — it does **not** extend to
+swallow a following binary operator. `channelReceiveOK` (the two-value
+"comma-ok" form, `v, ok := <-ch`) is the one exception: its right-hand side
+must be exactly `<-ch` with nothing else, matching Go's own grammar for that
+form.
 
 ---
 
@@ -912,7 +936,7 @@ argument         ::= expression [ "..." ]
 (* --- Atoms --- *)
 atom             ::= macroInvocation | ifExpression | optionalExpression
                    | "nil" | "{}" | funcLiteral
-                   | "&" addressTarget | "*" atom
+                   | "&" addressTarget | "*" atom | "<-" reference
                    | "(" expression ")"
                    | arrayLiteral | mapLiteral | structLiteral
                    | INTEGER | FLOAT | BOOLEAN | RUNE | STRING
