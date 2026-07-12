@@ -99,28 +99,17 @@
 
 @test "flow: channel in a nested struct field (BUG-73)"
 {
-	// Note: the nested field is deliberately not named after either type
-	// declared here ("inner" or "box") -- a struct field named the same as
-	// ANY type name still live in the same scope triggers a separate,
-	// pre-existing bug ("Duplicate field name ch" / "invalid field name
-	// for type: X") where the collision corrupts type registration. Not
-	// investigated further here -- unrelated to BUG-73's channel/lvalue
-	// work; tracked as BUG-76 in docs/ISSUES.md. Unlike the box1/box2/box3-
-	// style renaming this file needed throughout for *type* names (fixed by
-	// scoping c.types to each block, docs/ISSUES.md BUG-77), this one is a
-	// same-scope field-vs-type collision that block-scoping does not help
-	// with, since both names are alive in the same block here.
 	type inner struct {
 		ch chan
 	}
 
 	type box struct {
-		content inner
+		inner inner
 	}
 
-	o := box{content: inner{ch: make(chan, 1)}}
-	o.content.ch <- 7
-	@assert <-o.content.ch == 7
+	o := box{inner: inner{ch: make(chan, 1)}}
+	o.inner.ch <- 7
+	@assert <-o.inner.ch == 7
 }
 
 @test "flow: multiple sends and receives through a struct field (BUG-73)"

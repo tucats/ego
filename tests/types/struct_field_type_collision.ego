@@ -1,0 +1,115 @@
+// Regression tests for BUG-76: a struct field named the same as an unrelated
+// type declared elsewhere in the same compilation corrupted type registration.
+//
+// Root cause: parseStructFieldTypes (internal/language/compiler/typeCompiler.go)
+// reads a struct field's leading identifier and, if that identifier happens to
+// match any known type name, always assumed it was Go's anonymous "embedded
+// field" form (just a bare type name, no separate field name) -- regardless of
+// what followed. So "box inner" (field named "box", of type "inner") was
+// misread as "embed the unrelated type box", and the "inner" token that should
+// have been parsed as box's type was silently skipped, leaving the struct with
+// none of the fields the source actually declared.
+//
+// Fixed by resolving the ambiguity the same way the real parser would: after
+// seeing a name that matches a known type, speculatively try to parse a type
+// starting at the very next token (using the tokenizer's Mark/Set to roll back
+// afterwards either way). If that succeeds, the name was an ordinary field
+// name and what follows is its type -- fall through to the normal named-field
+// path. If it fails (typically because what follows is the NEXT field's name,
+// not a type), the name really is a solo embedded-type reference.
+
+@test "types: struct field name colliding with an unrelated type (BUG-76)"
+{
+    type box struct {
+        n int
+    }
+
+    b := box{n: 1}
+    @assert b.n == 1
+
+    type inner struct {
+        z int
+    }
+
+    type outer struct {
+        box inner
+    }
+
+    o := outer{box: inner{z: 5}}
+    @assert o.box.z == 5
+}
+
+@test "types: struct field name colliding with an unrelated type, channel-valued (BUG-76)"
+{
+    type box struct {
+        ch chan
+    }
+
+    b := box{ch: make(chan, 1)}
+    _ = b
+
+    type inner struct {
+        ch chan
+    }
+
+    type outer struct {
+        box inner
+    }
+
+    o := outer{box: inner{ch: make(chan, 1)}}
+    o.box.ch <- 7
+    @assert <-o.box.ch == 7
+}
+
+@test "types: genuine anonymous embedded field still works (BUG-76 regression)"
+{
+    type Inner struct {
+        n int
+    }
+
+    type Outer struct {
+        Inner
+        other int
+    }
+
+    o := Outer{n: 5, other: 9}
+    @assert o.n == 5
+    @assert o.other == 9
+}
+
+@test "types: embedded field followed by a named field still works (BUG-76 regression)"
+{
+    type Inner struct {
+        n int
+    }
+
+    type Outer struct {
+        Inner
+        other int
+    }
+
+    o := Outer{n: 1, other: 2}
+    @assert o.n == 1
+    @assert o.other == 2
+}
+
+@test "types: chained comma-separated embedded fields still work (BUG-76 regression)"
+{
+    type A struct {
+        a int
+    }
+
+    type B struct {
+        b int
+    }
+
+    type Combo struct {
+        A, B
+        c int
+    }
+
+    x := Combo{a: 1, b: 2, c: 3}
+    @assert x.a == 1
+    @assert x.b == 2
+    @assert x.c == 3
+}

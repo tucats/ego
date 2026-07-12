@@ -370,16 +370,40 @@ func (c *Compiler) parseStructFieldTypes(t *data.Type) (*data.Type, error) {
 			}
 		}
 
-		// Skip past the tokens and any optional trailing comma
+		// A bare identifier that names a known type is normally Go's anonymous
+		// "embedded field" form (the field's name IS the type name, with no
+		// separate type following it). But that identifier can just as easily
+		// be an ordinary field NAME that happens to collide with an unrelated
+		// type declared elsewhere ("box inner" -- field "box" of type
+		// "inner" -- when some other, unconnected "type box ..." also exists
+		// in this compilation), or the embed can legitimately be followed by
+		// another field's own "name Type" declaration ("Inner" embedded, then
+		// "other int" as an unrelated later field). Peeking at a single next
+		// token can't tell these apart -- both "inner" (a real type, meant as
+		// THIS field's type) and "other" (an ordinary identifier, meant as
+		// the NEXT field's name) look identical to a lookahead of one. So
+		// resolve the ambiguity the same way the real parser would: try to
+		// actually parse a type starting right after "name". If that
+		// succeeds, "name" was a field name and what follows is its type --
+		// roll back and let the normal named-field path below parse it for
+		// real. If it fails (most commonly because what follows isn't a type
+		// at all, but another field's name), "name" really is meant as a
+		// solo embedded-type reference. See BUG-76 in docs/ISSUES.md.
 		if typeData, found := c.types[name.Spelling()]; found {
-			embedType(t, typeData)
-			c.t.IsNext(tokenizer.CommaToken)
+			mark := c.t.Mark()
+			_, typeErr := c.parseType("", false)
+			c.t.Set(mark)
 
-			if err := c.ReferenceSymbol(name.Spelling()); err != nil {
-				return data.UndefinedType, err
+			if typeErr != nil {
+				embedType(t, typeData)
+				c.t.IsNext(tokenizer.CommaToken)
+
+				if err := c.ReferenceSymbol(name.Spelling()); err != nil {
+					return data.UndefinedType, err
+				}
+
+				continue
 			}
-
-			continue
 		}
 
 		fieldNames := make([]string, 1)
