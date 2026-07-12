@@ -421,6 +421,122 @@ func storeIndexByteCode(c *Context, i any) error {
 	return nil
 }
 
+// storeIndexChanByteCode is the instruction handler for the StoreIndexChan
+// opcode. It implements a channel SEND through a compound lvalue -- a
+// struct field, array element, or map value -- e.g. "s.ch <- 5",
+// "chans[0] <- 5", or "m["k"] <- 5" (BUG-73).
+//
+// # Why this opcode exists, instead of reusing StoreIndex or StoreChan
+//
+// For a *simple* lvalue ("ch <- 5"), the existing StoreChan opcode already
+// handles this correctly: it inspects the single popped stack value's Go
+// type at runtime and, if it is a *data.Channel, sends to it instead of
+// storing. That works because StoreChan also has direct access to the
+// destination *variable* (by name, via the symbol table) to fall back to an
+// ordinary store when the popped value isn't a channel.
+//
+// A compound lvalue has no single named variable to fall back to -- only a
+// container (struct/array/map) and an index/key into it. Before this fix,
+// patchStore (internal/language/compiler/lvalue.go) always converted the
+// lvalue's trailing LoadIndex into an ordinary StoreIndex for ANY compound
+// lvalue, regardless of whether "<-" was used. StoreIndex has no notion of
+// channels at all, so "s.ch <- 5" silently overwrote the field with the
+// plain value 5, destroying the channel reference instead of sending to it.
+//
+// patchStore now emits StoreIndexChan instead of StoreIndex specifically
+// when the source used "<-" as the pseudo-assignment-operator on a compound
+// lvalue. Because that only happens when the source text unambiguously
+// wrote a channel send, this handler does not need an "maybe the user meant
+// to overwrite the field" fallback the way StoreChan's simple-lvalue case
+// does: it reads back whatever is CURRENTLY stored at destination[index],
+// requires it to be a *data.Channel, and sends to it -- if it is not a
+// channel, that is reported as a runtime error (ErrInvalidChannel), not
+// silently treated as a normal field write.
+//
+// Three values are consumed from the stack (top of stack on the right),
+// exactly matching StoreIndex's own stack contract:
+//
+//	[... value destination index]   (when operand i is nil)
+//	[... value destination]         (when operand i holds the index)
+//
+// The destination container is pushed back unmodified on success, matching
+// StoreIndex's "push the container back so chained assignments work"
+// convention -- sending to a channel does not modify the container that
+// holds it.
+func storeIndexChanByteCode(c *Context, i any) error {
+	var (
+		index any
+		err   error
+	)
+
+	if i != nil {
+		index = c.unwrapConstant(i)
+	} else {
+		if index, err = c.Pop(); err != nil {
+			return err
+		}
+	}
+
+	destination, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	v, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	if isStackMarker(destination) || isStackMarker(index) || isStackMarker(v) {
+		return c.runtimeError(errors.ErrFunctionReturnedVoid)
+	}
+
+	// Resolve the value currently stored at destination[index], regardless
+	// of container kind, mirroring the same per-kind lookups loadIndexByteCode
+	// already performs for an ordinary read.
+	var current any
+
+	switch a := destination.(type) {
+	case *data.Struct:
+		current, _ = a.Get(data.String(index))
+
+	case *data.Array:
+		subscript, err := data.Int(index)
+		if err != nil {
+			return c.runtimeError(err)
+		}
+
+		current, _ = a.Get(subscript)
+
+	case *data.Map:
+		current, _, _ = a.Get(index)
+
+	// Fix BUG-64-style pointer indirection (a pointer receiver, or any
+	// other Ego pointer, "*any"), mirroring loadIndexByteCode's own *any
+	// case: only a *data.Struct target is supported.
+	case *any:
+		if structVal, ok := (*a).(*data.Struct); ok {
+			current, _ = structVal.Get(data.String(index))
+		} else {
+			return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(*a).String())
+		}
+
+	default:
+		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(destination).String())
+	}
+
+	ch, ok := current.(*data.Channel)
+	if !ok {
+		return c.runtimeError(errors.ErrInvalidChannel)
+	}
+
+	if err := ch.Send(v); err != nil {
+		return c.runtimeError(err)
+	}
+
+	return c.push(destination)
+}
+
 // checkStructFieldStrictType enforces a struct field's declared type when a
 // new value is about to be assigned to it (e.g. the Ego statement
 // "e.Age = someValue"). This is the struct equivalent of the type check

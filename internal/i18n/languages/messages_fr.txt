@@ -265,6 +265,7 @@ case=manque 'case'
 catch=manque la clause 'catch'
 cert.parse=erreur lors de l'analyse du fichier de certificat
 channel.assignment=utilisation invalide de liste d'affectation pour un canal
+channel.element.type=les canaux n'ont pas de type d'élément ; utilisez "chan" seul, pas "chan T"
 channel.not.open=canal non ouvert
 child.timeout=aucun processus enfant disponible pour traiter la requête
 circular.import=cycle d'importation invalide

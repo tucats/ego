@@ -271,6 +271,7 @@ case=missing 'case'
 catch=missing 'catch' clause
 cert.parse=error parsing certificate file
 channel.assignment=invalid use of assignment list for channel
+channel.element.type=channels do not have an element type; use "chan" alone, not "chan T"
 channel.not.open=channel not open
 child.timeout=no child process available to process request
 circular.import=Invalid import cycle

@@ -302,9 +302,16 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 
 // patchStore finalizes the store operation at the end of an lvalue bytecode
 // buffer. When the last emitted instruction is a LoadIndex with no operand —
-// meaning the previous suffix was an array/map subscript — it is replaced
-// in-place with StoreIndex, which writes the value back to the element.
-// For all other cases a new instruction is appended:
+// meaning the previous suffix was an array/map/struct-field subscript — it
+// is replaced in-place with one of:
+//   - StoreIndexChan if isChan is true — a channel SEND through a compound
+//     lvalue, e.g. "s.ch <- value" or "chans[0] <- value" (BUG-73). This
+//     reads back whatever is currently stored at that index/key, requires
+//     it to already be a channel, and sends to it — it does NOT overwrite
+//     the field/element, unlike an ordinary StoreIndex.
+//   - StoreIndex otherwise — writes the value back to the element.
+//
+// For all other (non-compound) lvalues a new instruction is appended:
 //   - StoreChan  if isChan is true  (channel send: ch <- value)
 //   - StoreViaPointer if isPointer is true  (pointer write: *p = value)
 //   - Store otherwise  (ordinary variable write)
@@ -313,7 +320,11 @@ func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 	instruction := bc.Instruction(address)
 
 	if address > 0 && instruction.Operation == bytecode.LoadIndex && instruction.Operand == nil {
-		bc.EmitAt(address, bytecode.StoreIndex)
+		if isChan {
+			bc.EmitAt(address, bytecode.StoreIndexChan)
+		} else {
+			bc.EmitAt(address, bytecode.StoreIndex)
+		}
 	} else {
 		if isChan {
 			bc.Emit(bytecode.StoreChan, name)

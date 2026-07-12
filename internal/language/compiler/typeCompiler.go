@@ -171,6 +171,29 @@ func (c *Compiler) parseType(name string, anonymous bool) (*data.Type, error) {
 		return c.parseArrayType(isPointer)
 	}
 
+	// Channels. Ego channels are deliberately untyped -- there is no
+	// per-channel element type ("chan T" the way Go has it); write "chan"
+	// alone. A type-looking token immediately following "chan" is almost
+	// always a Go habit rather than intentional Ego code, so it is called
+	// out explicitly here with one clear, consistent error, instead of
+	// silently matching only the bare "chan" token (via the generic
+	// compileKnownBaseType fallback below) and leaving the element-type
+	// token to derail whatever parsing came next with a confusing,
+	// context-dependent error (BUG-72).
+	if c.t.Peek(1).Is(tokenizer.ChanToken) {
+		if isTypeStartToken(c.t.Peek(2)) {
+			return data.UndefinedType, c.compileError(errors.ErrChannelElementType).Context(c.t.Peek(2).Spelling())
+		}
+
+		c.t.Advance(1)
+
+		if isPointer {
+			return data.PointerType(data.ChanType), nil
+		}
+
+		return data.ChanType, nil
+	}
+
 	// Known base types?
 	result, err := c.compileKnownBaseType(isPointer)
 	if err != nil || result != nil {

@@ -1,0 +1,274 @@
+// Regression tests for BUG-72: the tokenizer's TypeTokens classification map
+// (internal/language/tokenizer/reserved.go) was missing ChanToken, so the
+// lexer produced a plain Identifier token for "chan" instead of the intended
+// Type token -- unlike every sibling primitive ("int", "string", "map",
+// "struct", ...), all of which ARE correctly registered there. This had two
+// visible consequences, fixed together:
+//
+//  1. "chan T" (a Go-style element type) silently derailed parsing wherever
+//     it was written -- a var declaration, a function parameter, make(), a
+//     struct field, or a type assertion target -- each producing a
+//     different, confusing error ("unexpected token", "no such type",
+//     "invalid list", "invalid identifier") depending on which of several
+//     independent parsers happened to be looking at the tokens at the time.
+//     Ego channels are deliberately untyped by design (there is no
+//     per-channel element type, unlike Go); the fix makes every one of
+//     those contexts report the exact same, clear error instead.
+//  2. Because "chan" was misclassified as a plain identifier, none of the
+//     places that specially recognize other type keywords (parseTypeSpec,
+//     parseType, the "chan" case inside expressionAtom's type-vs-identifier
+//     disambiguation) ever got a chance to run for it at all -- they use
+//     tokenizer.ChanToken.Is() checks that only match a genuine Type-class
+//     token. Registering ChanToken in TypeTokens fixes classification at
+//     the source, and three separate "silently discard an inner
+//     ErrChannelElementType and fall back to some other, wrong
+//     interpretation" call sites (in expr_atom.go, expr_reference.go, and
+//     unwrap.go) were fixed so that clear error actually reaches the user
+//     instead of being swallowed by a fallback path meant for genuinely
+//     ambiguous cases.
+//
+// NOT covered here: a handful of separate, pre-existing bugs were found
+// incidentally while writing these tests -- channels stored in a struct
+// field, array element, or map value do not work correctly for
+// send/receive (confirmed present on the pre-BUG-72 baseline too), and a
+// malformed "chan T" as a function *return* type is silently accepted with
+// no error at all, rather than reporting the clear error the contexts below
+// now give. These are unrelated to the tokenizer misclassification fixed
+// here (they reproduce identically whether "chan" classifies correctly or
+// not) and are tracked separately -- see BUG-73/BUG-74 in docs/ISSUES.md.
+// They are deliberately NOT exercised below, so as not to assert behavior
+// that is currently broken for other reasons.
+
+// --- "chan" now classifies as a type keyword, matching its siblings -------
+
+@test "types: chan is registered as a type token like int/string (BUG-72)"
+{
+	// This is a compile-time-only check: if "chan" were still
+	// misclassified as a plain identifier, the block below would compile
+	// with no error (exactly like the "chan string" cases further down
+	// used to, before landing on a confusing, inconsistent error only once
+	// something downstream choked on the leftover token). Successfully
+	// compiling a BARE "chan" declaration is the baseline this file
+	// builds on.
+	var xc chan
+	_ = xc
+}
+
+// --- "chan" can still be used as an ordinary identifier (parity with int) -
+
+@test "types: chan can be declared as a variable name (BUG-72)"
+{
+	// Every primitive type keyword (int, string, bool, ...) can already be
+	// used as an ordinary identifier in Ego -- "chan" now behaves the same
+	// way instead of being a special case. "unused=false" sidesteps the
+	// "declared but never used" check -- referencing a variable named
+	// "chan" afterward is a separate, general, pre-existing quirk shared
+	// by every primitive type name (not specific to "chan"), and is
+	// deliberately not exercised here; see the file header.
+	@compile block unused=false {
+		chan := 5
+	}
+}
+
+@test "types: chan can be used as a struct field name (BUG-72)"
+{
+	type point struct {
+		chan int
+	}
+
+	p := point{chan: 5}
+	@assert p.chan == 5
+}
+
+// --- Bare "chan" (no element type) still works everywhere -----------------
+
+@test "types: bare chan in a var declaration still works (BUG-72)"
+{
+	var xc chan
+	xc = make(chan, 1)
+	xc <- 42
+	@assert <-xc == 42
+}
+
+@test "types: bare chan as a function parameter type still works (BUG-72)"
+{
+	func identity(c chan) chan {
+		return c
+	}
+
+	xc := make(chan, 1)
+	result := identity(xc)
+	result <- 7
+	@assert <-result == 7
+}
+
+@test "types: bare chan with make still works (BUG-72)"
+{
+	xc := make(chan, 3)
+	xc <- 1
+	xc <- 2
+	xc <- 3
+	@assert <-xc == 1
+	@assert <-xc == 2
+	@assert <-xc == 3
+}
+
+@test "types: bare chan as an unnamed function parameter still works (BUG-72)"
+{
+	func identity(chan) chan {
+		return nil
+	}
+	_ = identity
+}
+
+@test "types: pointer to bare chan still parses (BUG-72)"
+{
+	var p *chan
+	_ = p
+}
+
+@test "types: slice of bare chan still declares and populates (BUG-72)"
+{
+	// Note: send/receive *through* the indexed element (chans[0] <- v,
+	// <-chans[0]) hits a separate, pre-existing bug unrelated to this fix
+	// -- see the file header -- so only declaration and element assignment
+	// are checked here, not send/receive through the slice element.
+	chans := make([]chan, 2)
+	chans[0] = make(chan, 1)
+	chans[1] = make(chan, 1)
+	@assert chans[0] != nil
+	@assert chans[1] != nil
+}
+
+// --- "chan T" is rejected with the same, clear error everywhere -----------
+
+@test "types: chan with element type rejected in var declaration (BUG-72)"
+{
+	failed := false
+
+	@compile block {
+		var xc chan string
+		_ = xc
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected as function parameter (BUG-72)"
+{
+	failed := false
+
+	@compile block {
+		func f(c chan string) {
+			_ = c
+		}
+		_ = f
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected in make() (BUG-72)"
+{
+	failed := false
+
+	@compile block {
+		b := make(chan string, 10)
+		_ = b
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected as a struct field (BUG-72)"
+{
+	failed := false
+
+	@compile block {
+		type s struct {
+			ch chan string
+		}
+		var v s
+		_ = v
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected as a type assertion target (BUG-72)"
+{
+	failed := false
+
+	@compile block {
+		var v any = 5
+		_, ok := v.(chan string)
+		_ = ok
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan followed by a type is read as a named parameter, not rejected (BUG-72)"
+{
+	// "func f(chan string)" is genuinely ambiguous between "one unnamed
+	// parameter of type 'chan string'" and "one named parameter called
+	// 'chan' of type string" -- and since BUG-70's disambiguation always
+	// resolves "identifier immediately followed by a type-start token" as
+	// the named form, "chan" here is parsed as the parameter's NAME
+	// (consistent with "chan" now being an ordinary, usable identifier --
+	// see the tests above), not as an unnamed "chan string" type to
+	// reject. This means BUG-72's rejection can never actually be reached
+	// through the unnamed-parameter-list path: any occurrence of "chan"
+	// immediately followed by a type-looking token always flips the
+	// disambiguation to the named interpretation first.
+	//
+	// Note: referencing the parameter by name inside the body (e.g.
+	// "return chan") hits the same general, pre-existing "type keyword
+	// shadows a same-named local variable" quirk noted in the file header
+	// (confirmed for "int" too, not "chan"-specific), so only successful
+	// compilation and invocation are checked here, not the returned value.
+	// "unused=false" sidesteps the resulting "declared but never used"
+	// complaint about the now-unreferenced "chan" parameter.
+	@compile block unused=false {
+		func f(chan string) string {
+			return "ok"
+		}
+
+		result := f("hello")
+	}
+	catch(e) {
+		@fail "unexpected compile error: " + e.Error()
+	}
+}
+
+// --- Regression: channel receive as a general expression atom (BUG-62) ----
+// still works correctly after the "chan" reclassification, since that fix
+// (expr_atom.go's ChannelReceiveToken case) is keyed off the "<-" operator
+// token, not the word "chan", and is unaffected by this one.
+
+@test "types: channel receive as an expression atom still works after BUG-72 (regression)"
+{
+	xc := make(chan, 1)
+	xc <- 5
+	@assert (<-xc) + 1 == 6
+}

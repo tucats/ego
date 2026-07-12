@@ -272,6 +272,7 @@ case=falta 'case'
 catch=falta cláusula 'catch'
 cert.parse=error al analizar archivo de certificado
 channel.assignment=uso no válido de lista de asignación para canal
+channel.element.type=los canales no tienen tipo de elemento; use "chan" solo, no "chan T"
 channel.not.open=canal no abierto
 child.timeout=no hay proceso hijo disponible para procesar la solicitud
 circular.import=ciclo de importación no válido

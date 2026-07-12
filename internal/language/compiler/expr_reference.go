@@ -114,6 +114,16 @@ func (c *Compiler) compileDotReference() error {
 	// the unwrap code has already been emitted and we are done.
 	if err := c.compileUnwrap(); err == nil {
 		return nil
+	} else if errors.Equals(err, errors.ErrChannelElementType) {
+		// "chan T" (e.g. x.(chan string)) is never ambiguous with normal
+		// member access -- unlike every other compileUnwrap failure here,
+		// which falls through below on the assumption that the "(...)"
+		// text just wasn't a type assertion at all, propagate this one
+		// immediately. Otherwise the "chan" token would be discarded here
+		// and "string" would be misread as if it were a ".member" name,
+		// producing an unrelated "unexpected token" error instead of the
+		// clear "channels do not have an element type" message (BUG-72).
+		return err
 	}
 
 	// Not an unwrap — the thing after the dot must be a valid identifier.

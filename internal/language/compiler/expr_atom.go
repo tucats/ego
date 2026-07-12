@@ -205,6 +205,18 @@ func (c *Compiler) expressionAtom() error {
 			}
 
 			return nil
+		} else if errors.Equals(err, errors.ErrChannelElementType) {
+			// "chan T" (e.g. inside make(chan string, 10)) is never
+			// ambiguous with a legitimate identifier reference -- unlike
+			// every other parseType failure here, which falls back to a
+			// plain symbol lookup on the assumption that the token just
+			// isn't a type name at all, propagate this one immediately.
+			// Otherwise "chan" would be silently re-parsed as an ordinary
+			// identifier reference, leaving the element-type token (e.g.
+			// "string") behind as an unconsumed, confusing leftover that
+			// surfaces as an unrelated "invalid list" error from the
+			// enclosing argument list parser instead (BUG-72).
+			return err
 		}
 
 		c.t.Set(marker)

@@ -127,6 +127,25 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 		return data.FunctionType(&data.Function{Declaration: f}), nil
 	}
 
+	// Channel type. Ego channels are deliberately untyped -- there is no
+	// per-channel element type ("chan T" the way Go has it); write "chan"
+	// alone. A type-looking token immediately following "chan" is almost
+	// always a Go habit rather than intentional Ego code, so it is called
+	// out explicitly here with one clear, consistent error, instead of
+	// silently matching only the bare "chan" token (via the generic
+	// TypeDeclarations loop below) and leaving the element-type token to
+	// derail the rest of parsing with a confusing, context-dependent error
+	// (BUG-72).
+	if c.t.Peek(1).Is(tokenizer.ChanToken) {
+		if isTypeStartToken(c.t.Peek(2)) {
+			return data.UndefinedType, c.compileError(errors.ErrChannelElementType).Context(c.t.Peek(2).Spelling())
+		}
+
+		c.t.Advance(1)
+
+		return data.ChanType, nil
+	}
+
 	for _, typeDef := range data.TypeDeclarations {
 		found := true
 

@@ -342,6 +342,7 @@ var TypeTokens = map[Token]bool{
 	AnyToken:     true,
 	BoolToken:    true,
 	ByteToken:    true,
+	ChanToken:    true,
 	Int8Token:    true,
 	Int16Token:   true,
 	UInt16Token:  true,

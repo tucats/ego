@@ -239,7 +239,11 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-69](#BUG-69) | BUG | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 | [BUG-70](#BUG-70) | BUG | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | ✓ |
 | [BUG-71](#BUG-71) | BUG | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
-| [BUG-72](#BUG-72) | BUG | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | |
+| [BUG-72](#BUG-72) | BUG | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
+| [BUG-73](#BUG-73) | BUG | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
+| [BUG-74](#BUG-74) | BUG | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
+| [BUG-75](#BUG-75) | BUG | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | |
+| [BUG-76](#BUG-76) | BUG | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -525,7 +529,11 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-69](#BUG-69) | LOW | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
 | [BUG-70](#BUG-70) | MEDIUM | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | ✓ |
 | [BUG-71](#BUG-71) | MEDIUM | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
-| [BUG-72](#BUG-72) | LOW | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | |
+| [BUG-72](#BUG-72) | LOW | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
+| [BUG-73](#BUG-73) | MEDIUM | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
+| [BUG-74](#BUG-74) | LOW | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
+| [BUG-75](#BUG-75) | LOW | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | |
+| [BUG-76](#BUG-76) | LOW | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | |
 
 ---
 
@@ -7202,7 +7210,7 @@ change.
 
 <a id="BUG-72"></a>
 
-### BUG-72 — Channels do not support a Go-style element type (`chan string`)
+### BUG-72 — Channels do not support a Go-style element type (`chan string`) — **Resolved**
 
 **Severity:** LOW
 
@@ -7256,6 +7264,359 @@ or whether "untyped, dynamically-typed messages" is the deliberate design (consi
 may be documentation-only (updating the base-types table and `CLAUDE.md` to state plainly that
 `chan` never takes an element type, and treating `chan string` as a permanent parse error by
 design rather than a bug to fix in the compiler).
+
+**Resolution (July 2026):**
+
+The user confirmed the intended design: channels are deliberately untyped, and `chan T` should
+be rejected everywhere with one clear, consistent error rather than three different confusing
+ones. The investigation went one level deeper than the notes above anticipated and found the
+true root cause was in the **tokenizer**, not the three separate parsers:
+
+- **The real root cause** — `tokenizer.TypeTokens` (`internal/language/tokenizer/reserved.go`),
+  the lexer's classification map for built-in type keywords, was simply missing `ChanToken`.
+  Every sibling primitive (`int`, `string`, `map`, `struct`, ...) is registered there; `chan`
+  was not. This meant the lexer produced a plain `IdentifierTokenClass` token for the text
+  "chan" instead of the intended `TypeTokenClass` — so every `.Is(tokenizer.ChanToken)` check
+  anywhere in the compiler silently failed (class mismatch), and "chan" only ever worked at all
+  via the various parsers' fallback, spelling-based `TypeDeclarations` matching, which has no
+  mechanism to look for a following element type. Fixed with a one-line addition:
+  `ChanToken: true` in `TypeTokens`. This was verified safe with the full `go test ./...` and
+  `ego test tests/` suites (no regressions) before being kept — the alternative, narrower fix
+  (matching "chan" by spelling instead of by `.Is()` in just the two parsers below) was
+  implemented first and worked, but the user asked for the proper root-cause fix once the
+  tokenizer gap was identified, accepting the wider blast radius in exchange for `chan`
+  genuinely behaving like every other primitive type keyword.
+- **Explicit `chan` cases with a clear, shared error** — `internal/language/compiler/type.go`'s
+  `parseTypeSpec` (used by `var` declarations) and `internal/language/compiler/typeCompiler.go`'s
+  `parseType` (used by casts, assertions, struct/interface fields, function type specs — and,
+  via `ParseFunctionDeclaration`, function parameters and return types) each gained a `chan`
+  case that peeks at the following token: if it looks like the start of a type expression, a new
+  error, `errors.ErrChannelElementType` ("channels do not have an element type; use `chan`
+  alone, not `chan T`"), is raised immediately, added to `internal/errors/messages.go` and all
+  three localization files.
+- **Three separate "swallow the inner error and fall back to a different, wrong
+  interpretation" call sites** had to be fixed so this new, clear error actually reaches the
+  user instead of being silently discarded by a fallback path meant for genuinely ambiguous
+  cases (a token that just isn't a type name at all, so retry it as a plain identifier
+  reference): `expr_atom.go`'s "try type, else fall back to symbol lookup" atom parser (this is
+  what made `make(chan string, 10)` fail with an unrelated "invalid list" instead — "chan" was
+  silently re-parsed as a plain symbol reference, leaving "string" behind as an unconsumed,
+  confusing leftover token), `expr_reference.go`'s `compileDotReference` (type-assertion
+  targets), and `unwrap.go`'s `compileUnwrap` itself (the same swallow existed one level up,
+  discarding the error `parseType` had already correctly raised). All three now check
+  specifically for `errors.Equals(err, errors.ErrChannelElementType)` and propagate it
+  immediately, rather than changing the general fallback behavior for every other kind of
+  `parseType` failure.
+
+**Verified working, consistently, in every context:** `var` declaration, function parameter,
+`make()`, struct field, and type-assertion target all now raise the identical
+`channel.element.type` error for `chan string`; bare `chan` continues to work unchanged in all
+of the same contexts, plus as a pointer (`*chan`) and slice element (`[]chan`).
+
+**Verified NOT regressed:** `chan` can still be used as an ordinary identifier — a variable
+name or a struct field name — exactly like `int`, `string`, and every other primitive type
+keyword already could; this was confirmed to be pre-existing, general Ego behavior (not
+something newly granted to `chan`), and the full existing channel-operation test suite
+(`tests/flow/channel_receive_atom.ego`, `tests/flow/two_value_receive.ego`,
+`tests/flow/rangechannels.ego`, `tests/defer/channel.ego`) still passes unchanged.
+
+**New issues found while verifying this fix, deliberately not fixed here** (confirmed present
+on the pre-fix baseline too, so none of them are regressions from this change): a channel
+stored in a struct field, array element, or map value does not work correctly for send/receive
+([BUG-73](#BUG-73)); a malformed function return type is silently accepted with no error at all,
+unlike every other type-spec context fixed above ([BUG-74](#BUG-74)); and a local
+variable/parameter named after any primitive type keyword is shadowed by the type itself when
+referenced in expression position, producing the wrong value ([BUG-75](#BUG-75)).
+
+Regression tests: a new file, `tests/types/channel_type.ego`, with 16 `@test` blocks covering
+`chan` as a type token, as an ordinary identifier (variable and struct-field name), bare `chan`
+in every context (`var`, parameter, `make`, unnamed parameter, pointer, slice), `chan T`
+rejection with the identical error code in every context, the disambiguation edge case where
+`chan` immediately followed by a type-looking token is read as a named parameter rather than
+rejected, and a regression check that BUG-62's channel-receive-as-expression-atom fix is
+unaffected. Verified against `go test ./...` and `ego test tests/` / `ego test --types strict
+tests/` / `ego test --types relaxed tests/` (1348 `@test` blocks, up from 1332) with no
+regressions.
+
+---
+
+<a id="BUG-73"></a>
+
+### BUG-73 — A channel stored in a struct field, array element, or map value does not work correctly for send/receive — **Resolved**
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while verifying the BUG-72 fix. A channel stored directly in a local variable works
+correctly for both send and receive, but the same channel accessed through a struct field
+(`s.ch <- v` / `<-s.ch`), an array/slice element (`chans[0] <- v` / `<-chans[0]`), or a map
+value fails. Confirmed present on the pre-BUG-72 baseline too, so this is unrelated to that
+fix's tokenizer change.
+
+**Reproducer:**
+
+```go
+import "fmt"
+
+type S struct {
+    ch chan
+}
+
+func main() {
+    s := S{ch: make(chan, 1)}
+    s.ch <- 5           // send succeeds
+    fmt.Println(<-s.ch) // receive fails
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 9), neither source or destination is a channel
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+5
+```
+
+**Notes:**  
+The error surfaces on the *receive* line (`fmt.Println(<-s.ch)`), but the true root cause is
+the *send* the line before it: `s.ch <- 5` silently overwrites the field with the plain value
+`5`, destroying the channel, so the receive that follows is reading a corrupted (non-channel)
+field. Confirmed by isolating each half: `<-s.ch` alone, with the field populated by assigning
+an already-sent-to channel from elsewhere (`s := S{ch: raw}` where `raw` was sent to directly),
+receives correctly every time — receive through a compound lvalue was never actually broken.
+
+**Resolution (July 2026):**
+
+Two entirely independent root causes were found and fixed, covering all three compound-lvalue
+kinds named in the title:
+
+- **Struct field / array element send** — `patchStore`
+  (`internal/language/compiler/lvalue.go`), which finalizes the bytecode for any assignment's
+  left-hand side, always converted a compound lvalue's trailing `LoadIndex` instruction into an
+  ordinary `StoreIndex`, regardless of whether the source used `<-` (a channel send) or `=` (a
+  plain field/element write) — both forms compile to the identical instruction shape once a
+  lvalue ends in `.field` or `[index]`, so `StoreIndex` (which knows nothing about channels)
+  just overwrote whatever was there. This is distinct from the *simple*-lvalue case (`ch <- 5`,
+  a bare variable name), which already worked via the existing `StoreChan` opcode — that opcode
+  can inspect the popped value's Go type at runtime and fall back to an ordinary store, because
+  it also has the destination *variable's name* to fall back to; a compound lvalue has no name,
+  only a container and an index/key. Fixed by adding a new opcode, `StoreIndexChan`
+  (`internal/language/bytecode/structs.go`), which `patchStore` now emits instead of
+  `StoreIndex` specifically when `<-` was used on a compound lvalue. Since that only happens
+  when the source unambiguously wrote a channel send, the new opcode needs no "maybe fall back
+  to an ordinary write" logic: it reads back whatever is currently stored at that index/key,
+  requires it to already be a `*data.Channel`, and sends to it, leaving the container itself
+  unmodified.
+- **Map value (a separate, deeper bug)** — a channel failed even on a *plain* assignment
+  (`m["a"] = someChan`), before send/receive entered the picture at all, with
+  `wrong map value type`. `data.TypeOf()` reported a live `*data.Channel` value's type as
+  `PointerType(ChanType)` (kind `PointerKind`) instead of plain `ChanType` (kind `ChanKind`) —
+  inconsistent with every sibling reference type (`*data.Map`, `*data.Struct`), both of which
+  already report their own bare kind, not a synthetic "pointer to X". Since the compiler assigns
+  a `chan`-typed variable plain `ChanType`, a genuine channel value could never structurally
+  match its own declared type, and `data.Map.Set`'s value-type check (enforcing a typed map's
+  declared element type, e.g. `map[string]chan`) rejected every channel outright. Fixed by
+  correcting `data.TypeOf`/`data.KindOf`'s `*Channel` cases (`internal/language/data/types.go`)
+  to match their siblings. Verified safe (no code anywhere depends on the old, inconsistent
+  classification) via a dedicated investigation before making the change, given how widely
+  `TypeOf`/`KindOf` are used throughout the type system.
+
+Regression tests: a new file, `tests/flow/channel_compound_lvalue.ego`, with 13 `@test` blocks
+covering struct field send/receive, array element send/receive, a goroutine sender writing to a
+struct field, a pointer-receiver struct field, a nested struct field, multiple sequential
+sends/receives, a map value (plain assignment, send/receive, and comma-ok lookup), and explicit
+regression guards confirming ordinary (non-channel) struct/array/map/pointer-receiver stores are
+completely unaffected. Verified against `go test ./...` and `ego test tests/` /
+`ego test --types strict tests/` / `ego test --types relaxed tests/` (1361 `@test` blocks, up
+from 1348) with no regressions.
+
+A separate, pre-existing bug was found incidentally while writing these tests — a struct field
+named the same as an unrelated type declared elsewhere in the file corrupts type registration —
+and is tracked separately as [BUG-76](#BUG-76), not fixed here.
+
+---
+
+<a id="BUG-74"></a>
+
+### BUG-74 — A malformed function return type is silently accepted with no error
+
+**Severity:** LOW
+
+**Description:**  
+Found while verifying the BUG-72 fix. Every other type-spec context (`var` declarations,
+function parameters, `make()`, struct fields, type-assertion targets) now correctly rejects
+`chan string` with a clear error. A function's *return* type does not — the malformed type is
+silently discarded and the function compiles as if no return type had been declared at all,
+with the tokens that would have described the (invalid) return type simply abandoned.
+
+**Reproducer:**
+
+```go
+func makeChan() chan string {
+    return make(chan, 1)
+}
+
+func main() {
+    _ = makeChan
+}
+```
+
+**Actual output:**
+
+```text
+(compiles and runs with no error)
+```
+
+**Expected output:**
+
+A clear compile error — `channels do not have an element type; use "chan" alone, not "chan T"`
+— matching every other context.
+
+**Notes:**  
+Root cause: `ParseFunctionDeclaration`'s return-type loop
+(`internal/language/compiler/function.go`) calls `c.parseType("", false)` for each return type
+and, on any error, simply does `break` — discarding the error entirely. This is a deliberate
+ambiguity-resolution design (a function may legitimately have no return type at all, so a
+`parseType` failure there is normally read as "there wasn't one," not "the syntax was wrong"),
+which is why this needed its own investigation rather than being fixed alongside the other three
+call sites that swallowed `ErrChannelElementType` during the BUG-72 work. Propagating
+`ErrChannelElementType` specifically from this loop (the same targeted pattern used for the
+other three call sites) is likely the right fix, but was not attempted here since it required
+its own careful check that legitimate "no return type" cases are not affected.
+
+---
+
+<a id="BUG-75"></a>
+
+### BUG-75 — A local variable or parameter named after a primitive type keyword is shadowed by the type itself
+
+**Severity:** LOW
+
+**Description:**  
+Found while writing regression tests for the BUG-72 fix. Every primitive type keyword (`int`,
+`chan`, `string`, `bool`, ...) can be used as an ordinary identifier — declaring `chan := 5` or
+`func f(chan int)` compiles without error, matching how `int := 5` already worked before BUG-72.
+But *referencing* such a variable in an expression is unreliable: in some cases the expression
+evaluator resolves the name to the type itself (pushing the `*data.Type` value) instead of the
+local variable, producing the wrong value instead of a compile error.
+
+**Reproducer:**
+
+```go
+import "fmt"
+
+func main() {
+    chan := 5
+    fmt.Println(chan)     // prints "chan", not 5
+    chan = chan + 1        // this line then fails outright
+    fmt.Println(chan)
+}
+```
+
+**Actual output:**
+
+```text
+chan
+Error: at main(line 6), invalid value: 1
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+5
+6
+```
+
+**Notes:**  
+Confirmed present for `int` too (a different symptom was observed — "declared but never used"
+rather than the wrong printed value — depending on the exact surrounding statements), so this
+is a general quirk affecting every primitive type keyword used as an identifier, not specific to
+`chan`. The exact trigger condition is not fully understood: a bare `chan := 5; fmt.Println(chan)`
+with no further use reports "declared but never used" (as if the reference genuinely failed to
+resolve to the variable), while adding a later `chan = chan + 1` reassignment changes the
+`fmt.Println(chan)` outcome to printing the type name instead — suggesting the ambiguity between
+"is this identifier a type reference or a variable load" is resolved differently depending on
+what else appears in the same scope, rather than consistently one way or the other. Root cause
+likely lives in `internal/language/compiler/expr_atom.go`'s "try parsing this identifier as a
+type reference before falling back to a symbol lookup" logic (the same code touched by the
+BUG-72 fix's `ErrChannelElementType` propagation), which apparently does not always defer
+correctly to an existing local symbol of the same name. Not investigated further, since it
+affects every primitive type name equally and is unrelated to the tokenizer classification BUG-72
+fixed.
+
+---
+
+<a id="BUG-76"></a>
+
+### BUG-76 — A struct field named the same as an unrelated type corrupts type registration
+
+**Severity:** LOW
+
+**Description:**  
+Found while writing regression tests for the BUG-73 fix. A struct field whose name happens to
+match the name of a completely unrelated `type` declared elsewhere in the same compilation
+(a different `@test` block in the same file, in the reproducer below) fails to compile — even
+though the two are otherwise unconnected: different type name, different fields, no embedding
+or reference between them.
+
+**Reproducer:**
+
+```go
+package main
+
+type box struct {
+    ch chan
+}
+
+func main() {
+    b := box{ch: make(chan, 1)}
+    _ = b
+
+    type inner struct {
+        ch chan
+    }
+
+    type outer struct {
+        box inner // the field name "box" collides with the unrelated "type box" above
+    }
+
+    o := outer{box: inner{ch: make(chan, 1)}}
+    _ = o
+}
+```
+
+**Actual output:**
+
+```text
+INTERNAL: Duplicate field name ch
+Error: invalid field name for type: box
+Error: terminated with errors
+```
+
+**Expected output:**
+
+No error — `outer`'s field named `box` has nothing to do with the unrelated top-level `type
+box` and should not interact with it at all.
+
+**Notes:**  
+Confirmed present on the pre-BUG-73 baseline, so this is unrelated to that fix or to channels
+specifically — a minimal reproducer without any channel involved at all (two plain `int`-typed
+structs, same field/type name collision) produces a different but related error, `no such
+type`, at the point the colliding field is used as a struct-literal key. Both symptoms point to
+some shared namespace between *type names* and *struct field names* within a single
+compilation unit — as if field name resolution falls back to (or is confused with) type name
+resolution when the two strings coincide. Not root-caused to a specific line; a reasonable
+starting point would be wherever struct field types are registered during compilation (likely
+`internal/language/compiler/typeCompiler.go`'s `parseStructFieldTypes`, or the runtime
+`data.Struct.DefineField`/`data.Struct.Set` path suggested by the "Duplicate field name"
+message's wording) to see whether it is querying `c.types` (the compiler's type-name registry)
+instead of, or in addition to, the struct's own field registry.
 
 ---
 

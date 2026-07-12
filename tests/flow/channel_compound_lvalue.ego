@@ -1,0 +1,214 @@
+// Regression tests for BUG-73: a channel stored in a struct field, array
+// element, or map value did not work correctly. Two independent root causes
+// were involved:
+//
+// 1. SEND through a struct field or array element (RECEIVE already worked
+//    fine). patchStore (internal/language/compiler/lvalue.go), which
+//    finalizes the bytecode for any assignment's left-hand side, always
+//    converted a compound lvalue's trailing LoadIndex instruction into an
+//    ordinary StoreIndex -- regardless of whether the source used "<-" (a
+//    channel send) or "=" (a plain field/element write) as the operator.
+//    Since both forms compile to the exact same shape once a lvalue ends in
+//    ".field" or "[index]", StoreIndex had no way to tell them apart: it
+//    just overwrote whatever was stored there. "s.ch <- 5" therefore
+//    silently replaced the channel object in the field with the plain
+//    integer 5, destroying the channel instead of sending to it.
+//
+//    This is distinct from the SIMPLE-lvalue case ("ch <- 5", a bare
+//    variable name), which already worked correctly via the existing
+//    StoreChan opcode -- that opcode can inspect the popped stack value's
+//    Go type at runtime and fall back to an ordinary store when it isn't a
+//    channel, because it also has the destination variable's NAME to fall
+//    back to. A compound lvalue has no name to fall back to, only a
+//    container and an index/key.
+//
+//    Fixed by teaching patchStore to emit a new opcode, StoreIndexChan,
+//    instead of StoreIndex specifically when "<-" was used on a compound
+//    lvalue. Because that only happens when the source unambiguously wrote
+//    a channel send, the new opcode does not need StoreChan's "maybe fall
+//    back to an ordinary write" logic: it reads back whatever is currently
+//    stored at that index/key, requires it to already be a channel, and
+//    sends to it, leaving the container itself completely unmodified.
+//
+// 2. A channel stored as a MAP VALUE failed even on a plain assignment
+//    ("m[k] = someChan"), before send/receive even entered the picture --
+//    a completely separate bug. data.TypeOf(aChannelValue) reported
+//    PointerType(ChanType) (kind PointerKind) instead of plain ChanType
+//    (kind ChanKind), inconsistent with every sibling reference type
+//    (*data.Map, *data.Struct), both of which already report their own
+//    bare kind. Since the compiler assigns a "chan"-typed variable plain
+//    ChanType, a genuine channel value could never structurally match that
+//    declared type, and data.Map.Set's value-type check
+//    (map[string]chan's declared element type) rejected every channel
+//    outright. Fixed by correcting data.TypeOf/data.KindOf's *Channel
+//    cases to match their siblings.
+
+@test "flow: channel stored in a struct field sends and receives correctly (BUG-73)"
+{
+	type box struct {
+		ch chan
+	}
+
+	b := box{ch: make(chan, 1)}
+	b.ch <- 5
+	@assert <-b.ch == 5
+}
+
+@test "flow: channel stored in an array element sends and receives correctly (BUG-73)"
+{
+	chans := make([]chan, 2)
+	chans[0] = make(chan, 1)
+	chans[1] = make(chan, 1)
+
+	chans[0] <- 100
+	chans[1] <- 200
+
+	@assert <-chans[0] == 100
+	@assert <-chans[1] == 200
+}
+
+@test "flow: struct field channel with a goroutine sender (BUG-73)"
+{
+	type senderBox struct {
+		ch chan
+	}
+
+	func producer(c chan) {
+		c <- 1
+		c <- 2
+		close(c)
+	}
+
+	b := senderBox{ch: make(chan, 2)}
+	go producer(b.ch)
+
+	@assert <-b.ch == 1
+	@assert <-b.ch == 2
+}
+
+@test "flow: struct field channel through a pointer receiver (BUG-73)"
+{
+	type ptrBox struct {
+		ch chan
+	}
+
+	b := &ptrBox{ch: make(chan, 1)}
+	b.ch <- 42
+	@assert <-b.ch == 42
+}
+
+@test "flow: channel in a nested struct field (BUG-73)"
+{
+	// Note: the nested field is deliberately NOT named "box" -- that name
+	// collides with the unrelated "type box struct" declared earlier in
+	// this file and triggers a completely separate, pre-existing bug
+	// ("Duplicate field name ch" / "invalid field name for type: box")
+	// where a struct field name colliding with an unrelated type name
+	// elsewhere in the same compilation corrupts type registration. Not
+	// investigated further here -- unrelated to BUG-73's channel/lvalue
+	// work; tracked as BUG-76 in docs/ISSUES.md.
+	type inner struct {
+		ch chan
+	}
+
+	type outer struct {
+		content inner
+	}
+
+	o := outer{content: inner{ch: make(chan, 1)}}
+	o.content.ch <- 7
+	@assert <-o.content.ch == 7
+}
+
+@test "flow: multiple sends and receives through a struct field (BUG-73)"
+{
+	type multiBox struct {
+		ch chan
+	}
+
+	b := multiBox{ch: make(chan, 3)}
+	b.ch <- 1
+	b.ch <- 2
+	b.ch <- 3
+
+	@assert <-b.ch == 1
+	@assert <-b.ch == 2
+	@assert <-b.ch == 3
+}
+
+// --- Channel stored as a map value (root cause 2, above) ------------------
+
+@test "flow: a channel can be stored as a plain assignment into a typed map (BUG-73)"
+{
+	// Before the data.TypeOf/data.KindOf fix, this plain assignment (no
+	// "<-" involved at all) failed outright with "wrong map value type".
+	m := make(map[string]chan)
+	m["a"] = make(chan, 1)
+	@assert m["a"] != nil
+}
+
+@test "flow: channel stored as a map value sends and receives correctly (BUG-73)"
+{
+	m := make(map[string]chan)
+	m["a"] = make(chan, 1)
+
+	m["a"] <- 9
+	@assert <-m["a"] == 9
+}
+
+@test "flow: channel stored as a map value works via comma-ok lookup (BUG-73)"
+{
+	m := make(map[string]chan)
+	m["a"] = make(chan, 1)
+
+	ch, ok := m["a"]
+	@assert ok == true
+
+	ch <- 15
+	@assert <-m["a"] == 15
+}
+
+// --- Regression: ordinary (non-channel) compound stores are unaffected ----
+
+@test "flow: ordinary struct field assignment still works (BUG-73 regression)"
+{
+	type point struct {
+		x int
+		y int
+	}
+
+	p := point{x: 1, y: 2}
+	p.x = 99
+	@assert p.x == 99
+	@assert p.y == 2
+}
+
+@test "flow: ordinary array element assignment still works (BUG-73 regression)"
+{
+	arr := []int{1, 2, 3}
+	arr[0] = 100
+	@assert arr[0] == 100
+	@assert arr[1] == 2
+}
+
+@test "flow: ordinary map value assignment still works (BUG-73 regression)"
+{
+	m := map[string]int{"a": 1}
+	m["a"] = 42
+	@assert m["a"] == 42
+}
+
+@test "flow: pointer-receiver ordinary field assignment still works (BUG-73 regression)"
+{
+	type bumpPoint struct {
+		x int
+	}
+
+	func bump(p *bumpPoint) {
+		p.x = p.x + 1
+	}
+
+	p := &bumpPoint{x: 5}
+	bump(p)
+	@assert p.x == 6
+}

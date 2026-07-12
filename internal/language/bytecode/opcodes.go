@@ -126,6 +126,7 @@ const (
 	StoreChan
 	StoreGlobal
 	StoreIndex
+	StoreIndexChan
 	StoreInto
 	StoreViaPointer
 	Struct
@@ -263,6 +264,7 @@ var opcodeNames = map[Opcode]string{
 	StoreChan:          "StoreChan",
 	StoreGlobal:        "StoreGlobal",
 	StoreIndex:         "StoreIndex",
+	StoreIndexChan:     "StoreIndexChan",
 	StoreInto:          "StoreInto",
 	StoreViaPointer:    "StoreViaPointer",
 	Struct:             "Struct",
@@ -392,6 +394,7 @@ func initializeDispatch() {
 		dispatchTable[StoreChan] = storeChanByteCode
 		dispatchTable[StoreGlobal] = storeGlobalByteCode
 		dispatchTable[StoreIndex] = storeIndexByteCode
+		dispatchTable[StoreIndexChan] = storeIndexChanByteCode
 		dispatchTable[StoreInto] = storeIntoByteCode
 		dispatchTable[StoreViaPointer] = storeViaPointerByteCode
 		dispatchTable[Struct] = structByteCode

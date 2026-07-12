@@ -69,7 +69,8 @@ func (c *Compiler) compileUnwrap() error {
 		c.t.Set(position)
 		c.t.Advance(1)
 
-		if typeSpec, err := c.parseType("", true); err == nil && typeSpec != nil && typeSpec != data.UndefinedType {
+		typeSpec, err := c.parseType("", true)
+		if err == nil && typeSpec != nil && typeSpec != data.UndefinedType {
 			if c.t.IsNext(tokenizer.EndOfListToken) {
 				if c.flags.inAssignment && c.flags.multipleTargets {
 					c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let"))
@@ -82,6 +83,18 @@ func (c *Compiler) compileUnwrap() error {
 
 				return nil
 			}
+		}
+
+		// "chan T" (e.g. x.(chan string)) is never ambiguous with a normal
+		// member access -- unlike every other parseType failure here, which
+		// falls through below to be retried as "x.member" on the assumption
+		// that the parenthesized text just isn't a type spec at all,
+		// propagate this one immediately so the caller sees the clear
+		// "channels do not have an element type" error instead of the
+		// confusing generic "invalid identifier" that a discarded "string"
+		// token would otherwise produce (BUG-72).
+		if errors.Equals(err, errors.ErrChannelElementType) {
+			return err
 		}
 	}
 

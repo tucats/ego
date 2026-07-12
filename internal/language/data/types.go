@@ -1477,8 +1477,17 @@ func KindOf(i any) int {
 	case *Scalar:
 		return KindOf(i.(*Scalar).value)
 
+	// A channel is reference-typed in Ego (like Go's own channels), the
+	// same way *Map and *Struct above are -- not a pointer TO a channel.
+	// This used to return PointerKind (a plain Go-pointer-shape guess that
+	// never considered channels specifically), which meant a genuine
+	// channel value could never satisfy data.ChanType's own Kind in a
+	// structural comparison such as data.IsType, even though the compiler
+	// assigns "chan"-typed variables exactly that type. That mismatch
+	// broke storing a channel into a typed map (map[string]chan), among
+	// other things (BUG-73).
 	case *Channel:
-		return PointerKind
+		return ChanKind
 
 	default:
 		return InterfaceKind
@@ -1686,8 +1695,16 @@ func TypeOf(i any) *Type {
 			valueType: v.valueType,
 		}
 
+	// A channel is reference-typed in Ego, the same way *Map (above) and
+	// *Struct are -- report its bare ChanType, not PointerType(ChanType).
+	// The compiler already assigns "chan"-typed variables plain ChanType
+	// (see typeCompiler.go/type.go's "chan" cases); reporting the pointer
+	// form here meant a genuine channel value could never satisfy that
+	// declared type in a structural comparison such as data.IsType, which
+	// broke storing a channel into a typed map (map[string]chan) among
+	// other things (BUG-73). See the matching fix in KindOf, above.
 	case *Channel:
-		return PointerType(ChanType)
+		return ChanType
 
 	case *errors.Error, errors.Error:
 		return ErrorType
