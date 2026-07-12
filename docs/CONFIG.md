@@ -161,6 +161,7 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.compiler.normalized | Symbol names are case-insensitive |
 | ego.compiler.optimize | Enable bytecode optimizer |
 | ego.compiler.types | Specify strict, relaxed, or dynamic types |
+| ego.compiler.type.shadowing | If true (the default), var names can shadow reserved types (same as Go) |
 | ego.compiler.unknown.var.error | If true, variables referenced without being set are an error |
 | ego.compiler.unused.var.error | If true, variables created or set but not read are an error |
 | ego.compiler.var.usage.logging | If true, include COMPILER log messages for variable usage |

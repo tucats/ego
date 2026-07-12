@@ -218,7 +218,7 @@ The `elapsed` field in `log.server.request` is the **total** server-side time fo
 Preferences stored in `~/.ego/` as JSON profile files. Set via:
 
 ```sh
-ego config set ego.runtime.path=/home/tom/ego
+ego set config ego.runtime.path=/home/tom/ego
 ```
 
 Notable settings:
@@ -226,6 +226,7 @@ Notable settings:
 - `ego.compiler.extensions` — allow language extensions (default `false`)
 - `ego.compiler.import` — auto-import all built-in packages (default `false`)
 - `ego.compiler.types` — `dynamic` (default) or `static` type checking
+- `ego.compiler.type.shadowing` — allow a variable/parameter to shadow a built-in type name, e.g. `int := 5` (default `true`, matching Go; set `false` to make this a compile-time error — useful in teaching contexts)
 - `ego.runtime.path` — where Ego looks for its `lib/` directory
 
 ---
@@ -710,7 +711,7 @@ This does **not** apply to library source under `lib/packages/*.ego` (e.g. `lib/
 
 ### `@compile` — writing tests that exercise compile errors
 
-`@compile [flags] { code }` compiles `code` in an isolated sub-compiler and splices the result inline on success. Flags (any combination, any order, all optional): `block` (bare — `code` is a statement block, not a full program), `unused=true|false`, `unknown=true|false`, `optimize=off|false|low|high|0|1|2`, `bytecode`/`disasm` (bare — print a disassembly of `code`'s bytecode once it compiles, regardless of `--log bytecode`), `eof="marker"` (delimit `code` with a text marker instead of `{ }`, so a test can exercise intentionally mismatched braces).
+`@compile [flags] { code }` compiles `code` in an isolated sub-compiler and splices the result inline on success. Flags (any combination, any order, all optional): `block` (bare — `code` is a statement block, not a full program), `unused=true|false`, `unknown=true|false`, `optimize=off|false|low|high|0|1|2`, `typeShadowing=true|false` (overrides the sub-compiler's `c.flags.typeShadowing` directly — see `ego.compiler.type.shadowing` above — independent of both the parent compiler and the global profile setting, letting a test exercise both values without touching real settings), `bytecode`/`disasm` (bare — print a disassembly of `code`'s bytecode once it compiles, regardless of `--log bytecode`), `eof="marker"` (delimit `code` with a text marker instead of `{ }`, so a test can exercise intentionally mismatched braces).
 
 **As of July 2026, if `code` fails to compile and no `catch` clause is present, the compile error is signalled (raised) at runtime instead of being silently discarded.** If you are deliberately compiling broken code and don't care about the error, you must write an explicit empty catch block:
 

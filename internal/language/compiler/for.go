@@ -640,12 +640,22 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	}
 
 	if indexName != defs.DiscardedVariable {
+		// Reject shadowing a built-in type name when
+		// ego.compiler.type.shadowing is turned off (BUG-75).
+		if err := c.checkTypeShadowing(indexName); err != nil {
+			return err
+		}
+
 		c.DefineSymbol(indexName)
 	} else {
 		indexName = generateIndexName("idx")
 	}
 
 	if valueName != defs.DiscardedVariable {
+		if err := c.checkTypeShadowing(valueName); err != nil {
+			return err
+		}
+
 		c.DefineSymbol(valueName)
 	} else {
 		valueName = generateIndexName("val")

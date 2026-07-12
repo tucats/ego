@@ -163,8 +163,19 @@ func (c *Compiler) expressionAtom() error {
 		return nil
 	}
 
-	// Is it a type cast?
-	if c.t.Peek(2).Is(tokenizer.StartOfListToken) {
+	// Is it a type cast? Skipped when the token is a built-in type keyword
+	// (t.IsType()) that has ALSO been shadowed by a local variable (BUG-75)
+	// -- `int := 5; int(3)` must not be read as a cast to the (now-shadowed)
+	// `int` type, matching Go's rule that a local declaration hides the
+	// predeclared type of the same name for the rest of its scope. Falling
+	// through here lets the normal identifier/call handling below treat
+	// "int" as the variable it now is. The t.IsType() gate matters: a
+	// user-defined type name (e.g. "Point") is never TypeTokenClass, but IS
+	// separately registered in the current scope by typeEmitter purely for
+	// "unused type" tracking -- without gating on t.IsType(), isLocalSymbol
+	// would misread that self-registration as "Point has been shadowed" and
+	// break ordinary `Point(x)` conversions and `Point{...}` literals.
+	if c.t.Peek(2).Is(tokenizer.StartOfListToken) && !(t.IsType() && c.isLocalSymbol(text)) {
 		mark := c.t.Mark()
 
 		// Skip the parentheses
@@ -177,8 +188,26 @@ func (c *Compiler) expressionAtom() error {
 	}
 
 	// Watch out for function calls here.
+	//
+	// If this token is a built-in type keyword (t.IsType()) that has ALSO
+	// been declared as a local variable (or parameter) somewhere still in
+	// scope, the variable shadows the built-in type -- Go's ordinary
+	// scoping rule. Skip the "parse this as a bare type reference" attempt
+	// entirely in that case so the identifier falls through to the plain
+	// symbol lookup below, which loads the variable instead of pushing the
+	// type object (BUG-75). Without this check, `int := 5;
+	// fmt.Println(int)` printed the type "int" instead of the value 5.
+	//
+	// The t.IsType() gate is required, not just a nice-to-have: a
+	// user-defined type name is also registered in the current scope (by
+	// typeEmitter, purely for "unused type" tracking) the moment its `type
+	// X ...` declaration is compiled. Without gating on t.IsType(),
+	// isLocalSymbol would treat that self-registration as if the type had
+	// been shadowed by a variable of its own name, breaking ordinary
+	// `Point{...}` struct literals and `Point(x)` conversions immediately
+	// after declaring `type Point ...`.
 	isPanic := c.flags.extensionsEnabled && (c.t.Peek(1).Is(tokenizer.PanicToken))
-	if !isPanic && c.t.Peek(2).IsNot(tokenizer.StartOfListToken) {
+	if !isPanic && c.t.Peek(2).IsNot(tokenizer.StartOfListToken) && !(t.IsType() && c.isLocalSymbol(text)) {
 		marker := c.t.Mark()
 
 		if typeSpec, err := c.parseType("", true); err == nil {

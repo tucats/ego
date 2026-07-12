@@ -1,0 +1,236 @@
+// Regression tests for BUG-75 and the ego.compiler.type.shadowing setting.
+//
+// BUG-75: Go allows a local variable, parameter, or other user-named
+// binding to shadow the name of a built-in type ("int := 5" is valid Go).
+// Ego allowed the declaration too, but *referencing* the shadowed name in
+// an expression was unreliable: expressionAtom (internal/language/compiler/
+// expr_atom.go) always tried to parse a bare identifier as a type reference
+// before falling back to a symbol lookup, so "int := 5; fmt.Println(int)"
+// printed the type "int" instead of the value 5. Fixed by checking
+// c.isLocalSymbol(name) -- gated on t.IsType() so it only ever applies to
+// genuine built-in type keywords, never to a user-defined type's own
+// self-registered name -- before attempting the type-reference parse.
+//
+// ego.compiler.type.shadowing: a new setting (default true, preserving the
+// behavior above) that, when set to false, turns shadowing a built-in type
+// name into a compile-time error instead of a silently-accepted oddity --
+// useful in teaching contexts where "int := 5" is almost always a mistake,
+// not an intentional choice. The setting is cached once per compiler as
+// c.flags.typeShadowing (see New(), in compiler.go) so the check made at
+// every declaration site is a field read, not a settings lookup. The
+// @compile directive's "typeShadowing=true|false" flag overrides that
+// cached field directly on the sub-compiler, letting these tests exercise
+// both settings values in one file without touching the real profile
+// setting at all.
+
+@test "types: shadowing a built-in type name with := loads the variable, not the type (BUG-75)"
+{
+    chan := 5
+    @assert chan == 5
+
+    chan = chan + 1
+    @assert chan == 6
+}
+
+@test "types: shadowing int specifically (BUG-75)"
+{
+    int := 5
+    @assert int == 5
+
+    int = int + 1
+    @assert int == 6
+}
+
+@test "types: a function parameter may shadow a built-in type name (BUG-75)"
+{
+    func f(int int) int {
+        return int + 1
+    }
+
+    @assert f(5) == 6
+}
+
+@test "types: a named return value may shadow a built-in type name (BUG-75)"
+{
+    func f() (string string) {
+        string = "hello"
+        return
+    }
+
+    @assert f() == "hello"
+}
+
+@test "types: a for-range variable may shadow a built-in type name (BUG-75)"
+{
+    arr := []int{10, 20, 30}
+    sum := 0
+
+    for int, v := range arr {
+        sum = sum + int + v
+    }
+
+    @assert sum == (0 + 10) + (1 + 20) + (2 + 30)
+}
+
+@test "types: a catch variable may shadow a built-in type name (BUG-75)"
+{
+    var result int
+
+    try {
+        _ = 5 / 0
+    } catch(int) {
+        result = 42
+        _ = int
+    }
+
+    @assert result == 42
+}
+
+@test "types: once shadowed, the type's own cast/conversion syntax no longer applies (BUG-75 regression)"
+{
+    // Matches Go's rule that a local declaration hides the predeclared type
+    // for the rest of its scope: int(3) can no longer mean "cast 3 to int"
+    // once "int" has been shadowed by a local variable -- it means calling
+    // the variable "int" as if it were a function, which is an error.
+    int := 5
+    _ = int
+
+    @compile block {
+        int := 5
+        y := int(3)
+        _ = y
+    } catch(e) {
+        @assert e != nil
+    }
+}
+
+@test "types: ordinary (unshadowed) built-in type usage is unaffected (BUG-75 regression)"
+{
+    var x int = 5
+    y := int32(x)
+    @assert int(y) == 5
+
+    var arr []int
+    arr = append(arr, 1, 2, 3)
+    @assert len(arr) == 3
+}
+
+@test "types: a user-defined type's own name is never treated as shadowed (BUG-75 regression)"
+{
+    // typeEmitter registers a declared type's own name in the current scope
+    // (purely for "unused type" tracking) the moment "type Point struct {
+    // ... }" is compiled. Naively treating any locally-registered name as
+    // "shadowed" would misfire here and break ordinary struct literals and
+    // conversions immediately after the type declaration -- the fix gates
+    // the shadowing check on t.IsType() (true only for a built-in type
+    // keyword token) so a user type name like "Point" is never affected.
+    type Point struct {
+        x int
+        y int
+    }
+
+    p := Point{x: 1, y: 2}
+    @assert p.x == 1
+    @assert p.y == 2
+}
+
+// --- ego.compiler.type.shadowing setting, exercised via @compile's own
+// --- "typeShadowing=" flag override, so these tests never touch the real
+// --- profile setting (see the file-level comment above).
+
+@test "types: @compile typeShadowing=false rejects a shadowing := declaration"
+{
+    var caught bool
+
+    @compile block typeShadowing=false {
+        int := 5
+        fmt.Println(int)
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.name.variable"
+        @assert e.Unwrap() == "int"
+    }
+
+    @assert caught == true
+}
+
+@test "types: @compile typeShadowing=false rejects a shadowing var declaration"
+{
+    var caught bool
+
+    @compile block typeShadowing=false {
+        var chan int
+        fmt.Println(chan)
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.name.variable"
+    }
+
+    @assert caught == true
+}
+
+@test "types: @compile typeShadowing=false rejects a shadowing function parameter"
+{
+    var caught bool
+
+    @compile typeShadowing=false {
+        package main
+        func f(string string) string {
+            return string
+        }
+        func main() {
+            fmt.Println(f("x"))
+        }
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.name.variable"
+    }
+
+    @assert caught == true
+}
+
+@test "types: @compile typeShadowing=false does not affect ordinary variable names"
+{
+    var failed bool
+
+    @compile block typeShadowing=false {
+        x := 5
+        fmt.Println(x)
+    } catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "types: @compile typeShadowing=true explicitly allows shadowing"
+{
+    var failed bool
+
+    @compile block typeShadowing=true {
+        int := 5
+        fmt.Println(int)
+    } catch {
+        failed = true
+    }
+
+    @assert failed == false
+}
+
+@test "types: @compile with no typeShadowing flag defaults to allowing shadowing"
+{
+    // No explicit typeShadowing= flag: the sub-compiler keeps whatever
+    // c.flags.typeShadowing it was constructed with (the current
+    // ego.compiler.type.shadowing setting, true by default), so this must
+    // behave exactly like ordinary, non-@compile code.
+    var failed bool
+
+    @compile block {
+        int := 5
+        fmt.Println(int)
+    } catch {
+        failed = true
+    }
+
+    @assert failed == false
+}

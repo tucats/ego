@@ -242,9 +242,10 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-72](#BUG-72) | BUG | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
 | [BUG-73](#BUG-73) | BUG | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
 | [BUG-74](#BUG-74) | BUG | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
-| [BUG-75](#BUG-75) | BUG | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | |
+| [BUG-75](#BUG-75) | BUG | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | ✓ |
 | [BUG-76](#BUG-76) | BUG | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | BUG | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
+| [BUG-78](#BUG-78) | BUG | `profile.Set()` on an `ego.*` setting from Ego code leaks to the persisted profile file despite being documented as in-memory-only. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -533,9 +534,10 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-72](#BUG-72) | LOW | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
 | [BUG-73](#BUG-73) | MEDIUM | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
 | [BUG-74](#BUG-74) | LOW | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
-| [BUG-75](#BUG-75) | LOW | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | |
+| [BUG-75](#BUG-75) | LOW | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | ✓ |
 | [BUG-76](#BUG-76) | LOW | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | MEDIUM | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
+| [BUG-78](#BUG-78) | LOW | `profile.Set()` on an `ego.*` setting from Ego code leaks to the persisted profile file despite being documented as in-memory-only. | |
 
 ---
 
@@ -7552,6 +7554,95 @@ correctly to an existing local symbol of the same name. Not investigated further
 affects every primitive type name equally and is unrelated to the tokenizer classification BUG-72
 fixed.
 
+**Root cause:**  
+Confirmed exactly where the earlier investigation pointed: `expressionAtom` (`expr_atom.go`)
+always attempted `c.parseType("", true)` on a bare identifier — trying to read it as a built-in
+type reference — before ever checking whether that name had already been declared as a local
+variable. When the parse succeeded (which it always does for a primitive type keyword, since
+those are recognized unconditionally), the `*data.Type` value was pushed onto the stack instead
+of the variable being loaded, with no regard for whether a `chan := 5`-style declaration had
+shadowed it earlier in the same scope. Go's own scoping rule — a local declaration hides an
+identically-named predeclared identifier for the rest of its scope — was never implemented at
+all for this code path.
+
+**Resolution:**  
+Added `Compiler.isLocalSymbol(name string) bool` (`internal/language/compiler/symbols.go`), a
+read-only scan of `c.scopes` (the same stack `DefineSymbol`/`ReferenceSymbol` already maintain
+for "unused variable" tracking) that reports whether `name` has been declared anywhere still in
+scope. `expressionAtom` now checks `t.IsType() && c.isLocalSymbol(text)` before attempting both
+the type-cast parse (`T(value)`) and the bare-type-reference parse, and skips straight to the
+ordinary symbol lookup when true — giving a shadowing variable priority over the built-in type,
+matching Go.
+
+The `t.IsType()` gate (true only for a token lexically classified as a built-in type keyword —
+`int`, `chan`, `string`, etc.) is required, not just a nice-to-have: `typeEmitter`
+(`typeCompiler.go`) *also* calls `DefineSymbol` on every `type X ...` declaration's own name,
+purely for "unused type" tracking. Without the `t.IsType()` gate, `isLocalSymbol` would treat
+that self-registration as if the type had been shadowed by a variable of its own name the moment
+it was declared — breaking ordinary `Point{...}` struct literals and `Point(x)` conversions
+immediately after `type Point struct { ... }`. This was caught during testing (`go test ./...`
+failures in `TestBUG41MultilineLiteral`/`TestBUG26StructValueSemantics` from an earlier, ungated
+version of this fix) and is why the check is keyed off the token's lexical class rather than a
+plain name lookup against `c.scopes`.
+
+A second, related gap was fixed at the same time: once a built-in type name is shadowed, its
+cast/conversion syntax should no longer apply either (`int := 5; int(3)` must not silently mean
+"cast 3 to int" — Go treats it as attempting to call the variable `int`, which is an error). The
+type-cast attempt at the top of `expressionAtom` got the same `t.IsType() &&
+c.isLocalSymbol(text)` guard.
+
+**New setting — `ego.compiler.type.shadowing`:**  
+Alongside the bug fix, a companion teaching-oriented setting was added
+(`internal/defs/config.go`; default `true`, matching Go's own behavior and Ego's historical
+behavior; profile default wired up in `internal/runtime/profile/initialization.go`). When set to
+`false`, declaring a variable, parameter, named return value, for-range variable, or catch
+variable with the same spelling as a built-in type keyword is a compile-time error
+(`errors.ErrTypeNameAsVariable`, "built-in type names cannot be used as variable names") instead
+of the otherwise-legal shadowing this bug fix restores — useful in teaching contexts where `int
+:= 5` is almost always a mistake, not a deliberate choice.
+
+The setting is read once per compiler, in `New()` (`compiler.go`), and cached as
+`c.flags.typeShadowing` — a plain field read, not a settings lookup, at every declaration site
+(`checkTypeShadowing` in `symbols.go`). `Clone()` already copies the whole `flags` struct, so the
+cached value naturally propagates to nested function compilers. The `@compile` directive gained a
+matching `typeShadowing=true|false` flag (`directives.go`) that overrides the sub-compiler's
+`c.flags.typeShadowing` directly, independent of both the parent compiler's flags and the global
+profile setting — this is what lets a test exercise both settings values in one file without
+ever touching the real profile.
+
+`checkTypeShadowing` is called at every real variable-declaring site: `:=` short declarations and
+plain assignment (`lvalue.go`, two call sites — one for the single-target lvalue path, one for
+the multi-target list path), `var` declarations (`var.go`), function parameters and named return
+values (`function.go`), for-range loop variables (`for.go`), `try`/`catch` and `@compile`'s own
+`catch` variable (`try.go`, `directives.go`), `switch`'s semicolon-separated init variable
+(`switch.go`), and `@capture`'s `:=` form (`capture.go`). It deliberately does *not* fire for a
+`type X ...` declaration's own name (that's bookkeeping, not a variable) or for compiler-internal
+registrations (package names, generated temporaries).
+
+One implementation pitfall worth recording: the multi-target lvalue list parser
+(`assignmentTargetList` in `lvalue.go`) is tried first by `assignmentTarget`, which silently
+discards *any* error it returns and falls back to re-parsing from the original token position via
+the single-target path — a pre-existing "is this a list, or not" disambiguation pattern that
+predates this fix. The first version of the shadowing check here returned its error without
+restoring the tokenizer position first (unlike every *other* early return in that loop), which
+left the tokenizer mid-token by the time the silent fallback re-read from a stale position,
+producing an unrelated "invalid symbol name: Special ':='" error instead of the real one. Fixed
+by calling `c.t.Set(savedPosition)` before returning, matching the loop's existing convention.
+
+**Regression tests:** a new file, `tests/types/type_shadowing.ego`, with 15 `@test` blocks
+covering: shadowing via `:=` for both a channel-associated keyword (`chan`) and `int`
+specifically; a function parameter, named return value, for-range variable, and `catch` variable
+each shadowing a built-in type; a shadowed type's cast syntax correctly failing instead of
+silently casting; ordinary (unshadowed) built-in type usage remaining unaffected; a user-defined
+type's own name never being mistaken for shadowing; and six tests exercising the
+`ego.compiler.type.shadowing` setting via `@compile`'s `typeShadowing=` flag — rejecting a
+shadowing `:=`, `var`, and function parameter when `false`, confirming ordinary variable names
+are unaffected when `false`, and confirming both an explicit `typeShadowing=true` and the flag's
+absence (falling back to the ambient setting, `true` by default) allow shadowing. Verified
+against `go build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types
+dynamic`, `--types strict`, and `--types relaxed` (1381 `@test` blocks, up from 1366, with no
+regressions).
+
 ---
 
 <a id="BUG-76"></a>
@@ -7776,6 +7867,96 @@ names, since every `@test` block in the file now has its own independent type na
 Verified with `go build ./...`, `go vet ./...`, `go test ./...` (all clean) and `ego test tests/`
 under `--types dynamic`, `--types strict`, and `--types relaxed` (1361 tests passing in all three
 modes, matching the pre-fix count exactly — zero regressions from making type scoping stricter).
+
+---
+
+<a id="BUG-78"></a>
+
+### BUG-78 — `profile.Set()` on an `ego.*` setting leaks to the persisted profile file
+
+**Severity:** LOW
+
+**Description:**  
+Found while building test coverage for the new `ego.compiler.type.shadowing` setting (BUG-75).
+`internal/runtime/profile/profile.go`'s `setKey` (the implementation behind the Ego-visible
+`profile.Set()` function) contains an explicit comment and code path stating that settings with
+the `ego.*` prefix are updated only in memory, never persisted to disk:
+
+```go
+// Ego settings can only be updated in the in-memory copy, not in the persisted data.
+if isEgoSetting {
+    return err, nil
+}
+
+// Otherwise, store the value back to the file system.
+return err, settings.Save()
+```
+
+In practice this guarantee does not hold: calling `profile.Set("ego.compiler.type.shadowing",
+"false")` from Ego code and then exiting the process leaves the on-disk profile file
+(`~/.ego/<profile>.profile`) permanently changed to `"false"`.
+
+**Root cause:**  
+The leak does not come from `setKey` itself — its own `Save()` call is correctly skipped for
+`ego.*` keys, exactly as the comment describes. It comes from a *different*, unconditional
+`settings.Save()` call in the top-level CLI dispatcher: `internal/cli/app/run.go`'s
+`RunFromArgs`-equivalent entry point calls `settings.Save()` once, after every successful command
+(`ego test`, `ego run`, or any other verb), regardless of what that command did:
+
+```go
+if err := context.Parse(); err != nil {
+    return err
+} else {
+    // If no errors, then write out an updated profile as needed.
+    if err = settings.Save(); err != nil {
+        return err
+    }
+}
+```
+
+`settings.Set()` (called unconditionally by `setKey`, before the `isEgoSetting` check decides
+whether to *also* call `Save()` itself) marks the active `Configuration.Dirty = true` regardless
+of the key's prefix. `settings.Save()` (`internal/cli/settings/files.go`) persists *any*
+configuration with `Dirty == true` to disk — it has no awareness of `setKey`'s `isEgoSetting`
+distinction at all. So the very next time the top-level command's own `Save()` runs (which happens
+unconditionally, for every command, not just `ego config set`), the `ego.*` change gets flushed to
+disk anyway, completely undoing the in-memory-only guarantee `setKey` tried to provide.
+
+**Reproducer:**
+
+```sh
+ego set config ego.compiler.type.shadowing=true
+grep type.shadowing ~/.ego/default.profile   # shows "true"
+
+cat > /tmp/leak_test.ego <<'EGO'
+@test "leak"
+{
+    import "profile"
+    profile.Set("ego.compiler.type.shadowing", "false")
+    @pass
+}
+EGO
+ego test /tmp/leak_test.ego
+
+grep type.shadowing ~/.ego/default.profile   # now shows "false" -- leaked
+```
+
+**Expected output:**  
+The on-disk profile should be unaffected by `profile.Set()` calls on `ego.*`-prefixed keys; only
+the in-memory value for the remainder of that process should change, matching the existing code
+comment's stated intent.
+
+**Notes:**  
+This affects every `ego.*` setting, not just the new `ego.compiler.type.shadowing` one — it is a
+general gap in the `isEgoSetting` protection, not something introduced by BUG-75's work. Not fixed
+here to keep that work scoped; a fix would need `run.go`'s top-level `Save()` to either skip
+persisting `ego.*` keys specifically, or `setKey` to mark such changes with some form of
+"do not persist" flag that survives past its own return and is honored by the later, unrelated
+`Save()` call. The regression tests added for BUG-75 avoid exercising `profile.Set()` on
+`ego.compiler.type.shadowing` for exactly this reason — they use `@compile`'s own
+`typeShadowing=true|false` flag instead, which overrides the sub-compiler's cached flag directly
+and never touches the settings store at all, so it carries no risk of polluting the developer's
+real profile.
 
 ---
 

@@ -58,6 +58,12 @@ func (c *Compiler) compileVar() error {
 		}
 
 		for _, name := range names {
+			// Reject shadowing a built-in type name when
+			// ego.compiler.type.shadowing is turned off (BUG-75).
+			if err := c.checkTypeShadowing(name); err != nil {
+				return err
+			}
+
 			c.DefineSymbol(name)
 		}
 

@@ -90,6 +90,7 @@ type flagSet struct {
 	silent                bool // This compilation unit is not logged
 	exitEnabled           bool // Only true in interactive mode
 	fragment              bool // True if this compilation is not a complete program
+	typeShadowing         bool // True if a variable may shadow a built-in type name (BUG-75)
 }
 
 type importElement struct {
@@ -219,6 +220,22 @@ func New(name string) *Compiler {
 
 	unusedVarsErr := settings.GetBool(defs.UnusedVarsSetting)
 
+	// Is a variable permitted to shadow a built-in type name (e.g.
+	// "int := 5")? This defaults to true -- matching Go's own behavior and
+	// Ego's historical behavior -- even when the setting has never been
+	// explicitly set. settings.GetBool alone would read an entirely absent
+	// key as false, which would silently forbid shadowing in any
+	// environment that hasn't run profile initialization (e.g. a raw
+	// Go-level compiler test, or an embedded use of the compiler); only an
+	// explicit "false" value should ever disable shadowing. This is read
+	// once, here, and cached in c.flags.typeShadowing so the check made for
+	// every variable declaration (checkTypeShadowing, in symbols.go) is a
+	// simple field read rather than a settings lookup (BUG-75).
+	typeShadowing := true
+	if v := settings.Get(defs.TypeShadowingSetting); v != "" {
+		typeShadowing = settings.GetBool(defs.TypeShadowingSetting)
+	}
+
 	// Create a new instance of the compiler.
 	return &Compiler{
 		b:            bytecode.New(name),
@@ -239,6 +256,7 @@ func New(name string) *Compiler {
 			extensionsEnabled:     extensions,
 			strictTypes:           typeChecking,
 			unusedVars:            unusedVarsErr,
+			typeShadowing:         typeShadowing,
 		},
 	}
 }

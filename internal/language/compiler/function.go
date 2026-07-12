@@ -274,6 +274,12 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 	// Did we accumulate named return variables? If so, add them to the known variable list.
 	for _, rv := range c.returnVariables {
+		// Reject shadowing a built-in type name when
+		// ego.compiler.type.shadowing is turned off (BUG-75).
+		if err := c.checkTypeShadowing(rv.Name); err != nil {
+			return nil, nil, err
+		}
+
 		c.DefineSymbol(rv.Name)
 
 		if err := c.ReferenceSymbol(rv.Name); err != nil {
@@ -804,6 +810,17 @@ func (c *Compiler) parseParameterDeclaration(defineSymbols bool) (parameters []p
 				parameters = append(parameters, p)
 
 				if defineSymbols {
+					// Reject shadowing a built-in type name when
+					// ego.compiler.type.shadowing is turned off (BUG-75).
+					// Only checked when defineSymbols is true -- a bare
+					// function type spec's parameter names are purely
+					// documentation (see the doc comment above) and never
+					// become real local variables, so there is nothing to
+					// shadow.
+					if err := c.checkTypeShadowing(name); err != nil {
+						return nil, false, err
+					}
+
 					c.DefineSymbol(name)
 				}
 			}

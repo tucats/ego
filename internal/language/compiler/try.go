@@ -57,6 +57,12 @@ func (c *Compiler) compileTry() error {
 			return c.compileError(errors.ErrMissingParenthesis)
 		}
 
+		// Reject shadowing a built-in type name when
+		// ego.compiler.type.shadowing is turned off (BUG-75).
+		if err := c.checkTypeShadowing(errName.Spelling()); err != nil {
+			return err
+		}
+
 		c.b.Emit(bytecode.Load, defs.ErrorVariable)
 		c.b.Emit(bytecode.StoreAlways, errName)
 		c.DefineSymbol(errName.Spelling())

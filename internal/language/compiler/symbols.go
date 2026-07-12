@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
 // scope tracks the set of symbols declared within a single lexical block
@@ -214,6 +215,59 @@ func (c *Compiler) UsageOptional(name string) *Compiler {
 	c.optionalUsage[name] = true
 
 	return c
+}
+
+// isLocalSymbol reports whether name has already been declared as a variable,
+// parameter, or other symbol somewhere in the current scope chain (any entry
+// in c.scopes, from the innermost lexical block back to the package/global
+// scope at index 0). This is a read-only lookup: unlike validateSymbol, it
+// never marks the symbol as "used" and never falls back to checking
+// constants, packages, or the runtime symbol table -- it only answers "has
+// DefineSymbol already been called for this exact name, somewhere still in
+// scope, in this compilation unit."
+//
+// Used by expressionAtom to prefer a local variable over a same-named
+// built-in type keyword when both exist, matching Go's ordinary scoping
+// rule that a local declaration shadows any identically-named predeclared
+// identifier -- e.g. `int := 5` followed by `fmt.Println(int)` must load
+// the local variable, not push the `int` type itself (BUG-75).
+func (c *Compiler) isLocalSymbol(name string) bool {
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		if _, ok := c.scopes[i].usage[name]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checkTypeShadowing returns an ErrTypeNameAsVariable compile error if name
+// is spelled exactly like a built-in type keyword (e.g. "int", "chan",
+// "string" -- anything in tokenizer.TypeTokens) and c.flags.typeShadowing is
+// false. That flag is cached once, from the ego.compiler.type.shadowing
+// setting, when the compiler is constructed (see New(), in compiler.go) or
+// explicitly overridden by an enclosing @compile directive's
+// "typeShadowing=" flag (see compileBlockDirective, in directives.go) --
+// checking the cached field here, rather than re-reading the setting on
+// every declaration, is what makes this check cheap enough to call at every
+// variable/parameter declaration site.
+//
+// Call this at every site that declares a new variable, parameter, named
+// return value, or other user-chosen binding name -- but NOT at type
+// declarations themselves (typeEmitter's own DefineSymbol call), or at
+// compiler-internal bookkeeping registrations (package names, generated
+// temporaries), which this check has no opinion about. See BUG-75 in
+// docs/ISSUES.md.
+func (c *Compiler) checkTypeShadowing(name string) error {
+	if c.flags.typeShadowing {
+		return nil
+	}
+
+	if !tokenizer.TypeTokens[tokenizer.NewTypeToken(name)] {
+		return nil
+	}
+
+	return c.compileError(errors.ErrTypeNameAsVariable).Context(name)
 }
 
 // Mark a variable as being used in the current scope. If the variable has not been defined

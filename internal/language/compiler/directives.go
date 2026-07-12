@@ -765,6 +765,14 @@ func (c *Compiler) compileBlockDirective() error {
 		// the "block" keyword's own bare-flag style.
 		bytecodeFlag = "bytecode"
 		disasmFlag   = "disasm"
+
+		// typeShadowingFlag lets a test force the sub-compiler's
+		// c.flags.typeShadowing on or off directly, independent of the
+		// ego.compiler.type.shadowing profile setting, so BUG-75-style tests
+		// can exercise both settings in isolation without having to save and
+		// restore the profile setting via the profile package. See
+		// checkTypeShadowing in symbols.go.
+		typeShadowingFlag = "typeShadowing"
 	)
 
 	var (
@@ -781,6 +789,16 @@ func (c *Compiler) compileBlockDirective() error {
 		// flag is present on the directive; see bytecodeFlag/disasmFlag
 		// above.
 		showBytecode = false
+
+		// typeShadowing/typeShadowingSet hold the value and presence of an
+		// explicit "typeShadowing=" flag on this directive. Unlike
+		// unusedVars/unknownVars/optimize above, there is no "saved" value
+		// to restore afterward: the flag is applied directly to the
+		// sub-compiler's own c.flags.typeShadowing (see below) rather than
+		// to the global settings store, so nothing needs undoing once the
+		// block finishes compiling.
+		typeShadowing    = false
+		typeShadowingSet = false
 
 		// eofMarker holds the value of an "eof=" option, e.g.
 		// @compile eof="$EOF". It stays empty ("") unless that option is
@@ -857,6 +875,27 @@ func (c *Compiler) compileBlockDirective() error {
 			default:
 				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
 			}
+
+		case typeShadowingFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next().Spelling()
+			switch strings.ToLower(flag) {
+			case trueFlag, onFlag, "1":
+				typeShadowing = true
+
+			case falseFlag, offFlag, "0":
+				typeShadowing = false
+
+			default:
+				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
+			}
+
+			typeShadowingSet = true
 
 		case optimizeFlag, optFlag:
 			c.t.Advance(1)
@@ -980,6 +1019,18 @@ func (c *Compiler) compileBlockDirective() error {
 	subCompiler.flags.unusedVars = unusedVars
 	subCompiler.flags.fragment = false
 	subCompiler.flags.trial = false
+
+	// Unlike unusedVars/unknownVars/optimize above, typeShadowing has no
+	// "always re-apply" default: New() already gave subCompiler a correct
+	// c.flags.typeShadowing (freshly read from the ego.compiler.type.shadowing
+	// setting, or inherited wholesale from the parent's c.flags in blockMode,
+	// just above). Only stomp on that when the directive explicitly asked
+	// for a specific value via "typeShadowing=true|false" -- this is what
+	// lets a test force the flag in isolation, independent of both the
+	// parent compiler's flags and the global profile setting.
+	if typeShadowingSet {
+		subCompiler.flags.typeShadowing = typeShadowing
+	}
 
 	// Collect up all the tokens that make up the code to compile. These
 	// will be the tokens sent to the sub-compiler for compilation. Exactly
@@ -1195,6 +1246,12 @@ func (c *Compiler) compileBlockDirective() error {
 
 		if !c.t.IsNext(tokenizer.EndOfListToken) {
 			return c.compileError(errors.ErrMissingParenthesis)
+		}
+
+		// Reject shadowing a built-in type name when
+		// ego.compiler.type.shadowing is turned off (BUG-75).
+		if err := c.checkTypeShadowing(errName.Spelling()); err != nil {
+			return err
 		}
 
 		c.b.Emit(bytecode.Load, defs.ErrorVariable)

@@ -117,6 +117,20 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		name = tokenizer.NewIdentifierToken(c.normalize(name.Spelling()))
 		needLoad := true
 
+		// Reject shadowing a built-in type name when
+		// ego.compiler.type.shadowing is turned off (BUG-75). Restore the
+		// tokenizer position first, matching every other early-return in
+		// this loop: assignmentTarget's caller silently falls back to the
+		// single-target lvalue path on ANY error from this function (it
+		// only distinguishes "not a list" from "real error" by discarding
+		// errors wholesale), so leaving the tokenizer mid-token here would
+		// make that fallback re-parse from the wrong position.
+		if err := c.checkTypeShadowing(name.Spelling()); err != nil {
+			c.t.Set(savedPosition)
+
+			return nil, err
+		}
+
 		// Until we get to the end of the lvalue...
 		for tokenizer.InList(c.t.Peek(1), tokenizer.DotToken, tokenizer.StartOfArrayToken) {
 			if needLoad {
@@ -271,6 +285,12 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
 		if c.t.Peek(1).Is(tokenizer.DefineToken) {
+			// Reject shadowing a built-in type name when
+			// ego.compiler.type.shadowing is turned off (BUG-75).
+			if err := c.checkTypeShadowing(name.Spelling()); err != nil {
+				return nil, err
+			}
+
 			bc.Emit(bytecode.SymbolCreate, name)
 			c.DefineSymbol(name.Spelling())
 		}

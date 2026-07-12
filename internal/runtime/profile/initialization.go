@@ -71,6 +71,7 @@ func InitProfileDefaults(class int) error {
 		defs.AutoImportSetting:             {RuntimeDefaults, defs.True},
 		defs.CaseNormalizedSetting:         {RuntimeDefaults, defs.False},
 		defs.StaticTypesSetting:            {RuntimeDefaults, defs.Dynamic},
+		defs.TypeShadowingSetting:          {RuntimeDefaults, defs.True},
 		defs.UnusedVarsSetting:             {RuntimeDefaults, defs.True},
 		defs.UnknownVarSetting:             {RuntimeDefaults, defs.False},
 		defs.UnusedVarLoggingSetting:       {RuntimeDefaults, defs.False},

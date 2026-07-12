@@ -181,6 +181,12 @@ func (c *Compiler) captureDirective() error {
 	// corrupting the capture stack instead of cleanly reporting an error.
 	if !isDiscard {
 		if isDefine {
+			// Reject shadowing a built-in type name when
+			// ego.compiler.type.shadowing is turned off (BUG-75).
+			if err := c.checkTypeShadowing(varName); err != nil {
+				return err
+			}
+
 			c.b.Emit(bytecode.SymbolCreate, varName)
 			c.DefineSymbol(varName)
 		} else {

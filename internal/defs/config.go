@@ -181,6 +181,14 @@ const (
 	// The default is "dynamic".
 	StaticTypesSetting = CompilerKeyPrefix + "types"
 
+	// Should a local variable be permitted to shadow the name of a built-in
+	// type (e.g. "int := 5")? Defaults to true, matching Go's own behavior
+	// and Ego's historical behavior. When set to false, declaring a
+	// variable named after a built-in type is a compile-time error --
+	// useful in teaching contexts where accidentally shadowing a type name
+	// is a common, confusing mistake worth calling out explicitly.
+	TypeShadowingSetting = CompilerKeyPrefix + "type.shadowing"
+
 	// Should a variable that is declared but never used be an error?
 	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
 
@@ -596,6 +604,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	UseReadlineSetting:              true,
 	FullStackListingSetting:         true,
 	StaticTypesSetting:              true,
+	TypeShadowingSetting:            true,
 	ApplicationServerSetting:        false,
 	LogonServerSetting:              true,
 	LogonTokenSetting:               false,

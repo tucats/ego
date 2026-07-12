@@ -468,6 +468,12 @@ func (c *Compiler) compileSwitchAssignedValue() (string, error) {
 	// the init clause and parse a second expression as the actual switch value.
 	if c.t.IsNext(tokenizer.SemicolonToken) {
 		if hasScope {
+			// Reject shadowing a built-in type name when
+			// ego.compiler.type.shadowing is turned off (BUG-75).
+			if err := c.checkTypeShadowing(initVarName); err != nil {
+				return "", err
+			}
+
 			// Store the init expression under the named variable so that the
 			// second expression and the case bodies can reference it.
 			c.DefineSymbol(initVarName)
