@@ -76,8 +76,14 @@ func (c *Compiler) compileFunctionDefinition(isLiteral bool) error {
 		}
 	}
 
-	// The function name must be followed by a parameter declaration
-	parameters, hasVarArgs, err := c.parseParameterDeclaration()
+	// The function name must be followed by a parameter declaration. This is
+	// always a real function (named or literal) that must be followed by a
+	// body (checked immediately below), so its named parameters genuinely
+	// need to be tracked for the "declared but never used" check -- unlike
+	// a bare function TYPE spec's parameters, which have no body to ever
+	// reference them (see the defineSymbols=false callers below, and
+	// parseParameterDeclaration's own comment).
+	parameters, hasVarArgs, err := c.parseParameterDeclaration(true)
 	if err != nil {
 		return err
 	}
@@ -585,8 +591,24 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 		}
 	}
 
-	// The function name must be followed by a parameter declaration.
-	paramList, hasVarArgs, err := c.parseParameterDeclaration()
+	// The function name must be followed by a parameter declaration. This
+	// path (ParseFunctionDeclaration) is used both for pure function TYPE
+	// specs with no body at all (a var declaration, struct/interface field,
+	// or type assertion target -- see typeCompiler.go's "func" case,
+	// parseInterface, and type.go's parseTypeSpec addition for BUG-70) and
+	// for a real named function definition's speculative, discarded-
+	// position pre-parse (see the ParseFunctionDeclaration(false) call in
+	// compileFunctionDefinition above, whose token position is rewound
+	// immediately after). Neither case should register the parameter names
+	// for "declared but never used" tracking: a type spec's names are pure
+	// documentation with no body to reference them, and the speculative
+	// pre-parse's own real parameter parse happens again, separately, via
+	// compileFunctionDefinition's direct parseParameterDeclaration(true)
+	// call. Without this, a named function type used as a var's type (or a
+	// struct field, or a type assertion target) would almost always fail to
+	// compile with a spurious "declared but never used" error for its
+	// parameter names.
+	paramList, hasVarArgs, err := c.parseParameterDeclaration(false)
 	if err != nil {
 		return nil, err
 	}
@@ -705,13 +727,38 @@ func (c *Compiler) parseFunctionName() (functionName tokenizer.Token, thisName t
 // parenthesis with each parameter name and a required type declaration that
 // follows it. This is returned as the parameters value, which is an array for
 // each parameter and it's type.
-func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarArgs bool, err error) {
+//
+// defineSymbols controls whether named parameters are registered with
+// DefineSymbol for "declared but never used" tracking. Pass true only when a
+// real function body is guaranteed to follow (compileFunctionDefinition's own
+// call), so a parameter that the body never references is correctly flagged.
+// Pass false for a bare function TYPE spec -- a var declaration, struct or
+// interface field, or type assertion target -- where the names are purely
+// documentation and no body will ever exist to reference them; ParseFunction
+// Declaration's callers all pass false for exactly this reason (BUG-70).
+// Unnamed parameters (parseUnnamedParameterList) are never affected either
+// way, since they have no name to register in the first place.
+func (c *Compiler) parseParameterDeclaration(defineSymbols bool) (parameters []parameter, hasVarArgs bool, err error) {
 	parameters = []parameter{}
 	hasVarArgs = false
 
 	c.t.IsNext(tokenizer.StartOfListToken)
 
 	if !c.t.IsNext(tokenizer.BlockBeginToken) {
+		// Go allows a parameter list to give only types, with no parameter
+		// names at all -- e.g. "func(int, int) int" instead of
+		// "func(a, b int) int". This form is used most often for function
+		// TYPE specs (a var declaration, struct/interface field, or type
+		// assertion target), but Go permits it in an actual function
+		// definition too (the parameters are simply not addressable inside
+		// the body). isUnnamedParameterList performs a read-only lookahead
+		// to detect this form before committing to either parser, since the
+		// two forms cannot be told apart by their very first token alone
+		// (BUG-70).
+		if c.isUnnamedParameterList() {
+			return c.parseUnnamedParameterList()
+		}
+
 		for !c.t.IsNext(tokenizer.EndOfListToken) {
 			if c.t.AtEnd() {
 				return parameters, hasVarArgs, c.compileError(errors.ErrMissingParenthesis)
@@ -756,7 +803,9 @@ func (c *Compiler) parseParameterDeclaration() (parameters []parameter, hasVarAr
 
 				parameters = append(parameters, p)
 
-				c.DefineSymbol(name)
+				if defineSymbols {
+					c.DefineSymbol(name)
+				}
 			}
 
 			// Skip the comma if there is one.
@@ -790,6 +839,146 @@ func (c *Compiler) collectParameterNames() ([]string, error) {
 	}
 
 	return names, nil
+}
+
+// isUnnamedParameterList performs a read-only lookahead over the upcoming
+// parameter list -- from the current position (which must be just after the
+// list's opening "(", the same position collectParameterNames would start
+// reading from) up to and including its matching ")" -- to determine
+// whether the list uses Go's type-only ("unnamed") form, e.g.
+// "func(int, int) int", rather than the ordinary named form, e.g.
+// "func(a, b int) int" (BUG-70).
+//
+// The distinguishing signal, mirroring how Go's own parser disambiguates the
+// two forms: the named form always has at least one parameter group
+// consisting of one or more IDENTIFIER tokens immediately followed by the
+// start of a TYPE (another identifier, "*", "[", or "func") with no comma in
+// between -- e.g. the "b int" in "a, b int". In the unnamed form every entry
+// is a complete, self-contained type, so a top-level identifier is always
+// immediately followed by "," or the list's own closing ")", never by
+// another type-start token. A single occurrence of the named pattern
+// anywhere in the list is enough to decide the whole list is named, since
+// Go does not allow mixing the two forms in one parameter list.
+//
+// Every token is read with Peek, never Next or Advance, so the tokenizer's
+// position is completely unchanged when this returns -- the caller is free
+// to dispatch to whichever real parser applies.
+func (c *Compiler) isUnnamedParameterList() bool {
+	depth := 0
+
+	for offset := 1; ; offset++ {
+		tok := c.t.Peek(offset)
+
+		if tok.Is(tokenizer.EndOfTokens) {
+			// Ran off the end without ever finding a closing ")" -- let the
+			// real parser (named form, the existing/default path) report
+			// the appropriate "missing parenthesis" error.
+			return false
+		}
+
+		// Track nesting depth so tokens belonging to a compound type inside
+		// one parameter's type -- e.g. the "(int)" in "f func(int) int", or
+		// a "[...]"/"{...}" span -- are never mistaken for the parameter
+		// list's own top-level structure.
+		switch {
+		case tok.Is(tokenizer.StartOfListToken), tok.Is(tokenizer.StartOfArrayToken), tok.Is(tokenizer.BlockBeginToken):
+			depth++
+			continue
+
+		case tok.Is(tokenizer.EndOfListToken):
+			if depth == 0 {
+				// This is the parameter list's own closing ")" -- reached
+				// without ever finding the "identifier directly followed by
+				// a type" pattern, so every entry seen was a complete type
+				// on its own. That is the unnamed form.
+				return true
+			}
+
+			depth--
+			continue
+
+		case tok.Is(tokenizer.EndOfArrayToken), tok.Is(tokenizer.BlockEndToken):
+			depth--
+			continue
+		}
+
+		if depth > 0 {
+			continue
+		}
+
+		if !tok.IsIdentifier() {
+			continue
+		}
+
+		// Found a top-level identifier -- an unnamed entry's own type, or a
+		// named entry's parameter name. Look at what immediately follows.
+		// A variadic marker ("...") between a name and its type is skipped
+		// over so "args ...int" is still recognized as named.
+		nextOffset := offset + 1
+		next := c.t.Peek(nextOffset)
+
+		if next.Is(tokenizer.VariadicToken) {
+			nextOffset++
+			next = c.t.Peek(nextOffset)
+		}
+
+		if isTypeStartToken(next) {
+			return false
+		}
+	}
+}
+
+// isTypeStartToken reports whether tok could be the first token of a type
+// expression, for use by isUnnamedParameterList's lookahead. Most type-
+// introducing keywords (map, struct, interface, chan, error, any, and every
+// primitive type name) are TypeTokenClass or otherwise already satisfy
+// Token.IsIdentifier(); only the pointer, array, and function-type markers
+// need an explicit check here.
+func isTypeStartToken(tok tokenizer.Token) bool {
+	return tok.IsIdentifier() ||
+		tok.Is(tokenizer.PointerToken) ||
+		tok.Is(tokenizer.StartOfArrayToken) ||
+		tok.Is(tokenizer.FuncToken)
+}
+
+// parseUnnamedParameterList parses a comma-separated list of bare types with
+// no parameter names -- Go's "func(int, int) int" form. The caller
+// (parseParameterDeclaration) has already used isUnnamedParameterList's
+// lookahead to confirm this is the correct form; nothing here falls back to
+// the named form. Each parameter is given an empty name: DefineSymbol
+// already treats an empty name as a compiler-internal placeholder to skip,
+// which is correct here since an unnamed parameter is not addressable from
+// a function body anyway (matching Go's own semantics for this form).
+func (c *Compiler) parseUnnamedParameterList() (parameters []parameter, hasVarArgs bool, err error) {
+	parameters = []parameter{}
+
+	for !c.t.IsNext(tokenizer.EndOfListToken) {
+		if c.t.AtEnd() {
+			return parameters, hasVarArgs, c.compileError(errors.ErrMissingParenthesis)
+		}
+
+		isVariadic := c.t.IsNext(tokenizer.VariadicToken)
+		if isVariadic {
+			hasVarArgs = true
+		}
+
+		theType, err := c.parseType("", false)
+		if err != nil {
+			return nil, false, c.compileError(err)
+		}
+
+		p := parameter{name: "", kind: theType}
+		if isVariadic {
+			p.kind = data.VarArgsType
+		}
+
+		parameters = append(parameters, p)
+
+		// Skip the comma if there is one.
+		_ = c.t.IsNext(tokenizer.CommaToken)
+	}
+
+	return parameters, hasVarArgs, nil
 }
 
 // isLiteralFunction returns true if the following tokens are a literal function

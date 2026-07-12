@@ -64,6 +64,7 @@ func (c *Compiler) typeDeclaration() (any, error) {
 //   - "*T"          — pointer to T
 //   - "[]T"         — slice/array of T
 //   - "map[K]V"     — map from K to V
+//   - "func(...) ..." — function type (named or unnamed parameter list; BUG-70)
 //   - primitive type keywords (int, string, bool, …)
 //   - user-defined type names registered in c.types
 //
@@ -106,6 +107,24 @@ func (c *Compiler) parseTypeSpec() (*data.Type, error) {
 		}
 
 		return data.MapType(keyType, valueType), nil
+	}
+
+	// Function type, e.g. "var f func(int, int) int" or a struct field typed
+	// as a function. parseTypeSpec previously had no case for "func" at all,
+	// so a var declaration with a function type failed with "invalid type
+	// specification" regardless of whether the parameter list was named or
+	// unnamed (BUG-70) -- delegate to the same function-declaration parser
+	// parseType's own "func" case (used by type casts and type assertions)
+	// uses, so both forms are supported here too.
+	if c.t.Peek(1).Is(tokenizer.FuncToken) {
+		c.t.Advance(1)
+
+		f, err := c.ParseFunctionDeclaration(true)
+		if err != nil {
+			return data.UndefinedType, err
+		}
+
+		return data.FunctionType(&data.Function{Declaration: f}), nil
 	}
 
 	for _, typeDef := range data.TypeDeclarations {

@@ -25,3 +25,137 @@
 	t = string(bar)
 	@assert t == "bar(a int, b int, c string)"
 }
+
+// The tests below are regression tests for BUG-70: a function TYPE spec
+// with only types and no parameter names at all (Go's "func(int, int) int"
+// form, as opposed to the named "func(a, b int) int" form above) failed to
+// compile anywhere it could appear -- a var declaration, a struct field, or
+// a type assertion target -- with "invalid type specification". Two
+// separate root causes had to be fixed:
+//
+//  1. parseTypeSpec (used by "var" declarations specifically) had no case
+//     for "func" at all, so a function type failed in a var declaration
+//     even in its ordinary named, zero-parameter form (e.g.
+//     "var f func() int"), which had nothing to do with unnamed
+//     parameters.
+//  2. parseParameterDeclaration's name collector always tried to read one
+//     or more identifier NAMES before a type; for "func(int, int) int" it
+//     read "int" as a name, then found nothing left to parse as that
+//     name's type once it reached the second "int" and then ")".
+//
+// Fixing both together also exposed a third, previously unreachable bug:
+// parseParameterDeclaration unconditionally called DefineSymbol for named
+// parameters, which is correct for a real function body (so an unused
+// parameter is still flagged) but wrong for a bare type spec with no body
+// at all -- there, the names are pure documentation that can never be
+// "used", so every named function type spec falsely reported its parameter
+// names as unused variables. This was invisible before the first two
+// fixes, since no function type spec could reach this code at all before
+// they landed.
+
+@test "functions: unnamed function type in var declaration (BUG-70)"
+{
+	var f func(int, int) int
+	f = func(a, b int) int { return a + b }
+	@assert f(2, 3) == 5
+}
+
+@test "functions: unnamed zero-parameter function type in var (BUG-70)"
+{
+	// This is the simplest possible function type spec -- no parameters at
+	// all -- and it failed in a var declaration for the same root cause
+	// (missing "func" case in parseTypeSpec) even before unnamed
+	// multi-parameter lists were considered.
+	var f func() int
+	f = func() int { return 42 }
+	@assert f() == 42
+}
+
+@test "functions: named function type in var declaration (BUG-70)"
+{
+	// Regression guard for the DefineSymbol side effect described above:
+	// a NAMED function type spec used as a var's type must not falsely
+	// report its parameter names as unused, even though there is no body
+	// here to reference them.
+	var f func(a, b int) int
+	f = func(x, y int) int { return x + y }
+	@assert f(2, 3) == 5
+}
+
+@test "functions: unnamed variadic function type in var (BUG-70)"
+{
+	var f func(...int) int
+	f = func(nums ...int) int {
+		sum := 0
+		for _, n := range nums {
+			sum = sum + n
+		}
+		return sum
+	}
+	@assert f(1, 2, 3) == 6
+}
+
+@test "functions: unnamed function type in a struct field (BUG-70)"
+{
+	type handler struct {
+		fn func(int, int) int
+	}
+
+	h := handler{fn: func(a, b int) int { return a * b }}
+	@assert h.fn(3, 4) == 12
+}
+
+@test "functions: type assertion to unnamed multi-param function type (BUG-70)"
+{
+	// Ties BUG-70 to BUG-60: a type assertion target is also parsed via
+	// the function-type-spec machinery this fix touches, so a function
+	// type with parameters -- previously undocumented as unsupported,
+	// since it depended on this exact fix -- now works as an assertion
+	// target too.
+	var v any = func(a, b int) int { return a + b }
+
+	f, ok := v.(func(int, int) int)
+	@assert ok == true
+	@assert f(10, 20) == 30
+}
+
+@test "functions: real function body still flags a genuinely unused parameter (BUG-70)"
+{
+	// Regression guard in the opposite direction: the DefineSymbol fix
+	// above must only skip tracking for bare type specs (no body). A real
+	// function literal with a body must still correctly report a
+	// parameter its body never references.
+	failed := false
+
+	@compile block {
+		add := func(a, b int) int {
+			return a
+		}
+		_ = add
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "var.unused"
+	}
+
+	@assert failed == true
+}
+
+@test "functions: mixed named and unnamed parameters still rejected (BUG-70)"
+{
+	// Go disallows mixing the two forms in one parameter list, and so does
+	// Ego; this regression guard confirms the new unnamed-list support
+	// didn't accidentally start accepting this malformed form.
+	failed := false
+
+	@compile eof="$EOF"
+		var f func(a int, string)
+		_ = f
+	$EOF
+	catch(e) {
+		failed = true
+		@assert e.Code() == "type.not.found"
+	}
+
+	@assert failed == true
+}

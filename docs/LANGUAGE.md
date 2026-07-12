@@ -1440,11 +1440,29 @@ n, s := f()
 fmt.Println(n, s)           // 5 five
 ```
 
-> **Note:** _Ego_'s function type syntax currently only supports a
-> **parameterless** parameter list (`func() T`) as an assertion target. A
-> function type declared with parameters (`func(int, int) int`) is not yet
-> supported anywhere a function type spec is written, including in type
-> assertions.
+A function type declared with parameters works as an assertion target too,
+in either Go's usual named form (`func(a, b int) int`) or its type-only form
+with no parameter names at all (`func(int, int) int`):
+
+```go
+var v any = func(a, b int) int {
+    return a + b
+}
+
+f, ok := v.(func(int, int) int)
+if ok {
+    fmt.Println(f(3, 4))    // 7
+}
+```
+
+A function type can also be used as an ordinary variable's type, the same
+way any other type can:
+
+```go
+var g func(int, int) int
+g = func(a, b int) int { return a * b }
+fmt.Println(g(3, 4))        // 12
+```
 
 #### Type-switch: asserting against multiple types at once
 
