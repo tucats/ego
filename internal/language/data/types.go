@@ -1693,6 +1693,32 @@ func TypeOf(i any) *Type {
 		return ErrorType
 
 	default:
+		// A compiled Ego function or closure is represented at runtime as a
+		// *bytecode.ByteCode value. This package cannot type-switch on that
+		// concrete type directly: bytecode already imports data, so the
+		// reverse import would create an import cycle. Detect it
+		// structurally instead -- any value exposing a
+		// "Declaration() *Declaration" method the way *bytecode.ByteCode
+		// does is treated as a function value, and its declared signature
+		// becomes the reported FunctionKind type.
+		//
+		// Without this, every compiled function/closure value fell through
+		// to InterfaceType below, which made a type assertion against a
+		// function type (e.g. "x.(func() int)") always fail at runtime --
+		// the asserted-to type and the value's reported type could never
+		// match kinds -- and reflect.TypeOf(f) misreported any function
+		// value as interface{} too (BUG-60).
+		if fn, ok := i.(interface{ Declaration() *Declaration }); ok {
+			if decl := fn.Declaration(); decl != nil {
+				return &Type{
+					name:      decl.Name,
+					kind:      FunctionKind,
+					valueType: nil,
+					functions: map[string]Function{decl.Name: {Declaration: decl, Value: fn}},
+				}
+			}
+		}
+
 		return InterfaceType
 	}
 }

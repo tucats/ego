@@ -227,7 +227,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-57](#BUG-57) | BUG | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | ✓ |
 | [BUG-58](#BUG-58) | BUG | The `uint8()` cast function is not recognized despite being documented. | ✓ |
 | [BUG-59](#BUG-59) | BUG | `@compile ... optimize=N` silently has no effect. | ✓ |
-| [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
+| [BUG-60](#BUG-60) | BUG | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | ✓ |
 | [BUG-61](#BUG-61) | BUG | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
 | [BUG-62](#BUG-62) | BUG | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | BUG | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
@@ -237,6 +237,8 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-67](#BUG-67) | BUG | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
 | [BUG-68](#BUG-68) | BUG | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
 | [BUG-69](#BUG-69) | BUG | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
+| [BUG-70](#BUG-70) | BUG | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | |
+| [BUG-71](#BUG-71) | BUG | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -510,7 +512,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-57](#BUG-57) | MEDIUM | `@type relaxed` does not coerce assigned values to the receiving variable's type; it behaves like `dynamic`. | ✓ |
 | [BUG-58](#BUG-58) | LOW | The `uint8()` cast function is not recognized despite being documented. | ✓ |
 | [BUG-59](#BUG-59) | LOW | `@compile ... optimize=N` silently has no effect. | ✓ |
-| [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | |
+| [BUG-60](#BUG-60) | LOW | Type assertion to a function type (e.g. `x.(func() int)`) fails to compile. | ✓ |
 | [BUG-61](#BUG-61) | MEDIUM | `break`/`continue` skips scope cleanup for blocks/switch scopes it jumps out of, leaving the runtime scope one level too deep (or a symbol un-deleted); directly reproducible via `ego run` with a named-init `switch` in a loop. | ✓ |
 | [BUG-62](#BUG-62) | MEDIUM | A channel receive (`<-ch`) is not supported as a general expression atom, only as the direct right-hand side of an assignment. | |
 | [BUG-63](#BUG-63) | HIGH | A standalone `x++`/`x--` statement leaks a "let" stack marker, corrupting later function calls. | ✓ |
@@ -520,6 +522,8 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-67](#BUG-67) | MEDIUM | `--types strict` rejects a plain int literal at an `int32` (or other narrower-int) return/argument boundary, even with no user-defined types involved. | ✓ |
 | [BUG-68](#BUG-68) | LOW | Precision-loss checking is inconsistent across assignment/expression/argument/return boundaries, and across integer widths in the coercion helpers. | ✓ |
 | [BUG-69](#BUG-69) | LOW | Struct field assignment was the one coercion boundary missing the constant-adapts-losslessly rule that assignment/expression/argument/return already have. | ✓ |
+| [BUG-70](#BUG-70) | MEDIUM | A function type spec with unnamed parameters (e.g. `func(int, int) int`) fails to compile anywhere, not just in type assertions. | |
+| [BUG-71](#BUG-71) | MEDIUM | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
 
 ---
 
@@ -5629,7 +5633,7 @@ removed — only the directive's misuse of that constant was corrected.
 
 <a id="BUG-60"></a>
 
-### BUG-60 — Type assertion to a function type fails to compile
+### BUG-60 — Type assertion to a function type fails to compile — **Resolved**
 
 **Severity:** LOW
 
@@ -5673,6 +5677,49 @@ fails. Not yet root-caused against a specific line in the type-assertion parser
 (`internal/language/compiler/expr_atom.go` and/or `internal/language/compiler/types.go` are
 the likely locations, based on where other type-assertion target parsing lives), since this
 was discovered incidentally rather than through a dedicated investigation.
+
+**Resolution (July 2026):**
+
+Two independent bugs had to be fixed for `x.(func() int)` to actually work end to end, not
+just compile:
+
+- **Compile-time parsing** — `compileUnwrap` (`internal/language/compiler/unwrap.go`)
+  previously matched the assertion target with a hand-rolled check for exactly one
+  `IDENTIFIER` token followed by `)`. `func` is a keyword token, not an `IDENTIFIER`, so any
+  function-type target failed immediately with "invalid identifier" — before compilation ever
+  reached a point where the signature (no parameters vs. parameters vs. multiple returns)
+  could matter, which is why the bug appeared signature-independent. The fix retries, when the
+  single-token check doesn't match, using `parseType("", true)` — the same general-purpose
+  type parser `T(value)` type-cast expressions already use — which recognizes function types
+  (and, as a side effect, pointer, slice, map, struct, and `interface{}` literal types, none of
+  which compiled as assertion targets before either). Since a compound type has no single name
+  to look up by string, the resolved `*data.Type` is passed as the `UnWrap` operand directly,
+  instead of a name; `unwrapByteCode` (`internal/language/bytecode/types.go`) was extended to
+  recognize a `*data.Type` operand and use it as-is, bypassing the by-name lookup used for the
+  existing plain-identifier case (which is unchanged, to avoid any risk to already-working
+  named-type and `.(type)` type-switch behavior).
+- **Runtime type recognition** — fixing the parser exposed a second, independent bug: even
+  with the corrected syntax, the assertion still failed at runtime with "type mismatch",
+  because `data.TypeOf()` (`internal/language/data/types.go`) had no case for a compiled Ego
+  function/closure value (represented at runtime as `*bytecode.ByteCode`, a type the `data`
+  package cannot import without creating an import cycle) and fell through to its default
+  case, misreporting every function/closure value as `interface{}`. This also meant
+  `reflect.TypeOf(f)` on any Ego function value was wrong, independent of type assertions.
+  Fixed by having `TypeOf`'s default case structurally detect any value exposing a
+  `Declaration() *Declaration` method — which `*bytecode.ByteCode` does — and build a
+  `FunctionKind` type from the returned declaration, without needing to import `bytecode` at
+  all.
+
+The related, but out-of-scope, limitations found while verifying this fix are tracked
+separately as [BUG-70](#BUG-70) and [BUG-71](#BUG-71).
+
+Regression tests: `tests/types/type_assertions.ego` gained eight new `@test` blocks covering
+the original reproducer (including calling the asserted function immediately), a multi-return
+function type, the comma-ok form (both matching and non-matching), and the bonus pointer/slice/
+`interface{}` compound-type fixes, plus an explicit regression check that the `.(type)`
+type-switch form (which shares `compileUnwrap`) is unaffected. Verified against `go test ./...`
+and `ego test tests/` / `ego test --types strict tests/` / `ego test --types relaxed tests/`
+(1313 `@test` blocks, up from 1305) with no regressions.
 
 ---
 
@@ -6938,6 +6985,121 @@ pointer-receiver (`*any` indirection) code path is exercised separately from the
 Verified against `go test ./...` and `ego test tests/` / `ego test --types strict tests/`
 (1305 `@test` blocks each, up from 1299 after BUG-68) with no regressions, including the
 pre-existing BUG-33 struct field-enforcement tests.
+
+---
+
+<a id="BUG-70"></a>
+
+### BUG-70 — A function type spec with unnamed parameters fails to compile everywhere
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while verifying the [BUG-60](#BUG-60) fix. Go allows a function type's parameter list to
+give only types, with no parameter names (e.g. `func(int, int) int`) — this is the normal way
+to write a function type as opposed to a function *definition*. Ego's parser does not support
+this form anywhere a function type can appear (`var` declarations, struct/interface fields,
+type assertions, etc.) — only the named form (`func(a, b int) int`) works. This is unrelated to
+type assertions specifically; it is a general limitation of `ParseFunctionDeclaration`
+(`internal/language/compiler/function.go`) → `collectParameterNames`, which always tries to
+read one-or-more identifier *names* before a type, with no lookahead to recognize a bare type
+token instead.
+
+**Reproducer:**
+
+```go
+func main() {
+    var f func(int, int) int
+    f = func(a, b int) int { return a + b }
+    fmt.Println(f(2, 3))
+}
+```
+
+**Actual output:**
+
+```text
+Error: at line 2:7, invalid type specification
+Error: terminated with errors
+```
+
+**Expected output:**
+
+```text
+5
+```
+
+**Notes:**  
+`collectParameterNames` reads "int" (a valid identifier per `Token.IsIdentifier()`, since
+built-in type names are lexed as `TypeTokenClass`) as if it were a *parameter name*, then
+expects a type to follow; by the time it reaches the second "int" there is nothing left to
+consume as a name once the closing `)` arrives, and `parseType` fails outright when positioned
+on `)`. A fix needs `collectParameterNames` (or its caller) to look ahead and distinguish "this
+identifier is followed by another identifier or `,` then a type" (named form) from "this
+identifier IS itself a complete type, with no name" (unnamed form) — mirroring how Go's own
+parser disambiguates the two forms. Not yet attempted, since it touches the same function-
+declaration parser used for every named function definition in the language and needs its own
+careful test pass; out of scope for the BUG-60 fix that surfaced it.
+
+---
+
+<a id="BUG-71"></a>
+
+### BUG-71 — Type assertion used inline in a larger expression leaves a stray boolean on the stack
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while verifying the [BUG-60](#BUG-60) fix. `unwrapByteCode`
+(`internal/language/bytecode/types.go`) always pushes both the asserted value and a success
+boolean for `x.(T)` (`(value, bool)`, bool on top), so that the two-value comma-ok form
+(`v, ok := x.(T)`) can pop the bool separately. For the single-value form (`v := x.(T)`), the
+compiler is supposed to follow the assertion with cleanup that consumes the bool and turns a
+`false` into a catchable runtime error — but that cleanup is wired up in exactly one place,
+`assignment.go`'s handling of `c.flags.hasUnwrap` (see `internal/language/compiler/
+assignment.go:356`), which only fires when the assertion is the direct right-hand side of a
+`:=`/`=` assignment *statement*. Any other position — used as a sub-expression, immediately
+called, or combined with an operator — leaves the stray bool sitting on top of the intended
+value, corrupting whatever bytecode runs next. This is completely independent of BUG-60 (it
+reproduces with any assertion target, not just function types) and was previously masked for
+function-type targets simply because they could not compile at all before that fix.
+
+**Reproducer:**
+
+```go
+func main() {
+    var x any = 5
+    fmt.Println(x.(int) + 1)
+}
+```
+
+**Actual output:**
+
+```text
+Error: at main(line 3), invalid function invocation: 5
+```
+
+(The specific error text varies with what happens to consume the stray `true`/`false` next —
+here `+ 1` after `x.(int)` actually leaves the *value* as the operand for `Add` and the bool
+gets misinterpreted downstream; other expression shapes fail differently, e.g. calling the
+result of a function-type assertion inline reports "invalid function invocation: true".)
+
+**Expected output:**
+
+```text
+6
+```
+
+**Notes:**  
+In real Go, the single-value form of a type assertion is an ordinary primary expression and is
+valid anywhere a value is expected — `x.(int) + 1`, `f(x.(int))`, and `x.(func())()` all compile
+and run in Go, panicking on a type mismatch exactly as the bare-statement form does. Ego's
+version should behave the same way. A fix likely needs the single-value cleanup
+(bool-check-and-drop) to be emitted directly by `compileUnwrap` itself, immediately after the
+`UnWrap` instruction, whenever the two-value `multipleTargets` form is not in play — rather than
+relying on a later, position-specific pass in `assignment.go` to notice `c.flags.hasUnwrap`
+after the fact, which only runs for a bare assignment statement. Recorded here rather than
+fixed opportunistically alongside BUG-60 to avoid conflating two unrelated code paths in one
+change.
 
 ---
 

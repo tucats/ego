@@ -23,6 +23,7 @@ language and tool set patterned off of the _Go_ programming language.
     1. [Operators](#operators)
     1. [Type Conversion](#typeConversion)
     1. [Builtin Functions](#builtInFunctions)
+    1. [Type Assertions and Unwrapping](#typeAssertions)
 
 1. [Conditional and Iterative Execution](#flow-control)
     1. [If/Else Conditional](#if)
@@ -1283,6 +1284,195 @@ first message was read.
 &nbsp;
 &nbsp;
 
+### Type Assertions and Unwrapping<a name="typeAssertions"></a>
+
+When a value is stored in a variable of type `any` (Go's `interface{}`), _Ego_
+remembers the concrete type of the value along with the value itself. A
+**type assertion** — sometimes described as "unwrapping" the interface — lets
+you ask, at runtime, whether that stored value actually holds a value of a
+specific type, and if so, retrieve it as that type:
+
+```go
+x.(T)
+```
+
+This is written as the value, followed by `.`, followed by the target type
+in parentheses. A type assertion is **not** a type conversion — no coercion
+is performed. It either confirms that the concrete value stored in `x` is
+of type `T`, or it fails; it does not attempt to convert one type into
+another the way `int("42")` would. Use the [casting functions](#builtInFunctions)
+when you want conversion; use a type assertion when you want to check and
+recover a value's actual type.
+
+#### The two-value ("comma-ok") form
+
+```go
+value, ok := x.(T)
+```
+
+This is the safe form. `ok` is `true` if `x` holds a value of type `T`, in
+which case `value` holds that value. If `x` holds something else, `ok` is
+`false` and `value` is `nil` — no error is raised. This is the idiomatic way
+to test a value's type without risking a runtime error:
+
+```go
+var x any = 42
+
+n, ok := x.(int)
+if ok {
+    fmt.Println("x is an int:", n)
+} else {
+    fmt.Println("x is not an int")
+}
+```
+
+#### The single-value form
+
+```go
+value := x.(T)
+```
+
+If you are certain `x` holds a `T` — or want a runtime error if it does not
+— use the single-value form. If the assertion fails, it raises a catchable
+runtime error, exactly as if a division by zero or similar runtime error
+had occurred, and can be caught with [`try`/`catch`](#try-catch):
+
+```go
+var x any = 42
+n := x.(int)          // succeeds; n is 42
+fmt.Println(n)
+
+var y any = "not a number"
+
+try {
+    m := y.(int)       // fails; raises a runtime error
+    fmt.Println(m)
+} catch(e) {
+    fmt.Println("assertion failed:", e)
+}
+```
+
+> **Note:** write the single-value form as its own standalone assignment
+> statement (`v := x.(T)`), as shown above. Using it directly inline as
+> part of a larger expression — for example calling the result immediately
+> (`x.(func())()`) or combining it with an operator (`x.(int) + 1`) — is not
+> yet fully supported and can produce incorrect results. Assign the
+> asserted value to a variable first, and use that variable afterward.
+
+#### Asserting to a builtin type
+
+Any base type name is a valid assertion target:
+
+```go
+var v any = "hello"
+
+s, ok := v.(string)
+fmt.Println(s, ok)     // hello true
+
+n, ok := v.(int)
+fmt.Println(n, ok)     // <nil> false  (v does not hold an int)
+```
+
+Asserting to `any` (or the equivalent `interface{}`) always succeeds, since
+every value satisfies the empty interface:
+
+```go
+var v any = 42
+
+x, ok := v.(any)
+fmt.Println(x, ok)     // 42 true
+```
+
+#### Asserting to a user-defined type
+
+A type assertion works the same way for a struct type you have defined,
+and for a pointer to one:
+
+```go
+type Point struct {
+    X int
+    Y int
+}
+
+var v any = &Point{X: 1, Y: 2}
+
+p, ok := v.(*Point)
+if ok {
+    fmt.Println(p.X, p.Y)   // 1 2
+}
+```
+
+A slice, map, or array type can also be the target of an assertion:
+
+```go
+var v any = []int{1, 2, 3}
+
+a, ok := v.([]int)
+fmt.Println(ok, len(a))    // true 3
+```
+
+#### Asserting to a function type
+
+A function type can also be the assertion target. This is most useful when
+a function value has been stored in an `any`-typed variable, map, or struct
+field, and needs to be retrieved and called:
+
+```go
+var v any = func() int {
+    return 42
+}
+
+f, ok := v.(func() int)
+if ok {
+    fmt.Println(f())        // 42
+}
+```
+
+A function type with multiple return values works the same way:
+
+```go
+var v any = func() (int, string) {
+    return 5, "five"
+}
+
+f := v.(func() (int, string))
+n, s := f()
+fmt.Println(n, s)           // 5 five
+```
+
+> **Note:** _Ego_'s function type syntax currently only supports a
+> **parameterless** parameter list (`func() T`) as an assertion target. A
+> function type declared with parameters (`func(int, int) int`) is not yet
+> supported anywhere a function type spec is written, including in type
+> assertions.
+
+#### Type-switch: asserting against multiple types at once
+
+The [`switch`](#switch) statement has a special form,
+`switch v := x.(type)`, that lets you branch on `x`'s concrete type
+directly, without writing a chain of individual assertions:
+
+```go
+var x any = 42
+
+switch v := x.(type) {
+case int:
+    fmt.Println("int:", v)
+case string:
+    fmt.Println("string:", v)
+default:
+    fmt.Println("some other type")
+}
+```
+
+Inside each `case`, `v` has already been narrowed to that case's type — no
+further assertion is needed. This form is syntactic sugar over a sequence
+of individual type assertions, and follows the same matching rules
+described above.
+
+&nbsp;
+&nbsp;
+
 ## Conditional and Iterative Execution <a name="flow-control"></a>
 
 We have discussed how variables are created, and how expressions are
@@ -1456,6 +1646,10 @@ default:
 ```
 
 This form is equivalent to a chain of `if`/`else if` statements.
+
+A `switch` can also branch on the concrete type of an `any`-typed value,
+using `switch v := x.(type) { ... }`. See
+[Type Assertions and Unwrapping](#typeAssertions) for details.
 
 #### `break` inside a `switch`
 

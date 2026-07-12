@@ -167,3 +167,98 @@
     @assert isString == false
     @assert isFloat == false
 }
+
+// The tests below are regression tests for BUG-60: "x.(func() int)" (and
+// other compound assertion targets) failed to compile at all, with
+// "invalid identifier", because the compiler only recognized a single
+// IDENTIFIER token between the parens. "func" is a keyword token, not an
+// IDENTIFIER, so any function-type assertion target failed before even
+// reaching the runtime type check. Fixing the compile-time parsing also
+// exposed (and required fixing) a second, independent bug: data.TypeOf
+// could not recognize a compiled Ego function/closure value at all,
+// reporting it as interface{} instead of its real function type -- which
+// would have made the runtime comparison in every case below fail even
+// once the compiler accepted the syntax.
+
+@test "types: type assertion to function type (BUG-60)"
+{
+    var v any = func() int { return 42 }
+    f := v.(func() int)
+    @assert f() == 42
+}
+
+@test "types: function type assertion, multiple returns (BUG-60)"
+{
+    var v any = func() (int, string) { return 5, "five" }
+    f := v.(func() (int, string))
+    n, s := f()
+    @assert n == 5
+    @assert s == "five"
+}
+
+@test "types: function type assertion, comma-ok correct type (BUG-60)"
+{
+    var v any = func() int { return 7 }
+    f, ok := v.(func() int)
+    @assert ok == true
+    @assert f() == 7
+}
+
+@test "types: function type assertion, wrong type (BUG-60)"
+{
+    var v any = 123
+    _, ok := v.(func() int)
+    @assert ok == false
+}
+
+@test "types: pointer type assertion still works (BUG-60)"
+{
+    // Compound assertion targets other than function types were affected by
+    // the same compile-time limitation -- "*Point" is not a single
+    // IDENTIFIER token either -- and are fixed as part of the same change.
+    type Point struct {
+        X int
+        Y int
+    }
+
+    var v any = &Point{X: 1, Y: 2}
+    p, ok := v.(*Point)
+    @assert ok == true
+    @assert p.X == 1
+    @assert p.Y == 2
+}
+
+@test "types: slice type assertion still works (BUG-60)"
+{
+    var v any = []int{1, 2, 3}
+    a, ok := v.([]int)
+    @assert ok == true
+    @assert len(a) == 3
+    @assert a[0] == 1
+}
+
+@test "types: interface{} literal type assertion still works (BUG-60)"
+{
+    var v any = 42
+    _, ok := v.(interface{})
+    @assert ok == true
+}
+
+@test "types: type-switch with plain type case unaffected (BUG-60)"
+{
+    // Regression guard: the "switch v := x.(type)" discriminator form goes
+    // through the exact same compiler code path (compileUnwrap) as the
+    // "x.(T)" assertion fixed above, and must keep working unchanged.
+    var v any = 42
+    matched := false
+
+    switch t := v.(type) {
+    case int:
+        matched = true
+        _ = t
+    default:
+        matched = false
+    }
+
+    @assert matched == true
+}

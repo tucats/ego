@@ -115,55 +115,67 @@ func unwrapByteCode(c *Context, i any) error {
 		return nil
 	}
 
-	targetType := data.String(i)
-
-	// Special case: the operand "type" is the `.(type)` token used inside
-	// type-switch statements.  It means "just unwrap" with no additional
-	// conformance check.
-	if targetType == tokenizer.TypeToken.Spelling() {
-		if t == nil {
-			t = data.TypeOf(value)
-		}
-
-		_ = c.push(t)
-		_ = c.push(value)
-
-		return nil
-	}
-
-	// Resolve the target type name.  Look first in the built-in type registry
-	// (data.TypeDeclarations), then fall back to the current symbol table in
-	// case the programmer defined a custom type alias.
 	actualType := data.TypeOf(value)
 
-	// "any" is a programmer-friendly alias for "interface{}".  The canonical
-	// name stored in data.InterfaceType.Name() is "interface{}", so the lookup
-	// loop below would never match "any" without this normalization.  The other
-	// source-code spellings ("interface {}", "interface{}") are handled by the
-	// TypeDeclarations entries directly because they all map to the same
-	// *data.Type whose Name() is "interface{}".
-	if targetType == "any" {
-		targetType = data.InterfaceTypeName
-	}
+	// If the compiler already resolved the assertion's target type at
+	// compile time, the operand is the *data.Type itself rather than a name
+	// string -- use it directly and skip the by-name resolution below
+	// entirely. This is always the case for a compound type specification
+	// (a pointer, slice, map, struct, interface literal, or function type
+	// such as "func() int"), which has no single name to look up here; see
+	// compileUnwrap in the compiler package (BUG-60).
+	if resolvedType, ok := i.(*data.Type); ok {
+		newType = resolvedType
+	} else {
+		targetType := data.String(i)
 
-	for _, td := range data.TypeDeclarations {
-		if td.Kind.Name() == targetType {
-			newType = td.Kind
+		// Special case: the operand "type" is the `.(type)` token used inside
+		// type-switch statements.  It means "just unwrap" with no additional
+		// conformance check.
+		if targetType == tokenizer.TypeToken.Spelling() {
+			if t == nil {
+				t = data.TypeOf(value)
+			}
 
-			break
+			_ = c.push(t)
+			_ = c.push(value)
+
+			return nil
 		}
-	}
 
-	if newType == nil {
-		if td, found := c.symbols.Get(targetType); found {
-			if tdx, ok := td.(*data.Type); ok {
-				newType = tdx
+		// Resolve the target type name.  Look first in the built-in type registry
+		// (data.TypeDeclarations), then fall back to the current symbol table in
+		// case the programmer defined a custom type alias.
+
+		// "any" is a programmer-friendly alias for "interface{}".  The canonical
+		// name stored in data.InterfaceType.Name() is "interface{}", so the lookup
+		// loop below would never match "any" without this normalization.  The other
+		// source-code spellings ("interface {}", "interface{}") are handled by the
+		// TypeDeclarations entries directly because they all map to the same
+		// *data.Type whose Name() is "interface{}".
+		if targetType == "any" {
+			targetType = data.InterfaceTypeName
+		}
+
+		for _, td := range data.TypeDeclarations {
+			if td.Kind.Name() == targetType {
+				newType = td.Kind
+
+				break
 			}
 		}
-	}
 
-	if newType == nil {
-		return errors.ErrInvalidType.Context(targetType)
+		if newType == nil {
+			if td, found := c.symbols.Get(targetType); found {
+				if tdx, ok := td.(*data.Type); ok {
+					newType = tdx
+				}
+			}
+		}
+
+		if newType == nil {
+			return errors.ErrInvalidType.Context(targetType)
+		}
 	}
 
 	// Apply the type assertion.
