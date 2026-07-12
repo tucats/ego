@@ -167,7 +167,7 @@ func main() {
 	}
 
 	duration := time.Since(now)
-	fmt.Printf("\nExecuted %d tests in %v\n", testsExecuted, strings.TrimSpace(formats.Duration(duration, true)))
+	fmt.Printf("TEST: Completed %d tests in %v\n", testsExecuted, strings.TrimSpace(formats.Duration(duration, true)))
 }
 
 func exit(msg string) {

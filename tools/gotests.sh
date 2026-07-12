@@ -90,7 +90,7 @@ fail_count=$(printf '%s\n' "$output" | grep -c "^--- FAIL:")
 total=$((pass_count + fail_count))
 
 if [[ $exit_code -eq 0 ]]; then
-    printf "%d tests passed in %s\n" "$total" "$elapsed"
+    printf "TEST: %d tests passed in %s\n" "$total" "$elapsed"
 else
     # Filter the verbose output so it resembles plain 'go test ./...' output.
     # Remove lines that only appear in verbose mode and are not useful for
@@ -102,7 +102,7 @@ else
     #   "--- SKIP: TestName"   — skipped tests (not shown by plain go test)
     printf '%s\n' "$output" \
         | grep -Ev "^=== (RUN|PAUSE|CONT)[[:space:]]|^--- (PASS|SKIP):"
-    printf "\n%d FAILED, %d passed, %s elapsed\n" \
+    printf "\nTEST: %d FAILED, %d passed, %s elapsed\n" \
         "$fail_count" "$pass_count" "$elapsed"
     exit 1
 fi

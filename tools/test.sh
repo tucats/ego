@@ -84,13 +84,13 @@ echo "Running API tests for REST server"
 # "-p tools/apitests/" tells apitest where to find the test definition files.
 tools/apitest.sh -q tests/
 if [ $? != 0 ]; then
-   echo "API tests failed"
+   echo "TEST: API tests failed"
    exit 1
 fi
 
-echo " "
 # "$AVAIL" expands to either "" or " available", producing either
 # "All tests completed successfully" or "All available tests completed successfully".
-echo "All$AVAIL tests completed successfully"
+echo " "
+echo "TEST: All$AVAIL tests completed successfully"
 
 exit 0
