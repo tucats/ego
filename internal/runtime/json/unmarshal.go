@@ -95,6 +95,14 @@ func remapDecodedValue(decodedValue any, destinationPointer *any) (any, error) {
 		// Write JSON object entries into the existing map, converting each
 		// key and value to the declared types.
 		if m, ok := decodedValue.(map[string]any); ok {
+			// A nil-state map (e.g. from "var m map[K]V") has never been
+			// allocated. Go's json.Unmarshal auto-allocates a nil destination
+			// map before populating it, so match that here rather than
+			// surfacing a nil-map-write error.
+			if target.IsNil() {
+				target = data.NewMap(target.KeyType(), target.ElementType())
+			}
+
 			// Build a model value for map entries so reconstructValue can
 			// apply type-aware conversion. Use nil when the value type is
 			// interface{} so reconstructValue falls through to best-effort.

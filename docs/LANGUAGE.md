@@ -3748,72 +3748,227 @@ secret := io.Prompt("password~Enter your password: ")
 
 ### json <a name="json"></a>
 
-The `json` package is used to convert an _Ego_ data value into equivalent JSON expressed
-as a string value, or convert a JSON string to a comparable _ego_ data value.
+The `json` package converts _Ego_ data values to and from JSON text, and provides a
+small query language for pulling a single value out of a JSON string without fully
+decoding it. It is not a complete port of Go's `encoding/json` (there is no support
+for struct tags, `json.Marshaler`/`Unmarshaler` interfaces, streaming encoders/decoders,
+etc.), but the functions it does provide follow the same rules and produce the same
+output as their Go counterparts.
 
-#### json.Marshal(v[,...])
+#### json.Marshal(v [, ...])
 
-The `Marshal` function converts a value into a JSON byte array, which is the function
-result.
+```go
+func json.Marshal(v any, more ...any) ([]byte, error)
+```
+
+The `Marshal()` function converts a value into a JSON byte array, along with an error
+(`nil` on success). As in Go, map keys are always sorted alphabetically in the output,
+regardless of insertion order -- so a struct's fields (which _Ego_ represents
+internally as a map) are always emitted in alphabetical order by field name, not
+declaration order.
 
 ```go
 a := { name: "Tom", age: 44 }
-s := string(json.Marshal(a))
+
+b, err := json.Marshal(a)
+if err != nil {
+    fmt.Println("marshal failed:", err)
+    return
+}
+
+fmt.Println(string(b))   // {"age":44,"name":"Tom"}
 ```
 
-This results in `s` containing the value "{ \"name\":\"Tom\", \"age\": 44}". This is because
-the `Marshal` operation returns a byte array, and then `string()` is used to cast it to a
-string value.
-
-_Ego_ offers an extension to the Go version of this function. If you call `json.Marshal` with
-multiple parameters, the result is a JSON array containing all the items.
+_Ego_ offers an extension to the Go version of this function: if you call `json.Marshal()`
+with more than one argument, the result is a single JSON array containing the JSON
+representation of every argument, in order.
 
 ```go
 a := { name: "Tom", age: 44 }
-s := string(json.Marshal(7334, a, true))
+
+s, err := json.Marshal(7334, a, true)
+fmt.Println(string(s))   // [7334,{"age":44,"name":"Tom"},true]
 ```
 
-This results in `s` containing the value "[7334, {\"name\":\"Tom\", \"age\": 44}, true]".
+A value that cannot be represented as JSON (for example, a `float64` holding `NaN` or
+`Inf`, or a channel) produces a non-nil error rather than a partial result -- this is
+true whether `Marshal()` is called with one argument or several.
 
 #### json.MarshalIndent(v, prefix, indent)
 
-The `MarshalIndented` function converts a value into a JSON byte array, which is the
-function result. You must also supply a `prefix` and `indent` string. These are used as a
-prefix before each line of output in the resulting formatted JSON, as well as the indent
-spacing value for nested items. These are both interpreted as strings, and the most common
-use is to specify a string with the required number of blanks for each part.
+```go
+func json.MarshalIndent(v any, prefix string, indent string) ([]byte, error)
+```
+
+The `MarshalIndent()` function works like `Marshal()`, but the resulting JSON is
+formatted for readability: each nested level is placed on its own line. `prefix` is
+written at the start of every line after the first, and `indent` is written once for
+each level of nesting beyond that -- both are ordinary strings, most commonly a
+handful of spaces or a tab character.
 
 ```go
 a := { name: "Tom", age: 44 }
-s := string(json.MarshalIndent(a, "", "   "))
+
+b, err := json.MarshalIndent(a, "", "   ")
+if err != nil {
+    fmt.Println("marshal failed:", err)
+    return
+}
+
+fmt.Println(string(b))
 ```
 
-Because the resulting `[]byte` array is cast to a `string` value, the result in `s` is
-the string value
+This prints:
 
 ```json
 {
-    "name" : "Tom",
-    "age" : 44
+   "age": 44,
+   "name": "Tom"
 }
 ```
 
-#### json.Unmarshal([]byte, &value)
+`MarshalIndent()` does not accept `json.Marshal()`'s multiple-argument extension --
+it always takes exactly one value to encode.
 
-Given a JSON byte array expression, this creates the equivalent JSON object value.
-This may be a scalar type (such as int, string, or float64) or it may be an
-array or structure, or a combination of them.
+#### json.Unmarshal(data, &value)
 
 ```go
-r := { age:0, name:""}
-err := json.Unmarshal(s, &r) 
+func json.Unmarshal(data []byte, value *any) error
 ```
 
-If `s` contains the JSON byte array from the `Marshal` example above, the result is a
-structure { age: 44, name:"Tom"} in the variable `r`. You can use the `reflect.Members()`
-function to examine if a structure contains a field you expected. Note that the Unmarshal
-function returns an error code as its result; this will be nil if there are no errors
-found.
+The `Unmarshal()` function parses the JSON text in `data` (a `[]byte`, though a plain
+`string` is also accepted) and writes the result into `value`, which must be a pointer.
+The existing value pointed to acts as a _model_: its concrete type determines how the
+JSON is converted, and (for structs, arrays, and maps) its existing contents are
+updated in place rather than replaced outright.
+
+```go
+a := { name: "Tom", age: 44 }
+s, _ := json.Marshal(a)
+
+r := { age: 0, name: "" }
+
+err := json.Unmarshal(s, &r)
+if err != nil {
+    fmt.Println("unmarshal failed:", err)
+    return
+}
+
+fmt.Println(r)   // struct{ age: 44, name: "Tom" }
+```
+
+A few behaviors worth knowing, all of which match Go's `encoding/json`:
+
+- **Unknown JSON fields are silently ignored.** If `data` contains a field with no
+  matching field in the destination struct, it is skipped rather than causing an error.
+- **Existing fields not present in the JSON are left unchanged.** `Unmarshal()` only
+  overwrites the fields it finds in `data`.
+- **A `nil` destination map or slice is allocated automatically.** `var m map[string]int; json.Unmarshal(data, &m)`
+  works the same way it does in Go -- there is no need to `make()` the map first. A
+  destination that already has entries keeps any that aren't overwritten by the JSON.
+- **Type mismatches are returned as a normal error, not raised as an exception.** For
+  example, unmarshaling the JSON string `"notanumber"` into an `int` destination
+  returns a non-nil error from `Unmarshal()` itself; no `try`/`catch` is required.
+- **A generic destination (`interface{}`/`any`, or a map/array of it) decodes JSON
+  numbers as `float64`** and JSON objects/arrays as `map[string]any`/`[]any`
+  (converted to Ego maps/arrays), exactly as Go's `encoding/json` does for an `any`
+  destination.
+
+#### json.Parse(text, expression)
+
+```go
+func json.Parse(text string, expression string) (string, error)
+```
+
+The `Parse()` function extracts a single value out of a JSON string using a small
+query language (provided by the underlying `jaxon` package), without requiring a
+destination model the way `Unmarshal()` does. The result is **always returned as a
+string**, regardless of the underlying JSON type -- a JSON number, boolean, or `null`
+comes back as its text form (`"42"`, `"true"`, `"null"`), and an object or array comes
+back as a formatted JSON string of just that fragment. Convert the result yourself
+(with `strconv.Atoi()`, for example) if you need something other than a string.
+
+```go
+text := `{"user": {"name": "Jane", "age": 28}}`
+
+name, err := json.Parse(text, "user.name")
+fmt.Println(name, err)   // Jane <nil>
+
+age, err := json.Parse(text, "user.age")
+fmt.Println(age, err)   // 28 <nil>
+```
+
+**Query expression syntax:**
+
+| Expression | Matches |
+| :--------- | :------ |
+| `.` (or an empty string) | The entire value. |
+| `name` or `.name` | The field called `name` in an object. |
+| `name.other` | Field `other` nested inside field `name`. |
+| `2` or `[2]` | The element at (zero-based) array index 2. |
+| `items[1].age` | Field `age` inside the object at index 1 of array `items`. |
+| `name?fallback` | Field `name`, or the literal string `fallback` if that field is not present. |
+
+A query segment can name an object field, or index into an array, and segments are
+chained with `.` to walk into nested structures -- see the examples above.
+
+The underlying `jaxon` package also supports range queries (`"0:2"`, `"2:"`, `":2"`)
+and wildcards (`items.*.name`, or `items.*?.name` to skip elements that don't match
+instead of failing) that select _multiple_ values at once. `json.Parse()` only ever
+returns a single result, so an expression that matches more than one value returns an
+error ("ambiguous query returns multiple values") rather than a list:
+
+```go
+_, err := json.Parse(`[1,15,66]`, "0:1")
+fmt.Println(err)   // ambiguous query returns multiple values: 0:1
+```
+
+Errors are also returned (not raised) for malformed JSON input, a missing field, an
+out-of-range array index, or applying array/object syntax to the wrong kind of value.
+
+#### json.WriteFile(filename, v)
+
+```go
+func json.WriteFile(filename string, v any) error
+```
+
+The `WriteFile()` function marshals `v` to JSON (using the same rules as `Marshal()`)
+and writes it to `filename`, creating or truncating the file as needed. It returns an
+error (`nil` on success) if `v` cannot be marshaled or the file cannot be written.
+
+```go
+a := { name: "Tom", age: 44 }
+
+if err := json.WriteFile("person.json", a); err != nil {
+    fmt.Println("could not write file:", err)
+}
+```
+
+#### json.ReadFile(filename)
+
+```go
+func json.ReadFile(filename string) (any, error)
+```
+
+The `ReadFile()` function reads `filename` and parses its contents as JSON, returning
+the decoded value along with an error (`nil` on success). Unlike `Unmarshal()`, there
+is no destination model to guide the conversion, so the result follows the same
+generic decoding rules Go's `encoding/json` uses for an `any` destination: a JSON
+object becomes an Ego map (numbers as `float64`), a JSON array becomes an Ego array,
+and a top-level scalar is returned directly.
+
+```go
+v, err := json.ReadFile("person.json")
+if err != nil {
+    fmt.Println("could not read file:", err)
+    return
+}
+
+fmt.Println(v["name"], v["age"])   // Tom 44
+```
+
+Use `reflect.Members()` (see the `reflect` package) if you need to check what fields
+are present before accessing them.
 
 ### math <a name="math"></a>
 

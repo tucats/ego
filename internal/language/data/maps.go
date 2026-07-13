@@ -222,6 +222,22 @@ func (m *Map) SetAlways(key any, value any) *Map {
 	return m
 }
 
+// IsNil returns true if the map has never been allocated (for example, a
+// "var m map[K]V" declaration with no subsequent make() or assignment). This
+// is distinct from a map that has been allocated but has no entries -- Set()
+// rejects writes to a nil-state map with ErrNilMapWrite, but permits writes
+// to an allocated, empty one.
+func (m *Map) IsNil() bool {
+	if m == nil {
+		return true
+	}
+
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	return m.data == nil
+}
+
 // Len returns the number of keys in the map.
 func (m *Map) Len() int {
 	if m == nil {

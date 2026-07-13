@@ -228,6 +228,28 @@
     @assert string(b) == `[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]`
 }
 
+@test "json: Marshal - multiple items returns a catchable error"
+{
+    // Regression test: the multiple-argument branch of Marshal used to
+    // return a bare (non-list) error on failure, which triggered an
+    // uncaught, program-aborting runtime error instead of a normal
+    // catchable/assignable one -- unlike the single-argument path, which
+    // already worked correctly for the same kind of failure (see the NaN
+    // test below).
+    nan := math.NaN()
+    b, err := json.Marshal(1, nan)
+    @assert err != nil
+    @assert b == nil
+}
+
+@test "json: Marshal - single item NaN returns a catchable error"
+{
+    nan := math.NaN()
+    b, err := json.Marshal(nan)
+    @assert err != nil
+    @assert len(b) == 0
+}
+
 @test "json: MarshalIndent - basic 2-space indent"
 {
     anon := {age: 55, name: "Tom"}

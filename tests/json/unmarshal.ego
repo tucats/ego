@@ -16,12 +16,12 @@
 //    argument. In dynamic mode the implementation falls back to treating any
 //    non-[]byte input as a string. In strict mode only []byte is accepted.
 //
-// 5. Type mismatch error path (see JSON-H2): When the destination type and the
-//    JSON value type are incompatible and cannot be coerced (e.g., JSON string
-//    "notanumber" into int), the error is delivered as a catchable exception
-//    rather than as the return value of Unmarshal. The caller cannot check
-//    'if err := json.Unmarshal(...); err != nil' for this case; a try/catch
-//    block is required.
+// 5. Type mismatch error path (JSON-H2, fixed): When the destination type and
+//    the JSON value type are incompatible and cannot be coerced (e.g., JSON
+//    string "notanumber" into int), the coercion error is returned as the
+//    normal Ego-level error value, exactly like Go's encoding/json. No
+//    try/catch is required -- 'if err := json.Unmarshal(...); err != nil'
+//    works for this case just as it does for every other Unmarshal error.
 //
 // 6. Unknown JSON fields: Unmarshal silently ignores JSON keys that do not
 //    correspond to any field in the destination struct, matching Go's behavior.
@@ -30,6 +30,13 @@
 //    (int, string, bool, float) produces the zero value for that type with
 //    no error. This matches Go's behavior for pointer destinations but in Go
 //    unmarshal into a plain int with null would leave the value unchanged.
+//
+// 8. Nil destination maps (fixed): Unmarshaling into a nil-state map (e.g.
+//    "var m map[string]int") used to fail with "assignment to entry in nil
+//    map" because the destination was never allocated. Like Go's
+//    encoding/json, a nil destination map is now auto-allocated before being
+//    populated -- this applies even for an empty JSON object ("{}"), which
+//    still leaves the destination as an allocated (non-nil), empty map.
 
 @test "json: Unmarshal - bool true"
 {
@@ -387,4 +394,42 @@
     @assert int(arr[0].y) == 2
     @assert int(arr[1].x) == 3
     @assert int(arr[1].y) == 4
+}
+
+@test "json: Unmarshal - nil map is auto-allocated"
+{
+    // Regression test: unmarshaling into a nil-state map ("var m map[K]V")
+    // used to fail with "assignment to entry in nil map" because the
+    // destination was never allocated. Go's json.Unmarshal auto-allocates a
+    // nil destination map before populating it; Ego's now does too.
+    var m map[string]int
+
+    err := json.Unmarshal([]byte(`{"a":1,"b":2}`), &m)
+    @assert err == nil
+    @assert m["a"] == 1
+    @assert m["b"] == 2
+}
+
+@test "json: Unmarshal - empty object still allocates a nil map"
+{
+    // Even with no entries to add, an empty JSON object "{}" must still
+    // turn a nil destination map into an allocated, empty one, matching Go.
+    var m map[string]int
+
+    err := json.Unmarshal([]byte("{}"), &m)
+    @assert err == nil
+    @assert m == nil == false
+    @assert len(m) == 0
+}
+
+@test "json: Unmarshal - nil map merges into existing entries"
+{
+    // A destination map that already has entries is reused (not replaced),
+    // matching Go: existing keys not present in the JSON are preserved.
+    m := map[string]int{"existing": 99}
+
+    err := json.Unmarshal([]byte(`{"a":1}`), &m)
+    @assert err == nil
+    @assert m["a"] == 1
+    @assert m["existing"] == 99
 }

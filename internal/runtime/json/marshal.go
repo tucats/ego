@@ -38,7 +38,9 @@ func marshal(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		jsonBuffer, err := json.Marshal(data.Sanitize(v))
 		if err != nil {
-			return nil, errors.New(err)
+			err = errors.New(err).In("Marshal")
+
+			return data.NewList(nil, err), err
 		}
 
 		b.WriteString(string(jsonBuffer))
