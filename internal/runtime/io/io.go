@@ -32,7 +32,11 @@ func expand(s *symbols.SymbolTable, args data.List) (any, error) {
 		result.Append(item)
 	}
 
-	return result, err
+	if err != nil {
+		err = errors.New(err).In("Expand")
+	}
+
+	return data.NewList(result, err), err
 }
 
 // ExpandPath is used to expand a path into a list of file names. This is

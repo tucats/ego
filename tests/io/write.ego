@@ -1,0 +1,46 @@
+// Regression tests for io.File.Write() and io.File.WriteAt(). Both used to
+// gob-encode the argument before writing it, which always failed for a byte
+// array ("gob: type data.Array has no exported fields") since Ego byte
+// arrays have no exported fields for gob to see. They now write the raw
+// bytes directly, matching Go's io.Writer.Write([]byte) semantics.
+
+@test "io: File.Write writes raw bytes, not gob-encoded"
+{
+    fn := "test-" + uuid.New().String() + ".bin"
+
+    f, e := io.Open(fn, "create")
+    @assert e == nil
+
+    n, e2 := f.Write([]byte("hello"))
+    @assert e2 == nil
+    @assert n == 5
+    @assert f.Close() == nil
+
+    raw, e3 := os.ReadFile(fn)
+    @assert e3 == nil
+    @assert string(raw) == "hello"
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "io: File.WriteAt writes raw bytes at an offset"
+{
+    fn := "test-" + uuid.New().String() + ".bin"
+
+    f, e := io.Open(fn, "create")
+    @assert e == nil
+
+    _, e2 := f.Write([]byte("0123456789"))
+    @assert e2 == nil
+
+    n, e3 := f.WriteAt([]byte("XY"), 3)
+    @assert e3 == nil
+    @assert n == 2
+    @assert f.Close() == nil
+
+    raw, e4 := os.ReadFile(fn)
+    @assert e4 == nil
+    @assert string(raw) == "012XY56789"
+
+    @assert os.Remove(fn) == nil
+}

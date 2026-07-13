@@ -1,0 +1,13 @@
+// Regression test for io.Open() with an invalid mode string. It used to
+// return a bare (non-list) error despite being declared with two return
+// values, which triggered an uncaught, program-aborting runtime error
+// instead of a normal catchable/assignable one.
+
+@test "io: io.Open returns a catchable error for an invalid mode"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    f, e := io.Open(fn, "bogus-mode")
+    @assert f == nil
+    @assert e != nil
+}

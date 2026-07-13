@@ -1,0 +1,30 @@
+// Regression test for io.File.ReadString(). It used to have no way to
+// signal end-of-file: once the underlying scanner was exhausted, every
+// further call silently returned ("", nil) forever, so a caller had no way
+// to write a normal "read until EOF" loop. It now returns a catchable
+// errors.ErrScanEOF ("EOF") once the file is exhausted.
+
+@test "io: File.ReadString signals EOF at end of file"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    @assert os.WriteFile(fn, []byte("line1\nline2\n"), 0o644) == nil
+
+    f, e := io.Open(fn, "read")
+    @assert e == nil
+
+    s1, e1 := f.ReadString()
+    @assert e1 == nil
+    @assert s1 == "line1"
+
+    s2, e2 := f.ReadString()
+    @assert e2 == nil
+    @assert s2 == "line2"
+
+    _, e3 := f.ReadString()
+    @assert e3 != nil
+    @assert e3.Is(errors.New("scan.eof"))
+
+    @assert f.Close() == nil
+    @assert os.Remove(fn) == nil
+}

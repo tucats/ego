@@ -3524,92 +3524,225 @@ contents. The value is not printed to the console as part of this operation.
 ### io <a name="io"></a>
 
 The io package supports input/output operations using native files in the file system
-of the computer running _Ego_.
+of the computer running _Ego_. Line-oriented text access (`ReadString`/`WriteString`)
+and raw byte access (`Write`/`WriteAt`) are both supported, but there is currently no
+raw byte _read_ method on `io.File` -- see the note at the end of "The `File`
+structure" section below if you need to read binary data back out of a file.
 
-#### io.DirList(path)
-
-The `DirList` function produces a string containing a human-formatted directory
-listing, similar to the Unix "ls" command. The result string is already formatted
-with line breaks, etc.
-
-#### io.Expand(path)
-
-The `Expand()` function produces an array of strings containing the absolute path
-names of all files found within the given path.
-
-```go
-a := "/tmp"
-fns := io.Expand(a)
-```
-
-The value of `fns` is a []string and contains the names of each file found in the
-directory "/tmp".
+Like the `exec` package, file access can be restricted: when a sandbox path is
+configured (the `ego.runtime.sandbox.path` setting), paths passed to any function in
+this package are confined to that sandbox directory, and relative paths containing
+`..` segments are rejected.
 
 #### io.Open(filename [, mode])
 
-The `Open()` function opens a file, and returns a file handle that can be used to
-perform specific operations on the file.
-
 ```go
-fn := "mydata.txt"
-mode := "create"
-f := io.Open(fn, mode)
+func io.Open(filename string, mode ...string) (io.File, error)
 ```
 
-This program opens a file named "mydata.txt" for output, and creates the file if it
-does not already exist. The mode variable can be one of the following values
+The `Open()` function opens a file, and returns a `File` object that can be used to
+perform further operations on the file, along with an error (`nil` on success).
+
+```go
+f, err := io.Open("mydata.txt", "create")
+if err != nil {
+    fmt.Println("could not open file:", err)
+    return
+}
+
+defer f.Close()
+```
+
+This opens a file named "mydata.txt" for output, creating it if it does not already
+exist. The `mode` argument is optional (it defaults to `"read"`) and can be one of
+the following values:
 
 &nbsp;
 
 | Mode | Description |
 | :----: | :---------- |
-| append | The file must exist, and is opened for writing. All new data is written to the end of the file. |
-| create | The file is created (any previous contents are lost) and available for writing. |
-| read | The file must already exist, and is opened for reading only |
-| write | The file must already exist, and is opened for writing only |
+| `read` or `input` | The file must already exist, and is opened for reading only. |
+| `write` or `output` | The file must already exist, and is opened for writing only, starting at the beginning of the file. |
+| `create` | The file is created (any previous contents are discarded) and opened for writing. |
+| `append` | The file must exist, and is opened for writing. All new data is written to the end of the file. |
 
 &nbsp;
 
-Once a file handle is created, you can use the file handle to perform additional operations
-on the file, until you use the `Close()` method of the handle which closes the file so it
-completes all operations and then the handle cannot be used again until another `io.Open()`
-operation. The file handle functions are:
+An invalid mode string (anything other than the values above) returns a non-nil
+error rather than a valid `File`, and -- like every other error in this package --
+that error is a normal, catchable value; no `try`/`catch` is required to observe it:
 
-&nbsp;
+```go
+f, err := io.Open("mydata.txt", "not-a-real-mode")
+fmt.Println(f, err)   // <nil>  invalid file open mode: not-a-real-mode
+```
 
-| Function | Description |
+#### The `File` structure
+
+Once a `File` is created by `Open()`, its methods perform additional operations on
+the underlying file until `Close()` is called, after which the object can no longer
+be used for I/O (though it remains a valid value you can still inspect with
+`String()`).
+
+| Method | Description |
 | :------- | :---------- |
-| Close() | Close the file, after which the file object can no longer be used |
-| ReadString() | Read a line of text from the file and return it as a string |
-| WriteString(string) | Write a string to the output file and add a newline |
-| Write(value) | Write an arbitrary value to the output file |
-| WriteAt(value, int) | Write an arbitrary value at specific position in the file |
+| `Close() error` | Closes the file. After this, no other method (except `String()`) can be used on the object. |
+| `ReadString() (string, error)` | Reads the next line of text from the file (without its trailing newline). Returns an `errors.ErrScanEOF` ("EOF") error once the end of the file is reached. |
+| `WriteString(s string) (int, error)` | Writes a string to the file, followed by a newline, and returns the number of bytes written. |
+| `Write(b []byte) (int, error)` | Writes a byte array's raw bytes to the file at the current position, and returns the number of bytes written. |
+| `WriteAt(b []byte, offset int) (int, error)` | Writes a byte array's raw bytes to the file at the given byte offset, and returns the number of bytes written. |
+| `String() string` | Returns a human-readable description of the file object's state, mostly useful for debugging (e.g. `<file; open; name "mydata.txt"; fileptr ...>`). |
 
-&nbsp;
+A file also exposes read-only fields: `f.Name` (the absolute path of the file),
+`f.Mode` (one of `"input"`, `"output"`, or `"append"`, reflecting the mode it was
+opened with -- or `"closed"` after `Close()`), and `f.Valid` (`true` until the file
+is closed).
+
+**Reading text a line at a time:** because `ReadString()` reports end-of-file as an
+error rather than an empty result, the natural loop is a `try`/`catch` (or an
+explicit `.Is()` check) around repeated reads:
+
+```go
+f, err := io.Open("mydata.txt", "read")
+if err != nil {
+    fmt.Println("could not open file:", err)
+    return
+}
+
+defer f.Close()
+
+for {
+    line, err := f.ReadString()
+    if err != nil {
+        break   // end of file (or a real read error -- err.Is(errors.New("scan.eof")) tells them apart)
+    }
+
+    fmt.Println(line)
+}
+```
+
+**Writing raw bytes:**
+
+```go
+f, err := io.Open("data.bin", "create")
+if err != nil {
+    fmt.Println("could not open file:", err)
+    return
+}
+
+n, err := f.Write([]byte{0x01, 0x02, 0x03})
+fmt.Println(n, err)   // 3  <nil>
+
+f.Close()
+```
+
+`Write()` and `WriteAt()` write the byte array's contents exactly as given -- unlike
+`WriteString()`, they do not add a trailing newline, and they do not interpret or
+re-encode the bytes in any way.
+
+**No raw byte read method:** `io.File` has `Write`/`WriteAt` for raw bytes, but only
+`ReadString` (line-oriented text) for reading -- there is no `Read`/`ReadAt`
+counterpart. If you need to read binary data back out of a file, use `os.Open()`
+instead, which returns a different file object with `Read([]byte)` and
+`ReadAt([]byte, int64)` methods, or read the whole file at once with
+`os.ReadFile(filename)`.
 
 #### io.ReadDir(path)
 
-The `ReadDir()` function profiles a list of all the files in a given directory
-path location. This is the form of an array of structures which describe each
-file.
-
 ```go
-a := io.ReadDir("/tmp")
+func io.ReadDir(path string) ([]io.Entry, error)
 ```
 
-This will produce an array `a` containing information on each file in the "/tmp"
-directory. An empty array is returned if there are no files. Each array structure
-has the following members:
+The `ReadDir()` function reads the list of files in a given directory path,
+returning an array of structures describing each entry, and an error (`nil` on
+success). An empty array (not an error) is returned if the directory is empty.
+
+```go
+entries, err := io.ReadDir("/tmp")
+if err != nil {
+    fmt.Println("could not read directory:", err)
+    return
+}
+
+for _, e := range entries {
+    fmt.Println(e.Name, e.Size, e.IsDirectory)
+}
+```
+
+Each `io.Entry` structure has the following fields:
 
 &nbsp;
 
 | Field | Type | Description |
 | :--------- | :------: | :--------------------------------------------------------------- |
-| directory | bool | true if the entry is a subdirectory, else false if it is a file |
-| mode | string | Unix-style mode string for permissions for the file |
-| modified | string | Timestamp of the last time the file was modified |
-| name | string | The name of the file |
-| size | int | The size of the file contents in bytes |
+| `Name` | `string` | The name of the file (not the full path -- join it with the directory you passed to `ReadDir` if you need the full path). |
+| `IsDirectory` | `bool` | `true` if the entry is itself a subdirectory, else `false`. |
+| `Mode` | `string` | Unix-style mode string for the file's permissions (e.g. `"-rw-r--r--"`). |
+| `Size` | `int` | The size of the file's contents, in bytes. |
+| `Modified` | `time.Time` | An Ego `time.Time` value for the last modification time; use its `Format()` method to render it as text. |
+
+&nbsp;
+
+#### io.Expand(path [, filter])
+
+```go
+func io.Expand(path string, filter ...string) ([]string, error)
+```
+
+The `Expand()` function produces an array of the absolute path names of all files
+found within `path`, along with an error (`nil` on success). If `path` names a single
+file rather than a directory, the result is a one-element array containing that
+file's path. The optional `filter` argument, if given, restricts the results to
+names ending in that suffix (typically a file extension such as `".go"`).
+
+```go
+fns, err := io.Expand("/tmp")
+if err != nil {
+    fmt.Println("could not expand path:", err)
+    return
+}
+
+for _, fn := range fns {
+    fmt.Println(fn)
+}
+```
+
+`Expand()` recurses into subdirectories, so the result can include paths several
+levels below `path`.
+
+#### io.DirList(path)
+
+```go
+func io.DirList(path string) string
+```
+
+The `DirList()` function produces a single string containing a human-formatted
+directory listing, similar to the Unix `ls -l` command, with one line per entry
+(mode, modification time, size, and name) already separated by newlines. It is
+implemented in terms of `io.ReadDir()` -- if the directory cannot be read, the
+returned string describes the error instead of listing any files, rather than
+returning a separate error value.
+
+```go
+fmt.Print(io.DirList("/tmp"))
+```
+
+#### io.Prompt(text)
+
+```go
+func io.Prompt(text string) string
+```
+
+The `Prompt()` function writes `text` to the console as a prompt, then reads and
+returns a single line of text typed by the user (with the trailing newline
+removed). If `text` begins with the special prefix `"password~"`, the remainder of
+`text` is used as the prompt, but the typed input is not echoed back to the
+console -- useful for interactively collecting a password or other secret.
+
+```go
+name := io.Prompt("Enter your name: ")
+secret := io.Prompt("password~Enter your password: ")
+```
 
 &nbsp;
 

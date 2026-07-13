@@ -98,7 +98,7 @@ var IoPackage = data.NewPackageFromMap("io", map[string]any{
 					Type: data.StringType,
 				},
 			},
-			Returns:  []*data.Type{data.ArrayType(data.StringType)},
+			Returns:  []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 			ArgCount: data.Range{1, 2},
 		},
 		Value: expand,

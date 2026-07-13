@@ -35,7 +35,7 @@ func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	fileName, err := filepath.Abs(sandboxName(sandboxed, data.String(args.Get(0))))
 	if err != nil {
-		err = errors.New(err).In("ReadDir")
+		err = errors.New(err).In("Open")
 
 		return data.NewList(nil, err), err
 	}
@@ -45,7 +45,9 @@ func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		// Is it a valid mode name?
 		if !util.InList(modeValue, "input", "read", "output", "write", "create", "append") {
-			return nil, errors.ErrInvalidFileMode.Context(modeValue)
+			err := errors.ErrInvalidFileMode.Context(modeValue)
+
+			return data.NewList(nil, err), err
 		}
 		// If we are opening for output mode, delete the file if it already
 		// exists
@@ -67,9 +69,9 @@ func openFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	f, err = os.OpenFile(fileName, mode, mask)
 	if err != nil {
-		err = errors.New(err).In("ReadDir")
+		err = errors.New(err).In("Open")
 
-		return data.NewList(nil, err), errors.New(err)
+		return data.NewList(nil, err), err
 	}
 
 	fileObject := data.NewStruct(IoFileType)

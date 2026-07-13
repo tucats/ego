@@ -23,3 +23,15 @@
     @assert T.True(len(got)>0, "did not return a list")
     @assert T.Equal(got[0], want, "single level deep directory, got " + string(got))
 }
+
+@test "io: io.Expand() returns a catchable error for a bad path"
+{
+    // Regression test: Expand() used to be declared with only a single
+    // ([]string) return, so a failure could only be observed by an
+    // uncaught, program-aborting runtime error. It now returns
+    // ([]string, error) like io.Open()/io.ReadDir(), so the error is a
+    // normal assignable value.
+    fns, e := io.Expand("/no/such/path/ego-test-xyz")
+    @assert e != nil
+    @assert len(fns) == 0
+}

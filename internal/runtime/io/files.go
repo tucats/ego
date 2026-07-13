@@ -2,8 +2,6 @@ package io
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"os"
 	"strings"
@@ -104,7 +102,15 @@ func readString(s *symbols.SymbolTable, args data.List) (any, error) {
 		scanner = scanX.(*bufio.Scanner)
 	}
 
-	scanner.Scan()
+	if !scanner.Scan() {
+		if scanErr := scanner.Err(); scanErr != nil {
+			err = errors.New(scanErr).In("ReadString")
+		} else {
+			err = errors.New(errors.ErrScanEOF).In("ReadString")
+		}
+
+		return data.NewList("", err), err
+	}
 
 	return data.NewList(scanner.Text(), err), err
 }
@@ -128,20 +134,14 @@ func writeString(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(length, err), err
 }
 
-// write writes an arbitrary binary object to a file.
+// write writes a byte array to a file.
 func write(s *symbols.SymbolTable, args data.List) (any, error) {
-	var buf bytes.Buffer
-
-	enc := gob.NewEncoder(&buf)
-
-	if err := enc.Encode(args.Get(0)); err != nil {
-		err = errors.New(err).In("Write")
-
-		return data.NewList(nil, err), errors.New(err)
+	bytes, err := byteArrayArgument(args, 0, "Write")
+	if err != nil {
+		return data.NewList(nil, err), err
 	}
 
-	bytes := buf.Bytes()
-	length := len(bytes)
+	length := 0
 
 	f, err := getFile("Write", s)
 	if err == nil {
@@ -155,25 +155,21 @@ func write(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(length, err), err
 }
 
-// Write writes an arbitrary binary object to a file at an offset.
+// writeAt writes a byte array to a file at an offset.
 func writeAt(s *symbols.SymbolTable, args data.List) (any, error) {
-	var buf bytes.Buffer
-
 	offset, err := data.Int(args.Get(1))
 	if err != nil {
-		return nil, errors.New(err).In("WriteAt")
-	}
-
-	enc := gob.NewEncoder(&buf)
-
-	if err := enc.Encode(args.Get(0)); err != nil {
 		err = errors.New(err).In("WriteAt")
 
-		return nil, errors.New(err)
+		return data.NewList(nil, err), err
 	}
 
-	bytes := buf.Bytes()
-	length := len(bytes)
+	bytes, err := byteArrayArgument(args, 0, "WriteAt")
+	if err != nil {
+		return data.NewList(nil, err), err
+	}
+
+	length := 0
 
 	f, err := getFile("WriteAt", s)
 	if err == nil {
@@ -185,4 +181,15 @@ func writeAt(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	return data.NewList(length, err), err
+}
+
+// byteArrayArgument extracts the native []byte contents of a byte-array
+// argument at the given index, for use by Write() and WriteAt().
+func byteArrayArgument(args data.List, index int, name string) ([]byte, error) {
+	array, ok := args.Get(index).(*data.Array)
+	if !ok || array.Type().Kind() != data.ByteKind {
+		return nil, errors.ErrInvalidFunctionArgument.In(name).Context(args.Get(index))
+	}
+
+	return array.GetBytes(), nil
 }
