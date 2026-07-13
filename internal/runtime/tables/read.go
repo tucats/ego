@@ -13,21 +13,25 @@ func lenTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Get the table associated with the receiver variable.
 	t, err := getTable(s)
 	if err != nil {
-		return nil, errors.New(err).In("Len")
+		err = errors.New(err).In("Len")
+
+		return data.NewList(nil, err), err
 	}
 
 	// Return the length of the table.
-	return t.Len(), nil
+	return data.NewList(t.Len(), nil), nil
 }
 
 // widthTable implements the Width function, which returns the number of columns in the table.
 func widthTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	t, err := getTable(s)
 	if err != nil {
-		return nil, errors.New(err).In("Width")
+		err = errors.New(err).In("Width")
+
+		return data.NewList(nil, err), err
 	}
 
-	return t.Width(), nil
+	return data.NewList(t.Width(), nil), nil
 }
 
 // getTableElement implements the Get method, which returns the string value at
@@ -44,7 +48,9 @@ func getTableElement(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	rowIndex, err := data.Int(args.Get(0))
 	if err != nil {
-		return nil, errors.New(err).In("Get")
+		err = errors.New(err).In("Get")
+
+		return data.NewList(nil, err), err
 	}
 
 	columnName := data.String(args.Get(1))
@@ -94,7 +100,9 @@ func getRow(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	rowIndex, err := data.Int(args.Get(0))
 	if err != nil {
-		return nil, errors.New(err).In("GetRow")
+		err = errors.New(err).In("GetRow")
+
+		return data.NewList(nil, err), err
 	}
 
 	if rowIndex < 0 || rowIndex >= t.Len() {

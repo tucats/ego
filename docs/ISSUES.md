@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **264 issues**:
-**223 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **266 issues**:
+**225 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -249,6 +249,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-79](#BUG-79) | BUG | Three `strings` package functions (`EqualFold`, `Ints`, `Substitution`) are declared with a return type that doesn't match their actual runtime behavior. | ✓ |
 | [BUG-80](#BUG-80) | BUG | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
 | [BUG-81](#BUG-81) | BUG | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
+| [BUG-82](#BUG-82) | BUG | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -268,6 +269,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [CALL-10](#CALL-10) | CALL | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
 | [CALL-11](#CALL-11) | CALL | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 | [CALL-12](#CALL-12) | CALL | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
+| [CALL-13](#CALL-13) | CALL | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
 | [CALL-2](#CALL-2) | CALL | First extra variadic argument bypasses strict type checking | ✓ |
 | [CALL-3](#CALL-3) | CALL | Nil pointer dereference in callRuntimeFunction when savedDefinition is nil and context is sandboxed | ✓ |
 | [CALL-4](#CALL-4) | CALL | `parentTable` nil guard is dead code for non-literal named functions | ✓ |
@@ -546,6 +548,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-79](#BUG-79) | LOW | Three `strings` package functions (`EqualFold`, `Ints`, `Substitution`) are declared with a return type that doesn't match their actual runtime behavior. | ✓ |
 | [BUG-80](#BUG-80) | LOW | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
 | [BUG-81](#BUG-81) | MEDIUM | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
+| [BUG-82](#BUG-82) | MEDIUM | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 
 ---
 
@@ -8331,6 +8334,53 @@ temporarily reverted.
 
 ---
 
+<a id="BUG-82"></a>
+
+### BUG-82 — Several `tables` package methods violate the `(value, error)` return convention
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found during a documentation review of the `tables` package. Several methods either
+declared a return signature that didn't match their actual behavior, or returned a
+success-path value that broke normal `if err != nil` error checking:
+
+- `tables.New()` (`newTable` in `table.go`) was declared with only a single
+  `TablesTableType` return, no error — but its underlying `tables.New(headings)` call can
+  genuinely fail (terminal-size detection). A bare non-list error on a non-error-typed
+  single return becomes an uncatchable-except-try/catch runtime abort instead of a normal
+  returned error.
+- `Close()` (`closeTable`) and `Pagination()` (`setPagination`) are both declared with a
+  single `ErrorType` return -- the "value-slot" convention documented at the top of
+  `types.go` (`return err, err`) -- but each returned the literal boolean `true` on
+  success instead of `nil`. Since the single-ErrorType dispatch path pushes the success
+  value verbatim, `if err := t.Close(); err != nil` saw the non-nil `true` and treated
+  every successful close as a failure.
+- `String()` (`toString`) is declared to return `(string, error)` but its implementation
+  returned Go's bare two-value tuple (`return t.String(fmt)`) instead of wrapping it in
+  `data.NewList`. A two-value assignment (`s, err := t.String(...)`) failed outright with
+  "incorrect number of return values"; only single-value usage happened to work.
+  `Get()` (`getTableElement`) and `GetRow()` (`getRow`) each had one early-return path (an
+  invalid, non-coercible `rowIndex` argument) that returned a bare `nil, err` instead of
+  the `data.NewList(nil, err), err` pattern used by every other path in the same function
+  -- an inconsistency that made that one specific error path uncatchable via a normal
+  `v, err := ...` assignment even though the function's other error paths worked fine.
+- `Len()` (`lenTable`) and `Width()` (`widthTable`) were declared with only a single
+  `IntType` return, no error -- but both call `getTable(s)`, which fails on a closed or
+  invalid table receiver, hitting the same bare-non-list-error-on-non-error-return bug as
+  `tables.New()` above.
+
+**Fix:**  
+`New()`, `Len()`, and `Width()` now declare `(value, error)` and wrap both paths in
+`data.NewList`. `Close()` and `Pagination()` now return `nil` (via `err`, which is `nil` at
+that point) instead of `true` on success. `String()`, `Get()`, and `GetRow()` now wrap
+every return path in `data.NewList` consistently. Updated `internal/runtime/tables/tables_test.go`
+accordingly (it directly asserted the old `got != true` behavior for `Close()`/`Pagination()`,
+which had to be corrected to `got != nil` alongside the fix, and several tests needed a new
+`unwrapValue` helper to unwrap the now-`data.List` results of `newTable`/`lenTable`/`widthTable`/`toString`).
+
+---
+
 ### Testing Methodology
 
 All bugs were found by writing small Ego programs to `/tmp/test_*.ego` and running
@@ -10892,6 +10942,7 @@ if address < 0 || address > c.bc.nextAddress {
 | [CALL-10](#CALL-10) | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
 | [CALL-11](#CALL-11) | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 | [CALL-12](#CALL-12) | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
+| [CALL-13](#CALL-13) | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
 
 <a id="CALL-1"></a>
 
@@ -11685,6 +11736,82 @@ Regression tests: `Test_callRuntimeFunction_SandboxFlagsVisibleInFunctionSymbols
 with `fullScope=false` against a two-level (root + child) test context —
 reproducing the exact shape that hid the flag — and asserts both symbols are
 visible with the correct value in both the sandboxed and non-sandboxed case.
+
+---
+
+<a id="CALL-13"></a>
+
+### CALL-13 — `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`)
+
+**Affected function:** `findRows` (declaration in `internal/runtime/tables/types.go`)  
+**Files:** `internal/runtime/tables/types.go`, `internal/runtime/tables/find.go`  
+**Risk:** High when triggered — any package reference (e.g. `strconv.Atoi`) inside a
+`Find()` comparator closure fails outright with `"unknown identifier: strconv"`, but only
+when the `Find()` call itself is made at a shallow enough scope depth (a bare top-level
+statement, as used by `ego run < file.ego`'s stdin path) — the identical code works fine
+one scope level deeper (inside a function body, or an Ego test's own `@test{}` block),
+which is what let this ship unnoticed  
+**Discovered by:** manual testing while writing `tables` package documentation examples
+(the `Find()` example from `docs/LANGUAGE.md`, using `strconv.Atoi` inside the closure,
+silently returned an empty result with no error visible via single-value assignment)  
+**Status: RESOLVED**
+
+#### CALL-13: Description
+
+Every other runtime function that invokes a user-supplied Ego callback — `sort.Slice`,
+`sort.SliceStable`, `sort.Search`, `os.Expand`, `strings.Template` — sets `Scope: true`
+on its `data.Declaration`, per the documented convention: "The function's declaration
+entry in `types.go` must set `Scope: true` so the Ego closure can access variables from
+its enclosing scope." `tables.Find`'s declaration was missing this flag.
+
+`callRuntimeFunction` computes the parent for a call's own symbol table as follows:
+
+```go
+if fullScope {
+    parentTable = c.symbols
+} else {
+    parentTable = c.symbols.FindNextScope()
+}
+```
+
+`fullScope` is set from `definition.FullScope`, which is populated from the
+`Declaration.Scope` field. Without it, `findRows`'s own symbol table (and the child table
+it builds for the callback's `bytecode.Context`) is parented via `FindNextScope()` instead
+of `c.symbols` directly — the same scope-skipping mechanism responsible for CALL-12,
+this time affecting a normal symbol lookup (an imported package) rather than the sandbox
+flags. At a shallow enough call depth, this skips right past the table where the
+`strconv` package import is registered, so any reference to it inside the closure fails:
+
+```go
+t, _ := tables.New("Name", "Age")
+t.AddRow("Tom", 55)
+
+rows, err := t.Find(func(name string, age string) bool {
+    i, e := strconv.Atoi(age)
+    return e == nil && i > 50
+})
+
+fmt.Println(rows, err)
+// []  at <anon>(line 4), unknown identifier: strconv   -- when Find() is called
+//                                                          at bare top-level scope
+```
+
+The single-value form used in `docs/LANGUAGE.md`'s original example (`retirees :=
+t.Find(...)`, discarding the error) made this look like a silent, wrong *result* (an
+empty array) rather than a visible error, which is how it was first noticed.
+
+#### CALL-13: Fix
+
+Added `Scope: true` to `Find`'s `data.Declaration` in `types.go`, matching the other
+five callback-invoking functions listed above.
+
+**Regression test:** reproducing the exact scope-depth condition isn't possible through
+the normal Ego test harness — `ego test`'s `@test{}` block wrapping (and any function
+body) is already one scope level deeper than the bug requires, so a `tests/tables/*.ego`
+test can't fail on this even with the flag removed (confirmed by testing). Added
+`TestFindDeclarationHasScopeTrue` (`internal/runtime/tables/tables_test.go`) as a direct
+metadata check instead, asserting `Declaration.Scope == true` — verified it fails when
+the flag is manually removed and passes with it restored.
 
 ---
 

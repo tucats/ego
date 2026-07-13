@@ -179,6 +179,7 @@ var TablesTableType = data.TypeDefinition("Table",
 					Returns: []*data.Type{
 						data.ErrorType,
 					},
+					ArgCount: data.Range{0, 2},
 				},
 				Value: setFormat,
 			},
@@ -228,6 +229,7 @@ var TablesTableType = data.TypeDefinition("Table",
 					Type: data.OwnType,
 					Returns: []*data.Type{
 						data.IntType,
+						data.ErrorType,
 					},
 				},
 				Value: lenTable,
@@ -238,14 +240,16 @@ var TablesTableType = data.TypeDefinition("Table",
 					Type: data.OwnType,
 					Returns: []*data.Type{
 						data.IntType,
+						data.ErrorType,
 					},
 				},
 				Value: widthTable,
 			},
 			"Find": {
 				Declaration: &data.Declaration{
-					Name: "Find",
-					Type: data.OwnType,
+					Name:  "Find",
+					Type:  data.OwnType,
+					Scope: true,
 					Parameters: []data.Parameter{
 						{
 							Name: "eval",
@@ -353,7 +357,7 @@ var TablesPackage = data.NewPackageFromMap("tables", map[string]any{
 				},
 			},
 			Variadic: true,
-			Returns:  []*data.Type{TablesTableType},
+			Returns:  []*data.Type{TablesTableType, data.ErrorType},
 		},
 		Value: newTable,
 	},

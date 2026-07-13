@@ -37,7 +37,7 @@ func setPagination(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	t.SetPagination(h, w)
 
-	return true, err
+	return err, err
 }
 
 // setFormat implements the Format method, which controls whether the table
@@ -178,9 +178,18 @@ func toString(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	t, err := getTable(s)
-	if err == nil {
-		return t.String(fmt)
+	if err != nil {
+		err = errors.New(err).In("String")
+
+		return data.NewList(nil, err), err
 	}
 
-	return nil, err
+	text, err := t.String(fmt)
+	if err != nil {
+		err = errors.New(err).In("String")
+
+		return data.NewList(nil, err), err
+	}
+
+	return data.NewList(text, nil), nil
 }

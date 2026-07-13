@@ -59,7 +59,9 @@ func newTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Create the new table object, and set the alignment for each column heading now.
 	t, err := tables.New(headings)
 	if err != nil {
-		return nil, err
+		err = errors.New(err).In("New")
+
+		return data.NewList(nil, err), err
 	}
 
 	for i, v := range align {
@@ -82,7 +84,7 @@ func newTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	result.SetAlways(headingsFieldName, headingsArray)
 	result.SetReadonly(true)
 
-	return result, nil
+	return data.NewList(result, nil), nil
 }
 
 // closeTable closes the table handle, and releases any memory resources
@@ -99,7 +101,7 @@ func closeTable(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThisStruct(s)
 	this.SetAlways(tableFieldName, nil)
 
-	return true, nil
+	return nil, nil
 }
 
 // addRow adds a row to the table. This can either be a list of values, or

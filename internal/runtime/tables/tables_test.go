@@ -49,12 +49,12 @@ func makeTableSymbols(t *testing.T, headings ...string) *symbols.SymbolTable {
 		args[i] = h
 	}
 
-	tableStruct, err := newTable(s, data.NewList(args...))
+	result, err := newTable(s, data.NewList(args...))
 	if err != nil {
 		t.Fatalf("makeTableSymbols: newTable failed: %v", err)
 	}
 
-	s.SetAlways(defs.ThisVariable, tableStruct)
+	s.SetAlways(defs.ThisVariable, unwrapValue(t, result))
 
 	return s
 }
@@ -69,6 +69,22 @@ func addTestRow(t *testing.T, s *symbols.SymbolTable, values ...any) {
 	if err != nil {
 		t.Fatalf("addTestRow: %v", err)
 	}
+}
+
+// unwrapValue extracts index 0 from a data.List result. newTable, lenTable,
+// widthTable, and toString all follow the (value, error) convention by
+// returning a data.List{value, err}, so their Go-level "any" result must be
+// unwrapped before use, distinct from the Go-level error return checked
+// separately by the caller.
+func unwrapValue(t *testing.T, result any) any {
+	t.Helper()
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List result, got %T", result)
+	}
+
+	return list.Get(0)
 }
 
 // ---------------------------------------------------------------------------
@@ -181,12 +197,12 @@ func TestNewTable(t *testing.T) {
 	t.Run("simple column names", func(t *testing.T) {
 		s := symbols.NewRootSymbolTable("test")
 
-		got, err := newTable(s, data.NewList("Name", "Age", "City"))
+		result, err := newTable(s, data.NewList("Name", "Age", "City"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		tbl, ok := got.(*data.Struct)
+		tbl, ok := unwrapValue(t, result).(*data.Struct)
 		if !ok {
 			t.Fatal("result is not a *data.Struct")
 		}
@@ -210,12 +226,12 @@ func TestNewTable(t *testing.T) {
 	t.Run("left-alignment hint (leading colon)", func(t *testing.T) {
 		s := symbols.NewRootSymbolTable("test")
 
-		got, err := newTable(s, data.NewList(":Name", "Age"))
+		result, err := newTable(s, data.NewList(":Name", "Age"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		tbl := got.(*data.Struct)
+		tbl := unwrapValue(t, result).(*data.Struct)
 		headingsArr := tbl.GetAlways(headingsFieldName).(*data.Array)
 
 		// The colon should be stripped from the heading name.
@@ -228,12 +244,12 @@ func TestNewTable(t *testing.T) {
 	t.Run("right-alignment hint (trailing colon)", func(t *testing.T) {
 		s := symbols.NewRootSymbolTable("test")
 
-		got, err := newTable(s, data.NewList("Score:", "Name"))
+		result, err := newTable(s, data.NewList("Score:", "Name"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		tbl := got.(*data.Struct)
+		tbl := unwrapValue(t, result).(*data.Struct)
 		headingsArr := tbl.GetAlways(headingsFieldName).(*data.Array)
 
 		v, _ := headingsArr.Get(0)
@@ -245,12 +261,12 @@ func TestNewTable(t *testing.T) {
 	t.Run("center-alignment hint (both colons)", func(t *testing.T) {
 		s := symbols.NewRootSymbolTable("test")
 
-		got, err := newTable(s, data.NewList(":Label:"))
+		result, err := newTable(s, data.NewList(":Label:"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		tbl := got.(*data.Struct)
+		tbl := unwrapValue(t, result).(*data.Struct)
 		headingsArr := tbl.GetAlways(headingsFieldName).(*data.Array)
 
 		v, _ := headingsArr.Get(0)
@@ -266,12 +282,12 @@ func TestNewTable(t *testing.T) {
 		_ = arr.Set(0, "A")
 		_ = arr.Set(1, "B")
 
-		got, err := newTable(s, data.NewList(arr))
+		result, err := newTable(s, data.NewList(arr))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		tbl := got.(*data.Struct)
+		tbl := unwrapValue(t, result).(*data.Struct)
 		headingsArr := tbl.GetAlways(headingsFieldName).(*data.Array)
 
 		if headingsArr.Len() != 2 {
@@ -282,12 +298,12 @@ func TestNewTable(t *testing.T) {
 	t.Run("no headings creates empty table", func(t *testing.T) {
 		s := symbols.NewRootSymbolTable("test")
 
-		got, err := newTable(s, data.NewList())
+		result, err := newTable(s, data.NewList())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got == nil {
+		if unwrapValue(t, result) == nil {
 			t.Fatal("expected non-nil result")
 		}
 	})
@@ -301,12 +317,12 @@ func TestLenTable(t *testing.T) {
 	t.Run("empty table has zero rows", func(t *testing.T) {
 		s := makeTableSymbols(t, "A", "B")
 
-		got, err := lenTable(s, data.NewList())
+		result, err := lenTable(s, data.NewList())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got != 0 {
+		if got := unwrapValue(t, result); got != 0 {
 			t.Errorf("expected 0, got %v", got)
 		}
 	})
@@ -317,12 +333,12 @@ func TestLenTable(t *testing.T) {
 		addTestRow(t, s, "x", "y")
 		addTestRow(t, s, "p", "q")
 
-		got, err := lenTable(s, data.NewList())
+		result, err := lenTable(s, data.NewList())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got != 2 {
+		if got := unwrapValue(t, result); got != 2 {
 			t.Errorf("expected 2, got %v", got)
 		}
 	})
@@ -341,12 +357,12 @@ func TestWidthTable(t *testing.T) {
 	t.Run("width matches column count at creation", func(t *testing.T) {
 		s := makeTableSymbols(t, "Name", "Age", "City")
 
-		got, err := widthTable(s, data.NewList())
+		result, err := widthTable(s, data.NewList())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got != 3 {
+		if got := unwrapValue(t, result); got != 3 {
 			t.Errorf("expected 3, got %v", got)
 		}
 	})
@@ -356,12 +372,12 @@ func TestWidthTable(t *testing.T) {
 
 		_, _ = addColumn(s, data.NewList("C"))
 
-		got, err := widthTable(s, data.NewList())
+		result, err := widthTable(s, data.NewList())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got != 3 {
+		if got := unwrapValue(t, result); got != 3 {
 			t.Errorf("expected 3, got %v", got)
 		}
 	})
@@ -380,8 +396,8 @@ func TestAddRow(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		got, _ := lenTable(s, data.NewList())
-		if got != 1 {
+		result, _ := lenTable(s, data.NewList())
+		if got := unwrapValue(t, result); got != 1 {
 			t.Errorf("expected 1 row, got %v", got)
 		}
 	})
@@ -439,8 +455,8 @@ func TestAddRow(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		got, _ := lenTable(s, data.NewList())
-		if got != 1 {
+		result, _ := lenTable(s, data.NewList())
+		if got := unwrapValue(t, result); got != 1 {
 			t.Errorf("expected 1 row, got %v", got)
 		}
 	})
@@ -459,8 +475,8 @@ func TestAddColumn(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		got, _ := widthTable(s, data.NewList())
-		if got != 2 {
+		result, _ := widthTable(s, data.NewList())
+		if got := unwrapValue(t, result); got != 2 {
 			t.Errorf("expected width 2, got %v", got)
 		}
 
@@ -492,8 +508,8 @@ func TestAddColumns(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		got, _ := widthTable(s, data.NewList())
-		if got != 4 {
+		result, _ := widthTable(s, data.NewList())
+		if got := unwrapValue(t, result); got != 4 {
 			t.Errorf("expected width 4, got %v", got)
 		}
 	})
@@ -731,8 +747,12 @@ func TestCloseTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got != true {
-			t.Errorf("expected true return value, got %v", got)
+		// Close is declared with a single ErrorType return, so a successful
+		// call must yield a nil value here -- not some other truthy sentinel
+		// like the boolean true this used to (mistakenly) return, which would
+		// make "if err := t.Close(); err != nil" see a false failure.
+		if got != nil {
+			t.Errorf("expected nil return value, got %v", got)
 		}
 
 		// After close, getTable should return an error.
@@ -768,8 +788,13 @@ func TestSetPagination(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		if got != true {
-			t.Errorf("expected true, got %v", got)
+		// Pagination is declared with a single ErrorType return, so a
+		// successful call must yield a nil value here -- not some other
+		// truthy sentinel like the boolean true this used to (mistakenly)
+		// return, which would make "if err := t.Pagination(...); err != nil"
+		// see a false failure.
+		if got != nil {
+			t.Errorf("expected nil, got %v", got)
 		}
 	})
 
@@ -868,10 +893,12 @@ func TestToString(t *testing.T) {
 		addTestRow(t, s, "Alice", "95")
 		addTestRow(t, s, "Bob", "80")
 
-		got, err := toString(s, data.NewList("text"))
+		result, err := toString(s, data.NewList("text"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
+		got := unwrapValue(t, result)
 
 		str, ok := got.(string)
 		if !ok {
@@ -890,12 +917,12 @@ func TestToString(t *testing.T) {
 
 		addTestRow(t, s, "Alice", "95")
 
-		got, err := toString(s, data.NewList("json"))
+		result, err := toString(s, data.NewList("json"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		str := data.String(got)
+		str := data.String(unwrapValue(t, result))
 		if !strings.HasPrefix(str, "[") || !strings.HasSuffix(strings.TrimSpace(str), "]") {
 			t.Errorf("expected JSON array, got: %q", str)
 		}
@@ -1050,5 +1077,38 @@ func TestRoundTrip(t *testing.T) {
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("row[%d]: got %+v, want %+v", i, got, want)
 		}
+	}
+}
+
+// TestFindDeclarationHasScopeTrue is a regression test: Find's declaration
+// was missing Scope: true, unlike every other runtime function that invokes
+// a user-supplied Ego callback (sort.Slice, sort.SliceStable, sort.Search,
+// os.Expand, strings.Template all set it). Without Scope: true,
+// callRuntimeFunction builds the callback's own symbol table with
+// fullScope=false, so its parent is c.symbols.FindNextScope() instead of
+// c.symbols directly. For a Find() call made at a shallow enough scope depth
+// (a bare top-level statement, as in "ego run < file.ego"'s stdin path), that
+// skips right past the table holding package imports like "strconv",
+// making any reference to an imported package inside the closure fail with
+// "unknown identifier: strconv" -- even though the exact same code works
+// fine one scope level deeper (e.g. inside a function body or an Ego test's
+// own @test{} block, which is why this doesn't reproduce via a normal
+// tests/tables/*.ego regression test: every @test block is already one
+// scope level deeper than the bug requires).
+//
+// This is a direct metadata check rather than a full behavioral
+// reproduction for exactly that reason: reproducing the actual scope-depth
+// bug requires being at the outermost scope of a bytecode.Context, which the
+// Ego test harness's @test{} wrapping doesn't allow. Asserting the
+// declaration flag directly still catches a regression of the missing flag,
+// which is the actual root cause.
+func TestFindDeclarationHasScopeTrue(t *testing.T) {
+	fn, ok := TablesTableType.Function("Find").(data.Function)
+	if !ok {
+		t.Fatal("TablesTableType has no Find function")
+	}
+
+	if !fn.Declaration.Scope {
+		t.Error("Find's Declaration.Scope = false, want true (needed for its callback to see enclosing-scope symbols like package imports)")
 	}
 }

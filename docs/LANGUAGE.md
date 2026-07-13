@@ -6771,179 +6771,251 @@ Here's a breakdown of important steps in this example:
 
 ### tables Package<a name="tables"></a>
 
-The tables package provides functions to help programs produce text tables of
-data for output. The package allows you to create a table object with a given
-set of column names. You can add rows to the table, sort the table, specify
-formatting options for the table, and then generate a text or json version of
-the table data.
+The `tables` package is an Ego-specific addition with no direct Go standard
+library equivalent -- it helps programs build and print text tables of data.
+Create a table object with a given set of column names, add rows, sort it,
+set formatting options, and render it as text or JSON.
 
-#### tables.New(["columnName" [, "columnName"...]])
+Every fallible function and method in this package returns `(value, error)`
+(or, for methods that only conceptually return an error, just `error`), like
+everywhere else in the runtime.
 
-This gives access to the table formatting and printing subsystem for Ego programs. The
-arguments must be the names of the columns in the resulting table. These can be passed
-as discrete arguments, or as an array of strings. The result is a TableHandle object
-that can be used to insert data into the table structure, sort it, and format it for
-output.
-
-A table must have at least one column before you can operate on it. This can be created
-by passing one or more column names to the `New()` function, or using the `AddColumn()`
-or `AddColumns()` functions after the table is first created.
+#### tables.New(columnName...)
 
 ```go
-t := tables.New(":Identity", "Age:", "Address")
+func tables.New(columnName ...string) (tables.Table, error)
+```
+
+Creates a new table object. The column names can be passed as discrete
+arguments or as a single array of strings. A table needs at least one column
+before you can add rows to it -- either pass column names to `New()`, or add
+them afterward with `AddColumn()`/`AddColumns()`.
+
+A column name may start and/or end with a `:` to control that column's
+alignment: a leading `:` left-aligns, a trailing `:` right-aligns, both
+left-and-right aligns it centered, and neither defaults to left-aligned. The
+colon itself is stripped from the displayed heading.
+
+```go
+t, err := tables.New(":Identity", "Age:", "Address")
+if err != nil {
+    fmt.Println("could not create table:", err)
+    return
+}
 
 t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
 t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
 t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
 
-t.Sort( "Age", "Identity" )
-
-t.Format(true,false)
+t.Sort("Age", "Identity")
+t.Format(true, false)
 t.Print()
 t.Close()
 ```
 
-This sample program creates a table with three column headings. The use of the ":"
-character controls alignment for the column. If the colon is at the left or right
-side of the heading, that is how the heading is aligned. If no colon is used, then
-the default is left-aligned.
+Rows can be added as a struct (field names matching the column headings) or
+as positional arguments (matching the order columns were defined in) -- see
+`AddRow()` below. This example sorts by `Age` then `Identity`, prints column
+headings without the underline row beneath them, prints the table to the
+console, and releases the table's resources.
 
-The data is added
-for three rows. Note that data can be added as either a struct, where the column names
-must match the structure field names. Alternatively, the values can be added as
-separate arguments to the function, in which case they are added in the order of the
-column headings.
+#### The `tables.Table` structure
 
-The format of the table is further set by sorting the data by Age and then Identity, and
-indicating that headings are to be printed, but underlines under those headings are not.
-The table is then printed to the default output and the memory structures are released.
+| Field | Type | Description |
+| :---------- | :------: | :--------------------------------------------------------------- |
+| `Headings` | `[]string` | Read-only; the column names, in order. Updated automatically by `AddColumn()`/`AddColumns()`. |
 
-#### t.AddColumn("heading")
+Its methods:
 
-The `AddColumn()` function adds a new column to the table object. The column is always
-added to the end of the list of columns. If there are already rows of data in the table,
-then a blank field is added to the existing rows.
+| Method | Description |
+| :------- | :---------- |
+| `AddColumn(heading) error` | Appends a single column to the right of the existing ones. |
+| `AddColumns(heading...) error` | Appends multiple columns in one call. |
+| `AddRow(value...) error` | Adds a row; see below for its two calling conventions. |
+| `Sort(columnName...) error` | Sorts rows by one or more columns; see below. |
+| `Format(headings, underlines) error` | Controls whether the heading row and its underline are printed. |
+| `Align(columnOrIndex, alignment) error` | Sets a column's text alignment to `"left"`, `"right"`, or `"center"`. |
+| `Print(format...) error` | Renders the table to the console. |
+| `String(format...) (string, error)` | Renders the table and returns it as a string instead of printing it. |
+| `Pagination(height, width) error` | Sets terminal dimensions for paginated output; `(0, 0)` disables pagination. |
+| `Len() (int, error)` | Number of rows. |
+| `Width() (int, error)` | Number of columns. |
+| `Get(rowIndex, columnName) (string, error)` | A single cell's value. |
+| `GetRow(rowIndex) ([]string, error)` | All of a row's values, in column order. |
+| `Find(func(column...) bool) ([]int, error)` | Row indexes matching a predicate; see below. |
+| `Close() error` | Releases the table's resources. |
+
+#### AddColumn / AddColumns
 
 ```go
-t := tables.New()
+t, _ := tables.New()
 t.AddColumn("Name")
 t.AddColumn("Age")
 ```
 
-This results in a table `t` that has two columns named "Name" and "Age".
-
-#### t.AddColumns("heading"[, "heading2"...])
-
-The `AddColumns()` function adds new columns to the table object. There can be any number
-of column named added to the table, by specifying multiple string arguments. The columns are
-always added to the end of the list of columns. If there are already rows of data in the table,
-then blank fields is added to the existing rows.
+This results in a table `t` with two columns, "Name" and "Age". `AddColumns`
+adds several at once:
 
 ```go
-t := tables.New()
+t, _ := tables.New()
 t.AddColumns("Name", "Age", "Size")
 ```
 
-This results in a table `t` that has three columns named "Name", "Age", and "Size".
+If the table already has rows, each existing row gets a blank field for the
+new column.
 
-#### t.Len()
+#### AddRow(value...)
 
-The `Len()` function determines the current length of the table `t`, which was
-previously created with the `tables.New()` function. This number increases by one
-each time a row is added to the table.
+Adds one row. There are two calling conventions:
+
+- **A single struct argument** -- each field name must match a column
+  heading; the field's value becomes that column's cell.
+- **One argument per column** (or a single array of that many values) --
+  values are assigned to columns in the order the columns were defined.
 
 ```go
-t := tables.New(":Identity", "Age:", "Address")
+t, _ := tables.New("Name", "Age")
 
-t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
-t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
-t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
-t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
+err := t.AddRow( {Name: "Tony", Age: 61} )   // struct form
+fmt.Println(err)                             // <nil>
 
-i := t.Len()
+err = t.AddRow("Mary", 60)                    // positional form
+fmt.Println(err)                              // <nil>
 ```
 
-The value of `i` will be 4, since there are four rows in the
-table.
+#### Sort(columnName...)
 
-#### t.Width()
-
-The `Width()` function determines width of the table `t`, which was
-previously created with the `tables.New()` function. This indicates
-the number of columns in the table, and does not change after the
-table is created.
+Sorts the table's rows by one or more columns. With multiple column names,
+the **last** argument is the most significant sort key -- the table is
+stable-sorted starting with the least-significant key first, so that the
+last-applied (most significant) sort determines the final primary order.
+Prefix a column name with `~` to sort that column descending instead of the
+default ascending.
 
 ```go
-t := tables.New(":Identity", "Age:", "Address")
+t, _ := tables.New("Name", "Age")
+t.AddRow("Mary", 60)
+t.AddRow("Tony", 61)
+t.AddRow("Andy", 61)
 
-t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
-t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
-t.AddRow( {Identity: "Andy", Age: 61, Address: "Elm St"} )
-t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
-
-i := t.Width()
+t.Sort("Name", "Age")   // primary key: Age; secondary/tie-break: Name
 ```
 
-The value of `i` will be 3, since there are three columns in the
-table. This is the same value as `len(t.Headings)`, since `Headings`
-is the only exported data value for a table.
+#### Format(headings, underlines) / Align(column, alignment)
 
-#### t.Find( func(columns... string) bool ) []int
-
-The `Find()` function accepts as its parameter a closure function
-whose job is to determine if any given row should be included in the
-list of row numbers returned as the result of the `Find` function.
-The closure is called repeatedly for each row, with the parameters
-being the individual row values expressed as strings.
+`Format` controls whether `Print()`/`String()` include the heading row and
+the `===`-style underline beneath it:
 
 ```go
-t := tables.New(":Identity", "Age:", "Address")
+t, _ := tables.New("Name", "Age")
+t.AddRow("Tom", 51)
+
+t.Format(false, false)   // suppress both
+t.Print()                 // Tom     51
+
+t.Format(true, false)    // headings shown, underline suppressed
+t.Print()
+// Name    Age
+// Tom     51
+```
+
+`Align` sets one column's text alignment. The column may be named or given
+as its zero-based integer index; `alignment` is `"left"`, `"right"`, or
+`"center"` (case-insensitive):
+
+```go
+t.Align("Age", "right")
+```
+
+#### Print([format]) / String([format])
+
+`Print` renders the table to the console; `String` renders it the same way
+but returns the result as a string instead. Both accept an optional format:
+`"text"` (the default), `"json"`, or `"indented"` (pretty-printed JSON).
+
+```go
+t, _ := tables.New("Name", "Age")
+t.AddRow("Tom", 51)
+
+s, err := t.String("text")
+fmt.Println(err)
+fmt.Print(s)
+// Name    Age
+// ====    ===
+// Tom      51
+
+j, _ := t.String("json")
+fmt.Println(j)   // [{"Name":"Tom","Age":51}]
+```
+
+#### Pagination(height, width)
+
+Sets the terminal dimensions used when folding wide tables across multiple
+header blocks. `Pagination(0, 0)` (the default for a newly created table)
+disables pagination entirely.
+
+#### Len() / Width()
+
+```go
+t, _ := tables.New(":Identity", "Age:", "Address")
+t.AddRow( {Identity: "Tony", Age: 61, Address: "Main St"} )
+t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
+
+n, _ := t.Len()     // 2 -- number of rows
+w, _ := t.Width()   // 3 -- number of columns, same as len(t.Headings)
+```
+
+#### Find(func(column...) bool)
+
+`Find` accepts a closure that is called once per row, with that row's values
+passed as individual string arguments (one per column, in column order). It
+returns the indexes of every row for which the closure returned `true`.
+
+```go
+t, _ := tables.New(":Identity", "Age:", "Address")
 
 t.AddRow( {Identity: "Tony", Age: 65, Address: "Main St"} )
 t.AddRow( {Identity: "Mary", Age: 60, Address: "Elm St"} )
 t.AddRow( {Identity: "Andy", Age: 68, Address: "Elm St"} )
 t.AddRow( {Identity: "Sue", Age: 53, Address: "Baker St"} )
 
-retirees := t.Find(func(id string, age string, address string) bool{
-    if i, err := egostrings.Atoi(age); err == nil {
+retirees, err := t.Find(func(id string, age string, address string) bool {
+    if i, err := strconv.Atoi(age); err == nil {
         return i >= 65
     }
 
     return false
 })
+
+fmt.Println(retirees, err)   // [0, 2] <nil>
 ```
 
-This results in an array `retirees` that contains the row numbers
-of the rows that meet the criteria described in the closure function.
-The function accepts each column as a parameter, and converts the
-age from a string to an integer, and uses the result to compare the
-age to 65. If the value is 65 or greater, the function returns `true`.
-In all other cases it returns false.
+The closure converts each row's `age` column from a string to an integer and
+compares it to 65; `retirees` ends up holding the indexes of the rows (`0`
+and `2`) where that comparison is true.
 
-The resulting array will be `[]int{0, 2}` which indices that table
-rows 0 and 2 match the criteria expressed in the closure.
+#### Get(rowIndex, columnName) / GetRow(rowIndex)
 
-#### t.Get(index int, column string) (string, error)
+`Get` retrieves a single cell; `GetRow` retrieves an entire row as an array
+of strings. Both use a zero-based row index and return the same string
+values that were passed to `AddRow()`, without any formatting or alignment
+applied. The column name in `Get` is case-insensitive. An invalid row index
+or unknown column name returns an error rather than panicking.
 
-The `Get()` function retrieves a value from the table at the given row
-(a zero-based integer) and column (a case-insensitive references to the
-column name). If the row index is invalid or the column name does not
-exist, an error is returned.
+```go
+t, _ := tables.New("Name", "Age", "Title")
+t.AddRow("Tom", 55, "CTO")
+t.AddRow("Mary", 51, "President")
 
-The result is a string value that is the same value that was added to
-the table via the `AddRow()` function, without any additional formatting
-or alignment.
+v, err := t.Get(1, "title")
+fmt.Println(v, err)          // President <nil>
 
-#### t.GetRow(index int) ([]string, error)
+row, err := t.GetRow(0)
+fmt.Println(row, err)        // ["Tom", "55", "CTO"] <nil>
 
-The `GetRow()` function retrieves all the values in a given row from
-the table. The row is expressed as a zero-based integer value. If the
-row index is invalid or the column name does not exist, an error is
-returned.
-
-The result is an array of string values that is the same values that
-were added to the table via the `AddRow()` function, without any
-additional formatting or alignment.
+_, err = t.GetRow(99)
+fmt.Println(err)             // in GetRow, invalid range: 99
+```
 
 ---
 
