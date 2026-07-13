@@ -482,7 +482,20 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 
 		savedPos := c.t.Mark()
 
-		if c.t.Peek(1).IsIdentifier() {
+		// The "identifier followed by identifier" shape normally means a
+		// named return value ("result int"), but "chan" is never a valid
+		// candidate for that first identifier: unlike every other type
+		// keyword, "chan" has no legal form where it is directly followed
+		// by another type-looking token except the malformed "chan T"
+		// mistake that BUG-72 taught every other type-spec context to
+		// reject outright (channels have no element type; use "chan"
+		// alone). Without this exclusion, "chan string" as a bare return
+		// type was silently reinterpreted as "a return value named chan,
+		// of type string" -- IsIdentifier() returns true for "chan" since
+		// BUG-72 classified it as TypeTokenClass, so the heuristic below
+		// would happily consume it as a name, and typeDeclaration() would
+		// then parse "string" alone with no error at all (BUG-74).
+		if c.t.Peek(1).IsIdentifier() && !c.t.Peek(1).Is(tokenizer.ChanToken) {
 			c.t.IsNext(tokenizer.PointerToken)
 
 			if c.t.Peek(2).IsIdentifier() {
@@ -499,6 +512,14 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 
 		k, err := c.typeDeclaration()
 		if err != nil {
+			// Propagate the specific "chan T" diagnosis instead of masking
+			// it with the generic "invalid return type list" error, so a
+			// malformed channel return type is reported the same way it is
+			// everywhere else (BUG-74).
+			if errors.Equals(err, errors.ErrChannelElementType) {
+				return nil, nil, false, err
+			}
+
 			return nil, nil, false, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
@@ -639,9 +660,18 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 		// Check for special case of a named return variable. This is an identifier
 		// followed by a type, with an optional pointer. We don't need the name
 		// right now, so discard it.
+		//
+		// "chan" is excluded from this identifier check for the same reason
+		// compileReturnTypes excludes it: it is the one type keyword with no
+		// legal "identifier followed by another type-looking token" form
+		// other than the malformed "chan T" mistake (channels have no
+		// element type). Without the exclusion, "chan string" here was
+		// misread as "an unnamed return value's name is chan, its type is
+		// string", and the swallowed parseType error below meant the whole
+		// malformed type was silently discarded instead of rejected (BUG-74).
 		savedPos := c.t.Mark()
 
-		if c.t.Peek(1).IsIdentifier() {
+		if c.t.Peek(1).IsIdentifier() && !c.t.Peek(1).Is(tokenizer.ChanToken) {
 			c.t.IsNext(tokenizer.PointerToken)
 
 			if c.t.Peek(2).IsIdentifier() {
@@ -651,6 +681,16 @@ func (c *Compiler) ParseFunctionDeclaration(anon bool) (*data.Declaration, error
 
 		theType, err := c.parseType("", false)
 		if err != nil {
+			// Unlike every other parseType failure here -- which is read as
+			// "there simply wasn't a return type at all" and silently
+			// discarded, since a function legitimately may have none --
+			// "chan T" is never ambiguous with "no return type." Propagate
+			// it immediately so a malformed channel return type is reported
+			// the same way it is everywhere else (BUG-74).
+			if errors.Equals(err, errors.ErrChannelElementType) {
+				return nil, err
+			}
+
 			break
 		}
 

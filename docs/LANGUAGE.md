@@ -2059,6 +2059,29 @@ passed, the `typeof()` function can be used.
 A function that does not return a value at all should omit the
 return type declaration.
 
+A function can return a `chan` value, exactly like any other type — but
+because Ego channels are always untyped (see [Channels](#channels)), the
+return type must be written as bare `chan`, never `chan T`:
+
+```go
+func newRequestQueue() chan {
+    return make(chan, 10)
+}
+
+q := newRequestQueue()
+q <- "request 1"
+fmt.Println(<-q)
+```
+
+This is the same rule that applies to `chan` everywhere else a type is
+written — a `var` declaration, a function parameter, a struct field,
+`make()`, or a type-assertion target — so it is worth calling out
+specifically for return types: `chan T` is rejected there too, with the
+same `channels do not have an element type; use "chan" alone, not "chan T"`
+error you would get from any of those other contexts. This holds for both a
+single bare return type (`func f() chan { ... }`) and a `chan` inside a
+parenthesized multi-value return list (`func f() (chan, error) { ... }`).
+
 There is an important difference between Ego and Go, regarding
 nested function declarations. In Go, you cannot create a named
 nested function declaration at all; only function closures
@@ -2878,6 +2901,70 @@ operand of another operator:
 ```go
 fmt.Println(<-xc)              // pass the received value directly to a function
 greeting := "Got: " + <-xc     // use it as an operand
+```
+
+A function can also create and return a channel, which is a common way to
+hand a caller a communication endpoint without exposing how it is populated:
+
+```go
+func requestQueue() chan {
+    q := make(chan, 10)
+
+    go func() {
+        for i := 0; i < 3; i = i + 1 {
+            q <- "job " + string(i)
+        }
+        close(q)
+    }()
+
+    return q
+}
+
+jobs := requestQueue()
+for job := range jobs {
+    fmt.Println("Processing", job)
+}
+```
+
+A channel is a value like any other, so it can be stored in a struct field,
+an array element, or a map value, and sent to or received from through that
+storage location directly:
+
+```go
+type Worker struct {
+    Name  string
+    Inbox chan
+}
+
+w := Worker{Name: "w1", Inbox: make(chan, 5)}
+w.Inbox <- "task 1"
+fmt.Println(w.Name, "received", <-w.Inbox)
+
+queues := make([]chan, 3)
+for i := 0; i < 3; i = i + 1 {
+    queues[i] = make(chan, 1)
+    queues[i] <- i
+}
+fmt.Println(<-queues[0], <-queues[1], <-queues[2])
+
+registry := make(map[string]chan)
+registry["alerts"] = make(chan, 1)
+registry["alerts"] <- "fire"
+fmt.Println(<-registry["alerts"])
+```
+
+**A channel never has an element type — write `chan` alone, always, no
+matter where the type appears.** Unlike Go, where `chan string` declares a
+channel that only carries strings, Ego channels can carry any value and have
+no per-channel element type at all. This rule is the same everywhere a type
+is written: a `var` declaration, a function parameter, a function's return
+type (including inside a parenthesized multi-value return list), a struct
+field, `make()`, or a type-assertion target. Writing `chan T` in any of
+these positions is a compile-time error:
+
+```go
+var xc chan string    // error: channels do not have an element type;
+                       // use "chan" alone, not "chan T"
 ```
 
 &nbsp;

@@ -27,17 +27,22 @@
 //     instead of being swallowed by a fallback path meant for genuinely
 //     ambiguous cases.
 //
-// NOT covered here: a handful of separate, pre-existing bugs were found
-// incidentally while writing these tests -- channels stored in a struct
-// field, array element, or map value do not work correctly for
-// send/receive (confirmed present on the pre-BUG-72 baseline too), and a
-// malformed "chan T" as a function *return* type is silently accepted with
-// no error at all, rather than reporting the clear error the contexts below
-// now give. These are unrelated to the tokenizer misclassification fixed
-// here (they reproduce identically whether "chan" classifies correctly or
-// not) and are tracked separately -- see BUG-73/BUG-74 in docs/ISSUES.md.
-// They are deliberately NOT exercised below, so as not to assert behavior
-// that is currently broken for other reasons.
+// NOT covered here: a separate, pre-existing bug was found incidentally
+// while writing these tests -- channels stored in a struct field, array
+// element, or map value did not work correctly for send/receive (confirmed
+// present on the pre-BUG-72 baseline too, so unrelated to the tokenizer
+// misclassification fixed here). This has since been fixed and is covered
+// by its own dedicated regression file, tests/flow/channel_compound_lvalue.ego
+// (13 @test blocks: struct field, array element, and map value send/receive,
+// a goroutine sender, a pointer receiver, a nested struct field, comma-ok
+// map lookup, and explicit non-channel regression checks) -- see BUG-73 in
+// docs/ISSUES.md. Deliberately not duplicated here, since this file's scope
+// is "chan" token classification and type-spec correctness, not compound-
+// lvalue send/receive mechanics.
+//
+// A malformed "chan T" as a function *return* type WAS also found silently
+// accepted with no error here (tracked as BUG-74), but is now fixed and
+// covered below, alongside the other type-spec contexts.
 
 // --- "chan" now classifies as a type keyword, matching its siblings -------
 
@@ -226,6 +231,110 @@
 	}
 
 	@assert failed == true
+}
+
+// --- BUG-74: malformed "chan T" as a function return type --------------
+//
+// Unlike a function PARAMETER (see the "named parameter" test just below),
+// where BUG-70's list-level unnamed/named disambiguation runs first and
+// unconditionally reads "chan string" as "a parameter named chan, of type
+// string" -- a return type has no equivalent list-level pre-scan. The
+// original, simpler per-entry heuristic ("is the next token an identifier,
+// and the one after that also identifier-like?") could not tell "chan"
+// apart from any other identifier, so "chan string" as a return type was
+// misread the same way, but with no parseType error to swallow: the "name"
+// was consumed as chan, and typeDeclaration() then parsed "string" alone
+// successfully, so the malformed type was silently discarded instead of
+// reported. Fixed by excluding "chan" specifically from ever being treated
+// as a return-value name candidate, in both compileReturnTypes (a real
+// function's own return types) and ParseFunctionDeclaration's return-type
+// loop (function TYPE specs -- var declarations, struct/interface fields,
+// type assertion targets). This is a deliberate difference from how
+// parameters resolve the same shape: the bug report's own expected
+// behavior is an error "matching every other [type-spec] context", not a
+// silently-accepted named return.
+
+@test "types: chan with element type rejected as a bare function return type (BUG-74)"
+{
+	failed := false
+
+	@compile block {
+		func makeChan() chan string {
+			return make(chan, 1)
+		}
+		_ = makeChan
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected in a parenthesized return list (BUG-74)"
+{
+	failed := false
+
+	@compile block {
+		func f() (chan string, int) {
+			return make(chan, 1), 5
+		}
+		_ = f
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: chan with element type rejected as a function type spec's return type (BUG-74)"
+{
+	failed := false
+
+	@compile block {
+		var f func() chan string
+		_ = f
+	}
+	catch(e) {
+		failed = true
+		@assert e.Code() == "channel.element.type"
+	}
+
+	@assert failed == true
+}
+
+@test "types: bare chan (no element type) as a return type still works (BUG-74 regression)"
+{
+	func makeCh() chan {
+		return make(chan, 1)
+	}
+
+	c := makeCh()
+	c <- 5
+	@assert (<-c) == 5
+}
+
+@test "types: bare named return value still works (BUG-74 regression)"
+{
+	func f() result int {
+		result = 42
+		return
+	}
+
+	@assert f() == 42
+}
+
+@test "types: parenthesized named return value still works (BUG-74 regression)"
+{
+	func f() (result int) {
+		result = 99
+		return
+	}
+
+	@assert f() == 99
 }
 
 @test "types: chan followed by a type is read as a named parameter, not rejected (BUG-72)"

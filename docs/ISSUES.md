@@ -241,7 +241,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-71](#BUG-71) | BUG | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
 | [BUG-72](#BUG-72) | BUG | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
 | [BUG-73](#BUG-73) | BUG | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
-| [BUG-74](#BUG-74) | BUG | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
+| [BUG-74](#BUG-74) | BUG | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | ✓ |
 | [BUG-75](#BUG-75) | BUG | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | ✓ |
 | [BUG-76](#BUG-76) | BUG | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | BUG | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
@@ -533,7 +533,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-71](#BUG-71) | MEDIUM | A type assertion used inline within a larger expression (not as a bare `:=`/`=` assignment RHS) leaves a stray boolean on the stack, corrupting whatever follows. | |
 | [BUG-72](#BUG-72) | LOW | Channels do not support a Go-style element type (`chan string`) anywhere it can be written. | ✓ |
 | [BUG-73](#BUG-73) | MEDIUM | A channel stored in a struct field, array element, or map value does not work correctly for send/receive. | ✓ |
-| [BUG-74](#BUG-74) | LOW | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | |
+| [BUG-74](#BUG-74) | LOW | A malformed function return type (e.g. `chan string`) is silently accepted with no error, unlike every other type-spec context. | ✓ |
 | [BUG-75](#BUG-75) | LOW | A local variable or parameter named after a primitive type keyword (`int`, `chan`, `string`, ...) is shadowed by the type itself when referenced in expression position. | ✓ |
 | [BUG-76](#BUG-76) | LOW | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | MEDIUM | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
@@ -7482,16 +7482,82 @@ A clear compile error — `channels do not have an element type; use "chan" alon
 — matching every other context.
 
 **Notes:**  
-Root cause: `ParseFunctionDeclaration`'s return-type loop
-(`internal/language/compiler/function.go`) calls `c.parseType("", false)` for each return type
-and, on any error, simply does `break` — discarding the error entirely. This is a deliberate
-ambiguity-resolution design (a function may legitimately have no return type at all, so a
-`parseType` failure there is normally read as "there wasn't one," not "the syntax was wrong"),
-which is why this needed its own investigation rather than being fixed alongside the other three
-call sites that swallowed `ErrChannelElementType` during the BUG-72 work. Propagating
-`ErrChannelElementType` specifically from this loop (the same targeted pattern used for the
-other three call sites) is likely the right fix, but was not attempted here since it required
-its own careful check that legitimate "no return type" cases are not affected.
+Initial investigation (during BUG-72) suspected `ParseFunctionDeclaration`'s return-type loop
+(`internal/language/compiler/function.go`), which calls `c.parseType("", false)` for each return
+type and, on any error, simply does `break` — discarding the error entirely. That loop turned out
+to be only half the story; see Root cause below.
+
+**Root cause:**  
+Two separate code paths parse a function's return type(s), and both had the same underlying
+defect, for the same reason:
+
+- `compileReturnTypes` — used for a *real* function definition's own return types.
+- `ParseFunctionDeclaration`'s return-type loop — used for a function *type spec* with no body
+  (a `var` declaration, struct/interface field, or type assertion target), and, confusingly, the
+  actual reproducer above (`func makeChan() chan string { ... }`) goes through this second path
+  too, since `ParseFunctionDeclaration` performs a real named function's parameter-list parse a
+  second time via a discarded, position-rewound speculative pre-parse.
+
+Both paths use the same heuristic to decide whether a return item is a bare type or a *named*
+return value (`func f() (result int)` — Ego, like Go, supports this): "is the next token an
+identifier, and is the one after that also identifier-like?" If so, the first token is consumed
+as the return value's *name* and the second is parsed as its *type*.
+
+`chan` satisfies `IsIdentifier()` — it has done so since BUG-72 correctly classified it as
+`TypeTokenClass`, and `Token.IsIdentifier()` deliberately treats any type keyword as identifier-
+like too, precisely so it can be used as an ordinary variable name (see BUG-75). So `chan string`
+in return-type position was never actually reaching the "parse a type, possibly get
+`ErrChannelElementType`" code at all: the heuristic consumed `chan` as if it were the *name* of a
+named return value, and then successfully parsed `string` alone as its type — no
+malformed-channel-type parse was ever attempted, hence no error, and the function silently
+compiled with (from the compiler's point of view) one named return value called `chan`, of type
+`string`.
+
+This is a different resolution than the one Ego already uses for *function parameters* in the
+identical shape — `func f(chan string)` is deliberately read as "a parameter named `chan`, of
+type `string`" (see the `channel_type.ego` test documenting that as intentional, tested BUG-72
+behavior, since BUG-70's list-level unnamed/named disambiguation resolves it before any
+type-vs-name ambiguity for a single identifier is even considered). Return types have no
+equivalent list-level pre-scan, so nothing here forced this same resolution — and more to the
+point, this bug's own stated expected behavior is an error "matching every other type-spec
+context," not a silently-accepted named return. So the fix deliberately diverges from the
+parameter precedent: `chan` is excluded from ever being read as a return-value name candidate, in
+both `compileReturnTypes` and `ParseFunctionDeclaration`'s loop, since it has no legal
+"`chan` immediately followed by another type-looking token" form other than the malformed `chan
+T` mistake BUG-72 taught every other context to reject.
+
+**Resolution:**  
+In both `compileReturnTypes` and `ParseFunctionDeclaration`'s return-type loop
+(`internal/language/compiler/function.go`), the "is this the start of a named return value"
+identifier check now explicitly excludes `tokenizer.ChanToken`, so `chan` always falls straight
+through to the ordinary type parse (`typeDeclaration()`/`parseType()`) instead of ever being
+consumed as a candidate name. That type parse already produces `ErrChannelElementType` for `chan
+T`, exactly as it does in every other context — the remaining piece was making sure that error
+actually reaches the caller instead of being discarded:
+
+- `compileReturnTypes` previously wrapped *any* `typeDeclaration()` error in a generic
+  `ErrInvalidReturnTypeList`, discarding the original. It now checks for
+  `errors.Equals(err, errors.ErrChannelElementType)` first and propagates that specific error
+  unchanged, falling back to the generic wrapping only for other kinds of parse failures.
+- `ParseFunctionDeclaration`'s loop previously treated *any* `parseType` error as "there simply
+  wasn't a return type at all" and `break`-discarded it — correct for the common case (most
+  `parseType` failures there really do just mean "no return type follows"), but wrong for `chan
+  T` specifically, which is never ambiguous with "no return type." The loop now checks for
+  `ErrChannelElementType` and returns it immediately, before falling through to the `break`
+  used for every other failure.
+
+Both fixes were verified not to disturb the legitimate named-return-value feature, in both its
+bare (`func f() result int`) and parenthesized (`func f() (result int)`) forms, for any type
+keyword other than `chan` — and bare `chan` (no element type) as a return type continues to work
+exactly as before.
+
+**Regression tests:** 6 new `@test` blocks added to `tests/types/channel_type.ego` (alongside the
+existing BUG-72 tests it already covered channels with): `chan T` rejection as a bare function
+return type, in a parenthesized return list, and as a function type spec's return type — plus
+three explicit non-regression checks confirming bare `chan` return types, bare named returns, and
+parenthesized named returns for other types all continue to work unchanged. Verified against `go
+build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types dynamic`,
+`--types strict`, and `--types relaxed` (1389 `@test` blocks, up from 1383, with no regressions).
 
 ---
 
