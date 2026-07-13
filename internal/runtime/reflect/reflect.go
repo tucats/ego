@@ -2,10 +2,10 @@ package reflect
 
 import (
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 
+	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
@@ -364,19 +364,34 @@ func describeBytecodeFunction(source any) (any, error) {
 	}
 }
 
+// describeBuiltinFunction reflects a "legacy" builtin: a bare Go function
+// (not wrapped in a data.Function with its own attached Declaration) matching
+// defs.RuntimeFunctionReflectionTypeString. Its Ego-visible name and
+// declaration cannot be recovered from the Go function's own runtime symbol
+// name -- e.g. "len" is implemented by a Go function named Length, and after
+// the repository's internal/ reorganization the runtime symbol name no
+// longer even matches the hardcoded package-path prefixes this used to
+// strip. builtins.FindFunction looks the function up by comparing function
+// pointers against internal/builtins.FunctionDictionary instead, so it finds
+// the correct entry (and thus the correct Ego name and Declaration)
+// regardless of the Go function's own name or package path.
 func describeBuiltinFunction(source any) (any, error) {
-	name := runtime.FuncForPC(reflect.ValueOf(source).Pointer()).Name()
-	name = strings.Replace(name, "github.com/tucats/ego/builtins.", "", 1)
-	name = strings.Replace(name, "github.com/tucats/ego/runtime.", "", 1)
-	name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+	fn, _ := source.(func(*symbols.SymbolTable, data.List) (any, error))
 
-	declaration := data.GetBuiltinDeclaration(name)
+	name := ""
+	var declaration *data.Declaration
+
+	if def := builtins.FindFunction(fn); def != nil && def.Declaration != nil {
+		declaration = def.Declaration
+		name = declaration.Name
+	}
 
 	values := map[string]any{
 		data.TypeMDName:     builtinLabel,
 		data.BaseTypeMDName: builtinLabel + " " + name,
 		data.IsTypeMDName:   false,
 		data.NativeMDName:   true,
+		data.NameMDName:     name,
 	}
 
 	if declaration != nil {

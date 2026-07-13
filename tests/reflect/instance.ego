@@ -1,36 +1,96 @@
-// Tests for reflect.InstanceOf() — creates a zero-value instance of a type.
+// Tests for reflect.InstanceOf() — creates a zero-value instance based on
+// its argument.
 //
 // Behavior depends on the argument:
-//   - string type name ("int", "string", etc.) → zero value of that scalar type
-//   - Go reflect.Kind integer constant → zero value of the corresponding type
-//   - *data.Type (a type expression) → zero-value struct of that type
-//   - existing value (struct, array, map) → zero-value instance of the same type
+//   - *data.Type (a type value, e.g. the built-in "int" or a user-defined
+//     type name, or the result of reflect.Type()) → zero value of that type
+//   - a channel → returned unchanged (channels have no zero-value concept)
+//   - any other value (scalar, struct, array, map) → zero value of THAT
+//     value's own type, not a copy of the value itself
+//
+// Regression note: this used to also accept a string type name ("int",
+// "bool", etc.) and a raw Go reflect.Kind integer constant. Both were
+// removed:
+//   - The string form is redundant now that types are first-class Ego
+//     values -- pass the built-in type itself (reflect.InstanceOf(int)),
+//     not its name as a string.
+//   - The Kind-integer form was never intentional. Because Ego ints and Go's
+//     reflect.Kind constants are indistinguishable at the Go level (both are
+//     plain "int"), passing an ordinary Ego int VALUE collided with it: e.g.
+//     reflect.InstanceOf(3) used to misinterpret the value 3 as
+//     reflect.Kind(3) (Int8) and return byte(0) instead of an int zero
+//     value, and reflect.InstanceOf(0) (Kind 0 is reflect.Invalid) errored
+//     outright. Passing any plain scalar example value now correctly
+//     returns the zero value of THAT value's own type -- see below.
 
-@test "reflect: InstanceOf() from type name string"
+@test "reflect: InstanceOf() from a built-in type value"
 {
-    @assert reflect.InstanceOf("int") == 0
-    @assert typeof(reflect.InstanceOf("int")) == int
+    @assert reflect.InstanceOf(int) == 0
+    @assert typeof(reflect.InstanceOf(int)) == int
 
-    @assert reflect.InstanceOf("int32") == int32(0)
-    @assert typeof(reflect.InstanceOf("int32")) == int32
+    @assert reflect.InstanceOf(int32) == int32(0)
+    @assert typeof(reflect.InstanceOf(int32)) == int32
 
-    @assert reflect.InstanceOf("int64") == int64(0)
-    @assert typeof(reflect.InstanceOf("int64")) == int64
+    @assert reflect.InstanceOf(int64) == int64(0)
+    @assert typeof(reflect.InstanceOf(int64)) == int64
 
-    @assert reflect.InstanceOf("byte") == byte(0)
-    @assert typeof(reflect.InstanceOf("byte")) == byte
+    @assert reflect.InstanceOf(byte) == byte(0)
+    @assert typeof(reflect.InstanceOf(byte)) == byte
 
-    @assert reflect.InstanceOf("float32") == float32(0)
-    @assert typeof(reflect.InstanceOf("float32")) == float32
+    @assert reflect.InstanceOf(float32) == float32(0)
+    @assert typeof(reflect.InstanceOf(float32)) == float32
 
-    @assert reflect.InstanceOf("float64") == 0.0
-    @assert typeof(reflect.InstanceOf("float64")) == float64
+    @assert reflect.InstanceOf(float64) == 0.0
+    @assert typeof(reflect.InstanceOf(float64)) == float64
 
-    @assert reflect.InstanceOf("string") == ""
-    @assert typeof(reflect.InstanceOf("string")) == string
+    @assert reflect.InstanceOf(string) == ""
+    @assert typeof(reflect.InstanceOf(string)) == string
 
-    @assert reflect.InstanceOf("bool") == false
-    @assert typeof(reflect.InstanceOf("bool")) == bool
+    @assert reflect.InstanceOf(bool) == false
+    @assert typeof(reflect.InstanceOf(bool)) == bool
+}
+
+@test "reflect: InstanceOf() from a type variable"
+{
+    // A variable of type "type" (see the "Type as a value" section of the
+    // reflect docs) works exactly like a bare built-in type name.
+    t := int
+    @assert reflect.InstanceOf(t) == 0
+    @assert typeof(reflect.InstanceOf(t)) == int
+
+    t = string
+    @assert reflect.InstanceOf(t) == ""
+}
+
+@test "reflect: InstanceOf() from a plain scalar example value"
+{
+    // Regression coverage: passing an ordinary scalar VALUE (not a type,
+    // not a Kind number) must return the zero value of that value's own
+    // type -- this used to collide with the removed Kind-integer form.
+    @assert reflect.InstanceOf(0) == 0
+    @assert reflect.InstanceOf(42) == 0
+    @assert typeof(reflect.InstanceOf(42)) == int
+
+    @assert reflect.InstanceOf(int32(7)) == int32(0)
+    @assert typeof(reflect.InstanceOf(int32(7))) == int32
+
+    @assert reflect.InstanceOf(int64(7)) == int64(0)
+    @assert typeof(reflect.InstanceOf(int64(7))) == int64
+
+    @assert reflect.InstanceOf(byte(7)) == byte(0)
+    @assert typeof(reflect.InstanceOf(byte(7))) == byte
+
+    @assert reflect.InstanceOf(float32(1.5)) == float32(0)
+    @assert typeof(reflect.InstanceOf(float32(1.5))) == float32
+
+    @assert reflect.InstanceOf(1.5) == 0.0
+    @assert typeof(reflect.InstanceOf(1.5)) == float64
+
+    @assert reflect.InstanceOf("hello") == ""
+    @assert typeof(reflect.InstanceOf("hello")) == string
+
+    @assert reflect.InstanceOf(true) == false
+    @assert typeof(reflect.InstanceOf(true)) == bool
 }
 
 @test "reflect: InstanceOf() from type definition"
@@ -77,15 +137,4 @@
     @assert typeof(c) == map[string]int
     // Zero-value map is empty, not a copy of the data
     @assert len(c) == 0
-}
-
-@test "reflect: InstanceOf() error for bad type name"
-{
-    got := false
-    try {
-        _ = reflect.InstanceOf("nosuchtype")
-    } catch {
-        got = true
-    }
-    @assert got
 }

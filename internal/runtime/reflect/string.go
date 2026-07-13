@@ -69,6 +69,11 @@ func getString(s *symbols.SymbolTable, args data.List) (any, error) {
 		field("BaseType", data.String(v))
 	}
 
+	// Package — the name of the package a struct type belongs to, if any.
+	if v := r.GetAlways(data.PackageMDName); v != nil {
+		field("Package", data.String(v))
+	}
+
 	// Native — only shown when true (wraps a native Go type or function).
 	if v := r.GetAlways(data.NativeMDName); v != nil {
 		fieldTrue("Native", v)

@@ -49,6 +49,54 @@
     @assert c.inner.value == 42
 }
 
+@test "reflect: DeepCopy() struct field with array is independent"
+{
+    // Regression test: Struct.Copy() (used internally by DeepCopy for the
+    // top-level struct) only duplicates the field map itself -- the values
+    // in that map, such as a nested array, were still shared with the
+    // original. Mutating the copy's array field used to mutate the
+    // original's too.
+    type Holder struct { tags []string }
+    h := Holder{ tags: []string{"a", "b"} }
+    c := reflect.DeepCopy(h)
+
+    c.tags[0] = "Z"
+
+    @assert h.tags[0] == "a"
+    @assert c.tags[0] == "Z"
+}
+
+@test "reflect: DeepCopy() struct field with map is independent"
+{
+    type Holder struct { counts map[string]int }
+    h := Holder{ counts: map[string]int{"a": 1} }
+    c := reflect.DeepCopy(h)
+
+    c.counts["a"] = 99
+
+    @assert h.counts["a"] == 1
+    @assert c.counts["a"] == 99
+}
+
+@test "reflect: DeepCopy() bad depth argument is a catchable error"
+{
+    // Regression test: DeepCopy() used to be declared with only a single
+    // (value) return even though a non-numeric depth argument produces a
+    // real error, so the failure could only be observed via an uncaught,
+    // program-aborting runtime error. It now returns (value, error).
+    //
+    // A string literal for the int-typed "depth" parameter is rejected at
+    // compile time in strict mode (a stronger, earlier form of the same
+    // protection) and only reaches the runtime check in dynamic mode, so
+    // @compile is used here to accept either outcome as correct: an empty
+    // catch swallows the strict-mode compile error, while in dynamic mode
+    // the spliced-in code runs and its own @assert checks the runtime error.
+    @compile block {
+        _, err := reflect.DeepCopy(42, "not-a-number")
+        @assert err != nil
+    } catch {}
+}
+
 @test "reflect: DeepCopy() map is independent"
 {
     m := map[string]int{ "a": 1, "b": 2, "c": 3 }

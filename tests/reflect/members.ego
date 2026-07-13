@@ -1,5 +1,12 @@
 // Tests for reflect.Members() — returns a sorted []string of field/key names.
 // Works on structs, maps, and packages; returns an error for other types.
+//
+// Regression note: Members() used to be declared with a single ([]string)
+// return even though it can genuinely fail (a scalar or array argument), so
+// the error could only be observed via try/catch -- an uncaught call would
+// abort the whole program. It now returns ([]string, error) like every other
+// fallible function in this package, so the error is caught normally, no
+// try/catch required.
 
 @test "reflect: Members() on struct, field names"
 {
@@ -62,30 +69,15 @@
 
 @test "reflect: Members() errors on scalars"
 {
-    got := false
-    try {
-        _ = reflect.Members(42)
-    } catch {
-        got = true
-    }
-    @assert got
+    _, err := reflect.Members(42)
+    @assert err != nil
 
-    got = false
-    try {
-        _ = reflect.Members("hello")
-    } catch {
-        got = true
-    }
-    @assert got
+    _, err2 := reflect.Members("hello")
+    @assert err2 != nil
 }
 
 @test "reflect: Members() errors on arrays"
 {
-    got := false
-    try {
-        _ = reflect.Members([]int{1, 2, 3})
-    } catch {
-        got = true
-    }
-    @assert got
+    _, err := reflect.Members([]int{1, 2, 3})
+    @assert err != nil
 }

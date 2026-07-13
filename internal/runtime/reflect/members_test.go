@@ -33,12 +33,22 @@ func TestFunctionMembers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := members(nil, tt.args)
+			result, err := members(nil, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FunctionMembers() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
 			}
+
+			// members() now returns a data.List of (value, error), matching
+			// the (value, error) convention used throughout the runtime
+			// packages, so the value must be unwrapped before comparing.
+			list, ok := result.(data.List)
+			if !ok {
+				t.Fatalf("FunctionMembers() returned %T, want data.List", result)
+			}
+
+			got := list.Get(0)
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FunctionMembers() = %v, want %v", got, tt.want)

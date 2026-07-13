@@ -23,10 +23,10 @@ func members(syms *symbols.SymbolTable, args data.List) (any, error) {
 
 		_ = keys.Sort()
 
-		return keys, nil
+		return data.NewList(keys, nil), nil
 
 	case *data.Struct:
-		return v.FieldNamesArray(false), nil
+		return data.NewList(v.FieldNamesArray(false), nil), nil
 
 	case *data.Package:
 		keys := data.NewArray(data.StringType, 0)
@@ -60,9 +60,11 @@ func members(syms *symbols.SymbolTable, args data.List) (any, error) {
 
 		err := keys.Sort()
 
-		return keys, err
+		return data.NewList(keys, err), err
 
 	default:
-		return nil, errors.ErrInvalidType.In("Members")
+		err := errors.ErrInvalidType.In("Members")
+
+		return data.NewList(nil, err), err
 	}
 }

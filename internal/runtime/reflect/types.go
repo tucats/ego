@@ -29,6 +29,7 @@ var ReflectReflectionType = data.TypeDefinition("Reflection",
 		DefineField("Imports", data.BoolType).
 		DefineField("Builtins", data.BoolType).
 		DefineField("BaseType", data.StringType).
+		DefineField("Package", data.StringType).
 		DefineField("Members", data.ArrayType(data.StringType)).
 		DefineField("Size", data.IntType).
 		DefineField("Error", data.ErrorType).
@@ -60,7 +61,7 @@ var ReflectPackage = data.NewPackageFromMap("reflect", map[string]any{
 				},
 			},
 			ArgCount: data.Range{1, 2},
-			Returns:  []*data.Type{data.InterfaceType},
+			Returns:  []*data.Type{data.InterfaceType, data.ErrorType},
 		},
 		Value: deepCopy,
 	},
@@ -86,7 +87,7 @@ var ReflectPackage = data.NewPackageFromMap("reflect", map[string]any{
 					Type: data.InterfaceType,
 				},
 			},
-			Returns: []*data.Type{data.ArrayType(data.StringType)},
+			Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 		},
 		Value: members,
 	},

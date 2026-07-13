@@ -7,17 +7,18 @@ import (
 
 // deepCopy implements the reflect.deepCopy function.
 func deepCopy(s *symbols.SymbolTable, args data.List) (any, error) {
-	var err error
-
 	depth := MaxDeepCopyDepth
+
 	if args.Len() > 1 {
-		depth, err = data.Int(args.Get(1))
+		d, err := data.Int(args.Get(1))
 		if err != nil {
-			return nil, err
+			return data.NewList(nil, err), err
 		}
+
+		depth = d
 	}
 
-	return recursiveCopy(args.Get(0), depth), nil
+	return data.NewList(recursiveCopy(args.Get(0), depth), nil), nil
 }
 
 // DeepCopy makes a deep copy of an Ego data type. It should be called with the
@@ -73,7 +74,18 @@ func recursiveCopy(source any, depth int) any {
 		return v
 
 	case *data.Struct:
-		return v.Copy()
+		// Copy() only duplicates the struct's own field map -- the values in
+		// that map (nested arrays, maps, or structs) are still shared with
+		// the original. Recurse into each field so the result is genuinely
+		// independent, matching the *data.Array/*data.Map/*data.Package
+		// cases below.
+		fresh := v.Copy()
+
+		for _, name := range v.FieldNames(true) {
+			fresh.SetAlways(name, recursiveCopy(v.GetAlways(name), depth-1))
+		}
+
+		return fresh
 
 	case *data.Array:
 		r := data.NewArray(v.Type(), v.Len())

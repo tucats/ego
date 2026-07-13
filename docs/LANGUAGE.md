@@ -3029,7 +3029,9 @@ The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages
 by writing your own, as described later in the section on User Packages.
 
-### base64 <a name="base64"></a>
+---
+
+### base64 Package <a name="base64"></a>
 
 The `base64` package supports encoding and decoding strings using standard
 Base64 encoding (RFC 4648).
@@ -3057,7 +3059,9 @@ s, err := base64.Decode("SGVsbG8sIFdvcmxkIQ==")
 
 produces the string `"Hello, World!"`.
 
-### errors <a name="error"></a>
+---
+
+### errors Package<a name="error"></a>
 
 The `errors` package implements simple error types. There is a single method, `New`, which
 is used to create a new error. The resulting error has a number of functions that can be
@@ -3196,7 +3200,9 @@ e := errors.New("not found").In("readFile").At(42)
 fmt.Println(e.Error())  // "at readFile(line 42), not found"
 ```
 
-### exec <a name="exec"></a>
+---
+
+### exec Package<a name="exec"></a>
 
 The `exec` package is a subset of the Go package that supports executing a command as
 a subprocess of the current Ego program. This package allows the caller to create a
@@ -3366,10 +3372,9 @@ resolve `Path` from the command name passed to it, so most programs do not need 
 call `LookPath()` directly unless they want to test for a command's existence
 before attempting to run it.
 
-&nbsp;
-&nbsp;
+---
 
-### fmt <a name="fmt"></a>
+### fmt Package<a name="fmt"></a>
 
 The `fmt` package contains a function library for formatting and printing output to the
 stdout console. These are generally analogous to the Go functions of the same name. Some
@@ -3521,7 +3526,9 @@ msg := fmt.Sprintf("Unrecognized value %s", v)
 This creates a string named `msg` which contains "Unrecognized value foobar" as its
 contents. The value is not printed to the console as part of this operation.
 
-### io <a name="io"></a>
+---
+
+### io Package<a name="io"></a>
 
 The io package supports input/output operations using native files in the file system
 of the computer running _Ego_. Line-oriented text access (`ReadString`/`WriteString`)
@@ -3744,9 +3751,9 @@ name := io.Prompt("Enter your name: ")
 secret := io.Prompt("password~Enter your password: ")
 ```
 
-&nbsp;
+---
 
-### json <a name="json"></a>
+### json Package<a name="json"></a>
 
 The `json` package converts _Ego_ data values to and from JSON text, and provides a
 small query language for pulling a single value out of a JSON string without fully
@@ -3970,7 +3977,9 @@ fmt.Println(v["name"], v["age"])   // Tom 44
 Use `reflect.Members()` (see the `reflect` package) if you need to check what fields
 are present before accessing them.
 
-### math <a name="math"></a>
+---
+
+### math Package<a name="math"></a>
 
 The `math` package provides a comprehensive set of math operations on common _Ego_ numeric
 data types (usually `int` and `float64` values). Most functions mirror the Go standard
@@ -4409,7 +4418,9 @@ b := math.Trunc(-1.9)
 
 The value of `a` is `1.0` and `b` is `-1.0`.
 
-### os <a name="os"></a>
+---
+
+### os Package<a name="os"></a>
 
 The `os` package provides functions that access operating system features -- command-line
 arguments, environment variables, and the file system -- for whatever operating system
@@ -4688,10 +4699,9 @@ func os.Executable() (string, error)
 returns the absolute path of the currently running `ego` executable itself. Both return a
 non-nil error if the underlying operating system call fails.
 
-&nbsp;
-&nbsp;
+---
 
-### profile <a name="profile"></a>
+### profile Package<a name="profile"></a>
 
 The `profile` package manages persistent configuration settings for the current user. There
 is no equivalent package in Go's standard library -- this is entirely an _Ego_-specific
@@ -4823,7 +4833,249 @@ for key, value := range profile.Config() {
 }
 ```
 
-### rest <a name="rest"></a>
+---
+
+### reflect Package<a name="reflect"></a>
+
+The `reflect` package lets an _Ego_ program discover information about its own values and
+types at runtime. Go's standard `reflect` package is far more extensive than this -- it
+exposes deep structural access to arbitrary Go values, including unexported fields, memory
+layout, and the ability to construct values dynamically. _Ego_ deliberately does not attempt
+to match that: Ego already wraps its data in protective layers (structs, arrays, and maps are
+managed types with their own access rules, not raw memory Go's `reflect` could walk), and this
+package only exposes what an Ego program can already do safely -- inspect a value's type and
+members, get a zero-value instance of a type, or make an independent deep copy of a value.
+
+#### Types as first-class values
+
+Before covering the package's functions, it's worth understanding a piece of the language
+that makes them useful: in _Ego_, a type itself is a value that can be stored in a variable,
+passed around, compared, and reassigned, just like any other value (in dynamic mode -- the
+default). The built-in type names (`int`, `string`, `bool`, etc.), user-defined type names,
+and the results of `reflect.Type()` (below) are all values of this kind.
+
+```go
+t := int      // t now holds the type value "int"
+
+var x t       // declares x with the type held in t -- x is an int, initialized to 0
+
+fmt.Println(x, typeof(x))   // 0 int
+```
+
+Because `t` is an ordinary (mutable, in dynamic mode) variable, it can be reassigned to a
+different type later, and a subsequent `var` declaration using it picks up the new type:
+
+```go
+t = string
+var y t
+fmt.Println(y, typeof(y))   // "" string
+```
+
+This is what makes `reflect.InstanceOf()` and `reflect.Type()` (below) useful as ordinary
+values rather than special-cased syntax -- a type returned by one can be stored, compared
+with `==`/`!=`, or handed to a `var` declaration exactly like `int` or `string` written
+directly in source.
+
+#### reflect.Type(value) / typeof(value)
+
+```go
+func reflect.Type(value any) type
+```
+
+Returns the type of `value` as a first-class type value (see above). The result can be
+compared against a built-in type name, a user-defined type name, or another value's type,
+using `==`/`!=`:
+
+```go
+a := 425.3
+b := reflect.Type(a)
+
+if b == float64 {
+    fmt.Println("The value is a float64")
+}
+```
+
+This works for more complex types too -- assign the comparison to a variable first if the
+type expression itself contains brackets (`map[...]`, `[]...`), since writing one directly
+inside an `if` condition can be misparsed as the start of a map literal:
+
+```go
+m := map[string]int{"Fred": 35}
+same := (reflect.Type(m) == map[string]int)
+
+fmt.Println(same)   // true
+```
+
+A pointer value reflects as a pointer to the pointee's own type (not just a generic pointer),
+and passing a type name itself (rather than a value of that type) returns its meta-type:
+
+```go
+x := 42
+p := &x
+fmt.Println(reflect.Type(p))   // *int
+
+type Foo struct { a int }
+fmt.Println(reflect.Type(Foo)) // type Foo struct{a int}   (Foo the type itself)
+
+f := Foo{a: 1}
+fmt.Println(reflect.Type(f))   // Foo struct{a int}         (the type of a Foo value)
+```
+
+`reflect.Type()` is also available as the built-in function `typeof()`, with one difference:
+`typeof()` is a language extension and only works when extensions are enabled (the
+`ego.compiler.extensions` setting, on by default); `reflect.Type()` works regardless of that
+setting, since it's a normal package function call rather than special syntax.
+
+```go
+fmt.Println(typeof(42))   // int
+```
+
+#### reflect.Reflect(value)
+
+```go
+func reflect.Reflect(value any) reflect.Reflection
+```
+
+Returns a `reflect.Reflection` structure describing `value` in more detail than
+`reflect.Type()` alone. Not every field is populated for every kind of value -- for example,
+`Members` is only meaningful for a struct, map, or package, and `Declaration` only for a
+function.
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `Type` | `string` | The _Ego_ type name of the value (`"struct"`, `"int"`, `"func"`, `"builtin"`, `"package"`, `"error"`, etc.) |
+| `BaseType` | `string` | The underlying type -- a struct's field layout, an array's element type, a function's label and name, etc. |
+| `Name` | `string` | The name of the value, for named functions and type definitions; empty otherwise. |
+| `Package` | `string` | The name of the package a struct's type belongs to, if any; empty for anonymous/local types. |
+| `IsType` | `bool` | `true` if `value` was itself a type (e.g. you passed `reflect.Type(x)`'s result, or a type name like `int`), rather than an ordinary value. |
+| `Native` | `bool` | `true` if this wraps a native Go type or function rather than one defined in Ego source. |
+| `Imports` | `bool` | For a package: `true` if it has Ego-source library members (from `lib/packages/`). |
+| `Builtins` | `bool` | For a package: `true` if it has native Go-implemented members. |
+| `Members` | `[]string` | Field names (struct), keys (map), or exported member names (package). |
+| `Declaration` | `reflect.Function` | The function's name, parameters, return types, and argument-count range; only set for functions. |
+| `Size` | `int` | Byte size for scalars, or element/member count for arrays, maps, and packages. |
+| `Error` | `error` | The error's i18n key, only set when reflecting an error value. |
+| `Text` | `string` | The error's human-readable message, only set when reflecting an error value. |
+| `Context` | `string` (or struct) | Additional error context, only set when reflecting an error value that has one. |
+
+```go
+e := { name: "Dave", age: 33 }
+r := reflect.Reflect(e)
+
+fmt.Println(r.Type)     // struct
+fmt.Println(r.BaseType) // struct{name string, age int}
+fmt.Println(r.Members)  // ["name", "age"]
+```
+
+A `reflect.Reflection` value also has a `String()` method that renders it as a compact,
+human-readable summary (used automatically by `fmt.Println`), and it's what you see if you
+print the value directly rather than accessing individual fields.
+
+#### reflect.Members(value)
+
+```go
+func reflect.Members(value any) ([]string, error)
+```
+
+Returns the names of the fields (for a struct), keys (for a map, sorted alphabetically), or
+exported members (for a package, sorted alphabetically) in `value`, along with an error
+(`nil` on success). Any other kind of value (a scalar, array, etc.) produces a non-nil error.
+
+```go
+e := { name: "Dave", age: 33 }
+
+m, err := reflect.Members(e)
+if err != nil {
+    fmt.Println("could not get members:", err)
+    return
+}
+
+fmt.Println(m)   // ["name", "age"]
+```
+
+For a struct, the names are returned in field-declaration order, not alphabetically --
+`{ name: "Dave", age: 33 }` yields `["name", "age"]`, matching the order the fields were
+written in, not `["age", "name"]`. The resulting names can be used to access struct fields
+by index notation:
+
+```go
+e[m[0]] = "Changed"   // sets e.name, since m[0] == "name"
+```
+
+#### reflect.InstanceOf(value)
+
+```go
+func reflect.InstanceOf(value any) any
+```
+
+Returns a "zero value" based on `value`'s type -- `0` for numeric types, `""` for `string`,
+`false` for `bool`, an empty (nil-state) map or zero-length array for a map or array, and a
+fresh zero-valued instance for a struct. `value` can be:
+
+- **An example value of any kind** -- the result is the zero value of _that value's own
+  type_, not a copy of the value itself:
+
+  ```go
+  fmt.Println(reflect.InstanceOf(42))        // 0
+  fmt.Println(reflect.InstanceOf("hello"))   // ""
+  fmt.Println(reflect.InstanceOf(int32(7)))  // 0   (as an int32)
+  ```
+
+- **A type value** (a built-in type name, a user-defined type, or the result of
+  `reflect.Type()`) -- useful when you don't have a convenient example value on hand:
+
+  ```go
+  fmt.Println(reflect.InstanceOf(int))     // 0
+  fmt.Println(reflect.InstanceOf(string))  // ""
+
+  t := int
+  fmt.Println(reflect.InstanceOf(t))       // 0
+  ```
+
+- **A struct, array, or map value** -- returns an empty/zero instance of the _same type or
+  shape_, not a copy of the contents:
+
+  ```go
+  type Config struct { host string; port int }
+  c := Config{ host: "localhost", port: 9090 }
+
+  zero := reflect.InstanceOf(c)
+  fmt.Println(zero)   // Config{ host: "", port: 0 }
+  fmt.Println(c)      // Config{ host: "localhost", port: 9090 } -- unchanged
+  ```
+
+- **A channel** -- returned unchanged, since a channel has no zero-value concept of its own.
+
+#### reflect.DeepCopy(value [, depth])
+
+```go
+func reflect.DeepCopy(value any, depth ...int) (any, error)
+```
+
+Makes an independent copy of `value`, along with an error (`nil` on success; the only
+failure mode is a non-numeric `depth`). Scalars are copied trivially, since they're already
+independent value types. For a struct, array, map, or package, every nested member is
+copied recursively as well, so the result shares no mutable state with the original --
+modifying a nested field, element, or entry in the copy never affects the source, and vice
+versa.
+
+```go
+a := { name: "Dave", tags: []string{"a", "b"} }
+b := reflect.DeepCopy(a)
+
+b.tags[0] = "Z"
+
+fmt.Println(a.tags)   // ["a", "b"]  -- unaffected
+fmt.Println(b.tags)   // ["Z", "b"]
+```
+
+The optional `depth` argument caps how many levels of nesting are copied before `DeepCopy`
+gives up and stops recursing (default 100); you are unlikely to need to change this unless
+you have unusually deep data structures.
+
+---
+
+### rest Package<a name="rest"></a>
 
 The `rest` package provides a generalized HTTP/HTTPS client that can be used to
 communicate with a server, authenticate to it (either using username/password or
@@ -4913,7 +5165,9 @@ if server.Status == http.StatusOK {
 }
 ```
 
-### runtime <a name="runtime"></a>
+---
+
+### runtime Package<a name="runtime"></a>
 
 The `runtime` package exposes a small amount of information about the platform Ego is
 running on and the Ego runtime itself, along with a few functions mirroring Go's own
@@ -5078,7 +5332,9 @@ n := runtime.Stack(buf, true)
 fmt.Println(string(buf[:n]))
 ```
 
-### sort <a name="sort"></a>
+---
+
+### sort Package<a name="sort"></a>
 
 The `sort` package contains functions that can sort an array containing only
 homogeneous base types (int, string, float64). If the array contains interface
@@ -5166,7 +5422,9 @@ sort.Strings(a)
 
 After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
 
-### sql <a name="sql"></a>
+---
+
+### sql Package<a name="sql"></a>
 
 The `sql` package provides support for accessing a database. Currently,
 this must one of the following supported database provider types:
@@ -5251,10 +5509,9 @@ without filling up memory with the entire result set at once.
 | r.Scan() | Read the next row and create either a struct or an array of the row data |
 | r.Close() | End reading rows and release any resources consumed by the rowset read. |
 
-&nbsp;
-&nbsp;
+---
 
-### strconv <a name="strconv"></a>
+### strconv Package<a name="strconv"></a>
 
 The `strconv` package performs data conversions to or from a string value.
 
@@ -5334,7 +5591,9 @@ string is case-insensitive and leading/trailing whitespace is ignored. For
 example, `strconv.Rtoi("XLII")` returns `42`. If the string is not a valid
 Roman numeral, an error is returned.
 
-### strings <a name="strings"></a>
+---
+
+### strings Package<a name="strings"></a>
 
 The `strings` package contains a library of functions to support manipulation
 of string data. Unless otherwise noted, strings are interpreted as a set of
@@ -5959,7 +6218,9 @@ If the url did not include the state name field, that would be blank, which coul
 tell the service that a GET on this URL was meant to return a list of the state
 values stored, as opposed to information about a specific state.
 
-### sync <a name="sync"></a>
+---
+
+### sync Package<a name="sync"></a>
 
 The `sync` package provides access to low-level primitive operations used to
 synchronize operations between different go routine threads that might be
@@ -6126,109 +6387,9 @@ Here's a breakdown of important steps in this example:
    were indicated by the matching `Add()` calls. Until then, the current program
    will simply wait, and then resume execution after the last `Done()` is called.
 
-&nbsp;
-&nbsp;
+---
 
-### reflect <a name="reflect"></a>
-
-The reflect package provides functions to allow an Ego program to discover
-information about native values and types.
-
-Note that this _does not_ match the native Go functions at this point.
-
-#### reflect.DeepCopy(value any [, depth int])
-
-This makes a "deep copy" of the value. For scalar objects, it is just a
-simple copy of the object. For complex types such as structs, arrays, or
-maps it makes a recursive copy of the entire object, so every member of
-the result is a new instance of the old member value, essentially doubling
-the memory consumed. The depth is optional, and if not given defaults to
-100. This indicates how deep the recursive copy should go before stopping.
-
-#### reflect.InstanceOf(type)
-
-This create a "Zero Value" of the given type. The result is always of the
-specified type, with all the values of the item set to the native zero
-value for that type (`false` for `bool`, an empty string for `string`,
-etc.)
-
-#### reflect.Members(i struct) []string
-
-Returns an array of strings containing the names of each member of the
-structure passed as an argument. If the value passed is not a structure
-it causes an error. Note that the resulting array elements can be used
-to reference fields in a structure using array index notation.
-
-```go
-    e := { name: "Dave", age: 33 }
-    m := reflect.Members(e)
-
-    e[m[1]] := 55
-```
-
-The `reflect.Members()` function returns an array [ "age", "name" ]. These are
-the fields of the structure, and they are always returned in alphabetical
-order. The assignment statement uses the first array element ("age") to access
-the value of e.age.
-
-#### reflect.Reflect(value)
-
-This returns a reflect.Reflection{} type that can be used to learn further
-information about the value specified. These are available via accessor
-functions. Not all types have all values available via accessor function,
-but you can use the Items() method of the reflection object to see the list
-of methods that are available for a given type.
-
-| Method | Description |
-| :--------------- | :--------------------------- |
-| BaseType() | The native Go type of the value |
-| Declaration() | The declaration string for functions or native types |
-| IsType() | Boolean indicating if the value was itself a type |
-| Members() | The names of the fields in the struct or type |
-| Functions() | The names of the functions  or receiver methods for this type |
-| Native() | Boolean indicating if this is a native Go structure or type |
-| Package() | Boolean indicating if this type is from a package |
-| Size() | For arrays and maps, the number of elements |
-| Type() | The _Ego_ type name of the value |
-
-#### reflect.Type(value)
-
-This returns a `type` value for the item. The resulting value may be compared
-with a give type to determine if it matches, such as:
-
-```go
-   a := 425.3
-   b := reflect.Type(a)
-   if b == float64 {
-       fmt.Println("The value is a float64")
-   }
-```
-
-This works with more complex types as well, so you can compare the value to
-an arbitrary type declaration:
-
-```go
-   a:= map[string]integer{
-       "Fred": 35,
-   }
-
-   if reflect.Type(a) != map[string]integer {
-       fmt.Println("Wrong type value found")
-   }
-```
-
-Note that this function is _only_ available when language extensions are
-turned on, because it returns a type of `type`. Additionally, this function
-can be accessed as a direct builtin called `typeof`. For example,
-
-```go
-   print typeof(42)
-```
-
-This will print the value "int" to the console, which is the default type
-of the value 42 in the above expression.
-
-### tables <a name="tables"></a>
+### tables Package<a name="tables"></a>
 
 The tables package provides functions to help programs produce text tables of
 data for output. The package allows you to create a table object with a given
@@ -6404,6 +6565,8 @@ The result is an array of string values that is the same values that
 were added to the table via the `AddRow()` function, without any
 additional formatting or alignment.
 
+---
+
 ### time
 
 The `time` package assist with functions that access or calculate time/date values. This
@@ -6480,7 +6643,9 @@ This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can incl
 fractional values. While the system is sleeping, go routines will continue to run but
 the current program (or go routine) will stop executing for the given duration.
 
-### util <a name="util"></a>
+---
+
+### util Package<a name="util"></a>
 
 The `util` package contains miscellaneous utility functions that may be convenient
 for developers writing _Ego_ programs.
@@ -6552,7 +6717,9 @@ Note that symbols that are internal to the running of the program are
 not displayed; only symbols created by the user or for defined packages
 are displayed.
 
-### uuid <a name="uuid"></a>
+---
+
+### uuid Package<a name="uuid"></a>
 
 The `uuid` package provides support for universal unique identifiers. This is an
 industry-standard way of creating an identifier that is (for all practical purposes)
@@ -6646,7 +6813,7 @@ the package name; instead you specify the object that was created using
 the package's definition. In this example, it should print the structure
 contents showing the `id` of 55 and the `name` of "Frodo."
 
-### package
+### package \<name\>
 
 Use the `package` statement to define a set of related functions in
 a package in the current source file. A give source file can only
@@ -6666,7 +6833,7 @@ y := factor.IntFact(55)
 
 This calls the function `IntFact()` defined in the `factor` package.
 
-### init()
+### init() Function
 
 A package can define a function named `init` that takes no arguments and
 returns no values. If present, it is run automatically, exactly once, the
@@ -6705,9 +6872,6 @@ A few things to keep in mind:
   zero), the `import` statement that triggered it fails with that error.
 - A package is not required to have an `init()` function; most packages
   won't need one.
-
-&nbsp;
-&nbsp;
 
 ## Directives <a name="directives"></a>
 
