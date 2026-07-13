@@ -3277,11 +3277,38 @@ is inserted in the string using the value of `answer`.
 See the [official Go documentation](https://golang.org/pkg/fmt/#hdr-Printing) for
 detailed information on the format operators supported by the fmt package.
 
+#### fmt.Print()
+
+The `Print` function prints one or more items using the default format for their data
+type to the standard out. There are no formatting operations available, and no
+newline is added at the end.
+
+```go
+fmt.Print("The answer is ", 42)
+```
+
+Unlike `Println` (below), `Print` does **not** always place a space between the items
+it prints. A space is inserted between two adjacent items only when **neither** of
+them is a string — matching Go's own `fmt.Print` behavior exactly:
+
+```go
+fmt.Print("hello", "world")   // "helloworld"  -- both strings, no space
+fmt.Print(1, 2)                // "1 2"         -- neither is a string, space added
+fmt.Print("hello", 42)         // "hello42"     -- one is a string, no space
+```
+
+This rule exists so that concatenating string fragments with `Print` does not
+introduce unwanted spaces, while numeric or other non-string values are still kept
+visually distinct from each other. If you want a space between every item regardless
+of type, use `Println` or `Sprint`+`" "` (or, more simply, just include the space you
+want directly in a string argument, as in the first example above).
+
 #### fmt.Println()
 
 The `Println` function prints one or more items using the default format for their
-data type to the standard out, with a single space placed between them. The output
-is followed by a newline character. There are no formatting operations available.
+data type to the standard out, with a single space placed between **every** pair of
+items, regardless of their type (unlike `Print`, above). The output is followed by a
+newline character. There are no formatting operations available.
 
 ```go
 answer := 42
@@ -3338,6 +3365,23 @@ characters (" ", etc) are ignored. The supported format values are:
 
 Note that this is a subset of the format operations supported by Go's runtime.
 Also note that _Ego_ does not support a width specification in the format.
+
+#### fmt.Sprint()
+
+The `Sprint()` function works exactly the same as the `Print()` function, but returns
+the formatted string as its result value instead of printing it anywhere. It follows
+the identical spacing rule: a space is inserted between two adjacent items only when
+neither of them is a string.
+
+```go
+s1 := fmt.Sprint("hello", "world")   // "helloworld"
+s2 := fmt.Sprint(1, 2)                // "1 2"
+s3 := fmt.Sprint("Count: ", 5)        // "Count: 5"
+```
+
+This is useful for building a string value out of mixed-type items without having to
+write an explicit format string, the way `Sprintf` requires. If you do want an
+explicit format string, use `Sprintf` instead.
 
 #### fmt.Sprintf()
 

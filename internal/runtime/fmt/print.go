@@ -126,24 +126,48 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 	return fmt.Sprintf(fmtString, args.Elements()[1:]...), nil
 }
 
+// formatPrintArgs builds the string representation of args using the same
+// spacing rule Go's real fmt.Print/fmt.Sprint document: a space is inserted
+// between two consecutive operands only when NEITHER of them is a string
+// (so "a", "b" formats as "ab", but 1, 2 formats as "1 2", and "a", 1
+// formats as "a1"). This is deliberately NOT the same rule fmt.Println uses
+// (see printLine below), which always inserts a space between every pair of
+// operands regardless of type.
+//
+// Shared by printList (fmt.Print, which writes the result to output) and
+// sprintList (fmt.Sprint, which returns it directly) so the two can never
+// drift out of sync with each other -- they differ only in what they do
+// with the finished string.
+func formatPrintArgs(s *symbols.SymbolTable, args data.List) string {
+	var b strings.Builder
+
+	elements := args.Elements()
+
+	for i, v := range elements {
+		if i > 0 {
+			prevIsString := data.TypeOf(elements[i-1]).IsString()
+			curIsString := data.TypeOf(v).IsString()
+
+			if !prevIsString && !curIsString {
+				b.WriteString(" ")
+			}
+		}
+
+		b.WriteString(formatUsingString(s, v))
+	}
+
+	return b.String()
+}
+
 // printList implements fmt.Print() and is a wrapper around the native Go function.
 // This prints the arguments to the output but with no trailing newline.
 func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		length int
 		e2     error
-		b      strings.Builder
 	)
 
-	for i, v := range args.Elements() {
-		if i > 0 {
-			b.WriteString(" ")
-		}
-
-		b.WriteString(formatUsingString(s, v))
-	}
-
-	str := b.String()
+	str := formatPrintArgs(s, args)
 
 	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
 		if writer, ok := writer.(io.Writer); ok {
@@ -160,8 +184,28 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(length, e2), e2
 }
 
+// sprintList implements fmt.Sprint() and returns the arguments formatted
+// using their default formats, exactly as fmt.Print does, but as a string
+// instead of writing to output.
+//
+// This cannot be a native pass-through to Go's real fmt.Sprint: the native
+// argument marshaller only knows how to convert a fixed set of scalar Ego
+// types to their Go equivalents, and would fail (or silently mishandle) an
+// Ego struct, array, map, or typed-nil value passed through the variadic
+// ...any parameter. Instead, per-argument formatting is emulated using the
+// same formatUsingString helper Print/Println/Sprintf already share, which
+// understands Ego's own runtime value shapes (including calling a value's
+// String() method, if it has one) directly.
+func sprintList(s *symbols.SymbolTable, args data.List) (any, error) {
+	return formatPrintArgs(s, args), nil
+}
+
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
-// This prints the arguments to the output with a trailing newline.
+// This prints the arguments to the output with a trailing newline. Unlike
+// printList/sprintList (fmt.Print/fmt.Sprint, see formatPrintArgs above),
+// Println always inserts a space between every pair of operands regardless
+// of type -- that is Go's own documented rule for Println specifically, not
+// a simplification, so this loop intentionally does not use formatPrintArgs.
 func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		length int

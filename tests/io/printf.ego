@@ -19,21 +19,26 @@
 
 @test "io: Print two-value return"
 {
+    // Go's fmt.Print only inserts a space between two operands when
+    // NEITHER of them is a string -- "hello", "world" are both strings, so
+    // no space is inserted, matching real Go (unlike fmt.Println, which
+    // always inserts a space; see the Sprint/Print spacing tests in
+    // tests/io/sprint.ego for the full rule).
     @capture printed := {
         n, err := fmt.Print("hello", "world")
-        @assert T.Equal(n, 11)
+        @assert T.Equal(n, 10)
         @assert T.Nil(err)
     }
-    @assert printed == "hello world"
+    @assert printed == "helloworld"
 }
 
 @test "io: Print single-value return still works"
 {
     @capture printed := {
         n := fmt.Print("hello", "world")
-        @assert T.Equal(n, 11)
+        @assert T.Equal(n, 10)
     }
-    @assert printed == "hello world"
+    @assert printed == "helloworld"
 }
 
 @test "io: Println two-value return"

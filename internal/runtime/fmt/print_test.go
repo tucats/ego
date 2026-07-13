@@ -155,3 +155,89 @@ func Test_stringPrintFormat_emptyArgs(t *testing.T) {
 		t.Errorf("empty args: got %v (%T), want 0 (int)", got, got)
 	}
 }
+
+// Test_formatPrintArgs verifies Go's own fmt.Print spacing rule: a space is
+// inserted between two consecutive operands only when neither of them is a
+// string. This is the shared helper behind both fmt.Print (printList) and
+// fmt.Sprint (sprintList) -- see Test_sprintList below, which exercises the
+// same rule through sprintList directly to guard against the two ever being
+// refactored apart and drifting out of sync.
+func Test_formatPrintArgs(t *testing.T) {
+	tests := []struct {
+		name string
+		args data.List
+		want string
+	}{
+		{
+			name: "two strings, no space",
+			args: data.NewList("hello", "world"),
+			want: "helloworld",
+		},
+		{
+			name: "two ints, space",
+			args: data.NewList(1, 2),
+			want: "1 2",
+		},
+		{
+			name: "string then int, no space",
+			args: data.NewList("a", 1),
+			want: "a1",
+		},
+		{
+			name: "int then string, no space",
+			args: data.NewList(1, "a"),
+			want: "1a",
+		},
+		{
+			name: "mixed run: int int string int",
+			args: data.NewList(1, 2, "x", 3),
+			want: "1 2x3",
+		},
+		{
+			name: "single argument, no separators",
+			args: data.NewList(42),
+			want: "42",
+		},
+		{
+			name: "no arguments",
+			args: data.NewList(),
+			want: "",
+		},
+	}
+
+	s := newTestSymbols()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatPrintArgs(s, tt.args)
+			if got != tt.want {
+				t.Errorf("formatPrintArgs() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// Test_sprintList verifies fmt.Sprint's wrapper (return shape: a single
+// string, no error) on top of the shared formatPrintArgs spacing rule
+// already covered in detail by Test_formatPrintArgs above.
+func Test_sprintList(t *testing.T) {
+	s := newTestSymbols()
+
+	got, err := sprintList(s, data.NewList("hello", "world"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got != "helloworld" {
+		t.Errorf("sprintList() = %q, want %q", got, "helloworld")
+	}
+
+	got, err = sprintList(s, data.NewList(1, 2))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got != "1 2" {
+		t.Errorf("sprintList() = %q, want %q", got, "1 2")
+	}
+}

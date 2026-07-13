@@ -51,6 +51,20 @@ var FmtPackage = data.NewPackageFromMap("fmt", map[string]any{
 		},
 		Value: printLine,
 	},
+	"Sprint": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Sprint",
+			Parameters: []data.Parameter{
+				{
+					Name: "item",
+					Type: data.InterfaceType,
+				},
+			},
+			Variadic: true,
+			Returns:  []*data.Type{data.StringType},
+		},
+		Value: sprintList,
+	},
 	"Sprintf": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Sprintf",

@@ -1,0 +1,121 @@
+// Regression tests for fmt.Sprint(), a new package function, and for a
+// spacing bug found in fmt.Print() while adding it.
+//
+// Go's fmt.Print/fmt.Sprint documentation specifies a precise, easy-to-miss
+// spacing rule: a space is inserted between two adjacent operands only when
+// NEITHER of them is a string. fmt.Println/fmt.Sprintln, by contrast,
+// always insert a space between every pair of operands, regardless of
+// type. Ego's existing fmt.Print implementation did not follow the
+// Print-specific rule at all -- it always inserted a space, exactly like
+// Println -- so "hello", "world" printed as "hello world" instead of the
+// correct "helloworld". Fixed alongside adding fmt.Sprint (which shares the
+// same underlying formatting helper, formatPrintArgs, in
+// internal/runtime/fmt/print.go) so the two can never drift out of sync
+// with each other again.
+//
+// fmt.Sprint cannot be a native pass-through to Go's real fmt.Sprint: the
+// native argument marshaller only understands a fixed set of scalar Ego
+// types, and would mishandle an Ego struct, array, map, or typed-nil value
+// passed through the variadic ...any parameter. It is implemented as an Ego
+// runtime wrapper instead (sprintList in internal/runtime/fmt/print.go),
+// using the same per-argument formatting helper (formatUsingString) that
+// Print/Println/Sprintf already share.
+
+@test "io: Sprint returns a string instead of printing"
+{
+    s := fmt.Sprint("hello")
+    @assert s == "hello"
+}
+
+@test "io: Sprint inserts no space between two adjacent strings"
+{
+    @assert fmt.Sprint("hello", "world") == "helloworld"
+}
+
+@test "io: Sprint inserts a space between two adjacent non-strings"
+{
+    @assert fmt.Sprint(1, 2) == "1 2"
+}
+
+@test "io: Sprint inserts no space when only one adjacent operand is a string"
+{
+    @assert fmt.Sprint("a", 1) == "a1"
+    @assert fmt.Sprint(1, "a") == "1a"
+}
+
+@test "io: Sprint spacing rule applies independently to each adjacent pair"
+{
+    // 1,2 -> neither is a string, space. 2,"x" -> one is a string, no
+    // space. "x",3 -> one is a string, no space.
+    @assert fmt.Sprint(1, 2, "x", 3) == "1 2x3"
+}
+
+@test "io: Sprint with a single argument has no separators to insert"
+{
+    @assert fmt.Sprint(42) == "42"
+}
+
+@test "io: Sprint with no arguments returns an empty string"
+{
+    @assert fmt.Sprint() == ""
+}
+
+@test "io: Sprint works with mixed scalar types"
+{
+    @assert fmt.Sprint(true, false) == "true false"
+    @assert fmt.Sprint(1.5, 2.5) == "1.5 2.5"
+    @assert fmt.Sprint("pi is", 3.14) == "pi is3.14"
+}
+
+@test "io: Print inserts no space between two adjacent strings (spacing fix)"
+{
+    @capture printed := {
+        fmt.Print("hello", "world")
+    }
+    @assert printed == "helloworld"
+}
+
+@test "io: Print inserts a space between two adjacent non-strings (spacing fix)"
+{
+    @capture printed := {
+        fmt.Print(1, 2)
+    }
+    @assert printed == "1 2"
+}
+
+@test "io: Print inserts no space when only one adjacent operand is a string (spacing fix)"
+{
+    @capture printed := {
+        fmt.Print("Count:", 5)
+    }
+    @assert printed == "Count:5"
+}
+
+@test "io: Println still always inserts a space, unaffected by the Print fix"
+{
+    // Println's own rule -- always space, regardless of type -- is
+    // unrelated to the Print/Sprint fix above and must not have changed.
+    @capture printed := {
+        fmt.Println("hello", "world")
+    }
+    @assert printed == "hello world\n"
+
+    @capture printed2 := {
+        fmt.Println(1, 2)
+    }
+    @assert printed2 == "1 2\n"
+}
+
+@test "io: Print and Sprint agree on formatting for the same arguments"
+{
+    // Print writes to output, Sprint returns the string -- but both share
+    // formatPrintArgs internally, so their output for identical arguments
+    // must always be byte-for-byte identical.
+    @capture printed := {
+        fmt.Print("value:", 1, 2, "x", 3)
+    }
+
+    s := fmt.Sprint("value:", 1, 2, "x", 3)
+
+    @assert printed == s
+}
