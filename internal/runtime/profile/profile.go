@@ -18,23 +18,27 @@ func getKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	// If this key is on the restricted list, it cannot be retrieved from this
 	// function. This is to prevent exposing sensitive information.
 	if defs.RestrictedSettings[key] {
-		return nil, errors.ErrNoPrivilegeForOperation.In("Get").Context(key)
+		err := errors.ErrNoPrivilegeForOperation.In("Get").Context(key)
+
+		return data.NewList("", err), err
 	}
 
-	return settings.Get(key), nil
+	return data.NewList(settings.Get(key), nil), nil
 }
 
-// setKey implements the profile.set() function.
+// setKey implements the profile.set() function. The returned error is
+// carried as the function's single (any) return value with a nil native
+// Go error, so it is a normal catchable/assignable value to Ego callers
+// (matching how io.File.Close() behaves) rather than an uncatchable abort.
 func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
-	var err error
-
 	key := data.String(args.Get(0))
 	isEgoSetting := strings.HasPrefix(key, defs.PrivilegedKeyPrefix)
 
-	// If this key is on the restricted list, it cannot be retrieved from this
-	// function. This is to prevent exposing sensitive information.
+	// If this key is on the restricted list, it cannot be set from this
+	// function, even ephemerally. This is to prevent exposing or overwriting
+	// sensitive information (tokens, passwords, etc.)
 	if defs.RestrictedSettings[key] {
-		return nil, errors.ErrNoPrivilegeForOperation.In("Set").Context(key)
+		return errors.ErrNoPrivilegeForOperation.In("Set").Context(key), nil
 	}
 
 	// Quick check here. The key must already exist if it's one of the
@@ -42,7 +46,7 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	// doesn't exist yet, for example
 	if isEgoSetting {
 		if !settings.Exists(key) {
-			return nil, errors.ErrReservedProfileSetting.In("Set").Context(key)
+			return errors.ErrReservedProfileSetting.In("Set").Context(key), nil
 		}
 	}
 
@@ -56,7 +60,7 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		(strings.HasPrefix(key, "ego.runtime") ||
 			strings.HasPrefix(key, "ego.server") ||
 			strings.HasPrefix(key, "ego.compiler")) {
-		return nil, errors.ErrReservedProfileSetting.In("Set").Context(key)
+		return errors.ErrReservedProfileSetting.In("Set").Context(key), nil
 	}
 
 	// If the value is an empty string, delete the key else
@@ -84,14 +88,21 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		return nil, nil
 	}
 
+	var err error
+
 	if value == "" {
 		err = settings.Delete(key)
 	} else {
 		settings.Set(key, value)
 	}
 
-	// Otherwise, store the value back to the file system.
-	return err, settings.Save()
+	// Store the value back to the file system, preserving whichever error
+	// (the delete/set itself, or the save) occurred first.
+	if err == nil {
+		err = settings.Save()
+	}
+
+	return err, nil
 }
 
 // deleteKey implements the profile.delete() function. This just calls
@@ -103,7 +114,7 @@ func deleteKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	// If this key is on the restricted list, it cannot be deleted from this
 	// function. This is to prevent exposing sensitive information.
 	if defs.RestrictedSettings[key] {
-		return nil, errors.ErrNoPrivilegeForOperation.In("Delete").Context(key)
+		return errors.ErrNoPrivilegeForOperation.In("Delete").Context(key), nil
 	}
 
 	return setKey(symbols, data.NewList(key, ""))

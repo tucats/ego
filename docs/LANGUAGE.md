@@ -4693,49 +4693,135 @@ non-nil error if the underlying operating system call fails.
 
 ### profile <a name="profile"></a>
 
-The `profile` package help manage persistent profile settings. These are the same settings
-that can be accessed from the command line using the `ego config` command. They apply to
-settings found in the current active profile.
+The `profile` package manages persistent configuration settings for the current user. There
+is no equivalent package in Go's standard library -- this is entirely an _Ego_-specific
+mechanism, the same one behind the `ego config` command line tool and the settings described
+throughout this project's documentation (`ego.compiler.types`, `ego.runtime.path`, etc.).
 
-Profile settings all have a name, which is a string value to identify the key. The prefix
-"ego." is reserved for settings related to the _Ego_ compiler, runtime, and server settings.
-You can use any other prefix to store settings related to your particular _Ego_ application
-usage.
+Profile settings are stored in `~/.ego/` as JSON files -- `default.profile` for the default
+profile, and `<name>.profile` for any other named profile selected with `ego --profile <name>`
+or `ego -p <name>`. A setting changed with `profile.Set()`/`profile.Delete()` is written back
+to that file the next time _Ego_ exits normally.
 
-The profile values are stored in the .ego/ directory located in your default home directory.
-There is a file named default.profile for your default profile, and other *.profile files
-for other named configurations. This file must be readable to access profile settings,
-and the file is rewritten when a setting value is changed and _Ego_ exits.
+#### Three kinds of setting name
 
-#### profile.Delete(key)
+Every setting is identified by a string key, and how `profile.Get()`/`Set()`/`Delete()`
+treat that key depends entirely on its name:
 
-The `Delete()` function deletes a setting from the active profile by name. If the profile
-value does not exist, there is no error.
+1. **Restricted keys.** A small, fixed set of especially sensitive keys (the server's token
+   signing key, saved logon tokens, the console history file path, and similar) cannot be
+   read, written, or deleted through this package **at all**, under any circumstances -- not
+   even to set them to a new value for the current process only. `Get()`, `Set()`, and
+   `Delete()` all return an error immediately for one of these. This is a security boundary,
+   not a limitation you can work around; it exists so that _Ego_ code (which might come from
+   an untrusted source, e.g. a script uploaded to a server) can never exfiltrate or overwrite
+   credentials via the profile mechanism.
+
+2. **`ego.*` keys.** Everything under this prefix is reserved for the compiler, runtime, and
+   server's own settings (`ego.compiler.types`, `ego.runtime.path`, `ego.server.rest.port`,
+   etc.). `profile.Set()` on one of these has two additional rules beyond the restricted-key
+   check above:
+   - The key must **already exist** -- you cannot invent a brand-new `ego.*` setting from
+     Ego code.
+   - Changes to anything under `ego.runtime.*`, `ego.server.*`, or `ego.compiler.*` are
+     **rejected outright** when running a normal program (there is a narrow exception used
+     internally by `ego test` so test files can exercise these settings, but ordinary `ego
+     run` programs cannot use it).
+
+   A `Set()` on an `ego.*` key that _is_ allowed only ever changes the **in-memory** copy for
+   the lifetime of the current process -- it is never written back to the profile file on
+   disk, regardless of how the process exits. This lets a script temporarily adjust its own
+   behavior (for example, `ego.compiler.type.shadowing`) without permanently changing the
+   user's saved configuration.
+
+3. **Everything else -- your own application settings.** Any key that does not start with
+   `ego.` is entirely yours: you can create, read, update, and delete these freely, and every
+   change **is** persisted to the profile file on disk, exactly like settings changed with
+   `ego config`. Use your own prefix (e.g. `myapp.`) to keep your settings distinct from
+   other tools' and from Ego's own reserved names.
 
 #### profile.Get(key)
 
-The `Get()` function retrieves the current value of a given setting by name. For example,
-
 ```go
-path := profile.Get("ego.runtime.path")
+func profile.Get(key string) (string, error)
 ```
 
-In this case, the variable `path` is a string containing the file system location for the
-_Ego_ main path, where service functions, import libraries, and test programs are found.
-If you request a profile value for a setting that does not exist, an empty string is
-returned.
+Retrieves the current value of `key` as a string, along with an error (`nil` on success).
+Requesting a key that simply doesn't exist is not an error -- it returns an empty string. An
+error is only returned for a restricted key (see above).
 
-#### profile.Keys()
+```go
+path, err := profile.Get("ego.runtime.path")
+if err != nil {
+    fmt.Println("could not read setting:", err)
+    return
+}
 
-The `Keys()` call returns a string array containing the names of all the profile values that
-are currently set (i.e. have non-empty values). This can be used to determine if a profile
-setting exists or not before getting its value.
+fmt.Println("Ego path is", path)
+```
 
 #### profile.Set(key, value)
 
-The `Set()` function creates or updates a profile setting by name, with the given value. The
-value is converted to a string representation and stored in the profile data under the named
-key. The key does not need to exist yet; you can create a new key simply by naming it.
+```go
+func profile.Set(key string, value string) error
+```
+
+Creates or updates the setting named `key` to `value`, returning an error (`nil` on
+success). Setting `value` to `""` (the empty string) is equivalent to calling
+`profile.Delete(key)`. See "Three kinds of setting name" above for what can fail and why.
+
+```go
+if err := profile.Set("myapp.greeting", "hello there"); err != nil {
+    fmt.Println("could not save setting:", err)
+}
+```
+
+#### profile.Delete(key)
+
+```go
+func profile.Delete(key string) error
+```
+
+Deletes the setting named `key`, returning an error (`nil` on success). Deleting a key that
+doesn't exist is not an error. Subject to the same restricted-key and `ego.*` rules as
+`Set()`.
+
+```go
+if err := profile.Delete("myapp.greeting"); err != nil {
+    fmt.Println("could not delete setting:", err)
+}
+```
+
+#### profile.Keys()
+
+```go
+func profile.Keys() []string
+```
+
+Returns the names of every currently-set profile value, sorted alphabetically, excluding
+any restricted keys.
+
+```go
+for _, key := range profile.Keys() {
+    fmt.Println(key)
+}
+```
+
+#### profile.Config()
+
+```go
+func profile.Config() map[string]string
+```
+
+Returns every currently-set profile value as a single map of key to value, excluding any
+restricted keys -- a convenient way to inspect or dump the whole active configuration at
+once rather than calling `Get()` once per key from the list `Keys()` returns.
+
+```go
+for key, value := range profile.Config() {
+    fmt.Println(key, "=", value)
+}
+```
 
 ### rest <a name="rest"></a>
 

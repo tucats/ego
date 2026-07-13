@@ -1,0 +1,67 @@
+// Regression tests for profile.Get()/Set()/Delete() error handling.
+//
+// Before this fix, none of the three functions declared a proper error
+// return (Get() returned only a string; Set()/Delete() declared no return
+// value at all), so every failure path -- a restricted key, a reserved
+// "ego.*" name that doesn't already exist, or an attempt to touch
+// ego.runtime/ego.server/ego.compiler settings -- triggered an uncaught,
+// program-aborting runtime error. A plain "err := profile.Set(...); if err
+// != nil" could never observe these failures; only try/catch could. They now
+// return normal catchable/assignable errors, matching every other package.
+//
+// Restricted keys (defs.RestrictedSettings, e.g. the server token key,
+// logon tokens, console history path) cannot be Get(), Set(), or Deleted()
+// at all, not even ephemerally -- this is a deliberate security boundary,
+// not a bug, and is unaffected by this fix.
+//
+// Not covered here: Set() also refuses ego.runtime.*/ego.server.*/
+// ego.compiler.* keys outright, UNLESS the caller is running in "test" mode
+// (defs.ModeVariable == "test") -- which is exactly the mode "ego test"
+// itself always runs in, to let test files exercise those settings (see
+// profile_ego_settings.ego, which toggles ego.compiler.type.shadowing). That
+// makes the "outside test mode" half of this rule untestable from an .ego
+// test file; it can only be observed via "ego run".
+
+@test "packages: profile.Get on a restricted key is a catchable error"
+{
+    v, err := profile.Get("ego.server.token.key")
+    @assert err != nil
+    @assert v == ""
+}
+
+@test "packages: profile.Set on a restricted key is a catchable error"
+{
+    err := profile.Set("ego.server.token.key", "hack")
+    @assert err != nil
+}
+
+@test "packages: profile.Delete on a restricted key is a catchable error"
+{
+    err := profile.Delete("ego.server.token.key")
+    @assert err != nil
+}
+
+@test "packages: profile.Set on a nonexistent ego.* key is a catchable error"
+{
+    err := profile.Set("ego.brand.new.key.that.does.not.exist", "value")
+    @assert err != nil
+}
+
+@test "packages: profile user-defined key round trip has no error"
+{
+    key := "myapp.test." + uuid.New().String()
+
+    err := profile.Set(key, "hello")
+    @assert err == nil
+
+    v, err2 := profile.Get(key)
+    @assert err2 == nil
+    @assert v == "hello"
+
+    err3 := profile.Delete(key)
+    @assert err3 == nil
+
+    v2, err4 := profile.Get(key)
+    @assert err4 == nil
+    @assert v2 == ""
+}
