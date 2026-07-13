@@ -39,3 +39,16 @@
 	@assert err != nil
 	@assert err.Error() == "invalid UUID length: 10"
 }
+
+// Regression test: the zero value of a "var" declared uuid.UUID must be
+// usable, matching Go's own zero value for uuid.UUID ([16]byte), which is
+// the valid nil UUID. Before this was fixed, UUIDTypeDef had no registered
+// constructor, so InstanceOf fell back to an empty struct with no native
+// field at all, and every method call failed with "invalid field name for
+// type: native value".
+@test "packages: uuid zero value is a usable nil UUID" {
+	var x uuid.UUID
+
+	@assert x.String() == "00000000-0000-0000-0000-000000000000"
+	@assert x == uuid.Nil()
+}

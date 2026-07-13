@@ -3,6 +3,7 @@ package uuid
 import (
 	"testing"
 
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
@@ -60,5 +61,28 @@ func TestParseUUID_InvalidInput(t *testing.T) {
 	listErr, ok := list.Get(1).(error)
 	if !ok || listErr == nil {
 		t.Fatalf("parseUUID(%q): expected a non-nil error in the result list, got %v", invalid, list.Get(1))
+	}
+}
+
+// TestUUIDTypeDef_ZeroValueIsUsable verifies that UUIDTypeDef's zero-value
+// constructor (wired up in the package's init() function) produces a struct
+// carrying a valid native uuid.UUID value -- matching Go's own zero value for
+// uuid.UUID ([16]byte), which is the valid nil UUID -- rather than the empty,
+// native-field-less struct that Type.InstanceOf falls back to for a StructKind
+// type with no registered constructor.
+func TestUUIDTypeDef_ZeroValueIsUsable(t *testing.T) {
+	v := UUIDTypeDef.InstanceOf(UUIDTypeDef)
+
+	s := symbols.NewSymbolTable("testing")
+	s.SetAlways(defs.ThisVariable, v)
+
+	result, err := toString(s, data.NewList())
+	if err != nil {
+		t.Fatalf("String() on zero-value UUID: unexpected error: %v", err)
+	}
+
+	const wantNil = "00000000-0000-0000-0000-000000000000"
+	if result != wantNil {
+		t.Errorf("String() on zero-value UUID = %v, want %v", result, wantNil)
 	}
 }

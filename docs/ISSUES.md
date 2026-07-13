@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **271 issues**:
-**230 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **272 issues**:
+**231 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 84 issues (83 resolved)
+- [BUG — General Language Bugs](#area-bug) — 85 issues (84 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -252,6 +252,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-82](#BUG-82) | BUG | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 | [BUG-83](#BUG-83) | BUG | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 | [BUG-84](#BUG-84) | BUG | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
+| [BUG-85](#BUG-85) | BUG | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -556,6 +557,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-82](#BUG-82) | MEDIUM | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 | [BUG-83](#BUG-83) | MEDIUM | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 | [BUG-84](#BUG-84) | MEDIUM | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
+| [BUG-85](#BUG-85) | MEDIUM | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
 
 ---
 
@@ -8477,6 +8479,56 @@ results via a new `unwrapValue` helper; a new `TestGetPackage` asserts both the 
 and error paths of `getPackage` return a `data.List` (registering a synthetic package via
 `packages.Save` rather than depending on a real package like `math` already being
 registered in the test's process).
+
+---
+
+<a id="BUG-85"></a>
+
+### BUG-85 — `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found during a documentation review of the `uuid` package. In Go, `uuid.UUID` is a
+`[16]byte` array, so its zero value (`var x uuid.UUID`) is automatically the valid nil
+UUID -- every method (`String()`, etc.) works on it with no special handling. Ego wraps
+`uuid.UUID` as a `*data.Struct` carrying the real Go value under a "native" field
+(`data.NewStruct(UUIDTypeDef).SetNative(...)`), and `UUIDTypeDef` had no registered
+zero-value constructor (`Type.SetNew`, unused anywhere else in the codebase before this
+fix). Without one, `Type.InstanceOf` -- the path `var` declarations and `new()` use to
+build a zero value -- falls back to its generic `StructKind` case, an empty
+`NewStruct(t)` with no native field at all. Every method that reads the native field
+(`String()`, `Gibberish()`) then failed:
+
+```go
+var x uuid.UUID
+fmt.Println(x.String())
+// Error: invalid field name for type: native value
+
+fmt.Println(x == uuid.Nil())
+// false -- structurally different: x has no native field, uuid.Nil() has one
+// (all zeros), so raw struct equality never matches even though both
+// "should" represent the same nil UUID
+```
+
+**Fix:**  
+Added an `init()` function in `internal/runtime/uuid/types.go` that calls
+`UUIDTypeDef.SetNew(...)`, registering a constructor that returns
+`data.NewStruct(UUIDTypeDef).SetNative(uuid.Nil)` -- the same shape `uuid.Nil()` already
+produces. This has to be a separate `init()` rather than part of `UUIDTypeDef`'s own var
+initializer, since a closure referencing `UUIDTypeDef` inside its own initializer
+expression is an initialization cycle; `init()` runs after the var is fully assigned, so
+the self-reference is fine there. `Type.InstanceOf` already had the necessary dispatch
+(`if t.nativeName != "" && t.newFunction != nil { return t.New() }`) -- it was simply
+never wired up for any type in the codebase before this fix.
+
+Regression test `TestUUIDTypeDef_ZeroValueIsUsable`
+(`internal/runtime/uuid/uuid_test.go`) calls `UUIDTypeDef.InstanceOf(UUIDTypeDef)`
+directly and asserts `String()` on the result succeeds and returns the nil UUID text —
+verified it fails with the original "invalid field name" error when the `init()` fix is
+reverted. `tests/packages/uuid.ego` adds an Ego-level test asserting both
+`x.String() == "00000000-0000-0000-0000-000000000000"` and `x == uuid.Nil()` for a bare
+`var x uuid.UUID`.
 
 ---
 
