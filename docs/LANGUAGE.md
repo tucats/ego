@@ -5810,83 +5810,150 @@ rows2.Close()
 
 ### strconv Package<a name="strconv"></a>
 
-The `strconv` package performs data conversions to or from a string value.
+The `strconv` package performs conversions to and from string representations
+of other data types, mirroring Go's own `strconv` package. Nearly every
+function here is a direct native passthrough to the identically-named Go
+function -- the parameter and return types below are exactly Go's, so Go's
+`strconv` documentation applies for any behavioral detail not covered here.
+The two exceptions are `Itor`/`Rtoi`, which are Ego-only additions with no
+Go equivalent.
 
-#### strconv.Atoi(text string) (int, error)
+#### Parsing strings to numbers
 
-The `Atoi` function converts a string (containing only ASCII characters) to
-an integer value. If the string does not contain a valid representation of
-an integer, then the result is zero and the error value indicates that the
-string was invalid.
-
-Note that the string can include radix integer representations. For example,
+| Function | Description |
+| :------- | :----------- |
+| `Atoi(s string) (int, error)` | Parses a base-10 integer. Equivalent to `ParseInt(s, 10, 0)` converted to `int`. |
+| `ParseInt(s string, base int, bitSize int) (int64, error)` | Parses a signed integer. `base` `0` infers the base from the string's prefix (`0x`, `0o`, `0b`, or none for decimal); `bitSize` (`0`, `8`, `16`, `32`, `64`) is the integer type the result must fit in (`0` means `int`). |
+| `ParseUint(s string, base int, bitSize int) (uint64, error)` | Like `ParseInt`, but for unsigned integers -- a leading `-` is always an error. |
+| `ParseFloat(s string, bitSize int) (float64, error)` | Parses a floating-point value. `bitSize` (`32` or `64`) controls how the result is rounded, though the return value is always `float64`. |
+| `ParseBool(s string) (bool, error)` | Accepts `"1"`, `"t"`, `"T"`, `"TRUE"`, `"true"`, `"True"` as `true`, and `"0"`, `"f"`, `"F"`, `"FALSE"`, `"false"`, `"False"` as `false`. Anything else is an error. |
 
 ```go
-v, err := strconv.Atoi("0x55")
+v, err := strconv.Atoi("42")
+fmt.Println(v, err)   // 42 <nil>
+
+_, err = strconv.Atoi("abc")
+fmt.Println(err)      // strconv.Atoi: parsing "abc": invalid syntax
+
+n, err := strconv.ParseInt("ff", 16, 64)
+fmt.Println(n, err)   // 255 <nil>
+
+u, err := strconv.ParseUint("42", 10, 64)
+fmt.Println(u, err)   // 42 <nil>
+
+f, err := strconv.ParseFloat("3.14", 64)
+fmt.Println(f, err)   // 3.14 <nil>
+
+b, err := strconv.ParseBool("T")
+fmt.Println(b, err)   // true <nil>
 ```
 
-will result in the variable `v` containing the value 85, which is the decimal
-integer value of the hexadecimal constant "55".
+`Atoi` does **not** understand `0x`/`0o`/`0b` prefixes -- it is always base
+10, matching Go's own `Atoi` (which is defined as `ParseInt(s, 10, 0)`). Use
+`ParseInt(s, 0, 64)` if you need the base inferred from the string's prefix.
 
-#### strconv.FormatBool(b bool) string
+#### Formatting numbers as strings
 
-The `FormatBool` function will format a boolean value. The result is either
-the string "true" or the string "false". There is no error condition.
+| Function | Description |
+| :------- | :----------- |
+| `Itoa(i int) string` | Formats an `int` in base 10. |
+| `FormatInt(i int64, base int) string` | Formats a signed integer in the given `base` (2-36). Requires an `int64` argument. |
+| `FormatUint(i uint64, base int) string` | Like `FormatInt`, but for unsigned integers. Requires a `uint64` argument. |
+| `FormatFloat(f float64, format byte, precision int, bitSize int) string` | Formats a float; see below for `format`. |
+| `FormatBool(b bool) string` | Returns `"true"` or `"false"`. |
 
-#### strconv.FormatFloat(f float64, format byte, precision int, bitsize int) string
+```go
+fmt.Println(strconv.Itoa(42))                          // 42
+fmt.Println(strconv.FormatInt(int64(255), 16))         // ff
+fmt.Println(strconv.FormatUint(uint64(255), 16))       // ff
+fmt.Println(strconv.FormatFloat(3.14159, 'f', 2, 64))  // 3.14
+fmt.Println(strconv.FormatBool(true))                  // true
+```
 
-The `FormatFloat` function formats a floating-point value. The format value is
-a single byte containing a character describing the expected output format. The
-`format` value must be one of the following:
+`FormatInt` and `FormatUint` take Go's native `int64`/`uint64` types, not
+`int`. In dynamic mode a plain `int` argument (e.g. `strconv.FormatInt(42,
+10)`) is coerced automatically; strict mode requires the explicit cast shown
+above (`int64(42)`) -- write the cast either way if your code needs to run
+under both type modes.
 
-- 'b' (-ddddp±ddd, a binary exponent),
-- 'e' (-d.dddde±dd, a decimal exponent),
-- 'E' (-d.ddddE±dd, a decimal exponent),
-- 'f' (-ddd.dddd, no exponent),
-- 'g' ('e' for large exponents, 'f' otherwise),
-- 'G' ('E' for large exponents, 'f' otherwise),
-- 'x' (-0xd.ddddp±ddd, a hexadecimal fraction and binary exponent), or
-- 'X' (-0Xd.ddddP±ddd, a hexadecimal fraction and binary exponent).
+`format` is a single byte selecting the output style:
 
-The `precision` value describes the number of digits that will be
-formatted to the right of the decimal point (trailing zero digits are
-not printed). Finally the `bitsize` value describes whether the floating
-point value presented is a 32-bit float or a 64-bit float. No other integer
-value than 32 or 64 is permitted.
+| `format` | Style |
+| :------- | :---- |
+| `'b'` | `-ddddp±ddd`, a binary exponent |
+| `'e'` | `-d.dddde±dd`, a decimal exponent |
+| `'E'` | `-d.ddddE±dd`, a decimal exponent |
+| `'f'` | `-ddd.dddd`, no exponent |
+| `'g'` | `'e'` for large exponents, `'f'` otherwise |
+| `'G'` | `'E'` for large exponents, `'f'` otherwise |
+| `'x'` | `-0xd.ddddp±ddd`, a hexadecimal fraction and binary exponent |
+| `'X'` | `-0Xd.ddddP±ddd`, a hexadecimal fraction and binary exponent |
 
-#### strconv.FormatInt(i int, base int) string
+`precision` is the number of digits after the decimal point (`-1` selects the
+smallest number of digits that round-trips exactly); `bitSize` (`32` or `64`)
+tells `FormatFloat` whether to round as if `f` were a `float32` or a native
+`float64` before formatting.
 
-The `FormatInt` function formats an integer value. The `base` parameter is
-the radix that is used, and must be one of 2, 8, 10, or 16.
+#### Roman numerals
 
-#### strconv.Itoa(i int) string
+`Itor` and `Rtoi` are Ego-only additions with no equivalent in Go's
+`strconv` package.
 
-The `Itoa` function is a simpler form of `FormatInt` and formats a value
-assuming base-10 radix. So the integer 123 is converted to the string "123".
+| Function | Description |
+| :------- | :----------- |
+| `Itor(i int) (string, error)` | Converts an integer in the range 1-3999 to a Roman numeral string. Values outside that range (there is no standard Roman representation of 0 or negative numbers, and this package does not implement the vinculum notation used for numbers 4000 and above) return an error. |
+| `Rtoi(s string) (int, error)` | Converts a Roman numeral string back to an integer. Case-insensitive; leading/trailing whitespace is ignored. An empty (or all-whitespace) string returns `0` with no error. |
 
-#### strconv.Quote(text string) string
+```go
+r, err := strconv.Itor(1994)
+fmt.Println(r, err)   // MCMXCIV <nil>
 
-The `Quote` function encloses the value presented in quotes. It also escapes
-any quotation marks that are already in the string.
+n, err := strconv.Rtoi("MCMXCIV")
+fmt.Println(n, err)   // 1994 <nil>
 
-#### strconv.Unquote(text string) (string, error)
+_, err = strconv.Itor(4000)
+fmt.Println(err)      // in Itor, Roman integers must be in range of 1..3999
+```
 
-The `Unquote` function removes any quotation marks from a string, and also
-converts escaped quote characters back to double-quotes in the string value.
-If the string is not a valid quoted string, an error is returned.
+#### Quoting strings and runes
 
-#### strconv.Itor(i int) string
+| Function | Description |
+| :------- | :----------- |
+| `Quote(s string) string` | Wraps `s` in double quotes, Go-escaping any special characters. |
+| `Unquote(s string) (string, error)` | Reverses `Quote` -- also accepts a single-quoted rune literal or a raw backquoted string. Returns an error if `s` isn't validly quoted. |
+| `QuoteRune(r rune) string` | Formats `r` as a single-quoted Go rune literal, e.g. `'A'`. |
+| `QuoteRuneToASCII(r rune) string` | Like `QuoteRune`, but escapes non-ASCII runes. |
+| `QuoteRuneToGraphic(r rune) string` | Like `QuoteRune`, but only escapes non-graphic runes. |
+| `QuoteToASCII(s string) string` | Like `Quote`, but escapes non-ASCII runes. |
+| `QuoteToGraphic(s string) string` | Like `Quote`, but only escapes non-graphic runes. |
 
-The `Itor` function converts an integer value to a Roman numeral string. The
-integer must be in the range 1–3999; values outside this range return an error.
-For example, `strconv.Itor(42)` returns `"XLII"`.
+```go
+fmt.Println(strconv.Quote(`say "hi"`))                 // "say \"hi\""
 
-#### strconv.Rtoi(r string) int
+s, err := strconv.Unquote(`"say \"hi\""`)
+fmt.Println(s, err)                                     // say "hi" <nil>
 
-The `Rtoi` function converts a Roman numeral string to an integer value. The
-string is case-insensitive and leading/trailing whitespace is ignored. For
-example, `strconv.Rtoi("XLII")` returns `42`. If the string is not a valid
-Roman numeral, an error is returned.
+fmt.Println(strconv.QuoteRune('A'))                     // 'A'
+fmt.Println(strconv.QuoteRuneToASCII('A'))              // 'A'
+fmt.Println(strconv.QuoteRuneToGraphic('A'))            // 'A'
+fmt.Println(strconv.QuoteToASCII("hello"))              // "hello"
+fmt.Println(strconv.QuoteToGraphic("hello"))            // "hello"
+```
+
+#### Inspecting characters and strings
+
+| Function | Description |
+| :------- | :----------- |
+| `CanBackquote(s string) bool` | Reports whether `s` can be represented unchanged as a raw (backquoted) string literal -- `false` if it contains a backquote, a newline, or most other control characters. |
+| `IsPrint(r rune) bool` | Reports whether `r` is defined as printable by Go (letters, marks, numbers, punctuation, symbols, and the ASCII space). |
+| `IsGraphic(r rune) bool` | Like `IsPrint`, but also includes the Unicode `Space` category beyond ASCII space (a broader definition of "graphic" per the Unicode standard). |
+
+```go
+fmt.Println(strconv.CanBackquote("hello"))          // true
+fmt.Println(strconv.CanBackquote("with\nnewline"))  // false
+fmt.Println(strconv.IsPrint('A'))                   // true
+fmt.Println(strconv.IsGraphic('A'))                 // true
+```
 
 ---
 
