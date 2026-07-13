@@ -11,18 +11,36 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
+// sortableSlice returns the native Go slice backing an Ego array, suitable
+// for passing to sort.Slice/sort.SliceStable so the sort mutates the array's
+// actual storage in place. BaseArray() returns a fresh []any copy for a byte
+// array (see its doc comment), so sorting that copy would silently leave the
+// original array unchanged; GetBytes() returns the real backing []byte for
+// byte arrays, so it must be used instead in that one case.
+func sortableSlice(array *data.Array) any {
+	if array.Type().Kind() == data.ByteKind {
+		return array.GetBytes()
+	}
+
+	return array.BaseArray()
+}
+
 // sortSlice implements the sort.sortSlice() function.
 func sortSlice(s *symbols.SymbolTable, args data.List) (any, error) {
 	var funcError error
 
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
+		err := errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
+
+		return data.NewList(nil, err), err
 	}
 
 	fn, ok := args.Get(1).(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
+		err := errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
+
+		return data.NewList(nil, err), err
 	}
 
 	// Create a symbol table to use for the slice comparator callback function.
@@ -41,7 +59,7 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Use the native sort.Slice function, and provide a comparison function
 	// whose job is to run the supplied bytecode instructions, passing in
 	// the two native arguments
-	sort.Slice(array.BaseArray(), func(i, j int) bool {
+	sort.Slice(sortableSlice(array), func(i, j int) bool {
 		// Set the i,j variables as the current function arguments
 		sliceSymbols.SetAlways(defs.ArgumentListVariable,
 			data.NewArrayFromInterfaces(data.IntType, i, j))
@@ -58,7 +76,7 @@ func sortSlice(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.BoolOrFalse(ctx.Result())
 	})
 
-	return array, funcError
+	return data.NewList(array, funcError), funcError
 }
 
 // sortSliceStable implements sort.SliceStable.  It is identical to sortSlice
@@ -69,12 +87,16 @@ func sortSliceStable(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
+		err := errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 1, data.TypeOf(args.Get(0)).String()))
+
+		return data.NewList(nil, err), err
 	}
 
 	fn, ok := args.Get(1).(*bytecode.ByteCode)
 	if !ok {
-		return nil, errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
+		err := errors.ErrArgumentType.Context(fmt.Sprintf("argument %d: %s", 2, data.TypeOf(args.Get(1)).String()))
+
+		return data.NewList(nil, err), err
 	}
 
 	sliceSymbols := symbols.NewChildSymbolTable("sort slice stable", s)
@@ -85,7 +107,7 @@ func sortSliceStable(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	ctx := bytecode.NewContext(sliceSymbols, fn)
 
-	sort.SliceStable(array.BaseArray(), func(i, j int) bool {
+	sort.SliceStable(sortableSlice(array), func(i, j int) bool {
 		sliceSymbols.SetAlways(defs.ArgumentListVariable,
 			data.NewArrayFromInterfaces(data.IntType, i, j))
 
@@ -100,5 +122,5 @@ func sortSliceStable(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.BoolOrFalse(ctx.Result())
 	})
 
-	return array, funcError
+	return data.NewList(array, funcError), funcError
 }

@@ -126,3 +126,24 @@
     @assert words[1] == "fig"
     @assert words[4] == "elderberry"
 }
+
+@test "sort: Stable and SliceStable return (value, error)"
+{
+    a := []int{5, 3, 1, 4, 2}
+    v, err := sort.Stable(a)
+    @assert err == nil
+    @assert v[0] == 1
+
+    b := []int{5, 3, 1, 4, 2}
+    v2, err2 := sort.SliceStable(b, func(i int, j int) bool {
+        return b[i] < b[j]
+    })
+    @assert err2 == nil
+    @assert v2[0] == 1
+}
+
+@test "sort: Stable wrong-type argument returns error"
+{
+    _, err := sort.Stable([]bool{true, false})
+    @assert err != nil
+}

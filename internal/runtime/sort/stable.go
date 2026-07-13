@@ -14,14 +14,16 @@ import (
 func sortStable(symTable *symbols.SymbolTable, args data.List) (any, error) {
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType.In("Stable").Context(data.TypeOf(args.Get(0)).String())
+		err := errors.ErrArgumentType.In("Stable").Context(data.TypeOf(args.Get(0)).String())
+
+		return data.NewList(nil, err), err
 	}
 
 	if err := stableSortArray(array); err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
-	return array, nil
+	return data.NewList(array, nil), nil
 }
 
 // stableSortArray sorts a *data.Array in-place using a stable algorithm.

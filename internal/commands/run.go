@@ -251,7 +251,7 @@ func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactiv
 
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			text = text + scanner.Text() + " "
+			text = text + scanner.Text() + "\n"
 		}
 
 		if e := scanner.Err(); e != nil {
@@ -379,7 +379,7 @@ func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error)
 
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
-				text = text + scanner.Text() + " "
+				text = text + scanner.Text() + "\n"
 			}
 
 			if e := scanner.Err(); e != nil {

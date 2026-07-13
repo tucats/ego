@@ -31,41 +31,66 @@ func commonSort(args data.List, kind int) (any, error) {
 
 // sortStrings implements the sort.Strings function.
 func sortStrings(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.StringKind)
+	v, err := commonSort(args, data.StringKind)
+
+	return data.NewList(v, err), err
 }
 
 // sortBytes implements the sort.sortBytes function.
 func sortBytes(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.ByteKind)
+	v, err := commonSort(args, data.ByteKind)
+
+	return data.NewList(v, err), err
 }
 
 // sortInts implements the sort.sortInts function.
 func sortInts(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.IntKind)
+	v, err := commonSort(args, data.IntKind)
+
+	return data.NewList(v, err), err
 }
 
 // sortInt32s implements the sort.sortInt32s function.
 func sortInt32s(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.Int32Kind)
+	v, err := commonSort(args, data.Int32Kind)
+
+	return data.NewList(v, err), err
 }
 
 // sortInt64s implements the sort.sortInt64s function.
 func sortInt64s(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.Int64Kind)
+	v, err := commonSort(args, data.Int64Kind)
+
+	return data.NewList(v, err), err
 }
 
 // sortFloat32s implements the sort.sortFloat32s function.
 func sortFloat32s(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.Float32Kind)
+	v, err := commonSort(args, data.Float32Kind)
+
+	return data.NewList(v, err), err
 }
 
 // sortFloat64s implements the sort.sortFloat64s function.
 func sortFloat64s(s *symbols.SymbolTable, args data.List) (any, error) {
-	return commonSort(args, data.Float64Kind)
+	v, err := commonSort(args, data.Float64Kind)
+
+	return data.NewList(v, err), err
 }
 
-// genericSort implements the sort.genericSort() function, which sorts an array regardless of it's type.
-func genericSort(symbols *symbols.SymbolTable, args data.List) (any, error) {
+// genericSort implements the sort.Sort() function. It sorts an array
+// regardless of its type, and returns (value, error) per the runtime
+// convention for fallible functions.
+func genericSort(s *symbols.SymbolTable, args data.List) (any, error) {
+	v, err := doGenericSort(args)
+
+	return data.NewList(v, err), err
+}
+
+// doGenericSort contains the actual sort logic for genericSort, kept as a
+// separate function so its many internal return points don't each need to
+// know about the (value, error) wrapping convention.
+func doGenericSort(args data.List) (any, error) {
 	// Make a master array of the values presented
 	var array []any
 

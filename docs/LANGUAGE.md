@@ -5423,91 +5423,216 @@ fmt.Println(string(buf[:n]))
 
 ### sort Package<a name="sort"></a>
 
-The `sort` package contains functions that can sort an array containing only
-homogeneous base types (int, string, float64). If the array contains interface
-or struct types, it cannot be sorted. The sort occurs "in place" in the array.
-
-#### sort.Ints(array)
-
-The `Ints` function sorts an array of integers. Negative numbers sort before positive
-numbers.
+The `sort` package provides sorting and searching functions modeled on Go's
+`sort` package. It is not as complete as Go's version -- there is no
+`sort.Interface`-based generic sort, for example -- but what is implemented is
+functionally equivalent. All sort functions modify the array **in place** and
+also return the same array as their primary value, so both of these styles
+work:
 
 ```go
 a := []int{5, 3, 8, 0, -1}
+sort.Ints(a)          // in-place; result discarded
 
+b := []int{5, 3, 8, 0, -1}
+b2, err := sort.Ints(b)   // in-place; b2 is the same array as b
+```
+
+Every function in the package returns `(value, error)`, like every other
+fallible function in the runtime. A wrong-type argument is the most common
+failure and is always a catchable error, not a program-terminating panic:
+
+```go
+_, err := sort.Strings([]int{5, 2, 6})
+fmt.Println(err)   // in Strings, incorrect function argument type: []int
+```
+
+#### Type-specific sorts
+
+Each of these sorts an array of exactly the named element type, ascending,
+and returns `(array, error)`. Passing an array of any other element type
+returns an error rather than sorting anything.
+
+| Function | Element type |
+| :------- | :----------- |
+| `sort.Ints(array)` | `[]int` |
+| `sort.Int32s(array)` | `[]int32` |
+| `sort.Int64s(array)` | `[]int64` |
+| `sort.Float32s(array)` | `[]float32` |
+| `sort.Float64s(array)` | `[]float64` |
+| `sort.Strings(array)` | `[]string` |
+| `sort.Bytes(array)` | `[]byte` |
+
+```go
+a := []int{5, 3, 8, 0, -1}
 sort.Ints(a)
+fmt.Println(a)   // [-1, 0, 3, 5, 8]
+
+f := []float64{5.3, 3, 8.001, 0, -1.5}
+sort.Float64s(f)
+fmt.Println(f)   // [-1.5, 0, 3, 5.3, 8.001]
+
+s := []string{"apple", "pear", "", "cherry"}
+sort.Strings(s)
+fmt.Println(s)   // ["", "apple", "cherry", "pear"]
+
+b := []byte{5, 3, 8, 0, 1}
+sort.Bytes(b)
+fmt.Println(b)   // [0, 1, 3, 5, 8]
 ```
 
-After this code executes, the value of the array is [-1, 0, 3, 5, 8].
+#### sort.Sort(array) / sort.Stable(array)
 
-#### sort.Float32s(array)
-
-The `Float32s` function sorts an array of 32-bit floating point numbers.
-Negative numbers sort before positive numbers.
+`Sort` sorts an array of any single supported scalar element type (`byte`,
+`int`, `int32`, `int64`, `float32`, `float64`, or `string`), determining the
+element type automatically -- you don't have to call the type-specific
+function by name. `Stable` does the same thing but guarantees elements that
+compare equal keep their original relative order (at some cost in
+performance).
 
 ```go
-a := []float32{5.3, 3, 8.001, 0, -1.5}
+a := []int32{9, 3, 7, 1, 5}
+v, err := sort.Sort(a)
+fmt.Println(v, err)   // [1, 3, 5, 7, 9] <nil>
 
-sort.Float32s(a)
+b := []int{5, 3, 1, 4, 2}
+sort.Stable(b)
+fmt.Println(b)   // [1, 2, 3, 4, 5]
 ```
 
-After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
-
-#### sort.Float64s(array)
-
-The `Float64s` function sorts an array of 64-bit floating point numbers.
-Negative numbers sort before positive numbers.
+An array whose element type isn't one of the supported scalar kinds (a struct
+or bool array, for example) returns an error:
 
 ```go
-a := []float64{5.3, 3, 8.001, 0, -1.5}
-
-sort.Float64s(a)
+_, err := sort.Sort([]bool{true, false})
+fmt.Println(err)   // in Sort, incorrect function argument type
 ```
 
-After this code executes, the value of the array is [-1.5, 0.0, 3.0, 5.3, 8.001].
+#### sort.Slice(array, less) / sort.SliceStable(array, less)
 
-#### sort.Slice(array, func)
+`Slice` sorts an array of **any** type -- including structs and other
+non-scalar types that the type-specific sorts and `Sort`/`Stable` can't
+handle -- using a custom comparison function you supply. `SliceStable` is
+identical but guarantees elements that compare equal keep their original
+relative order.
 
-The `Slice` function allows you to sort an array of a non-base type. For
-example, you could create an array of struct types; the builtin `sort`
-functions don't know how to sort that structure. You can sort it using
-the `Slice` function by supplying a function constant that is able to
-decide which of two items in the array is _less than_ the other. Even
-though the examples could be more complex, here's an example using integer
-values:
+The comparison function must accept two `int` arguments (`i`, `j`) and return
+a `bool`: `true` if the element at index `i` should sort before the element
+at index `j`. It's defined as a closure so it can see the array being sorted:
 
 ```go
-a := []int{ 101, 5, 33, -55, 239, 3, 66}
+a := []int{101, 5, 33, -55, 239, 3, 66}
 
 sort.Slice(a, func(i int, j int) bool {
     return a[i] < a[j]
 })
+
+fmt.Println(a)   // [-55, 3, 5, 33, 66, 101, 239]
 ```
 
-When this runs, the array `a` will be in sorted order. The function constant
-(the _comparison function_) is called by the `sort` package algorithm as many
-times as needed to compare two values in the array. The function _must_
-accept two integer values as arguments, and return a bool value. The function
-result is determining if the `i` element of the array is less than the `j`
-element of the array. The `Slice` function manages the sort algorithm, and
-calls back to your supplied function as needed to compare any two values.
-
-Note that the comparison function has to be defined as an anonymous function
-constant in the string, so it has access to values outside the function scope
-(specifically, the array value)
-
-#### sort.Strings(array)
-
-The `Strings` function sorts an array of strings. An empty string sorts to
-the start of the list.
+This is how you sort an array of structs, since there's no scalar type to
+dispatch on automatically:
 
 ```go
-a := []string{"apple", "pear", "", "cherry"}
+type Person struct {
+    Name string
+    Age  int
+}
 
-sort.Strings(a)
+people := []Person{
+    {Name: "Charlie", Age: 35},
+    {Name: "Alice", Age: 30},
+    {Name: "Bob", Age: 25},
+}
+
+sort.Slice(people, func(i int, j int) bool {
+    return people[i].Age < people[j].Age
+})
+
+for _, p := range people {
+    fmt.Println(p.Name, p.Age)
+}
+// Bob 25
+// Alice 30
+// Charlie 35
 ```
 
-After this code executes, the value of the array is ["", "apple", "cherry", "pear"].
+If the comparison function itself fails (for example, it makes an invalid
+type assertion), `Slice`/`SliceStable` return that failure as their error
+value rather than aborting the program.
+
+#### sort.Search(n, f)
+
+`Search` performs a binary search over the (conceptual) index range `[0, n)`,
+using a predicate function `f(i int) bool` that you supply. `f` must be
+_monotone_: `false` for every index below the answer, `true` for every index
+at or above it. `Search` returns the smallest index where `f` is `true`, or
+`n` if `f` is `false` for every index (nothing found).
+
+The canonical use is finding the insertion point (or an exact match) in an
+already-sorted array:
+
+```go
+a := []int{1, 3, 5, 7, 9, 11}
+
+i, err := sort.Search(len(a), func(i int) bool { return a[i] >= 7 })
+fmt.Println(i, err)   // 3 <nil>
+fmt.Println(a[i])     // 7
+
+// Not found: Search returns len(a)
+j, _ := sort.Search(len(a), func(i int) bool { return a[i] >= 100 })
+fmt.Println(j)   // 6
+```
+
+#### sort.SearchInts(array, x), sort.SearchFloat64s(array, x), sort.SearchStrings(array, x)
+
+These are convenience wrappers around `Search` for the common case of
+searching an already-sorted array of a known scalar type for a specific
+value `x`, without having to write the predicate function yourself. Each
+returns `(int, error)`: the smallest index at which `x` could be inserted to
+keep the array sorted -- which is `x`'s own index if it's already present, or
+`len(array)` if `x` is larger than every element. An array of the wrong
+element type returns an error rather than searching.
+
+```go
+a := []int{1, 3, 5, 7, 9, 11}
+
+i, err := sort.SearchInts(a, 7)
+fmt.Println(i, err)   // 3 <nil>
+
+// Not present: this is where 6 would be inserted to keep a sorted
+j, _ := sort.SearchInts(a, 6)
+fmt.Println(j)   // 3
+
+f := []float64{1.1, 3.3, 5.5, 7.7}
+fi, _ := sort.SearchFloat64s(f, 5.5)
+fmt.Println(fi)   // 2
+
+s := []string{"apple", "banana", "cherry", "date"}
+si, _ := sort.SearchStrings(s, "cherry")
+fmt.Println(si)   // 2
+```
+
+#### sort.IsSorted(array), sort.IntsAreSorted(array), sort.Float64sAreSorted(array), sort.StringsAreSorted(array)
+
+Each of these returns `(bool, error)` -- `true` if the array is already in
+non-decreasing order. `IsSorted` accepts any of the scalar element types
+`Sort`/`Stable` support and determines the type automatically; the other
+three additionally verify the array holds the named element type, returning
+an error otherwise, just like the type-specific sorts.
+
+```go
+// Passed directly as a single fmt.Println() argument like this, only the
+// primary (bool) value comes through -- the error is dropped, exactly like
+// any other multi-return call used as a plain expression rather than
+// assigned with ":=". Assign both return values if you need the error too.
+fmt.Println(sort.IsSorted([]int{1, 2, 3}))          // true
+fmt.Println(sort.IsSorted([]int{3, 1, 2}))          // false
+
+fmt.Println(sort.IntsAreSorted([]int{-5, 0, 3}))       // true
+fmt.Println(sort.Float64sAreSorted([]float64{1, 2}))   // true
+fmt.Println(sort.StringsAreSorted([]string{"a", "b"})) // true
+```
 
 ---
 

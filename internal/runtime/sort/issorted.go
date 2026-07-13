@@ -68,38 +68,54 @@ func isArraySorted(array *data.Array) (bool, error) {
 func sortIsSorted(s *symbols.SymbolTable, args data.List) (any, error) {
 	array, ok := args.Get(0).(*data.Array)
 	if !ok {
-		return nil, errors.ErrArgumentType.In("IsSorted").Context(data.TypeOf(args.Get(0)).String())
+		err := errors.ErrArgumentType.In("IsSorted").Context(data.TypeOf(args.Get(0)).String())
+
+		return data.NewList(false, err), err
 	}
 
-	return isArraySorted(array)
+	v, err := isArraySorted(array)
+
+	return data.NewList(v, err), err
 }
 
 // sortIntsAreSorted implements sort.IntsAreSorted.
 func sortIntsAreSorted(s *symbols.SymbolTable, args data.List) (any, error) {
 	array, ok := args.Get(0).(*data.Array)
 	if !ok || array.Type().Kind() != data.IntKind {
-		return nil, errors.ErrArgumentType.In("IntsAreSorted").Context(data.TypeOf(args.Get(0)).String())
+		err := errors.ErrArgumentType.In("IntsAreSorted").Context(data.TypeOf(args.Get(0)).String())
+
+		return data.NewList(false, err), err
 	}
 
-	return isArraySorted(array)
+	v, err := isArraySorted(array)
+
+	return data.NewList(v, err), err
 }
 
 // sortFloat64sAreSorted implements sort.Float64sAreSorted.
 func sortFloat64sAreSorted(s *symbols.SymbolTable, args data.List) (any, error) {
 	array, ok := args.Get(0).(*data.Array)
 	if !ok || array.Type().Kind() != data.Float64Kind {
-		return nil, errors.ErrArgumentType.In("Float64sAreSorted").Context(data.TypeOf(args.Get(0)).String())
+		err := errors.ErrArgumentType.In("Float64sAreSorted").Context(data.TypeOf(args.Get(0)).String())
+
+		return data.NewList(false, err), err
 	}
 
-	return isArraySorted(array)
+	v, err := isArraySorted(array)
+
+	return data.NewList(v, err), err
 }
 
 // sortStringsAreSorted implements sort.StringsAreSorted.
 func sortStringsAreSorted(s *symbols.SymbolTable, args data.List) (any, error) {
 	array, ok := args.Get(0).(*data.Array)
 	if !ok || array.Type().Kind() != data.StringKind {
-		return nil, errors.ErrArgumentType.In("StringsAreSorted").Context(data.TypeOf(args.Get(0)).String())
+		err := errors.ErrArgumentType.In("StringsAreSorted").Context(data.TypeOf(args.Get(0)).String())
+
+		return data.NewList(false, err), err
 	}
 
-	return isArraySorted(array)
+	v, err := isArraySorted(array)
+
+	return data.NewList(v, err), err
 }

@@ -105,3 +105,25 @@
     @assert a[3] == float32(5.0)
     @assert a[4] == float32(8.0)
 }
+
+@test "sort: Sort returns (value, error) like other packages"
+{
+    // Regression test: every function in the sort package used to be
+    // declared with only its primary return value, no error -- so a plain
+    // "v, err := sort.Sort(x)" could never compile, and any failure became
+    // an uncatchable-except-try/catch runtime error. All sort functions now
+    // return (value, error) per the runtime's standard convention.
+    a := []int{9, 3, 7, 1, 5}
+    v, err := sort.Sort(a)
+    @assert err == nil
+    @assert v[0] == 1
+    @assert v[4] == 9
+}
+
+@test "sort: Sort on an unsupported element type returns an error"
+{
+    // bool arrays are not one of sort's supported element kinds.
+    v, err := sort.Sort([]bool{true, false})
+    @assert err != nil
+    @assert v != nil   // in-place: the (unsorted) array is still returned
+}
