@@ -125,3 +125,15 @@
     // From packages/strings.ego:
     @assert strings.EqualFold("sillyStuff", "sillystuff") == true
 }
+
+@test "strings: EqualFold returns a real bool (BUG-79)"
+{
+    // Regression test: EqualFold's declared Returns was StringType even
+    // though Go's real strings.EqualFold (and the actual native passthrough
+    // result) is bool, so reflect.Type(strings.EqualFold) reported "...
+    // string" instead of "... bool". The runtime value itself was always a
+    // correct bool -- only the declaration/reflection metadata was wrong.
+    v := strings.EqualFold("Go", "go")
+    @assert reflect.Type(v) == bool
+    @assert string(reflect.Type(strings.EqualFold)) == "funcEqualFold(a string, b string) bool"
+}

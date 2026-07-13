@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **261 issues**:
-**220 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **264 issues**:
+**223 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -246,6 +246,9 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-76](#BUG-76) | BUG | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | BUG | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
 | [BUG-78](#BUG-78) | BUG | `profile.Set()` on an `ego.*` setting from Ego code leaks to the persisted profile file despite being documented as in-memory-only. | ✓ |
+| [BUG-79](#BUG-79) | BUG | Three `strings` package functions (`EqualFold`, `Ints`, `Substitution`) are declared with a return type that doesn't match their actual runtime behavior. | ✓ |
+| [BUG-80](#BUG-80) | BUG | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
+| [BUG-81](#BUG-81) | BUG | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -540,6 +543,9 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-76](#BUG-76) | LOW | A struct field named the same as an unrelated type declared elsewhere in the same compilation corrupts type registration ("Duplicate field name"). | ✓ |
 | [BUG-77](#BUG-77) | MEDIUM | A `type X ...` declaration inside any block (including a `@test { }` block) leaked into every later, unrelated block instead of being scoped to the block it was declared in. | ✓ |
 | [BUG-78](#BUG-78) | LOW | `profile.Set()` on an `ego.*` setting from Ego code leaks to the persisted profile file despite being documented as in-memory-only. | ✓ |
+| [BUG-79](#BUG-79) | LOW | Three `strings` package functions (`EqualFold`, `Ints`, `Substitution`) are declared with a return type that doesn't match their actual runtime behavior. | ✓ |
+| [BUG-80](#BUG-80) | LOW | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
+| [BUG-81](#BUG-81) | MEDIUM | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 
 ---
 
@@ -8192,6 +8198,136 @@ Non-`ego.*` keys are completely unaffected by this fix: `setKey` still calls `se
 Verified against `go build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under
 `--types dynamic`, `--types strict`, and `--types relaxed` (1383 `@test` blocks, up from 1381,
 with no regressions).
+
+---
+
+<a id="BUG-79"></a>
+
+### BUG-79 — Three `strings` functions declared with a return type that doesn't match their actual behavior
+
+**Severity:** LOW
+
+**Description:**  
+Found during a documentation review of the `strings` package. Three functions in
+`internal/runtime/strings/types.go` had a `Declaration.Returns` that did not match what the
+function actually returns at runtime:
+
+- `EqualFold` (a native passthrough to Go's `strings.EqualFold`, which returns `bool`) was
+  declared `Returns: []*data.Type{data.StringType}`.
+- `Ints` (`extractInts` in `conversion.go`, which always returns a `*data.Array` of `int`) was
+  declared `Returns: []*data.Type{data.IntType}` — a bare scalar, not an array.
+- `Substitution` (`substitution` in `substrings.go`, which always returns
+  `data.NewList(text, err)`) was declared `Returns: []*data.Type{data.StringType}` — a single
+  value, with no error.
+
+None of these caused an observably wrong *value* at a call site: native dispatch converts
+whatever the real Go function returned via reflection, independent of the declaration, and a
+`data.List` result is pushed however many items it actually contains, independent of the declared
+count. Both `v := strings.Ints("abc")` and `v, err := strings.Substitution(...)` already worked
+correctly before this fix. The bug was purely in the declared metadata: `reflect.Type()` on the
+function value reported the wrong signature (e.g. `funcEqualFold(a string, b string) string`
+instead of `... bool`), which would mislead any code or documentation relying on introspection.
+
+**Fix:**  
+Corrected the three declarations: `EqualFold` → `data.BoolType`; `Ints` → `data.ArrayType(data.IntType)`;
+`Substitution` → `[]*data.Type{data.StringType, data.ErrorType}`. Added regression tests asserting
+`string(reflect.Type(fn))` for each in `tests/strings/search.ego`, `tests/strings/split_join.ego`,
+and `tests/strings/format.ego`.
+
+---
+
+<a id="BUG-80"></a>
+
+### BUG-80 — `strings.Tokenize()` result array is doubly-wrapped (`[][]struct` instead of `[]struct`)
+
+**Severity:** LOW
+
+**Description:**  
+Found during the same documentation review. `tokenize()` (`internal/runtime/strings/parse.go`)
+built its result with:
+
+```go
+r := data.NewArray(data.ArrayType(data.StructType), len(items))
+```
+
+`data.ArrayType(data.StructType)` is itself "array of struct" (`[]struct`), so wrapping that again
+as the outer array's element type made `r`'s declared shape "array of array of struct"
+(`[][]struct`) even though each element actually stored was a single `*data.Struct`, matching the
+already-correctly-shaped `StringsTokenArrayType` used in the function's own `Declaration.Returns`.
+`reflect.Type(strings.Tokenize("..."))` reported `[][]struct` instead of `[]struct{kind string,
+spelling string}`. Individual elements were still usable as structs (`t[0].kind` etc. worked fine)
+since Ego arrays are loosely typed at the element level, so this was a declared-shape/reflection
+bug rather than a functional one.
+
+**Fix:**  
+Changed the array construction to `data.NewArray(StringsTokenArrayType, len(items))`, reusing the
+already-correct type instead of building a fresh, wrongly-shaped one. Added a regression test in
+`tests/packages/tokenizer.ego` asserting `string(reflect.Type(strings.Tokenize(...)))`.
+
+---
+
+<a id="BUG-81"></a>
+
+### BUG-81 — `NewStructFromMap`/`NewStructOfTypeFromMap` produce non-deterministic field order
+
+**Severity:** MEDIUM
+
+**Description:**  
+Reported as a flaky test: `ego test tests/packages/tokenizer.ego` randomly failed its BUG-80
+regression test (added moments earlier in the same session) on some invocations but not others,
+with no source change in between. The user correctly suspected non-deterministic map traversal.
+
+`data.NewStructFromMap` (`internal/language/data/structs.go`) built its type's field list with:
+
+```go
+for k, v := range m {
+    t.DefineField(k, TypeOf(v))
+}
+```
+
+`DefineField` appends to `t.fieldOrder` in call order (`t.fieldOrder = append(t.fieldOrder,
+name)`), and this loop's call order came directly from ranging over `m`. Go deliberately
+randomizes map iteration order on every single `range` statement execution — so `t.fieldOrder`
+(and, since `NewStructFromMap` copies `fieldOrder: t.fieldOrder` onto the returned `*Struct`, the
+struct's own field order too) ended up in a different, arbitrary order on every call. Anything
+that displays a struct/type by field order — `reflect.Type()`, the type's own `String()`
+(`structTypeString` in `types.go`) — showed a different field ordering depending on that call's
+random iteration outcome.
+
+This is more than a display quirk: `structTypeString`'s own fallback logic explicitly says "use
+`fieldOrder` if set, otherwise sort alphabetically for determinism" — but because `DefineField`
+unconditionally appends to `fieldOrder` on every call, `fieldOrder` was *never* actually empty for
+a struct built this way, so the alphabetical fallback path was dead code for every single caller
+of `NewStructFromMap`/`NewStructOfTypeFromMap` that didn't separately call `.SetFieldOrder()`
+afterward (many callers throughout the runtime packages do call `.SetFieldOrder()` explicitly on
+the resulting struct *value*, which masked the bug for those instances — but package-level `*Type`
+variables built once via `data.TypeOf(data.NewStructFromMap(...))`, like
+`strings.StringsTokenArrayType`, have no such per-call correction and kept whatever order was
+assigned at that one-time package initialization, which could differ between separate process
+launches).
+
+**Reproducer (before the fix):**
+
+```sh
+for i in $(seq 1 20); do ego test tests/packages/tokenizer.ego; done
+# Intermittently fails a `string(reflect.Type(...)) == "[]struct{kind string, spelling string}"`
+# assertion with fields in the opposite order, on some fraction of runs.
+```
+
+**Fix:**  
+Both `NewStructFromMap` and `NewStructOfTypeFromMap`'s `t == nil` path now collect the map's keys
+into a slice, sort it with `sort.Strings`, and call `DefineField` in that sorted order — so
+`fieldOrder` (and everything that displays by it) is always alphabetical and deterministic,
+regardless of Go's map iteration randomization, unless a caller explicitly overrides it afterward
+with `.SetFieldOrder()`.
+
+Regression tests `TestNewStructFromMap_FieldOrderIsAlphabetical` and
+`TestNewStructOfTypeFromMap_FieldOrderIsAlphabetical` (`internal/language/data/structs_test.go`)
+build a struct from a ten-key (and five-key) map across 20 iterations each, asserting the
+resulting `fieldOrder` is alphabetical every time — chosen to make a false pass by coincidental
+random ordering vanishingly unlikely. Confirmed the fix resolves the original flaky reproducer:
+20/20 clean `ego test tests/packages/tokenizer.ego` runs after the fix, versus 3/3 failures when
+temporarily reverted.
 
 ---
 

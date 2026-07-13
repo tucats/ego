@@ -111,8 +111,23 @@ func NewStructFromMap(m map[string]any) *Struct {
 	if value, ok := m[TypeMDKey]; ok {
 		t = TypeOf(value)
 	} else {
-		for k, v := range m {
-			t.DefineField(k, TypeOf(v))
+		// Define fields in sorted key order rather than ranging over m
+		// directly. Go randomizes map iteration order on every range
+		// statement, so without this, t.fieldOrder (built up by the
+		// DefineField calls below, and copied onto the returned Struct's
+		// own fieldOrder) would be a different, arbitrary order on every
+		// call -- affecting anything that displays or serializes the
+		// struct/type by field order, such as reflect.Type() or the
+		// type's own String() representation.
+		keys := make([]string, 0, len(m))
+		for k := range m {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			t.DefineField(k, TypeOf(m[k]))
 		}
 	}
 
@@ -169,8 +184,19 @@ func NewStructOfTypeFromMap(t *Type, m map[string]any) *Struct {
 		t = TypeOf(value)
 	} else if t == nil {
 		t = StructureType()
-		for k, v := range m {
-			t.DefineField(k, TypeOf(v))
+
+		// Define fields in sorted key order; see the identical comment in
+		// NewStructFromMap for why (Go's randomized map iteration order
+		// would otherwise make t.fieldOrder non-deterministic).
+		keys := make([]string, 0, len(m))
+		for k := range m {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			t.DefineField(k, TypeOf(m[k]))
 		}
 	}
 

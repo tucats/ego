@@ -38,7 +38,7 @@ func tokenize(s *symbols.SymbolTable, args data.List) (any, error) {
 		items = append(items, item)
 	}
 
-	r := data.NewArray(data.ArrayType(data.StructType), len(items))
+	r := data.NewArray(StringsTokenArrayType, len(items))
 
 	for i, item := range items {
 		if err := r.Set(i, item); err != nil {

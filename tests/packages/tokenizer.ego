@@ -34,6 +34,21 @@
 	@assert t[8].spelling == ")"
 }
 
+@test "packages: strings.Tokenizer result type is []struct, not [][]struct (BUG-80)"
+{
+    // Regression test: tokenize() built its result array with
+    // data.NewArray(data.ArrayType(data.StructType), ...) -- an extra,
+    // erroneous ArrayType wrapping meant the array's declared element type
+    // was "array of struct" instead of plain "struct", so
+    // reflect.Type(strings.Tokenize(...)) reported "[][]struct" instead of
+    // "[]struct{kind string, spelling string}". Individual elements were
+    // still usable as structs since Ego arrays are loosely typed, but the
+    // declared shape was wrong. Fixed by using the already-correctly-shaped
+    // StringsTokenArrayType directly.
+    toks := strings.Tokenize("x := 1")
+    @assert string(reflect.Type(toks)) == "[]struct{kind string, spelling string}"
+}
+
 @test "packages: strings.Tokenizer does not leak auto-inserted semicolons"
 {
 	// Merging compound tokens requires tokenizing in "code" mode, which also

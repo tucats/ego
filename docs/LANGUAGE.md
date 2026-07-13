@@ -6162,12 +6162,18 @@ The result is that `b` contains a string "usr/local/bin". This function is most
 commonly used to create lists (with a "," for separator) or path names (using a
 host-specific path separator like "/" or "\").
 
-#### strings.Format(v)
+#### strings.Format(format, args...)
 
-The `Format()` function returns a string that contains the formatted value of
-the variable passed in. This is the same formatting operation that is done by
-the `fmt.Println()` function, but the resulting string is returned as the
-function value instead of being printed to the console.
+The `Format()` function is equivalent to `fmt.Sprintf()`: the first argument
+is a format string using the standard `%d`/`%s`/`%f`/`%q`/etc. verbs, and the
+remaining arguments are substituted into it in order. The formatted result is
+returned as a string instead of being printed.
+
+```go
+fmt.Println(strings.Format("%s has %d items", "cart", 3))  // cart has 3 items
+fmt.Println(strings.Format("%05d", 42))                     // 00042
+fmt.Println(strings.Format("plain text"))                   // plain text
+```
 
 #### strings.Index(string, test)
 
@@ -6359,6 +6365,16 @@ part := strings.Substring(name, 5, 4)
 
 This would result in `part` containing the string "Linc", representing the
 starting with the fifth character, and being four characters long.
+
+Out-of-range arguments never produce an error; they return an empty string
+(or a truncated result) instead:
+
+```go
+fmt.Println(strings.Substring("Abe Lincoln", -1, 4))    // "" -- negative start
+fmt.Println(strings.Substring("Abe Lincoln", 5, -1))    // "" -- negative count
+fmt.Println(strings.Substring("Abe Lincoln", 100, 4))   // "" -- start beyond the string
+fmt.Println(strings.Substring("Abe Lincoln", 9, 10))    // "oln" -- count truncated to fit
+```
 
 #### strings.Template(name [, struct])
 

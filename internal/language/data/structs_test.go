@@ -225,3 +225,72 @@ func TestStructSet_NamedTypeStrictModeAllowsMatchingType(t *testing.T) {
 		t.Errorf("Age = %v, want 31", got)
 	}
 }
+
+// TestNewStructFromMap_FieldOrderIsAlphabetical is a regression test for a
+// flaky-test report: NewStructFromMap used to build its type's fieldOrder by
+// ranging directly over the input map to call DefineField. Go randomizes map
+// iteration order on every range statement, so fieldOrder (and therefore
+// anything that displays fields in that order, like reflect.Type() or the
+// type's own String()) was a different, arbitrary order on every call --
+// surfacing as a test that failed on some process runs and not others,
+// depending on that run's random iteration order. Fields are now defined in
+// sorted-key order, so fieldOrder is always alphabetical and deterministic.
+// Uses a map with enough keys that, before the fix, a run collecting them in
+// already-alphabetical order by chance would be very unlikely across many
+// repeated calls.
+func TestNewStructFromMap_FieldOrderIsAlphabetical(t *testing.T) {
+	m := map[string]any{
+		"zebra":  1,
+		"apple":  2,
+		"mango":  3,
+		"banana": 4,
+		"walnut": 5,
+		"cherry": 6,
+		"fig":    7,
+		"quince": 8,
+		"lime":   9,
+		"date":   10,
+	}
+	want := []string{"apple", "banana", "cherry", "date", "fig", "lime", "mango", "quince", "walnut", "zebra"}
+
+	for i := 0; i < 20; i++ {
+		s := NewStructFromMap(m)
+
+		if len(s.fieldOrder) != len(want) {
+			t.Fatalf("iteration %d: fieldOrder = %v, want %v", i, s.fieldOrder, want)
+		}
+
+		for j, name := range want {
+			if s.fieldOrder[j] != name {
+				t.Fatalf("iteration %d: fieldOrder = %v, want %v", i, s.fieldOrder, want)
+			}
+		}
+	}
+}
+
+// TestNewStructOfTypeFromMap_FieldOrderIsAlphabetical is the same regression
+// test for NewStructOfTypeFromMap's identical (t == nil) code path.
+func TestNewStructOfTypeFromMap_FieldOrderIsAlphabetical(t *testing.T) {
+	m := map[string]any{
+		"zebra":  1,
+		"apple":  2,
+		"mango":  3,
+		"banana": 4,
+		"walnut": 5,
+	}
+	want := []string{"apple", "banana", "mango", "walnut", "zebra"}
+
+	for i := 0; i < 20; i++ {
+		s := NewStructOfTypeFromMap(nil, m)
+
+		if len(s.fieldOrder) != len(want) {
+			t.Fatalf("iteration %d: fieldOrder = %v, want %v", i, s.fieldOrder, want)
+		}
+
+		for j, name := range want {
+			if s.fieldOrder[j] != name {
+				t.Fatalf("iteration %d: fieldOrder = %v, want %v", i, s.fieldOrder, want)
+			}
+		}
+	}
+}

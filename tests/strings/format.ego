@@ -59,3 +59,18 @@
     counter := {Count: 42}
     @assert strings.Substitution("Total: {{Count}}", counter) == "Total: 42"
 }
+
+@test "strings: Substitution returns (string, error) (BUG-79)"
+{
+    // Regression test: Substitution's declared Returns was a bare
+    // StringType even though the implementation always returns a
+    // data.List{string, error} pair, so "s, err := strings.Substitution(...)"
+    // worked by convention but reflect.Type() misreported the signature as
+    // taking no error. Declared Returns now matches the actual (string,
+    // error) behavior.
+    person := {First: "Tom"}
+    s, err := strings.Substitution("Hi {{First}}!", person)
+    @assert err == nil
+    @assert s == "Hi Tom!"
+    @assert string(reflect.Type(strings.Substitution)) == "funcSubstitution(text string, values interface{}) (string, error)"
+}
