@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -19,7 +19,7 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	)
 
 	// Check to see if we're even allowed to do this.
-	if !settings.GetBool(defs.ExecPermittedSetting) || !sandBoxedExec(s) {
+	if !settings.GetBool(defs.ExecPermittedSetting) || sandBoxedExec(s) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 

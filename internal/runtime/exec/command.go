@@ -4,11 +4,11 @@ import (
 	"os/exec"
 
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/util/fork"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/util/fork"
 )
 
 // newCommand implements exec.newCommand() which executes a command in a
@@ -16,7 +16,7 @@ import (
 // interrogate the success of the operation and view the results.
 func newCommand(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Check to see if we're even allowed to do this.
-	if !settings.GetBool(defs.ExecPermittedSetting) || !sandBoxedExec(s) {
+	if !settings.GetBool(defs.ExecPermittedSetting) || sandBoxedExec(s) {
 		return nil, errors.ErrNoPrivilegeForOperation.In("Run")
 	}
 
