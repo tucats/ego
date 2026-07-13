@@ -45,6 +45,15 @@ func callNative(c *Context, dp *data.Function, args []any) error {
 	// Call the native function and get the result. It's either a direct call if there
 	// is no receiver, else a receiver call.
 	if dp.Declaration.Type == nil {
+		// The compiler always emits SetThis for "X.Y(...)" call syntax -- it
+		// cannot know at compile time whether Y is a genuine receiver method
+		// or (as here) a plain package-scope function that merely needed X to
+		// resolve the Member lookup. Discard the resulting stale receiver-
+		// stack entry so it stays balanced; otherwise a receiver method call
+		// nested around this one (e.g. f.WriteString("x" + os.Hostname()))
+		// would wrongly pop this entry instead of its own receiver.
+		_, _ = c.popThis()
+
 		result, err = CallDirect(dp.Value, nativeArgs...)
 	} else {
 		// Get the receiver value

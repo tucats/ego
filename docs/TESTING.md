@@ -55,6 +55,28 @@ is scanned recursively, so you can use sub-folders to group tests. The scan is a
 in alphabetical order so you can use test names and/or subdirectory names to control the
 order of execution.
 
+There are a number of options to the `ego test` command that can be helpful in managing
+the test environment in which the code runs.
+
+| Option | Usage |
+| ------ | ----- |
+| `--count` | How many times to repeat the test suite (default is once) |
+| `--optimimize` | Determine if the optimizer is run over tests cases or not |
+| `--sandbox` | Determines if sandbox restrictions are in effect when running tests |
+| `--types` | Specify type rules (stirct, relaxed, or dynamic) during test runs |
+
+Additionally, a number  global Ego options placed on the command line after the
+word `ego` before any verb are useful for controlling execution of tests:
+
+| Option | Usage |
+| ------ | ----- |
+| `--maxcpus` | Specify maximum number of cpus to consume during use of go routines |
+| `--set` | Override one or more configuration settings for this execution only |
+| `--timeout` | Specify a duration used to abort a test that is in an endless loop or taking too long |
+
+See the `ego --help` command for more information on these options and the values they can accept
+that help influence how a test program is run.
+
 ## Directives
 
 Below is additional information about each of the individual test directives.

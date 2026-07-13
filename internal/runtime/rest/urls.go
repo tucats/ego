@@ -39,7 +39,9 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	url, err := url.Parse(urlString)
 	if err != nil {
-		return nil, errors.New(err).Context(urlString)
+		err = errors.New(err).Context(urlString)
+
+		return data.NewList(nil, err), err
 	}
 
 	hasSchema := strings.Contains(urlString, "://")
@@ -56,7 +58,9 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (any, error) {
 		// Scan the URL and the template, and build a map of the parts.
 		urlParts, valid = runtime_strings.ParseURLPattern(path, templateString)
 		if !valid {
-			return nil, errors.ErrInvalidURL.Context(path)
+			err := errors.ErrInvalidURL.Context(path)
+
+			return data.NewList(nil, err), err
 		}
 	}
 
@@ -110,7 +114,7 @@ func ParseURL(s *symbols.SymbolTable, args data.List) (any, error) {
 		urlParts[urlQueryElement] = data.NewMapFromMap(query)
 	}
 
-	return data.NewStructFromMap(urlParts), nil
+	return data.NewList(data.NewStructFromMap(urlParts), nil), nil
 }
 
 // setBase implements the setBase() rest function. This specifies a string that is used

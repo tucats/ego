@@ -5,8 +5,9 @@ const (
 	// Field names for runtime types.
 	baseURLFieldName   = "baseURL"
 	clientFieldName    = "client"
+	cookiesFieldName   = "Cookies"
 	headersFieldName   = "Headers"
-	mediaTypeFieldName = "Mediatype"
+	mediaTypeFieldName = "MediaType"
 	responseFieldName  = "Response"
 	statusFieldName    = "Status"
 	verifyFieldName    = "verify"

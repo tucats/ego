@@ -14,7 +14,29 @@ import (
 	"gopkg.in/resty.v1"
 )
 
+// isUserCodeRunning reports whether the interpreter is currently executing an
+// Ego program (via "ego run", a server-hosted service, or a spawned child
+// process) as opposed to one of the CLI's own native Go command
+// implementations (e.g. "ego logon") calling directly into the rest package's
+// internal Exchange()/newClient() helpers. See the security note on New()
+// below for why this distinction matters.
+func isUserCodeRunning() bool {
+	v, found := symbols.RootSymbolTable.Get(defs.UserCodeRunningVariable)
+
+	return found && data.BoolOrFalse(v)
+}
+
 // New implements the New() rest function.
+//
+// Security note: the server's own logon token is only ever attached
+// automatically when isUserCodeRunning() is false -- i.e. never, for a
+// client created by an Ego program. A rest.Client's Base() can point
+// anywhere, including a host the caller does not control, so auto-attaching
+// a valid bearer token here would let any Ego script -- trusted or
+// otherwise -- exfiltrate it to an arbitrary third party simply by creating
+// a client with no explicit credentials and pointing it elsewhere. A script
+// that genuinely needs to call back into its own Ego server using the
+// ambient identity must opt in explicitly with UseToken(true).
 func New(s *symbols.SymbolTable, args data.List) (any, error) {
 	client := resty.New()
 
@@ -30,18 +52,19 @@ func New(s *symbols.SymbolTable, args data.List) (any, error) {
 			client.SetBasicAuth(username, password)
 			client.SetDisableWarn(true)
 		}
-	} else {
+	} else if !isUserCodeRunning() {
 		token := settings.Get(defs.LogonTokenSetting)
 		if token != "" {
 			client.SetAuthToken(token)
 		}
 	}
 
-	if config, err := GetTLSConfiguration(); err != nil {
-		return nil, err
-	} else {
-		client.SetTLSClientConfig(config)
+	config, err := GetTLSConfiguration()
+	if err != nil {
+		return data.NewList(nil, err), err
 	}
+
+	client.SetTLSClientConfig(config)
 
 	r := data.NewStruct(RestClientType).FromBuiltinPackage()
 
@@ -51,13 +74,16 @@ func New(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	r.SetReadonly(true)
 
-	return r, nil
+	return data.NewList(r, nil), nil
 }
 
 func closeClient(s *symbols.SymbolTable, args data.List) (any, error) {
 	c, err := getClient(s)
 	if err != nil {
-		return nil, err
+		// Returned as the value (not the native error) so this is a normal
+		// catchable/assignable error, matching io.File.Close()'s convention
+		// for a single-ErrorType-return function.
+		return err, nil
 	}
 
 	c.GetClient().CloseIdleConnections()
@@ -67,7 +93,7 @@ func closeClient(s *symbols.SymbolTable, args data.List) (any, error) {
 	this.SetAlways(clientFieldName, nil)
 	this.SetAlways(statusFieldName, 0)
 
-	return true, nil
+	return nil, nil
 }
 
 // setDebug implements the setDebug() rest function. This specifies a boolean value that

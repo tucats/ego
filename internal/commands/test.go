@@ -168,6 +168,16 @@ func TestAction(c *cli.Context) error {
 
 				ctx.EnableConsoleOutput(false)
 
+				// --sandbox=true|false lets a test run be forced into (or out
+				// of) the same restricted sandbox mode a server-hosted
+				// dashboard "run" session executes untrusted code under (see
+				// bytecode.Context.Sandboxed), so tests can exercise
+				// sandboxed behavior without needing a running server.
+				// Without this flag, "ego test" is not sandboxed by default.
+				if c.WasFound("sandbox") {
+					ctx.Sandboxed(c.Boolean("sandbox"))
+				}
+
 				if c.Boolean("trace") {
 					ui.Active(ui.TraceLogger, true)
 				}

@@ -439,7 +439,19 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, wasComm
 
 	dumpSymbols := c.Boolean("symbols")
 
-	exitValue, err := runLoop(dumpSymbols, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt)
+	// --sandbox=true|false lets a caller (typically automated testing) force
+	// sandbox mode on or off for this run, the same restricted mode a
+	// server-hosted dashboard "run" session executes untrusted code under
+	// (see bytecode.Context.Sandboxed). Nil means the flag was not given, and
+	// a plain "ego run" is not sandboxed by default.
+	var sandbox *bool
+
+	if c.WasFound("sandbox") {
+		flag := c.Boolean("sandbox")
+		sandbox = &flag
+	}
+
+	exitValue, err := runLoop(dumpSymbols, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt, sandbox)
 	if err == nil {
 		_, err = comp.Close()
 	}
@@ -448,7 +460,7 @@ func runREPL(interactive bool, extensions bool, text string, debug bool, wasComm
 }
 
 // runLoop reads input text from the console or input source and repeatedly compiles and executes it, until the input source is exhausted, or an error occurs.
-func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string) (int, error) {
+func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string, sandbox *bool) (int, error) {
 	var (
 		b          *bytecode.ByteCode
 		err        error
@@ -532,7 +544,7 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 
 			// Let's run the code we've compiled. If nothing was compiled, no work to do.
 			if b != nil {
-				err = runCompiledCode(b, t, symbolTable, debug, fullScope)
+				err = runCompiledCode(b, t, symbolTable, debug, fullScope, sandbox)
 
 				exitValue, endRunLoop = getExitStatusFromError(err)
 				if endRunLoop {
@@ -625,7 +637,7 @@ func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text stri
 }
 
 // Run the compiled code from the most recent compilation in a new context, with debugging support as needed.
-func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *symbols.SymbolTable, debug bool, fullScope bool) error {
+func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *symbols.SymbolTable, debug bool, fullScope bool, sandbox *bool) error {
 	var err error
 
 	// Clean up the unused parts of the tokenizer resources.
@@ -647,6 +659,13 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 		SetDebug(debug).
 		SetTokenizer(t).
 		SetFullSymbolScope(fullScope)
+
+	// --sandbox=true|false (see runREPL) lets a caller force sandbox mode on
+	// or off for this run; nil (the flag was not given) leaves a plain
+	// "ego run" unsandboxed, as always.
+	if sandbox != nil {
+		ctx.Sandboxed(*sandbox)
+	}
 
 	// If we run under control of the debugger, use the debugger to run the program
 	// so it can handle breakpoints, stepping, etc. Otherwise, just run the program

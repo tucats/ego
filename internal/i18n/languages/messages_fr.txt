@@ -973,6 +973,7 @@ run.log=Diriger la sortie du journal vers ce fichier plutôt que vers stdout
 run.optimize=Activer l'optimiseur de bytecode
 run.profile=Activer le profilage du code source Ego
 run.project=La source est un répertoire plutôt qu'un fichier
+run.sandbox=Activer le mode sandbox (restreint fichiers, exécution et jetons)
 run.static=Spécifier le typage des valeurs pendant l'exécution du programme
 run.symbols=Afficher la table de symboles
 scope=Les blocs peuvent accéder à tout symbole dans la pile d'appels

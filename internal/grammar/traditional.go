@@ -1411,6 +1411,11 @@ var RunGrammar = []cli.Option{
 		Description: "run.entry.point",
 		OptionType:  cli.StringType,
 	},
+	{
+		LongName:    "sandbox",
+		Description: "run.sandbox",
+		OptionType:  cli.BooleanValueType,
+	},
 }
 
 // TestGrammar handles the command line options.
@@ -1447,5 +1452,10 @@ var TestGrammar = []cli.Option{
 		Description: "trace",
 		OptionType:  cli.BooleanType,
 		EnvVar:      defs.EgoTraceEnv,
+	},
+	{
+		LongName:    "sandbox",
+		Description: "run.sandbox",
+		OptionType:  cli.BooleanValueType,
 	},
 }

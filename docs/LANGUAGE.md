@@ -67,6 +67,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [`strings` package](#strings)
    1. [`sync` package](#sync)
    1. [`reflect` package](#reflect)
+   1. [`runtime` package](#runtime)
    1. [`tables` package](#tables)
    1. [`util` package](#util)
    1. [`uuid` package](#uuid)
@@ -5077,92 +5078,178 @@ you have unusually deep data structures.
 
 ### rest Package<a name="rest"></a>
 
-The `rest` package provides a generalized HTTP/HTTPS client that can be used to
-communicate with a server, authenticate to it (either using username/password or
-an authentication token), and perform GET, POST, and DELETE operations against
-URL endpoints.
+The `rest` package provides a generalized HTTP/HTTPS client for communicating with a
+server: authenticating with it (username/password, a bearer token, or the token from
+a prior `ego logon`), and performing GET, POST, and DELETE requests against URL
+endpoints. There is no equivalent package in Go's standard library -- this is an
+_Ego_-specific convenience wrapper  (like `reflect` and `profile`).
 
-The package supports sending and receiving arbitrary Ego data structures which
-are expressed as JSON data to the server, or sending and receiving text payloads.
+A JSON response body is automatically decoded into an Ego-native value (a map, array,
+or scalar, per `json.Unmarshal()`'s rules) when the client's media type is JSON (the
+default); otherwise the response body is returned as a plain string.
 
-If the server being communicated with is an _Ego_ server, then you can use the
-`ego logon` command to create a local token used to authenticate to the server.
-
-#### rest.ParseURL(path [, template])
-
-This parses a URL string, and returns a map containing each part of the string.
-If a template is provided, the path component is also re-parsed to create additional
-elements in the map for each part of the path. Path elements in the map that match
-the text of the template have a name of the path element and a value of true. If
-the template contains a pseudo-name, such as `{{name}}`in the template path,  that part of the
-path is assumed to be a named item, and an entry in the map is created with the
-given value (in this case, "name"). Other elements of the map that are provided
-by the parser include:
-
-&nbsp;
-
-| Field | Description |
-| :----------- | :------- |
-| urlScheme | the URL scheme, such as "http" or "https" |
-| urlHost | the URL host, such as "abc.com" |
-| urlPort | the URL port string, if it was given |
-| urlUsername | The username from the URL, if given |
-| urlPassword | The password from the URL, if given |
-| urlPath | The raw path string from the URL |
-| urlQuery | A `map[string][]string` for each query parameter specified |
-
-&nbsp;
-
-Note that if there are no query parameters, or if any other part of the URL is missing,
-then there is no map entry for the corresponding part. Also, username and passwords are
-generally not secure when used as part of a URL transmitted over a network.
-
-#### rest.New(<user, password>)
-
-This returns a rest connection handle (an opaque Go object represented by an Ego symbol
-value). If the optional username and password are specified, then the request will use
-Basic authentication with that username and password. Otherwise, if the logon-token
-preference item is available, it is used as a Bearer token string for authentication.
-
-The resulting item can be used to make calls using the connection just created. For
-example, if the value of `rest.New()` was stored in the variable `r`, the following
-functions would become available:
-
-&nbsp;
-
-| Function | Description |
-| :------- | :---------- |
-| r.Base(url) | Specify a "base URL" that is put in front of the url used in get() or post() |
-| r.Get(url) | GET from the named url. The body of the response (typically json or HTML) is returned as a string result value |
-| r.Post(url [, body]) | POST to the named url. If the second parameter is given, it is a value representing the body of the POST request |
-| r.Delete(url) | DELETE to the named URL |
-| r.Media("type") | Specify the media/content type of the exchange |
-| r.Verify(b) | Enable or disable TLS server certificate validation |
-| r.Auth(u,p) | Establish BasicAuth with the given username and password strings |
-| r.Token(t) | Establish Bearer token auth with the given token value |
-
-&nbsp;
-
-Additionally, the values `r.status`, `r.headers`, `r.cookies`, and `r.response` can be used
-to examine the HTTP status code of the last request, the headers returned, and the value of
-the response body of the last request. The response body may be a string (if the media type
-was not json) or an actual object if the media type was json.
-
-Here's a simple example:
+#### rest.New([username, password])
 
 ```go
-server := rest.New().Base("https://localhost")
+func rest.New(username ...string, password ...string) (rest.Client, error)
+```
 
-server.Get("/services/debug")
-    
-if server.Status == http.StatusOK {
-    // Response payload is JSON, so decode it into a struct.
-    // Note this example only supplies one parameter, which
-    // means the resulting struct is defined based on whatever
-    // is found in the JSON.
-    resp := json.Unmarshal(server.Response)
-    fmt.Println("Server session ID is ", resp.server.id)
+Creates a new `rest.Client`, along with an error (`nil` on success). If `username` or
+`password` is given, the client uses HTTP Basic authentication with those credentials.
+
+```go
+client, err := rest.New()
+if err != nil {
+    fmt.Println("could not create client:", err)
+    return
 }
+```
+
+**Security note on the ambient logon token:** 
+A `rest.Client`'s `Base()` can point to any server, including a host you
+don't control -- so to prevent a script (trusted or not) from accidentally or
+deliberately exfiltrating the user's login token to an arbitrary third party,
+`New()` called from within _any_ running Ego program **never** attaches the
+token automatically, regardless of arguments. A script that genuinely needs
+to call back into its own Ego server using the ambient identity must opt in
+explicitly with `UseToken(true)` (below).
+
+#### The `rest.Client` structure
+
+A `rest.Client` exposes these read-only fields, updated after each `Get()`/`Post()`/`Delete()`:
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `Status` | `int` | The HTTP status code of the most recent response (e.g. `200`, `404`). |
+| `Response` | `any` | The most recent response body -- a decoded Ego value for a JSON response, or a plain string otherwise. |
+| `Headers` | `map[string]string` | The most recent response's HTTP headers. |
+| `Cookies` | `[]any` | The most recent response's cookies, each as a `map[string]interface{}` with `name`, `value`, `domain`, `path`, and `expires` keys. |
+| `MediaType` | `string` | The media type currently in effect (set via `Media()`, defaults to `"application/json"`). |
+
+Its methods fall into two groups. The first group are fluent setters: each configures
+one aspect of the client and returns the client itself, so calls can be chained.
+
+| Method | Description |
+| :------- | :---------- |
+| `Base(url) rest.Client` | Sets a base URL prepended to the endpoint passed to `Get()`/`Post()`/`Delete()`. |
+| `Media(type) rest.Client` | Sets the media/content type for the exchange (e.g. `"application/json"`, `"text/plain"`). |
+| `Verify(flag) rest.Client` | Enables (`true`, the default) or disables (`false`) TLS server certificate validation -- turn this off only for testing against a self-signed certificate. |
+| `Auth(username, password) rest.Client` | Sets HTTP Basic authentication credentials. |
+| `Token(token) rest.Client` | Sets Bearer token authentication using the given token string, or the current `ego logon` token if `token` is omitted. |
+| `UseToken(flag) rest.Client` | See below. |
+
+`UseToken(flag)` is the explicit opt-in mentioned above: `UseToken(true)` attaches the
+current `ego logon` token as this client's bearer token.  `UseToken(false)` removes any
+bearer token currently set on the client. Both forms are refused outright (an error,
+not a value, is returned -- see below) when the current execution context is sandboxed
+(e.g. a server-hosted dashboard "run" session executing untrusted code): a restricted
+runtime has no legitimate need for the server's own token, whether by accident or on purpose.
+
+The second group performs the actual HTTP request and returns `(value, error)`, like
+every other fallible function in the runtime:
+
+| Method | Description |
+| :------- | :---------- |
+| `Get(endpoint) (any, error)` | Sends a GET request. |
+| `Post(endpoint [, body]) (any, error)` | Sends a POST request, with `body` (if given) as the request payload. |
+| `Delete(endpoint) (any, error)` | Sends a DELETE request. |
+| `Close() error` | Closes idle connections held by the client. |
+
+The returned `error` reflects a **transport-level** failure only -- the connection
+couldn't be made at all (host unreachable, DNS failure, TLS handshake failure, etc.).
+An HTTP-level error status (`404`, `500`, and so on) is not an error as far as these
+methods are concerned: the call still succeeds, decodes whatever body the server sent,
+and you check `client.Status` yourself to see whether the request was accepted:
+
+```go
+client, _ := rest.New()
+client.Base("https://example.com").Verify(false).Media("application/json")
+
+factors, err := client.Get("/services/factor/10")
+if err != nil {
+    // A transport-level failure -- could not reach the server at all.
+    fmt.Println("request failed:", err)
+    return
+}
+
+if client.Status != 200 {
+    fmt.Println("server returned status", client.Status, ":", client.Response)
+    return
+}
+
+fmt.Println(factors)   // [1, 2, 5, 10]
+```
+
+`Post()`/`Delete()` work the same way; `Post()`'s second argument is the request body
+(any Ego value -- it is marshaled to JSON automatically when the media type is JSON):
+
+```go
+result, err := client.Post("/services/factor/10", map[string]int{"note": 1})
+if err != nil {
+    fmt.Println("request failed:", err)
+    return
+}
+
+fmt.Println(client.Status, result)
+```
+
+#### rest.Status(code)
+
+```go
+func rest.Status(code int) string
+```
+
+Returns a short human-readable description of an HTTP status code (e.g. `200` ->
+`"OK"`, `404` -> `"Not found"`), falling back to `"HTTP status <code>"` for a code it
+doesn't recognize.
+
+```go
+fmt.Println(rest.Status(200))   // OK
+fmt.Println(rest.Status(404))   // Not found
+```
+
+#### rest.ParseURL(url [, template])
+
+```go
+func rest.ParseURL(url string, template ...string) (map[string]any, error)
+```
+
+Parses `url` into its component parts, returned as a map, along with an error (`nil`
+on success).
+
+| Key | Description |
+| :----------- | :------- |
+| `urlScheme` | The URL scheme, such as `"http"` or `"https"`. |
+| `urlHost` | The URL host, such as `"example.com"`. |
+| `urlPort` | The URL port, if one was given. |
+| `urlUsername` | The username from the URL, if given. |
+| `urlPassword` | The password from the URL, if given. |
+| `urlPath` | The raw path string from the URL. |
+| `urlQuery` | A `map[string][]string` of query parameter values, if any were given. |
+
+A part that wasn't present in `url` has no corresponding map entry at all (rather than
+an empty-string entry).
+
+```go
+parts, err := rest.ParseURL("https://user:pass@example.com:8080/api/v1/items?x=1")
+if err != nil {
+    fmt.Println("invalid URL:", err)
+    return
+}
+
+fmt.Println(parts.urlHost, parts.urlPort, parts.urlPath)   // example.com 8080 /api/v1/items
+```
+
+If `template` is given, `url`'s path is additionally matched against it: a literal
+segment in `template` that matches the corresponding segment of `url`'s path adds an
+entry to the map (name equal to the segment text, value `true`); a `{{name}}`
+placeholder segment instead captures whatever text appears in that position of `url`'s
+path, under the key `name`. This is convenient for pulling apart a REST endpoint path
+using the same `{{...}}` placeholder syntax the path was originally defined with:
+
+```go
+parts, err := rest.ParseURL("/services/factor/12", "/services/factor/{{n}}")
+fmt.Println(parts.n)   // 12
 ```
 
 ---

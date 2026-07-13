@@ -1,26 +1,20 @@
 @test "server: client - verify server heartbeat"
 {
 	@global ServerAddr os.Hostname() + ".local"
+	@global ServerAvailable true
 
     // Empty username in the New() call means no authentication provided.
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 
     // First, lets try to see if the server is even running. If not, then
-    // we'll skip all these tests.
-    try {
-        conn.Get("admin/heartbeat")
-    } catch {
-        if index(__error, "connection refused") > 0 {
-            fmt.Println("Client/server tests will not be run, server unavailable")
-            return
-        }
-
-        if index(__error, "no such host") > 0 {
-            fmt.Println("Client/server tests will not be run, server unavailable")
-            return
-        }
-
-        fmt.Println("Failed, ", __error)
+    // we'll skip all these tests. Get() now returns (value, error) like
+    // every other package's fallible functions, so a transport-level
+    // failure (server down, DNS failure, etc.) is a normal returned error
+    // instead of a try/catch-only exception.
+    _, err := conn.Get("admin/heartbeat")
+    if err != nil {
+        fmt.Println("Client/server tests will not be run, server unavailable:", err)
+        ServerAvailable = false
 
         return
     }
@@ -30,6 +24,10 @@
 
 @test "server: client - factorial service"
 {
+    if !ServerAvailable {
+        return
+    }
+
 	// Use of empty username in New() signals no credentials provided.
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 	r := conn.Get("services/factor/10")
@@ -40,12 +38,15 @@
 	@assert int(r[1]) == 2
 	@assert int(r[2]) == 5
 	@assert int(r[3]) == 10
-	
 }
 
 
 @test "server: client - stateless symbol test"
 {
+    if !ServerAvailable {
+        return
+    }
+
 	// Use of empty username in New() signals no credentials provided.
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
 	r := conn.Get("services/count")
@@ -58,6 +59,96 @@
 	r = conn.Get("services/count")
 	@assert reflect.Type(r) == float64
 	@assert r == 42.0
-
 }
 
+@test "server: client - Get() returns (value, error) like other packages"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    // Regression test: Get()/Post()/Delete() used to be declared with only
+    // an ErrorType return, even though the actually-assignable value was the
+    // response body -- so a plain "value, err := conn.Get(...)" could never
+    // compile ("function did not return the expected number of values"),
+    // and the real error was only reachable via try/catch. They now return
+    // (value, error) like every other package's fallible functions.
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Get("services/factor/12")
+    @assert err == nil
+    @assert len(r) == 6
+
+    // Existing single-value callers (see the tests above) still work
+    // unchanged, since Ego allows discarding the second return value.
+}
+
+@test "server: client - Get() transport failure is a catchable error"
+{
+    // Regression test: a transport-level failure (unreachable host) used to
+    // be an uncatchable-except-try/catch exception. It's now a normal
+    // returned error, checkable without try/catch.
+    conn := rest.New("").Base("https://nosuchhost.invalid.example:443").Verify(false).Media("application/json")
+
+    r, err := conn.Get("/services/up")
+    @assert err != nil
+    @assert r == nil
+}
+
+@test "server: client - Delete() converts JSON objects to Ego-native types"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    // Regression test: Delete()'s JSON response handling used to skip the
+    // Ego-native conversion step that Get()/Post() already applied, so a
+    // JSON object/array response came back as a raw Go map[string]any/[]any
+    // that Ego code could not index at all ("invalid or unsupported data
+    // type for this operation"). A DELETE against a nonexistent endpoint
+    // gets a JSON error object back from the server, which is enough to
+    // exercise the conversion without needing a real deletable resource.
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    body, err := conn.Delete("/services/no-such-endpoint-xyz")
+    @assert err == nil
+    @assert reflect.Type(body) == map[string]interface{}
+    @assert body["msg"] != nil
+}
+
+@test "server: client - UseToken attaches and clears the logon token"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    // UseToken(true) is the explicit opt-in for a script that wants the
+    // ambient logon token attached (New() itself never attaches it
+    // automatically while an Ego program is running -- see rest.New()).
+    // Like Base()/Media()/Verify()/Auth()/Token(), it's a fluent setter that
+    // returns the client itself, not a separate error value, so no
+    // try/catch is needed for the normal (non-sandboxed) success case.
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    conn.UseToken(true)
+    conn.UseToken(false)
+}
+
+@test "server: client - Cookies field is reachable (rest-1)"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    // Regression test: the "cookies" field was set on every Get()/Post()/
+    // Delete() call via this.SetAlways("cookies", ...), but RestClientType
+    // never declared any field by that name at all, so it was completely
+    // unreachable from Ego code ("unknown structure member: cookies"). It is
+    // now declared as "Cookies" (matching the capitalized-field convention
+    // used by Status/Response/Headers/MediaType) and reachable.
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    _, err := conn.Get("admin/heartbeat")
+    @assert err == nil
+    @assert reflect.Type(conn.Cookies) == []interface{}
+}

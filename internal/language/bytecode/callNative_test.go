@@ -1570,6 +1570,46 @@ func Test_callNative_ReceiverCall_NoReceiverInStack(t *testing.T) {
 	tc.assertError(err, errors.ErrNoFunctionReceiver)
 }
 
+// Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry is a
+// regression test for CALL-11 (docs/ISSUES.md): the compiler emits SetThis
+// for any "X.Y(...)" call syntax, including a no-receiver package function
+// like os.Hostname(), because it cannot tell at compile time whether Y is a
+// genuine receiver method. Before this fix, callNative's no-receiver branch
+// (Declaration.Type == nil) never popped that pushed entry, leaving it on
+// the receiver stack to be wrongly consumed by the next real receiver call
+// that ran popThis() -- typically an enclosing call, e.g.
+// f.WriteString("x" + os.Hostname()) would corrupt WriteString's receiver.
+// callNative must now discard the stale entry itself.
+func Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry(t *testing.T) {
+	tc := newTestContext(t)
+
+	// Simulate the compiler's SetThis for a nested no-receiver call, e.g.
+	// the "os" in "os.Hostname()" used inside an enclosing call's arguments.
+	tc.ctx.pushThis("staleReceiver", "should not leak")
+
+	dp := &data.Function{
+		IsNative: true,
+		Value:    strings.TrimSpace,
+		Declaration: &data.Declaration{
+			Name:       "TrimSpace",
+			Parameters: []data.Parameter{{Name: "s", Type: data.StringType}},
+			Returns:    []*data.Type{data.StringType},
+		},
+	}
+
+	err := callNative(tc.ctx, dp, []any{"  trim me  "})
+
+	tc.assertNoError(err)
+	tc.assertTopStack("trim me")
+
+	// The stale entry must have been discarded, not left behind for a
+	// subsequent popThis() (representing an enclosing receiver call) to
+	// wrongly consume.
+	if _, ok := tc.ctx.popThis(); ok {
+		t.Fatal("expected receiver stack to be empty after a no-receiver call, but found a leftover entry")
+	}
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 13: sandboxName — apply sandbox path prefix
 // ─────────────────────────────────────────────────────────────────────────────

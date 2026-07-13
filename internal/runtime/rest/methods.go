@@ -22,7 +22,7 @@ import (
 func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 	client, err := getClient(s)
 	if err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
@@ -55,12 +55,14 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.New(e2)
+		err = errors.New(e2)
+
+		return data.NewList(nil, err), err
 	}
 
 	logResponse(response)
 
-	this.SetAlways("cookies", fetchCookies(response))
+	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	status := response.StatusCode()
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
@@ -89,12 +91,12 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		this.SetAlways(responseFieldName, jsonResponse)
 
-		return jsonResponse, err
+		return data.NewList(jsonResponse, err), err
 	}
 
 	this.SetAlways(responseFieldName, rb)
 
-	return rb, nil
+	return data.NewList(rb, nil), nil
 }
 
 // doPost implements the doPost() rest function.
@@ -103,7 +105,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	client, err := getClient(s)
 	if err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
@@ -111,7 +113,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
 
 	if tlsConf, err := GetTLSConfiguration(); err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	} else {
 		client.SetTLSClientConfig(tlsConf)
 	}
@@ -161,13 +163,15 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.New(e2)
+		err = errors.New(e2)
+
+		return data.NewList(nil, err), err
 	}
 
 	logResponse(response)
 
 	status := response.StatusCode()
-	this.SetAlways("cookies", fetchCookies(response))
+	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
@@ -186,12 +190,12 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		this.SetAlways(responseFieldName, jsonResponse)
 
-		return jsonResponse, err
+		return data.NewList(jsonResponse, err), err
 	}
 
 	this.SetAlways(responseFieldName, rb)
 
-	return rb, nil
+	return data.NewList(rb, nil), nil
 }
 
 // doDelete implements the doDelete() rest function.
@@ -200,7 +204,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	client, err := getClient(s)
 	if err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
@@ -225,7 +229,9 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 		if strings.Contains(media, defs.JSONMediaType) {
 			b, err := json.Marshal(body)
 			if err != nil {
-				return nil, errors.New(err)
+				err = errors.New(err)
+
+				return data.NewList(nil, err), err
 			}
 
 			body = string(b)
@@ -250,13 +256,15 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		return nil, errors.New(e2)
+		err = errors.New(e2)
+
+		return data.NewList(nil, err), err
 	}
 
 	logResponse(response)
 
 	status := response.StatusCode()
-	this.SetAlways("cookies", fetchCookies(response))
+	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
 	rb := string(response.Body())
@@ -269,16 +277,23 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 			if err != nil {
 				err = errors.New(err)
 			}
+
+			// Convert well-known complex types (objects, arrays) to their
+			// Ego-native equivalents, matching doGet()/doPost() -- without
+			// this, a JSON object/array response was a raw Go
+			// map[string]any/[]any that Ego code could not index or
+			// otherwise use at all ("invalid or unsupported data type").
+			jsonResponse = makeEgoTypeFromBody(jsonResponse)
 		}
 
 		this.SetAlways(responseFieldName, jsonResponse)
 
-		return jsonResponse, err
+		return data.NewList(jsonResponse, err), err
 	}
 
 	this.SetAlways(responseFieldName, rb)
 
-	return rb, nil
+	return data.NewList(rb, nil), nil
 }
 
 func logRequest(r *resty.Request, method, url string) {

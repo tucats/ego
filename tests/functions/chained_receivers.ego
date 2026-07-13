@@ -5,7 +5,35 @@
     // calls below ( "New", "Media", and "Base" ) all use the 
     // "this" value passed from one to the next. 
     
+    // Regression test for a field-name casing bug: the internal field key
+    // used to be "Mediatype" while the declared struct field was "MediaType",
+    // so Media() silently wrote to a hidden shadow field and the real,
+    // documented "MediaType" field was never updated. Both now agree.
     url := "http://localhost:8080"
     r := rest.New().Base(url).Media("text")
-    @assert T.Equal(r.Mediatype, "text")
+    @assert T.Equal(r.MediaType, "text")
+}
+
+@test "functions: package function nested in a receiver call's arguments (CALL-11)"
+{
+    // Regression test for CALL-11 (docs/ISSUES.md): the compiler emits
+    // SetThis for any "X.Y(...)" call syntax, including a no-receiver
+    // package function like os.Hostname(), because it can't tell at
+    // compile time whether Y is a genuine receiver method. A no-receiver
+    // native/wrapper package function nested inside another call's
+    // arguments used to leave a stale entry on the receiver stack, which
+    // was then wrongly consumed by the enclosing receiver call --
+    // corrupting its receiver and failing with "no function receiver".
+    f, err := os.Create("call11-" + uuid.New().String() + ".txt")
+    @assert err == nil
+
+    // os.Hostname() (a native, no-receiver function) is nested directly in
+    // the argument expression of a receiver method call (f.WriteString).
+    n, err2 := f.WriteString("x" + os.Hostname())
+    @assert err2 == nil
+    @assert n > 1
+
+    name := f.Name()
+    @assert f.Close() == nil
+    @assert os.Remove(name) == nil
 }

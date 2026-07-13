@@ -990,6 +990,7 @@ run.log=Direct log output to this file instead of stdout
 run.optimize=Enable bytecode optimizer
 run.profile=Enable Ego source code profiling
 run.project=Source is a directory instead of a file
+run.sandbox=Enable sandbox mode (restricts file, exec, and token access) while running
 run.static=Specify value typing during program execution
 run.symbols=Display symbol table
 scope=Blocks can access any symbol in call stack

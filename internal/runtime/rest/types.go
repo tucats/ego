@@ -14,6 +14,7 @@ var RestClientType = data.TypeDefinition("Client",
 		DefineField("Status", data.IntType).
 		DefineField("verify", data.BoolType).
 		DefineField("Headers", data.MapType(data.StringType, data.StringType)).
+		DefineField("Cookies", data.ArrayType(data.InterfaceType)).
 		DefineFunctions(map[string]data.Function{
 			"Base": {
 				Declaration: &data.Declaration{
@@ -101,6 +102,20 @@ var RestClientType = data.TypeDefinition("Client",
 				},
 				Value: setVerify,
 			},
+
+			"UseToken": {
+				Declaration: &data.Declaration{
+					Name: "UseToken",
+					Parameters: []data.Parameter{
+						{
+							Name: "flag",
+							Type: data.BoolType,
+						},
+					},
+					Returns: []*data.Type{data.OwnType},
+				},
+				Value: setUseToken,
+			},
 		}).
 		DefineFunctions(map[string]data.Function{
 			"Close": {
@@ -125,6 +140,7 @@ var RestClientType = data.TypeDefinition("Client",
 						},
 					},
 					Returns: []*data.Type{
+						data.InterfaceType,
 						data.ErrorType,
 					},
 				},
@@ -146,6 +162,7 @@ var RestClientType = data.TypeDefinition("Client",
 						},
 					},
 					Returns: []*data.Type{
+						data.InterfaceType,
 						data.ErrorType,
 					},
 					ArgCount: data.Range{1, 2},
@@ -164,27 +181,11 @@ var RestClientType = data.TypeDefinition("Client",
 						},
 					},
 					Returns: []*data.Type{
+						data.InterfaceType,
 						data.ErrorType,
 					},
 				},
 				Value: doDelete,
-			},
-
-			"Status": {
-				Declaration: &data.Declaration{
-					Name: "Status",
-					Type: data.OwnType,
-					Parameters: []data.Parameter{
-						{
-							Name: "code",
-							Type: data.IntType,
-						},
-					},
-					Returns: []*data.Type{
-						data.StringType,
-					},
-				},
-				Value: Status,
 			},
 		}),
 ).SetPackage("rest").FixSelfReferences()
@@ -203,7 +204,7 @@ var RestPackage = data.NewPackageFromMap("rest", map[string]any{
 					Type: data.StringType,
 				},
 			},
-			Returns:  []*data.Type{data.PointerType(RestClientType)},
+			Returns:  []*data.Type{data.PointerType(RestClientType), data.ErrorType},
 			ArgCount: data.Range{0, 2},
 		},
 		Value: New,
@@ -235,7 +236,7 @@ var RestPackage = data.NewPackageFromMap("rest", map[string]any{
 				},
 			},
 			ArgCount: data.Range{1, 2},
-			Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType)},
+			Returns:  []*data.Type{data.MapType(data.StringType, data.InterfaceType), data.ErrorType},
 		},
 		Value: ParseURL,
 	},

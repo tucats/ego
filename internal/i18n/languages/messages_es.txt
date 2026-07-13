@@ -980,6 +980,7 @@ run.log=Enviar la salida del registro a este archivo en lugar de stdout
 run.optimize=Habilitar el optimizador de bytecode
 run.profile=Habilitar el análisis de rendimiento del código fuente Ego
 run.project=La fuente es un directorio en lugar de un archivo
+run.sandbox=Habilitar el modo sandbox (restringe el acceso a archivos, ejecución y tokens) durante la ejecución
 run.static=Especificar la tipificación de valores durante la ejecución del programa
 run.symbols=Mostrar la tabla de símbolos
 scope=Los bloques pueden acceder a cualquier símbolo en la pila de llamadas

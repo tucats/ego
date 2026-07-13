@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **259 issues**:
-**219 resolved** and **40 still open**. Open issues are
+Across all six areas, this document currently tracks **260 issues**:
+**219 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -263,6 +263,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUILTIN-TYPES-1](#BUILTIN-TYPES-1) | BUILTIN-TYPES | typeOf returned a bare string "<builtin>" for builtin functions instead of a *data.Type, breaking the uniform return contract. | ✓ |
 | [CALL-1](#CALL-1) | CALL | Argument count mismatch silently ignored for non-variadic functions with default ArgCount | ✓ |
 | [CALL-10](#CALL-10) | CALL | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
+| [CALL-11](#CALL-11) | CALL | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 | [CALL-2](#CALL-2) | CALL | First extra variadic argument bypasses strict type checking | ✓ |
 | [CALL-3](#CALL-3) | CALL | Nil pointer dereference in callRuntimeFunction when savedDefinition is nil and context is sandboxed | ✓ |
 | [CALL-4](#CALL-4) | CALL | `parentTable` nil guard is dead code for non-literal named functions | ✓ |
@@ -10752,6 +10753,7 @@ if address < 0 || address > c.bc.nextAddress {
 | [CALL-8](#CALL-8) | `makeNativeArrayArgument` missing `Int64Kind` and `Float32Kind` for `*data.Array` conversion | ✓ |
 | [CALL-9](#CALL-9) | `CallWithReceiver` panics when method name is not found on receiver | ✓ |
 | [CALL-10](#CALL-10) | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
+| [CALL-11](#CALL-11) | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 
 <a id="CALL-1"></a>
 
@@ -11317,6 +11319,118 @@ definition.MinArgCount = minCount
 `Test_synthesizeDefinition_Variadic_ZeroParams` now asserts
 `MinArgCount == 0` instead of `-1`, and a comment in the source explains
 why the clamp is needed.
+
+---
+
+<a id="CALL-11"></a>
+
+### CALL-11 — Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments
+
+**Affected functions:** `callNative` (fixed for native/wrapper functions), `callBytecodeFunction` (still open for Ego-source functions)  
+**Files:** `bytecode/callNative.go`, `bytecode/callBytecodeFunction.go`, `bytecode/call.go`, `compiler/expr_reference.go`  
+**Risk:** High when triggered — silently corrupts the receiver of an enclosing method call, producing a misleading "no function receiver" error (in principle it could instead dispatch to the wrong receiver's method rather than erroring, since it consumes whatever entry happens to be on top of the stack)  
+**Discovered by:** manual testing while writing `rest` package documentation examples (`conn.Base("https://" + os.Hostname() + ...)`)  
+**Status: PARTIALLY RESOLVED (native/wrapper functions fixed; Ego-source no-receiver functions still open)**
+
+#### CALL-11: Description
+
+The compiler emits a `SetThis` instruction for any `X.Y(...)` call syntax
+(`compileDotReference` in `compiler/expr_reference.go`), pushing an entry onto
+`Context.receiverStack`, regardless of whether `Y` turns out to be a genuine
+receiver method or a plain package-scope function — the compiler cannot tell
+the two apart at compile time.
+
+A genuine receiver method call consumes that entry via `popThis()`:
+
+- A native passthrough method with a declared receiver (`dp.Declaration.Type
+  != nil`) pops it in `callNative.go`.
+- A wrapper-style runtime function (`func(*symbols.SymbolTable, data.List)
+  (any, error)`) pops it unconditionally in `callRuntimeFunction.go:55`.
+- A user-defined Ego method (`func (r Receiver) Method()`) pops it via the
+  `GetThis` opcode compiled into the method's own prologue.
+
+Before this fix, a native passthrough function with **no** receiver
+(`dp.Declaration.Type == nil`, e.g. `os.Hostname`, `strconv.Itoa`) never
+called `popThis()` at all — `callNative.go` only popped in the receiver
+branch. The pushed entry was left on `receiverStack` and later wrongly
+consumed by the next genuine receiver call that ran `popThis()` — typically
+an *enclosing* call, since the natural way to trigger this is nesting the
+no-receiver call inside another call's own argument list:
+
+```go
+f, _ := os.Create("test.txt")
+f.WriteString("x" + os.Hostname())   // "no function receiver: WriteString"
+```
+
+Bytecode for the inner expression shows exactly where things go wrong:
+
+```text
+Load "f"
+SetThis                  <- pushes f's receiver entry (for WriteString)
+Member "WriteString"
+Push "x"
+Load "os"
+SetThis                  <- pushes a SECOND entry (for Hostname, which has no receiver)
+Member "Hostname"
+Call 0                   <- Hostname has no receiver; its entry is never popped (before the fix)
+Add
+Call 1                   <- WriteString pops "this" and wrongly gets os's leftover entry
+```
+
+**Fixed for native/wrapper functions:** `callNative.go`'s no-receiver branch
+now discards the stale entry with `_, _ = c.popThis()` before calling
+`CallDirect`, keeping the receiver stack balanced. This covers every
+`IsNative: true` function (e.g. `os.Hostname`, `strconv.Itoa`) and every
+`func(*symbols.SymbolTable, data.List) (any, error)` wrapper function (the
+latter already popped unconditionally in `callRuntimeFunction.go`, so it was
+never actually affected).
+
+**Still open:** a plain, no-receiver, Ego-*source*-defined function (e.g.
+anything in `lib/packages/*.ego`, such as `io.DirList`) reproduces the same
+bug when nested the same way:
+
+```go
+f, _ := os.Create("test.txt")
+f.WriteString("x" + io.DirList("/tmp"))   // "no function receiver: WriteString"
+```
+
+This dispatches through `callBytecodeFunction` (the `*ByteCode` case in
+`call.go`), not `callNative`. Unlike native functions, a `*ByteCode` value has
+no reliable "does this function have a receiver" signal available at the
+call-dispatch point: `Declaration().Type` (the field native functions set to
+`data.OwnType` for methods) is never populated for user-defined functions,
+receiver or not — the compiler tracks "has a receiver" only internally, at
+compile time, via `thisName.Spelling() != ""` in `compiler/function.go`, and
+uses that solely to decide whether to emit a `GetThis` opcode into the
+callee's own prologue. Nothing currently surfaces that fact to the
+caller-side dispatch code in `callBytecodeFunction`.
+
+#### CALL-11: Suggested fix
+
+Two narrowly-scoped options were considered and rejected:
+
+- Inspecting the callee's compiled instructions for a leading `GetThis` is
+  fragile (order-dependent on other prologue opcodes like
+  `PushScope`/`ArgCheck`).
+- Having `callBytecodeFunction` unconditionally pop `receiverStack`
+  (mirroring `callRuntimeFunction`) is unsafe on its own: a function *with* a
+  receiver would then be double-popped — once by `callBytecodeFunction`, once
+  by its own `GetThis` opcode — desyncing the stack for whatever comes after.
+
+A complete fix likely needs to unify the two consumption points for
+functions *with* a receiver: have `callBytecodeFunction` pop `receiverStack`
+unconditionally (like `callRuntimeFunction` already does) and store the
+value into the new scope's `defs.ThisVariable`, then change `GetThis`
+(`this.go:getThisByteCode`) to stop popping `receiverStack` itself and
+instead just read `defs.ThisVariable` (which `callBytecodeFunction` will
+already have set), applying the existing byValue-copy/pointer-boxing logic to
+that value. This consolidates all receiver-stack consumption into the two
+call-site dispatchers (`callNative`, `callBytecodeFunction`, both
+unconditional) and removes the callee-side pop entirely, eliminating the
+asymmetry that causes this bug family. This touches core call/receiver
+plumbing exercised by every method call in the language, so it needs its own
+dedicated regression pass across the full receiver/method/closure test suite
+before landing.
 
 ---
 
