@@ -23,6 +23,7 @@ import (
 
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
@@ -138,7 +139,7 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 // sprintList (fmt.Sprint, which returns it directly) so the two can never
 // drift out of sync with each other -- they differ only in what they do
 // with the finished string.
-func formatPrintArgs(s *symbols.SymbolTable, args data.List) string {
+func formatPrintArgs(s *symbols.SymbolTable, args data.List) (string, error) {
 	var b strings.Builder
 
 	elements := args.Elements()
@@ -153,10 +154,15 @@ func formatPrintArgs(s *symbols.SymbolTable, args data.List) string {
 			}
 		}
 
-		b.WriteString(formatUsingString(s, v))
+		text, err := formatUsingString(s, v)
+		if err != nil {
+			return "", err
+		}
+
+		b.WriteString(text)
 	}
 
-	return b.String()
+	return b.String(), nil
 }
 
 // printList implements fmt.Print() and is a wrapper around the native Go function.
@@ -167,7 +173,10 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 		e2     error
 	)
 
-	str := formatPrintArgs(s, args)
+	str, err := formatPrintArgs(s, args)
+	if err != nil {
+		return nil, err
+	}
 
 	if writer, found := s.Get(defs.StdoutWriterSymbol); found {
 		if writer, ok := writer.(io.Writer); ok {
@@ -197,7 +206,7 @@ func printList(s *symbols.SymbolTable, args data.List) (any, error) {
 // understands Ego's own runtime value shapes (including calling a value's
 // String() method, if it has one) directly.
 func sprintList(s *symbols.SymbolTable, args data.List) (any, error) {
-	return formatPrintArgs(s, args), nil
+	return formatPrintArgs(s, args)
 }
 
 // printLine implements fmt.Println() and is a wrapper around the native Go function.
@@ -208,17 +217,27 @@ func sprintList(s *symbols.SymbolTable, args data.List) (any, error) {
 // a simplification, so this loop intentionally does not use formatPrintArgs.
 func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
-		length int
-		e2     error
-		b      strings.Builder
+		length        int
+		e2            error
+		b             strings.Builder
+		lastWasString bool = true // Special case, assume we don't need leading space
 	)
 
-	for i, v := range args.Elements() {
-		if i > 0 {
+	for _, v := range args.Elements() {
+		// Go standard for this is you only add spaces if neither adjacent
+		// items was a string.
+		if _, ok := v.(string); !ok && !lastWasString {
 			b.WriteString(" ")
+		} else {
+			lastWasString = ok
 		}
 
-		b.WriteString(formatUsingString(s, v))
+		text, err := formatUsingString(s, v)
+		if err != nil {
+			return "", err
+		}
+
+		b.WriteString(text)
 	}
 
 	str := b.String()
@@ -241,7 +260,11 @@ func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 // formatUsingString will attempt to use the String() function of the
 // object type passed in, if it is a typed struct. Otherwise, it
 // just returns the Unquoted format value.
-func formatUsingString(s *symbols.SymbolTable, v any) string {
+//
+// The error comes if an error occurs locating and executing a String()
+// function for this object, including bytecode runtime errors if the
+// String() function is bytecode.
+func formatUsingString(s *symbols.SymbolTable, v any) (string, error) {
 	var typeDef *data.Type
 
 	switch m := v.(type) {
@@ -260,12 +283,35 @@ func formatUsingString(s *symbols.SymbolTable, v any) string {
 
 				if si, err := fmt(local, data.NewList()); err == nil {
 					if str, ok := si.(string); ok {
-						return str
+						return str, nil
+					} else {
+						return "", errors.ErrInvalidReturnValue.Context(typeDef.Name() + ".String()")
 					}
+				}
+			}
+
+			// Might also be bytecode String function.
+			if fmt, ok := f.(data.Function); ok { // Create a symbol table to use for the slice comparator callback function.
+				if fn, ok := fmt.Value.(*bytecode.ByteCode); ok {
+					stringSymbols := symbols.NewChildSymbolTable(fmt.Declaration.Name, s)
+					ctx := bytecode.NewContext(stringSymbols, fn)
+					// Set up a call to the String function with our data item
+					// There are no arguments to a String function.
+					stringSymbols.SetAlways(defs.ArgumentListVariable,
+						data.NewArrayFromInterfaces(data.InterfaceType))
+					// But there is a "this" variable.
+					ctx.PushThis(typeDef.Name(), v)
+					// Run the String function. If it fails, return error as the string
+					// @TODO fix this with proper return next.
+					if err := ctx.Run(); err != nil {
+						return "", err
+					}
+
+					return data.String(ctx.Result()), nil
 				}
 			}
 		}
 	}
 
-	return data.FormatUnquoted(v)
+	return data.FormatUnquoted(v), nil
 }

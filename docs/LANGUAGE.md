@@ -3435,9 +3435,9 @@ want directly in a string argument, as in the first example above).
 #### fmt.Println()
 
 The `Println` function prints one or more items using the default format for their
-data type to the standard out, with a single space placed between **every** pair of
-items, regardless of their type (unlike `Print`, above). The output is followed by a
-newline character. There are no formatting operations available.
+data type to the standard out. The output is followed by a newline character. It
+follows the same spacing rules as `fmt.Print()`. There are no formatting operations
+available.
 
 ```go
 answer := 42

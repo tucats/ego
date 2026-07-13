@@ -55,8 +55,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -110,7 +110,7 @@ func Test_callBytecodeFunction_StoresArgsInSymbolTable(t *testing.T) {
 		got, err := arr.Get(i)
 		if err != nil {
 			t.Errorf("arr.Get(%d) error: %v", i, err)
-			
+
 			continue
 		}
 
@@ -434,7 +434,7 @@ func Test_callBytecodeFunction_PackageMethod_UsesCallFramePush(t *testing.T) {
 	tc := newTestContext(t)
 
 	pkg := data.NewPackage("math", "math")
-	tc.ctx.pushThis("math", pkg)
+	tc.ctx.PushThis("math", pkg)
 
 	fn := &ByteCode{name: "Sin", literal: false}
 
@@ -487,7 +487,7 @@ func Test_getPackageSymbols_PackageReceiver_ReturnsSymbolTable(t *testing.T) {
 	tc := newTestContext(t)
 
 	pkg := data.NewPackage("math", "math")
-	tc.ctx.pushThis("math", pkg)
+	tc.ctx.PushThis("math", pkg)
 
 	result := tc.ctx.getPackageSymbols()
 
@@ -508,7 +508,7 @@ func Test_getPackageSymbols_PackageReceiver_ReturnsSymbolTable(t *testing.T) {
 func Test_getPackageSymbols_NonPackageReceiver(t *testing.T) {
 	tc := newTestContext(t)
 
-	tc.ctx.pushThis("notAPackage", data.NewStructFromMap(map[string]any{"x": 1}))
+	tc.ctx.PushThis("notAPackage", data.NewStructFromMap(map[string]any{"x": 1}))
 
 	result := tc.ctx.getPackageSymbols()
 
@@ -533,7 +533,7 @@ func Test_callBytecodeFunction_PackageMethod_CanAccessGlobalPackages(t *testing.
 	tc.ctx.symbols.Root().SetAlways("math", mathPkg)
 
 	// Push the same package as the receiver (simulating `math.Factor(n)`)
-	tc.ctx.pushThis("math", mathPkg)
+	tc.ctx.PushThis("math", mathPkg)
 
 	fn := &ByteCode{name: "Factor", literal: false}
 

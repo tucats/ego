@@ -1585,7 +1585,7 @@ func Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry(t *testi
 
 	// Simulate the compiler's SetThis for a nested no-receiver call, e.g.
 	// the "os" in "os.Hostname()" used inside an enclosing call's arguments.
-	tc.ctx.pushThis("staleReceiver", "should not leak")
+	tc.ctx.PushThis("staleReceiver", "should not leak")
 
 	dp := &data.Function{
 		IsNative: true,

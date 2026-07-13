@@ -209,7 +209,7 @@ func Test_formatPrintArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := formatPrintArgs(s, tt.args)
+			got, _ := formatPrintArgs(s, tt.args)
 			if got != tt.want {
 				t.Errorf("formatPrintArgs() = %q, want %q", got, tt.want)
 			}

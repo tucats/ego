@@ -36,7 +36,7 @@ func Test_getThisByteCode_PointerReceiverExplicitPointer(t *testing.T) {
 	ptr := &boxed
 
 	tc := newTestContext(t)
-	tc.ctx.pushThis("b", ptr)
+	tc.ctx.PushThis("b", ptr)
 
 	err := getThisByteCode(tc.ctx, []any{"b", false})
 
@@ -67,7 +67,7 @@ func Test_getThisByteCode_PointerReceiverAutoAddress(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.pushThis("b", s) // no *any wrapper - the auto-address case
+	tc.ctx.PushThis("b", s) // no *any wrapper - the auto-address case
 
 	err := getThisByteCode(tc.ctx, []any{"b", false})
 
@@ -92,11 +92,11 @@ func Test_getThisByteCode_ValueReceiverExplicitPointer(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	var boxed any = s
-	
+
 	ptr := &boxed
 
 	tc := newTestContext(t)
-	tc.ctx.pushThis("c", ptr)
+	tc.ctx.PushThis("c", ptr)
 
 	err := getThisByteCode(tc.ctx, []any{"c", true})
 
@@ -122,7 +122,7 @@ func Test_getThisByteCode_ValueReceiverAutoAddress(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.pushThis("c", s)
+	tc.ctx.PushThis("c", s)
 
 	err := getThisByteCode(tc.ctx, []any{"c", true})
 
@@ -147,7 +147,7 @@ func Test_getThisByteCode_PlainNameOperand(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.pushThis("b", s)
+	tc.ctx.PushThis("b", s)
 
 	err := getThisByteCode(tc.ctx, "b")
 

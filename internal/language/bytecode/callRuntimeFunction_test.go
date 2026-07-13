@@ -45,9 +45,9 @@ import (
 	"testing"
 
 	"github.com/tucats/ego/internal/builtins"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -59,7 +59,6 @@ import (
 func runtimeFnReturning42(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(42, nil), nil
 }
-
 
 // runtimeFnEchoFirstArg returns its first argument as the sole result item.
 // Tests use this to confirm that arguments are correctly forwarded into the
@@ -360,7 +359,7 @@ func Test_callRuntimeFunction_ReceiverInjectedIntoFunctionScope(t *testing.T) {
 	tc := newTestContext(t)
 
 	// Push a receiver value so popThis() finds it.
-	tc.ctx.pushThis("receiver", "my-receiver-value")
+	tc.ctx.PushThis("receiver", "my-receiver-value")
 
 	err := callRuntimeFunction(tc.ctx, runtimeFnThatInspectsThis, nil, false, []any{})
 
@@ -480,7 +479,7 @@ func Test_callRuntimeFunction_SandboxedFunctionBlocked(t *testing.T) {
 	tc.ctx.sandboxedIO.Store(true)
 
 	saved := &data.Function{
-		Sandboxed: true,
+		Sandboxed:   true,
 		Declaration: &data.Declaration{Name: "blockedFn"},
 	}
 
@@ -496,7 +495,7 @@ func Test_callRuntimeFunction_SandboxedContextNonSandboxedFunction(t *testing.T)
 	tc.ctx.sandboxedIO.Store(true)
 
 	saved := &data.Function{
-		Sandboxed: false, // this function is permitted in sandbox
+		Sandboxed:   false, // this function is permitted in sandbox
 		Declaration: &data.Declaration{Name: "allowedFn"},
 	}
 

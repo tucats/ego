@@ -53,8 +53,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -161,9 +161,9 @@ func Test_deferStartByteCode_NonEmptyReceiverStack_SetsSizeToLength(t *testing.T
 	tc := newTestContext(t)
 
 	// Simulate three receivers already on the stack.
-	tc.ctx.pushThis("r0", "value0")
-	tc.ctx.pushThis("r1", "value1")
-	tc.ctx.pushThis("r2", "value2")
+	tc.ctx.PushThis("r0", "value0")
+	tc.ctx.PushThis("r1", "value1")
+	tc.ctx.PushThis("r2", "value2")
 
 	err := deferStartByteCode(tc.ctx, false)
 

@@ -91,14 +91,14 @@
     @assert printed == "Count:5"
 }
 
-@test "io: Println still always inserts a space, unaffected by the Print fix"
+@test "io: Println also follows spacing rules"
 {
     // Println's own rule -- always space, regardless of type -- is
     // unrelated to the Print/Sprint fix above and must not have changed.
     @capture printed := {
         fmt.Println("hello", "world")
     }
-    @assert printed == "hello world\n"
+    @assert printed == "helloworld\n"
 
     @capture printed2 := {
         fmt.Println(1, 2)

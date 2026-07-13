@@ -2,8 +2,8 @@ package bytecode
 
 import (
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // setThisByteCode implements the SetThis opcode. Given a named value,
@@ -28,7 +28,7 @@ func setThisByteCode(c *Context, i any) error {
 	}
 
 	if v, ok := c.get(name); ok {
-		c.pushThis(name, v)
+		c.PushThis(name, v)
 	}
 
 	return nil
@@ -64,7 +64,7 @@ func loadThisByteCode(c *Context, i any) error {
 	c.setAlways(name, this)
 
 	if v, ok := c.get(name); ok {
-		c.pushThis(name, v)
+		c.PushThis(name, v)
 	}
 
 	return nil
@@ -160,8 +160,11 @@ func getThisByteCode(c *Context, i any) error {
 	return nil
 }
 
-// pushThis adds a receiver value to the "this" stack.
-func (c *Context) pushThis(name string, v any) {
+// PushThis adds a receiver value to the "this" stack. This has
+// been made an exported function because it's used when the
+// formatter needs to call a String() function on a receiver
+// (and possibly other cases).
+func (c *Context) PushThis(name string, v any) {
 	if c.receiverStack == nil {
 		c.receiverStack = []this{}
 	}
