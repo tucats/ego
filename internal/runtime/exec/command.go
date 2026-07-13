@@ -51,10 +51,10 @@ func newCommand(s *symbols.SymbolTable, args data.List) (any, error) {
 func lookPath(s *symbols.SymbolTable, args data.List) (any, error) {
 	path, err := exec.LookPath(data.String(args.Get(0)))
 	if err != nil {
-		return "", errors.New(err).In("LookPath")
+		return data.NewList(path, errors.New(err).In("LookPath")), nil
 	}
 
-	return path, nil
+	return data.NewList(path, nil), nil
 }
 
 // getThis returns a map for the "this" object in the current

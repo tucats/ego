@@ -3200,24 +3200,70 @@ fmt.Println(e.Error())  // "at readFile(line 42), not found"
 
 The `exec` package is a subset of the Go package that supports executing a command as
 a subprocess of the current Ego program. This package allows the caller to create a
-new `exec.Cmd` object, and then use that object to optionally set arguments and
-stdin values for the command, execute the command, and then access the stdout values.
+new `exec.Cmd` object, and then use that object to optionally set arguments, an
+environment, a working directory, and stdin values for the command, execute the
+command, and then access the stdout (and, for `Output()`, stderr) values.
 
-The `exec.Cmd`  structure includes a field `Env` which is a string array for environment
-variables which must all be strings of the form "name=value", and these are set in
-the context of the process to be run. Additionally, the field `Stdin` is an optional
-string array -- if present, the string array is converted to a byte stream and becomes
-the stdin contents for the command to be executed.
+Subprocess execution is a privileged operation. It is gated by the
+`ego.runtime.exec` configuration setting (default `true`), and is unconditionally
+disabled for sandboxed contexts (for example, code run through the server's admin
+"run" dashboard endpoint on behalf of a non-admin user), regardless of that
+setting. If execution is not permitted, every function and method in this package
+returns the error `no privilege for operation`.
 
-When the command completes, if it completed without error, the `Stdout` field of the
-command structure contains a string array which has the output of the command.
+#### The `Cmd` structure
 
-For example,
+`exec.Command()` (below) returns a `Cmd` object with these fields:
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `Path` | `string` | Full resolved path of the command to run. Set automatically by `Command()`; can be overwritten before calling `Run()`/`Output()` to force a specific executable. |
+| `Dir` | `string` | Working directory for the subprocess. If empty (the default), the subprocess inherits the current process's working directory. |
+| `Args` | `[]string` | Command-line arguments, including the command name itself as `Args[0]` (matching Go's `os/exec.Cmd.Args` convention). Populated by `Command()`; can be modified before running. |
+| `Env` | `[]string` | Environment variables for the subprocess, each formatted as `"name=value"`. If left empty, the subprocess does not inherit any variables from the Ego process's environment -- set this explicitly (typically alongside values read via `os.Getenv()` or `os.Environ()`) if the subprocess needs access to the caller's environment. |
+| `Stdin` | `[]string` | Optional. If set before running, each element is joined with a newline and fed to the subprocess as its standard input. |
+| `Stdout` | `[]string` | Populated after `Run()` or `Output()` completes: one element per line of the subprocess's standard output. |
+| `Stderr` | `[]string` | Populated after `Output()` completes (empty on success): one element per line of the subprocess's standard error. **Not** populated by `Run()` -- see below. |
+
+#### exec.Command()
+
+```go
+func exec.Command(commandText string, argument ...string) exec.Cmd
+```
+
+The `Command()` function creates a new `Cmd` object and returns it to the caller.
+The first parameter is the name of the command to execute; it is resolved using the
+same search rules as `exec.LookPath()` (below). Any additional string arguments are
+passed to the program as its command-line arguments.
+
+```go
+c := exec.Command("ls", "-l", "/tmp")
+```
+
+This creates (but does not yet run) a command that will invoke `ls -l /tmp`. Note
+that these are Unix-style commands; you would use Windows-style commands on a
+Windows-based deployment of _Ego_.
+
+#### Cmd.Run()
+
+```go
+func (c exec.Cmd) Run() error
+```
+
+Runs the command represented by `c`. The subprocess's standard input is taken from
+`c.Stdin` if set; on completion, `c.Stdout` is set to the lines of standard output
+produced by the command. **`Run()` discards the subprocess's standard error entirely**
+-- it is not captured, not stored in `c.Stderr`, and not passed through to the Ego
+program's own console. Use `Output()` instead if you need to inspect error output.
 
 ```go
 func main() {
     c := exec.Command("ls", "-l")
-    c.Run()
+
+    if err := c.Run(); err != nil {
+        fmt.Println("command failed:", err)
+        return
+    }
 
     for _, line := range c.Stdout {
         fmt.Println(line)
@@ -3225,23 +3271,100 @@ func main() {
 }
 ```
 
-This program creates an `exec.Cmd` object that invokes the "ls" command as its
-operation, with the argument "-l". Note that these are Unix-style commands; you
-would use Windows-style commands on a Windows-based deployment of _Ego_. The
-program runs the command, and then prints out the lines of output stored in the
-`Stdout` field of the command structure.
+**Important:** `Run()` is declared with a single `error` return value, not the usual
+`(value, error)` pair. Because of this, a failure is only observable inside a
+`try`/`catch` block -- assigning the result to a plain variable (`err := c.Run()`)
+does *not* let you inspect the error afterwards with an `if err != nil` check; an
+uncaught failure instead aborts the program immediately, the same as any other
+uncaught runtime error. Always wrap `Run()` in `try`/`catch` if the command might fail
+and you want to keep running:
 
-#### exec.Command()
+```go
+c := exec.Command("false")
 
-The `Command()` function creates a new `Cmd` object and returns it to the caller.
-The call can include parameters, which are the name of the command to execute
-followed by any optional argument strings that are passed to the program to be run.
+try {
+    _ = c.Run()
+    fmt.Println("command succeeded")
+} catch(e) {
+    fmt.Println("command failed:", e)
+}
+```
 
-The resulting structure supports the `Run()` method. After an `exec.Cmd` object
-is initialized, it can be run using its `Run()` method. This method returns an
-error if the command does not complete successfully. If it does
-complete successfully, the `Stdout` array can be consulted to collect any output
-from the command as strings.
+Also note that `Stdout` is a raw split of the captured output on newline boundaries,
+so a trailing newline in the command's output produces a trailing empty string
+element -- unlike `Output()`, which trims it (see below).
+
+#### Cmd.Output()
+
+```go
+func (c exec.Cmd) Output() ([]string, error)
+```
+
+Runs the command represented by `c` and returns its standard output as a string
+array, along with an error. Unlike `Run()`, this method returns the conventional
+`(value, error)` pair, so the error can be checked normally without `try`/`catch`:
+
+```go
+c := exec.Command("git", "rev-parse", "HEAD")
+
+out, err := c.Output()
+if err != nil {
+    fmt.Println("git failed:", err)
+    return
+}
+
+fmt.Println("HEAD is at", out[0])
+```
+
+`Output()` also captures standard error separately (something `Run()` does not do),
+storing it as a string array in `c.Stderr`. On success, `c.Stderr` is set to an
+empty array. On failure, the returned string array and `c.Stdout` reflect whatever
+standard output the command produced before it failed (which may be empty), and
+`c.Stderr` holds the lines of error output. This matches the _behavior_ of Go's own
+`os/exec.Cmd.Output()`, which likewise returns partial stdout alongside the error --
+though Go exposes the captured stderr text via the `Stderr` field of the returned
+`*exec.ExitError` rather than a field on `Cmd` itself:
+
+```go
+c := exec.Command("sh", "-c", "echo partial output; echo failure detail 1>&2; exit 1")
+
+out, err := c.Output()
+if err != nil {
+    fmt.Println("error:", err)          // "error: exit status 1"
+    fmt.Println("stdout:", out)          // ["partial output"]
+    fmt.Println("stderr:", c.Stderr)     // ["failure detail"]
+}
+```
+
+A trailing newline in either stream does not produce a trailing empty string
+element -- `Output()` trims one trailing blank line from both `Stdout` and `Stderr`,
+unlike `Run()`.
+
+#### exec.LookPath()
+
+```go
+func exec.LookPath(file string) (string, error)
+```
+
+Searches the directories named by the `PATH` environment variable for an executable
+named `file`, and returns its resolved path. If `file` contains a slash, it is used
+directly (after verifying it is executable) rather than searched for. If no
+executable is found, the second return value is a non-nil error and the first
+return value is an empty string.
+
+```go
+path, err := exec.LookPath("git")
+if err != nil {
+    fmt.Println("git is not installed:", err)
+} else {
+    fmt.Println("found git at", path)
+}
+```
+
+`exec.Command()` internally performs the equivalent of a `LookPath()` call to
+resolve `Path` from the command name passed to it, so most programs do not need to
+call `LookPath()` directly unless they want to test for a command's existence
+before attempting to run it.
 
 &nbsp;
 &nbsp;

@@ -400,7 +400,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 	contextPointer.SetByteCode(b)
 
 	// Initialize the default sandbox settings based on the global process state.
-	ctx.sandboxedExec.Store(settings.GetBool(defs.ExecPermittedSetting))
+	ctx.sandboxedExec.Store(!settings.GetBool(defs.ExecPermittedSetting))
 	ctx.sandboxedIO.Store("" != settings.Get(defs.SandboxPathSetting))
 
 	s.SetAlways(defs.SandboxedExecSymbolName, ctx.sandboxedExec.Load())

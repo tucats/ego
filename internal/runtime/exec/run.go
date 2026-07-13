@@ -40,7 +40,7 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 		cmd.Path = s
 	}
 
-	if str, ok := cmdStruct.Get("dir"); ok {
+	if str, ok := cmdStruct.Get("Dir"); ok {
 		s := data.String(str)
 		cmd.Dir = s
 	}

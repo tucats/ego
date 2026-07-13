@@ -11,6 +11,7 @@ var ExecCmdType = data.TypeDefinition("Cmd", data.StructureType().
 	DefineField("Args", data.ArrayType(data.StringType)).
 	DefineField("Env", data.ArrayType(data.StringType)).
 	DefineField("Stdout", data.ArrayType(data.StringType)).
+	DefineField("Stderr", data.ArrayType(data.StringType)).
 	DefineField("Stdin", data.ArrayType(data.StringType)).
 	DefineFunctions(map[string]data.Function{
 		"Output": {

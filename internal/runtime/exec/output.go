@@ -37,7 +37,7 @@ func output(s *symbols.SymbolTable, args data.List) (any, error) {
 		cmd.Path = s
 	}
 
-	if str, ok := cmdStruct.Get("dir"); ok {
+	if str, ok := cmdStruct.Get("Dir"); ok {
 		s := data.String(str)
 		cmd.Dir = s
 	}
@@ -87,17 +87,24 @@ func output(s *symbols.SymbolTable, args data.List) (any, error) {
 	cmd.Stderr = &stdErr
 
 	if e := cmd.Run(); e != nil {
-		// Convert the text to an Ego string array. If there is a trailing
-		// blank line in the output, remove it
-		text := stdErr.String()
-
-		textArray := strings.Split(text, "\n")
-		if len(textArray) > 0 && textArray[len(textArray)-1] == "" {
-			textArray = textArray[:len(textArray)-1]
+		// Convert the captured stderr text to an Ego string array and store
+		// it in the Stderr field, regardless of success or failure.
+		stdErrArray := strings.Split(stdErr.String(), "\n")
+		if len(stdErrArray) > 0 && stdErrArray[len(stdErrArray)-1] == "" {
+			stdErrArray = stdErrArray[:len(stdErrArray)-1]
 		}
 
-		result := data.NewArrayFromStrings(textArray...)
-		_ = cmdStruct.Set("Stderr", result)
+		_ = cmdStruct.Set("Stderr", data.NewArrayFromStrings(stdErrArray...))
+
+		// As with Go's exec.Cmd.Output(), return whatever stdout was
+		// collected before the command failed, not the stderr text.
+		stdOutArray := strings.Split(out.String(), "\n")
+		if len(stdOutArray) > 0 && stdOutArray[len(stdOutArray)-1] == "" {
+			stdOutArray = stdOutArray[:len(stdOutArray)-1]
+		}
+
+		result := data.NewArrayFromStrings(stdOutArray...)
+		_ = cmdStruct.Set("Stdout", result)
 
 		return data.NewList(result, errors.New(e)), errors.New(e)
 	}
@@ -112,6 +119,7 @@ func output(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Otherwise, return the array of strings as the output.
 	result := data.NewArrayFromStrings(resultStrings...)
 	_ = cmdStruct.Set("Stdout", result)
+	_ = cmdStruct.Set("Stderr", data.NewArrayFromStrings())
 
 	return data.NewList(result, nil), nil
 }

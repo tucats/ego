@@ -1,0 +1,93 @@
+// Regression tests for the exec package: exec.Command, Cmd.Run, Cmd.Output,
+// and exec.LookPath. These cover bugs fixed alongside the exec package
+// documentation work:
+//   - exec was unconditionally blocked ("no privilege for operation") for a
+//     plain ego run/test context because the sandboxedExec flag was
+//     initialized inverted from the ego.runtime.exec setting.
+//   - LookPath did not follow the (value, error) data.List return
+//     convention, so both its success and failure paths misbehaved.
+//   - The Cmd.Dir field was never applied to the subprocess because the
+//     runtime looked it up under the key "dir" instead of "Dir".
+//   - Cmd.Output() had no Stderr field to write to, and on failure it
+//     returned the stderr text as the "stdout" result instead of whatever
+//     stdout had actually been collected.
+
+@test "exec: Command is permitted by default and Run captures Stdout"
+{
+    c := exec.Command("echo", "hello", "world")
+    err := c.Run()
+    @assert err == nil
+    @assert c.Stdout[0] == "hello world"
+}
+
+@test "exec: Run error is only observable via try/catch"
+{
+    c := exec.Command("false")
+    caught := false
+
+    try {
+        _ = c.Run()
+    } catch(e) {
+        caught = true
+        @assert e != nil
+    }
+
+    @assert caught
+}
+
+@test "exec: Output returns stdout and empty Stderr on success"
+{
+    c := exec.Command("sh", "-c", "echo a; echo b; echo c")
+    out, err := c.Output()
+
+    @assert err == nil
+    @assert len(out) == 3
+    @assert out[0] == "a"
+    @assert out[1] == "b"
+    @assert out[2] == "c"
+    @assert len(c.Stderr) == 0
+}
+
+@test "exec: Output on failure returns stdout and fills Stderr"
+{
+    c := exec.Command("sh", "-c", "echo partial; echo oops 1>&2; exit 3")
+    out, err := c.Output()
+
+    @assert err != nil
+    @assert len(out) == 1
+    @assert out[0] == "partial"
+    @assert len(c.Stderr) == 1
+    @assert c.Stderr[0] == "oops"
+}
+
+@test "exec: Dir field changes the subprocess working directory"
+{
+    marker := "/tmp/ego_exec_dir_test.txt"
+
+    _ = os.Remove(marker)
+
+    c := exec.Command("sh", "-c", "echo here > ego_exec_dir_test.txt")
+    c.Dir = "/tmp"
+    err := c.Run()
+    @assert err == nil
+
+    content, readErr := os.ReadFile(marker)
+    @assert readErr == nil
+    @assert strings.TrimSpace(string(content)) == "here"
+
+    _ = os.Remove(marker)
+}
+
+@test "exec: LookPath finds an existing command"
+{
+    path, err := exec.LookPath("ls")
+    @assert err == nil
+    @assert len(path) > 0
+}
+
+@test "exec: LookPath reports a catchable error for a missing command"
+{
+    path, err := exec.LookPath("no-such-command-xyz")
+    @assert err != nil
+    @assert path == ""
+}
