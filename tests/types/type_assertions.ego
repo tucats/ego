@@ -262,3 +262,137 @@
 
     @assert matched == true
 }
+
+// The tests below are regression tests for BUG-71: the single-value form of
+// a type assertion ("x.(T)", no comma-ok) only had its trailing success/fail
+// boolean consumed when it appeared as the direct right-hand side of a bare
+// "v := x.(T)" assignment *statement* -- that cleanup was wired up in
+// exactly one place, assignment.go, keyed off c.flags.hasUnwrap. Used
+// anywhere else -- a sub-expression, a function argument, an operator
+// operand, or immediately called -- the boolean was left sitting on top of
+// the asserted value, corrupting whatever bytecode ran next. Fixed by
+// moving the cleanup into compileUnwrap itself (unwrap.go), which emits an
+// IfError right after UnWrap for every single-value position, not just the
+// one assignment.go used to special-case -- matching Go, where the
+// single-value assertion is an ordinary primary expression usable anywhere
+// a value is expected.
+
+@test "types: single-value assertion as an operand in an arithmetic expression (BUG-71)"
+{
+    var x any = 5
+    @assert x.(int)+1 == 6
+}
+
+@test "types: single-value assertion as a function-call argument (BUG-71)"
+{
+    func double(n int) int {
+        return n * 2
+    }
+
+    var x any = 5
+    @assert double(x.(int)) == 10
+}
+
+@test "types: single-value function-type assertion, immediately called (BUG-71)"
+{
+    var g any = func() int {
+        return 42
+    }
+
+    @assert g.(func() int)() == 42
+}
+
+@test "types: single-value assertion used as both operands (BUG-71)"
+{
+    var x any = 5
+    @assert 1+x.(int)+2 == 8
+}
+
+@test "types: single-value assertion on a compound (pointer) target, member access (BUG-71)"
+{
+    type point struct {
+        x int
+        y int
+    }
+
+    var p any = &point{x: 1, y: 2}
+    @assert p.(*point).x == 1
+    @assert p.(*point).y == 2
+}
+
+@test "types: nested single-value assertions (BUG-71)"
+{
+    var x any = 5
+    var y any = x
+    @assert y.(any).(int)+100 == 105
+}
+
+@test "types: single-value assertion failure in an inline position is still catchable (BUG-71)"
+{
+    var x any = "not an int"
+    caught := false
+
+    try {
+        _ = x.(int) + 1
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.mismatch"
+    }
+
+    @assert caught == true
+}
+
+@test "types: single-value function-type assertion failure inline is still catchable (BUG-71)"
+{
+    var g any = 5
+    caught := false
+
+    try {
+        g.(func() int)()
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.mismatch"
+    }
+
+    @assert caught == true
+}
+
+@test "types: single-value compound-target assertion failure inline is still catchable (BUG-71)"
+{
+    type point struct {
+        x int
+    }
+
+    _ = point{}
+    var p any = 5
+    caught := false
+
+    try {
+        _ = p.(*point).x
+    } catch(e) {
+        caught = true
+        @assert e.Code() == "type.mismatch"
+    }
+
+    @assert caught == true
+}
+
+@test "types: bare assignment single-value form still works (BUG-71 regression)"
+{
+    var x any = 5
+    n := x.(int)
+    @assert n == 6-1
+}
+
+@test "types: comma-ok form is unaffected by the inline-position fix (BUG-71 regression)"
+{
+    var x any = 5
+    n, ok := x.(int)
+    @assert n == 5
+    @assert ok == true
+
+    var y any = "hi"
+    m, ok2 := y.(int)
+    @assert m == nil
+    @assert ok2 == false
+}

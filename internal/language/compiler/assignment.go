@@ -363,22 +363,17 @@ func (c *Compiler) compileAssignment() error {
 		return nil
 	}
 
-	// If this assignment was an any unwrap operation, then
-	// we need to modify the lvalue store by removing the last bytecode
-	// (which is a DropToMarker). Then add code that checks to see if there
-	// was abandoned info on the stack that should trigger an error when false.
-	if c.flags.hasUnwrap {
-		if storeLValue.StoreCount() < 2 {
-			storeLValue.Remove(storeLValue.Mark() - 1)
-			c.b.Emit(bytecode.Swap)
-			c.b.Append(storeLValue)
-			c.b.Emit(bytecode.IfError, errors.ErrTypeMismatch)
-			c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
-
-			return nil
-		} else {
-			c.b.Emit(bytecode.Swap)
-		}
+	// If this assignment's right-hand side was a two-value ("v, ok := x.(T)")
+	// type assertion, one final Swap is needed to put the extracted value and
+	// the "ok" boolean into the order storeLValue's two Store instructions
+	// expect. The single-value form ("v := x.(T)") needs no special handling
+	// here at all any more: compileUnwrap (unwrap.go) now emits its own
+	// IfError right after UnWrap, universally, for every single-value
+	// position -- not just this one -- so by the time storeLValue runs, the
+	// stack already holds just the plain asserted value, exactly like any
+	// other expression result (BUG-71).
+	if c.flags.hasUnwrap && storeLValue.StoreCount() >= 2 {
+		c.b.Emit(bytecode.Swap)
 	}
 
 	c.b.Append(storeLValue)

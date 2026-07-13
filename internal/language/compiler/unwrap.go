@@ -21,6 +21,28 @@ import (
 // runtime can push both the extracted value and the boolean "ok" flag in the
 // right order.
 //
+// In every OTHER position -- a bare "v := x.(T)" assignment statement, or
+// (BUG-71) any other place a value is expected at all, such as a
+// sub-expression, an argument, an operator operand, or an immediately-called
+// result -- an IfError instruction is emitted right after UnWrap, so the
+// trailing success boolean unwrapByteCode always pushes is consumed on the
+// spot: false becomes a catchable ErrTypeMismatch, true is silently dropped,
+// and only the asserted value is left on the stack. This matches Go, where
+// the single-value form of a type assertion is an ordinary primary
+// expression usable anywhere a value is expected -- "x.(int) + 1",
+// "f(x.(int))", and "x.(func())()" all compile. Doing the cleanup here,
+// immediately, rather than relying on a later, position-specific pass (the
+// old approach only handled the direct right-hand side of a "v := x.(T)"
+// assignment *statement*, in assignment.go) is what makes every position
+// work uniformly.
+//
+// This IfError is skipped in exactly two cases, both of which push a
+// different stack shape than unwrapByteCode's ordinary (value, bool):
+//   - the two-value comma-ok form above, where the bool must survive to be
+//     stored into the second target;
+//   - "x.(type)", the type-switch marker (see form 1 below), which pushes
+//     (type, value) instead and is post-processed separately by switch.go.
+//
 // If the pattern does not match (i.e. it is a normal member access, not a type
 // assertion), the token position is restored and ErrInvalidUnwrap is returned
 // so the caller can fall through to normal member-access handling.
@@ -42,7 +64,9 @@ import (
 //     keyword token, not an IDENTIFIER (BUG-60). Since a compound type has
 //     no single name to look up by string, the *data.Type resolved here at
 //     compile time is passed as the UnWrap operand directly, instead of a
-//     name.
+//     name. This form can never be "x.(type)" -- form 1 always intercepts
+//     that single-token spelling first -- so its cleanup never needs the
+//     type-switch exclusion form 1 does.
 func (c *Compiler) compileUnwrap() error {
 	position := c.t.Mark()
 
@@ -50,7 +74,9 @@ func (c *Compiler) compileUnwrap() error {
 		typeName := c.t.Next()
 		if typeName.IsIdentifier() {
 			if c.t.IsNext(tokenizer.EndOfListToken) {
-				if c.flags.inAssignment && c.flags.multipleTargets {
+				isTwoValueForm := c.flags.inAssignment && c.flags.multipleTargets
+
+				if isTwoValueForm {
 					c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let"))
 					c.b.Emit(bytecode.Swap)
 				}
@@ -58,6 +84,10 @@ func (c *Compiler) compileUnwrap() error {
 				c.flags.hasUnwrap = true
 
 				c.b.Emit(bytecode.UnWrap, typeName)
+
+				if !isTwoValueForm && !typeName.Is(tokenizer.TypeToken) {
+					c.b.Emit(bytecode.IfError, errors.ErrTypeMismatch)
+				}
 
 				return nil
 			}
@@ -72,7 +102,9 @@ func (c *Compiler) compileUnwrap() error {
 		typeSpec, err := c.parseType("", true)
 		if err == nil && typeSpec != nil && typeSpec != data.UndefinedType {
 			if c.t.IsNext(tokenizer.EndOfListToken) {
-				if c.flags.inAssignment && c.flags.multipleTargets {
+				isTwoValueForm := c.flags.inAssignment && c.flags.multipleTargets
+
+				if isTwoValueForm {
 					c.b.Emit(bytecode.Push, bytecode.NewStackMarker("let"))
 					c.b.Emit(bytecode.Swap)
 				}
@@ -80,6 +112,10 @@ func (c *Compiler) compileUnwrap() error {
 				c.flags.hasUnwrap = true
 
 				c.b.Emit(bytecode.UnWrap, typeSpec)
+
+				if !isTwoValueForm {
+					c.b.Emit(bytecode.IfError, errors.ErrTypeMismatch)
+				}
 
 				return nil
 			}
