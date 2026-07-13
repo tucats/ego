@@ -4827,6 +4827,171 @@ if server.Status == http.StatusOK {
 }
 ```
 
+### runtime <a name="runtime"></a>
+
+The `runtime` package exposes a small amount of information about the platform Ego is
+running on and the Ego runtime itself, along with a few functions mirroring Go's own
+`runtime` package.
+
+#### runtime.GOOS / runtime.GOARCH
+
+```go
+runtime.GOOS   string
+runtime.GOARCH string
+```
+
+These constants hold the operating system and processor architecture Ego was built for,
+using the same values Go's own `runtime.GOOS`/`runtime.GOARCH` do (`"darwin"`, `"linux"`,
+`"windows"`, etc. for `GOOS`; `"amd64"`, `"arm64"`, etc. for `GOARCH`).
+
+```go
+import "runtime"
+
+func main() {
+    fmt.Println(runtime.GOOS, runtime.GOARCH)
+}
+```
+
+On an Apple Silicon Mac, this prints:
+
+```text
+darwin arm64
+```
+
+#### runtime.Version()
+
+```go
+func runtime.Version() string
+```
+
+Returns the version string of the Go compiler used to build the running `ego` executable
+(for example, `"go1.26.1"`) -- this is Go's own build, not Ego's version; see
+`runtime.Ego()` below for that.
+
+#### runtime.NumCPU()
+
+```go
+func runtime.NumCPU() int
+```
+
+Returns the number of logical CPUs available to the current process, exactly like Go's
+`runtime.NumCPU()`.
+
+#### runtime.GOMAXPROCS(n)
+
+```go
+func runtime.GOMAXPROCS(n int) int
+```
+
+Sets the maximum number of operating system threads that can execute Ego (and Go runtime)
+code simultaneously to `n`, and returns the _previous_ setting -- identical to Go's
+`runtime.GOMAXPROCS()`. Pass `0` to query the current value without changing it:
+
+```go
+previous := runtime.GOMAXPROCS(0)
+fmt.Println("currently allowed:", previous)
+```
+
+#### runtime.GC()
+
+```go
+func runtime.GC()
+```
+
+Forces an immediate garbage-collection cycle, exactly like Go's `runtime.GC()`. This is
+rarely needed; it exists mainly for diagnosing memory behavior.
+
+#### runtime.Ego() / runtime.Buildtime()
+
+```go
+func runtime.Ego() string
+func runtime.Buildtime() (time.Time, error)
+```
+
+`Ego()` returns the version string of the running `ego` executable itself (for example,
+`"ego1.8-1888"`), as opposed to `runtime.Version()`, which reports the Go compiler version.
+`Buildtime()` returns the timestamp the executable was built, along with an error if that
+timestamp could not be parsed (for example, in a `go build` binary that was not built with
+the project's normal build script, which injects the timestamp via linker flags -- see
+`./tools/build` in the project `CLAUDE.md`).
+
+```go
+built, err := runtime.Buildtime()
+if err != nil {
+    fmt.Println("build time unavailable:", err)
+} else {
+    fmt.Println("built:", built.Format(time.RFC1123))
+}
+```
+
+#### runtime.Frames(count) / the `runtime.Frame` type
+
+```go
+func runtime.Frames(count int) []runtime.Frame
+```
+
+Returns up to `count` call frames describing the active call stack at the point
+`Frames()` is called, starting with the immediate caller and working outward. Each
+`runtime.Frame` has these fields:
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `Module` | `string` | The name of the function (or source file, for the outermost frame) at that point in the call stack. |
+| `Table` | `string` | The name of the symbol table scope active at that frame -- mostly useful for debugging. |
+| `Line` | `int` | The source line number being executed in that frame. |
+
+Fewer than `count` frames are returned if the call stack isn't that deep -- there is no
+error in that case, the result array is just shorter.
+
+```go
+import "runtime"
+
+func inner() {
+    frames := runtime.Frames(5)
+    for _, f := range frames {
+        fmt.Println(f.Module, f.Line)
+    }
+}
+
+func outer() {
+    inner()
+}
+
+func main() {
+    outer()
+}
+```
+
+This prints something like:
+
+```text
+inner 4
+outer 11
+main 15
+ 18
+```
+
+(the final, blank-`Module` entry is the top-level program itself, not a named function).
+
+#### runtime.Stack(buf, all)
+
+```go
+func runtime.Stack(buf []byte, all bool) int
+```
+
+Formats a human-readable call stack trace (similar to what an uncaught error's stack
+trace shows) into `buf`, and returns the number of bytes written -- truncating if the
+formatted text doesn't fit. This mirrors Go's own `runtime.Stack()` function signature,
+though the `all` parameter (which in Go includes every other goroutine's stack in the
+output) is currently accepted but has no effect -- Ego's version always formats only the
+calling goroutine's own call stack, regardless of the value passed for `all`.
+
+```go
+buf := make([]byte, 1024)
+n := runtime.Stack(buf, true)
+fmt.Println(string(buf[:n]))
+```
+
 ### sort <a name="sort"></a>
 
 The `sort` package contains functions that can sort an array containing only
