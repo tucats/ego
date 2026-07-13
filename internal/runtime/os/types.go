@@ -396,8 +396,12 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 					Sandboxed: true,
 				},
 				{
+					// Declared as InterfaceType (not ArrayType(ByteType)) even
+					// though a []byte is the common case, so that the string-data
+					// extension (see writeFile) is accepted in strict type mode
+					// too, not just dynamic mode.
 					Name: "data",
-					Type: data.ArrayType(data.ByteType),
+					Type: data.InterfaceType,
 				},
 				{
 					Name: "mode",

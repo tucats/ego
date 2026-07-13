@@ -250,16 +250,17 @@ func (c *Compiler) entrypointDirective() error {
 		mainName = tokenizer.NewIdentifierToken(defs.Main)
 	}
 
+	// Mark the stack so EntryPointExit (emitted below) can find whatever the
+	// entry point function returns, if anything, once it actually finishes --
+	// its call frame isn't run synchronously, so that value cannot be
+	// collected here at compile time.
+	c.b.Emit(bytecode.Push, bytecode.NewStackMarker("entrypoint"))
 	c.b.Emit(bytecode.Push, mainName)
 	c.b.Emit(bytecode.Dup)
 	c.b.Emit(bytecode.StoreAlways, defs.MainVariable)
 	c.b.Emit(bytecode.EntryPoint)
 	c.b.Emit(bytecode.AtLine, -1)
-	c.b.Emit(bytecode.Push, 0)
-	c.b.Emit(bytecode.Load, "os")
-	c.b.Emit(bytecode.Member, "Exit")
-	c.b.Emit(bytecode.Push, 0)
-	c.b.Emit(bytecode.Call, 1)
+	c.b.Emit(bytecode.EntryPointExit)
 
 	return nil
 }

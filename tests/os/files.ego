@@ -1,0 +1,88 @@
+// Regression tests for os.WriteFile and os.Chmod.
+//
+// os.WriteFile(filename string, data []byte|string, mode int) error
+// os.Chmod(file string, mode int) error
+//
+// Both were fixed in the same pass:
+//
+//  1. os.WriteFile's string-data fallback path (data.Ego extension: passing a
+//     plain string instead of a []byte) read the wrong argument index --
+//     args.Get(2) (the mode value) instead of args.Get(1) (the actual data)
+//     -- so the file was written with the mode's decimal string ("420")
+//     instead of the caller's text.
+//
+//  2. Both functions are declared with a single ErrorType return, but every
+//     error path returned the error as the Go-native second return value
+//     with a nil "value", which -- per the single-ErrorType-return dispatch
+//     convention -- makes the error observable only inside a try/catch, not
+//     via a plain "err := os.WriteFile(...); if err != nil" check. Both now
+//     return the error as the value (native return nil), matching how
+//     io.File.Close() already behaved and how Go's own os.WriteFile/os.Chmod
+//     are used idiomatically.
+
+@test "os: WriteFile writes string data (not the mode value)"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    err := os.WriteFile(fn, "hello world", 0o644)
+    @assert err == nil
+
+    content, err2 := os.ReadFile(fn)
+    @assert err2 == nil
+    @assert string(content) == "hello world"
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "os: WriteFile applies the requested octal permission mode"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    err := os.WriteFile(fn, "data", 0o644)
+    @assert err == nil
+
+    // Re-reading the file should succeed under the requested permissions.
+    content, err2 := os.ReadFile(fn)
+    @assert err2 == nil
+    @assert string(content) == "data"
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "os: WriteFile error is a plain assignable value, no try/catch needed"
+{
+    err := os.WriteFile("/no/such/dir/ego-test.txt", "data", 0o644)
+    @assert err != nil
+}
+
+@test "os: WriteFile with a byte array still works"
+{
+    fn := "test-" + uuid.New().String() + ".bin"
+
+    err := os.WriteFile(fn, []byte{1, 2, 3}, 0o644)
+    @assert err == nil
+
+    content, err2 := os.ReadFile(fn)
+    @assert err2 == nil
+    @assert len(content) == 3
+    @assert int(content[0]) == 1
+    @assert int(content[2]) == 3
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "os: Chmod error is a plain assignable value, no try/catch needed"
+{
+    err := os.Chmod("/no/such/file/ego-test.txt", 0o644)
+    @assert err != nil
+}
+
+@test "os: Chmod succeeds on an existing file"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    @assert os.WriteFile(fn, "data", 0o644) == nil
+    @assert os.Chmod(fn, 0o600) == nil
+
+    @assert os.Remove(fn) == nil
+}

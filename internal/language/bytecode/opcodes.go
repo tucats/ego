@@ -65,6 +65,7 @@ const (
 	Dup
 	EndCapture
 	EntryPoint
+	EntryPointExit
 	Equal
 	Exp
 	Explode
@@ -201,6 +202,7 @@ var opcodeNames = map[Opcode]string{
 	Dup:                "Dup",
 	EndCapture:         "EndCapture",
 	EntryPoint:         "EntryPoint",
+	EntryPointExit:     "EntryPointExit",
 	Equal:              "Equal",
 	Exp:                "Exp",
 	Explode:            "Explode",
@@ -332,6 +334,7 @@ func initializeDispatch() {
 		dispatchTable[DumpSymbols] = dumpSymbolsByteCode
 		dispatchTable[EndCapture] = endCaptureByteCode
 		dispatchTable[EntryPoint] = entryPointByteCode
+		dispatchTable[EntryPointExit] = entryPointExitByteCode
 		dispatchTable[Equal] = equalByteCode
 		dispatchTable[Exp] = exponentByteCode
 		dispatchTable[Explode] = explodeByteCode

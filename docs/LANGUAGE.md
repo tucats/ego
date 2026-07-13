@@ -4411,155 +4411,285 @@ The value of `a` is `1.0` and `b` is `-1.0`.
 
 ### os <a name="os"></a>
 
-The `os` package provides a number of functions that access operating system features
-for whatever operating system (macOS, Windows, Linux, etc.) you are running on. The results
-and the behavior of the routines can be specific to that operating system. The examples
-shown here are for macOS (the "darwin" Go build).
+The `os` package provides functions that access operating system features -- command-line
+arguments, environment variables, and the file system -- for whatever operating system
+(macOS, Windows, Linux, etc.) you are running on. The results and behavior of some
+functions can be specific to that operating system; the examples shown here are for macOS
+(the "darwin" Go build).
+
+Several functions in this package (anything that takes a file or directory path, plus
+`os.Args()` and `os.Executable()`) are restricted the same way `exec` and `io` are: when a
+sandbox path is configured (the `ego.runtime.sandbox.path` setting), paths are confined to
+that sandbox directory.
+
+**Octal file modes:** functions that take a numeric file permission mode (`os.WriteFile()`,
+`os.Chmod()`) expect the same bit layout as Go's `os.FileMode` -- most commonly written as
+an octal literal like `0o644`. Unlike Go, _Ego_ does **not** treat a bare leading zero
+(`0644`) as an octal literal -- it is parsed as decimal 644 instead. Always use the explicit
+`0o` radix prefix (`0o644`) for a file mode, or you will silently get the wrong permission
+bits.
 
 #### os.Args()
 
-The `Args{}` function returns an array of the string command line arguments when an _Ego_
-program is run from the shell/command line. Consider the following simple program:
+```go
+func os.Args() []string
+```
+
+The `Args()` function returns an array of the command-line arguments an _Ego_ program was
+run with.
 
 ```go
-func main() int {
+func main() {
     fmt.Println(os.Args())
 }
 ```
 
-This has a `main` function (the function that is always invoked with the `ego run` command).
-This gets the list of arguments via `os.Args()` and prints it to the standard output. If
-this is placed in a file -- for example, "args.ego" -- then it can be run with a command
+If this is placed in a file -- for example, "args.ego" -- then it can be run with a command
 line similar to:
 
 ```bash
-    tom$ ego run args.ego stuff I want
+tom$ ego run args.ego stuff I want
 ```
 
-The "tom$" is the shell prompt; the remainder of the command is the command line entered. Note
-that after the name of the program file there are additional command line tokens. The main
-function in "args.ego" will retrieve these and print them, and the output will look like:
+The "tom$" is the shell prompt; the remainder of the command is the command line entered.
+This prints:
+
+```text
+["stuff", "I", "want"]
+```
+
+Note that the array does **not** include the program name itself (unlike Go's `os.Args`,
+whose element 0 is always the executable path) -- it contains only the tokens that came
+after the source file name on the command line.
+
+#### os.Exit(code)
 
 ```go
-    [ "stuff", "I", "want"]
+func os.Exit(code int)
 ```
 
-The result is an array where each element of the array is the next token from the original
-command line.
+The `Exit()` function immediately stops execution of the current _Ego_ program and returns
+control to the shell, with `code` as the process's exit status (read via `$?` in most
+Linux/Unix shells). The `code` argument is optional; if omitted, the exit status is 0.
 
-#### os.Exit(i)
+```go
+import "os"
 
-The `Exit()` operation stops the execution of the _Ego_ program and its runtime environment,
-and returns control to the shell/command line where it was invoked. If an optional parameter
-is given, it is an integer that becomes the system return code from the `ego run` command
-line.
-
- ```go
-main() int {
+func main() {
     if true {
         os.Exit(55)
     }
-
-    return 0
 }
 ```
 
-In this example, the condition is always true so the `os.Exit(55)` call is made. When the
-ego command completes, the shell return code ("$?" in most Linux/Unix shells, for example)
-will be the value "55".
+Running this and then checking the shell's exit status shows `55`.
 
-If the main program returns a non-zero return code, this has the same effect as calling
-`os.Exit()` with that value. If no `os.Exit()` call is made and the main program simply
-terminates, then the return code value is assumed to be 0, which indicates successful
-completion of the code.
-
-#### os.Getenv(name)
-
-The `Getenv()` function retrieves an environment variable from the shell that invoked
-the _Ego_ processor. This can be an environment variable from a Linux shell, or a
-DOS-style environment variable from the CMD.EXE Windows shell. The argument must be
-the name of the variable (case-sensitive) and the result is the value of the environment
-variable. If the variable does not exist, the function always returns an empty string.
+If `main()` returns an `int` value instead of (or without ever reaching) an explicit
+`os.Exit()` call, that returned value becomes the exit status, exactly as if `os.Exit()`
+had been called with it:
 
 ```go
 func main() int {
-    shell := os.Getenv("SHELL")ego
-
-    fmt.Println("You are running the ", shell, " shell program")
-
-    return 0
+    return 42
 }
 ```
 
-Invoking this on a macOS or Linux system while running the "bash" shell will result in
-output similar to:
+Running this exits with status `42`. If `main()` declares no return value and completes
+without calling `os.Exit()`, the exit status is 0.
 
-```text
-    You are running the  /bin/bash  shell program
-```
-
-#### os.ReadFile(filename) ([]byte, error)
-
-The `ReadFile` function reads input from a file. If the filename is "." then the
-function reads a single line of text from stdin (the console or a pipe). Otherwise,
-the filename must be the absolute or relative path to a file in the file system, and
-its' entire contents are returned as an array of bytes.
+#### Environment variables
 
 ```go
-fn := "mydata.txt"
-s, err := os.ReadFile(fn)
+func os.Getenv(name string) string
+func os.LookupEnv(name string) (string, bool)
+func os.Setenv(name string, value string) error
+func os.Environ() []string
+func os.Clearenv()
+func os.ExpandEnv(s string) string
+func os.Expand(s string, mapping func(string) string) string
 ```
 
-The variable `s` will contain a `[]byte` array containing the entire contents of
-the input file. You can convert this to a string (including line breaks) using
-the `string()` cast operation. You can then use `strings.Split()` to convert
-this into an array of strings based on the line breaks if you wish.
+`Getenv()` retrieves the named environment variable's value, or an empty string if it is
+not set (there is no way to distinguish "not set" from "set to an empty string" with
+`Getenv()` alone -- use `LookupEnv()` for that).
 
 ```go
-fn := "mydata.txt"
-b, err := os.ReadFile(fn)
-a := strings.Split(string(b), "\n")
+shell := os.Getenv("SHELL")
+fmt.Println("You are running the", shell, "shell program")
 ```
 
-After this code runs, `a` contains an array of strings, one for each line in the input
-file.
+`LookupEnv()` returns the value and a boolean that is `true` only if the variable is
+actually set:
+
+```go
+v, found := os.LookupEnv("SHELL")
+if !found {
+    fmt.Println("SHELL is not set")
+}
+```
+
+`Setenv()` sets an environment variable for the current process (and anything it
+subsequently spawns via `exec`), returning an error if the name or value is invalid.
+`Environ()` returns every environment variable as `"name=value"` strings. `Clearenv()`
+deletes all environment variables for the current process.
+
+`ExpandEnv()` replaces `$name` or `${name}` references in `s` with the corresponding
+environment variable's value (an unset variable expands to an empty string):
+
+```go
+fmt.Println(os.ExpandEnv("home is $HOME"))   // home is /Users/tom
+```
+
+`Expand()` works like `ExpandEnv()`, but instead of consulting the process environment, it
+calls `mapping` with each `${name}`/`$name` reference found and substitutes whatever string
+that function returns:
+
+```go
+s := os.Expand("hello ${name}!", func(key string) string {
+    if key == "name" {
+        return "world"
+    }
+    return ""
+})
+fmt.Println(s)   // hello world!
+```
+
+#### os.Open/os.Create/os.CreateTemp -- the `os.File` type
+
+```go
+func os.Open(name string) (os.File, error)
+func os.Create(name string) (os.File, error)
+func os.CreateTemp(dir string, pattern string) (os.File, error)
+```
+
+These functions open a native file and return an `os.File` handle, along with an error
+(`nil` on success). `Open()` opens an existing file for reading only. `Create()` creates a
+new file for reading and writing, truncating it first if it already exists. `CreateTemp()`
+creates a new temporary file in `dir` (or the system default temporary directory if `dir`
+is `""`) whose name is derived from `pattern` -- a `*` in `pattern` is replaced with a
+random string, matching Go's `os.CreateTemp()`.
+
+```go
+f, err := os.Create("mydata.txt")
+if err != nil {
+    fmt.Println("could not create file:", err)
+    return
+}
+
+defer f.Close()
+
+f.WriteString("hello")
+```
+
+`os.File` supports these methods, each returning the usual `(value, error)` pair (or just
+`error` for `Close()` and `Chdir()`):
+
+| Method | Description |
+| :----- | :---------- |
+| `Read(buf []byte) (int, error)` | Reads up to `len(buf)` bytes starting at the file's current position, returning the number of bytes read. |
+| `ReadAt(buf []byte, offset int64) (int, error)` | Like `Read()`, but starting at the given byte offset instead of the current position. |
+| `Write(buf []byte) (int, error)` | Writes `buf`'s bytes at the current position. |
+| `WriteAt(buf []byte, offset int64) (int, error)` | Writes `buf`'s bytes at the given byte offset. |
+| `WriteString(s string) (int, error)` | Writes the bytes of `s` at the current position (no trailing newline is added). |
+| `Close() error` | Closes the file. |
+| `Name() string` | Returns the name the file was opened/created with. |
+| `Chdir() error` | Changes the current working directory to the file, which must have been opened as a directory. |
+| `Chown(uid int, gid int) error` | Changes the file's owning user and group IDs. |
+
+```go
+f, _ := os.Create("data.bin")
+
+f.Write([]byte("abc"))
+f.WriteString("def")
+f.WriteAt([]byte("XY"), 1)
+
+fmt.Println(f.Name())
+f.Close()
+```
+
+After this runs, `data.bin` contains `aXYdef`: `Write("abc")` writes at position 0,
+`WriteString("def")` continues from position 3, and `WriteAt` then overwrites bytes 1-2
+in place.
+
+#### os.ReadFile(filename) / os.WriteFile(filename, data, mode)
+
+```go
+func os.ReadFile(filename string) ([]byte, error)
+func os.WriteFile(filename string, data []byte, mode int) error
+```
+
+`ReadFile()` reads an entire file's contents into a byte array in one call, without
+needing to `Open()`/`Close()` it explicitly. As an _Ego_-specific convenience, a filename
+of exactly `"."` reads a single line of text from the console (stdin) instead of the file
+system.
+
+```go
+b, err := os.ReadFile("mydata.txt")
+if err != nil {
+    fmt.Println("could not read file:", err)
+    return
+}
+
+lines := strings.Split(string(b), "\n")
+```
+
+`WriteFile()` writes `data` to `filename` in one call, creating the file if it doesn't
+exist and truncating it if it does. As an _Ego_ extension, `data` may be a plain `string`
+instead of a `[]byte`. `mode` sets the file's permissions if it is newly created (as with
+any file mode, use an explicit `0o` prefix for an octal value):
+
+```go
+err := os.WriteFile("mydata.txt", "hello, world", 0o644)
+if err != nil {
+    fmt.Println("could not write file:", err)
+}
+```
 
 #### os.Remove(filename)
 
-The `Remove()` function deletes a file from the file system.
-
 ```go
-fn := "NewData.txt"
-
-os.Remove(fn)
+func os.Remove(filename string) error
 ```
 
-When this program runs, the physical file "NewData.txt" will have been deleted
-from the file system, assuming the current user has permission to delete the
-file.
-
-#### os.WriteFile(filename string, data []byte, mode int) error
-
-The `WriteFile()` function writes an array of bytes or a string value to a file. If the
-file does not exist, it is created. If the file previously existed, the contents are
-over-written by the new file.
+The `Remove()` function deletes a single file (not a directory) from the file system,
+returning an error if it does not exist or cannot be removed.
 
 ```go
-fn := "mydata.txt"
-s, err := io.ReadFile(fn)
-if err == nil {
-   err = io.WriteFile("NewData.txt", s, 0o644)
+if err := os.Remove("NewData.txt"); err != nil {
+    fmt.Println("could not remove file:", err)
 }
 ```
 
-This reads the contents of the "mydata.txt" file into a new `[]byte` array, and then
-writes it to the "NewData.txt" file, in its entirety. Note that the mode value is
-an integer, but is most commonly expressed as an octal value to match file system
-semantics of a grouping of 3-bit values. Note that in Ego, you must use the radix
-prefix `0o` before the octal value. In Go, a leading zero implies octal.
+#### os.Chmod(file, mode) / os.Chown(path, uid, gid)
+
+```go
+func os.Chmod(file string, mode int) error
+func os.Chown(path string, uid int, gid int) error
+```
+
+`Chmod()` changes a file's permission bits (again, use an explicit `0o` prefix for an
+octal `mode` value). `Chown()` changes a file's owning user and group IDs -- on most
+systems this requires elevated privileges unless you are already the file's owner.
+
+```go
+if err := os.Chmod("mydata.txt", 0o600); err != nil {
+    fmt.Println("could not change permissions:", err)
+}
+```
+
+#### os.Hostname() / os.Executable()
+
+```go
+func os.Hostname() (string, error)
+func os.Executable() (string, error)
+```
+
+`Hostname()` returns the name of the host the _Ego_ process is running on. `Executable()`
+returns the absolute path of the currently running `ego` executable itself. Both return a
+non-nil error if the underlying operating system call fails.
 
 &nbsp;
-&hbsp;
+&nbsp;
 
 ### profile <a name="profile"></a>
 

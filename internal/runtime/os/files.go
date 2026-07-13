@@ -43,11 +43,11 @@ func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	// The file mode must be a valid uint32 value.
 	modeArg, err := args.GetInt(2)
 	if err != nil {
-		return nil, errors.ErrInvalidFunctionArgument.In("os.WriteFile").Context(modeArg)
+		return errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg), nil
 	}
 
 	if modeArg < 0 || modeArg > math.MaxInt32 {
-		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
+		return errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg), nil
 	}
 
 	mode := fs.FileMode(uint32(modeArg))
@@ -55,23 +55,20 @@ func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	if a, ok := args.Get(1).(*data.Array); ok {
 		if a.Type().Kind() == data.ByteKind {
 			if err := os.WriteFile(fileName, a.GetBytes(), mode); err != nil {
-				err = errors.New(err).In("WriteFile")
-
-				return err, err
+				return errors.New(err).In("WriteFile"), nil
 			}
 
 			return nil, nil
 		}
 	}
 
-	text := data.String(args.Get(2))
+	text := data.String(args.Get(1))
 
-	err = os.WriteFile(fileName, []byte(text), mode)
-	if err != nil {
-		err = errors.New(err).In("WriteFile")
+	if err := os.WriteFile(fileName, []byte(text), mode); err != nil {
+		return errors.New(err).In("WriteFile"), nil
 	}
 
-	return err, err
+	return nil, nil
 }
 
 // changeMode implements the os.changeMode() function.
@@ -81,16 +78,16 @@ func changeMode(s *symbols.SymbolTable, args data.List) (any, error) {
 	// The file mode must be a valid uint32 value.
 	modeArg, err := args.GetInt(1)
 	if err != nil {
-		return nil, errors.ErrInvalidFunctionArgument.In("os.changeMode").Context(modeArg)
+		return errors.ErrInvalidFunctionArgument.In("Chmod").Context(modeArg), nil
 	}
 
 	if modeArg < 0 || modeArg > math.MaxInt32 {
-		return nil, errors.ErrInvalidFunctionArgument.In("WriteFile").Context(modeArg)
+		return errors.ErrInvalidFunctionArgument.In("Chmod").Context(modeArg), nil
 	}
 
 	mode := fs.FileMode(uint32(modeArg))
-	if err := os.Chmod(path, fs.FileMode(mode)); err != nil {
-		return nil, errors.New(err).In("Chmod")
+	if err := os.Chmod(path, mode); err != nil {
+		return errors.New(err).In("Chmod"), nil
 	}
 
 	return nil, nil
