@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
-// rowsClose implements db.Rows.Close(). It closes the underlying *goSQL.Rows
+// rowsClose implements sql.Rows.Close(). It closes the underlying *goSQL.Rows
 // cursor and sets the rows and client fields on the Rows struct to nil,
 // releasing the resources held by the cursor. Callers should always close a
 // cursor when they are done iterating, even if all rows were consumed.
@@ -43,32 +43,32 @@ func rowsClose(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(err), err
 }
 
-// rowsHeadings implements db.Rows.Headings(). It returns a []any slice of
+// rowsHeadings implements sql.Rows.Headings(). It returns a []any slice of
 // column name strings in the same order as the SELECT list. This is useful
 // when the caller needs to interpret a row returned by Scan() in no-arg mode,
 // which produces a positional *data.Array without field labels.
 //
-// WARNING: there is no nil guard on the rows field. Calling this method after
-// Close() will panic. A future fix should add a nil check before the cast.
-//
 // Returns ErrArgumentCount if any arguments are passed (method takes none).
+// Returns ErrDatabaseClientClosed if the cursor has already been closed.
 func rowsHeadings(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(nil, errors.ErrArgumentCount), errors.ErrArgumentCount
 	}
 
 	this := getThis(s)
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return nil, errors.ErrDatabaseClientClosed
+		return data.NewList(nil, errors.ErrDatabaseClientClosed), errors.ErrDatabaseClientClosed
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, errors.New(err)
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
 	result := make([]any, len(columns))
@@ -76,10 +76,12 @@ func rowsHeadings(s *symbols.SymbolTable, args data.List) (any, error) {
 		result[i] = name
 	}
 
-	return data.NewArrayFromInterfaces(data.StringType, result...), nil
+	headings := data.NewArrayFromInterfaces(data.StringType, result...)
+
+	return data.NewList(headings, nil), nil
 }
 
-// rowsNext implements db.Rows.Next(). It advances the cursor to the next row
+// rowsNext implements sql.Rows.Next(). It advances the cursor to the next row
 // and returns true if a row is available, or false when the result set is
 // exhausted or the cursor has been closed. Callers must call Next() before
 // each Scan().
@@ -87,17 +89,17 @@ func rowsHeadings(s *symbols.SymbolTable, args data.List) (any, error) {
 // Returns ErrArgumentCount if any arguments are passed (method takes none).
 func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
-		return nil, errors.ErrArgumentCount
+		return data.NewList(false, errors.ErrArgumentCount), errors.ErrArgumentCount
 	}
 
 	this := getThis(s)
 	if this == nil {
-		return false, nil
+		return data.NewList(false, nil), nil
 	}
 
 	rowsVal := this.GetAlways(rowsFieldName)
 	if rowsVal == nil {
-		return false, nil
+		return data.NewList(false, nil), nil
 	}
 
 	rows := rowsVal.(*goSQL.Rows)
@@ -108,10 +110,10 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 			"flag": active})
 	}
 
-	return active, nil
+	return data.NewList(active, nil), nil
 }
 
-// rowsScan implements db.Rows.Scan(values ...*any). It reads the current row
+// rowsScan implements sql.Rows.Scan(values ...*any). It reads the current row
 // (the cursor must have been advanced by a successful Next() call) and returns
 // the column values. There are two calling modes:
 //
@@ -126,8 +128,8 @@ func rowsNext(s *symbols.SymbolTable, args data.List) (any, error) {
 //     the standard goSQL.Rows.Scan() API.
 //   - Returns data.List{nil, nil} on success.
 //
-// WARNING: there is no nil guard on the rows field. Calling this method after
-// Close() will panic. A future fix should add a nil check before the cast.
+// Returns ErrNoFunctionReceiver if called without a receiver, or
+// ErrDatabaseClientClosed if the cursor has already been closed.
 func rowsScan(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	if this == nil {

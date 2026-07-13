@@ -1,10 +1,10 @@
 // Package sql manages the Ego database interfaces, mirroring the standard
 // "database/sql" package in conventional Go. It provides:
 //
-//   - sql.Open(driver, connStr) — open a connection and return a db.Client struct
-//   - sql.DAtabase.             — struct with methods Execute, Query, QueryResult,
+//   - sql.Open(driver, connStr) — open a connection and return a sql.Database struct
+//   - sql.Database              — struct with methods Execute, Query, QueryResult,
 //     Begin, Commit, Rollback, Close, AsStruct
-//   - sql.Rows                   — cursor struct with methods Next, Scan, Close, Headings
+//   - sql.Rows                  — cursor struct with methods Next, Scan, Close, Headings
 //
 // All exported symbols are registered in SqlPackage (types.go) so that Ego
 // code can access them via `import "sql"`.
@@ -177,8 +177,8 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(result, nil), nil
 }
 
-// asStructures implements the db.Client.AsStruct(flag bool) method. It sets
-// the asStruct field on the Client struct which controls how subsequent
+// asStructures implements the sql.Database.AsStruct(flag bool) method. It sets
+// the asStruct field on the Database struct which controls how subsequent
 // Query() and QueryResult() calls format their results:
 //
 //   - false (default) — each row is a *data.Array of column values in the
@@ -186,21 +186,24 @@ func openDatabase(s *symbols.SymbolTable, args data.List) (any, error) {
 //   - true            — each row is a *data.Struct whose field names match
 //     the column names; callers use field-name access
 //
-// The method returns the Client struct itself so Ego code can chain calls.
+// The method returns the Database struct itself so Ego code can chain calls.
+//
+// Returns an error (e.g. ErrNoFunctionReceiver, ErrDatabaseClientClosed) if
+// called on a closed or invalid connection.
 func asStructures(s *symbols.SymbolTable, args data.List) (any, error) {
 	if _, _, err := client(s); err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
 	this.SetAlways(asStructFieldName, data.BoolOrFalse(args.Get(0)))
 
-	return this, nil
+	return data.NewList(this, nil), nil
 }
 
-// closeConnection implements the db.Client.Close() method. It rolls back any
+// closeConnection implements the sql.Database.Close() method. It rolls back any
 // active transaction, closes the underlying *goSQL.DB, and then zeroes all
-// fields on the Client struct. Zeroing the fields achieves two goals:
+// fields on the Database struct. Zeroing the fields achieves two goals:
 //
 //  1. It prevents accidental re-use of the connection — subsequent calls
 //     to client() will find clientFieldName == nil and return an error.

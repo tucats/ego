@@ -115,6 +115,17 @@ func assertErrNil(t *testing.T, label string, err error) {
 	}
 }
 
+// nextHasRow unwraps a rowsNext() result -- data.List{bool, error} -- down to
+// its bool value, for tests that only care whether a row was available.
+func nextHasRow(result any) bool {
+	list, ok := result.(data.List)
+	if !ok {
+		return false
+	}
+
+	return data.BoolOrFalse(list.Get(0))
+}
+
 // listErr extracts the last element of a data.List result as an error.
 // Runtime functions that use the data.NewList(...) pattern embed errors
 // in the list rather than returning them as a Go error; callers must use
@@ -623,9 +634,14 @@ func TestRowsHeadings_ReturnsColumnNames(t *testing.T) {
 	headResult, err := rowsHeadings(rowsST, data.NewList())
 	assertErrNil(t, "rowsHeadings", err)
 
-	colArr, ok := headResult.(*data.Array)
+	headList, ok := headResult.(data.List)
 	if !ok {
-		t.Fatalf("expected *data.Array from rowsHeadings, got %T", headResult)
+		t.Fatalf("expected data.List from rowsHeadings, got %T", headResult)
+	}
+
+	colArr, ok := headList.Get(0).(*data.Array)
+	if !ok {
+		t.Fatalf("expected *data.Array from rowsHeadings, got %T", headList.Get(0))
 	}
 
 	if colArr.Len() != 3 {
@@ -658,10 +674,15 @@ func TestRowsNext_ReturnsTrueForFirstRow(t *testing.T) {
 	rowsStruct := list.Get(0).(*data.Struct)
 	rowsST := makeRowsST(rowsStruct)
 
-	hasNext, err := rowsNext(rowsST, data.NewList())
+	nextResult, err := rowsNext(rowsST, data.NewList())
 	assertErrNil(t, "rowsNext first", err)
 
-	if hasNext != true {
+	nextList, ok := nextResult.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List from rowsNext, got %T", nextResult)
+	}
+
+	if nextList.Get(0) != true {
 		t.Fatal("expected rowsNext to return true for first row")
 	}
 
@@ -687,9 +708,9 @@ func TestRowsNext_EventuallyReturnsFalse(t *testing.T) {
 	count := 0
 
 	for {
-		hasNext, _ := rowsNext(rowsST, data.NewList())
+		nextResult, _ := rowsNext(rowsST, data.NewList())
 
-		if hasNext != true {
+		if !nextHasRow(nextResult) {
 			break
 		}
 
@@ -1143,10 +1164,10 @@ func TestBug_NilRowsPanic_AfterClose(t *testing.T) {
 	}
 
 	// rowsNext on a closed cursor must return false, not panic or error.
-	hasNext, err := rowsNext(rowsST, data.NewList())
+	nextResult, err := rowsNext(rowsST, data.NewList())
 	assertErrNil(t, "rowsNext after close go-error", err)
 
-	if hasNext != false {
+	if nextHasRow(nextResult) {
 		t.Fatal("expected rowsNext to return false after close")
 	}
 
@@ -1243,4 +1264,113 @@ func TestBug_StructModeMismatch_RowsScanVsQueryResult(t *testing.T) {
 	}
 
 	_, _ = rowsClose(rowsST, data.NewList())
+}
+
+// Previously, Database's type definition called SetPackage("db") while
+// RowsType called SetPackage("sql") — a leftover from when this package was
+// named "db" before being renamed to "sql". This made reflect.Type() report
+// a Database value as "db.Database" even though the package (and every other
+// type/reference in it) is "sql". Both types must report the same package.
+func TestBug_DatabaseTypePackageMismatch_BothReportSql(t *testing.T) {
+	if got := Database.Package(); got != "sql" {
+		t.Fatalf("Database.Package() = %q, want %q", got, "sql")
+	}
+
+	if got := RowsType.Package(); got != "sql" {
+		t.Fatalf("RowsType.Package() = %q, want %q", got, "sql")
+	}
+}
+
+// Previously, QueryResult's data.Declaration.Name field was "Execute" (a
+// copy-paste leftover from the Execute declaration below it in types.go),
+// even though it is registered under the "QueryResult" key. This made
+// reflect.Type() report two distinct "Execute" methods on sql.Database and
+// never showed "QueryResult" at all.
+func TestBug_QueryResultDeclarationName_NotExecute(t *testing.T) {
+	fn, ok := Database.Function("QueryResult").(data.Function)
+	if !ok {
+		t.Fatal("Database has no QueryResult function")
+	}
+
+	if fn.Declaration.Name != "QueryResult" {
+		t.Fatalf("QueryResult's Declaration.Name = %q, want %q", fn.Declaration.Name, "QueryResult")
+	}
+}
+
+// Previously, AsStruct() was declared with a single VoidType return and its
+// Go implementation returned a bare (nil, err) — not wrapped in data.List —
+// on its one error path (client(s) failing, e.g. after Close()). Since the
+// dispatch layer only routes a *data.List result through the (value, error)
+// convention, a bare non-list error on a non-error-typed single return
+// becomes an uncatchable-except-try/catch runtime abort instead of a normal
+// returned error. AsStruct is now declared with (sql.Database, error) and
+// both paths return a data.List.
+func TestBug_AsStructures_ErrorPathReturnsDataList(t *testing.T) {
+	dbPath, cleanup := makeTestDB(t)
+	defer cleanup()
+
+	s, _ := makeClientST(t, dbPath)
+
+	// Close the connection so client(s) fails inside asStructures.
+	_, _ = closeConnection(s, data.NewList())
+
+	result, err := asStructures(s, data.NewList(true))
+	if err == nil {
+		t.Fatal("expected an error calling AsStruct() on a closed connection")
+	}
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List from asStructures error path, got %T", result)
+	}
+
+	if list.Get(0) != nil {
+		t.Fatalf("expected nil value in error path, got %v", list.Get(0))
+	}
+
+	if list.Get(1) == nil {
+		t.Fatal("expected non-nil error in list's second slot")
+	}
+}
+
+// Previously, rowsHeadings() was declared with a single ArrayType(String)
+// return (no error) and its Go implementation returned a bare (nil, err) on
+// every error path (ErrArgumentCount, ErrDatabaseClientClosed, a Columns()
+// failure) — the same bare-non-list-error-on-non-error-return bug as
+// AsStruct above. Headings is now declared with
+// ([]string, error) and every path returns a data.List.
+func TestBug_RowsHeadings_ErrorPathReturnsDataList(t *testing.T) {
+	dbPath, cleanup := makeTestDB(t)
+	defer cleanup()
+
+	s, _ := makeClientST(t, dbPath)
+	setupSchema(t, s)
+
+	queryRes, err := query(s, data.NewList(`SELECT id FROM users`))
+	assertErrNil(t, "query", err)
+
+	list := queryRes.(data.List)
+	rowsStruct := list.Get(0).(*data.Struct)
+	rowsST := makeRowsST(rowsStruct)
+
+	// Close the cursor so rowsHeadings hits its ErrDatabaseClientClosed path.
+	_, _ = rowsClose(rowsST, data.NewList())
+
+	result, err := rowsHeadings(rowsST, data.NewList())
+	if err == nil {
+		t.Fatal("expected ErrDatabaseClientClosed calling Headings() on a closed cursor")
+	}
+
+	headList, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List from rowsHeadings error path, got %T", result)
+	}
+
+	if headList.Get(0) != nil {
+		t.Fatalf("expected nil value in error path, got %v", headList.Get(0))
+	}
+
+	if !errors.Equal(headList.Get(1).(error), errors.ErrDatabaseClientClosed) {
+		t.Fatalf("expected ErrDatabaseClientClosed in list's second slot, got %v", headList.Get(1))
+	}
 }

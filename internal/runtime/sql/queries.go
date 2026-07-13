@@ -9,15 +9,15 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
-// query implements db.Client.Query(sql string, args ...any). It executes the
-// given SQL SELECT statement and returns a db.Rows cursor struct wrapped in a
+// query implements sql.Database.Query(sql string, args ...any). It executes the
+// given SQL SELECT statement and returns a sql.Rows cursor struct wrapped in a
 // data.List: [rows *data.Struct, err error].
 //
 // Optional positional arguments (args[1:]) are passed as query parameters to
 // the driver, providing safe parameter substitution (equivalent to "?" or "$N"
 // placeholders depending on the driver).
 //
-// When a transaction is active on the Client struct, the query runs inside
+// When a transaction is active on the Database struct, the query runs inside
 // that transaction. Note: the non-tx path uses args.Elements()[1:args.Len()]
 // while the tx path uses args.Elements()[1:] — these are functionally
 // identical since Len() == len(elements), but the inconsistency is a minor
@@ -73,12 +73,12 @@ func query(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(result, err), err
 }
 
-// queryResult implements goSQL.Database.QueryResult(sql string, args ...any). It
+// queryResult implements sql.Database.QueryResult(sql string, args ...any). It
 // executes the given SQL SELECT and eagerly fetches the entire result set,
 // returning it as a data.List: [rows *data.Array, err error].
 //
 // The shape of each element in the array depends on the asStruct flag on the
-// Client struct (set via AsStruct()):
+// Database struct (set via AsStruct()):
 //
 //   - false (default) — each element is a *data.Array of column values in
 //     SELECT-list order; row[0] is the first column, etc.
@@ -205,14 +205,14 @@ func queryResult(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(r, err), err
 }
 
-// execute implements db.Client.Execute(sql string, args ...any). It runs a
+// execute implements sql.Database.Execute(sql string, args ...any). It runs a
 // non-SELECT SQL statement (INSERT, UPDATE, DELETE, CREATE TABLE, etc.) and
 // returns a data.List: [rowsAffected int, err error].
 //
 // rowsAffected is the count reported by the driver's RowsAffected() method.
 // DDL statements (CREATE, DROP, ALTER) typically report 0.
 //
-// When a transaction is active on the Client struct, the statement runs inside
+// When a transaction is active on the Database struct, the statement runs inside
 // that transaction. Optional positional arguments (args[1:]) are passed as
 // query parameters.
 //

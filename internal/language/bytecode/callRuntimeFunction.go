@@ -52,6 +52,22 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 
 	functionSymbols := symbols.NewChildSymbolTable("builtin "+name, parentTable)
 
+	// Stamp the context's current sandbox state directly onto this call's own
+	// symbol table, rather than relying on it being reachable via the parent
+	// chain. FindNextScope() (used above for parentTable) always skips the
+	// table it's called on, returning that table's parent instead -- so a
+	// runtime function called with no intervening nested scope between it and
+	// wherever Context.Sandboxed() (or NewContext()) last set these symbols
+	// would otherwise never see them, silently defeating sandboxedIO(s)-style
+	// checks in packages like rest and io for any call made directly at the
+	// outermost scope of a Context (e.g. a bare top-level statement, as used
+	// by the dashboard's "run code" sandboxed session path). Setting them
+	// here, directly from the authoritative atomic fields on c, guarantees
+	// every runtime function call sees the correct, current value regardless
+	// of scope depth or nesting.
+	functionSymbols.SetAlways(defs.SandboxedIOSymbolName, c.sandboxedIO.Load())
+	functionSymbols.SetAlways(defs.SandboxedExecSymbolName, c.sandboxedExec.Load())
+
 	if v, ok := c.popThis(); ok {
 		functionSymbols.SetAlways(defs.ThisVariable, v)
 	}

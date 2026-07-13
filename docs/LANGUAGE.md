@@ -5638,88 +5638,173 @@ fmt.Println(sort.StringsAreSorted([]string{"a", "b"})) // true
 
 ### sql Package<a name="sql"></a>
 
-The `sql` package provides support for accessing a database. Currently,
-this must one of the following supported database provider types:
+The `sql` package provides database access, mirroring Go's own
+`database/sql` package with some Ego-specific conveniences. It supports:
 
-- a Postgres database or a database that uses the Postgres
-wire protocol for communicating
-- A SQLite3 database in the file system.
+- A Postgres database, or any database using the Postgres wire protocol.
+- A SQLite database in the file system.
 
-The package has an `Open` function which creates a new database client
-object. With this object, you can execute a SQL query and get back
-either a fully-formed array of struct types (for small result sets)
-or a row scanning object that is used to step through a result set
-of arbitrary size.
+`sql.Open()` creates a `sql.Database` connection handle. With it, you can
+execute a SQL statement and get back either the entire result set as an
+Ego array (`QueryResult()` -- convenient for small result sets), or a
+`sql.Rows` cursor object used to step through a result set of arbitrary
+size a row at a time (`Query()`).
 
-#### sql.Open("driver", "connection-string")
+Every fallible function and method in this package returns `(value, error)`,
+like everywhere else in the runtime.
 
-The driver must be one of the following supported Database driver types:
-
-- postgres - uses Postgres connection string or URL format
-- sqlite3 - Specifies the file system path of the database file
-- dsn - Specifies a named DSN defined by the Ego server
-
-The connection-string is a driver-specific connection string. For
-example, for Sqlite3, this is the path to the database file. For
-Postgres, it is a Postgres connection string or URL specification.
-For dsn connections, it is the name of the dsn to use to locate
-the connection string, credentials, etc.
-
-The result of the `db.Open()` call is a database handle, which can be
-used to execute statements or return results from queries.
+#### sql.Open(driver, connectionString)
 
 ```go
-d := sql.Open("postgres", "postgres://root:secrets@localhost:5432/defaultDB?sslmode=disable")
+func sql.Open(driver string, connectionString string) (sql.Database, error)
+```
 
-r, e := d.QueryResult("select * from foo")
+`driver` must be one of:
+
+| Driver | Description |
+| :----- | :----------- |
+| `"sqlite"` | A SQLite database file; `connectionString` is the file system path. `"sqlite3"` is accepted as a deprecated alias for the same driver. |
+| `"postgres"` | A Postgres connection string or URL, e.g. `"postgres://user:pass@host/dbname?sslmode=disable"`. |
+| `"dsn"` | The name of a data source pre-registered with the Ego server; `connectionString` is that DSN's name. |
+
+```go
+d, err := sql.Open("sqlite", "/tmp/example.db")
+if err != nil {
+    fmt.Println("could not open database:", err)
+    return
+}
+
+_, err = d.Execute("CREATE TABLE member (id INTEGER, name TEXT, age INTEGER)")
+_, err = d.Execute("INSERT INTO member VALUES (1, 'Alice', 30)")
+_, err = d.Execute("INSERT INTO member VALUES (2, 'Bob', 25)")
+
+r, err := d.QueryResult("select * from member")
+fmt.Println(r, err)
 
 d.Close()
 ```
 
-This example will open a database connection with the specified URL,
-and perform a query that returns a result set. The result set is an
-Ego array of arrays, containing the values from the result set. The
-`QueryResult()` function call always returns all results, so this could be
-quite large with a query that has no filtering. You can specify
-parameters to the query as additional argument, which are then
-substituted into the query, as in:
+`QueryResult()` always fetches the entire result set at once, which can use a
+lot of memory for a query with no filtering -- use `Query()`'s cursor instead
+for large result sets. Query parameters are passed as additional arguments
+and substituted positionally using `$1`, `$2`, etc.:
 
 ```go
 age := 21
-r, e := d.QueryResult("select member where age >= $1", age)
+r, err := d.QueryResult("select * from member where age >= $1", age)
 ```
 
-The parameter value of `age` is injected into the query where the
-$1 string is found.
+As a security precaution, opening a SQLite database whose file name matches
+the server's own credentials database (`ego.server.userdata`, normally
+`ego-system.db`) is always rejected, regardless of directory, to prevent
+sandboxed Ego code from reading or tampering with server authentication data.
 
-Once a database handle is created, here are the functions you can
-call using the handle:
+#### The `sql.Database` structure
 
-&nbsp;
+| Field | Type | Description |
+| :---------- | :------: | :--------------------------------------------------------------- |
+| `StructMode` | `bool` | Set via `AsStruct()`; when `true`, `Query()`/`QueryResult()` rows are structs keyed by column name instead of arrays. |
+| `Rowcount` | `int` | Number of rows affected or returned by the most recent call. Reset to `-1` by `Close()`. |
+| `Constr` | `string` | The (password-redacted) connection string used to open this database. |
 
-| Function | Description |
-| :------- | :------------ |
-| d.Begin() | Start a transaction on the remote serve for this connection. There can only be one active transaction at a time |
-| d.Commit() | Commit the active transaction |
-| d.Rollback() | Roll back the active transaction |
-| d.QueryResult(q [, args...]) | Execute a query string with optional arguments. The result is the entire query result set. |
-| d.Query(q, [, args...]) | Execute a query and return a sql.Rows object |
-| d.Execute(q [, args...]) | Execute a statement with optional arguments. The result is the number of rows affected. |
-| d.Close() | Terminate the connection to the database and free up resources. |
-| d.AsStruct(b) | If true, results are returned as array of struct instead of array of array. |
+```go
+d, _ := sql.Open("sqlite", "/tmp/example.db")
+fmt.Println(d.Constr)      // /tmp/example.db
+fmt.Println(d.StructMode)  // false
+fmt.Println(d.Rowcount)    // 0
 
-&nbsp;
+d.Close()
+fmt.Println(d.Rowcount)    // -1
+```
 
-When you use the Query() call it returns a sqlRows object. This object can be used to step through the
-result set a row at a time. This allows the underlying driver to manage buffers and large result sets
-without filling up memory with the entire result set at once.
-&nbsp;
+Its methods:
 
-| Function | Description |
-| :---------- | :------------ |
-| r.Next() | Prepare the next row for reading. Returns false if there are no more rows |
-| r.Scan() | Read the next row and create either a struct or an array of the row data |
-| r.Close() | End reading rows and release any resources consumed by the rowset read. |
+| Method | Description |
+| :------- | :---------- |
+| `Begin() error` | Starts a transaction. Only one transaction may be active per connection at a time. |
+| `Commit() error` | Commits the active transaction. |
+| `Rollback() error` | Discards the active transaction. |
+| `Execute(sql [, args...]) (int, error)` | Runs a non-`SELECT` statement; the value is the number of rows affected (typically `0` for DDL). |
+| `Query(sql [, args...]) (sql.Rows, error)` | Runs a `SELECT` and returns a cursor for stepping through the result one row at a time. |
+| `QueryResult(sql [, args...]) ([][]interface{}, error)` | Runs a `SELECT` and eagerly fetches the entire result set. |
+| `AsStruct(flag) (sql.Database, error)` | Sets `StructMode`; returns the `Database` itself so calls can be chained. |
+| `Close() error` | Closes the connection and frees its resources. |
+
+While a transaction is active (after `Begin()`, before `Commit()`/`Rollback()`),
+`Execute()`, `Query()`, and `QueryResult()` automatically run inside it:
+
+```go
+err := d.Begin()
+_, _ = d.Execute("INSERT INTO member VALUES (3, 'Eve', 40)")
+err = d.Rollback()   // discards the insert
+
+err = d.Begin()
+_, _ = d.Execute("INSERT INTO member VALUES (4, 'Frank', 50)")
+err = d.Commit()     // makes the insert permanent
+```
+
+`AsStruct(true)` switches `QueryResult()` and `Query()`/`Scan()` rows from
+positional arrays to structs keyed by column name:
+
+```go
+d.AsStruct(false)   // default
+rows, _ := d.QueryResult("SELECT id, name FROM member")
+fmt.Println(rows[0][1])       // "Alice" -- indexed by column position
+
+d.AsStruct(true)
+rows2, _ := d.QueryResult("SELECT id, name FROM member")
+fmt.Println(rows2[0].name)    // "Alice" -- indexed by column name
+```
+
+#### The `sql.Rows` cursor
+
+Returned by `Database.Query()`, for stepping through a result set one row at
+a time without loading it all into memory:
+
+| Method | Description |
+| :------- | :---------- |
+| `Next() (bool, error)` | Advances to the next row; the value is `false` once the result set is exhausted (or the cursor is already closed). Must be called before each `Scan()`. |
+| `Scan(...) (interface{}, error)` | Reads the current row. See below for its two calling conventions. |
+| `Headings() ([]string, error)` | Column names, in `SELECT`-list order. |
+| `Close() error` | Releases the cursor's resources. Always close a cursor when done with it, even if every row was consumed. |
+
+`Scan()` has two calling conventions:
+
+- **No arguments** -- returns the row as its value: an array of column
+  values in `SELECT`-list order (`Database.StructMode == false`, the
+  default), or a struct keyed by column name (`StructMode == true`).
+- **One `*interface{}` pointer per column** -- mimics Go's own
+  `sql.Rows.Scan()`: writes each column value into the corresponding
+  pointer and returns a `nil` value.
+
+```go
+rows, err := d.Query("SELECT id, name, age FROM member ORDER BY id")
+fmt.Println(err)
+
+headings, _ := rows.Headings()
+fmt.Println(headings)   // ["id", "name", "age"]
+
+for rows.Next() {
+    row, _ := rows.Scan()
+    fmt.Println(row)
+}
+
+rows.Close()
+```
+
+Struct mode, with a parameterized query:
+
+```go
+d.AsStruct(true)
+
+rows2, _ := d.Query("SELECT id, name, age FROM member WHERE id = $1", 2)
+for rows2.Next() {
+    info, _ := rows2.Scan()
+    fmt.Println(info.name, info.age)
+}
+
+rows2.Close()
+```
 
 ---
 

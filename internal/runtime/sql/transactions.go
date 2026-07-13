@@ -8,7 +8,7 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
-// begin implements db.Client.Begin(). It starts a new database transaction and
+// begin implements sql.Database.Begin(). It starts a new database transaction and
 // stores the resulting *goSQL.Tx in the transactionFieldName field of the Client
 // struct. While a transaction is active, all Execute, Query, and QueryResult
 // calls automatically run inside it.
@@ -45,7 +45,7 @@ func begin(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(err), err
 }
 
-// rollback implements db.Client.Rollback(). It aborts the current transaction,
+// rollback implements sql.Database.Rollback(). It aborts the current transaction,
 // discarding all changes made since the matching Begin() call, and clears the
 // transactionFieldName field so subsequent operations run outside a transaction.
 //
@@ -78,7 +78,7 @@ func rollback(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(err), err
 }
 
-// commit implements db.Client.Commit(). It commits the current transaction,
+// commit implements sql.Database.Commit(). It commits the current transaction,
 // making all changes permanent, and clears the transactionFieldName field so
 // subsequent operations run outside a transaction.
 //

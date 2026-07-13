@@ -520,6 +520,65 @@ func Test_callRuntimeFunction_NilSavedDefNoSandboxPanic(t *testing.T) {
 	tc.assertNoError(err)
 }
 
+// Test_callRuntimeFunction_SandboxFlagsVisibleInFunctionSymbols is a
+// regression test: packages like rest and io check sandbox state themselves
+// via s.Get(defs.SandboxedIOSymbolName) on their symbol table argument
+// (rather than the Declaration.Sandboxed blanket-block mechanism covered by
+// the tests above), so they need that symbol reachable from the function's
+// own symbol table. Context.Sandboxed() sets it directly on c.symbols, but
+// FindNextScope() -- used to compute parentTable when fullScope is false --
+// always skips the table it is called on and returns that table's parent
+// instead. newTestContext's "test local" table is (like nearly every
+// realistic caller table) not a scope boundary, so FindNextScope() returns
+// "test root", which never had the flag set on it -- silently hiding the
+// flag from any runtime function called with fullScope=false, exactly as
+// happened for a bare top-level statement in "ego run" and for the
+// dashboard's sandboxed "run code" session path. callRuntimeFunction now
+// stamps both sandbox fields directly onto every call's fresh symbol table
+// from the context's own atomic fields, so they are always visible
+// regardless of scope depth.
+func Test_callRuntimeFunction_SandboxFlagsVisibleInFunctionSymbols(t *testing.T) {
+	captureFn := func(s *symbols.SymbolTable, args data.List) (any, error) {
+		io, _ := s.Get(defs.SandboxedIOSymbolName)
+		exec, _ := s.Get(defs.SandboxedExecSymbolName)
+
+		return data.NewList(data.BoolOrFalse(io), data.BoolOrFalse(exec), nil), nil
+	}
+
+	t.Run("sandboxed", func(t *testing.T) {
+		tc := newTestContext(t).withNextOpcode(StackCheck)
+		tc.ctx.Sandboxed(true)
+
+		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{})
+		tc.assertNoError(err)
+
+		// Push order puts Get(0) (io) on top, then exec, then the trailing nil error.
+		if got, _ := tc.ctx.Pop(); got != true {
+			t.Errorf("SandboxedIOSymbolName visible in function scope = %v, want true", got)
+		}
+
+		if got, _ := tc.ctx.Pop(); got != true {
+			t.Errorf("SandboxedExecSymbolName visible in function scope = %v, want true", got)
+		}
+	})
+
+	t.Run("not sandboxed", func(t *testing.T) {
+		tc := newTestContext(t).withNextOpcode(StackCheck)
+		tc.ctx.Sandboxed(false)
+
+		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{})
+		tc.assertNoError(err)
+
+		if got, _ := tc.ctx.Pop(); got != false {
+			t.Errorf("SandboxedIOSymbolName visible in function scope = %v, want false", got)
+		}
+
+		if got, _ := tc.ctx.Pop(); got != false {
+			t.Errorf("SandboxedExecSymbolName visible in function scope = %v, want false", got)
+		}
+	})
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 6: functionReturnedValueAndError
 // ─────────────────────────────────────────────────────────────────────────────

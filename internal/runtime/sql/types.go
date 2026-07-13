@@ -1,14 +1,14 @@
-// Package db provides the Ego scripting language's database access layer,
+// Package sql provides the Ego scripting language's database access layer,
 // mirroring the standard "database/sql" package in conventional Go. It
-// defines two Ego-visible types (db.Client and db.Rows) and exposes a single
-// package-level constructor, db.New(), that opens a connection.
+// defines two Ego-visible types (sql.Database and sql.Rows) and exposes a
+// single package-level constructor, sql.Open(), that opens a connection.
 //
 // All functions in this package share the same signature:
 //
 //	func(s *symbols.SymbolTable, args data.List) (any, error)
 //
 // The symbol table (s) always carries a defs.ThisVariable ("__this") which
-// is a *data.Struct representing the receiver — either a Client struct or a
+// is a *data.Struct representing the receiver — either a Database struct or a
 // Rows cursor struct.
 //
 // Field name constants (defined at the bottom of this file) are the stable
@@ -20,8 +20,8 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 )
 
-// RowsType is the Ego type definition for a db.Rows cursor. Instances are
-// created by db.Client.Query() and carry three internal fields:
+// RowsType is the Ego type definition for a sql.Rows cursor. Instances are
+// created by sql.Database.Query() and carry three internal fields:
 //
 //   - "rows"   — the *sql.Rows handle from the underlying database driver
 //   - "client" — the *sql.DB handle (kept so the cursor can reach the
@@ -39,7 +39,7 @@ var RowsType *data.Type = data.TypeDefinition("Rows",
 		DefineFunction("Next", &data.Declaration{
 			Name:    "Next",
 			Type:    data.OwnType,
-			Returns: []*data.Type{data.BoolType},
+			Returns: []*data.Type{data.BoolType, data.ErrorType},
 		}, rowsNext).
 		DefineFunction("Scan", &data.Declaration{
 			Name: "Scan",
@@ -51,7 +51,7 @@ var RowsType *data.Type = data.TypeDefinition("Rows",
 			},
 			Type:     data.OwnType,
 			Variadic: true,
-			Returns:  []*data.Type{data.ErrorType},
+			Returns:  []*data.Type{data.InterfaceType, data.ErrorType},
 		}, rowsScan).
 		DefineFunction("Close", &data.Declaration{
 			Name:    "Close",
@@ -61,11 +61,11 @@ var RowsType *data.Type = data.TypeDefinition("Rows",
 		DefineFunction("Headings", &data.Declaration{
 			Name:    "Headings",
 			Type:    data.OwnType,
-			Returns: []*data.Type{data.ArrayType(data.StringType)},
+			Returns: []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 		}, rowsHeadings),
 ).SetPackage("sql").FixSelfReferences()
 
-// Database is the Ego type definition for a db.Client connection handle.
+// Database is the Ego type definition for a sql.Database connection handle.
 // Instances are created by sql.Open() and expose the database connection
 // along with its current state:
 //
@@ -118,7 +118,7 @@ var Database *data.Type = data.TypeDefinition("Database",
 			},
 		}, query).
 		DefineFunction("QueryResult", &data.Declaration{
-			Name: "Execute",
+			Name: "QueryResult",
 			Type: data.OwnType,
 			Parameters: []data.Parameter{
 				{
@@ -169,15 +169,15 @@ var Database *data.Type = data.TypeDefinition("Database",
 					Type: data.BoolType,
 				},
 			},
-			Returns: []*data.Type{data.VoidType},
+			Returns: []*data.Type{data.OwnType, data.ErrorType},
 		}, asStructures),
-).SetPackage("db").FixSelfReferences()
+).SetPackage("sql").FixSelfReferences()
 
-// DBPackage is the Ego package object that the import system installs when
-// Ego code writes `import "db"`. It exports:
-//   - db.New(connection string) — opens a new connection and returns a Client
-//   - db.Client               — the Client type (for type assertions / docs)
-//   - db.Rows                 — the Rows type (for type assertions / docs)
+// SqlPackage is the Ego package object that the import system installs when
+// Ego code writes `import "sql"`. It exports:
+//   - sql.Open(driver, connection string) — opens a new connection and returns a Database
+//   - sql.Database                        — the Database type (for type assertions / docs)
+//   - sql.Rows                            — the Rows type (for type assertions / docs)
 var SqlPackage = data.NewPackageFromMap("sql", map[string]any{
 	"Open": data.Function{
 		Declaration: &data.Declaration{

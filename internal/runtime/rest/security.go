@@ -100,19 +100,21 @@ func setToken(s *symbols.SymbolTable, args data.List) (any, error) {
 // is no legitimate reason for sandboxed code to need it.
 func setUseToken(s *symbols.SymbolTable, args data.List) (any, error) {
 	if sandboxedIO(s) {
-		return nil, errors.ErrNoPrivilegeForOperation.In("UseToken")
+		err := errors.ErrNoPrivilegeForOperation.In("UseToken")
+
+		return data.NewList(nil, err), err
 	}
 
 	r, err := getClient(s)
 	if err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	this := getThis(s)
 
 	flag, err := data.Bool(args.Get(0))
 	if err != nil {
-		return nil, err
+		return data.NewList(nil, err), err
 	}
 
 	if flag {
@@ -121,7 +123,7 @@ func setUseToken(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.SetAuthToken("")
 	}
 
-	return this, nil
+	return data.NewList(this, nil), nil
 }
 
 // Externalized function that sets the "insecure" flag, which turns off

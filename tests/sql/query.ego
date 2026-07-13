@@ -107,7 +107,8 @@ queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
     rows, err := queryDB.Query("SELECT id, name, age FROM people")
     @assert err == nil
 
-    headings := rows.Headings()
+    headings, err2 := rows.Headings()
+    @assert err2 == nil
     @assert len(headings) == 3
     @assert string(headings[0]) == "id"
     @assert string(headings[1]) == "name"
@@ -115,6 +116,24 @@ queryDBPath := "/tmp/ego_sql_query_" + uuid.New().Gibberish() + ".db"
 
     err = rows.Close()
     @assert err == nil
+}
+
+@test "sql: Headings() on a closed cursor returns an error"
+{
+    // Regression test: Headings() used to be declared with only an
+    // ArrayType(string) return (no error), and its Go implementation
+    // returned a bare (nil, err) on every error path -- turning a closed-
+    // cursor call into an uncatchable-except-try/catch runtime abort
+    // instead of a normal (value, error) result. Headings now returns
+    // ([]string, error) like every other fallible method.
+    rows, err := queryDB.Query("SELECT id FROM people")
+    @assert err == nil
+
+    err = rows.Close()
+    @assert err == nil
+
+    _, err2 := rows.Headings()
+    @assert err2 != nil
 }
 
 @test "sql: Query() Next and Scan iterate all rows"
