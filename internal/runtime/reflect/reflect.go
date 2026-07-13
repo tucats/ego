@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/builtins"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
-	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/util"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // describe implements the reflect.Reflect() function.
@@ -376,10 +376,10 @@ func describeBytecodeFunction(source any) (any, error) {
 // the correct entry (and thus the correct Ego name and Declaration)
 // regardless of the Go function's own name or package path.
 func describeBuiltinFunction(source any) (any, error) {
-	fn, _ := source.(func(*symbols.SymbolTable, data.List) (any, error))
-
-	name := ""
 	var declaration *data.Declaration
+
+	fn, _ := source.(func(*symbols.SymbolTable, data.List) (any, error))
+	name := ""
 
 	if def := builtins.FindFunction(fn); def != nil && def.Declaration != nil {
 		declaration = def.Declaration

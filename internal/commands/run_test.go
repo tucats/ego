@@ -38,7 +38,7 @@ func Test_readSourceFromConsoleOrPipe_PreservesNewlines(t *testing.T) {
 
 	c := &cli.Context{}
 
-	_, _, text, _ := readSourceFromConsoleOrPipe(false, c, false, "", "", "")
+	_, _, text, _ := readSourceFromConsoleOrPipe(false, c, false, "", "", "") //nolint:dogsled
 
 	const want = "// hello\nfmt.Println(\"hi\")\n"
 	if text != want {

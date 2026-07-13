@@ -67,6 +67,7 @@ func TestSetDefault(t *testing.T) {
 		},
 	}
 	CurrentConfiguration = Configurations["default"]
+
 	ClearDefaults()
 
 	SetDefault("ephemeralKey", "ephemeralValue")
@@ -98,6 +99,7 @@ func TestDeleteDefault(t *testing.T) {
 		},
 	}
 	CurrentConfiguration = Configurations["default"]
+	
 	ClearDefaults()
 
 	// Case 1: deleting an ephemeral override falls back to the persisted value.

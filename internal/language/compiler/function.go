@@ -491,10 +491,10 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 		// reject outright (channels have no element type; use "chan"
 		// alone). Without this exclusion, "chan string" as a bare return
 		// type was silently reinterpreted as "a return value named chan,
-		// of type string" -- IsIdentifier() returns true for "chan" since
-		// BUG-72 classified it as TypeTokenClass, so the heuristic below
-		// would happily consume it as a name, and typeDeclaration() would
-		// then parse "string" alone with no error at all (BUG-74).
+		// of type string" -- IsIdentifier() returns true for "chan"
+		// since BUG-72 classified it as TypeTokenClass, so the heuristic
+		// below would happily consume it as a name, and typeDeclaration()
+		// would then parse "string" alone with no error at all (BUG-74).
 		if c.t.Peek(1).IsIdentifier() && !c.t.Peek(1).Is(tokenizer.ChanToken) {
 			c.t.IsNext(tokenizer.PointerToken)
 

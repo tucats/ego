@@ -189,7 +189,7 @@ func Test_formatPrintArgs(t *testing.T) {
 			want: "1a",
 		},
 		{
-			name: "mixed run: int int string int",
+			name: "mixed run: int int string int", //nolint:dupword
 			args: data.NewList(1, 2, "x", 3),
 			want: "1 2x3",
 		},
