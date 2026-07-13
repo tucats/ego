@@ -199,40 +199,45 @@ func getMemberValue(c *Context, m any, name string) (any, error) {
 // does not match any of the dedicated Ego type cases (*data.Struct, *data.Map,
 // *data.Package).  It tries two lookup strategies in order:
 //
-//  1. Reflection method check: if the Go type has a method called name, look up
-//     that method in the Ego package registry and return the matching Function
-//     descriptor.  This bridges between Go's reflect.MethodByName and Ego's
-//     typed function table.
+//  1. Ego package registry: derive the package/type name from the Go value's
+//     reflected type string (e.g., "*time.Duration" → pkg="time",
+//     typeName="Duration") and look up a Function registered under name on
+//     that package's Type (e.g., via Type.DefineFunction or
+//     Type.DefineNativeFunction). This is intentionally not gated on Go's own
+//     reflect.MethodByName(name): an earlier version required the name to
+//     also be a genuine Go method on the concrete type, which meant an
+//     Ego-only extension method with no Go equivalent (e.g.
+//     time.Time.SleepUntil) could never be found -- only Ego-registered
+//     methods that happened to share a name with a real Go method (like
+//     time.Duration.String) worked, purely by coincidence of the gate.
 //
 //  2. Registered Ego function: if the Ego type for mv has a Function entry
-//     registered under name (e.g., via Type.DefineFunction), return it.
+//     registered under name via data.TypeOf(mv), return it. This mainly
+//     covers scalar/interface fallback kinds that step 1 doesn't reach.
 //
 // If neither lookup succeeds the result depends on the kind of the type:
 //   - Scalar types (kind < MaximumScalarType): ErrInvalidTypeForOperation.
 //   - Non-scalar types: ErrUnknownNativeField.
 func getNativePackageMemberValue(mv any, name string, c *Context) (any, error) {
-	// Step 1: does the underlying Go type expose a method called name?
+	// Step 1: derive the package/type name from the Go value's reflected type
+	// string and look up name directly in the Ego package registry for that
+	// type, regardless of whether Go's own reflection recognizes it as a
+	// real method.
 	gt := reflect.TypeOf(mv)
-	if _, found := gt.MethodByName(name); found {
-		// The method exists on the Go type.  Extract the package name and type
-		// name from the reflect string (e.g., "*time.Duration" → pkg="time",
-		// typeName="Duration") so we can look up the Ego function descriptor
-		// in the package registry.
-		text := gt.String()
+	text := gt.String()
 
-		if parts := strings.Split(text, "."); len(parts) == 2 {
-			pkg := strings.TrimPrefix(parts[0], "*")
-			typeName := parts[1]
+	if parts := strings.Split(text, "."); len(parts) == 2 {
+		pkg := strings.TrimPrefix(parts[0], "*")
+		typeName := parts[1]
 
-			// Walk: context symbols → *data.Package → *data.Type → Function.
-			if pkgData, found := c.get(pkg); found {
-				if pkg, ok := pkgData.(*data.Package); ok {
-					if typeInterface, ok := pkg.Get(typeName); ok {
-						if typeData, ok := typeInterface.(*data.Type); ok {
-							fd := typeData.FunctionByName(name)
-							if fd != nil {
-								return *fd, nil
-							}
+		// Walk: context symbols → *data.Package → *data.Type → Function.
+		if pkgData, found := c.get(pkg); found {
+			if pkg, ok := pkgData.(*data.Package); ok {
+				if typeInterface, ok := pkg.Get(typeName); ok {
+					if typeData, ok := typeInterface.(*data.Type); ok {
+						fd := typeData.FunctionByName(name)
+						if fd != nil {
+							return *fd, nil
 						}
 					}
 				}

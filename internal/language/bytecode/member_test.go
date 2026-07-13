@@ -32,6 +32,7 @@ package bytecode
 
 import (
 	"testing"
+	"time"
 
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
@@ -563,4 +564,71 @@ func Test_memberByteCode_Package_ImmutableInSymbolTable(t *testing.T) {
 	tc.assertNoError(err)
 	// Immutable wrapper must be stripped by data.UnwrapConstant.
 	tc.assertTopStack(6.28318)
+}
+
+// Test_getNativePackageMemberValue_EgoOnlyMethod_NoMatchingGoMethod is a
+// regression test: getNativePackageMemberValue used to gate its package-
+// registry lookup behind reflect.Type.MethodByName(name), so a member name
+// was only ever resolved if the underlying native Go type ALSO happened to
+// have a real method by that exact name. This meant an Ego-only extension
+// method registered on a native passthrough type (e.g. time.Time.SleepUntil,
+// which has no Go equivalent) could never be found -- reflect.MethodByName
+// correctly reports no such method on time.Time, so the walk into the Ego
+// package registry was never even attempted, even though the method WAS
+// registered there. Found while adding time.Time.SleepUntil().
+//
+// This test reproduces the exact shape without depending on the real
+// runtime/time package (which cannot be imported here -- it imports this
+// bytecode package, so the reverse import would cycle): it registers a fake
+// "time" package in the context's symbol table with a Duration-like *data.Type
+// carrying a method whose name ("TripleValue") does not exist on Go's real
+// time.Duration, and verifies the member lookup still finds it against a
+// genuine time.Duration receiver value.
+func Test_getNativePackageMemberValue_EgoOnlyMethod_NoMatchingGoMethod(t *testing.T) {
+	durationType := data.TypeDefinition("Duration", data.StructureType())
+	durationType.DefineFunction("TripleValue", &data.Declaration{
+		Name:    "TripleValue",
+		Type:    data.OwnType,
+		Returns: []*data.Type{data.Int64Type},
+	}, nil)
+
+	pkg := data.NewPackageFromMap("time", map[string]any{
+		"Duration": durationType,
+	})
+
+	tc := newTestContext(t)
+	tc.ctx.symbols.SetAlways("time", pkg)
+
+	result, err := getNativePackageMemberValue(time.Duration(5), "TripleValue", tc.ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	fn, ok := result.(data.Function)
+	if !ok {
+		t.Fatalf("expected data.Function, got %T", result)
+	}
+
+	if fn.Declaration.Name != "TripleValue" {
+		t.Errorf("resolved function name = %q, want %q", fn.Declaration.Name, "TripleValue")
+	}
+}
+
+// Test_getNativePackageMemberValue_UnknownMethod_StillErrors verifies the
+// fix didn't loosen error reporting: a name that is neither a real Go method
+// nor registered in the Ego package registry must still fail.
+func Test_getNativePackageMemberValue_UnknownMethod_StillErrors(t *testing.T) {
+	durationType := data.TypeDefinition("Duration", data.StructureType())
+
+	pkg := data.NewPackageFromMap("time", map[string]any{
+		"Duration": durationType,
+	})
+
+	tc := newTestContext(t)
+	tc.ctx.symbols.SetAlways("time", pkg)
+
+	_, err := getNativePackageMemberValue(time.Duration(5), "NoSuchMethod", tc.ctx)
+	if err == nil {
+		t.Fatal("expected an error for an unregistered method name, got nil")
+	}
 }

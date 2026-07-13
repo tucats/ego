@@ -7019,81 +7019,184 @@ fmt.Println(err)             // in GetRow, invalid range: 99
 
 ---
 
-### time
+### time Package<a name="time"></a>
 
-The `time` package assist with functions that access or calculate time/date values. This
-is similar to the "time" package in Go, but has significant differences and is not as
-complete as the _Go_ version. The `time.Now()` and `time.Parse()` functions each create
-a new `time.Time` variable type, which has a set of functions that can be performed
-on it.
+The `time` package works with time and date values and durations, mirroring Go's own
+`time` package fairly closely, with two Ego-specific additions: `ParseDuration()` accepts
+a `"d"` suffix for days (e.g. `"2d"`, `"1d6h30m"`), and `time.Time` has an extra
+`SleepUntil()` method with no Go equivalent. Every fallible function returns
+`(value, error)`, like everywhere else in the runtime.
 
-| Function | Example | Description |
-| :------- | :------ | :---------- |
-| Add | n := t.Add(nt) | Add one time value to another. |
-| Format | f := t.Format("Mon Jan 2") | Format the time value according to the reference time. |
-| SleepUntil | t.SleepUntil() | Pause execution until the time arrives. |
-| String | f := t.String() | Convert the time value to a standard string representation. |
-| Sub | n := t.Sub(start) | Subtract a a time value from another. |
+#### Package-level functions
 
-#### time.Now()
-
-The `Now()` function gets the current time at the moment of the call, and sets it as the
-time value in the result.
-
-```go
-    now := time.Now()
-    ...
-    elapsed := time.Now().Sub(now)
-```
-
-In this case, the code first captures the current time and stores it in the variable `now`.
-It then does some other work for the program, and when done we want to find out the elapsed
-time. The value of `elapsed` is a duration string that indicates how much time passed between
-the `now` value and the current time. For example, this could be a value such as "5s" for
-five seconds of time passing.
-
-#### time.Parse(model, string)
-
-This converts a text representation of a time into a time value. The first parameter is the
-model which describes the format expected, and the second parameter is the text to parse as
-a date. This uses the same specific date values from the `time.UnixDate` time.
+| Function | Description |
+| :------- | :----------- |
+| `Now() Time` | The current time. |
+| `Parse(layout, value string) (Time, error)` | Parses `value` using a Go reference-time `layout` string. |
+| `ParseAny(text string) (Time, error)` | An Ego addition: parses `text`, guessing the layout automatically. |
+| `ParseDuration(text string) (Duration, error)` | Parses a duration string; accepts Go's own syntax plus an Ego `"d"` (days) suffix. |
+| `Date(year int, month Month, day, hour, min, sec, nsec int, loc *Location) Time` | Constructs a time from individual components. |
+| `Unix(sec, nsec int64) Time` | Constructs a time from a Unix timestamp. |
+| `Since(t Time) Duration` | The duration elapsed since `t`. |
+| `Sleep(d Duration)` | Blocks the current goroutine for `d`. |
+| `FixedZone(name string, offsetSeconds int) *Location` | A `*Location` with a fixed offset from UTC. |
+| `LoadLocation(name string) (*Location, error)` | Looks up an IANA time zone by name (e.g. `"America/New_York"`). |
 
 ```go
-s := "12/7/1960 15:30"
-m := "1/2/2006 15:04"
-t := time.Parse(m, s)
+now := time.Now()
+time.Sleep(time.ParseDuration("10ms"))
+elapsed := time.Since(now)
+fmt.Println(elapsed.Milliseconds() >= 10)   // true
+
+d, err := time.ParseDuration("1d6h30m")
+fmt.Println(d, err)      // 30h30m0s <nil>
+fmt.Println(d.Hours())   // 30.5
 ```
 
-The time value stored in `t` is the time value "Wed Dec 7 15:30:00 UTC 1960". Note that the
-model showed a month of 1 (for January) but was still using the specific values from the
-reference time. The slashes are not part of the reference time, so they must exist in the
-same locations in the string to be converted and will be skipped.
-
-If there is an error in parsing, the value of `t` will be `nil`. You can find the exact
-error by allowing the `time.Parse()` function to return two values:
+`time.Month` has no named constants (no `time.January`, etc.) -- construct one with a
+cast, `time.Month(n)`, using `1` for January through `12` for December. Likewise there
+is no pre-built `time.UTC` location value -- use `time.FixedZone("UTC", 0)`, or the
+zero-value `*Location` produced by leaving `Date()`'s last argument as `nil`:
 
 ```go
-t, e := time.Parse(s, m)
+loc := time.FixedZone("EST", -5*3600)
+t := time.Date(2024, time.Month(7), 4, 8, 30, 0, 0, loc)
+fmt.Println(t.String())                       // 2024-07-04 08:30:00 -0500 EST
+fmt.Println(t.Format("2006-01-02 15:04:05"))  // 2024-07-04 08:30:00
+
+u := time.Unix(int64(1705315800), int64(0))
+fmt.Println(u.Format("2006-01-02"))   // 2024-01-15
+
+loc2, err := time.LoadLocation("America/New_York")
+fmt.Println(loc2, err)   // America/New_York <nil>
 ```
 
-If the value of `t` is `nil` then the value of `e` will be the error code that reflects the
-parsing error. If the call is made with only one return value specified, then the error is
-discarded.
+#### Parsing
 
-#### time.Sleep(duration)
-
-The `Sleep()` function of the `time` package will sleep for the specified amount of time.
-The duration is a time.Duration value, which can be parsed from a string if needed. For
-example,
+`Parse(layout, value)` follows Go's reference-time convention: the layout string is the
+specific moment `Mon Jan 2 15:04:05 MST 2006`, written using the actual field values
+that moment would have, and any character that isn't part of a recognized field
+(slashes, commas, etc.) must appear literally in `value` in the same position.
 
 ```go
-d := time.ParseDuration("10s")
-time.Sleep(d)
+t, err := time.Parse("1/2/2006 15:04", "12/7/1960 15:30")
+fmt.Println(t.String(), err)   // 1960-12-07 15:30:00 +0000 UTC <nil>
+
+_, err = time.Parse("1/2/2006", "not a date")
+fmt.Println(err != nil)   // true
 ```
 
-This will sleep for ten seconds. The suffix can be "h", "m", or "s" and can include
-fractional values. While the system is sleeping, go routines will continue to run but
-the current program (or go routine) will stop executing for the given duration.
+`ParseAny(text)` is an Ego addition that guesses the layout for you -- convenient when
+the input format isn't fixed or known in advance:
+
+```go
+t, err := time.ParseAny("December 7, 1959 10:35am EST")
+fmt.Println(t.String(), err)   // 1959-12-07 10:35:00 -0500 EST <nil>
+
+t2, err := time.ParseAny("2024-01-15")
+fmt.Println(t2.Hour(), err)    // 0 <nil>
+```
+
+`ParseDuration(text)` accepts Go's own syntax (`"h"`, `"m"`, `"s"`, `"ms"`, `"us"`/`"µs"`,
+`"ns"`, fractional values, combinations like `"1h30m"`) plus an Ego-only `"d"` suffix for
+days (`1d` = 24 hours); units may be separated by spaces:
+
+```go
+d, err := time.ParseDuration("2d")
+fmt.Println(d.Hours(), err)   // 48 <nil>
+
+d2, err := time.ParseDuration("1d 6h 30m")
+fmt.Println(d2.Hours(), err)  // 30.5 <nil>
+```
+
+#### The `time.Time` structure
+
+| Method | Description |
+| :------- | :---------- |
+| `Add(d Duration) Time` | `t` shifted by `d`. |
+| `Sub(u Time) Duration` | The duration between `t` and `u`. |
+| `Before(u Time) bool` / `After(u Time) bool` / `Equal(u Time) bool` | Comparisons. |
+| `Format(layout string) string` | Formats `t` using a Go reference-time layout string. |
+| `String() string` | Formats `t` using Go's default layout (`2006-01-02 15:04:05.999999999 -0700 MST`, with trailing zero fractional digits omitted). |
+| `Hour() int` | The hour, in `[0, 23]`. |
+| `Clock() (hour, min, sec int)` | Hour, minute, and second together. |
+| `Month() Month` | The month, as a `time.Month` value (its own `String()` gives the English name). |
+| `SleepUntil() error` | An Ego addition: blocks until `t` is reached; a no-op (not an error) if `t` is already in the past. |
+
+```go
+t1 := time.ParseAny("Dec 1, 1960")
+t2 := time.ParseAny("Dec 2, 1960")
+
+fmt.Println(t1.Before(t2), t2.After(t1), t1.Equal(t1))   // true true true
+
+diff := t2.Sub(t1)
+fmt.Println(diff.Hours())   // 24
+
+d, _ := time.ParseDuration("1h30m")
+t3 := t1.Add(d)
+fmt.Println(t3.Sub(t1).Hours())   // 1.5
+
+fmt.Println(t1.Hour(), t1.Month().String())   // 0 December
+h, m, s := t2.Clock()
+fmt.Println(h, m, s)   // 0 0 0
+```
+
+`SleepUntil()` blocks the calling goroutine until the receiver's time arrives:
+
+```go
+target := time.Now().Add(time.ParseDuration("300ms"))
+err := target.SleepUntil()   // returns ~300ms later
+fmt.Println(err)             // <nil>
+
+past := time.Now().Add(-time.ParseDuration("300ms"))
+err = past.SleepUntil()      // returns immediately -- no-op, not an error
+fmt.Println(err)             // <nil>
+```
+
+#### The `time.Duration` structure
+
+| Method | Description |
+| :------- | :---------- |
+| `String([extended bool]) string` | Formats the duration. See below for the `extended` argument. |
+| `Hours() float64` / `Minutes() float64` / `Seconds() float64` | The duration expressed in that unit. |
+| `Milliseconds() int64` / `Microseconds() int64` / `Nanoseconds() int64` | The duration expressed as an integer count of that unit. |
+
+`String()` with no argument (or `false`) matches Go's own compact format
+(`"1h30m0s"`). Passing `true` selects an Ego-only extended format: units separated by
+spaces, with durations of 24 hours or more broken into days. Durations under one second
+always use the compact format regardless of `extended`:
+
+```go
+d, _ := time.ParseDuration("772h35m12s")
+fmt.Println(d.String())       // 772h35m12s
+fmt.Println(d.String(true))   // 32d 4h 35m 12s
+
+d2, _ := time.ParseDuration("300ms")
+fmt.Println(d2.String(true))  // 300ms -- sub-second always uses the compact format
+
+fmt.Println(d.Hours(), d.Milliseconds())
+```
+
+#### Duration and layout constants
+
+`time.Nanosecond`, `Microsecond`, `Millisecond`, `Second`, `Minute`, and `Hour` are
+plain integer constants (each is that many nanoseconds), not `Duration`-typed values --
+cast the result to `time.Duration` to use `Duration`'s methods:
+
+```go
+d := time.Duration(90 * time.Minute)
+fmt.Println(d.String())   // 1h30m0s
+```
+
+`time.ANSIC`, `UnixDate`, `RubyDate`, `RFC822`, `RFC822Z`, `RFC850`, `RFC1123`,
+`RFC1123Z`, `RFC3339`, `RFC3339Nano`, `Kitchen`, `Stamp`, `StampMilli`, `StampMicro`, and
+`StampNano` are ready-made layout strings for `Format()`/`Parse()`, matching Go's own
+constants of the same names:
+
+```go
+t := time.ParseAny("December 7, 1959")
+fmt.Println(t.Format(time.RFC1123))   // Mon, 07 Dec 1959 00:00:00 UTC
+```
 
 ---
 

@@ -22,15 +22,19 @@ func durationString(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
 		withSpaces, err = data.Bool(args.Get(0))
 		if err != nil {
-			return nil, errors.New(err).In("String")
+			err = errors.New(err).In("String")
+
+			return data.NewList(nil, err), err
 		}
 	}
 
 	if duration != nil {
-		return util.FormatDuration(*duration, withSpaces), nil
+		return data.NewList(util.FormatDuration(*duration, withSpaces), nil), nil
 	}
 
-	return nil, errors.ErrNoFunctionReceiver
+	err = errors.ErrNoFunctionReceiver
+
+	return data.NewList(nil, err), err
 }
 
 // getDuration retrieves the method receiver (defs.ThisVariable) from the symbol

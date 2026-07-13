@@ -25,6 +25,7 @@ package bytecode
 
 import (
 	"testing"
+	"time"
 
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
@@ -371,6 +372,21 @@ func Test_negateByteCode_Int64(t *testing.T) {
 	err := negateByteCode(tc.ctx, nil)
 	tc.assertNoError(err)
 	tc.assertTopStack(int64(3))
+}
+
+// Test_negateByteCode_TimeDuration is a regression test: negateByteCode's
+// type switch had no case for time.Duration (Go requires an exact type
+// match, not just "convertible to int64"), so "-d" for a time.Duration
+// value fell through to the default case and returned ErrInvalidType --
+// even though a Duration is just an int64 under the hood and negating one
+// is meaningful (e.g. constructing a "before" offset from a "since" one).
+// Found while adding time.Time.SleepUntil() and testing it against a time
+// in the past.
+func Test_negateByteCode_TimeDuration(t *testing.T) {
+	tc := newTestContext(t).withStack(time.Duration(-3 * time.Second))
+	err := negateByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(time.Duration(3 * time.Second))
 }
 
 // Test_negateByteCode_Int32 verifies arithmetic negation of an int32.

@@ -20,6 +20,23 @@ func String(s *symbols.SymbolTable, args data.List) (any, error) {
 	return t.Format(time.UnixDate), nil
 }
 
+// sleepUntil implements t.SleepUntil(). It is an Ego-specific convenience
+// method with no direct Go equivalent -- Go code does the equivalent with
+// time.Sleep(time.Until(t)). It pauses execution until the receiver's time
+// value is reached; if that time has already passed, time.Until returns a
+// non-positive duration and time.Sleep returns immediately, so this is a
+// no-op for a time in the past rather than an error.
+func sleepUntil(s *symbols.SymbolTable, args data.List) (any, error) {
+	t, err := getTime(s)
+	if err == nil {
+		if d := time.Until(*t); d > 0 {
+			time.Sleep(d)
+		}
+	}
+
+	return err, err
+}
+
 // getTime looks in the symbol table for the "this" receiver, and
 // extracts the time value from it.
 func getTime(symbols *symbols.SymbolTable) (*time.Time, error) {

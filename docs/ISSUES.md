@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **266 issues**:
-**225 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **269 issues**:
+**228 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -250,6 +250,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-80](#BUG-80) | BUG | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
 | [BUG-81](#BUG-81) | BUG | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 | [BUG-82](#BUG-82) | BUG | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
+| [BUG-83](#BUG-83) | BUG | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -354,6 +355,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [MATH-1](#MATH-1) | MATH | `exponentByteCode` returns 0 for signed integer `x^0` (should return 1) | ✓ |
 | [MATH-10](#MATH-10) | MATH | `addByteCode` function comment incorrectly says "OR" for boolean operands | ✓ |
 | [MATH-11](#MATH-11) | MATH | `notByteCode` and `negateByteCode` return raw (undecorated) errors from `c.Pop()` | ✓ |
+| [MATH-12](#MATH-12) | MATH | `negateByteCode` has no case for `time.Duration`, so `-d` fails | ✓ |
 | [MATH-2](#MATH-2) | MATH | `multiplyByteCode` `case int16:` asserts `v1.(int8)` when v1 is `int16` — panics | ✓ |
 | [MATH-3](#MATH-3) | MATH | `multiplyByteCode` `case uint16:` asserts `v1.(int8)` when v1 is `uint16` — panics | ✓ |
 | [MATH-4](#MATH-4) | MATH | `subtractByteCode` `case int8:` asserts `v1.(int16)` when v1 is `int8` — panics | ✓ |
@@ -369,6 +371,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [MEMBERS-5](#MEMBERS-5) | MEMBERS | `getPackageMemberValue` signature includes dead parameters `v any` and `found bool` | ✓ |
 | [MEMBERS-6](#MEMBERS-6) | MEMBERS | `getMemberValue` ignores the member name when the object is `*data.Type` | ✓ |
 | [MEMBERS-7](#MEMBERS-7) | MEMBERS | `getMemberValue` silently returns `(nil, nil)` for a nil `*data.Type` behind `*any` | ✓ |
+| [MEMBERS-8](#MEMBERS-8) | MEMBERS | `getNativePackageMemberValue` can never resolve an Ego-only method with no matching Go method name | ✓ |
 | [OAUTH-H1](#OAUTH-H1) | OAUTH | No rate limiting on the AS login form endpoint | ✓ |
 | [OAUTH-H2](#OAUTH-H2) | OAUTH | Revoked JWT tokens bypass the RS validation cache | ✓ |
 | [OAUTH-H3](#OAUTH-H3) | OAUTH | PKCE not required for public clients in the AS authorization flow | ✓ |
@@ -549,6 +552,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-80](#BUG-80) | LOW | `strings.Tokenize()` builds its result array with an erroneous extra `ArrayType` wrapping, reporting `[][]struct` instead of `[]struct`. | ✓ |
 | [BUG-81](#BUG-81) | MEDIUM | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 | [BUG-82](#BUG-82) | MEDIUM | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
+| [BUG-83](#BUG-83) | MEDIUM | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 
 ---
 
@@ -8381,6 +8385,50 @@ which had to be corrected to `got != nil` alongside the fix, and several tests n
 
 ---
 
+<a id="BUG-83"></a>
+
+### BUG-83 — `time` package: `durationString` return-convention violation and a shared-singleton base type
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found while adding `time.Time.SleepUntil()` (see MEMBERS-8 and MATH-12 for the two
+dispatch-layer bugs that had to be fixed first for the new method to be callable at
+all).
+
+- `durationString` (`Duration.String()`'s Ego implementation, in
+  `internal/runtime/time/duration.go`) is declared to return `(string, error)`, but
+  returned a bare `nil, err` on its two error paths (a non-bool `extendedFormat`
+  argument; no receiver bound) instead of `data.NewList(nil, err), err`. Since dispatch
+  only routes a `*data.List` result through the `(value, error)` convention, this meant
+  `s, err := d.String(...)` without a surrounding `try`/`catch` crashed the whole
+  program on a bad argument instead of returning a normal catchable error.
+- `TimeType` (`internal/runtime/time/types.go`) was constructed as
+  `data.TypeDefinition("Time", data.StructType)` — using `data.StructType`, a
+  process-wide **shared singleton** `*Type` value (`internal/language/data/constructors.go`),
+  as its base — instead of a fresh `data.StructureType()` instance the way
+  `TimeDurationType`/`TimeLocationType`/`TimeMonthType` in the same file correctly do.
+  `DefineFunction`/`DefineNativeFunction` mutate the *wrapper* type's own `.functions`
+  map (not the shared base), so this did not turn out to be the root cause of the
+  `SleepUntil` dispatch failure (see MEMBERS-8) — but it remains a latent hazard flagged
+  during review: `data.StructType` is referenced from many unrelated places in the
+  codebase, and any future code path that reads through a `TypeKind` wrapper's
+  `valueType` fields/functions directly (rather than the wrapper's own) would silently
+  cross-contaminate every other type built on the same shared base.
+
+**Fix:**  
+`durationString` now wraps both the success and error paths in `data.NewList`, matching
+its declared `(string, error)` signature. `TimeType` now uses `data.StructureType()` like
+its sibling types in the same file — confirmed via grep that no other `TypeDefinition`
+call in the codebase uses the shared `data.StructType` singleton as a base.
+
+Regression test `TestDurationString_ReturnsDataList`
+(`internal/runtime/time/time_test.go`) asserts both the success and error paths return a
+`data.List`. Existing `TestDurationString_*` tests were updated to unwrap the now-`data.List`
+result via a new `unwrapValue` test helper.
+
+---
+
 ### Testing Methodology
 
 All bugs were found by writing small Ego programs to `/tmp/test_*.ego` and running
@@ -13182,6 +13230,7 @@ chain.  Key conversion notes:
 | [MATH-9](#MATH-9) | `notByteCode` multi-type case returns wrong result for zero values of non-`int` integer types | ✓ |
 | [MATH-10](#MATH-10) | `addByteCode` function comment incorrectly says "OR" for boolean operands | ✓ |
 | [MATH-11](#MATH-11) | `notByteCode` and `negateByteCode` return raw (undecorated) errors from `c.Pop()` | ✓ |
+| [MATH-12](#MATH-12) | `negateByteCode` has no case for `time.Duration`, so `-d` fails | ✓ |
 
 <a id="MATH-1"></a>
 
@@ -13610,6 +13659,54 @@ if err != nil {
 
 ---
 
+<a id="MATH-12"></a>
+
+### MATH-12 — `negateByteCode` has no case for `time.Duration`, so `-d` fails
+
+**Affected function:** `negateByteCode`  
+**File:** `bytecode/math.go`  
+**Risk:** Medium — arithmetic negation of a `time.Duration` value (e.g. to build a
+"before" offset from a "since" duration) fails outright, even though a `Duration` is
+just an `int64` in Go and negating one is meaningful  
+**Discovered by:** manual testing while adding `time.Time.SleepUntil()` and
+constructing a target time in the past to test its no-op behavior  
+**Status: RESOLVED**
+
+#### MATH-12: Description
+
+`negateByteCode`'s arithmetic path is a Go type switch on the popped value's
+concrete type (`byte`, `int16`, `uint16`, ..., `int64`, `float32`, `float64`, ...).
+Go's type switch requires an exact type match — `time.Duration` (`type Duration
+int64`) does not match a `case int64:` arm even though its underlying
+representation is identical. With no `case time.Duration:` arm, negation fell
+through to `default: return c.runtimeError(errors.ErrInvalidType)`.
+
+```go
+d, _ := time.ParseDuration("500ms")
+neg := -d
+// Error: invalid or unsupported data type for this operation
+```
+
+#### MATH-12: Fix
+
+Added a `case time.Duration:` arm (importing stdlib `"time"` into `math.go`),
+matching the same `isConstant`-aware pattern used by the adjacent integer cases:
+
+```go
+case time.Duration:
+    value = -value
+    if isConstant {
+        return c.push(data.Constant(value))
+    }
+
+    return c.push(value)
+```
+
+`Test_negateByteCode_TimeDuration` (`bytecode/math_test.go`) asserts
+`-3s` negates to `3s`.
+
+---
+
 <a id="members"></a>
 
 ## MEMBERS — Member Access
@@ -13623,6 +13720,7 @@ if err != nil {
 | [MEMBERS-5](#MEMBERS-5) | `getPackageMemberValue` signature includes dead parameters `v any` and `found bool` | ✓ |
 | [MEMBERS-6](#MEMBERS-6) | `getMemberValue` ignores the member name when the object is `*data.Type` | ✓ |
 | [MEMBERS-7](#MEMBERS-7) | `getMemberValue` silently returns `(nil, nil)` for a nil `*data.Type` behind `*any` | ✓ |
+| [MEMBERS-8](#MEMBERS-8) | `getNativePackageMemberValue` can never resolve an Ego-only method with no matching Go method name | ✓ |
 
 <a id="MEMBERS-1"></a>
 
@@ -13874,6 +13972,83 @@ case *data.Type:
 
 `Test_memberByteCode_PtrAny_PointingToNilType` (renamed from the `_MEMBERS7`
 form) now asserts `ErrInvalidType`.
+
+---
+
+<a id="MEMBERS-8"></a>
+
+### MEMBERS-8 — `getNativePackageMemberValue` can never resolve an Ego-only method with no matching Go method name
+
+**Affected function:** `getNativePackageMemberValue`  
+**File:** `bytecode/member.go`  
+**Risk:** High — silently prevents *any* Ego-only extension method registered on a
+native passthrough type (a type whose Ego methods are backed by a raw Go value, not
+a `*data.Struct`) from ever being callable, with no compile-time warning; only
+Ego-registered methods that happen to share a name with a genuine Go method on the
+same concrete type work, purely by coincidence  
+**Discovered by:** manual testing while adding `time.Time.SleepUntil()`, an
+Ego-specific convenience method with no Go equivalent  
+**Status: RESOLVED**
+
+#### MEMBERS-8: Description
+
+`getNativePackageMemberValue` resolves a member name on a native Go value (one that
+doesn't match the dedicated `*data.Struct`/`*data.Map`/`*data.Package` cases) in two
+steps. Step 1 used to be gated behind a Go reflection check:
+
+```go
+gt := reflect.TypeOf(mv)
+if _, found := gt.MethodByName(name); found {
+    // ... derive pkg/typeName from gt.String(), walk
+    // context symbols → *data.Package → *data.Type → Function ...
+}
+```
+
+The intent of the package-registry walk is to find an Ego-registered `Function`
+entry for `name` on the type (e.g. one added via `Type.DefineFunction` or
+`Type.DefineNativeFunction`). But it only ever ran when Go's own reflection
+*also* recognized `name` as a genuine method on the concrete native type
+(`gt.MethodByName(name)`). This meant:
+
+- An Ego method sharing a name with a real Go method (e.g.
+  `time.Duration.String()`, which Ego re-implements with an extra
+  `extendedFormat` argument) resolved correctly — the reflection check passed
+  for an unrelated reason (Go really does have a `String()` method), and the
+  subsequent registry walk found the Ego override.
+- An Ego-only method with **no** corresponding Go method name at all (e.g. a
+  new `time.Time.SleepUntil()`, added specifically because Go has no
+  equivalent) could never resolve: `gt.MethodByName("SleepUntil")` correctly
+  reports no such method on `time.Time`, so the registry walk — which
+  otherwise would have found it — was never even attempted, and the call
+  failed with `"unknown field or method name for this object type: SleepUntil"`.
+
+**Reproducer (before the fix):**
+
+```go
+t := time.Now()
+err := t.SleepUntil()
+// Error: unknown field or method name for this object type: SleepUntil
+```
+
+#### MEMBERS-8: Fix
+
+Removed the `gt.MethodByName(name)` gate entirely; the package-registry walk (deriving
+`pkg`/`typeName` from `gt.String()`, e.g. `"*time.Duration"` → `pkg="time"`,
+`typeName="Duration"`) now always runs, regardless of whether Go's reflection
+recognizes `name` as a real method. The walk's own existing checks (package lookup,
+type lookup, then `FunctionByName(name)`) already provide the necessary safety net —
+if `name` isn't actually registered, it falls through to step 2 and then the final
+error, exactly as before. No other caller relies on the removed gate: it only ever
+narrowed which names could be tried, it added no additional correctness check.
+
+Regression tests `Test_getNativePackageMemberValue_EgoOnlyMethod_NoMatchingGoMethod`
+and `Test_getNativePackageMemberValue_UnknownMethod_StillErrors`
+(`bytecode/member_test.go`) register a synthetic `"time"` package with a
+`Duration`-shaped `*data.Type` carrying a method (`TripleValue`) that does not exist
+on Go's real `time.Duration`, and confirm it now resolves against a genuine
+`time.Duration` receiver value (and that a truly unregistered name still errors).
+Verified against the original reproducer (`time.Time.SleepUntil()`) and confirmed
+the test fails when the gate is reintroduced.
 
 ---
 

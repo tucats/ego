@@ -41,6 +41,20 @@ func newSymbolTableWithReceiver(value any) *symbols.SymbolTable {
 	return st
 }
 
+// unwrapValue extracts index 0 from a data.List result. durationString
+// follows the (value, error) convention by returning a data.List{value,
+// err}, so its Go-level "any" result must be unwrapped before use.
+func unwrapValue(t *testing.T, result any) any {
+	t.Helper()
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List result, got %T", result)
+	}
+
+	return list.Get(0)
+}
+
 // ---------------------------------------------------------------------------
 // parseDuration tests
 // ---------------------------------------------------------------------------
@@ -298,6 +312,52 @@ func TestParseDuration_TableDriven(t *testing.T) {
 // boolean argument selects "extended" formatting (spaces between units, days
 // expressed separately) vs. the default compact Go format ("1h30m0s").
 
+// TestDurationString_ReturnsDataList is a regression test: durationString
+// was declared with only a single StringType return (no error), and on
+// error returned a bare (nil, err) rather than wrapping it in data.NewList.
+// Since dispatch only routes a *data.List result through the (value, error)
+// convention, a bare non-list error on a non-error-typed single return
+// becomes an uncatchable-except-try/catch runtime abort instead of a normal
+// (value, error) result -- so "s, err := d.String(...)" without a
+// surrounding try/catch would crash the whole program on a bad argument.
+// Both the success and error paths now return a data.List.
+func TestDurationString_ReturnsDataList(t *testing.T) {
+	d := time.Hour
+	st := newSymbolTableWithReceiver(d)
+
+	result, err := durationString(st, data.NewList())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List on success, got %T", result)
+	}
+
+	if list.Get(1) != nil {
+		t.Errorf("expected nil error in list's second slot, got %v", list.Get(1))
+	}
+
+	badResult, err := durationString(st, data.NewList("not-a-bool"))
+	if err == nil {
+		t.Fatal("expected an error for a non-bool extendedFormat argument")
+	}
+
+	badList, ok := badResult.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List on error path, got %T", badResult)
+	}
+
+	if badList.Get(0) != nil {
+		t.Errorf("expected nil value in error path, got %v", badList.Get(0))
+	}
+
+	if badList.Get(1) == nil {
+		t.Error("expected non-nil error in list's second slot")
+	}
+}
+
 func TestDurationString_NoReceiver(t *testing.T) {
 	// When no receiver is bound in the symbol table, durationString must return
 	// ErrNoFunctionReceiver. An empty symbol table simulates a bare function call
@@ -322,8 +382,8 @@ func TestDurationString_DefaultFormat(t *testing.T) {
 
 	// Go's time.Duration.String() for 1h30m is "1h30m0s".
 	want := d.String() // "1h30m0s"
-	if result != want {
-		t.Errorf("durationString (no args) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (no args) = %q, want %q", got, want)
 	}
 }
 
@@ -338,8 +398,8 @@ func TestDurationString_ExplicitFalse(t *testing.T) {
 	}
 
 	want := d.String()
-	if result != want {
-		t.Errorf("durationString (false) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (false) = %q, want %q", got, want)
 	}
 }
 
@@ -355,8 +415,8 @@ func TestDurationString_ExtendedFormat(t *testing.T) {
 	}
 
 	want := "1h 30m"
-	if result != want {
-		t.Errorf("durationString (true) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (true) = %q, want %q", got, want)
 	}
 }
 
@@ -371,8 +431,8 @@ func TestDurationString_ExtendedFormat_DaysAndHours(t *testing.T) {
 	}
 
 	want := "1d 1h"
-	if result != want {
-		t.Errorf("durationString (25h, extended) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (25h, extended) = %q, want %q", got, want)
 	}
 }
 
@@ -390,8 +450,8 @@ func TestDurationString_ExtendedFormat_SubSecond(t *testing.T) {
 
 	// Falls back to Go default for sub-second values.
 	want := "300ms"
-	if result != want {
-		t.Errorf("durationString (300ms, extended) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (300ms, extended) = %q, want %q", got, want)
 	}
 }
 
@@ -405,8 +465,8 @@ func TestDurationString_ExtendedFormat_Zero(t *testing.T) {
 	}
 
 	want := "0s"
-	if result != want {
-		t.Errorf("durationString (0, extended) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (0, extended) = %q, want %q", got, want)
 	}
 }
 
@@ -421,8 +481,8 @@ func TestDurationString_PtrReceiver(t *testing.T) {
 	}
 
 	want := d.String()
-	if result != want {
-		t.Errorf("durationString (*time.Duration) = %q, want %q", result, want)
+	if got := unwrapValue(t, result); got != want {
+		t.Errorf("durationString (*time.Duration) = %q, want %q", got, want)
 	}
 }
 

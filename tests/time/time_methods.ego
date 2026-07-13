@@ -137,3 +137,24 @@
     @assert t1.Before(t3)
     @assert !t1.Equal(t3)
 }
+
+@test "time: SleepUntil"
+{
+    // SleepUntil is an Ego-only addition with no Go equivalent (Go code does
+    // the same thing with time.Sleep(time.Until(t))). It was unreachable
+    // until two underlying bugs were fixed:
+    //   - getNativePackageMemberValue only resolved a member name if Go's
+    //     own reflection recognized it as a genuine method on the concrete
+    //     native type; an Ego-only method name (like "SleepUntil", which
+    //     time.Time does not have in Go) could never be found.
+    //   - negateByteCode had no case for time.Duration, so "-d" failed,
+    //     which is needed to build a target time already in the past.
+    target := time.Now().Add(time.ParseDuration("300ms"))
+    err := target.SleepUntil()
+    @assert err == nil
+
+    // Sleeping until a time already in the past is a no-op, not an error.
+    past := time.Now().Add(-time.ParseDuration("300ms"))
+    err2 := past.SleepUntil()
+    @assert err2 == nil
+}

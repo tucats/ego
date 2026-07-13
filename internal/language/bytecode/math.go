@@ -3,6 +3,7 @@ package bytecode
 import (
 	"math"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -238,6 +239,14 @@ func negateByteCode(c *Context, i any) error {
 		return c.push(value)
 
 	case int64:
+		value = -value
+		if isConstant {
+			return c.push(data.Constant(value))
+		}
+
+		return c.push(value)
+
+	case time.Duration:
 		value = -value
 		if isConstant {
 			return c.push(data.Constant(value))

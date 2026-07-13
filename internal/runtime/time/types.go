@@ -7,7 +7,7 @@ import (
 	"github.com/tucats/ego/internal/defs"
 )
 
-var TimeType = data.TypeDefinition("Time", data.StructType).
+var TimeType = data.TypeDefinition("Time", data.StructureType()).
 	SetNativeName("time.Time").
 	SetPackage("time").
 	// Fix BUG-56: without a format function, data.Format()'s default case
@@ -105,7 +105,14 @@ var TimeType = data.TypeDefinition("Time", data.StructType).
 			},
 		},
 		Returns: []*data.Type{TimeDurationType},
-	}, nil).FixSelfReferences()
+	}, nil).
+	// SleepUntil is an Ego-specific addition with no Go equivalent -- Go
+	// code does the same thing with time.Sleep(time.Until(t)).
+	DefineFunction("SleepUntil", &data.Declaration{
+		Name:    "SleepUntil",
+		Type:    data.OwnType,
+		Returns: []*data.Type{data.ErrorType},
+	}, sleepUntil).FixSelfReferences()
 
 var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 	SetNativeName(defs.TimeDurationTypeName).
@@ -129,7 +136,7 @@ var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 				},
 			},
 			ArgCount: data.Range{0, 1},
-			Returns:  []*data.Type{data.StringType},
+			Returns:  []*data.Type{data.StringType, data.ErrorType},
 		}, durationString).
 	DefineNativeFunction("Hours",
 		&data.Declaration{
