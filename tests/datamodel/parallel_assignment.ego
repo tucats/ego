@@ -9,9 +9,11 @@
 // and internal/language/compiler/var.go (varInitializerList and the
 // varInferredInitializer list branch) for the implementation.
 //
-// Known limitation: a target list containing an indexed or member lvalue
-// (e.g. "m[k], arr[i] = ...") is not supported -- see BUG-24 in
-// docs/issues/BUGS.md. All targets exercised here are simple names.
+// A target list containing an indexed or member lvalue (e.g. "m[k], arr[i]
+// = ...") is covered separately, below, in the BUG-24 section -- that used
+// to be a known limitation (rejected at runtime with "invalid or
+// unsupported data type for this operation") but is now fixed. All targets
+// in the tests above this point are simple names.
 
 @test "datamodel: parallel assignment with = and pre-declared variables"
 {
@@ -243,4 +245,183 @@
     }
 
     @assert failed == true
+}
+
+// The tests below are regression tests for BUG-24: a multi-target
+// assignment list containing an indexed or member lvalue ("m[\"k\"], arr[0]
+// = ...") failed at runtime, either with a generic "invalid or unsupported
+// data type for this operation" error, or (once the first symptom was
+// fixed) silently storing the WRONG value into a later compound target.
+//
+// Two independent, compounding root causes were involved, both in
+// internal/language/compiler/lvalue.go's assignmentTargetList and the
+// bytecode it builds:
+//
+//  1. The loop unconditionally emitted a SymbolOptCreate instruction for
+//     EVERY target in the list, compound or not, immediately before
+//     calling patchStore. patchStore decides whether to convert a compound
+//     lvalue's trailing LoadIndex into StoreIndex by checking whether the
+//     LAST instruction emitted so far is exactly that LoadIndex -- the
+//     unconditional SymbolOptCreate landing in between made that check
+//     fail every time, so patchStore fell back to an ordinary Store on the
+//     base variable's own name (e.g. "m") instead of storing into the
+//     map/array/struct element at all. Fixed by only emitting
+//     SymbolOptCreate for a genuinely simple (non-compound) target.
+//
+//  2. Once (1) was fixed and StoreIndex started being emitted correctly,
+//     a second bug surfaced: storeIndexByteCode (internal/language/
+//     bytecode/structs.go) pushes its container back onto the stack after
+//     a successful write (storeInMap, storeInArray, and the struct
+//     branches all do this). For a single-target assignment that leftover
+//     value is harmless -- the enclosing "let" stack marker's
+//     DropToMarker cleans up any stray items in one shot -- but within a
+//     multi-target list, the next target's real value needs to be exactly
+//     where the leftover container ended up sitting, so it was consumed as
+//     the NEXT target's "value" instead (e.g. "m[\"k\"], arr[0] =
+//     pair()" stored the whole map into arr[0], not pair()'s second return
+//     value). Fixed by emitting an explicit Drop right after any compound
+//     target's store, discarding the leftover container immediately
+//     instead of letting it survive to interfere with the next target.
+//
+//  3. A third, related bug was found and fixed at the same time:
+//     ByteCode.StoreCount() (internal/language/bytecode/bytecode.go),
+//     used to detect how many targets a multi-target list actually has
+//     (compileAssignment's multipleTargets flag, compileUnwrap's two-value
+//     assertion detection, and compileParallelAssignment's RHS-count
+//     validation all depend on it), only counted Store/CreateAndStore
+//     instructions -- never StoreIndex. Once fix (1) above started
+//     emitting StoreIndex correctly for compound targets, a list
+//     containing only compound targets (no simple names at all) undercounted
+//     as having 0 targets, breaking all three of those checks. Fixed by
+//     counting StoreIndex alongside Store/CreateAndStore.
+
+@test "datamodel: multi-target list with a map and array target (BUG-24)"
+{
+    m := map[string]int{}
+    arr := []int{0, 0}
+
+    func pair() (int, int) {
+        return 5, 6
+    }
+
+    m["k"], arr[0] = pair()
+
+    @assert m["k"] == 5
+    @assert arr[0] == 6
+}
+
+@test "datamodel: multi-target list with a literal RHS list, not a call (BUG-24)"
+{
+    m := map[string]int{}
+    arr := []int{0, 0}
+
+    m["a"], arr[1] = 10, 20
+
+    @assert m["a"] == 10
+    @assert arr[1] == 20
+}
+
+@test "datamodel: multi-target list with := and compound targets (BUG-24)"
+{
+    func pair() (int, int) {
+        return 7, 8
+    }
+
+    m := map[string]int{}
+    arr := []int{0, 0}
+
+    m["k"], arr[0] = pair()
+
+    @assert m["k"] == 7
+    @assert arr[0] == 8
+}
+
+@test "datamodel: multi-target list with struct field targets (BUG-24)"
+{
+    type point struct {
+        x int
+        y int
+    }
+
+    func pair() (int, int) {
+        return 5, 6
+    }
+
+    p := point{}
+    q := point{}
+
+    p.x, q.y = pair()
+
+    @assert p.x == 5
+    @assert q.y == 6
+}
+
+@test "datamodel: multi-target list mixing simple and compound targets (BUG-24)"
+{
+    a := 0
+    m := map[string]int{}
+    arr := []int{0}
+
+    a, m["x"], arr[0] = 1, 2, 3
+
+    @assert a == 1
+    @assert m["x"] == 2
+    @assert arr[0] == 3
+}
+
+@test "datamodel: multi-target list with all-compound targets (BUG-24)"
+{
+    // This specific shape -- no simple names at all in the list -- is what
+    // exposed the StoreCount() undercounting bug (root cause 3 above):
+    // with zero Store/CreateAndStore instructions in the whole list, only
+    // fixing root causes 1 and 2 would still have left this case broken.
+    m1 := map[string]int{}
+    m2 := map[string]int{}
+
+    m1["p"], m2["q"] = 100, 200
+
+    @assert m1["p"] == 100
+    @assert m2["q"] == 200
+}
+
+@test "datamodel: multi-target list with a nested compound target (BUG-24)"
+{
+    type inner struct {
+        v int
+    }
+
+    type outer struct {
+        content inner
+    }
+
+    o := outer{content: inner{v: 0}}
+    arr := []int{0}
+
+    o.content.v, arr[0] = 11, 22
+
+    @assert o.content.v == 11
+    @assert arr[0] == 22
+}
+
+@test "datamodel: simple-target-only multi-assignment is unaffected (BUG-24 regression)"
+{
+    func pair() (int, int) {
+        return 55, 66
+    }
+
+    a, b := pair()
+
+    @assert a == 55
+    @assert b == 66
+}
+
+@test "datamodel: single-target compound lvalue assignment is unaffected (BUG-24 regression)"
+{
+    m := map[string]int{}
+    m["k"] = 42
+    @assert m["k"] == 42
+
+    arr := []int{0}
+    arr[0] = 43
+    @assert arr[0] == 43
 }

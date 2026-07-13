@@ -231,8 +231,17 @@ func (b *ByteCode) EmitAt(address int, opcode Opcode, operands ...any) {
 	}
 
 	// If this is a Store operation, count it. This is used to handle
-	// assignments to tuples.
-	if opcode == Store || opcode == CreateAndStore {
+	// assignments to tuples (multi-target lists: "a, b = ..."). StoreIndex
+	// is included alongside Store/CreateAndStore because a compound target
+	// in that same list -- "m[\"k\"], arr[0] = ..." -- ends its lvalue
+	// chain with a StoreIndex (patchStore in the compiler package converts
+	// the chain's trailing LoadIndex into one), not a plain Store; leaving
+	// it uncounted here made compileParallelAssignment's target-count check
+	// see 0 targets for an all-compound list, and made
+	// compileAssignment/compileUnwrap's "is this actually a multi-target
+	// list" and "two-value assertion" checks (both keyed off StoreCount())
+	// miss a list whose targets were all compound too (BUG-24).
+	if opcode == Store || opcode == CreateAndStore || opcode == StoreIndex {
 		b.storeCount++
 	}
 

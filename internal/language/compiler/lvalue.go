@@ -148,13 +148,47 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 			}
 		}
 
-		// Cheating here a bit; this opcode does an optional create
-		// if it's not found anywhere in the tree already.
-		bc.Emit(bytecode.SymbolOptCreate, name)
-		c.ReferenceOrDefineSymbol(name.Spelling())
+		// Cheating here a bit; this opcode does an optional create if it's
+		// not found anywhere in the tree already. This only applies to a
+		// SIMPLE lvalue: needLoad is still true here exactly when the
+		// suffix loop above never ran, i.e. there was no ".field"/"[index]"
+		// chain. A compound target's base variable must already exist (you
+		// cannot introduce "m" via "m[\"k\"] := 5") and was already Load'ed
+		// and ReferenceSymbol'd inside that loop, so nothing further is
+		// needed for it here -- emitting SymbolOptCreate unconditionally
+		// for every target, compound or not, used to corrupt the very next
+		// patchStore call below. patchStore decides whether to convert the
+		// lvalue chain's trailing LoadIndex into StoreIndex by checking
+		// whether the LAST instruction emitted so far is exactly that
+		// LoadIndex; SymbolOptCreate landing in between made that check
+		// fail, silently falling back to an ordinary Store on the base
+		// variable name instead of storing into the map/array/struct
+		// element at all (BUG-24).
+		if needLoad {
+			bc.Emit(bytecode.SymbolOptCreate, name)
+			c.ReferenceOrDefineSymbol(name.Spelling())
+		}
 
 		names = append(names, name.Spelling())
 		patchStore(bc, name.Spelling(), false, false)
+
+		// A compound target's StoreIndex (emitted by patchStore just above)
+		// pushes its container back onto the stack on success -- storeInMap,
+		// storeInArray, and the *data.Struct/*any-wrapped-struct branches of
+		// storeIndexByteCode (internal/language/bytecode/structs.go) all do
+		// this unconditionally. For a single-target assignment that leftover
+		// is harmless: the "let" marker pushed before the lvalue runs, and
+		// the DropToMarker at the very end of that path, cleans it up in one
+		// shot regardless of how many stray items accumulated. But within
+		// THIS list, the next target's value must be immediately below
+		// where this target's Load/suffix chain started -- so the leftover
+		// container has to be discarded right now, or it silently becomes
+		// the next target's "value" instead of the real one (e.g.
+		// "m[\"k\"], arr[0] = pair()" stored the whole map "m" into
+		// arr[0], not pair()'s second return value) (BUG-24).
+		if !needLoad {
+			bc.Emit(bytecode.Drop, 1)
+		}
 
 		count++
 
