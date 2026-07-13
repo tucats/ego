@@ -34,7 +34,7 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 				},
 			},
 			ArgCount: data.Range{1, 2},
-			Returns:  []*data.Type{data.ArrayType(data.StringType)},
+			Returns:  []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 		},
 		Value: getLogContents,
 	},
@@ -62,7 +62,7 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 				},
 			},
 			Returns: []*data.Type{data.MapType(data.StringType,
-				data.MapType(data.StringType, data.StringType))},
+				data.MapType(data.StringType, data.StringType)), data.ErrorType},
 		},
 		Value: getPackage,
 	},
@@ -86,7 +86,7 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 					Type: data.BoolType,
 				},
 			},
-			Returns: []*data.Type{data.BoolType},
+			Returns: []*data.Type{data.BoolType, data.ErrorType},
 		},
 		Value: setLogger,
 	},
@@ -108,13 +108,22 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 				},
 			},
 			ArgCount: data.Range{0, 3},
+			// Scope: this function's entire purpose is to walk and report on
+			// the caller's live symbol table chain. Without this, callRuntimeFunction
+			// uses FindNextScope() for the parent table, which skips the caller's
+			// own immediate (non-boundary) block scope -- exactly the scope holding
+			// the caller's own local variables, making them invisible to the report.
+			Scope: true,
 		},
 		Value: formatSymbols,
 	},
 	"SymbolTables": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "SymbolTables",
-			Returns: []*data.Type{UtilSymbolTableType},
+			Returns: []*data.Type{data.ArrayType(UtilSymbolTableType)},
+			// Scope: like Symbols above, this walks the caller's live symbol
+			// table parent chain and must see the caller's own immediate scope.
+			Scope: true,
 		},
 		Value: formatTables,
 	},

@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **269 issues**:
-**228 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **271 issues**:
+**230 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -75,7 +75,7 @@ You can find a specific issue two ways:
 
 *(originally `BUGS.md`)*
 
-- [BUG — General Language Bugs](#area-bug) — 62 issues (32 resolved)
+- [BUG — General Language Bugs](#area-bug) — 84 issues (83 resolved)
 
 ### Functional / Behavioral Issues
 
@@ -107,7 +107,7 @@ You can find a specific issue two ways:
 *(originally `BYTECODE_ISSUES.md`)*
 
 - [BRANCH — Branch Instructions](#branch) — 3 issues (3 resolved)
-- [CALL — Call Instructions](#call) — 10 issues (10 resolved)
+- [CALL — Call Instructions](#call) — 14 issues (13 resolved)
 - [TRYCATCH — Try/Catch Instructions](#trycatch) — 1 issue (1 resolved)
 - [COERCE — Coerce and Conversions Instructions](#coerce) — 2 issues (2 resolved)
 - [COMPARE — Comparison Instructions](#compare) — 4 issues (3 resolved)
@@ -251,6 +251,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-81](#BUG-81) | BUG | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 | [BUG-82](#BUG-82) | BUG | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 | [BUG-83](#BUG-83) | BUG | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
+| [BUG-84](#BUG-84) | BUG | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -271,6 +272,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [CALL-11](#CALL-11) | CALL | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 | [CALL-12](#CALL-12) | CALL | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
 | [CALL-13](#CALL-13) | CALL | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
+| [CALL-14](#CALL-14) | CALL | `util.Symbols()`/`util.SymbolTables()` can't see the caller's own local variables (missing `Scope: true`) | ✓ |
 | [CALL-2](#CALL-2) | CALL | First extra variadic argument bypasses strict type checking | ✓ |
 | [CALL-3](#CALL-3) | CALL | Nil pointer dereference in callRuntimeFunction when savedDefinition is nil and context is sandboxed | ✓ |
 | [CALL-4](#CALL-4) | CALL | `parentTable` nil guard is dead code for non-literal named functions | ✓ |
@@ -553,6 +555,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-81](#BUG-81) | MEDIUM | `NewStructFromMap`/`NewStructOfTypeFromMap` build field order by ranging over a map directly, producing non-deterministic (flaky) field ordering. | ✓ |
 | [BUG-82](#BUG-82) | MEDIUM | Several `tables` package methods violate the `(value, error)` return convention. | ✓ |
 | [BUG-83](#BUG-83) | MEDIUM | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
+| [BUG-84](#BUG-84) | MEDIUM | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
 
 ---
 
@@ -8429,6 +8432,54 @@ result via a new `unwrapValue` test helper.
 
 ---
 
+<a id="BUG-84"></a>
+
+### BUG-84 — `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention
+
+**Severity:** MEDIUM
+
+**Description:**  
+Found during a documentation review of the `util` package (an Ego-specific package with
+no Go corrolary). Three functions were declared with a non-error-typed single (or
+error-omitting) `Returns`, but returned a bare `nil, err` on their error paths instead
+of `data.NewList(nil, err), err`:
+
+- `setLogger` (`util.SetLogger()`) was declared with only `[]*data.Type{data.BoolType}`
+  -- no error -- despite genuinely failing on an unrecognized logger name or a
+  non-bool `active` argument.
+- `getLogContents` (`util.Log()`) was declared with only
+  `[]*data.Type{data.ArrayType(data.StringType)}` -- no error -- despite genuinely
+  failing on a non-integer `count`/`session` argument or an underlying `ui.Tail` error.
+- `getPackage` (`util.Package()`) was declared with only the result map type -- no
+  error -- despite genuinely failing on an unknown package name.
+
+Since dispatch only routes a `*data.List` result through the `(value, error)`
+convention (see `callRuntimeFunction` dispatch mechanics in `CLAUDE.md`), a bare
+non-list error on a non-error-typed return becomes an uncatchable-except-try/catch
+runtime abort instead of a normal returned error -- e.g. `_, err :=
+util.SetLogger("bogus", true)` crashed the whole program instead of setting `err`.
+
+Separately, `util.SymbolTables()`'s declaration claimed a single `UtilSymbolTableType`
+return, but its implementation (`formatTables`) always returns a `*data.Array` of
+them -- see CALL-14, which fixes this alongside the missing `Scope: true` on the same
+declaration.
+
+**Fix:**  
+All three declarations now include `data.ErrorType` in `Returns`, and all three
+implementations wrap every return path (success and error) in `data.NewList`.
+`getLogContents`'s previous "empty buffer" success path (a bare `[]any{}`) was also
+changed to `data.NewArray(data.StringType, 0)`, consistent with its declared element
+type.
+
+Regression tests added to `internal/runtime/util/util_test.go`: existing
+`TestSetLogger`/`TestGetLogContents` subtests were updated to unwrap the now-`data.List`
+results via a new `unwrapValue` helper; a new `TestGetPackage` asserts both the success
+and error paths of `getPackage` return a `data.List` (registering a synthetic package via
+`packages.Save` rather than depending on a real package like `math` already being
+registered in the test's process).
+
+---
+
 ### Testing Methodology
 
 All bugs were found by writing small Ego programs to `/tmp/test_*.ego` and running
@@ -10991,6 +11042,7 @@ if address < 0 || address > c.bc.nextAddress {
 | [CALL-11](#CALL-11) | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
 | [CALL-12](#CALL-12) | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
 | [CALL-13](#CALL-13) | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
+| [CALL-14](#CALL-14) | `util.Symbols()`/`util.SymbolTables()` can't see the caller's own local variables (missing `Scope: true`) | ✓ |
 
 <a id="CALL-1"></a>
 
@@ -11860,6 +11912,87 @@ test can't fail on this even with the flag removed (confirmed by testing). Added
 `TestFindDeclarationHasScopeTrue` (`internal/runtime/tables/tables_test.go`) as a direct
 metadata check instead, asserting `Declaration.Scope == true` — verified it fails when
 the flag is manually removed and passes with it restored.
+
+---
+
+<a id="CALL-14"></a>
+
+### CALL-14 — `util.Symbols()`/`util.SymbolTables()` can't see the caller's own local variables (missing `Scope: true`)
+
+**Affected functions:** `formatSymbols`, `formatTables` (declarations in
+`internal/runtime/util/types.go`)  
+**Files:** `internal/runtime/util/types.go`, `internal/runtime/util/symbols.go`  
+**Risk:** High when triggered — the caller's own local variables (and, for
+`SymbolTables()`, the caller's own table) are silently missing from the report, with
+no error of any kind; only manifests at a specific shallow call depth (a bare
+top-level statement, as used by `ego run < file.ego`'s stdin path), which is why it
+shipped unnoticed — the identical call one scope level deeper (inside a function
+body) is unaffected  
+**Discovered by:** manual testing while writing `util` package documentation examples
+(`x := 5; y := "hello"; fmt.Println(util.Symbols())` never showed `x` or `y` at any
+scope level in the report)  
+**Status: RESOLVED**
+
+#### CALL-14: Description
+
+Same root cause and mechanism as CALL-13, this time affecting the two functions whose
+entire purpose is to introspect the caller's own live scope chain rather than a nested
+callback closure. Neither `Symbols` nor `SymbolTables`'s `data.Declaration` set
+`Scope: true`, so `callRuntimeFunction` parented their call's own symbol table via:
+
+```go
+if fullScope {
+    parentTable = c.symbols
+} else {
+    parentTable = c.symbols.FindNextScope()
+}
+```
+
+`fullScope` comes from `Declaration.Scope`; without it, `FindNextScope()` returns the
+*parent* of `c.symbols` for a non-boundary scope, i.e. it always skips exactly one
+level -- the caller's own immediate block scope, which is precisely the scope holding
+the caller's own local variables (and, for `SymbolTables()`, the caller's own table
+entry). `formatSymbols` and `formatTables` both walk outward from the symbol table
+they're given (`s.Parent()` for `formatTables`; `s` itself, then `.Parent()`
+repeatedly, for `formatSymbols`), so once that one level is skipped it's gone from
+the walk for good -- not merely reordered.
+
+**Reproducer (before the fix):**
+
+```go
+x := 5
+y := "hello"
+fmt.Println(util.Symbols())
+// "x" and "y" never appear in the report, at any scope level
+```
+
+```go
+tbls := util.SymbolTables()
+fmt.Println(tbls[0].name)
+// omits the caller's own immediate table entirely -- the walk starts one level
+// too high, e.g. skipping straight to a *file table when it should start there
+```
+
+#### CALL-14: Fix
+
+Added `Scope: true` to both `Symbols` and `SymbolTables`'s `data.Declaration` in
+`types.go`, matching the convention already used by `sort.Slice`, `os.Expand`,
+`tables.Find` (CALL-13), and the other callback-invoking functions. While auditing
+`SymbolTables`'s declaration, also found and fixed a second, unrelated inaccuracy: its
+`Returns` claimed a single `UtilSymbolTableType`, but the implementation
+(`formatTables`) always returns a `*data.Array` of them -- corrected to
+`data.ArrayType(UtilSymbolTableType)`.
+
+**Regression test:** same harness limitation as CALL-13 -- `ego test`'s `@test{}`
+wrapping (and any additional nesting, e.g. `@capture`) is already deep enough that the
+one skipped level either doesn't matter or lands past where the variable of interest
+lives, so a `tests/util/*.ego` test cannot be made to fail on this even with the flag
+removed (confirmed by testing). Added `TestSymbolsAndSymbolTablesDeclareScopeTrue`
+(`internal/runtime/util/util_test.go`) as a direct metadata check instead, asserting
+`Declaration.Scope == true` for both functions -- verified it fails when either flag is
+manually removed and passes with both restored. `tests/util/util.ego` still exercises
+both functions' actual reporting behavior (at the scope depth `ego test` provides) as
+general behavioral coverage, alongside the rest of the `util` package.
 
 ---
 

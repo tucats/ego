@@ -7,7 +7,22 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/packages"
 )
+
+// unwrapValue extracts index 0 from a data.List result. Functions that follow
+// the (value, error) convention return a data.List{value, err}, so their
+// Go-level "any" result must be unwrapped before use.
+func unwrapValue(t *testing.T, result any) any {
+	t.Helper()
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List result, got %T", result)
+	}
+
+	return list.Get(0)
+}
 
 // ---------------------------------------------------------------------------
 // bToMb
@@ -192,10 +207,12 @@ func TestSetLogger(t *testing.T) {
 		// Ensure the logger is off first.
 		ui.Active(traceID, false)
 
-		got, err := setLogger(s, data.NewList("TRACE", true))
+		result, err := setLogger(s, data.NewList("TRACE", true))
 		if err != nil {
 			t.Fatalf("setLogger() unexpected error: %v", err)
 		}
+
+		got := unwrapValue(t, result)
 
 		// The returned value is the *previous* state (false).
 		if got != false {
@@ -212,10 +229,12 @@ func TestSetLogger(t *testing.T) {
 		// Ensure the logger is on first.
 		ui.Active(traceID, true)
 
-		got, err := setLogger(s, data.NewList("TRACE", false))
+		result, err := setLogger(s, data.NewList("TRACE", false))
 		if err != nil {
 			t.Fatalf("setLogger() unexpected error: %v", err)
 		}
+
+		got := unwrapValue(t, result)
 
 		// The returned value is the *previous* state (true).
 		if got != true {
@@ -274,22 +293,24 @@ func TestGetLogContents(t *testing.T) {
 	s := symbols.NewSymbolTable("test getLogContents")
 
 	t.Run("returns empty array when no log lines buffered", func(t *testing.T) {
-		got, err := getLogContents(s, data.NewList(0))
+		result, err := getLogContents(s, data.NewList(0))
 		if err != nil {
 			t.Fatalf("getLogContents() unexpected error: %v", err)
 		}
 
+		got := unwrapValue(t, result)
 		if got == nil {
 			t.Fatal("getLogContents() returned nil, want empty value")
 		}
 	})
 
 	t.Run("accepts optional session filter argument", func(t *testing.T) {
-		got, err := getLogContents(s, data.NewList(10, 0))
+		result, err := getLogContents(s, data.NewList(10, 0))
 		if err != nil {
 			t.Fatalf("getLogContents() with session filter unexpected error: %v", err)
 		}
 
+		got := unwrapValue(t, result)
 		if got == nil {
 			t.Fatal("getLogContents() with session=0 returned nil, want empty value")
 		}
@@ -356,4 +377,124 @@ func TestGetPackages(t *testing.T) {
 
 		prev = name
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Scope metadata (CALL-14)
+// ---------------------------------------------------------------------------
+
+// TestSymbolsAndSymbolTablesDeclareScopeTrue guards against a regression where
+// Symbols() and SymbolTables() lose Scope: true on their data.Declaration.
+// Both functions exist specifically to walk and report on the caller's own
+// live symbol table chain, so callRuntimeFunction must parent their call
+// scope directly on c.symbols (via fullScope) rather than on
+// c.symbols.FindNextScope() (the default for non-Scope functions), which
+// skips exactly the caller's own immediate block scope -- the one holding
+// the local variables the report is supposed to show (see CALL-14).
+//
+// This can't be reproduced through the normal `ego test` harness: the bug
+// only manifests when the call happens at a specific shallow scope depth
+// (e.g. a bare top-level statement), and `ego test`'s @test{} block wrapping
+// (plus any nested @capture block) is already one or more scopes deeper,
+// which happens to land past the skipped level rather than on it -- the same
+// harness limitation noted for CALL-13's tables.Find() regression test.
+func TestSymbolsAndSymbolTablesDeclareScopeTrue(t *testing.T) {
+	v, found := UtilPackage.Get("Symbols")
+	if !found {
+		t.Fatal("could not find Symbols function in UtilPackage")
+	}
+
+	symbolsFn, ok := v.(data.Function)
+	if !ok {
+		t.Fatalf("Symbols is %T, want data.Function", v)
+	}
+
+	if !symbolsFn.Declaration.Scope {
+		t.Error("Symbols() Declaration.Scope = false, want true")
+	}
+
+	v, found = UtilPackage.Get("SymbolTables")
+	if !found {
+		t.Fatal("could not find SymbolTables function in UtilPackage")
+	}
+
+	symbolTablesFn, ok := v.(data.Function)
+	if !ok {
+		t.Fatalf("SymbolTables is %T, want data.Function", v)
+	}
+
+	if !symbolTablesFn.Declaration.Scope {
+		t.Error("SymbolTables() Declaration.Scope = false, want true")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// getPackage
+// ---------------------------------------------------------------------------
+
+// TestGetPackage verifies that getPackage follows the (value, error) return
+// convention (a data.List, not a bare value/error pair) on both its success
+// and error paths, and that a known package name ("math") produces a map with
+// the expected "functions" and "constants" sub-maps.
+func TestGetPackage(t *testing.T) {
+	s := symbols.NewSymbolTable("test getPackage")
+
+	// getPackage looks up its argument in the process-wide package registry
+	// (internal/packages), which is normally populated by compiling an Ego
+	// program that imports the package. Register a minimal stand-in package
+	// directly so this test doesn't depend on that registry already holding
+	// a real package like "math".
+	testPkg := data.NewPackageFromMap("testpkg", map[string]any{
+		"DoThing": data.Function{
+			Declaration: &data.Declaration{Name: "DoThing"},
+		},
+	})
+	packages.Save(testPkg)
+
+	defer packages.Delete("testpkg")
+
+	t.Run("known package name returns data.List on success", func(t *testing.T) {
+		result, err := getPackage(s, data.NewList("testpkg"))
+		if err != nil {
+			t.Fatalf("getPackage() unexpected error: %v", err)
+		}
+
+		list, ok := result.(data.List)
+		if !ok {
+			t.Fatalf("expected data.List on success, got %T", result)
+		}
+
+		if list.Get(1) != nil {
+			t.Errorf("expected nil error in list's second slot, got %v", list.Get(1))
+		}
+
+		m, ok := list.Get(0).(*data.Map)
+		if !ok {
+			t.Fatalf("expected *data.Map value, got %T", list.Get(0))
+		}
+
+		if _, found, _ := m.Get("functions"); !found {
+			t.Error(`expected "functions" key in result map`)
+		}
+	})
+
+	t.Run("unknown package name returns data.List on error", func(t *testing.T) {
+		result, err := getPackage(s, data.NewList("no-such-package"))
+		if err == nil {
+			t.Fatal("expected an error for an unknown package name")
+		}
+
+		list, ok := result.(data.List)
+		if !ok {
+			t.Fatalf("expected data.List on error path, got %T", result)
+		}
+
+		if list.Get(0) != nil {
+			t.Errorf("expected nil value in error path, got %v", list.Get(0))
+		}
+
+		if list.Get(1) == nil {
+			t.Error("expected non-nil error in list's second slot")
+		}
+	})
 }

@@ -7203,45 +7203,56 @@ fmt.Println(t.Format(time.RFC1123))   // Mon, 07 Dec 1959 00:00:00 UTC
 ### util Package<a name="util"></a>
 
 The `util` package contains miscellaneous utility functions that may be convenient
-for developers writing _Ego_ programs.
+for developers writing _Ego_ programs. It is an Ego-specific package with no
+corresponding package in Go; every fallible function returns `(value, error)`.
+
+| Function | Description |
+| :------- | :---------- |
+| `SetLogger(name string, active bool) (bool, error)` | Enables or disables a logger; returns its previous state. |
+| `Memory() MemoryStatus` | Current and lifetime memory consumption of the running program. |
+| `Mode() string` | The execution mode the program is running under. |
+| `Symbols([scope int [, format string [, allSymbols bool]]]) string` | A formatted report of the active symbol table chain. |
+| `SymbolTables() []SymbolTable` | Metadata (name, depth, size, ...) about each symbol table in the active scope chain. |
+| `Package(name string) (map[string]map[string]string, error)` | Lists the types, constants, variables, and functions exported by a package. |
+| `Packages() []string` | The names of every package known to the running program. |
+| `Log(count int [, session int]) ([]string, error)` | The last `count` lines of the log buffer, optionally filtered to one session. |
 
 #### util.SetLogger()
 
-The `SetLogger()` function enables or disables specific loggers at runtime. This can be
-used to turn on tracing when in interactive mode, for example.
+`SetLogger()` enables or disables a named logger at runtime, returning the logger's
+previous enabled state. This can be used to turn on tracing while running interactively,
+for example. Logger names are not case sensitive; an unrecognized name is an error.
 
 ```go
-oldSetting := util.SetLogger("trace", true)
-```
+old, err := util.SetLogger("trace", true)
+fmt.Println(old, err)   // false <nil>  (assuming it started disabled)
 
-The value of `oldSetting` is a boolean that describes the previous state of this logger,
-which allows a program to set a logger back to its original state if desired.
+_, err = util.SetLogger("no-such-logger", true)
+fmt.Println(err != nil)   // true
+```
 
 #### util.Memory()
 
-The `Memory()` function returns a structure summarizing current user memory consumption,
-total consumption for the life of the program, system memory on behalf of the _Ego_
-processes, and a count of the number of times the garbage collector that manages
-memory for Ego has been run.
+`Memory()` returns a `MemoryStatus` structure summarizing current memory consumption,
+total consumption for the life of the program, system memory used on behalf of the
+_Ego_ process, and a count of how many times the garbage collector has run.
 
-```text
-    ego> fmt.Println(util.Memory())
-    { current: 0.9879989624023438, gc: 0, system: 68.58106994628906, time: "Thu Apr 22 2021 10:07:36 EDT", total: 0.9879989624023438 }
+```go
+fmt.Println(util.Memory())
+// MemoryStatus{ Current: 36.22, GC: 4, System: 114.32, Time: "Mon Jul 13 2026 17:53:24 EDT", Total: 102.25 }
 ```
 
-The result of the function is always a structure. The `current` and `system` values
-are expressed in megabytes; so in the above example, the current memory consumption
-by the system on behalf of Ego is 68MB and the user memory consumed by Ego on behalf
-of the user is just under 1MB. The value of `total` is the total amount of memory
-ever allocated by Ego; this number will rise throughout the life of the program, but
-each time the memory reclamation thread (garbage collector) runs, it will reclaim
-unused memory and reduce the `current` value accordingly. You can use the `gc` field
-as a count of the number of times the garbage collector has run.
+`Current` and `System` are expressed in megabytes: `Current` is memory currently
+allocated by the Ego process, and `System` is memory obtained from the operating
+system on the process's behalf (always somewhat larger than `Current`, since it
+includes reserved-but-unused space). `Total` is the cumulative amount ever allocated
+over the life of the program -- it only grows, unlike `Current`, which drops each
+time the garbage collector reclaims unused memory. `GC` counts how many garbage
+collection cycles have completed so far.
 
 #### util.Mode()
 
-The `Mode()` function reports the mode the current program is running under.
-The list of values are:
+`Mode()` reports the mode the current program is running under:
 
 &nbsp;
 
@@ -7253,24 +7264,122 @@ The list of values are:
 | run | The program is running using `ego run` with an input file or pipe |
 
 &nbsp;
-&nbsp;
-
-#### util.Symbols()
-
-The `Symbols()` function generates a report on the current state of the active
-symbol table structure. This prints the symbols defined in each scope (including
-statement blocks, functions, programs, and the root symbol table). For each one,
-the report includes the number of symbol table slots used out of the maximum
-allowed, and then a line for each symbol, showing its name, type, and
-value.
 
 ```go
+fmt.Println(util.Mode())   // run
+```
+
+#### util.Symbols([scope [, format [, allSymbols]]])
+
+`Symbols()` generates a report on the current state of the active symbol table chain,
+starting with the scope the call itself runs in (scope 0, which -- since it was created
+just for this call -- is always empty) and continuing outward through every enclosing
+scope: statement blocks, functions, imported-package tables, and finally the root table.
+All three arguments are optional:
+
+- `scope`: if given (`>= 0`), restricts the report to just that one scope level instead
+  of the full chain. Requesting a scope level beyond the root table is an error.
+- `format`: `"json"` or `"indented"` selects JSON output (the latter pretty-printed)
+  instead of the default human-readable table.
+- `allSymbols`: when `true`, also includes built-in functions and built-in packages,
+  which are omitted by default.
+
+```go
+x := 5
+y := "hello"
 fmt.Println(util.Symbols())
 ```
 
-Note that symbols that are internal to the running of the program are
-not displayed; only symbols created by the user or for defined packages
-are displayed.
+```text
+Scope    Table                 Boundary    Symbol    Type              Readonly    Value
+=====    ==================    ========    ======    ==============    ========    ==================
+  0       builtin ... Symbols  false       <no symbols>
+  1      *file <stdin>         false       fmt       *interface{}      false       Package<"fmt", ...>
+                                            ...
+                                            x         int               false       5
+                                            y         string            false       "hello"
+  2      *root                 true        _version  string            true        "1.8-1896"
+                                            ...
+```
+
+Requesting just the caller's own scope (level 1 here), as indented JSON:
+
+```go
+fmt.Println(util.Symbols(1, "indented", false))
+```
+
+```text
+[
+   ...
+   {
+      "Symbol":"x",
+      "Type":"int",
+      "Readonly":false,
+      "Value":5
+   },
+   {
+      "Symbol":"y",
+      "Type":"string",
+      "Readonly":false,
+      "Value":"\"hello\""
+   }
+]
+```
+
+#### util.SymbolTables()
+
+`SymbolTables()` returns an array of `SymbolTable` structures, one per symbol table in
+the active scope chain, giving each table's name, nesting depth, unique id, size, and
+whether it is the root table or a shared table:
+
+```go
+tbls := util.SymbolTables()
+fmt.Println(len(tbls) > 0)   // true
+fmt.Println(tbls[0].name)    // file <stdin>
+```
+
+#### util.Package(name)
+
+`Package(name)` looks up a package by name (or import path) and returns a map
+describing every exported type, constant, variable, and function it defines. The
+result map has up to four keys -- `"types"`, `"constants"`, `"variables"`, and
+`"functions"` -- each present only if the package defines at least one item of that
+kind; each of those, in turn, maps an item's name to a human-readable description of
+its declaration or value.
+
+```go
+m, err := util.Package("math")
+fmt.Println(err)                       // <nil>
+fmt.Println(m["functions"]["Sqrt"])     // Sqrt(f float64) float64
+fmt.Println(m["constants"]["Pi"])       // 3.141592654
+
+_, err = util.Package("no-such-package")
+fmt.Println(err)   // invalid or missing package name: no-such-package
+```
+
+#### util.Packages()
+
+`Packages()` returns a sorted array of the names of every package known to the
+running program (built-in packages plus anything imported):
+
+```go
+names := util.Packages()
+fmt.Println(len(names) >= 20)   // true
+```
+
+#### util.Log(count [, session])
+
+`Log(count)` returns the last `count` lines from the log buffer as a string array. The
+optional `session` argument restricts the result to lines logged during a specific
+session id; pass `0` (or omit it) for lines from all sessions. If the log buffer is
+empty (or logging isn't configured to retain lines), an empty array is returned rather
+than an error.
+
+```go
+lines, err := util.Log(10)
+fmt.Println(err)             // <nil>
+fmt.Println(len(lines) >= 0) // true
+```
 
 ---
 

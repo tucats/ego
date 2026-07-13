@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -951,7 +951,7 @@ func TestPrintTable(t *testing.T) {
 		addTestRow(t, s, "Alice", "95")
 
 		var buf bytes.Buffer
-		
+
 		s.SetAlways(defs.StdoutWriterSymbol, &buf)
 
 		_, err := printTable(s, data.NewList("text"))
@@ -1098,7 +1098,7 @@ func TestRoundTrip(t *testing.T) {
 //
 // This is a direct metadata check rather than a full behavioral
 // reproduction for exactly that reason: reproducing the actual scope-depth
-// bug requires being at the outermost scope of a bytecode.Context, which the
+// issue requires being at the outermost scope of a bytecode.Context, which the
 // Ego test harness's @test{} wrapping doesn't allow. Asserting the
 // declaration flag directly still catches a regression of the missing flag,
 // which is the actual root cause.

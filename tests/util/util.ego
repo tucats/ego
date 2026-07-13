@@ -1,0 +1,97 @@
+// Tests for the util package: an Ego-specific utility package with no Go
+// corrolary. All fallible functions follow the (value, error) convention.
+
+@test "util: Mode reports the running mode"
+{
+    // Running under "ego test" always reports "test".
+    @assert util.Mode() == "test"
+}
+
+@test "util: Memory returns a MemoryStatus structure"
+{
+    m := util.Memory()
+    @assert m.Current >= 0.0
+    @assert m.Total >= 0.0
+    @assert m.System >= 0.0
+    @assert m.GC >= 0
+    @assert len(m.Time) > 0
+}
+
+@test "util: SetLogger enables and restores a logger, and errors on a bad name"
+{
+    // Use the APP logger (not TRACE/BYTECODE) since enabling those would flood
+    // this test run with instruction-level trace output as a side effect.
+    old, err := util.SetLogger("app", false)
+    @assert err == nil
+
+    // Flip it and confirm the previous state comes back on the second call.
+    _, err2 := util.SetLogger("app", true)
+    @assert err2 == nil
+
+    restored, err3 := util.SetLogger("app", old)
+    @assert err3 == nil
+    @assert restored == true
+
+    savedInternal := util.SetLogger("INTERNAL", false)
+    _, err4 := util.SetLogger("no-such-logger-xyz", true)
+    _, _ := util.SetLogger("INTERNAL", savedInternal)
+
+    @assert err4 != nil
+}
+
+@test "util: Symbols sees the caller's own local variables (MEMBERS-9)"
+{
+    // Before this was fixed, callRuntimeFunction used FindNextScope() for a
+    // non-Scope-flagged runtime function's parent table, which always skips
+    // the immediate calling block -- exactly the scope holding the caller's
+    // own locals. util.Symbols() and util.SymbolTables() exist specifically
+    // to report on the caller's scope chain, so they must set Scope: true on
+    // their declarations to see it. Without the fix, "probeVariable" (and
+    // its value) would never appear in this report at any scope level.
+    probeVariable := 424242
+    _ = probeVariable
+
+    @capture report := {
+        fmt.Println(util.Symbols(-1, "indented", true))
+    }
+
+    @assert strings.Contains(report, "probeVariable")
+    @assert strings.Contains(report, "424242")
+}
+
+@test "util: SymbolTables sees the caller's own table (MEMBERS-9)"
+{
+    tbls := util.SymbolTables()
+    @assert len(tbls) > 0
+
+    // The first entry must be the caller's own immediate block scope ("block
+    // 0", depth 0) -- not skipped in favor of its parent -- same root cause
+    // as Symbols above.
+    @assert tbls[0].name == "block 0"
+    @assert tbls[0].depth == 0
+}
+
+@test "util: Package lists functions and constants for a known package"
+{
+    m, err := util.Package("math")
+    @assert err == nil
+    @assert len(m["functions"]) > 0
+    @assert m["constants"]["Pi"] == "3.141592654"
+
+    _, err2 := util.Package("no-such-package-xyz")
+    @assert err2 != nil
+}
+
+@test "util: Packages lists known package names"
+{
+    names := util.Packages()
+    @assert len(names) >= 20
+    @assert strings.Contains(strings.Join(names, ","), ",uuid")
+}
+
+@test "util: Log returns lines without error"
+{
+    lines, err := util.Log(5)
+    @assert err == nil
+    @assert len(lines) >= 0
+}

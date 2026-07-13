@@ -18,19 +18,23 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 	enabled, err := data.Bool(args.Get(1))
 	if err != nil {
-		return nil, errors.New(err).In("SetLogger")
+		err = errors.New(err).In("SetLogger")
+
+		return data.NewList(nil, err), err
 	}
 
 	loggerID := ui.LoggerByName(name)
 	if loggerID < 0 {
-		return nil, errors.ErrInvalidLoggerName.Context(name)
+		err = errors.ErrInvalidLoggerName.Context(name)
+
+		return data.NewList(nil, err), err
 	}
 
 	oldSetting := ui.IsActive(loggerID)
 
 	ui.Active(loggerID, enabled)
 
-	return oldSetting, nil
+	return data.NewList(oldSetting, nil), nil
 }
 
 // getLogContents implements the util.Log(n[, session]) function, which returns the
@@ -44,7 +48,9 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 	count, err := data.Int(args.Get(0))
 	if err != nil {
-		return nil, errors.New(err).In("Log")
+		err = errors.New(err).In("Log")
+
+		return data.NewList(nil, err), err
 	}
 
 	filter := 0
@@ -52,17 +58,21 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 1 {
 		filter, err = data.Int(args.Get(1))
 		if err != nil {
-			return nil, errors.New(err).In("Log")
+			err = errors.New(err).In("Log")
+
+			return data.NewList(nil, err), err
 		}
 	}
 
 	lines, err := ui.Tail(count, filter)
 	if err != nil {
-		return nil, errors.New(err).Context("Log()")
+		err = errors.New(err).Context("Log()")
+
+		return data.NewList(nil, err), err
 	}
 
 	if lines == nil {
-		return []any{}, nil
+		return data.NewList(data.NewArray(data.StringType, 0), nil), nil
 	}
 
 	// ui.Tail returns []string, but data.NewArrayFromInterfaces requires []any,
@@ -72,5 +82,5 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 		xLines[i] = j
 	}
 
-	return data.NewArrayFromInterfaces(data.StringType, xLines...), nil
+	return data.NewList(data.NewArrayFromInterfaces(data.StringType, xLines...), nil), nil
 }

@@ -22,7 +22,9 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 	if pkg == nil {
 		pkg = packages.GetByName(path)
 		if pkg == nil {
-			return nil, errors.New(errors.ErrInvalidPackageName).Context(path)
+			err := errors.New(errors.ErrInvalidPackageName).Context(path)
+
+			return data.NewList(nil, err), err
 		}
 	}
 
@@ -42,7 +44,7 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 		case "var":
 			nameParts := strings.SplitN(text, " ", 2)
 			if _, err := varMap.Set(nameParts[0], nameParts[1]); err != nil {
-				return nil, err
+				return data.NewList(nil, err), err
 			}
 
 		case "const":
@@ -50,20 +52,20 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 			valueParts := strings.SplitN(nameParts[1], "=", 2)
 
 			if _, err := constMap.Set(nameParts[0], strings.TrimSpace(valueParts[1])); err != nil {
-				return nil, err
+				return data.NewList(nil, err), err
 			}
 
 		case "type":
 			nameParts := strings.SplitN(text, " ", 2)
 			if _, err := typeMap.Set(nameParts[0], nameParts[1]); err != nil {
-				return nil, err
+				return data.NewList(nil, err), err
 			}
 
 		case "func":
 			nameParts := strings.SplitN(text, "(", 2)
 
 			if _, err := funcMap.Set(nameParts[0], text); err != nil {
-				return nil, err
+				return data.NewList(nil, err), err
 			}
 		}
 	}
@@ -72,29 +74,29 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if typeMap.Len() > 0 {
 		if _, err := resultMap.Set("types", typeMap); err != nil {
-			return nil, err
+			return data.NewList(nil, err), err
 		}
 	}
 
 	if constMap.Len() > 0 {
 		if _, err := resultMap.Set("constants", constMap); err != nil {
-			return nil, err
+			return data.NewList(nil, err), err
 		}
 	}
 
 	if varMap.Len() > 0 {
 		if _, err := resultMap.Set("variables", varMap); err != nil {
-			return nil, err
+			return data.NewList(nil, err), err
 		}
 	}
 
 	if funcMap.Len() > 0 {
 		if _, err := resultMap.Set("functions", funcMap); err != nil {
-			return nil, err
+			return data.NewList(nil, err), err
 		}
 	}
 
-	return resultMap, nil
+	return data.NewList(resultMap, nil), nil
 }
 
 // makePackageItemList builds a sorted list of human-readable declarations for every

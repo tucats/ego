@@ -213,9 +213,12 @@ func LoggerByName(loggerName string) int {
 		}
 	}
 
-	WriteLog(InternalLogger, "logging.no.class", A{
-		"func":  "LoggerByName",
-		"class": loggerName})
+	// This is a debug operation that isn't necessary to be logged, I think.
+	if false {
+		WriteLog(InternalLogger, "logging.no.class", A{
+			"func":  "LoggerByName",
+			"class": loggerName})
+	}
 
 	return NoSuchLogger
 }
