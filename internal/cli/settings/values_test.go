@@ -51,6 +51,73 @@ func TestSet(t *testing.T) {
 	assert.True(t, c.Dirty)
 }
 
+// TestSetDefault verifies the ephemeral overlay contract SetDefault must
+// hold: Get() sees the new value immediately, but the persisted
+// Configuration itself is never touched and never marked dirty. This is
+// what makes SetDefault (unlike Set) safe for profile.Set() to use for
+// "ego.*" keys without leaking to disk the next time any CLI command's
+// unconditional settings.Save() runs (BUG-78).
+func TestSetDefault(t *testing.T) {
+	Configurations = map[string]*Configuration{
+		"default": {
+			Description: "default configuration",
+			Items:       map[string]string{},
+			Modified:    time.Now().Format(time.RFC1123Z),
+			Dirty:       false,
+		},
+	}
+	CurrentConfiguration = Configurations["default"]
+	ClearDefaults()
+
+	SetDefault("ephemeralKey", "ephemeralValue")
+
+	assert.Equal(t, "ephemeralValue", Get("ephemeralKey"))
+	assert.True(t, Exists("ephemeralKey"))
+
+	c := getCurrentConfiguration()
+	_, inPersistedConfig := c.Items["ephemeralKey"]
+	assert.False(t, inPersistedConfig)
+	assert.False(t, c.Dirty)
+
+	ClearDefaults()
+}
+
+// TestDeleteDefault mirrors TestSetDefault for the removal side: it must
+// remove the ephemeral override (so Get() falls back to whatever, if
+// anything, is in the persisted configuration) without ever marking the
+// persisted configuration dirty -- including when no override was set in
+// the first place, which must be a harmless no-op rather than an error
+// (BUG-78).
+func TestDeleteDefault(t *testing.T) {
+	Configurations = map[string]*Configuration{
+		"default": {
+			Description: "default configuration",
+			Items:       map[string]string{"persistedKey": "persistedValue"},
+			Modified:    time.Now().Format(time.RFC1123Z),
+			Dirty:       false,
+		},
+	}
+	CurrentConfiguration = Configurations["default"]
+	ClearDefaults()
+
+	// Case 1: deleting an ephemeral override falls back to the persisted value.
+	SetDefault("persistedKey", "overriddenValue")
+	assert.Equal(t, "overriddenValue", Get("persistedKey"))
+
+	DeleteDefault("persistedKey")
+	assert.Equal(t, "persistedValue", Get("persistedKey"))
+
+	c := getCurrentConfiguration()
+	assert.False(t, c.Dirty)
+	assert.Equal(t, "persistedValue", c.Items["persistedKey"])
+
+	// Case 2: deleting a key with no ephemeral override is a harmless no-op.
+	DeleteDefault("neverSet")
+	assert.False(t, c.Dirty)
+
+	ClearDefaults()
+}
+
 func TestGetBool(t *testing.T) {
 	// Test case 1: Boolean value "true"
 	SetDefault("test_key1", "true")

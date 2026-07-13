@@ -1,0 +1,86 @@
+// Regression test for BUG-78: profile.Set() on an "ego.*" key must update
+// the in-memory value immediately (so later code in the same process sees
+// the change) but must never leak to the persisted profile file on disk.
+//
+// The "never leaks to disk" half of this contract is verified at the Go
+// level, in internal/cli/settings/values_test.go's TestSetDefault and
+// TestDeleteDefault -- a single .ego test can't easily assert on the
+// contents of ~/.ego/<profile>.profile without depending on the developer's
+// home directory layout. What a test here CAN and does verify is the other
+// half of the fix: that profile.Set()/profile.Get() still behave exactly
+// like an ordinary, durable setting from the point of view of Ego code
+// running in the same process -- i.e. that routing the change through
+// settings.SetDefault()/DeleteDefault() (the ephemeral overlay) instead of
+// settings.Set()/Delete() (which is what leaked) didn't also break the
+// "the rest of this process sees the new value" half of the behavior.
+//
+// IMPORTANT: the ephemeral overlay is process-global, not scoped to this
+// test or file -- a change here would be visible to every other @test block
+// compiled and run afterward in the same "ego test" invocation (including
+// other files, since ego test compiles/runs one file at a time in a single
+// process). Every test below restores the setting to its original value
+// before finishing, so this file has no effect on any other test's result.
+//
+// It also means these tests cannot assume they are the first thing to touch
+// the ephemeral overlay for this key: "ego --set ego.compiler.type.shadowing=..."
+// (internal/cli/app/actions.go's SetAction) populates the exact same overlay
+// via settings.SetDefault() before any test file is even compiled. So
+// profile.Get() at the top of a test may already be reflecting an ephemeral
+// override rather than the persisted value -- see the delete test below for
+// why that distinction matters.
+
+@test "packages: profile.Set on an ego.* key updates profile.Get immediately"
+{
+    import "profile"
+
+    original := profile.Get("ego.compiler.type.shadowing")
+
+    profile.Set("ego.compiler.type.shadowing", "false")
+    @assert profile.Get("ego.compiler.type.shadowing") == "false"
+
+    profile.Set("ego.compiler.type.shadowing", "true")
+    @assert profile.Get("ego.compiler.type.shadowing") == "true"
+
+    // Restore whatever the setting actually was before this test ran.
+    profile.Set("ego.compiler.type.shadowing", original)
+    @assert profile.Get("ego.compiler.type.shadowing") == original
+}
+
+@test "packages: profile.Delete on an ego.* key clears the ephemeral override"
+{
+    import "profile"
+
+    original := profile.Get("ego.compiler.type.shadowing")
+
+    // Use a sentinel value that could never legitimately be this key's real
+    // value (persisted or ephemeral), rather than trying to pick something
+    // merely "different from original". A true/false-valued override risks
+    // coincidentally matching whatever profile.Delete() falls back to --
+    // e.g. if the ephemeral overlay already held "false" (from something
+    // outside this test, like a "--set ego.compiler.type.shadowing=false"
+    // flag on the "ego test" invocation itself, which populates the exact
+    // same explicit-values overlay as profile.Set()) and the persisted
+    // profile underneath happens to hold "true", picking "true" as the
+    // override would make the post-delete "!=" check below pass even if
+    // Delete() had done nothing at all. The sentinel sidesteps this
+    // entirely: it can only still be present if Delete() failed to clear
+    // the override, regardless of what value -- persisted or otherwise --
+    // is sitting underneath it.
+    sentinel := "bug78-test-sentinel-value"
+
+    profile.Set("ego.compiler.type.shadowing", sentinel)
+    @assert profile.Get("ego.compiler.type.shadowing") == sentinel
+
+    // An empty-string Set() is how profile.Delete() is implemented
+    // (deleteKey just calls setKey with ""); this must clear the ephemeral
+    // override, falling back to whatever is underneath it -- not leave the
+    // just-set override value in place, and not error.
+    profile.Delete("ego.compiler.type.shadowing")
+    @assert profile.Get("ego.compiler.type.shadowing") != sentinel
+
+    // Restore whatever was visible before this test ran, so later tests
+    // (in this file, or elsewhere in the same "ego test" run) see the same
+    // value they would have if this test had never run.
+    profile.Set("ego.compiler.type.shadowing", original)
+    @assert profile.Get("ego.compiler.type.shadowing") == original
+}

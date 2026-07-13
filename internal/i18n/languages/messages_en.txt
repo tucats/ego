@@ -1469,6 +1469,7 @@ config.deleted=Deleted profile {{name}}, file {{path}}
 config.delete.not.found=No such profile "{{name}}" to delete
 config.set=Setting profile key "{{name}}" = "{{value}}"
 config.set.default=Setting default key "{{name}}" = "{{value}}"
+config.delete.default=Deleting default key "{{name}}"
 config.deleting=Deleting profile key "{{name}}"
 
 db.connect=Connecting to {{constr}}

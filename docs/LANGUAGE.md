@@ -4030,11 +4030,10 @@ Profile settings all have a name, which is a string value to identify the key. T
 You can use any other prefix to store settings related to your particular _Ego_ application
 usage.
 
-The profile values are stored in the .org.fernwood/ego.json file located in your default
-home directory. This file must be readable to access profile settings, and the file is
-rewritten when a setting value is changed and _Ego_ exits. Note that this file contains
-all the profiles, not just the default profile (or profile specified with the --profile
-command-line option).
+The profile values are stored in the .ego/ directory located in your default home directory.
+There is a file named default.profile for your default profile, and other *.profile files
+for other named configurations. This file must be readable to access profile settings,
+and the file is rewritten when a setting value is changed and _Ego_ exits.
 
 #### profile.Delete(key)
 

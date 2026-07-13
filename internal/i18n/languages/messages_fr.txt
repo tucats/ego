@@ -1449,6 +1449,7 @@ config.deleted=Profil {{name}} supprimé, fichier {{path}}
 config.delete.not.found=Aucun profil «{{name}}» à supprimer
 config.set=Définition de la clé de profil «{{name}}» = «{{value}}»
 config.set.default=Définition de la clé par défaut «{{name}}» = «{{value}}»
+config.delete.default=Suppression de la clé par défaut «{{name}}»
 config.deleting=Suppression de la clé de profil «{{name}}»
 
 db.connect=Connexion à {{constr}}

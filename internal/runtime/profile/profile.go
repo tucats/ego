@@ -61,16 +61,33 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 
 	// If the value is an empty string, delete the key else
 	// store the value for the key.
+	//
+	// Ego settings ("ego.*") can only be updated in the in-memory copy, not
+	// in the persisted data. Set()/Delete() mark the active Configuration
+	// dirty regardless of key prefix, and the CLI's top-level command
+	// dispatcher (internal/cli/app/run.go) unconditionally calls
+	// settings.Save() after every successful command -- so using Set()/
+	// Delete() here would flush the "ephemeral" change to disk anyway the
+	// next time any command completes, defeating the in-memory-only intent
+	// below. SetDefault()/DeleteDefault() touch only the transient
+	// explicit-values overlay (which Get() still checks first) and never
+	// mark anything dirty, so they can never leak to disk this way (BUG-78).
 	value := data.String(args.Get(1))
+
+	if isEgoSetting {
+		if value == "" {
+			settings.DeleteDefault(key)
+		} else {
+			settings.SetDefault(key, value)
+		}
+
+		return nil, nil
+	}
+
 	if value == "" {
 		err = settings.Delete(key)
 	} else {
 		settings.Set(key, value)
-	}
-
-	// Ego settings can only be updated in the in-memory copy, not in the persisted data.
-	if isEgoSetting {
-		return err, nil
 	}
 
 	// Otherwise, store the value back to the file system.

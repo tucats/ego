@@ -48,6 +48,19 @@ func SetDefault(key string, value string) {
 		"value": value})
 }
 
+// DeleteDefault removes a key from the transient default (explicit-values)
+// overlay only. Unlike Delete, it never touches the persisted Configuration
+// or marks it dirty; removing an override that was never set is a harmless
+// no-op. This is the ephemeral counterpart to SetDefault -- see BUG-78 in
+// docs/ISSUES.md for why profile.Delete() must use this, not Delete(), for
+// "ego.*" keys.
+func DeleteDefault(key string) {
+	delete(explicitValues.Items, key)
+
+	ui.Log(ui.AppLogger, "config.delete.default", ui.A{
+		"name": key})
+}
+
 // ClearDefaults clears all ephemeral (default) keys from the explicit values map.
 func ClearDefaults() {
 	explicitValues.Items = map[string]string{}

@@ -1456,6 +1456,7 @@ config.deleted=Perfil {{name}} eliminado, archivo {{path}}
 config.delete.not.found=No existe el perfil "{{name}}" para eliminar
 config.set=Estableciendo clave de perfil "{{name}}" = "{{value}}"
 config.set.default=Estableciendo clave predeterminada "{{name}}" = "{{value}}"
+config.delete.default=Eliminando clave predeterminada "{{name}}"
 config.deleting=Eliminando clave de perfil "{{name}}"
 
 db.connect=Conectando a {{constr}}
