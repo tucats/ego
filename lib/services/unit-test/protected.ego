@@ -1,0 +1,14 @@
+// Test fixture (see tests/server/unittest.ego) exercising the @endpoint
+// bare "authenticated" term: requires a valid authenticated (non-admin)
+// session, and returns the caller's username. An unauthenticated request
+// never reaches this handler -- the router rejects it with 401/403 first.
+
+@endpoint get path="/services/unit-test/protected" authenticated
+
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.WriteJSON({username: req.Username})
+}

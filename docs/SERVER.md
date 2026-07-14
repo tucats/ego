@@ -419,35 +419,23 @@ will be referenced with an endpoint like `http://host:port/services/foo`
 
 ### Request Parameter <a name="#request"></a>
 
-The first parameter of the service's `handler()` function must be of type `Request`, which
-describes all the information known about the request made by the caller. It is a `struct`
-data type, with the following fields:
-
-| Name | Type | Description |
-| :--- | ---- | :---------- |
-| Authentication | string | The kind of authentication, "none", "basic", or "token" |
-| Body | string | The request body if this was a POST operation |
-| Endpoint | string | The endpoint for this request |
-| Headers | map | A `map[string][]string` containing all the headers |
-| Media | string | "text" or "json" based on the Accept header value |
-| Method | string | The request method, "GET", "POST", "DELETE", etc. |
-| Parameters | map | A `map[string][]string` containing the parameters |
-| Url | string | The full URL used to make the request. |
-| IsJSON | bool | True if this service can return JSON data |
-| IsText | bool | True if this service can return text data |
-| Username | string | If authenticated, the username of the requestor |
+The first parameter of the service's `handler()` function must be of type `http.Request`,
+which describes all the information known about the request made by the caller: its
+method, headers, query parameters, body, and (if the endpoint required authentication)
+the caller's identity and permissions.
 
 ### Response Parameter <a name="#response"></a>
 
-The second parameter of the service's `handler()` function must be of type `Response` and
-is used to send responses back to the caller. This item has no fields, but does have methods
-you can call.
+The second parameter of the service's `handler()` function must be of type
+`*http.ResponseWriter`, and is used to send a response back to the caller: setting the
+status code, response headers, and body (as text, JSON, or from a template).
 
-| Name | Parameter | Description |
-| :---------- | :--------- | :---------- |
-| WriteStatus | integer | Set the HTTP response status code |
-| Write | any | Add the item to the response body |
-| WriteJSON | any | Add a JSON representation of the parameter to the body |
+Both types, and every field and method they expose, are documented in full in
+`docs/LANGUAGE.md`'s [`http` package section](LANGUAGE.md#http) -- this includes the
+`Request` field table, the `ResponseWriter`/`Header` method tables, and the standard
+`http.StatusXxx`/`http.MethodXxx` constants. That section is the authoritative
+reference; this document covers the service-file-level mechanics (`@endpoint`,
+directories, directives) around it.
 
 &nbsp;
 &nbsp;
@@ -576,23 +564,27 @@ This section describes the source for a simple service. This can also be found i
 the lib/services directory.
 
 ```go
-// Sample service. This illustrates using a collection-style URL
-// endpoint, of the form specified in the @endpoint directive below.
-// Note that @endpoint must be the first statement in the source
-// file.
+// Sample service. This illustrates using a collection-style URI
+// path, of the form shown in the @endpoint directive. Note that the
+// endpoint directive must be the first statement in the source file.
 //
-//  * If name and field are omitted, it lists the possible users.
-//  * If field is omitted, it lists all info about a specific user.
-//  * If field is given, it lists the specific field for the specific user.
+//  If name and field are omitted, it lists the possible users.
+//  If field is omitted, it lists all info about a specific user.
+//  If field is given, it lists the specific field for the specific user.
 @endpoint get path="/services/sample/users/{{name}}/{{field}}"
 
 import "http"
 
-func handler(req http.Request, w http.ResponseWriter) {
+func handler( req http.Request, w *http.ResponseWriter) {
     // Construct some sample data.
     type person struct {
         age    int 
         gender string 
+
+    }
+
+    if req.IsJSON {
+        w.Header().Add("Content-Type", "application/json")
     }
 
     names := map[string]person{
@@ -600,12 +592,32 @@ func handler(req http.Request, w http.ResponseWriter) {
             "mary": {age:47, gender:"F"},
     }
 
+    // If the users collection name was not present, we can do nothing.
+    if !bool(req.URL.Parts["users"]) {
+        w.WriteHeader(http.StatusBadRequest)
+        w.Write("incomplete URL")
+        return
+    }
+
     // If the name wasn't part of the path, the Request
-    // is for all names.
-    name := r.URL.Parts["name"]
+    // is for all names. Here, we have content-type-specific
+    // blocks for text vs json, as the text is formatted as
+    // a list of names separated by newline, and the JSON is 
+    // an array formed from the list of key names.
+    name := req.URL.Parts["name"]
     if name == "" {
-        for k, _ := range names {
-            resp.Write(fmt.Sprintf("%s", k))
+        list := make([]string, 0)
+        for  k := range names {
+            list = append(list, k)
+        }
+
+        if req.IsJSON {
+            w.Write(list)
+        } else {
+            text := strings.Join(list, ", ")
+
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte(text))
         }
 
         return
@@ -615,26 +627,35 @@ func handler(req http.Request, w http.ResponseWriter) {
     // exist then complain.
     info, found := names[name]
     if !found {
-        resp.WriteHeader(http.StatusNotFound)
-        resp.Write("No such name as " + name)
+        w.WriteHeader(404)
+        w.Write("No such name as " + name)
     } else {
-        // Based on the item name, return the desired info.
-        switch item := r.URL.Parts["field"] {
+
+        // Based on the item name, return the desired info. Here we don't need
+        // a media-specific writer, we can just send the value to Write() and 
+        // it will be either a json object or formatted text.
+        item := req.URL.Parts["field"] 
+        switch item {
         case "":
-            resp.Write(fmt.Sprintf("%v", info))
+            w.WriteHeader(http.StatusOK)
+            d := { age: info.age, gender: info.gender}
+            w.Write(d)
 
         case "age":
-            resp.Write(fmt.Sprintf("%v", info.age))
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte(string(info.age)))
 
         case "gender":
-            resp.Write(fmt.Sprintf("%v", info.gender))
-        
-        // No item given, so return the whole object value
+            w.WriteHeader(http.StatusOK)
+            w.Write([]byte(info.gender))
+
         default:
-            resp.WriteHeader(http.StatusBadRequest)
-            resp.Write("Invalid field selector " + item)
+            w.WriteHeader(http.StatusBadRequest)
+            w.Write("Invalid field selector " + item)
         }
     }
+
+    return
 }
 ```
 

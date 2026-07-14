@@ -57,6 +57,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [`exec` package](#exec)
    1. [`filepath` package](#filepath)
    1. [`fmt` package](#fmt)
+   1. [`http` package](#http)
    1. [`i18n` package](#i18n)
    1. [`io` package](#io)
    1. [`json` package](#json)
@@ -3739,6 +3740,137 @@ contents. The value is not printed to the console as part of this operation.
 
 ---
 
+### http Package<a name="http"></a>
+
+The `http` package provides the types used to write REST service endpoints hosted by
+the Ego server: `Request` (the incoming request, passed as a handler's first argument),
+`ResponseWriter` (used to build the response, passed as the second argument), `Header`
+(the response's HTTP headers), plus the standard Go `net/http` status-code and
+method-name constants. There is no client-side equivalent here -- to make outbound HTTP
+calls from Ego code, use the [`rest` package](#rest) instead.
+
+This package is meaningful only inside a service handler running under `ego server`; see
+`docs/SERVER.md` for how a service file is structured and how `@endpoint` maps a URL to a
+handler function. A handler function always has this shape:
+
+```go
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    // ... inspect req, write a response via w ...
+}
+```
+
+#### The `http.Request` structure
+
+`req` describes everything known about the incoming request. All fields are read-only.
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `URL` | `http.URL` | The request URL, broken into `Path` (string) and `Parts` (see below). |
+| `Endpoint` | `string` | The service's own endpoint path (the `@endpoint path=` value, without any `{{name}}` substitutions applied). |
+| `Method` | `string` | The HTTP method, e.g. `"GET"`, `"POST"`. Compare against the `http.MethodXxx` constants rather than a literal string. |
+| `Headers` | `map[string][]string` | The request's HTTP headers. The `Authorization` header is never included here. |
+| `Parameters` | `map[string][]string` | The request's query-string parameters. |
+| `Body` | `string` | The raw request body (for `POST`/`PUT`/`PATCH`/`DELETE` requests that included one). |
+| `Username` | `string` | The authenticated caller's username, or `""` if the request was not authenticated. |
+| `Authenticated` | `bool` | `true` if the caller was authenticated at all (by token or username/password), regardless of what permissions they hold. |
+| `Authentication` | `string` | How the caller authenticated: `"none"`, `"user"` (username/password), or `"token"` (bearer token). |
+| `IsAdmin` | `bool` | `true` if the caller holds `ego.root` (admin) privileges. |
+| `IsJSON` | `bool` | `true` if the caller's `Accept` header indicates it wants a JSON response. |
+| `IsText` | `bool` | `true` if the caller's `Accept` header indicates it wants a plain-text response. |
+| `Permissions` | `[]string` | The authenticated caller's permission strings. |
+| `SessionID` | `int` | The server's internal session/request number for this call, useful for correlating with server log entries. |
+| `Router` | `interface{}` | The server's internal route dispatcher. Reserved for internal use -- there is no supported way to call into it from a handler. |
+
+`req.URL` is itself a small structure:
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `Path` | `string` | The request's path, **including its query string** (despite the field name) -- e.g. `/services/widgets?verbose=true`. |
+| `Parts` | `map[string]interface{}` | One entry per `{{name}}` placeholder declared in the endpoint's `@endpoint path=`, keyed by name, holding the text captured from the actual request path. |
+
+```go
+@endpoint get path="/services/sample/users/{{name}}/{{field}}"
+
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    name := req.URL.Parts["name"]
+    field := req.URL.Parts["field"]
+    ...
+}
+```
+
+`IsJSON`/`IsText` reflect content negotiation against the endpoint's own `media=`
+declaration (see `docs/SERVER.md`'s `@endpoint` documentation): if the caller's `Accept`
+header doesn't match any type the endpoint declared, the router rejects the request with
+400 before the handler ever runs, so a handler only ever sees a type it already agreed to
+serve.
+
+#### The `http.ResponseWriter` structure
+
+`w` is used to build the response. It has no directly readable fields -- everything is
+done through its methods. Methods are commonly chained in the order shown here: set
+headers, set the status, then write the body.
+
+| Method | Description |
+| :------- | :---------- |
+| `Header() http.Header` | Returns the response's `Header` object, for adding/replacing/removing response headers. |
+| `WriteHeader(status int)` | Sets the HTTP response status code. If never called, the response defaults to `200 OK`. |
+| `Write(data interface{}) (int, error)` | Writes `data` to the response body and returns the number of bytes written. See below for how `data`'s type affects the output. |
+| `WriteJSON(i interface{})` | Marshals `i` to JSON and writes it to the body -- shorthand for `json.Marshal` followed by `Write`. |
+| `WriteTemplate(filename string, i interface{})` | Renders the named template file (relative to `ego.runtime.path`) using `i` as the template data, and writes the result to the body. On error, writes a `500` response with the error text instead. |
+
+`Write()`'s behavior depends on the type of `data`:
+
+- A `[]byte` value is written to the body exactly as given.
+- Any other value is formatted according to the request's negotiated content type: as
+  JSON (via `json.Marshal`) if `req.IsJSON`, otherwise as plain text (its default string
+  formatting, with a trailing newline). If both are accepted, JSON takes precedence.
+
+```go
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.WriteJSON({message: "hello", count: 3})
+}
+```
+
+`Header()` returns an `http.Header`, which wraps the response's `map[string][]string` of
+headers with methods matching Go's `net/http.Header`:
+
+| Method | Description |
+| :------- | :---------- |
+| `Add(key, value string)` | Appends `value` to any existing values already set for `key`. |
+| `Set(key, value string)` | Replaces all existing values for `key` with `value`. |
+| `Del(key string)` | Removes `key` entirely. |
+
+#### Status code and method constants
+
+The `http` package defines the same status-code and method-name constants as Go's
+`net/http`, for use with `w.WriteHeader()` and when comparing `req.Method`:
+
+```go
+if req.Method != http.MethodGet {
+    w.WriteHeader(http.StatusMethodNotAllowed)
+    return
+}
+
+w.WriteHeader(http.StatusOK)
+```
+
+`http.StatusOK` (`200`), `http.StatusBadRequest` (`400`), `http.StatusUnauthorized`
+(`401`), `http.StatusForbidden` (`403`), `http.StatusNotFound` (`404`), and
+`http.StatusInternalServerError` (`500`) cover the great majority of handlers; the full
+set (matching the standard IANA status code registry) is also available, along with
+`http.MethodGet`, `http.MethodPost`, `http.MethodPut`, `http.MethodPatch`,
+`http.MethodDelete`, and the rest of the standard HTTP method names.
+
+---
+
 ### i18n Package<a name="i18n"></a>
 
 Unlike most Ego packages, `i18n` has no direct equivalent in Go's standard
@@ -5481,7 +5613,9 @@ every other fallible function in the runtime:
 | :------- | :---------- |
 | `Get(endpoint) (any, error)` | Sends a GET request. |
 | `Post(endpoint [, body]) (any, error)` | Sends a POST request, with `body` (if given) as the request payload. |
-| `Delete(endpoint) (any, error)` | Sends a DELETE request. |
+| `Put(endpoint [, body]) (any, error)` | Sends a PUT request, with `body` (if given) as the request payload. |
+| `Patch(endpoint [, body]) (any, error)` | Sends a PATCH request, with `body` (if given) as the request payload. |
+| `Delete(endpoint [, body]) (any, error)` | Sends a DELETE request, with `body` (if given) as the request payload. |
 | `Close() error` | Closes idle connections held by the client. |
 
 The returned `error` reflects a **transport-level** failure only -- the connection
@@ -5509,8 +5643,9 @@ if client.Status != 200 {
 fmt.Println(factors)   // [1, 2, 5, 10]
 ```
 
-`Post()`/`Delete()` work the same way; `Post()`'s second argument is the request body
-(any Ego value -- it is marshaled to JSON automatically when the media type is JSON):
+`Post()`/`Put()`/`Patch()`/`Delete()` work the same way; each takes an optional second
+argument as the request body (any Ego value -- it is marshaled to JSON automatically
+when the media type is JSON):
 
 ```go
 result, err := client.Post("/services/factor/10", map[string]int{"note": 1})

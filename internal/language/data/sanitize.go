@@ -25,6 +25,18 @@ import (
 // For maps and packages a new map is built so callers can safely mutate it.
 func Sanitize(v any) any {
 	switch v := v.(type) {
+	case Interface:
+		// An interface{}-typed value is boxed with its Ego type alongside it
+		// (see Wrap/UnWrap in interfaces.go) so the runtime can answer "what
+		// type is this?" without Go reflection. That bookkeeping wrapper must
+		// not leak into JSON output -- without this case, json.Marshal would
+		// serialize the wrapper's own exported fields ("Value"/"BaseType")
+		// instead of the value it carries. Recurse so a wrapped Array/Struct/
+		// Map is also sanitized.
+		value, _ := UnWrap(v)
+
+		return Sanitize(value)
+
 	case *Array:
 		// Byte arrays must be returned as a native Go []byte so that
 		// json.Marshal produces the standard base64 encoding.

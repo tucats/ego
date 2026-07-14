@@ -1,0 +1,24 @@
+// Test fixture (see tests/server/unittest.ego) exercising rest.Client.Get()
+// against the server. Echoes the request back as a JSON object so a test can
+// assert on exactly what the server received. Declares "count" as an int
+// parameter so a request with an unparsable count value can be used to
+// exercise the router's query-parameter validation (a bad value never
+// reaches this handler at all -- it gets rejected with 400 first).
+
+@endpoint get path="/services/unit-test/echo" parameter="name:string","count:int"
+
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    result := {
+        method:     req.Method,
+        path:       req.URL.Path,
+        parameters: req.Parameters,
+        headers:    req.Headers,
+        body:       req.Body,
+    }
+
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.WriteJSON(result)
+}

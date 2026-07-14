@@ -69,6 +69,23 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	functionSymbols.SetAlways(defs.SandboxedExecSymbolName, c.sandboxedExec.Load())
 
 	if v, ok := c.popThis(); ok {
+		// Auto-deref: a pointer-receiver Ego method's own receiver parameter is
+		// bound as a boxed *any (see the BUG-64 fix commentary in this.go's
+		// getThisByteCode). If that method's body calls another receiver
+		// method on the same variable -- e.g. WriteJSON calling w.Write(...)
+		// on its own *ResponseWriter parameter -- the boxed pointer would
+		// otherwise reach this Go-wrapper function un-dereferenced, and every
+		// runtime package's receiver helpers type-assert defs.ThisVariable
+		// directly to a concrete type (*data.Struct, etc.), never *any, so the
+		// assertion fails with "no function receiver". Unwrap here exactly as
+		// getThisByteCode does, so both dispatch paths agree on what a bound
+		// receiver looks like. This does not affect mutation propagation --
+		// the boxed value and its unboxed contents share the same underlying
+		// reference (*data.Struct or similar).
+		if ptr, ok := v.(*any); ok && ptr != nil {
+			v = *ptr
+		}
+
 		functionSymbols.SetAlways(defs.ThisVariable, v)
 	}
 

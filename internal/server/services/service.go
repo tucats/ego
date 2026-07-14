@@ -12,16 +12,16 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/compiler"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/debugger"
-	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/router"
 	egoHTTP "github.com/tucats/ego/internal/runtime/http"
-	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -112,18 +112,19 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 			"Path":  r.URL.String(),
 			"Parts": data.NewMapFromMap(session.URLParts),
 		}),
-		"Endpoint":      endpoint,
-		"Parameters":    data.NewMapFromMap(parameters),
-		"Username":      session.User,
-		"IsAdmin":       session.Admin,
-		"IsJSON":        session.AcceptsJSON,
-		"IsText":        session.AcceptsText,
-		"SessionID":     session.ID,
-		"Router":        session.Router,
-		"Method":        r.Method,
-		"Authenticated": authType,
-		"Permissions":   data.NewArrayFromStrings(session.Permissions...),
-		"Body":          byteBuffer.String(),
+		"Endpoint":       endpoint,
+		"Parameters":     data.NewMapFromMap(parameters),
+		"Username":       session.User,
+		"IsAdmin":        session.Admin,
+		"IsJSON":         session.AcceptsJSON,
+		"IsText":         session.AcceptsText,
+		"SessionID":      session.ID,
+		"Router":         session.Router,
+		"Method":         r.Method,
+		"Authenticated":  session.Authenticated,
+		"Authentication": authType,
+		"Permissions":    data.NewArrayFromStrings(session.Permissions...),
+		"Body":           byteBuffer.String(),
 	})
 
 	symbolTable.SetAlways(defs.RequestVariable, request)

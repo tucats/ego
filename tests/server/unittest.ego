@@ -1,0 +1,190 @@
+@test "server: unittest - verify server heartbeat"
+{
+    @global ServerAddr os.Hostname() + ".local"
+    @global ServerAvailable true
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    _, err := conn.Get("admin/heartbeat")
+    if err != nil {
+        fmt.Println("Unit-test endpoint tests will not be run, server unavailable:", err)
+        ServerAvailable = false
+
+        return
+    }
+
+    conn.Close()
+}
+
+@test "server: unittest - echo GET reflects method and query parameters"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Get("services/unit-test/echo?name=foo&count=5")
+    @assert err == nil
+    @assert r.method == "GET"
+    @assert r.parameters.name[0] == "foo"
+    @assert r.parameters.count[0] == "5"
+}
+
+@test "server: unittest - echo GET rejects an unparsable count parameter"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    // A well-formed JSON error body (status >= 400 that still starts with "{")
+    // is not itself a client-side error -- Get() only returns a non-nil error
+    // for a transport-level failure. Check conn.Status for the rejection.
+    _, _ = conn.Get("services/unit-test/echo?count=notanumber")
+    @assert conn.Status == 400
+}
+
+@test "server: unittest - echo PUT reflects method and body"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Put("services/unit-test/echo", { hello: "world" })
+    @assert err == nil
+    @assert r.method == "PUT"
+    @assert index(r.body, "\"hello\":\"world\"") >= 0
+}
+
+@test "server: unittest - echo POST reflects method and body"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Post("services/unit-test/echo", { hello: "post" })
+    @assert err == nil
+    @assert r.method == "POST"
+    @assert index(r.body, "\"hello\":\"post\"") >= 0
+}
+
+@test "server: unittest - echo PATCH reflects method and body"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Patch("services/unit-test/echo", { hello: "patch" })
+    @assert err == nil
+    @assert r.method == "PATCH"
+    @assert index(r.body, "\"hello\":\"patch\"") >= 0
+}
+
+@test "server: unittest - echo DELETE reflects method and optional body"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Delete("services/unit-test/echo", { hello: "delete" })
+    @assert err == nil
+    @assert r.method == "DELETE"
+    @assert index(r.body, "\"hello\":\"delete\"") >= 0
+}
+
+@test "server: unittest - media negotiation returns JSON when requested"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    r, err := conn.Get("services/unit-test/media")
+    @assert err == nil
+    @assert r.format == "json"
+}
+
+@test "server: unittest - media negotiation returns text when requested"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("text/plain")
+
+    r, err := conn.Get("services/unit-test/media")
+    @assert err == nil
+    @assert index(string(r), "format=text") >= 0
+}
+
+@test "server: unittest - media negotiation rejects an unsupported Accept type"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/xml")
+
+    _, _ = conn.Get("services/unit-test/media")
+    @assert conn.Status == 400
+}
+
+@test "server: unittest - protected endpoint rejects unauthenticated requests"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    _, _ = conn.Get("services/unit-test/protected")
+    @assert conn.Status == 401 || conn.Status == 403
+}
+
+@test "server: unittest - protected endpoint accepts an authenticated request"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    logonConn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+    credentials := { username: "admin", password: "password" }
+    logon := logonConn.Post("services/admin/logon/", credentials)
+    logonConn.Close()
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json").Token(logon.token)
+
+    r, err := conn.Get("services/unit-test/protected")
+    @assert err == nil
+    @assert r.username == "admin"
+}
+
+@test "server: unittest - status endpoint returns the requested status code"
+{
+    if !ServerAvailable {
+        return
+    }
+
+    conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+
+    _, err := conn.Get("services/unit-test/status/200")
+    @assert err == nil
+    @assert conn.Status == 200
+
+    _, _ = conn.Get("services/unit-test/status/404")
+    @assert conn.Status == 404
+
+    _, _ = conn.Get("services/unit-test/status/500")
+    @assert conn.Status == 500
+}

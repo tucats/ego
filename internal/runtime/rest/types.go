@@ -170,6 +170,52 @@ var RestClientType = data.TypeDefinition("Client",
 				Value: doPost,
 			},
 
+			"Put": {
+				Declaration: &data.Declaration{
+					Name: "Put",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "endpoint",
+							Type: data.StringType,
+						},
+						{
+							Name: "body",
+							Type: data.InterfaceType,
+						},
+					},
+					Returns: []*data.Type{
+						data.InterfaceType,
+						data.ErrorType,
+					},
+					ArgCount: data.Range{1, 2},
+				},
+				Value: doPut,
+			},
+
+			"Patch": {
+				Declaration: &data.Declaration{
+					Name: "Patch",
+					Type: data.OwnType,
+					Parameters: []data.Parameter{
+						{
+							Name: "endpoint",
+							Type: data.StringType,
+						},
+						{
+							Name: "body",
+							Type: data.InterfaceType,
+						},
+					},
+					Returns: []*data.Type{
+						data.InterfaceType,
+						data.ErrorType,
+					},
+					ArgCount: data.Range{1, 2},
+				},
+				Value: doPatch,
+			},
+
 			"Delete": {
 				Declaration: &data.Declaration{
 					Name: "Delete",
@@ -179,11 +225,22 @@ var RestClientType = data.TypeDefinition("Client",
 							Name: "endpoint",
 							Type: data.StringType,
 						},
+						{
+							// Optional: doDelete already reads this
+							// (see methods.go) but until this field was
+							// added, the declaration only allowed exactly
+							// one argument, so a body could never actually
+							// be passed from Ego -- see the commit message
+							// for the full explanation.
+							Name: "body",
+							Type: data.InterfaceType,
+						},
 					},
 					Returns: []*data.Type{
 						data.InterfaceType,
 						data.ErrorType,
 					},
+					ArgCount: data.Range{1, 2},
 				},
 				Value: doDelete,
 			},

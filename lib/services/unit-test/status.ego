@@ -1,0 +1,23 @@
+// Test fixture (see tests/server/unittest.ego) exercising the rest client's
+// Status field for arbitrary status codes, without needing a dedicated
+// fixture per code. GET /services/unit-test/status/404 responds with a 404,
+// and so on for any valid integer status code.
+
+@endpoint get path="/services/unit-test/status/{{code}}"
+
+import "http"
+import "strconv"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    code, err := strconv.Atoi(req.URL.Parts["code"])
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        w.Write("invalid status code: " + req.URL.Parts["code"])
+
+        return
+    }
+
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(code)
+    w.WriteJSON({status: code})
+}

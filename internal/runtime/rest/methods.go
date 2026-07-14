@@ -198,6 +198,208 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(rb, nil), nil
 }
 
+// doPut implements the doPut() rest function. Identical to doPost except for
+// the HTTP verb used (PUT instead of POST) -- see doPost for the detailed
+// explanation of each step.
+func doPut(s *symbols.SymbolTable, args data.List) (any, error) {
+	var body any = ""
+
+	client, err := getClient(s)
+	if err != nil {
+		return data.NewList(nil, err), err
+	}
+
+	this := getThis(s)
+
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
+
+	if tlsConf, err := GetTLSConfiguration(); err != nil {
+		return data.NewList(nil, err), err
+	} else {
+		client.SetTLSClientConfig(tlsConf)
+	}
+
+	if !data.BoolOrFalse(this.GetAlways("verify")) {
+		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		ui.Log(ui.RestLogger, "rest.tls.insecure", nil)
+	}
+
+	url := applyBaseURL(data.String(args.Get(0)), this)
+
+	if args.Len() > 1 {
+		body = args.Get(1)
+	}
+
+	// If the media type is json, then convert the value passed
+	// into a json value for the request body.
+	if mt := this.GetAlways(mediaTypeFieldName); mt != nil {
+		media := data.String(mt)
+		if strings.Contains(media, defs.JSONMediaType) {
+			body = makeBodyFromEgoType(body)
+		}
+	}
+
+	r := client.NewRequest()
+	switch actual := body.(type) {
+	default:
+		r.Body = actual
+	}
+
+	r.SetContentLength(true)
+
+	isJSON := false
+
+	if media := this.GetAlways(mediaTypeFieldName); media != nil {
+		ms := data.String(media)
+		isJSON = strings.Contains(ms, defs.JSONMediaType)
+
+		r.Header.Set("Accept", ms)
+		r.Header.Set("Content-Type", ms+"; charset=utf-8")
+	}
+
+	AddAgent(r, defs.ClientAgent)
+	logRequest(r, "PUT", url)
+
+	response, e2 := r.Put(url)
+	if e2 != nil {
+		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
+
+		err = errors.New(e2)
+
+		return data.NewList(nil, err), err
+	}
+
+	logResponse(response)
+
+	status := response.StatusCode()
+	this.SetAlways(cookiesFieldName, fetchCookies(response))
+	this.SetAlways(statusFieldName, status)
+	this.SetAlways(headersFieldName, headerMap(response))
+	rb := string(response.Body())
+
+	if isJSON {
+		var jsonResponse any
+
+		if len(rb) > 0 {
+			err = json.Unmarshal([]byte(rb), &jsonResponse)
+			if err != nil {
+				err = errors.New(err)
+			}
+
+			jsonResponse = makeEgoTypeFromBody(jsonResponse)
+		}
+
+		this.SetAlways(responseFieldName, jsonResponse)
+
+		return data.NewList(jsonResponse, err), err
+	}
+
+	this.SetAlways(responseFieldName, rb)
+
+	return data.NewList(rb, nil), nil
+}
+
+// doPatch implements the doPatch() rest function. Identical to doPost except
+// for the HTTP verb used (PATCH instead of POST) -- see doPost for the
+// detailed explanation of each step.
+func doPatch(s *symbols.SymbolTable, args data.List) (any, error) {
+	var body any = ""
+
+	client, err := getClient(s)
+	if err != nil {
+		return data.NewList(nil, err), err
+	}
+
+	this := getThis(s)
+
+	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(MaxRedirectCount))
+
+	if tlsConf, err := GetTLSConfiguration(); err != nil {
+		return data.NewList(nil, err), err
+	} else {
+		client.SetTLSClientConfig(tlsConf)
+	}
+
+	if !data.BoolOrFalse(this.GetAlways("verify")) {
+		client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+		ui.Log(ui.RestLogger, "rest.tls.insecure", nil)
+	}
+
+	url := applyBaseURL(data.String(args.Get(0)), this)
+
+	if args.Len() > 1 {
+		body = args.Get(1)
+	}
+
+	// If the media type is json, then convert the value passed
+	// into a json value for the request body.
+	if mt := this.GetAlways(mediaTypeFieldName); mt != nil {
+		media := data.String(mt)
+		if strings.Contains(media, defs.JSONMediaType) {
+			body = makeBodyFromEgoType(body)
+		}
+	}
+
+	r := client.NewRequest()
+	switch actual := body.(type) {
+	default:
+		r.Body = actual
+	}
+
+	r.SetContentLength(true)
+
+	isJSON := false
+
+	if media := this.GetAlways(mediaTypeFieldName); media != nil {
+		ms := data.String(media)
+		isJSON = strings.Contains(ms, defs.JSONMediaType)
+
+		r.Header.Set("Accept", ms)
+		r.Header.Set("Content-Type", ms+"; charset=utf-8")
+	}
+
+	AddAgent(r, defs.ClientAgent)
+	logRequest(r, "PATCH", url)
+
+	response, e2 := r.Patch(url)
+	if e2 != nil {
+		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
+
+		err = errors.New(e2)
+
+		return data.NewList(nil, err), err
+	}
+
+	logResponse(response)
+
+	status := response.StatusCode()
+	this.SetAlways(cookiesFieldName, fetchCookies(response))
+	this.SetAlways(statusFieldName, status)
+	this.SetAlways(headersFieldName, headerMap(response))
+	rb := string(response.Body())
+
+	if isJSON {
+		var jsonResponse any
+
+		if len(rb) > 0 {
+			err = json.Unmarshal([]byte(rb), &jsonResponse)
+			if err != nil {
+				err = errors.New(err)
+			}
+
+			jsonResponse = makeEgoTypeFromBody(jsonResponse)
+		}
+
+		this.SetAlways(responseFieldName, jsonResponse)
+
+		return data.NewList(jsonResponse, err), err
+	}
+
+	this.SetAlways(responseFieldName, rb)
+
+	return data.NewList(rb, nil), nil
+}
+
 // doDelete implements the doDelete() rest function.
 func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 	var body any = ""

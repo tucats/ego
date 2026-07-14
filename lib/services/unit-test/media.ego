@@ -1,0 +1,23 @@
+// Test fixture (see tests/server/unittest.ego) exercising media-type
+// negotiation. Declares media="application/json","text/plain", so the
+// router itself rejects any other Accept type with 400 before this handler
+// ever runs (see AcceptedMediaType in internal/util/media.go). Handlers that
+// do run pick JSON or plain text based on the negotiated type.
+
+@endpoint get path="/services/unit-test/media" media="application/json","text/plain"
+
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    if req.IsJSON {
+        w.Header().Add("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        w.WriteJSON({message: "hello", format: "json"})
+
+        return
+    }
+
+    w.Header().Add("Content-Type", "text/plain")
+    w.WriteHeader(http.StatusOK)
+    w.Write("hello, format=text")
+}

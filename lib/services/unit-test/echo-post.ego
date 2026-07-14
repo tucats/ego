@@ -1,0 +1,21 @@
+// Test fixture (see tests/server/unittest.ego) exercising rest.Client.Post()
+// against the server. Echoes the request back as a JSON object so a test can
+// assert on exactly what the server received, including the request body.
+
+@endpoint post path="/services/unit-test/echo"
+
+import "http"
+
+func handler(req http.Request, w *http.ResponseWriter) {
+    result := {
+        method:     req.Method,
+        path:       req.URL.Path,
+        parameters: req.Parameters,
+        headers:    req.Headers,
+        body:       req.Body,
+    }
+
+    w.Header().Add("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.WriteJSON(result)
+}
