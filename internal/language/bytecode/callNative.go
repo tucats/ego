@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
@@ -683,6 +684,120 @@ func callMutexMethod(mu *sync.Mutex, methodName string) (result any, handled boo
 	}
 }
 
+// rwMutexState is the per-*sync.RWMutex bookkeeping callRWMutexMethod needs:
+// whether the write lock is currently held, and how many read locks are
+// currently held (RWMutex allows any number of concurrent readers, so a
+// single bool isn't enough the way it is for sync.Mutex). Both fields are
+// atomic because Ego programs can call methods on the same RWMutex from many
+// goroutines at once, same as in Go.
+type rwMutexState struct {
+	writeLocked atomic.Bool
+	readers     atomic.Int32
+}
+
+// rwMutexLockState tracks the rwMutexState for every *sync.RWMutex an Ego
+// program has created, keyed by the *sync.RWMutex pointer itself -- the same
+// pointer-identity approach mutexLockState uses for sync.Mutex, and for the
+// same reason: Ego represents a sync.RWMutex variable as a bare *sync.RWMutex
+// with no natural place to stash extra bookkeeping fields (see SetNew in
+// internal/runtime/sync/types.go).
+var rwMutexLockState sync.Map // key: *sync.RWMutex, value: *rwMutexState
+
+// rwState returns the rwMutexState for rw, creating and storing one on first
+// use.
+func rwState(rw *sync.RWMutex) *rwMutexState {
+	v, _ := rwMutexLockState.LoadOrStore(rw, &rwMutexState{})
+
+	return v.(*rwMutexState)
+}
+
+// callRWMutexMethod intercepts Lock, Unlock, RLock, RUnlock, TryLock, and
+// TryRLock calls on a *sync.RWMutex receiver, mirroring callMutexMethod's
+// approach for sync.Mutex: calling Unlock() without a held write lock, or
+// RUnlock() without a held read lock, triggers Go's unrecoverable "fatal
+// error: sync: {Unlock,RUnlock} of unlocked RWMutex" rather than an ordinary
+// panic() that safeReflectCall's recover() could catch, so the mistake must
+// be caught BEFORE ever calling the real method. See the mutexLockState and
+// callMutexMethod comments above for the full explanation of why this
+// proactive check is required.
+//
+// handled reports whether methodName was one of the six method names this
+// function knows about; see callMutexMethod for how the caller uses it.
+func callRWMutexMethod(rw *sync.RWMutex, methodName string) (result any, handled bool, err error) {
+	state := rwState(rw)
+
+	switch methodName {
+	case "Lock":
+		// Same reasoning as callMutexMethod's "Lock" case: blocking until
+		// available is normal Go behavior, not a bug, so there is nothing to
+		// guard against beyond recording the new state once Lock() returns.
+		rw.Lock()
+		state.writeLocked.Store(true)
+
+		return nil, true, nil
+
+	case "Unlock":
+		if !state.writeLocked.CompareAndSwap(true, false) {
+			return nil, true, errors.New(errors.ErrMutexNotLocked).Context("Unlock")
+		}
+
+		rw.Unlock()
+
+		return nil, true, nil
+
+	case "RLock":
+		rw.RLock()
+		state.readers.Add(1)
+
+		return nil, true, nil
+
+	case "RUnlock":
+		// Decrement only if the reader count is currently positive, using a
+		// compare-and-swap loop so concurrent RUnlock() calls from different
+		// goroutines can't both read the same stale count and both succeed
+		// when only one of them should.
+		for {
+			current := state.readers.Load()
+			if current <= 0 {
+				return nil, true, errors.New(errors.ErrMutexNotLocked).Context("RUnlock")
+			}
+
+			if state.readers.CompareAndSwap(current, current-1) {
+				break
+			}
+		}
+
+		rw.RUnlock()
+
+		return nil, true, nil
+
+	case "TryLock":
+		// TryLock() never blocks and never panics, so it's always safe to
+		// call regardless of the current state -- we only need to update our
+		// bookkeeping when it succeeds, so a later Unlock() is judged
+		// correctly.
+		acquired := rw.TryLock()
+		if acquired {
+			state.writeLocked.Store(true)
+		}
+
+		return acquired, true, nil
+
+	case "TryRLock":
+		acquired := rw.TryRLock()
+		if acquired {
+			state.readers.Add(1)
+		}
+
+		return acquired, true, nil
+
+	default:
+		// Not one of the methods we specially handle -- see
+		// internal/runtime/sync/types.go for the full RWMutex method list.
+		return nil, false, nil
+	}
+}
+
 // CallWithReceiver looks up methodName on receiver and calls it with args,
 // returning the result(s).
 //
@@ -729,6 +844,14 @@ func CallWithReceiver(receiver any, methodName string, args ...any) (any, error)
 		// falling through to the generic path below.
 		if mu, ok := actual.(*sync.Mutex); ok {
 			if result, handled, err := callMutexMethod(mu, methodName); handled {
+				return result, err
+			}
+		}
+
+		// sync.RWMutex needs the same special-casing, for the same reason:
+		// see callRWMutexMethod's comment for the full explanation.
+		if rw, ok := actual.(*sync.RWMutex); ok {
+			if result, handled, err := callRWMutexMethod(rw, methodName); handled {
 				return result, err
 			}
 		}

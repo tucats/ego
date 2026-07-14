@@ -2813,6 +2813,7 @@ way if needed.
 | Datatype | Description |
 | :------- | :---------- |
 | sync.Mutex | A simple mutual exclusion lock for serializing access to a resource |
+| sync.RWMutex | A reader/writer lock: any number of concurrent readers, or a single exclusive writer |
 | sync.WaitGroup | A way to launch a varying number of go routines and wait for them to complete |
 
 See the detailed descriptions in the later sections on the `sync` package
@@ -6959,7 +6960,8 @@ func main() int {
         go worker(i)
     }
 
-    time.Sleep("1s")
+    sec := time.ParseDuration("1s")
+    time.Sleep(sec)
 
     return 0
 }
@@ -7008,7 +7010,8 @@ func main() int {
         go worker(i)
     }
 
-    time.Sleep("1s")
+    sec := time.ParseDuration("1s")
+    time.Sleep(sec)
 
     return 0
 }
@@ -7025,6 +7028,86 @@ in output that might look like this:
     thread 3, counter 4
     thread 1, counter 5
 ```
+
+`Mutex` also supports `TryLock()`, which attempts to acquire the lock without
+blocking: it returns `true` if the lock was acquired (in which case the
+caller is now responsible for calling `Unlock()`), or `false` immediately if
+some other goroutine already holds it.
+
+```go
+if mutex.TryLock() {
+    // lock acquired -- do the work, then release it
+    counter = counter + 1
+    mutex.Unlock()
+} else {
+    // someone else has it right now; do something else instead of waiting
+    fmt.Println("busy, skipping this round")
+}
+```
+
+Calling `Unlock()` on a `Mutex` that is not currently locked (for example, a
+duplicate `Unlock()` call) is a catchable Ego error rather than a program
+crash, unlike real Go, where the equivalent mistake is an unrecoverable
+fatal error that cannot be caught with `recover()`:
+
+```go
+try {
+    mutex.Unlock()
+} catch(e) {
+    fmt.Println(e)   // e.Is(errors.New("mutex.not.locked")) is true
+}
+```
+
+#### sync.RWMutex
+
+`RWMutex` is a reader/writer mutual-exclusion lock: any number of readers can
+hold the lock at the same time via `RLock()`/`RUnlock()`, but a writer
+holding it via `Lock()`/`Unlock()` has it exclusively -- no readers and no
+other writer can hold it at the same time. This is useful when a resource is
+read far more often than it is written, since concurrent readers don't need
+to wait on each other the way they would with a plain `Mutex`.
+
+```go
+import "sync"
+
+var data map[string]int
+var mu sync.RWMutex
+
+func read(key string) (int, bool) {
+    mu.RLock()
+    defer mu.RUnlock()
+
+    v, ok := data[key]
+
+    return v, ok
+}
+
+func write(key string, value int) {
+    mu.Lock()
+    defer mu.Unlock()
+
+    data[key] = value
+}
+```
+
+`RWMutex` also supports non-blocking acquisition, matching Go's own API
+exactly: `TryLock()` attempts to acquire the exclusive write lock, and
+`TryRLock()` attempts to acquire a read lock; both return `true` on success
+without blocking, or `false` immediately if the lock isn't currently
+available.
+
+```go
+if mu.TryRLock() {
+    v := data["key"]
+    mu.RUnlock()
+    fmt.Println(v)
+}
+```
+
+As with `Mutex`, calling `Unlock()` without a currently-held write lock, or
+`RUnlock()` without a currently-held read lock, is a catchable Ego error
+(`e.Is(errors.New("mutex.not.locked"))`) rather than the unrecoverable fatal
+error real Go produces for the same mistake.
 
 #### sync.WaitGroup
 

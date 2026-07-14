@@ -87,9 +87,15 @@ var SyncRWMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.BoolType},
 		}, nil).
-	DefineNativeFunction("RTryLock",
+	// TryRLock matches Go's real sync.RWMutex method name exactly; the
+	// reflection-based native dispatch (see CallWithReceiver in
+	// internal/language/bytecode/callNative.go) looks up the method by this
+	// same literal name on the underlying *sync.RWMutex, so a name that
+	// doesn't match Go's own API (this was previously declared "RTryLock")
+	// would always fail to resolve at runtime.
+	DefineNativeFunction("TryRLock",
 		&data.Declaration{
-			Name:    "RTryLock",
+			Name:    "TryRLock",
 			Type:    data.OwnType,
 			Returns: []*data.Type{data.BoolType},
 		}, nil).FixSelfReferences()
@@ -97,4 +103,5 @@ var SyncRWMutexType = data.TypeDefinition("RWMutex", data.StructureType()).
 var SyncPackage = data.NewPackageFromMap("sync", map[string]any{
 	"WaitGroup": SyncWaitGroupType,
 	"Mutex":     SyncMutexType,
+	"RWMutex":   SyncRWMutexType,
 })

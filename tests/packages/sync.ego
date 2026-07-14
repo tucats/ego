@@ -1,10 +1,21 @@
-// Tests for the sync package (sync.Mutex, sync.WaitGroup).
+// Tests for the sync package (sync.Mutex, sync.RWMutex, sync.WaitGroup).
 //
 // This file also carries the regression tests for BUG-27 and BUG-28 (see
 // docs/ISSUES.md): misusing sync.Mutex or sync.WaitGroup from Ego code used
 // to crash the entire ego process instead of producing a normal, catchable
 // Ego error. Both bugs are now fixed, so the "misuse" tests below expect a
 // catchable error rather than a program crash.
+//
+// sync.RWMutex was implemented in internal/runtime/sync/types.go but never
+// actually registered in SyncPackage, so it was completely unreachable from
+// Ego code -- "import sync; var m sync.RWMutex" failed with "unknown
+// package member: RWMutex". Its TryRLock method was also declared under the
+// wrong name ("RTryLock" instead of Go's real "TryRLock"), which would have
+// failed to resolve via reflection even once RWMutex itself was reachable.
+// Both are now fixed, and RWMutex gets the same Mutex-style bookkeeping
+// (see rwMutexLockState in internal/language/bytecode/callNative.go) so
+// that Unlock() without a held write lock, or RUnlock() without a held read
+// lock, is a catchable Ego error instead of an unrecoverable process crash.
 
 import "sync"
 import "errors"
@@ -107,6 +118,151 @@ import "errors"
     // instances instead of being tracked per-instance.
     var mu1 sync.Mutex
     var mu2 sync.Mutex
+
+    mu1.Lock()
+
+    // mu2 was never locked, so it must be independently lockable...
+    mu2.Lock()
+    mu2.Unlock()
+
+    // ...and unlocking mu1 must still work normally.
+    mu1.Unlock()
+
+    @pass
+}
+
+@test "sync: RWMutex normal write lock and unlock cycle"
+{
+    var mu sync.RWMutex
+
+    mu.Lock()
+    mu.Unlock()
+
+    mu.Lock()
+    mu.Unlock()
+
+    @pass
+}
+
+@test "sync: RWMutex supports multiple concurrent readers"
+{
+    var mu sync.RWMutex
+
+    mu.RLock()
+    mu.RLock()
+    mu.RLock()
+
+    mu.RUnlock()
+    mu.RUnlock()
+    mu.RUnlock()
+
+    @pass
+}
+
+@test "sync: RWMutex TryLock and TryRLock report availability correctly"
+{
+    var mu sync.RWMutex
+
+    // Nothing else holds the lock yet, so a write TryLock must succeed.
+    acquired := mu.TryLock()
+    @assert acquired
+
+    // The mutex is now write-locked, so both a second TryLock() and a
+    // TryRLock() must fail rather than block.
+    @assert !mu.TryLock()
+    @assert !mu.TryRLock()
+
+    mu.Unlock()
+
+    // Once unlocked, a read TryRLock must succeed.
+    racquired := mu.TryRLock()
+    @assert racquired
+
+    // While read-locked, TryLock() (an exclusive write lock) must fail.
+    @assert !mu.TryLock()
+
+    mu.RUnlock()
+}
+
+@test "sync: RWMutex Unlock without a held write lock is catchable, not a crash"
+{
+    // Mirrors the sync.Mutex BUG-28 regression test above: calling
+    // Unlock() on a sync.RWMutex that is not write-locked triggers Go's
+    // unrecoverable "fatal error: sync: Unlock of unlocked RWMutex" and
+    // must be turned into an ordinary, catchable Ego error instead.
+    var mu sync.RWMutex
+    caught := false
+
+    mu.Lock()
+    mu.Unlock()
+
+    try {
+        mu.Unlock()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("mutex.not.locked"))
+    }
+
+    @assert caught
+
+    // The mutex must still be usable afterward.
+    mu.Lock()
+    mu.Unlock()
+}
+
+@test "sync: RWMutex RUnlock without a held read lock is catchable, not a crash"
+{
+    // Same idea as the previous test, for the read-lock side: Go's real
+    // RUnlock() on an RWMutex with no outstanding read lock triggers
+    // "fatal error: sync: RUnlock of unlocked RWMutex".
+    var mu sync.RWMutex
+    caught := false
+
+    mu.RLock()
+    mu.RUnlock()
+
+    try {
+        mu.RUnlock()
+    } catch(e) {
+        caught = true
+        @assert e.Is(errors.New("mutex.not.locked"))
+    }
+
+    @assert caught
+
+    // Extra RUnlock() must not have corrupted the reader count -- the
+    // mutex must still support a normal read-lock cycle afterward.
+    mu.RLock()
+    mu.RUnlock()
+}
+
+@test "sync: RWMutex a lingering reader is not confused with a later Unlock"
+{
+    // Guards against a bookkeeping bug where RUnlock() might decrement
+    // some other counter, or Unlock() might be satisfied by an
+    // outstanding *read* lock instead of requiring its own write lock.
+    var mu sync.RWMutex
+    caught := false
+
+    mu.RLock()
+
+    try {
+        // No write lock was ever taken, so this must fail even though a
+        // read lock is currently held.
+        mu.Unlock()
+    } catch {
+        caught = true
+    }
+
+    @assert caught
+
+    mu.RUnlock()
+}
+
+@test "sync: independent RWMutex values track lock state separately"
+{
+    var mu1 sync.RWMutex
+    var mu2 sync.RWMutex
 
     mu1.Lock()
 
