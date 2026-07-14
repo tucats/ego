@@ -70,3 +70,43 @@
     @assert os.Remove(marker) == nil
     @assert os.Remove(outsidePath) == nil
 }
+
+@test "os: Stat respects the sandbox root the same way Read/WriteFile do"
+
+{
+    // os.Stat shares the same sandboxName() helper as ReadFile/WriteFile/
+    // Chmod (internal/runtime/os/files.go), so it is contained the same way.
+    // The manifestation is different, though: ReadFile/WriteFile *error* on
+    // a clamped path because "." (the sandbox root) is a directory, not a
+    // readable/writable file. Stat succeeds on a directory, so a traversal
+    // attempt does not error -- it silently resolves to stat'ing the sandbox
+    // root itself. This is still full containment: the caller learns nothing
+    // about the real file outside the root (the returned info describes the
+    // root directory, not the escaped file), it just doesn't surface as an
+    // error the way ReadFile/WriteFile do.
+    marker := "ego-sandbox-stat-test-" + uuid.New().String() + ".txt"
+    outsidePath := "../" + marker
+
+    @assert os.WriteFile(outsidePath, "should not be statable", 0o644) == nil
+    @assert os.WriteFile(marker, "safe, inside the sandbox", 0o644) == nil
+
+    @sandbox true path="."
+
+    // Legitimate in-sandbox access still works normally.
+    info, err := os.Stat(marker)
+    @assert err == nil
+    @assert info.Name == marker
+    @assert info.IsDir == false
+
+    // The traversal attempt clamps to the sandbox root ("."), a directory --
+    // it does not error, but it also does not return the outside file's info.
+    escapeInfo, escapeErr := os.Stat(outsidePath)
+    @assert escapeErr == nil
+    @assert escapeInfo.Name == "."
+    @assert escapeInfo.IsDir == true
+
+    @sandbox false path=""
+
+    @assert os.Remove(marker) == nil
+    @assert os.Remove(outsidePath) == nil
+}

@@ -86,3 +86,46 @@
 
     @assert os.Remove(fn) == nil
 }
+
+@test "os: Stat reports name, size, mode, and IsDir for a file"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    @assert os.WriteFile(fn, "hello world", 0o644) == nil
+
+    info, err := os.Stat(fn)
+    @assert err == nil
+    @assert info.Name == fn
+    @assert info.Size == 11
+    @assert info.Mode == 0o644
+    @assert info.IsDir == false
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "os: Stat reports IsDir for a directory"
+{
+    info, err := os.Stat(".")
+    @assert err == nil
+    @assert info.IsDir == true
+}
+
+@test "os: Stat Mode round-trips through Chmod"
+{
+    fn := "test-" + uuid.New().String() + ".txt"
+
+    @assert os.WriteFile(fn, "data", 0o644) == nil
+    @assert os.Chmod(fn, 0o600) == nil
+
+    info, err := os.Stat(fn)
+    @assert err == nil
+    @assert info.Mode == 0o600
+
+    @assert os.Remove(fn) == nil
+}
+
+@test "os: Stat error is a plain assignable value, no try/catch needed"
+{
+    _, err := os.Stat("/no/such/file/ego-test.txt")
+    @assert err != nil
+}

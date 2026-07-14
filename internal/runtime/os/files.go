@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/runtime/time"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -43,6 +44,29 @@ func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	return data.NewList(data.NewArray(data.ByteType, 0).Append(content), nil), nil
+}
+
+// stat implements os.Stat(), which returns file info about a path without
+// opening it. The path is resolved the same as any other sandboxed path
+// argument (readFile, writeFile, changeMode).
+func stat(s *symbols.SymbolTable, args data.List) (any, error) {
+	name := sandboxName(SandBoxedIO(s), data.String(args.Get(0)))
+
+	info, err := os.Stat(name)
+	if err != nil {
+		err = errors.New(err).In("Stat")
+
+		return data.NewList(nil, err), err
+	}
+
+	fileInfo := data.NewStruct(OsFileInfoType)
+	_ = fileInfo.Set("Name", info.Name())
+	_ = fileInfo.Set("Size", info.Size())
+	_ = fileInfo.Set("Mode", int(info.Mode()))
+	_ = fileInfo.Set("ModTime", data.NewStruct(time.TimeType).SetNative(info.ModTime()))
+	_ = fileInfo.Set("IsDir", info.IsDir())
+
+	return data.NewList(fileInfo, nil), nil
 }
 
 // writeFile implements os.WriteFile() writes a byte array (or string) to a file.

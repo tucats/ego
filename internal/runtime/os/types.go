@@ -7,7 +7,22 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/language/data"
+	egotime "github.com/tucats/ego/internal/runtime/time"
 )
+
+// OsFileInfoType describes the result of os.Stat(): a plain field-based
+// struct (matching the io.Entry convention in internal/runtime/io/types.go)
+// rather than Go's method-based os.FileInfo interface. Mode is the raw
+// permission/type bits as an int, the same representation os.Chmod()'s mode
+// parameter already uses, so os.Chmod(path, info.Mode) round-trips directly.
+var OsFileInfoType = data.TypeDefinition("FileInfo",
+	data.StructureType().
+		DefineField("Name", data.StringType).
+		DefineField("Size", data.Int64Type).
+		DefineField("Mode", data.IntType).
+		DefineField("ModTime", egotime.TimeType).
+		DefineField("IsDir", data.BoolType)).
+	SetPackage("os")
 
 var OsFileType = data.TypeDefinition("File", data.StructureType()).
 	SetNativeName("os.File").
@@ -108,7 +123,8 @@ var OsFileType = data.TypeDefinition("File", data.StructureType()).
 	}, nil).FixSelfReferences()
 
 var OsPackage = data.NewPackageFromMap("os", map[string]any{
-	"File": OsFileType,
+	"File":     OsFileType,
+	"FileInfo": OsFileInfoType,
 	"Args": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Args",
@@ -385,6 +401,20 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 		},
 		Value:    os.Setenv,
 		IsNative: true,
+	},
+	"Stat": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Stat",
+			Parameters: []data.Parameter{
+				{
+					Name:      "name",
+					Type:      data.StringType,
+					Sandboxed: true,
+				},
+			},
+			Returns: []*data.Type{OsFileInfoType, data.ErrorType},
+		},
+		Value: stat,
 	},
 	"WriteFile": data.Function{
 		Declaration: &data.Declaration{

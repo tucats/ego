@@ -5166,6 +5166,38 @@ if err := os.Chmod("mydata.txt", 0o600); err != nil {
 }
 ```
 
+#### os.Stat(name) -- the `os.FileInfo` type
+
+```go
+func os.Stat(name string) (os.FileInfo, error)
+```
+
+`Stat()` returns information about the named file or directory without opening it,
+along with an error (`nil` on success; for example if `name` does not exist).
+
+Unlike Go's `os.FileInfo`, which is an interface accessed through method calls
+(`info.Name()`, `info.Size()`, ...), _Ego_'s `os.FileInfo` is a plain struct with
+read-only fields:
+
+| Field | Type | Description |
+| :--------- | :------: | :--------------------------------------------------------------- |
+| `Name` | `string` | The base name of the file (not the full path). |
+| `Size` | `int64` | The file's size in bytes. |
+| `Mode` | `int` | The raw permission and file-type bits, in the same representation `os.Chmod()`'s `mode` parameter uses -- so `os.Chmod(path, info.Mode)` round-trips a file's existing permissions. For a directory or other non-regular file, this includes type bits above the low 9 permission bits (matching Go's `os.FileMode` layout), so mask with `0o777` first if you only want the permission bits. |
+| `ModTime` | `time.Time` | The file's last-modified time. |
+| `IsDir` | `bool` | `true` if `name` is a directory. |
+
+```go
+info, err := os.Stat("mydata.txt")
+if err != nil {
+    fmt.Println("could not stat file:", err)
+    return
+}
+
+fmt.Println(info.Name, info.Size, info.IsDir)
+fmt.Println("permissions:", info.Mode & 0o777)
+```
+
 #### os.Hostname() / os.Executable()
 
 ```go
