@@ -11,10 +11,12 @@ func TestTokens(t *testing.T) {
 	s := symbols.NewSymbolTable("test")
 
 	// Generate a new token.
-	token, err := NewToken(s, data.NewList("user", "data"))
+	rawToken, err := NewToken(s, data.NewList("user", "data"))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
+
+	token := unwrapValue(t, rawToken)
 
 	if token == nil {
 		t.Fatalf("Unexpected result: %v", token)
@@ -35,10 +37,12 @@ func TestTokens(t *testing.T) {
 	}
 
 	// Extract the data value from the token.
-	extracted, err := Extract(s, data.NewList(token))
+	rawExtracted, err := Extract(s, data.NewList(token))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
+
+	extracted := unwrapValue(t, rawExtracted)
 
 	if extracted == nil {
 		t.Fatalf("Unexpected result: %v", extracted)

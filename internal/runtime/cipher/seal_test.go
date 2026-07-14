@@ -18,8 +18,10 @@ func TestSealString_ValidString(t *testing.T) {
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(strPtr)
 
-	result, err := sealString(s, args)
+	rawResult, err := sealString(s, args)
 	require.Nil(t, err)
+
+	result := unwrapValue(t, rawResult)
 	require.NotEmpty(t, result)
 	require.NotEqual(t, "Hello, World!", result)
 	require.Equal(t, data.String(str), "")
@@ -41,8 +43,10 @@ func TestSealString_EmptyString(t *testing.T) {
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(strPtr)
 
-	result, err := sealString(s, args)
+	rawResult, err := sealString(s, args)
 	require.Nil(t, err)
+
+	result := unwrapValue(t, rawResult)
 	require.NotEmpty(t, result)
 	require.NotEqual(t, "", result)
 	require.Equal(t, data.String(str), "")
@@ -59,28 +63,37 @@ func TestSealString_NilArgument(t *testing.T) {
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(nil)
 
-	result, err := sealString(s, args)
+	rawResult, err := sealString(s, args)
 	require.NotNil(t, err)
 	require.True(t, errors.Equals(err, errors.ErrInvalidPointerType))
-	require.Empty(t, result)
+
+	list, ok := rawResult.(data.List)
+	require.True(t, ok)
+	require.Nil(t, list.Get(0))
 }
 
 func TestSealString_NonStringArgument(t *testing.T) {
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(data.Int(123))
 
-	result, err := sealString(s, args)
+	rawResult, err := sealString(s, args)
 	require.NotNil(t, err)
 	require.True(t, errors.Equals(err, errors.ErrInvalidPointerType))
-	require.Empty(t, result)
+
+	list, ok := rawResult.(data.List)
+	require.True(t, ok)
+	require.Nil(t, list.Get(0))
 }
 
 func TestSealString_MultipleArguments(t *testing.T) {
 	s := symbols.NewRootSymbolTable("test")
 	args := data.NewList(data.String("Hello, World!"), data.String("Extra argument"))
 
-	result, err := sealString(s, args)
+	rawResult, err := sealString(s, args)
 	require.NotNil(t, err)
 	require.True(t, errors.Equals(err, errors.ErrInvalidPointerType))
-	require.Empty(t, result)
+
+	list, ok := rawResult.(data.List)
+	require.True(t, ok)
+	require.Nil(t, list.Get(0))
 }

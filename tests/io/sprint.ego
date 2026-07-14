@@ -91,14 +91,17 @@
     @assert printed == "Count:5"
 }
 
-@test "io: Println also follows spacing rules"
+@test "io: Println always inserts a space, regardless of type"
 {
     // Println's own rule -- always space, regardless of type -- is
-    // unrelated to the Print/Sprint fix above and must not have changed.
+    // unrelated to the Print/Sprint rule above (Print/Sprint only space
+    // between two operands when NEITHER is a string). A prior version of
+    // printLine mistakenly reused the Print rule, so "hello", "world"
+    // printed as "helloworld\n" instead of the correct "hello world\n".
     @capture printed := {
         fmt.Println("hello", "world")
     }
-    @assert printed == "helloworld\n"
+    @assert printed == "hello world\n"
 
     @capture printed2 := {
         fmt.Println(1, 2)

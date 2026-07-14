@@ -46,7 +46,7 @@ var ErrorsPackage = data.NewPackageFromMap("errors", map[string]any{
 			},
 		},
 		ArgCount: data.Range{1, 1},
-		Returns:  []*data.Type{data.StringType},
+		Returns:  []*data.Type{data.BoolType},
 	}, isError)
 
 	// Register the (e error) Unwrap( ) any function, which returns

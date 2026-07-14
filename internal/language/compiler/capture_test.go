@@ -98,7 +98,7 @@ func TestCaptureDirective_Nested(t *testing.T) {
 		t.Fatalf("unexpected error running program: %v", err)
 	}
 
-	want := "outer-before\ninner was:true\nouter-after\n"
+	want := "outer-before\ninner was: true\nouter-after\n"
 	if v, ok := s.Get("outer"); !ok || v != want {
 		t.Errorf("outer = %#v (found=%v), want %#v", v, ok, want)
 	}

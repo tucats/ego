@@ -3062,6 +3062,150 @@ produces the string `"Hello, World!"`.
 
 ---
 
+### cipher Package <a name="cipher"></a>
+
+The `cipher` package provides cryptographic primitives: one-way hashing, symmetric
+encryption, cryptographically-random byte strings, in-place "sealing" of sensitive
+string variables, and creation/validation of signed authentication tokens (the same
+kind of token the Ego server issues to REST clients after a successful logon).
+
+#### cipher.Hash(text string) string
+
+Computes a SHA-256 digest of `text` and returns it as a 64-character lowercase
+hexadecimal string. The digest is one-way (irreversible); the same input always
+produces the same output.
+
+```go
+h := cipher.Hash("Hello, World!")
+fmt.Println(h)
+// dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f
+```
+
+This is a general-purpose content digest — do not use it to store passwords.
+
+#### cipher.Encrypt(text, key string) (string, error)
+
+Encrypts `text` using `key` as the passphrase and returns the result as a
+hexadecimal string. Internally this uses AES-256-GCM with an Argon2id-derived
+key and a random salt and nonce, so encrypting the same text twice with the
+same key produces different output each time. An error is returned only if
+the underlying cryptographic operation itself fails (for example, if the
+system's secure random source is unavailable).
+
+```go
+e, err := cipher.Encrypt("Hello, World!", "my secret key")
+```
+
+#### cipher.Decrypt(encryptedText, key string) (string, error)
+
+Reverses `cipher.Encrypt()`, given the same `key` that was used to encrypt the
+text. Returns an error if `encryptedText` is not a valid hexadecimal string,
+or if decryption fails (wrong key, or the ciphertext was modified).
+
+```go
+e, _ := cipher.Encrypt("Hello, World!", "my secret key")
+d, err := cipher.Decrypt(e, "my secret key")
+fmt.Println(d)
+// Hello, World!
+
+_, err = cipher.Decrypt(e, "wrong key")
+fmt.Println(err != nil)
+// true
+```
+
+`Decrypt` also recognizes ciphertext produced by older, retired key-derivation
+schemes, so text encrypted by a previous version of Ego continues to decrypt
+correctly.
+
+#### cipher.Random([bits int]) (string, error)
+
+Generates a cryptographically random value and returns it as a URL-safe
+Base64-encoded string. `bits` is the number of random bytes to generate; if
+omitted, 32 bytes are generated. An error is returned only if the system's
+secure random source is unavailable.
+
+```go
+r, err := cipher.Random()     // 32 random bytes, ~44-character result
+r8, err := cipher.Random(8)   // 8 random bytes, ~12-character result
+```
+
+#### cipher.Seal(&text string) (string, error) / cipher.Unseal(sealedText string) string
+
+`Seal` encrypts the string referenced by the pointer argument and returns the
+result. As a side effect, the original variable is set to the empty string,
+so the plaintext no longer lingers in a variable that might be logged or
+inspected later. `Unseal` reverses the process. `Seal` returns an error if
+its argument is not a pointer to a string.
+
+```go
+secret := "top secret"
+sealed, err := cipher.Seal(&secret)
+
+fmt.Println(secret)             // "" -- the original was cleared
+fmt.Println(cipher.Unseal(sealed))  // "top secret"
+```
+
+Sealing the same string twice produces different sealed output each time
+(the underlying encryption uses a random salt and nonce), but both unseal
+back to the same original text.
+
+#### cipher.New(name string [, data string [, expiration string]]) (string, error)
+
+Creates a new signed authentication token containing `name` (typically a
+username) and an optional `data` payload, and returns it as an opaque,
+hex-encoded string suitable for use as a bearer token. `expiration` is a Go
+duration string (e.g. `"15m"`, `"2h"`, `"24h"`); it defaults to the server's
+configured token expiration, or `"15m"` if that has not been set. An error is
+returned if `expiration` cannot be parsed as a duration.
+
+```go
+token, err := cipher.New("alice", "role=admin", "1h")
+```
+
+#### cipher.Validate(token string) bool
+
+Reports whether `token` (as produced by `cipher.New()`) is currently valid —
+correctly signed, not expired, and not blacklisted. It never returns an
+error; a malformed or expired token simply validates as `false`. Use
+`cipher.Extract()` instead when you need to know _why_ a token failed
+validation.
+
+```go
+token, _ := cipher.New("alice")
+
+if cipher.Validate(token) {
+    fmt.Println("token is valid")
+}
+```
+
+#### cipher.Extract(token string) (cipher.Token, error)
+
+Decodes `token` and returns its contents as a `cipher.Token` struct. Returns
+an error explaining _why_ the token is invalid if it is malformed, tampered
+with, or expired.
+
+```go
+type Token struct {
+    Name    string  // the name/identity the token was created for
+    Data    string  // the optional data payload passed to New()
+    TokenID string  // a unique ID for this specific token
+    AuthID  string  // the UUID of the server instance that issued the token
+    Expires string  // the token's expiration time, formatted per RFC 822 with zone
+}
+```
+
+```go
+token, _ := cipher.New("alice", "role=admin")
+
+info, err := cipher.Extract(token)
+if err == nil {
+    fmt.Println(info.Name, info.Data)
+    // alice role=admin
+}
+```
+
+---
+
 ### errors Package<a name="error"></a>
 
 The `errors` package implements simple error types. There is a single method, `New`, which
@@ -3114,6 +3258,15 @@ The `Is()` function can be used with any error as the receiver value, and will
 compare the error to the provided parameter which is also an error value. This
 lets you compare error messages to see if they match. Note that this does not
 compare the context, only the actual error message.
+
+```go
+e1 := errors.New("not found")
+e2 := errors.New("not found").Context("foobar.txt")
+e3 := errors.New("different message")
+
+fmt.Println(e1.Is(e2))  // true -- same message, context is ignored
+fmt.Println(e1.Is(e3))  // false -- different message
+```
 
 #### (e error) Unwrap() any
 

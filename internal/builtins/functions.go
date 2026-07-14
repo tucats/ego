@@ -359,7 +359,7 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 						if fn, ok := fd.Value.(func(*symbols.SymbolTable, data.List) (any, error)); ok {
 							v, e := fn(s, data.NewList(args...))
 
-							return v, e
+							return unwrapListResult(v), e
 						}
 					}
 				}
@@ -394,13 +394,20 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 	// Use the function pointer to call the function.
 	result, err := fn(s, data.NewList(args...))
 
-	// If the function follows the (value,error) standard, unwrap the returned
-	// value from the list.
+	return unwrapListResult(result), err
+}
+
+// unwrapListResult extracts the value half of a (value, error) result for
+// callers of CallBuiltin, which are Go code and don't go through the
+// bytecode dispatch path that normally unwraps a data.List result (see
+// callRuntimeFunction). Functions that follow the (value, error) convention
+// return a 2-item data.List{value, err}; everything else is returned as-is.
+func unwrapListResult(result any) any {
 	if list, ok := result.(data.List); ok && list.Len() == 2 {
-		result = list.Get(0)
+		return list.Get(0)
 	}
 
-	return result, err
+	return result
 }
 
 // AddFunction adds a function definition to the dictionary of known built-in functions.

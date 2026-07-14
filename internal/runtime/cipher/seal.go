@@ -8,8 +8,6 @@ import (
 )
 
 func sealString(s *symbols.SymbolTable, args data.List) (any, error) {
-	var err error
-
 	arg := args.Get(0)
 
 	if stringPointer, ok := arg.(*string); ok {
@@ -17,28 +15,26 @@ func sealString(s *symbols.SymbolTable, args data.List) (any, error) {
 		seal := util.Seal(value)
 		*stringPointer = ""
 
-		return string(seal), err
+		return data.NewList(string(seal), nil), nil
 	}
 
 	if stringPointer, ok := arg.(*any); ok {
-		value := *stringPointer
-		if text, ok := value.(string); ok {
+		if text, ok := (*stringPointer).(string); ok {
 			seal := util.Seal(text)
 			*stringPointer = ""
 
-			return string(seal), err
+			return data.NewList(string(seal), nil), nil
 		}
 	}
 
-	return nil, errors.ErrInvalidPointerType.In("cipher.Seal").Context(data.TypeOf(arg).String())
+	err := errors.ErrInvalidPointerType.In("cipher.Seal").Context(data.TypeOf(arg).String())
+
+	return data.NewList(nil, err), err
 }
 
 func unsealString(s *symbols.SymbolTable, args data.List) (any, error) {
-	var err error
-
 	text := data.String(args.Get(0))
 	sealedString := util.NewSealedString(text)
-	unsealed := sealedString.Unseal()
 
-	return unsealed, err
+	return sealedString.Unseal(), nil
 }

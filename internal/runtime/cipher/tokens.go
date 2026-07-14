@@ -16,45 +16,11 @@ import (
 	"github.com/tucats/ego/internal/language/tokens"
 )
 
-// validate determines if a token is valid and returns true/false.
+// Validate determines if a token is valid and returns true/false. The reason a
+// token failed validation (expired, tampered with, blacklisted, etc.) is not
+// reported here; call Extract() instead if that detail is needed, since it
+// performs the same checks and also returns the underlying error.
 func Validate(s *symbols.SymbolTable, args data.List) (any, error) {
-	var (
-		err       error
-		reportErr bool
-		session   int
-	)
-
-	if args.Len() > 1 {
-		reportErr, err = data.Bool(args.Get(1))
-		if err != nil {
-			return nil, errors.New(err).In("cipher.Validate")
-		}
-	}
-
-	if i, ok := s.Get(defs.SessionVariable); ok {
-		session, err = data.Int(i)
-		if err != nil {
-			return nil, errors.New(err).In("cipher.Validate")
-		}
-	}
-
-	tokenString := data.String(args.Get(0))
-
-	valid, err := tokens.Validate(tokenString, session)
-
-	if err != nil {
-		if reportErr {
-			return valid, errors.New(err)
-		}
-
-		return valid, nil
-	}
-
-	return valid, err
-}
-
-// extract extracts the data from a token and returns it as a struct.
-func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err     error
 		session int
@@ -67,6 +33,31 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
+	tokenString := data.String(args.Get(0))
+
+	valid, _ := tokens.Validate(tokenString, session)
+
+	return valid, nil
+}
+
+// Extract extracts the data from a token and returns it as a Token struct. Unlike
+// Validate, the underlying error is returned so the caller can distinguish between
+// an expired token, a tampered/invalid token, and other failures.
+func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
+	var (
+		err     error
+		session int
+	)
+
+	if i, ok := s.Get(defs.SessionVariable); ok {
+		session, err = data.Int(i)
+		if err != nil {
+			err = errors.New(err).In("cipher.Extract")
+
+			return data.NewList(nil, err), err
+		}
+	}
+
 	t, err := tokens.Unwrap(data.String(args.Get(0)), session)
 	if err != nil {
 		if ui.IsActive(ui.AuthLogger) {
@@ -75,35 +66,36 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 				"error":   err})
 		}
 
-		return nil, errors.New(err)
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
 	// Has the expiration passed?
-	d := time.Since(t.Expires)
-	if d.Seconds() > 0 {
+	if time.Since(t.Expires).Seconds() > 0 {
 		if ui.IsActive(ui.AuthLogger) {
 			ui.Log(ui.AuthLogger, "auth.expired", ui.A{
 				"session": session,
 				"id":      t.TokenID})
 		}
 
-		err = errors.ErrExpiredToken.In("Extract.expired")
+		err = errors.ErrExpiredToken.In("cipher.Extract")
+
+		return data.NewList(nil, err), err
 	}
 
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	return data.NewStructOfTypeFromMap(CipherAuthType, map[string]any{
+	result := data.NewStructOfTypeFromMap(CipherAuthType, map[string]any{
 		"Expires": t.Expires.Format(time.RFC822Z),
 		"Name":    t.Name,
 		"Data":    t.Data,
 		"AuthID":  t.AuthID.String(),
 		"TokenID": t.TokenID.String(),
-	}), err
+	})
+
+	return data.NewList(result, nil), nil
 }
 
-// newToken creates a new token with a username and a data payload.
+// NewToken creates a new token with a username and a data payload.
 func NewToken(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		err                       error
@@ -114,7 +106,9 @@ func NewToken(s *symbols.SymbolTable, args data.List) (any, error) {
 	if i, ok := s.Get(defs.SessionVariable); ok {
 		session, err = data.Int(i)
 		if err != nil {
-			return nil, errors.New(err).In("cipher.Validate")
+			err = errors.New(err).In("cipher.New")
+
+			return data.NewList(nil, err), err
 		}
 	}
 
@@ -155,5 +149,7 @@ func NewToken(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	return tokens.New(name, datum, interval, id, session)
+	result, err := tokens.New(name, datum, interval, id, session)
+
+	return data.NewList(result, err), err
 }

@@ -8,6 +8,20 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
+// unwrapValue extracts index 0 from a data.List result. Functions that follow
+// the (value, error) convention return a data.List{value, err}, so their
+// Go-level "any" result must be unwrapped before use.
+func unwrapValue(t *testing.T, result any) any {
+	t.Helper()
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List result, got %T", result)
+	}
+
+	return list.Get(0)
+}
+
 func Test_hash(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -15,16 +29,6 @@ func Test_hash(t *testing.T) {
 		want    any
 		wantErr bool
 	}{
-		{
-			name:    "missing argument",
-			args:    data.NewList(),
-			wantErr: true,
-		},
-		{
-			name:    "too many arguments",
-			args:    data.NewList("test", "foo"),
-			wantErr: true,
-		},
 		{
 			name: "empty string",
 			args: data.NewList(""),

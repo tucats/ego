@@ -217,19 +217,14 @@ func sprintList(s *symbols.SymbolTable, args data.List) (any, error) {
 // a simplification, so this loop intentionally does not use formatPrintArgs.
 func printLine(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
-		length        int
-		e2            error
-		b             strings.Builder
-		lastWasString bool = true // Special case, assume we don't need leading space
+		length int
+		e2     error
+		b      strings.Builder
 	)
 
-	for _, v := range args.Elements() {
-		// Go standard for this is you only add spaces if neither adjacent
-		// items was a string.
-		if _, ok := v.(string); !ok && !lastWasString {
+	for i, v := range args.Elements() {
+		if i > 0 {
 			b.WriteString(" ")
-		} else {
-			lastWasString = ok
 		}
 
 		text, err := formatUsingString(s, v)

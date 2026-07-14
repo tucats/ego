@@ -13,29 +13,25 @@ import (
 
 // hash implements the cipher.hash() function. For an arbitrary string
 // value, it computes a cryptographic hash of the value, and returns it
-// as a 32-character string containing the hexadecimal hash value. Hashes
-// are irreversible.
+// as a 64-character string containing the hexadecimal SHA-256 hash value.
+// Hashes are irreversible.
 func hash(s *symbols.SymbolTable, args data.List) (any, error) {
-	if args.Len() != 1 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	return util.Hash(data.String(args.Get(0))), nil
 }
 
 // encrypt implements the cipher.encrypt() function. This takes a string value and
-// a string key, and encrypts the string using the key.
+// a string key, and encrypts the string using the key. Returns the encrypted text
+// as a hexadecimal string, and an error if the underlying encryption operation
+// failed (for example, if the system's cryptographic random source is unavailable).
 func encrypt(s *symbols.SymbolTable, args data.List) (any, error) {
-	if args.Len() != 2 {
-		return nil, errors.ErrArgumentCount
-	}
-
 	b, err := util.Encrypt(data.String(args.Get(0)), data.String(args.Get(1)))
 	if err != nil {
-		return b, err
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
-	return hex.EncodeToString([]byte(b)), nil
+	return data.NewList(hex.EncodeToString([]byte(b)), nil), nil
 }
 
 // decrypt implements the cipher.decrypt() function. It accepts an encrypted string
@@ -45,7 +41,9 @@ func encrypt(s *symbols.SymbolTable, args data.List) (any, error) {
 func decrypt(s *symbols.SymbolTable, args data.List) (any, error) {
 	b, err := hex.DecodeString(data.String(args.Get(0)))
 	if err != nil {
-		return data.NewList(nil, err), errors.New(err)
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
 	result, err := util.Decrypt(string(b), data.String(args.Get(1)))
@@ -62,15 +60,19 @@ func random(s *symbols.SymbolTable, args data.List) (any, error) {
 	if args.Len() > 0 {
 		n, err = data.Int(args.Get(0))
 		if err != nil {
-			return nil, errors.New(err).In("cipher.Random")
+			err = errors.New(err).In("cipher.Random")
+
+			return data.NewList(nil, err), err
 		}
 	}
 
 	b := make([]byte, n)
 
 	if _, err := rand.Read(b); err != nil {
-		return nil, errors.New(err)
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
-	return base64.URLEncoding.EncodeToString(b), nil
+	return data.NewList(base64.URLEncoding.EncodeToString(b), nil), nil
 }

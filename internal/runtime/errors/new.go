@@ -8,10 +8,6 @@ import (
 )
 
 func newError(s *symbols.SymbolTable, args data.List) (any, error) {
-	if args.Len() < 1 || args.Len() > 2 {
-		return nil, errors.ErrArgumentCount.In("New")
-	}
-
 	result := errors.Message(data.String(args.Get(0))).SetUser(true)
 
 	if args.Len() > 1 {
