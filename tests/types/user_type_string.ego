@@ -1,0 +1,30 @@
+@test "types: user String() formatter for scalar type"
+{
+
+   type Foo int
+
+   func (f Foo) String() string {
+      switch f {
+         case 0:
+         return "False"
+
+         case 1:
+         return "True"
+
+         default:
+         return "?"
+      }
+
+      return ""
+   }
+
+   var x Foo
+   x = Foo(0)
+
+// The formatter in the fmt package (and the strings.String() function)
+// should be checking for a method on the type String() that can be called
+// when it's time to format the data. Because we've provided a formatter
+// above, this should be used.
+
+   @assert fmt.Sprint(x) == "False"
+}

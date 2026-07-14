@@ -12,6 +12,11 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
+// run implements exec.Cmd.Run() function. IT actually does the
+// execution of the command text provided. If the command could
+// not be found or was invalid, this is probably where the error
+// will occur. This is different that stderr from the execution
+// of the command, which is captured separately.
 func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	var (
 		out bytes.Buffer
@@ -48,7 +53,7 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	if argArray, ok := cmdStruct.Get("Args"); ok {
 		if args, ok := argArray.(*data.Array); ok {
 			r := make([]string, args.Len())
-			for n := 0; n < len(r); n++ {
+			for n := range r {
 				v, _ := args.Get(n)
 				r[n] = data.String(v)
 			}
@@ -85,7 +90,7 @@ func run(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	if e := cmd.Run(); e != nil {
-		return nil, errors.New(e)
+		return errors.New(e), nil
 	}
 
 	resultStrings := strings.Split(out.String(), "\n")

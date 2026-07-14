@@ -3259,9 +3259,7 @@ func (c exec.Cmd) Run() error
 
 Runs the command represented by `c`. The subprocess's standard input is taken from
 `c.Stdin` if set; on completion, `c.Stdout` is set to the lines of standard output
-produced by the command. **`Run()` discards the subprocess's standard error entirely**
--- it is not captured, not stored in `c.Stderr`, and not passed through to the Ego
-program's own console. Use `Output()` instead if you need to inspect error output.
+produced by the command.
 
 ```go
 func main() {
@@ -3275,25 +3273,6 @@ func main() {
     for _, line := range c.Stdout {
         fmt.Println(line)
     }
-}
-```
-
-**Important:** `Run()` is declared with a single `error` return value, not the usual
-`(value, error)` pair. Because of this, a failure is only observable inside a
-`try`/`catch` block -- assigning the result to a plain variable (`err := c.Run()`)
-does *not* let you inspect the error afterwards with an `if err != nil` check; an
-uncaught failure instead aborts the program immediately, the same as any other
-uncaught runtime error. Always wrap `Run()` in `try`/`catch` if the command might fail
-and you want to keep running:
-
-```go
-c := exec.Command("false")
-
-try {
-    _ = c.Run()
-    fmt.Println("command succeeded")
-} catch(e) {
-    fmt.Println("command failed:", e)
 }
 ```
 
@@ -5105,7 +5084,7 @@ if err != nil {
 }
 ```
 
-**Security note on the ambient logon token:** 
+**Security note on the ambient logon token:**
 A `rest.Client`'s `Base()` can point to any server, including a host you
 don't control -- so to prevent a script (trusted or not) from accidentally or
 deliberately exfiltrating the user's login token to an arbitrary third party,

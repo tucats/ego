@@ -20,19 +20,12 @@
     @assert c.Stdout[0] == "hello world"
 }
 
-@test "exec: Run error is only observable via try/catch"
+@test "exec: Run error now observatble in err"
 {
     c := exec.Command("false")
-    caught := false
+    e := c.Run()
 
-    try {
-        _ = c.Run()
-    } catch(e) {
-        caught = true
-        @assert e != nil
-    }
-
-    @assert caught
+    @assert e != nil
 }
 
 @test "exec: Output returns stdout and empty Stderr on success"
