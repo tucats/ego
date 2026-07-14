@@ -2,8 +2,7 @@
  * Debugging service. This is used to debug arbitrary operations.
  * This is not meant to be a product service.
  */
-@endpoint "GET /services/admin/debug"
-@authenticated user 
+@endpoint get path="/services/admin/debug" authenticated
 
 import "http"
 

@@ -1,6 +1,6 @@
 // Testing endpoint that generates a compile error of the handler.
 
-@endpoint "GET /services/bogus-compile"
+@endpoint get path="/services/bogus-compile"
 
 import "http"
 

@@ -1,6 +1,6 @@
 // Testing endpoint that generates a runtime error of the handler.
 
-@endpoint "GET /services/bogus-runtime"
+@endpoint get path="/services/bogus-runtime"
 
 import "http"
 

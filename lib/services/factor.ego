@@ -13,7 +13,7 @@
 //           expression in the URL). The body of the resp is the
 //           text of the error.
 
-@endpoint "GET /services/factor/{{value}}"
+@endpoint get path="/services/factor/{{value}}"
 
 import "http"
 import "math"

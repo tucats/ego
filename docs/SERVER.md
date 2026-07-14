@@ -457,21 +457,85 @@ you can call.
 There are a few compiler directives that can be used in service programs that are executed
 by the server. These allow for more declarative code.
 
-#### @endpoint "path"
+#### @endpoint
 
-This specifies the endpoint this service provides, and includes any pattern information
-about how elements of the URL can be converted into local variables within the handler
-being run. If used, this directive must be the first line of code in the service file.
+This specifies the endpoint this service provides: its URL path, HTTP method, accepted
+media types, required permissions, and query parameter validation rules. If used, this
+directive must be the first statement in the service file (blank lines and comments
+before it are fine).
 
-The "path" string is an expression of the URL path, using substitution values for URL elements that are variable. The specific path for a given request is stored in the
-http.Request field `URL.Path` which is a string. Additionally, `URL.Parts` is a map
-for each field in the URL, indicating if the value was present in the actual request,
-and if so the value provided.
+If the service does not have an `@endpoint` directive at all, then the URL path is
+assumed to be identical to the service handler program's own path, with no additional
+user elements, and the service accepts any HTTP method with no authentication
+requirement.
 
-If the service does not have an `@endpoint` directive, then the URL path is assumed
-to be identical to the service handler program path, with no additional user elements.
+##### Syntax
 
-#### @authenticated type
+```text
+@endpoint [method] [path=]"/path/{{param}}" [media="type"[,"type"]]
+          [permissions="perm"[,"perm"]] [parameter="name:kind"[,"name:kind"]]
+          [authenticated|admin|root]
+```
+
+The terms may appear in any order. All are optional except the path, which is required
+whenever `@endpoint` is used at all.
+
+| Term | Description |
+| :--------- | :---------- |
+| _method_ | A single, case-insensitive, bare word: `get`, `put`, `delete`, `patch`, `post`, or `update`. If omitted, the endpoint responds to any HTTP method. |
+| `path=` _"..."_ | The URL path this service handles, using `{{name}}` substitution elements for URL parts that vary. The `path=` prefix is the preferred form for new services. For backward compatibility, a bare string with no `path=` prefix is also accepted as the path -- see **Legacy path syntax** below. |
+| `media=` _"type"[,"type"]_ | One or more media (MIME) types this service will respond with. If omitted, all media types are accepted. |
+| `permissions=` _"perm"[,"perm"]_ | One or more permission strings the caller must have (ALL of them, unless the caller is an `ego.root` admin) to access this service. Specifying any permission also requires the caller to be authenticated. |
+| `parameter=` _"name:kind"[,"name:kind"]_ | Declares one or more query parameters this service accepts, and the validation `kind` for each value (comma-separated within a single `parameter=` term). See the list of valid `kind` values below the table. |
+| `authenticated` | Bare word. The caller must be authenticated (any valid user), but does not need any specific permission. Equivalent to `@authenticated user` below. |
+| `admin` / `root` | Bare word. Requires the caller to specifically be an admin (equivalent to `@authenticated admin` below), and also contributes the `ego.root` permission to `permissions=`. |
+
+Valid `kind` values for `parameter=` are `any`, `duration`, `flag`, `bool`, `int`,
+`string`, `list`, and `string|flag` (e.g. `parameter="verbose:string|flag"`).
+
+The specific path for a given request is stored in the `http.Request` field `URL.Path`,
+which is a string. Additionally, `URL.Parts` is a map for each field in the URL,
+indicating if the value was present in the actual request, and if so the value provided.
+
+A malformed `@endpoint` directive does not prevent the server from starting -- it is
+logged ("Invalid endpoint definition", with the specific problem and the file name) and
+that one service is simply not registered, while the rest of the server's services start
+normally.
+
+##### Examples
+
+```go
+@endpoint get path="/services/factor/{{value}}"
+
+@endpoint path="/services/widgets" permissions="widgets.read" media="application/json"
+
+@endpoint post path="/services/widgets" permissions="widgets.write" parameter="dryrun:bool"
+
+@endpoint get path="/services/admin/report" admin
+```
+
+##### Legacy path syntax
+
+For backward compatibility, the path may be given as a bare string with no `path=`
+prefix, optionally beginning with an HTTP method name and a space, and optionally
+followed by `?name=kind&name2=kind2` query parameter declarations packed into the same
+string:
+
+```go
+@endpoint "GET /services/factor/{{value}}?verbose=bool"
+```
+
+This is equivalent to `@endpoint get path="/services/factor/{{value}}" parameter="verbose:bool"`.
+New services should prefer the explicit term syntax above, which is easier to read and
+supports media types and permissions, neither of which the legacy string syntax can
+express.
+
+#### @authenticated type <a name="at-authenticated"></a>
+
+**Deprecated** in favor of the `authenticated`/`admin`/`root`/`permissions=` terms on
+`@endpoint` itself (see above), which is more discoverable since it's all in one place.
+`@authenticated` continues to work unchanged, and composes with `@endpoint`'s own auth
+terms if a file happens to use both.
 
 This requires that the caller of the service be authenticated, and specifies the type
 of the authentication to be performed. This should be at the start of the service code;
@@ -520,7 +584,7 @@ the lib/services directory.
 //  * If name and field are omitted, it lists the possible users.
 //  * If field is omitted, it lists all info about a specific user.
 //  * If field is given, it lists the specific field for the specific user.
-@endpoint "GET services/sample/users/{{name}}/{{field}}"
+@endpoint get path="/services/sample/users/{{name}}/{{field}}"
 
 import "http"
 

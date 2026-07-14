@@ -2,7 +2,7 @@
  * This sample service illustrates how a service can redirect to another site, by returning
  * a redirect (such as 301) and a new server address in the Location header.
  */
-@endpoint "GET /services/admin/redirect"
+@endpoint get path="/services/admin/redirect"
 
 import "http"
 

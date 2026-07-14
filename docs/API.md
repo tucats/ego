@@ -1301,9 +1301,14 @@ server maps the file path under the services root to an endpoint path. For
 example, `lib/services/factor.ego` is available at `/services/factor`.
 
 A service file uses the `@endpoint` directive to declare a custom endpoint path,
-and `@authenticated` to require authentication. Query parameter types can be
-declared with `?name=type` annotations. The server calls the `handler` function
-in the service file, passing `http.Request` and `http.Response` objects.
+HTTP method, accepted media types, required permissions, and query parameter
+validation rules -- e.g. `@endpoint get path="/services/widgets" permissions="widgets.read" parameter="verbose:bool"`.
+Authentication can be required either with the `authenticated`/`admin`/`root` terms
+directly on `@endpoint`, or with the separate (deprecated) `@authenticated` directive.
+See [`@endpoint`](SERVER.md#directives) in SERVER.md for the full term syntax,
+including the legacy single-string `"METHOD /path?name=type"` form still supported
+for backward compatibility. The server calls the `handler` function in the service
+file, passing `http.Request` and `http.Response` objects.
 
 Example service:
 

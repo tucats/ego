@@ -1,5 +1,5 @@
 // Simple status service, returns basic information about the server.
-@endpoint "GET /services/up"
+@endpoint get path="/services/up"
 
 import (
     "http"

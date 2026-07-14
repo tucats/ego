@@ -324,6 +324,7 @@ dup.column=duplicate column name
 dup.type=duplicate type name
 empty.column=empty column list
 endpoint=invalid endpoint path string
+endpoint.definition=invalid endpoint definition
 entry.not.found=undefined entrypoint name
 eof.marker=@compile eof marker not found before end of source
 equals=missing '='
@@ -1732,6 +1733,7 @@ server.db.error=Database error, {{error}}
 server.auth.init=Initializing credentials and authorizations using {{database}}
 server.service.dir=Scanning directory {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
+server.service.route.invalid=Invalid endpoint definition in {{file}}: {{error}}
 server.interrupt=Server received SIGINT shutdown signal
 server.shutdown=Server shutdown by admin function
 server.request={{status}} {{method}} {{path}} from {{host}}{{user|label "; user "}}; length {{length}}; content {{type}}; elapsed {{elapsed}}

@@ -318,6 +318,7 @@ dup.column=nom de colonne en double
 dup.type=nom de type en double
 empty.column=liste de colonnes vide
 endpoint=chaîne de chemin d'endpoint invalide
+endpoint.definition=définition d'endpoint invalide
 entry.not.found=nom de point d'entrée non défini
 eof.marker=marqueur de fin @compile introuvable avant la fin de la source
 equals=manque '='
@@ -1715,6 +1716,7 @@ server.auth.init=Initialisation des identifiants et autorisations à l'aide de {
 server.auth.init.err=Erreur lors de l'initialisation du sous-système d'authentification, {{error}}
 server.service.dir=Analyse du répertoire {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
+server.service.route.invalid=Définition d'endpoint invalide dans {{file}} : {{error}}
 server.interrupt=Le serveur a reçu le signal d'arrêt SIGINT
 server.shutdown=Serveur arrêté par la fonction d'administration
 server.request={{status}} {{method}} {{path}} depuis {{host}}{{user|label " ; utilisateur "}} ; longueur {{length}} ; contenu {{type}} ; durée {{elapsed}}

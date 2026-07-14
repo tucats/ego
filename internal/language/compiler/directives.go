@@ -228,18 +228,25 @@ func (c *Compiler) symbolsDirective() error {
 
 // Identify the endpoint for this service module, if it is other
 // than the default provided by the service file directory path.
+// endpointDirective compiles the @endpoint directive. Its full term grammar
+// (method, path=, media=, permissions=, parameter=, the authenticated/admin/root
+// tokens, and the legacy bare-string path) is parsed and validated separately,
+// at server startup, by internal/server/services's endpoint parser -- see that
+// package for the actual grammar and error reporting; a malformed @endpoint
+// there causes that one service's route to be skipped and logged, not a
+// compile failure. This directive exists only so the file compiles at all
+// (and to catch the trivial case of a bare "@endpoint" with nothing after
+// it); it deliberately does no semantic validation of its own, so it doesn't
+// need to duplicate (and risk drifting out of sync with) that grammar.
 func (c *Compiler) endpointDirective() error {
 	if c.t.EndOfStatement() {
 		return c.compileError(errors.ErrInvalidEndPointString)
 	}
 
-	endpoint := c.t.Next()
-	if !endpoint.IsString() {
-		return c.compileError(errors.ErrInvalidEndPointString)
+	for !c.t.EndOfStatement() {
+		c.t.Advance(1)
 	}
 
-	// We do no work here, this text is processed during server
-	// initialization only.
 	return nil
 }
 

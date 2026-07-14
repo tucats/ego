@@ -660,8 +660,9 @@ func (r *Route) AcceptMedia(mediaTypes ...string) *Route {
 	return r
 }
 
-// AcceptMedia specifies one or more user media types that are required for endpoint
-// validation. If no media types are assigned, then all media types are accepted.
+// ContentMedia specifies one or more media types that the request body (Content-Type
+// header) must match for this route. If no media types are assigned, then all
+// content media types are accepted.
 func (r *Route) ContentMedia(mediaTypes ...string) *Route {
 	if r != nil {
 		if r.contentMediaTypes == nil {
@@ -680,7 +681,7 @@ func (r *Route) ContentMedia(mediaTypes ...string) *Route {
 			}
 
 			if !duplicate {
-				r.acceptMediaTypes = append(r.contentMediaTypes, mediaType)
+				r.contentMediaTypes = append(r.contentMediaTypes, mediaType)
 			}
 		}
 	}

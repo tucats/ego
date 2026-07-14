@@ -325,6 +325,7 @@ dup.column=nombre de columna duplicado
 dup.type=nombre de tipo duplicado
 empty.column=lista de columnas vacía
 endpoint=cadena de ruta de endpoint no válida
+endpoint.definition=definición de endpoint no válida
 entry.not.found=nombre de punto de entrada no definido
 eof.marker=marcador de fin @compile no encontrado antes del final de la fuente
 equals=falta '='
@@ -1722,6 +1723,7 @@ server.auth.init=Inicializando credenciales y autorizaciones usando {{database}}
 server.auth.init.err=Error al inicializar el subsistema de autenticación, {{error}}
 server.service.dir=Explorando directorio {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
+server.service.route.invalid=Definición de endpoint no válida en {{file}}: {{error}}
 server.interrupt=El servidor recibió la señal de apagado SIGINT
 server.shutdown=Servidor apagado por la función de administración
 server.request={{status}} {{method}} {{path}} desde {{host}}{{user|label "; usuario "}}; longitud {{length}}; contenido {{type}}; transcurrido {{elapsed}}

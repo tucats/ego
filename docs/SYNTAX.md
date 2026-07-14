@@ -633,12 +633,12 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | Directive | Arguments | Purpose |
 | --------- | --------- | ------- |
 | `@assert` | `expression` | Assertion in test mode |
-| `@authenticated` | `user` \| `admin` \| `any` | Require authentication (server mode) |
+| `@authenticated` _(deprecated)_ | `none` \| `user` \| `admin` \| `root` | Require authentication (server mode); superseded by `@endpoint`'s own `authenticated`/`admin`/`root`/`permissions=` terms |
 | `@capture` | `IDENT ( ":=" \| "=" ) block` | Capture a block's console output into a variable — see [12.1](#121-capture) |
 | `@compile` | `{ flag } ( block \| eof-delimited code ) [ catch ]` | Compile a block or program fragment in an isolated sub-compiler — see [12.2](#122-compile) |
 | `@debug` | — | Enable debug logging |
 | `@define` | `IDENT { "," IDENT }` | Pre-declare global variables |
-| `@endpoint` | `STRING` | Declare service endpoint path |
+| `@endpoint` | `[ method ] [ "path=" ] STRING [ "media=" STRING { "," STRING } ] [ "permissions=" STRING { "," STRING } ] [ "parameter=" STRING { "," STRING } ] [ "authenticated" \| "admin" \| "root" ]` | Declare service endpoint path, method, media types, permissions, and parameter validation — see [`@endpoint`](SERVER.md#directives) in SERVER.md |
 | `@entrypoint` | `[ IDENT ]` | Set entry-point function name (default `main`) |
 | `@error` | `[ expression ]` | Signal a compile-time error |
 | `@extensions` | `true` \| `false` \| `default` \| _(empty = true)_ | Toggle language extensions |

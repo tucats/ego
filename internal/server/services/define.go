@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/router"
-	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
@@ -34,54 +32,54 @@ func DefineLibHandlers(r *router.Router, root, subpath string) error {
 			"path": subpath})
 	}
 
-	for _, path := range paths {
-		fileName := filepath.Join(root, strings.TrimSuffix(path, "/")+defs.EgoFilenameExtension)
-		pattern, authenticate, admin := getPattern(fileName)
-		parameters := map[string]string{}
-		method := router.AnyMethod
+	for _, svcPath := range paths {
+		fileName := filepath.Join(root, strings.TrimSuffix(svcPath, "/")+defs.EgoFilenameExtension)
 
-		if pattern != "" {
-			// See if there is a method prefix in the pattern string. If there is one, peel it out and save it
-			// as the route method, and delete it from the pattern string we use.
-			for _, prefix := range []string{http.MethodGet, http.MethodDelete, http.MethodPut, http.MethodPost} {
-				if strings.HasPrefix(strings.ToUpper(pattern), prefix+" ") {
-					method = prefix
-					pattern = strings.TrimSpace(strings.TrimPrefix(pattern, prefix+" "))
+		spec, err := parseEndpoint(fileName)
+		if err != nil {
+			// A malformed @endpoint in one file must not take down the whole
+			// server: log it and skip registering a route for this file,
+			// then keep scanning the rest of the directory.
+			ui.Log(ui.ServerLogger, "server.service.route.invalid", ui.A{
+				"file":  fileName,
+				"error": err.Error()})
 
-					break
-				}
-			}
-
-			// Does the pattern have a parameter list? If so, this is a parameter-syntax list where the
-			// parameter name must be set to the type, i.e. "int", "string", etc. required for parameter
-			// validation.
-			if i := strings.Index(pattern, "?"); i > 0 {
-				paramDefs := pattern[i+1:]
-				pattern = pattern[:i]
-
-				params := strings.Split(paramDefs, "&")
-				for _, param := range params {
-					if strings.TrimSpace(param) == "" {
-						continue
-					}
-
-					parts := strings.Split(param, "=")
-					if len(parts) != 2 {
-						return errors.ErrMissingOptionValue.Context(parts[0])
-					}
-
-					name := strings.TrimSpace(parts[0])
-					kind := strings.ToLower(strings.TrimSpace(parts[1]))
-					parameters[name] = kind
-				}
-			}
-
-			path = pattern
-		} else {
-			// Edit the path to replace Windows-style path separators (if present)
-			// with forward slashes.
-			path = strings.ReplaceAll(path+"/", string(os.PathSeparator), "/")
+			continue
 		}
+
+		// legacyAuthenticate/legacyAdmin come from the separate (deprecated)
+		// @authenticated directive, which continues to work unchanged and
+		// independently of @endpoint's own auth terms -- see parseAuthenticated.
+		legacyAuthenticate, legacyAdmin := parseAuthenticated(fileName)
+
+		var (
+			path        string
+			method      = router.AnyMethod
+			parameters  = map[string]string{}
+			mediaTypes  []string
+			permissions []string
+		)
+
+		if spec != nil {
+			path = spec.Path
+			method = spec.Method
+			parameters = spec.Parameters
+			mediaTypes = spec.MediaTypes
+			permissions = spec.Permissions
+		} else {
+			// No @endpoint directive at all: fall back to the file's own
+			// location-derived default path, exactly as before.
+			path = strings.ReplaceAll(svcPath+"/", string(os.PathSeparator), "/")
+		}
+
+		authenticate := legacyAuthenticate || (spec != nil && spec.Authenticated) || len(permissions) > 0
+
+		// admin combines the legacy "@authenticated admin" directive with
+		// @endpoint's own admin/root bare term: both require
+		// route.Authentication(true, true) (the strict "caller must
+		// specifically be an admin" check), in addition to whatever
+		// Permissions() already contributes ("ego.root" among them).
+		admin := legacyAdmin || (spec != nil && spec.Admin)
 
 		methodString := "(any)"
 		if method != router.AnyMethod {
@@ -114,12 +112,19 @@ func DefineLibHandlers(r *router.Router, root, subpath string) error {
 		route := r.New(path, ServiceHandler, method).Filename(fileName).NeedsLock(true)
 		route.AllowRedirects(!authenticate).Authentication(authenticate, admin).CanAuthenticate(true)
 
-		// If there were any parameters in the pattern, register those now as well. If the
-		// registration returns nil, it had an invalid type name.
+		if len(mediaTypes) > 0 {
+			route.AcceptMedia(mediaTypes...)
+		}
+
+		if len(permissions) > 0 {
+			route.Permissions(permissions...)
+		}
+
+		// Parameter kinds were already validated by parseEndpoint, so this
+		// can never panic the way calling route.Parameter() with unvalidated
+		// input would.
 		for k, v := range parameters {
-			if route.Parameter(k, v) == nil {
-				return errors.ErrInvalidType.Context(k)
-			}
+			route.Parameter(k, v)
 		}
 	}
 
@@ -159,58 +164,4 @@ func getServicePaths(fids []os.DirEntry, subpath string, r *router.Router, root 
 	}
 
 	return paths, nil
-}
-
-// For a given filename, determine if it starts with an @endpoint
-// directive. If so, return the associated path. Otherwise, return
-// the default path provided.
-func getPattern(filename string) (string, bool, bool) {
-	if b, err := os.ReadFile(filename); err == nil {
-		t := tokenizer.New(string(b), true)
-
-		// First, see if there is an @authenticate directive.
-		mark := t.Mark()
-		authenticate := false
-		admin := false
-
-		for !t.IsNext(tokenizer.EndOfTokens) {
-			if t.IsNext(tokenizer.DirectiveToken) && t.NextText() == "authenticated" {
-				authenticate = true
-				kind := t.NextText()
-
-				if kind == "admin" || kind == "root" || kind == "admin_root" {
-					admin = true
-				}
-
-				// If the token was "none" (or was ";" which means end-of-line) then the authentication
-				// is turned off.
-				if kind == "none" || kind == ";" {
-					authenticate = false
-					admin = false
-				}
-
-				break
-			}
-
-			t.Advance(1)
-		}
-
-		// Now scan from the start past any blank lines marked by a semicolon.
-		t.Set(mark)
-
-		for t.IsNext(tokenizer.SemicolonToken) {
-		}
-
-		directive := t.Peek(1)
-		endpoint := t.Peek(2)
-		path := t.Peek(3)
-
-		if directive.Is(tokenizer.DirectiveToken) &&
-			endpoint.Spelling() == "endpoint" &&
-			path.IsString() {
-			return path.Spelling(), authenticate, admin
-		}
-	}
-
-	return "", false, false
 }
