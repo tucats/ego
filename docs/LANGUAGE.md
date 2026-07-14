@@ -57,6 +57,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [`exec` package](#exec)
    1. [`filepath` package](#filepath)
    1. [`fmt` package](#fmt)
+   1. [`i18n` package](#i18n)
    1. [`io` package](#io)
    1. [`json` package](#json)
    1. [`math` package](#math)
@@ -3734,6 +3735,125 @@ msg := fmt.Sprintf("Unrecognized value %s", v)
 
 This creates a string named `msg` which contains "Unrecognized value foobar" as its
 contents. The value is not printed to the console as part of this operation.
+
+---
+
+### i18n Package<a name="i18n"></a>
+
+Unlike most Ego packages, `i18n` has no direct equivalent in Go's standard
+library. It provides internationalization/localization support: looking up
+a message by key in whichever language is active, and substituting named
+values (with optional formatting) into the resulting text. It works hand in
+hand with the [`@localization` directive](#at-localization), which defines
+a program's own per-language message catalog, and falls back to Ego's own
+built-in message catalog — the same one CLI and error messages are drawn
+from — for any key a program's own `@localization` block doesn't define
+(or when a program has no `@localization` block at all).
+
+#### i18n.Language() string
+
+Returns the current default language code (`"en"`, `"fr"`, `"es"`, etc).
+This is resolved once per process, in order: the `EGO_LANG` environment
+variable, then the more general `LANG` environment variable, then a
+built-in default of `"en"` if neither is set (or neither names a real
+language — see the note on locale strings below).
+
+```go
+lang := i18n.Language()
+fmt.Println(lang)   // "en"
+```
+
+#### i18n.T(key string [, parameters map[string]any [, language string]]) (string, error)
+
+Looks up `key` and returns its localized, substituted text.
+
+- If the program has an active `@localization` block, `key` is looked up
+  under the requested language within it, falling back to `"en"` within
+  that same block if the requested language isn't present there.
+- If there is no `@localization` block, or `key` isn't found within it,
+  `key` is looked up in Ego's own built-in message catalog instead.
+- If `key` isn't found anywhere, the literal `key` text is returned
+  unchanged (so a missing catalog entry is obvious in the output, rather
+  than silently producing an empty string).
+
+```go
+@localization {
+    "en": { "hello.msg": "hello, {{Name}}" },
+    "fr": { "hello.msg": "bonjour, {{Name}}" },
+}
+
+m, err := i18n.T("hello.msg", map[string]any{"Name": "Tom"}, "fr")
+fmt.Println(m, err)   // bonjour, Tom <nil>
+```
+
+`parameters` is optional and supplies values for any `{{tag}}` placeholders
+in the message text — see [Substitutions](#at-localization) under the
+`@localization` directive for the full placeholder and formatting-operator
+syntax. `language` is also optional; if omitted, `i18n.Language()`'s
+current default is used. This third argument is the way to look up text in
+a specific language regardless of the process default — useful, for
+example, when a REST service wants to honor an individual caller's
+language preference rather than the server's own default.
+
+```go
+// No @localization block in this program at all -- falls straight
+// through to Ego's own built-in catalog.
+greeting, err := i18n.T("ego.hello", map[string]any{"name": "Alice"})
+fmt.Println(greeting, err)   // Hello, Alice! <nil>
+```
+
+#### i18n.Format(text string [, parameters map[string]any]) (string, error)
+
+Applies `{{tag}}` placeholder substitution directly to `text`, without a
+catalog lookup — this is the function `i18n.T()` itself calls once it has
+resolved a key to its message text. Use it directly when you already have
+the message text in hand (for example, a value read from configuration or
+composed at runtime) rather than a catalog key.
+
+```go
+s, err := i18n.Format("Total: {{amount|%.2f}}", map[string]any{"amount": 9.5})
+fmt.Println(s, err)   // Total: 9.50 <nil>
+```
+
+If `parameters` is omitted, `nil`, or an empty map, `text` is returned
+completely unchanged (including any `{{tag}}` placeholders, left as literal
+text) with no error — substitution is only attempted when at least one
+parameter is supplied. When `parameters` is non-empty but doesn't contain a
+value for every placeholder actually referenced in `text`, the result still
+contains the best-effort substituted text (unresolved placeholders are left
+as literal `{{...}}` text) _and_ a non-nil, catchable error identifying the
+missing key:
+
+```go
+s, err := i18n.Format("hello {{missing}}", map[string]any{"other": "x"})
+fmt.Println(s, err)   // hello {{missing}} substitution key not found: "missing"
+```
+
+`parameters` may be an Ego `map[string]any` (as in the examples above) or a
+struct, in which case each field name becomes a placeholder name:
+
+```go
+type Greeting struct {
+    Name string
+}
+
+s, _ := i18n.Format("hi {{Name}}", Greeting{Name: "Sam"})
+fmt.Println(s)   // hi Sam
+```
+
+Parameter values keep their original Ego type (`float64`, `int`, `string`,
+...) so that Go `fmt`-verb formatting operators like `%.2f` or `%03d` work
+correctly against numeric values — see the format operator table under
+[Substitutions](#at-localization).
+
+#### A note on locale strings
+
+`EGO_LANG`/`LANG` values are parsed as POSIX/BCP-47-style locale strings —
+`"en_US.UTF-8"`, `"fr_FR@euro"`, or a bare `"en"` are all recognized, and
+only the language subtag before the first `_`, `.`, or `@` is used. The
+special locale names `"C"` and `"POSIX"` (common defaults in containers and
+minimal shells, meaning "no locale configured" rather than naming a real
+language) are treated the same as an unset value, falling back to `"en"`.
 
 ---
 

@@ -1,13 +1,28 @@
 package i18n
 
 import (
-	"os"
 	"testing"
 
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/language/symbols"
+
+	EgoLocalization "github.com/tucats/ego/internal/i18n"
 )
+
+// unwrapValue extracts index 0 from a data.List result. Functions that follow
+// the (value, error) convention return a data.List{value, err}, so their
+// Go-level "any" result must be unwrapped before use.
+func unwrapValue(t *testing.T, result any) any {
+	t.Helper()
+
+	list, ok := result.(data.List)
+	if !ok {
+		t.Fatalf("expected data.List result, got %T", result)
+	}
+
+	return list.Get(0)
+}
 
 func TestTranslation(t *testing.T) {
 	tests := []struct {
@@ -80,15 +95,22 @@ func TestTranslation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Ensure the language is set for this test.
-			os.Setenv("LANG", tt.lang)
+			// Ensure the language is set for this test. Set the shared
+			// package var directly rather than the LANG environment
+			// variable: DefaultLanguage() only ever derives a value from
+			// the environment once per process (sync.Once), so an env var
+			// change wouldn't be picked up by a later sub-test, but it
+			// always returns the *current* value of Language itself.
+			EgoLocalization.Language = tt.lang
 
 			_, _ = language(s, data.NewList())
 
-			got, err := translation(s, tt.args)
+			rawGot, err := translation(s, tt.args)
 			if err != nil {
 				t.Errorf("translation() error = %v", err)
 			}
+
+			got := unwrapValue(t, rawGot)
 
 			if got != tt.expected {
 				t.Errorf("translation() = %v, want %v", got, tt.expected)

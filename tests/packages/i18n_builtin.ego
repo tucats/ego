@@ -1,0 +1,35 @@
+// Tests for i18n.T() and i18n.Language() when there is no @localization
+// directive in effect -- both must fall back to Ego's own built-in message
+// catalog (the same one CLI and error messages are drawn from) rather than
+// only working inside a program that has defined its own @localization map.
+
+@test "packages: i18n.Language returns a non-empty language code"
+{
+    import "i18n"
+
+    lang := i18n.Language()
+    @assert lang != ""
+}
+
+@test "packages: i18n.T falls back to the built-in catalog with no @localization"
+{
+    import "i18n"
+
+    // "ego.hello" is a real key in the built-in catalog (internal/i18n),
+    // not something this test file defines itself.
+    m, err := i18n.T("ego.hello", map[string]any{"name": "Alice"}, "en")
+    @assert err == nil
+    @assert m == "Hello, Alice!"
+
+    // A single-value capture must also still work.
+    m2 := i18n.T("ego.hello", map[string]any{"name": "Bob"}, "es")
+    @assert m2 == "¡Hola, Bob!"
+}
+
+@test "packages: i18n.T on an unknown key returns the key itself"
+{
+    import "i18n"
+
+    m := i18n.T("no.such.key.in.any.catalog")
+    @assert m == "no.such.key.in.any.catalog"
+}

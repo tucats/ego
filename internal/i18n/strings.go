@@ -75,23 +75,42 @@ func DefaultLanguage() string {
 		// variables, as long as that assignment happens before the first
 		// translation call.
 		if Language == "" {
-			Language = os.Getenv(defs.EgoLangEnv)
-			if Language == "" {
-				Language = os.Getenv("LANG")
+			raw := os.Getenv(defs.EgoLangEnv)
+			if raw == "" {
+				raw = os.Getenv("LANG")
 			}
 
-			// Environment variables often contain a longer locale
-			// string, such as "en_US.UTF-8" or "fr_FR" — we only care
-			// about the two-letter language code at the very front of
-			// that string, since that's how the message catalog is
-			// keyed.
-			if len(Language) > 2 {
-				Language = Language[0:2]
-			}
+			Language = languageSubtag(raw)
 		}
 	})
 
 	return Language
+}
+
+// languageSubtag extracts the language subtag from a POSIX/BCP-47-style
+// locale string such as "en_US.UTF-8", "fr_FR@euro", "zh_CN", or a bare
+// "es", by taking whatever precedes the first territory ("_"), encoding
+// ("."), or modifier ("@") delimiter.
+//
+// "C" and "POSIX" are the standard placeholder locale names meaning "no
+// locale configured" (common defaults in containers and minimal shells)
+// rather than real language codes, so both are treated as empty here,
+// letting the caller's own "default to en" fallback take over. The
+// previous approach of simply taking the first two characters of the raw
+// value returned the meaningless code "C." for "C.UTF-8" -- technically a
+// two-character string, but not a language.
+func languageSubtag(raw string) string {
+	if idx := strings.IndexAny(raw, "_.@"); idx >= 0 {
+		raw = raw[:idx]
+	}
+
+	raw = strings.ToLower(raw)
+
+	if raw == "c" || raw == "posix" {
+		return ""
+	}
+
+	return raw
 }
 
 // translate is the shared lookup logic behind both T (which always uses

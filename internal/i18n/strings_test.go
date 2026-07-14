@@ -239,3 +239,49 @@ func TestDefaultLanguageIsRaceFree(t *testing.T) {
 		}
 	}
 }
+
+// TestLanguageSubtag covers locale-string shapes seen in the wild: plain
+// codes, POSIX territory/encoding suffixes, and the "C"/"POSIX" default
+// locale names, which are not real language codes and must not be returned
+// verbatim (the previous first-two-characters approach turned "C.UTF-8"
+// into the meaningless "C.").
+func TestLanguageSubtag(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{"bare language code", "en", "en"},
+		{"language and territory", "fr_FR", "fr"},
+		{"language, territory, and encoding", "en_US.UTF-8", "en"},
+		{"language and encoding, no territory", "en.UTF-8", "en"},
+		{"language, territory, and modifier", "de_DE@euro", "de"},
+		{"uppercase language code is lowercased", "EN_US.UTF-8", "en"},
+		{"bare C locale is not a language", "C", ""},
+		{"C locale with encoding is not a language", "C.UTF-8", ""},
+		{"POSIX locale is not a language", "POSIX", ""},
+		{"empty string stays empty", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := languageSubtag(tt.raw); got != tt.want {
+				t.Errorf("languageSubtag(%q) = %q, want %q", tt.raw, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestDefaultLanguage_CLocaleFallsBackToEmpty confirms the fix end-to-end
+// through DefaultLanguage itself (not just the languageSubtag helper): a
+// "C.UTF-8" LANG value -- a common default in containers and minimal
+// shells -- must not produce the language code "C.".
+func TestDefaultLanguage_CLocaleFallsBackToEmpty(t *testing.T) {
+	resetDefaultLanguageForTesting()
+	os.Unsetenv(defs.EgoLangEnv)
+	os.Setenv("LANG", "C.UTF-8")
+
+	if got := DefaultLanguage(); got != "" {
+		t.Errorf("DefaultLanguage() with LANG=C.UTF-8 = %q, want %q", got, "")
+	}
+}

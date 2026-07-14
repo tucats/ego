@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/subs"
@@ -17,13 +18,17 @@ func format(s *symbols.SymbolTable, args data.List) (any, error) {
 	// value.
 	parameters, err := constructParameterMap(args)
 	if err != nil {
-		return nil, err
+		err = errors.New(err)
+
+		return data.NewList(nil, err), err
 	}
 
-	m := map[string]any{}
-	for k, v := range parameters {
-		m[k] = v
+	result, err := subs.SubstituteMap(msg, parameters)
+	if err != nil {
+		err = errors.New(err)
+
+		return data.NewList(result, err), err
 	}
 
-	return subs.SubstituteMap(msg, m)
+	return data.NewList(result, nil), nil
 }

@@ -14,3 +14,41 @@
     @assert m == "There are 2 things."
 
 }
+
+@test "packages: i18n Format two-value return"
+{
+    import "i18n"
+
+    m, err := i18n.Format("hello {{name}}", map[string]any{"name": "Tom"})
+    @assert err == nil
+    @assert m == "hello Tom"
+
+    // A placeholder with no matching entry in the parameter map is a
+    // catchable error, not an uncatchable abort -- the natural (value,
+    // error) capture idiom must work here exactly as it does for any
+    // other function in the standard library.
+    m2, err2 := i18n.Format("hello {{missing}}", map[string]any{"other": "x"})
+    @assert err2 != nil
+    @assert m2 == "hello {{missing}}"
+}
+
+@test "packages: i18n Format preserves numeric types for Go format verbs"
+{
+    // Parameter values passed through an Ego map must keep their native
+    // type (float64, int, ...) so a "%..." format operator -- a real Go
+    // fmt verb applied directly to the value -- works correctly. An
+    // earlier version of constructParameterMap stringified every map/struct
+    // value before it reached the formatter, so a numeric verb like
+    // "%.2f" received the string "9.5" instead of the float64 9.5, and Go's
+    // fmt package printed the format-mismatch placeholder
+    // "%!f(string=9.5)" instead of a formatted number.
+    import "i18n"
+
+    s, err := i18n.Format("Total: {{amount|%.2f}}", map[string]any{"amount": 9.5})
+    @assert err == nil
+    @assert s == "Total: 9.50"
+
+    s2, err2 := i18n.Format("Count: {{n|%03d}}", map[string]any{"n": 7})
+    @assert err2 == nil
+    @assert s2 == "Count: 007"
+}
