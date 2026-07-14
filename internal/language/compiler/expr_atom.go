@@ -393,7 +393,8 @@ func (c *Compiler) compileSubExpressions(t tokenizer.Token) (bool, error) {
 }
 
 // For a given token, if it contains an integer representation of a radix
-// integer value (0x for binary, 0o for octal, 0x for hexadecimal) convert
+// integer value (0b for binary, 0o for octal, 0x for hexadecimal, or a bare
+// leading zero followed by digits for Go's legacy octal notation) convert
 // the value to a simple decimal integer token.
 func convertRadixToDecimal(t tokenizer.Token) (tokenizer.Token, error) {
 	var (
@@ -416,6 +417,13 @@ func convertRadixToDecimal(t tokenizer.Token) (tokenizer.Token, error) {
 		radix = 8
 	} else if strings.HasPrefix(strings.ToLower(text), "0x") {
 		radix = 16
+	} else if len(text) > 1 && text[0] == '0' && text[1] >= '0' && text[1] <= '9' {
+		// Go's legacy octal notation: a bare leading zero followed by more
+		// digits (e.g. 0644), with no "o"/"x"/"b" radix letter. A lone "0"
+		// digit, or a leading zero followed by "." or "e" (a float literal
+		// like 0.5 or 0e5), does not match this and is left alone.
+		radix = 8
+		offset = 1
 	} else {
 		// Not a radix value, so bail out
 		return t, nil

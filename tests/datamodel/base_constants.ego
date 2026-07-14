@@ -10,3 +10,16 @@
     @assert T.Equal(o, 255)
     @assert T.Equal(h, 65)
 }
+
+@test "datamodel: Go-style legacy octal constant (leading zero)"
+
+{
+    // Matches Go: a bare leading zero followed by digits is an octal
+    // literal, same as the explicit 0o prefix form.
+    mode := 0644
+    zero := 0
+
+    @assert T.Equal(mode, 420)
+    @assert T.Equal(mode, 0o644)
+    @assert T.Equal(zero, 0)
+}

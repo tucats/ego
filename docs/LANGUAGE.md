@@ -213,6 +213,24 @@ A `chan` value has no constant expression; it is a type that can be
 used to create a variable used to communicate between threads. See
 the section below on threads for more information.
 
+#### Radix (base) integer literals<a name="radix-literals"></a>
+
+An integer literal can be written in binary, octal, or hexadecimal instead of decimal,
+matching Go's notation:
+
+| Prefix | Base | Example | Decimal value |
+| :----- | :--- | :------ | :------------ |
+| `0b` or `0B` | 2 (binary) | `0b101` | 5 |
+| `0o` or `0O`, or a bare leading `0` | 8 (octal) | `0o644`, `0644` | 420 |
+| `0x` or `0X` | 16 (hexadecimal) | `0x41` | 65 |
+
+The explicit `0o` prefix and the bare-leading-zero form are interchangeable -- `0o644`
+and `0644` are the same value. The bare form only applies when every digit after the
+leading zero is a valid octal digit (`0`-`7`); a lone `0` is simply the integer zero, and
+a leading zero followed by a decimal point or exponent (`0.5`, `0e5`) is a `float64`
+literal, not octal. Radix literals are always integers -- there is no radix notation for
+floating-point values (other than the exponent form already shown in the table above).
+
 ### Arrays<a name="arrays"></a>
 
 An array is an ordered list of values. That is, it is a set where each
@@ -4897,10 +4915,8 @@ that sandbox directory.
 
 **Octal file modes:** functions that take a numeric file permission mode (`os.WriteFile()`,
 `os.Chmod()`) expect the same bit layout as Go's `os.FileMode` -- most commonly written as
-an octal literal like `0o644`. Unlike Go, _Ego_ does **not** treat a bare leading zero
-(`0644`) as an octal literal -- it is parsed as decimal 644 instead. Always use the explicit
-`0o` radix prefix (`0o644`) for a file mode, or you will silently get the wrong permission
-bits.
+an octal literal such as `0o644` or `0644`. Both forms are equivalent; see
+[radix literals](#radix-literals) above.
 
 #### os.Args()
 
@@ -5109,7 +5125,7 @@ lines := strings.Split(string(b), "\n")
 `WriteFile()` writes `data` to `filename` in one call, creating the file if it doesn't
 exist and truncating it if it does. As an _Ego_ extension, `data` may be a plain `string`
 instead of a `[]byte`. `mode` sets the file's permissions if it is newly created (as with
-any file mode, use an explicit `0o` prefix for an octal value):
+any file mode, this is usually written as an octal value, either `0o644` or `0644`):
 
 ```go
 err := os.WriteFile("mydata.txt", "hello, world", 0o644)
@@ -5140,9 +5156,9 @@ func os.Chmod(file string, mode int) error
 func os.Chown(path string, uid int, gid int) error
 ```
 
-`Chmod()` changes a file's permission bits (again, use an explicit `0o` prefix for an
-octal `mode` value). `Chown()` changes a file's owning user and group IDs -- on most
-systems this requires elevated privileges unless you are already the file's owner.
+`Chmod()` changes a file's permission bits (again, typically written as an octal `mode`
+value, `0o600` or `0600`). `Chown()` changes a file's owning user and group IDs -- on
+most systems this requires elevated privileges unless you are already the file's owner.
 
 ```go
 if err := os.Chmod("mydata.txt", 0o600); err != nil {

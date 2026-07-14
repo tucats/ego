@@ -278,6 +278,11 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			want: 16,
 		},
 		{
+			name: "Go-style legacy octal integer assignment (leading zero)",
+			text: "result := 0644",
+			want: 420,
+		},
+		{
 			name: "optional error catch",
 			text: "result := ?(5/0):-1",
 			want: -1,
