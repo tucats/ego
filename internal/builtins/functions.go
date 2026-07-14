@@ -392,7 +392,15 @@ func CallBuiltin(s *symbols.SymbolTable, name string, args ...any) (any, error) 
 	}
 
 	// Use the function pointer to call the function.
-	return fn(s, data.NewList(args...))
+	result, err := fn(s, data.NewList(args...))
+
+	// If the function follows the (value,error) standard, unwrap the returned
+	// value from the list.
+	if list, ok := result.(data.List); ok && list.Len() == 2 {
+		result = list.Get(0)
+	}
+
+	return result, err
 }
 
 // AddFunction adds a function definition to the dictionary of known built-in functions.

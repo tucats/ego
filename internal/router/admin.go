@@ -6,20 +6,20 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/builtins"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/language/tokens"
 	"github.com/tucats/ego/internal/runtime/cipher"
 	egoRuntimeUtility "github.com/tucats/ego/internal/runtime/util"
 	auth "github.com/tucats/ego/internal/server/auth"
-	"github.com/tucats/ego/internal/language/symbols"
-	"github.com/tucats/ego/internal/language/tokens"
 	"github.com/tucats/ego/internal/util"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // LogonHandler fields incoming logon requests to the /services/admin/logon endpoint.
@@ -220,8 +220,13 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
-	// The response should be an array of strings. Convert this to a native array
-	// of strings by appending each line to a []string array.
+	// The response should be an array of strings. Because util.Log follows the (value,error)
+	// convention, first extract the array from the returned data.List. Convert this to a
+	// native array of strings by appending each line to a []string array.
+	if list, ok := v.(data.List); ok {
+		v = list.Get(0)
+	}
+
 	if array, ok := v.(*data.Array); ok {
 		for i := 0; i < array.Len(); i++ {
 			v, _ := array.Get(i)
