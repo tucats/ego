@@ -4,8 +4,6 @@ import (
 	"io/fs"
 	"math"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -13,7 +11,19 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/util"
 )
+
+// SandBoxedIO returns the state of the sandbox flag for the current call, as
+// set by the running Context (see callRuntimeFunction.go). Mirrors
+// runtime/io's identically-named helper.
+func SandBoxedIO(s *symbols.SymbolTable) bool {
+	if v, ok := s.Get(defs.SandboxedIOSymbolName); ok {
+		return data.BoolOrFalse(v)
+	}
+
+	return false
+}
 
 // readFile implements os.ReadFile() which reads a file contents into a
 // byte array value.
@@ -23,7 +33,7 @@ func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.NewList(ui.Prompt(""), nil), nil
 	}
 
-	name = sandboxName(name)
+	name = sandboxName(SandBoxedIO(s), name)
 
 	content, err := os.ReadFile(name)
 	if err != nil {
@@ -38,7 +48,7 @@ func readFile(s *symbols.SymbolTable, args data.List) (any, error) {
 // writeFile implements os.WriteFile() writes a byte array (or string) to a file.
 // Accepting a string as the data parameter is an Ego extension.
 func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
-	fileName := sandboxName(data.String(args.Get(0)))
+	fileName := sandboxName(SandBoxedIO(s), data.String(args.Get(0)))
 
 	// The file mode must be a valid uint32 value.
 	modeArg, err := args.GetInt(2)
@@ -73,7 +83,7 @@ func writeFile(s *symbols.SymbolTable, args data.List) (any, error) {
 
 // changeMode implements the os.changeMode() function.
 func changeMode(s *symbols.SymbolTable, args data.List) (any, error) {
-	path := data.String(args.Get(0))
+	path := sandboxName(SandBoxedIO(s), data.String(args.Get(0)))
 
 	// The file mode must be a valid uint32 value.
 	modeArg, err := args.GetInt(1)
@@ -93,14 +103,11 @@ func changeMode(s *symbols.SymbolTable, args data.List) (any, error) {
 	return nil, nil
 }
 
-func sandboxName(path string) string {
-	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); sandboxPrefix != "" {
-		if strings.HasPrefix(path, sandboxPrefix) {
-			return path
-		}
-
-		return filepath.Join(sandboxPrefix, path)
+func sandboxName(flag bool, path string) string {
+	sandboxPrefix := settings.Get(defs.SandboxPathSetting)
+	if !flag || sandboxPrefix == "" {
+		return path
 	}
 
-	return path
+	return util.SandboxJoin(sandboxPrefix, path)
 }

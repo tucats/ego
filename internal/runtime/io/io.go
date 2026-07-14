@@ -11,6 +11,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/runtime/time"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/util"
 )
 
 // expand expands a list of file or path names into a list of files.
@@ -119,21 +120,14 @@ func readDirectory(s *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(result, nil), nil
 }
 
-// If there is a sandbox path set, coerce the path to fit into the sandbox. Additionally,
-// when a sandbox path is present, disallow relative directory paths so they cannot be used
-// to escape the sandbox.
+// If there is a sandbox path set, coerce the path to fit into the sandbox. The
+// actual containment guarantee -- no ".." segment or absolute path can result
+// in a location outside the sandbox root -- is enforced by util.SandboxJoin.
 func sandboxName(flag bool, path string) string {
-	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); flag && sandboxPrefix != "" {
-		if strings.HasPrefix(path, "../") || strings.HasSuffix(path, "/..") || strings.Contains(path, "/../") {
-			path = strings.ReplaceAll(path, "..", "<invalid path>")
-		}
-
-		if strings.HasPrefix(path, sandboxPrefix) {
-			return path
-		}
-
-		return filepath.Join(sandboxPrefix, path)
+	sandboxPrefix := settings.Get(defs.SandboxPathSetting)
+	if !flag || sandboxPrefix == "" {
+		return path
 	}
 
-	return path
+	return util.SandboxJoin(sandboxPrefix, path)
 }

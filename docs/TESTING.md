@@ -156,6 +156,63 @@ enclosing `try`/`catch` can still catch it normally. See the `@capture` entry in
 `docs/LANGUAGE.md`'s Directives section for the full details, including a known
 limitation around `@fail` and unrecovered `panic()`.
 
+### @sandbox
+
+`@sandbox true|false [path=expr]` sets the running context's sandboxed-IO mode,
+letting a test exercise sandboxed code paths — for example, the path-traversal
+containment enforced by the `os`, `io`, and `filepath` packages' sandbox
+checks — without needing a real server- or dashboard-triggered sandboxed
+session. This is the same restricted mode a request to the dashboard's
+sandboxed "run code" handler runs under.
+
+```go
+@test "os: sandboxed reads cannot escape the sandbox root"
+{
+    marker := "inside.txt"
+    @assert os.WriteFile(marker, "safe", 0o644) == nil
+
+    @sandbox true path="."
+
+    content, err := os.ReadFile(marker)
+    @assert err == nil
+    @assert string(content) == "safe"
+
+    _, escapeErr := os.ReadFile("../outside.txt")
+    @assert escapeErr != nil     // clamped to the sandbox root, not the real file
+
+    @sandbox false path=""
+    @assert os.Remove(marker) == nil
+}
+```
+
+The optional `path=` clause sets the sandbox root and accepts any expression —
+not just a string literal — so a test can compute the root (from a
+temp-directory helper, a variable, etc.) instead of hardcoding one. Both the
+flag and the path take effect at **runtime**, at the exact point `@sandbox`
+appears in the compiled instruction stream — not at compile time — so
+statements earlier in the same test are never retroactively affected by a
+`path=` that appears later on. `path=""` is a real, given value (it clears the
+sandbox root) and is distinct from omitting the clause entirely (which leaves
+whatever root was previously set untouched).
+
+The path is written to the same ephemeral, non-persisted settings overlay
+`@optimizer` uses, so a test never needs to save and restore the real
+`ego.runtime.sandbox.path` profile setting.
+
+Because the sandbox root is a global (not context-scoped) setting, remember to
+clear it with `path=""` when you turn sandboxing back off — otherwise
+subsequent native-passthrough calls (`os.Remove`, `filepath.*`, etc.) stay
+sandboxed even after `@sandbox false`, since those check for a configured root
+independently of the context's own sandboxed-IO flag. See
+`tests/os/sandbox_escape.ego` for a complete, self-cleaning example.
+
+`@sandbox` may only appear when the compiler is running in test mode — the
+same restriction as `@test`/`@assert`/`@pass`. Ordinary compiled Ego source,
+including untrusted code submitted to the dashboard's sandboxed "run code"
+handler, has no way to reach the underlying `Sandbox` opcode, so it cannot use
+this directive to lift its own sandbox restrictions or repoint the sandbox
+root.
+
 ### @error
 
 The `@error` is used to generate a runtime error; the text of the error message is

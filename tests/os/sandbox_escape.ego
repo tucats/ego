@@ -1,0 +1,72 @@
+// Regression test for a path-traversal vulnerability in sandboxed I/O.
+//
+// The sandbox mechanism exists to keep untrusted code (for example, code
+// submitted to the dashboard's sandboxed "run code" handler) from touching
+// files outside a configured sandbox root. Three independent
+// implementations of the path-containment check (bytecode.callNative's
+// sandboxName, runtime/io's sandboxName, and runtime/os's sandboxName) used
+// to either trust filepath.Join's result outright, or pattern-match a
+// handful of raw substrings like "../" before joining -- both approaches a
+// caller could evade (a bare ".." argument was never caught by the
+// substring check; filepath.Join silently resolves ".." segments above the
+// sandbox root with no verification at all). All three now delegate to
+// util.SandboxJoin, which joins, cleans, and verifies containment against
+// the normalized result. This test exercises that fix through the actual
+// os package, using the test-only @sandbox directive to enable sandboxing
+// (and set the sandbox root) without needing a real sandboxed session or
+// touching the persisted profile. Both the flag and the path take effect at
+// the exact point @sandbox appears in the file, not before.
+
+@test "os: sandboxed path traversal cannot escape the sandbox root"
+
+{
+    marker := "ego-sandbox-escape-test-" + uuid.New().String() + ".txt"
+    outsidePath := "../" + marker
+
+    // Create a file just outside what will become the sandbox root, and a
+    // control file inside it. Both happen before sandboxing is enabled --
+    // this setup itself is not sandboxed.
+    @assert os.WriteFile(outsidePath, "should not be readable", 0o644) == nil
+    @assert os.WriteFile(marker, "safe, inside the sandbox", 0o644) == nil
+
+    // The current directory becomes the sandbox root.
+    @sandbox true path="."
+
+    // Legitimate in-sandbox access still works normally.
+    content, err := os.ReadFile(marker)
+    @assert err == nil
+    @assert string(content) == "safe, inside the sandbox"
+
+    // The traversal attempt must not reach the real file outside the
+    // sandbox root. The path is clamped back to the root itself, which is
+    // a directory, so reading it as a file fails rather than returning the
+    // outside file's contents.
+    _, escapeErr := os.ReadFile(outsidePath)
+    @assert escapeErr != nil
+
+    // A write through the same traversal payload must not land outside the
+    // sandbox root either.
+    writeErr := os.WriteFile(outsidePath, "pwned", 0o644)
+    @assert writeErr != nil
+
+    // filepath.Abs is a native passthrough with a sandboxed parameter; it
+    // must clamp the same way rather than returning a path outside root.
+    absPath, absErr := filepath.Abs(outsidePath)
+    @assert absErr == nil
+    @assert !strings.Contains(absPath, "..")
+
+    // Clearing path along with the false flag is required here: the
+    // sandbox root set above is an ephemeral *global* settings override,
+    // not scoped to sandboxed mode, so leaving it set would keep
+    // subsequent native-passthrough calls (like os.Remove below) sandboxed
+    // even after "false" turns off this context's own sandboxedIO flag.
+    @sandbox false path=""
+
+    // Confirm the outside file was never touched by the write attempt.
+    outsideContent, outsideErr := os.ReadFile(outsidePath)
+    @assert outsideErr == nil
+    @assert string(outsideContent) == "should not be readable"
+
+    @assert os.Remove(marker) == nil
+    @assert os.Remove(outsidePath) == nil
+}

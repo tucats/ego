@@ -2,10 +2,8 @@ package bytecode
 
 import (
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +12,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/util"
 )
 
 // Make a call to a native (Go) function. The function value is found in the function
@@ -831,13 +830,10 @@ func CallDirect(fn any, args ...any) (any, error) {
 
 // Utility function used to sandbox names used as parameters to native functions.
 func sandboxName(c *Context, path string) string {
-	if sandboxPrefix := settings.Get(defs.SandboxPathSetting); c.sandboxedIO.Load() || sandboxPrefix != "" {
-		if strings.HasPrefix(path, sandboxPrefix) {
-			return path
-		}
-
-		return filepath.Join(sandboxPrefix, path)
+	sandboxPrefix := settings.Get(defs.SandboxPathSetting)
+	if !c.sandboxedIO.Load() && sandboxPrefix == "" {
+		return path
 	}
 
-	return path
+	return util.SandboxJoin(sandboxPrefix, path)
 }

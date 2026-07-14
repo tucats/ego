@@ -44,6 +44,7 @@ const (
 	PackagesDirective      = "packages"
 	PassDirective          = "pass"
 	ProfileDirective       = "profile"
+	SandboxDirective       = "sandbox"
 	StatusDirective        = "status"
 	SymbolsDirective       = "symbols"
 	TemplateDirective      = "template"
@@ -151,6 +152,9 @@ func (c *Compiler) compileDirective() error {
 
 	case ProfileDirective:
 		return c.profileDirective()
+
+	case SandboxDirective:
+		return c.sandboxDirective()
 
 	case SymbolsDirective:
 		return c.symbolsDirective()
@@ -605,6 +609,73 @@ func (c *Compiler) extensionsDirective() error {
 
 	c.SetExtensionsEnabled(extensions)
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, extensions)
+
+	return nil
+}
+
+// sandboxDirective implements the @sandbox true|false [path=expr] directive,
+// which sets the running context's sandboxed-IO mode. This exists solely so
+// a test file can exercise sandboxed code paths (e.g. the path-traversal
+// containment enforced by the various sandboxName functions) without
+// needing a real server- or dashboard-triggered sandboxed session.
+//
+// The optional "path=" clause sets the sandbox root. It accepts any
+// expression, not just a string literal, so a test can compute the root
+// (e.g. from a temp-directory helper or a variable) instead of hardcoding
+// one. Both the path and the
+// true|false flag are applied at RUN time (by the Sandbox opcode this emits),
+// not at compile time -- the whole file is compiled before any of it runs,
+// so applying either eagerly here would affect every statement in the file,
+// including ones that appear earlier in the source than this directive.
+// The path is written to the same ephemeral (non-persisted) settings
+// overlay @optimizer uses via settings.SetDefault, rather than the real
+// profile, so a test never needs to save and restore the actual
+// ego.runtime.sandbox.path profile setting.
+//
+// It may only appear when the compiler is running in test mode (the same
+// restriction and rationale as testDirective/Assert/TestPass): ordinary
+// compiled Ego source -- including untrusted code submitted to the
+// dashboard's sandboxed "run code" handler -- has no way to reach the
+// Sandbox opcode this emits, so it cannot use this directive to lift its
+// own sandbox restrictions or repoint the sandbox root.
+func (c *Compiler) sandboxDirective() error {
+	if !c.flags.testMode {
+		return c.compileError(errors.ErrWrongMode)
+	}
+
+	var flag bool
+
+	if c.t.IsNext(tokenizer.TrueToken) {
+		flag = true
+	} else if c.t.IsNext(tokenizer.FalseToken) {
+		flag = false
+	} else {
+		return c.compileError(errors.ErrInvalidBooleanValue)
+	}
+
+	// The "path=" clause, if present, may be any expression -- not just a
+	// string literal -- so a test can compute the sandbox root (e.g. from a
+	// temp-directory helper or a variable) instead of hardcoding one. When
+	// the clause is absent, a nil is pushed instead: this is the "no path=
+	// clause" sentinel the Sandbox opcode checks for, distinguishing "leave
+	// whatever sandbox root was set before untouched" from an explicit
+	// path="" (which IS a given value, and clears the sandbox root).
+	if !c.t.EndOfStatement() && c.t.Peek(1).Spelling() == "path" {
+		c.t.Advance(1)
+
+		if !c.t.IsNext(tokenizer.AssignToken) {
+			return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+		}
+
+		if err := c.emitExpression(); err != nil {
+			return err
+		}
+	} else {
+		c.b.Emit(bytecode.Push, nil)
+	}
+
+	c.b.Emit(bytecode.Push, flag)
+	c.b.Emit(bytecode.Sandbox)
 
 	return nil
 }

@@ -32,6 +32,7 @@ package bytecode
 import (
 	"reflect"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -269,6 +270,57 @@ func staticTypingByteCode(c *Context, i any) error {
 	}
 
 	return err
+}
+
+// sandboxByteCode is the instruction handler for the Sandbox opcode.
+//
+// It pops two values from the stack: an optional sandbox-root path (or nil
+// if the directive had no "path=" clause) and a boolean. If the path is
+// present, it is written to the ephemeral settings overlay (the same one
+// @optimizer uses) *before* the flag is applied, so that this happens at
+// exactly the point the @sandbox directive appears in the instruction
+// stream rather than when it was compiled -- code earlier in the same test
+// file is unaffected by a path set later on. The boolean is then applied
+// via Context.Sandboxed(), enabling or disabling sandboxed I/O (and exec)
+// restrictions for all subsequent native/runtime calls made in this
+// context.
+//
+// This opcode is only ever emitted by the @sandbox test directive (see
+// sandboxDirective in internal/language/compiler/directives.go), which is
+// itself gated to only compile when the compiler is running in test mode.
+// Ordinary compiled Ego source has no way to reach this opcode, so
+// untrusted code (for example, code submitted to the dashboard's sandboxed
+// "run code" handler) cannot use it to lift its own sandbox restrictions or
+// repoint the sandbox root.
+func sandboxByteCode(c *Context, i any) error {
+	flagValue, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	flag, err := data.Bool(flagValue)
+	if err != nil {
+		return c.runtimeError(err)
+	}
+
+	pathValue, err := c.Pop()
+	if err != nil {
+		return err
+	}
+
+	// A literal nil (pushed by sandboxDirective when there was no "path="
+	// clause at all) means "leave the existing sandbox root untouched".
+	// Any other value -- including an explicit path="" -- came from a real
+	// expression and is converted with data.String rather than a raw type
+	// assertion, since an expression's result may arrive boxed (e.g. as a
+	// *data.Interface) rather than as a bare Go string.
+	if pathValue != nil {
+		settings.SetDefault(defs.SandboxPathSetting, data.String(pathValue))
+	}
+
+	c.Sandboxed(flag)
+
+	return nil
 }
 
 // requiredTypeByteCode is the instruction handler for the RequiredType opcode.

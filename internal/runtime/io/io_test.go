@@ -19,14 +19,21 @@ func Test_sandboxName(t *testing.T) {
 			want:    "/bar/tmp/foo/odd../name",
 		},
 		{
+			// A traversal attempt is clamped back to the sandbox root
+			// itself rather than escaping it. The previous implementation
+			// pattern-matched raw ".." substrings and replaced them with
+			// the literal text "<invalid path>", which was both easy to
+			// evade (see Test_sandboxName_BareDoubleDotEscapes below, which
+			// it did not catch at all) and a confusing result to hand back
+			// to a real filesystem call.
 			name:    "../../tmp/foo",
 			sandbox: "/bar",
-			want:    "/bar/<invalid path>/<invalid path>/tmp/foo",
+			want:    "/bar",
 		},
 		{
 			name:    "/tmp/foo/../..",
 			sandbox: "/bar",
-			want:    "/bar/tmp/foo/<invalid path>/<invalid path>",
+			want:    "/bar",
 		},
 		{
 			name:    "/tmp/foo",
@@ -57,5 +64,19 @@ func Test_sandboxName(t *testing.T) {
 				t.Errorf("sandboxName() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+// Test_sandboxName_BareDoubleDotEscapes covers a case the previous
+// implementation's raw-substring pattern match ("../", "/..", "/../") never
+// caught at all: a path that is *only* "..", with no surrounding slashes.
+// filepath.Join("/bar", "..") happily resolves to "/" (the parent of
+// "/bar"), which the old code returned completely unmodified. This must now
+// be clamped back to the sandbox root.
+func Test_sandboxName_BareDoubleDotEscapes(t *testing.T) {
+	settings.Set(defs.SandboxPathSetting, "/bar")
+
+	if got := sandboxName(true, ".."); got != "/bar" {
+		t.Errorf("sandboxName(true, \"..\") = %v, want %v (clamped to sandbox root)", got, "/bar")
 	}
 }

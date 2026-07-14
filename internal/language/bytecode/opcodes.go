@@ -117,6 +117,7 @@ const (
 	Return
 	RunDefers
 	UserPanic
+	Sandbox
 	Say
 	SetThis
 	Signal
@@ -255,6 +256,7 @@ var opcodeNames = map[Opcode]string{
 	Return:             "Return",
 	RunDefers:          "RunDefers",
 	UserPanic:          "UserPanic",
+	Sandbox:            "Sandbox",
 	Say:                "Say",
 	SetThis:            "SetThis",
 	Signal:             "Signal",
@@ -386,6 +388,7 @@ func initializeDispatch() {
 		dispatchTable[Return] = returnByteCode
 		dispatchTable[RunDefers] = runDefersByteCode
 		dispatchTable[UserPanic] = userPanicByteCode
+		dispatchTable[Sandbox] = sandboxByteCode
 		dispatchTable[Say] = sayByteCode
 		dispatchTable[SetThis] = setThisByteCode
 		dispatchTable[Signal] = signalByteCode
