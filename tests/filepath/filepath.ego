@@ -1,0 +1,50 @@
+// Tests for the filepath package, a native passthrough to Go's standard
+// path/filepath package. These exercise the Ego bindings against the same
+// behavior Go's own package documents.
+
+@test "filepath: Base"
+{
+    @assert filepath.Base("/a/b/c.txt") == "c.txt"
+    @assert filepath.Base("/a/b/") == "b"
+    @assert filepath.Base("c.txt") == "c.txt"
+}
+
+@test "filepath: Dir"
+{
+    @assert filepath.Dir("/a/b/c.txt") == "/a/b"
+    @assert filepath.Dir("c.txt") == "."
+}
+
+@test "filepath: Ext"
+{
+    @assert filepath.Ext("/a/b/c.txt") == ".txt"
+    @assert filepath.Ext("/a/b/c") == ""
+    @assert filepath.Ext("archive.tar.gz") == ".gz"
+}
+
+@test "filepath: Clean"
+{
+    @assert filepath.Clean("/a/b/../c.txt") == "/a/c.txt"
+    @assert filepath.Clean("a//b") == "a/b"
+    @assert filepath.Clean("./a/b") == "a/b"
+}
+
+@test "filepath: Join"
+{
+    @assert filepath.Join("a", "b", "c.txt") == "a/b/c.txt"
+    @assert filepath.Join("a", "", "b") == "a/b"
+}
+
+@test "filepath: Abs returns an absolute, cleaned path"
+{
+    p, err := filepath.Abs("c.txt")
+    @assert err == nil
+    @assert filepath.Base(p) == "c.txt"
+    @assert filepath.Clean(p) == p
+
+    // A path that is already absolute is returned cleaned, unchanged
+    // otherwise.
+    p2, err2 := filepath.Abs("/a/b/../c.txt")
+    @assert err2 == nil
+    @assert p2 == "/a/c.txt"
+}

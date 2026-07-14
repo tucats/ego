@@ -55,6 +55,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [`cipher` package](#cipher)
    1. [`errors` package](#errors)
    1. [`exec` package](#exec)
+   1. [`filepath` package](#filepath)
    1. [`fmt` package](#fmt)
    1. [`io` package](#io)
    1. [`json` package](#json)
@@ -3504,6 +3505,81 @@ if err != nil {
 resolve `Path` from the command name passed to it, so most programs do not need to
 call `LookPath()` directly unless they want to test for a command's existence
 before attempting to run it.
+
+---
+
+### filepath Package<a name="filepath"></a>
+
+The `filepath` package is a thin, native passthrough to Go's standard
+`path/filepath` package, so it behaves identically to Go for path
+manipulation (string operations only — none of these functions touch the
+filesystem, except `Abs`, which consults the current working directory).
+
+All six functions accept a `path`/`partialPath`/`elements` argument that is
+subject to sandbox path containment when running in a sandboxed context (see
+`ego.runtime.sandbox.path` and the `@sandbox` test directive in
+`docs/TESTING.md`): a sandboxed program cannot use `..` segments, an absolute
+path, or any other trick to make these functions compute a path outside the
+configured sandbox root.
+
+#### filepath.Base(path string) string
+
+Returns the last element of `path`. Trailing slashes are removed before
+extracting the last element; if `path` is empty, returns `"."`.
+
+```go
+filepath.Base("/a/b/c.txt")   // "c.txt"
+filepath.Base("/a/b/")        // "b"
+```
+
+#### filepath.Dir(path string) string
+
+Returns all but the last element of `path`, effectively the directory
+containing `path`.
+
+```go
+filepath.Dir("/a/b/c.txt")    // "/a/b"
+```
+
+#### filepath.Ext(path string) string
+
+Returns the file extension of `path` — the suffix beginning at the last dot
+in the final path element — or `""` if there is no dot.
+
+```go
+filepath.Ext("/a/b/c.txt")    // ".txt"
+filepath.Ext("/a/b/c")        // ""
+```
+
+#### filepath.Clean(path string) string
+
+Returns the shortest equivalent path by lexically resolving `.` and `..`
+elements and removing redundant separators, following the same rules as
+Go's `filepath.Clean`.
+
+```go
+filepath.Clean("/a/b/../c.txt")   // "/a/c.txt"
+```
+
+#### filepath.Join(elements... string) string
+
+Joins any number of path elements into a single path with the operating
+system's separator, then cleans the result the same way `Clean` does.
+
+```go
+filepath.Join("a", "b", "c.txt")   // "a/b/c.txt"
+```
+
+#### filepath.Abs(partialPath string) (string, error)
+
+Returns an absolute representation of `partialPath`. If `partialPath` is not
+already absolute, it is joined with the current working directory. The
+result is `Clean`ed. An error is returned only if the current working
+directory cannot be determined.
+
+```go
+p, err := filepath.Abs("c.txt")
+```
 
 ---
 
