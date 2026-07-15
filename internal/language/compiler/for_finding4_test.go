@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
@@ -24,6 +26,11 @@ func needsFreshScope(t *testing.T, body string) bool {
 
 	c := &Compiler{}
 	c.t = tokenizer.New(body, true)
+
+	// Update, the compiler uses the local optimization level, and since
+	// this compiler wasn't created with New(), must set the opt level
+	// to the global value to bre able to see the effects.
+	c.optimizationLevel = settings.GetInt(defs.OptimizerSetting)
 
 	return c.loopBodyNeedsFreshScopePerIteration()
 }

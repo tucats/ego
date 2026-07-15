@@ -136,6 +136,8 @@ type Compiler struct {
 	scopes            []scope                  // Nested symbol table scopes for this compilation
 	functionDepth     int                      // Current nested function declaration depth
 	blockDepth        int                      // Current nested statement block  depth
+	optimizationLevel int                      // The optimization level (0=none, 1=low, 2=high)
+
 	// scopeDepth counts how many runtime PushScope instructions are
 	// currently open at this exact point in the bytecode stream being
 	// generated - i.e., the number of matching PopScope instructions that
@@ -201,7 +203,9 @@ func GetAutoImportedPackages() []string {
 // compiler open and close operations.
 var debugCompilerLifetimes = false
 
-// New creates a new compiler instance.
+// New creates a new compiler instance. This is initialized with the global
+// state of extensions, optimizations, etc. as well as being primed for
+// being handed tokens.
 func New(name string) *Compiler {
 	// Are language extensions enabled? We use the default unless the value is
 	// overridden in the root symbol table.
@@ -238,19 +242,20 @@ func New(name string) *Compiler {
 
 	// Create a new instance of the compiler.
 	return &Compiler{
-		b:            bytecode.New(name),
-		t:            nil,
-		s:            symbols.NewRootSymbolTable(name),
-		id:           uuid.NewString(),
-		constants:    make([]string, 0),
-		deferQueue:   make([]deferStatement, 0),
-		types:        map[string]*data.Type{},
-		packageMutex: sync.Mutex{},
-		packages:     map[string]*data.Package{},
-		importStack:  make([]importElement, 0),
-		symbolErrors: map[string]*errors.Error{},
-		started:      time.Now(),
-		iota:         -1, // Not inside a const(...) block yet; see the field comment.
+		b:                 bytecode.New(name),
+		t:                 nil,
+		s:                 symbols.NewRootSymbolTable(name),
+		id:                uuid.NewString(),
+		constants:         make([]string, 0),
+		deferQueue:        make([]deferStatement, 0),
+		types:             map[string]*data.Type{},
+		packageMutex:      sync.Mutex{},
+		packages:          map[string]*data.Package{},
+		importStack:       make([]importElement, 0),
+		symbolErrors:      map[string]*errors.Error{},
+		started:           time.Now(),
+		optimizationLevel: settings.GetInt(defs.OptimizerSetting),
+		iota:              -1, // Not inside a const(...) block yet; see the field comment.
 		flags: flagSet{
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
@@ -286,6 +291,8 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.functionLocalScopeStart = c.functionLocalScopeStart
 	clone.statementCount = c.statementCount
 	clone.started = c.started
+	clone.optimizationLevel = c.optimizationLevel
+
 	// Propagate the current "iota" counter so that an expression clone created by
 	// Expression() (used to compile a const ConstSpec's right-hand side) still
 	// recognizes a bare "iota" reference while inside a const(...) block.
@@ -363,8 +370,8 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 		return nil, nil
 	}
 
-	// If we are a clone, restore everything back to the parent compiler except
-	// the bytecode and coercions.
+	// If we are a clone, restore nearly everything back to the parent compiler except
+	// the bytecode and coercions, and the optomization level.
 	if c.parent != nil {
 		c.parent.statementCount = c.statementCount
 		c.parent.flags = c.flags

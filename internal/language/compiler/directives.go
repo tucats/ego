@@ -490,7 +490,7 @@ func (c *Compiler) optimizerDirective() error {
 		return err
 	}
 
-	settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(mode))
+	c.optimizationLevel = mode
 
 	return nil
 }

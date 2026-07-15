@@ -250,17 +250,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			// marker; if even one leaked, this would compound the stack
 			// corruption and the final call would fail.
 			name: "multiple standalone increments before a function call (BUG-63)",
-			text: `
-				func triple(v int) int {
-					return v * 3
-				}
-
-				x := 0
-				x++
-				x++
-				x++
-
-				result := triple(x)
+			text: `func triple(v int) int { return v * 3 } ; x := 0 ; x++ ; x++ ; x++ ;	result := triple(x)
 			`,
 			want: 9,
 		},

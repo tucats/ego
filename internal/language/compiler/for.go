@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -209,7 +208,7 @@ func loopVariableEpilogue(name string) *bytecode.ByteCode {
 // rather than chasing full precision.
 func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
 	// IF optimizations are off, no work here.
-	if settings.GetInt(defs.OptimizerSetting) == 0 {
+	if c.optimizationLevel == 0 {
 		return true
 	}
 
@@ -340,10 +339,10 @@ func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
 
 func (c *Compiler) loopBodyIdempotentDeclEligible() bool {
 	// If optimizations are off, not eligible
-	if settings.GetInt(defs.OptimizerSetting) == 0 {
+	if c.optimizationLevel == 0 {
 		return false
 	}
-	
+
 	pos := c.t.Mark()
 	if pos >= len(c.t.Tokens) || !c.t.Tokens[pos].Is(tokenizer.BlockBeginToken) {
 		return false

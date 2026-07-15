@@ -12,6 +12,8 @@ import (
 	"github.com/tucats/ego/internal/util"
 )
 
+const authenticatedKeyword = "authenticated"
+
 // endpointSpec holds the fully-parsed result of an @endpoint directive.
 type endpointSpec struct {
 	// Path is the route's URL pattern, e.g. "/services/factor/{{value}}".
@@ -178,7 +180,7 @@ func parseEndpointTerms(t *tokenizer.Tokenizer) (*endpointSpec, error) {
 
 		case next.IsIdentifier():
 			word := strings.ToLower(next.Spelling())
-			
+
 			t.Advance(1)
 
 			switch {
@@ -190,14 +192,14 @@ func parseEndpointTerms(t *tokenizer.Tokenizer) (*endpointSpec, error) {
 				spec.Method = endpointMethods[word]
 				methodSet = true
 
-			case word == "authenticated" || word == "admin" || word == "root":
+			case word == authenticatedKeyword || word == adminKeyword || word == "root":
 				if authTermSet {
 					return nil, endpointError(t, "duplicate authentication term: "+word)
 				}
 
 				authTermSet = true
 
-				if word == "authenticated" {
+				if word == authenticatedKeyword {
 					spec.Authenticated = true
 				} else {
 					spec.Admin = true
@@ -422,7 +424,7 @@ func parseAuthenticated(filename string) (authenticate bool, admin bool) {
 	t := tokenizer.New(string(b), true)
 
 	for !t.IsNext(tokenizer.EndOfTokens) {
-		if t.IsNext(tokenizer.DirectiveToken) && t.NextText() == "authenticated" {
+		if t.IsNext(tokenizer.DirectiveToken) && t.NextText() == authenticatedKeyword {
 			authenticate = true
 			kind := t.NextText()
 

@@ -27,6 +27,11 @@ func idempotentDeclEligible(t *testing.T, body string) bool {
 	c := &Compiler{}
 	c.t = tokenizer.New(body, true)
 
+	// Update, the compiler uses the local optimization level, and since
+	// this compiler wasn't created with New(), must set the opt level
+	// to the global value to bre able to see the effects.
+	c.optimizationLevel = settings.GetInt(defs.OptimizerSetting)
+
 	return c.loopBodyIdempotentDeclEligible()
 }
 

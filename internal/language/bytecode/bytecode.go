@@ -5,9 +5,9 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -71,6 +71,9 @@ type ByteCode struct {
 	// should not run (code too small, etc.) this flag is set to true indicating the
 	// optimizer evaluation was done, even if the optimizer was not run.
 	optimized bool
+
+	// The requested optimization level
+	optimizeLevel int
 
 	// If this is the bytecode for a function literal, this is set to true.
 	literal bool
@@ -200,18 +203,20 @@ func (b *ByteCode) SetName(name string) *ByteCode {
 	return b
 }
 
-// New generates and initializes a new bytecode stream.
+// New generates and initializes a new bytecode stream. A new bytecode
+// inherits the current global optimizer setting.
 func New(name string) *ByteCode {
 	if name == "" {
 		name = defs.Anon
 	}
 
 	return &ByteCode{
-		name:         name,
-		instructions: make([]instruction, initialOpcodeSize),
-		nextAddress:  0,
-		sealed:       false,
-		optimized:    false,
+		name:          name,
+		instructions:  make([]instruction, initialOpcodeSize),
+		nextAddress:   0,
+		sealed:        false,
+		optimized:     false,
+		optimizeLevel: settings.GetInt(defs.OptimizerSetting),
 	}
 }
 
@@ -338,7 +343,7 @@ func (b *ByteCode) Seal() *ByteCode {
 	// 0 - do not optimize
 	// 1 - optimize if bytecode likely to benefit
 	// 2 - optimize always
-	useOptimizer := settings.GetInt(defs.OptimizerSetting)
+	useOptimizer := b.optimizeLevel
 
 	if ui.IsActive(ui.OptimizerLogger) && firstOptimizerLogMessage && useOptimizer == 0 {
 		firstOptimizerLogMessage = false
