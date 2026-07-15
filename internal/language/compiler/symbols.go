@@ -37,6 +37,9 @@ var predefinedNames = map[string]bool{
 	"index":   true,
 	"panic":   true,
 	"recover": true,
+	"complex": true,
+	"real":    true,
+	"imag":    true,
 	// platform/server built-ins
 	"_platform": true,
 	"Status":    true,
@@ -49,6 +52,7 @@ var predefinedNames = map[string]bool{
 	"fmt":     true,
 	"sort":    true,
 	"math":    true,
+	"cmplx":   true,
 	"time":    true,
 	// Testing infrastructure
 	"T": true,

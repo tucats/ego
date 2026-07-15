@@ -51,9 +51,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,6 +156,51 @@ func Test_equalByteCode_Float32Equal(t *testing.T) {
 
 	tc.assertNoError(equalByteCode(tc.ctx, nil))
 	tc.assertTopStack(true)
+}
+
+// Test_equalByteCode_Complex128Equal verifies complex128 equality.
+func Test_equalByteCode_Complex128Equal(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(1+2i))
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_equalByteCode_Complex128NotEqual verifies complex128 inequality.
+func Test_equalByteCode_Complex128NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(1+3i))
+
+	tc.assertNoError(equalByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_Complex128Equal verifies that two equal complex128
+// values return false from !=.
+func Test_notEqualByteCode_Complex128Equal(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(1+2i))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(false)
+}
+
+// Test_notEqualByteCode_Complex128NotEqual verifies complex128 inequality
+// via !=.
+func Test_notEqualByteCode_Complex128NotEqual(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(1+3i))
+
+	tc.assertNoError(notEqualByteCode(tc.ctx, nil))
+	tc.assertTopStack(true)
+}
+
+// Test_greaterThanByteCode_ComplexNotOrderable verifies that complex128 values
+// are rejected by the ordered comparisons -- Go has no ordering for complex
+// numbers, and this is intentional, matching behavior, not a gap: no case was
+// added for complex64/complex128 in greaterThanByteCode's switch, so it falls
+// through to the existing "cannot order this type" default.
+func Test_greaterThanByteCode_ComplexNotOrderable(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(3+4i))
+
+	tc.assertError(greaterThanByteCode(tc.ctx, nil), errors.ErrInvalidType)
 }
 
 // Test_equalByteCode_StringEqual verifies string equality (case-sensitive).
@@ -401,7 +446,7 @@ func Test_notEqualByteCode_ArrayEqualValues(t *testing.T) {
 func Test_notEqualByteCode_MapNotEqual(t *testing.T) {
 	mapA := data.NewMap(data.StringType, data.IntType)
 	mapB := data.NewMap(data.StringType, data.IntType)
-	
+
 	mapA.SetAlways("key", 1)
 	mapB.SetAlways("key", 2) // different value
 
@@ -973,7 +1018,7 @@ func Test_notEqualByteCode_StructEqual(t *testing.T) {
 	s1.SetAlways("x", 1)
 
 	s2 := data.NewStruct(structType)
-	
+
 	s2.SetAlways("x", 1)
 
 	tc := newTestContext(t).withStack(s1, s2)
@@ -991,7 +1036,7 @@ func Test_notEqualByteCode_StructNotEqual(t *testing.T) {
 	s1.SetAlways("x", 1)
 
 	s2 := data.NewStruct(structType)
-	
+
 	s2.SetAlways("x", 2) // different value
 
 	tc := newTestContext(t).withStack(s1, s2)

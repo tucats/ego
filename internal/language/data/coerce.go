@@ -8,8 +8,8 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // Coerce converts value to the same concrete type as model and returns the
@@ -131,6 +131,12 @@ func Coerce(value any, model any) (any, error) {
 	case float64:
 		return coerceFloat64(value)
 
+	case complex64:
+		return coerceComplex64(value)
+
+	case complex128:
+		return coerceComplex128(value)
+
 	case string:
 		return coerceString(value)
 
@@ -208,6 +214,9 @@ func coerceBool(value any) (any, error) {
 		default:
 			return nil, errors.ErrInvalidBooleanValue.Context(actual)
 		}
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidBooleanValue.Context(value)
@@ -323,6 +332,9 @@ func coerceFloat64(v any) (any, error) {
 		}
 
 		return st, nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidFloatValue.Context(v)
@@ -398,9 +410,140 @@ func coerceFloat32(v any) (any, error) {
 		}
 
 		return float32(st), nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidFloatValue.Context(v)
+}
+
+// coerceComplex128 converts a real numeric scalar, a string, or the other
+// complex width to complex128. A real value becomes complex(value, 0) -- Ego
+// coerces real numbers to complex implicitly at assignment/call boundaries,
+// unlike Go, which requires an explicit conversion. The reverse direction
+// (complex -> real) is never implicit; see the complex64/complex128 cases
+// added to every other coerceXxx helper in this file, which explicitly
+// reject it with ErrInvalidComplexValue rather than silently discarding the
+// imaginary part.
+func coerceComplex128(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return complex128(0), nil
+
+	case byte:
+		return complex(float64(value), 0), nil
+
+	case int8:
+		return complex(float64(value), 0), nil
+
+	case int16:
+		return complex(float64(value), 0), nil
+
+	case uint16:
+		return complex(float64(value), 0), nil
+
+	case uint:
+		return complex(float64(value), 0), nil
+
+	case uint32:
+		return complex(float64(value), 0), nil
+
+	case uint64:
+		return complex(float64(value), 0), nil
+
+	case int32:
+		return complex(float64(value), 0), nil
+
+	case int:
+		return complex(float64(value), 0), nil
+
+	case int64:
+		return complex(float64(value), 0), nil
+
+	case float32:
+		return complex(float64(value), 0), nil
+
+	case float64:
+		return complex(value, 0), nil
+
+	case complex64:
+		return complex128(value), nil
+
+	case complex128:
+		return value, nil
+
+	case string:
+		st, err := strconv.ParseComplex(value, 128)
+		if err != nil {
+			return nil, errors.ErrInvalidComplexValue.Context(value)
+		}
+
+		return st, nil
+	}
+
+	return nil, errors.ErrInvalidComplexValue.Context(v)
+}
+
+// coerceComplex64 is the complex64 counterpart of coerceComplex128; see its
+// comment for the real->complex and complex->real coercion rules.
+func coerceComplex64(v any) (any, error) {
+	switch value := v.(type) {
+	case nil:
+		return complex64(0), nil
+
+	case byte:
+		return complex(float32(value), 0), nil
+
+	case int8:
+		return complex(float32(value), 0), nil
+
+	case int16:
+		return complex(float32(value), 0), nil
+
+	case uint16:
+		return complex(float32(value), 0), nil
+
+	case uint:
+		return complex(float32(value), 0), nil
+
+	case uint32:
+		return complex(float32(value), 0), nil
+
+	case uint64:
+		return complex(float32(value), 0), nil
+
+	case int32:
+		return complex(float32(value), 0), nil
+
+	case int:
+		return complex(float32(value), 0), nil
+
+	case int64:
+		return complex(float32(value), 0), nil
+
+	case float32:
+		return complex(value, 0), nil
+
+	case float64:
+		return complex(float32(value), 0), nil
+
+	case complex64:
+		return value, nil
+
+	case complex128:
+		return complex64(value), nil
+
+	case string:
+		st, err := strconv.ParseComplex(value, 64)
+		if err != nil {
+			return nil, errors.ErrInvalidComplexValue.Context(value)
+		}
+
+		return complex64(st), nil
+	}
+
+	return nil, errors.ErrInvalidComplexValue.Context(v)
 }
 
 func coerceToInt8(v any) (any, error) {
@@ -536,6 +679,9 @@ func coerceToInt8(v any) (any, error) {
 		}
 
 		return int8(st), nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -640,6 +786,9 @@ func coerceToInt16(v any) (any, error) {
 		}
 
 		return int16(st), nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -740,6 +889,9 @@ func coerceToUInt16(v any) (any, error) {
 		}
 
 		return uint16(st), nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -824,6 +976,9 @@ func coerceToInt(v any) (any, error) {
 		}
 
 		return st, nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -888,7 +1043,7 @@ func coerceToInt64(v any) (any, error) {
 
 	case float64:
 		r := int64(value)
-		
+
 		if value != math.Trunc(value) {
 			if precisionError() {
 				return nil, errors.ErrLossOfPrecision.Context(value)
@@ -908,6 +1063,9 @@ func coerceToInt64(v any) (any, error) {
 		}
 
 		return int64(st), nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -972,6 +1130,9 @@ func coerceInt32(v any) (any, error) {
 		}
 
 		return coerceInt32(intValue)
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1036,6 +1197,9 @@ func coerceUInt32(v any) (any, error) {
 		}
 
 		return coerceUInt32(intValue)
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1100,6 +1264,9 @@ func coerceUInt64(v any) (any, error) {
 		}
 
 		return coerceUInt64(intValue)
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1183,6 +1350,9 @@ func coerceUInt(v any) (any, error) {
 		}
 
 		return u64, nil
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)
@@ -1247,6 +1417,9 @@ func coerceToByte(v any) (any, error) {
 		}
 
 		return coerceToByte(st)
+
+	case complex64, complex128:
+		return nil, errors.ErrInvalidComplexValue.Context(value)
 	}
 
 	return nil, errors.ErrInvalidInteger.Context(v)

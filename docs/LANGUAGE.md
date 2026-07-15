@@ -53,6 +53,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [The `import` statement](#import)
    1. [`base64` package](#base64)
    1. [`cipher` package](#cipher)
+   1. [`cmplx` package](#cmplx)
    1. [`errors` package](#errors)
    1. [`exec` package](#exec)
    1. [`filepath` package](#filepath)
@@ -179,6 +180,8 @@ listed here.
 | `uint64` | 5505955 | 0 to 18446744073709551615 | An unsigned 64-bit integer value |
 | `float32` | -3.14 | -1.79e+38 to 1.79e+38 | A 32-bit floating point value |
 | `float64` | -153.35 | -1.79e+308 to 1.79e+308 | A 64-bit floating point value |
+| `complex64` | 3+4i | float32 real/imaginary components | A complex number with `float32` real and imaginary parts |
+| `complex128` | 3+4i | float64 real/imaginary components | A complex number with `float64` real and imaginary parts |
 | `string` | "Andrew" | any | A string value, consisting of a varying number of Unicode characters |
 | `chan` | chan | any | A channel, used to communicate values between threads. Ego channels do not take an element type — always write `chan` alone, not `chan string` |
 
@@ -230,6 +233,38 @@ leading zero is a valid octal digit (`0`-`7`); a lone `0` is simply the integer 
 a leading zero followed by a decimal point or exponent (`0.5`, `0e5`) is a `float64`
 literal, not octal. Radix literals are always integers -- there is no radix notation for
 floating-point values (other than the exponent form already shown in the table above).
+
+#### Imaginary literals<a name="imaginary-literals"></a>
+
+An integer or floating-point literal immediately followed by `i`, with no space, is an
+imaginary literal -- the imaginary half of a complex number, matching Go's notation:
+
+```go
+x := 3i      // complex128(0+3i)
+y := 2.5i    // complex128(0+2.5i)
+z := 1 + 2i  // complex128(1+2i), via ordinary addition
+```
+
+An imaginary literal always compiles to `complex128`, regardless of magnitude -- the
+same way a plain floating-point literal always defaults to `float64` rather than
+`float32`. The `i` must be immediately adjacent to the number with no space; `3 i` (with
+a space) is two separate tokens -- the integer `3` followed by an identifier named `i` --
+not an imaginary literal, matching Go's grammar exactly.
+
+Unlike Go, which requires an explicit conversion (e.g. `complex128(5)`) to use a real
+number where a complex value is expected, _Ego_ coerces real numbers (any integer or
+floating-point type) to `complex64`/`complex128` implicitly at assignment and call
+boundaries, with the imaginary part set to zero -- consistent with how _Ego_ already
+coerces other scalar types more liberally than Go does. The reverse direction is never
+implicit: extracting the real or imaginary component of a complex value always requires
+an explicit call to `real()` or `imag()` (see [Builtin Functions](#builtInFunctions)),
+matching Go's own strictness in that direction. Dividing by a complex zero value (`c /
+(0+0i)`) raises a runtime error rather than producing Go's native IEEE Inf/NaN result,
+consistent with how dividing a `float64` by `0` already behaves in _Ego_.
+
+See the [`cmplx` package](#cmplx) for complex-number math functions (`Abs`, `Sqrt`,
+`Polar`, and so on), and [`strconv.ParseComplex`/`FormatComplex`](#strconv) for parsing
+and formatting complex values as strings.
 
 ### Arrays<a name="arrays"></a>
 
@@ -1197,10 +1232,13 @@ a single value.
 | :-------- | :-------------------- | :---------- |
 | append() | append(list, 5, 6, 7) | Append the items together into an array. |
 | close() | close(sender) | Close a channel. See the information on [Threads](#threads) for more info. |
+| complex() | complex(3.0, 4.0) | Combine two real numbers into a complex value, `3+4i`. Produces `complex64` only when both arguments are literally `float32`; `complex128` otherwise. |
 | delete() | delete(emp, "Name") | Remove the named field from a map, or a delete a dynamic struct member |
+| imag() | imag(3+4i) | Return the imaginary part of a complex value, `4`, as `float32` or `float64` matching the argument's width |
 | index() | index(items, 55) | Return the array index of `items` that contains the value `55` |
 | len() | len(items) | If the argument is a string, return its length in characters. If it is an array, return the number of items in the array |
 | make() | make([]int, 5) | Create an array of int values with `5` elements in the array |
+| real() | real(3+4i) | Return the real part of a complex value, `3`, as `float32` or `float64` matching the argument's width |
 
 &nbsp;
 &nbsp;
@@ -1230,6 +1268,8 @@ For base types, the following are available:
 | uint64() | uint64(12071957) | Convert the value to an unsigned 64-bit integer |
 | float32() | float32(33) | Convert the value to a 32-bit floating value, in this case `33.0` |
 | float64() | float64(33) | Convert the value to a 64-bit floating value, in this case `33.0` |
+| complex64() | complex64(3) | Convert a real number to a complex value with a 32-bit real/imaginary pair, in this case `3+0i` |
+| complex128() | complex128(3) | Convert a real number to a complex value with a 64-bit real/imaginary pair, in this case `3+0i` |
 | string() | string(true) | Convert the argument to a string value, in this case `true` |
 
 &nbsp;
@@ -3225,6 +3265,116 @@ if err == nil {
     // alice role=admin
 }
 ```
+
+---
+
+### cmplx Package<a name="cmplx"></a>
+
+The `cmplx` package provides complex-number math functions, mirroring Go's standard
+`math/cmplx` package. Unlike `math` (which is called with either `float32` or `float64`
+values), every function here operates on `complex128` only -- Go's own `math/cmplx` has
+no `complex64` variant either. Pass a `complex64` value through an explicit
+`complex128(x)` cast first if needed.
+
+See [Imaginary literals](#imaginary-literals) for how to write complex number constants
+(`3+4i`), and the [`complex()`/`real()`/`imag()`](#builtInFunctions) builtins for
+constructing a complex value from two real numbers or extracting its components.
+
+#### cmplx.Abs(x) / cmplx.Phase(x)
+
+```go
+func cmplx.Abs(x complex128) float64
+func cmplx.Phase(x complex128) float64
+```
+
+`Abs()` returns the absolute value (modulus) of `x`. `Phase()` returns the phase (angle,
+in radians) of `x`.
+
+```go
+fmt.Println(cmplx.Abs(3+4i))     // 5
+```
+
+#### cmplx.Conj(x)
+
+```go
+func cmplx.Conj(x complex128) complex128
+```
+
+Returns the complex conjugate of `x` (the imaginary part negated).
+
+```go
+fmt.Println(cmplx.Conj(3+4i))    // (3-4i)
+```
+
+#### cmplx.Sqrt(x) / cmplx.Exp(x) / cmplx.Log(x) / cmplx.Log10(x)
+
+```go
+func cmplx.Sqrt(x complex128) complex128
+func cmplx.Exp(x complex128) complex128
+func cmplx.Log(x complex128) complex128
+func cmplx.Log10(x complex128) complex128
+```
+
+`Sqrt()` returns the complex square root of `x` -- unlike `math.Sqrt`, this accepts a
+negative real number without error, since the square root of a negative number is a
+valid complex value:
+
+```go
+fmt.Println(cmplx.Sqrt(-1))      // (0+1i)
+```
+
+`Exp()`, `Log()`, and `Log10()` are the complex versions of the base, natural, and
+base-10 exponential/logarithm functions.
+
+#### cmplx.Sin(x) / cmplx.Cos(x) / cmplx.Tan(x)
+
+```go
+func cmplx.Sin(x complex128) complex128
+func cmplx.Cos(x complex128) complex128
+func cmplx.Tan(x complex128) complex128
+```
+
+The complex versions of the standard trigonometric functions.
+
+#### cmplx.Polar(x) / cmplx.Rect(r, theta)
+
+```go
+func cmplx.Polar(x complex128) (r, theta float64)
+func cmplx.Rect(r, theta float64) complex128
+```
+
+`Polar()` converts a complex value to polar coordinates: `r` (the modulus, same as
+`Abs(x)`) and `theta` (the phase angle in radians, same as `Phase(x)`). `Rect()` is the
+inverse: it builds a complex value from polar coordinates.
+
+```go
+r, theta := cmplx.Polar(1 + 1i)
+fmt.Println(cmplx.Rect(r, theta))   // (1+1i), modulo floating-point rounding
+```
+
+#### cmplx.Pow(x, y)
+
+```go
+func cmplx.Pow(x, y complex128) complex128
+```
+
+Returns `x` raised to the complex power `y`.
+
+#### cmplx.IsNaN(x) / cmplx.IsInf(x) / cmplx.NaN() / cmplx.Inf()
+
+```go
+func cmplx.IsNaN(x complex128) bool
+func cmplx.IsInf(x complex128) bool
+func cmplx.NaN() complex128
+func cmplx.Inf() complex128
+```
+
+`IsNaN()` reports whether either the real or imaginary part of `x` is NaN (and neither is
+an infinity). `IsInf()` reports whether either part is an infinity. `NaN()` and `Inf()`
+return a complex value with both parts set to NaN or positive infinity, respectively.
+Note that these functions deal with Go's native IEEE special values directly -- they are
+unrelated to _Ego_'s own choice to raise a runtime error for complex division by zero
+rather than producing one of these values (see [Imaginary literals](#imaginary-literals)).
 
 ---
 
@@ -6338,6 +6488,7 @@ Go equivalent.
 | `ParseInt(s string, base int, bitSize int) (int64, error)` | Parses a signed integer. `base` `0` infers the base from the string's prefix (`0x`, `0o`, `0b`, or none for decimal); `bitSize` (`0`, `8`, `16`, `32`, `64`) is the integer type the result must fit in (`0` means `int`). |
 | `ParseUint(s string, base int, bitSize int) (uint64, error)` | Like `ParseInt`, but for unsigned integers -- a leading `-` is always an error. |
 | `ParseFloat(s string, bitSize int) (float64, error)` | Parses a floating-point value. `bitSize` (`32` or `64`) controls how the result is rounded, though the return value is always `float64`. |
+| `ParseComplex(s string, bitSize int) (complex128, error)` | Parses a complex value written as `"3+4i"` (or `"(3+4i)"`). `bitSize` (`64` or `128`) controls how each real/imaginary component is rounded, though the return value is always `complex128`. |
 | `ParseBool(s string) (bool, error)` | Accepts `"1"`, `"t"`, `"T"`, `"TRUE"`, `"true"`, `"True"` as `true`, and `"0"`, `"f"`, `"F"`, `"FALSE"`, `"false"`, `"False"` as `false`. Anything else is an error. |
 
 ```go
@@ -6356,6 +6507,9 @@ fmt.Println(u, err)   // 42 <nil>
 f, err := strconv.ParseFloat("3.14", 64)
 fmt.Println(f, err)   // 3.14 <nil>
 
+c, err := strconv.ParseComplex("3+4i", 128)
+fmt.Println(c, err)   // (3+4i) <nil>
+
 b, err := strconv.ParseBool("T")
 fmt.Println(b, err)   // true <nil>
 ```
@@ -6372,6 +6526,7 @@ fmt.Println(b, err)   // true <nil>
 | `FormatInt(i int64, base int) string` | Formats a signed integer in the given `base` (2-36). Requires an `int64` argument. |
 | `FormatUint(i uint64, base int) string` | Like `FormatInt`, but for unsigned integers. Requires a `uint64` argument. |
 | `FormatFloat(f float64, format byte, precision int, bitSize int) string` | Formats a float; see below for `format`. |
+| `FormatComplex(c complex128, format byte, precision int, bitSize int) string` | Formats a complex value as `"(3+4i)"`; `format`, `precision`, and `bitSize` apply to each real/imaginary component the same way they do for `FormatFloat`. |
 | `FormatBool(b bool) string` | Returns `"true"` or `"false"`. |
 
 ```go
@@ -6379,6 +6534,7 @@ fmt.Println(strconv.Itoa(42))                          // 42
 fmt.Println(strconv.FormatInt(int64(255), 16))         // ff
 fmt.Println(strconv.FormatUint(uint64(255), 16))       // ff
 fmt.Println(strconv.FormatFloat(3.14159, 'f', 2, 64))  // 3.14
+fmt.Println(strconv.FormatComplex(3+4i, 'g', -1, 128)) // (3+4i)
 fmt.Println(strconv.FormatBool(true))                  // true
 ```
 

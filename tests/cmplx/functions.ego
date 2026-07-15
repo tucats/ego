@@ -1,0 +1,113 @@
+@test "cmplx: Abs and Phase"
+
+{
+    @assert cmplx.Abs(3+4i) == 5.0
+    @assert cmplx.Abs(0i) == 0.0
+
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    @assert near(cmplx.Phase(1+1i), math.Pi/4)
+}
+
+@test "cmplx: Conj"
+
+{
+    @assert cmplx.Conj(3+4i) == 3-4i
+    @assert cmplx.Conj(3-4i) == 3+4i
+}
+
+@test "cmplx: Sqrt handles negative real numbers"
+
+{
+    // The whole reason cmplx.Sqrt exists (unlike math.Sqrt, which errors on
+    // a negative argument) -- the square root of a negative number is a
+    // valid complex value, sqrt(-1) == i. Arguments are explicitly
+    // complex128-typed (rather than a bare int/float literal) so this test
+    // passes under --types strict too -- a native function call argument
+    // is not coerced in strict mode, the same way math.Sqrt(4) also fails
+    // in strict mode with a plain int argument (a pre-existing, unrelated
+    // native-call behavior, not specific to complex).
+    @assert cmplx.Sqrt(-1+0i) == 1i
+    @assert cmplx.Sqrt(-4+0i) == 2i
+    @assert cmplx.Sqrt(4+0i) == 2+0i
+}
+
+@test "cmplx: Polar and Rect round-trip"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    r, theta := cmplx.Polar(1 + 1i)
+    @assert near(r, math.Sqrt(2.0))
+    @assert near(theta, math.Pi/4)
+
+    back := cmplx.Rect(r, theta)
+    @assert near(real(back), 1.0)
+    @assert near(imag(back), 1.0)
+}
+
+@test "cmplx: Pow"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    // (1+1i)^2 == 2i
+    r := cmplx.Pow(1+1i, 2+0i)
+    @assert near(real(r), 0.0)
+    @assert near(imag(r), 2.0)
+}
+
+@test "cmplx: IsNaN and IsInf"
+
+{
+    @assert cmplx.IsNaN(cmplx.NaN()) == true
+    @assert cmplx.IsNaN(3+4i) == false
+
+    @assert cmplx.IsInf(cmplx.Inf()) == true
+    @assert cmplx.IsInf(3+4i) == false
+}
+
+@test "cmplx: Exp and Log are inverses"
+
+{
+    func near(a, b float64) bool {
+        return math.Abs(a-b) < 1e-9
+    }
+
+    c := 1 + 1i
+    r := cmplx.Log(cmplx.Exp(c))
+    @assert near(real(r), real(c))
+    @assert near(imag(r), imag(c))
+}
+
+@test "cmplx: trig functions are callable"
+
+{
+    // Just confirm these dispatch correctly (no panic) and produce a
+    // complex128 result -- exact trigonometric identities are exercised by
+    // the math package's own trig tests.
+    @assert reflect.Type(cmplx.Sin(1+1i)) == complex128
+    @assert reflect.Type(cmplx.Cos(1+1i)) == complex128
+    @assert reflect.Type(cmplx.Tan(1+1i)) == complex128
+}
+
+@test "cmplx: real number arguments coerce implicitly to complex128 (dynamic mode)"
+
+{
+    // Regression test for the call-boundary coercion gap found while
+    // wiring this package up: convertToNative had no Complex64Kind/
+    // Complex128Kind case, so a plain int argument like -1 reached the
+    // native math/cmplx.Sqrt call unconverted and panicked via reflect.
+    // This is dynamic-mode-specific -- ego test's default mode -- since a
+    // native function call's argument types are checked before coercion in
+    // --types strict, the same way math.Sqrt(4) also requires an explicit
+    // float64(4) under strict mode (a pre-existing, unrelated behavior).
+    @assert cmplx.Sqrt(-1) == 1i
+    @assert cmplx.Abs(5) == 5.0
+}

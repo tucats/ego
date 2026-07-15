@@ -38,6 +38,10 @@ const (
 	// 3.14 or 1e-9.
 	FloatTokenClass
 
+	// ComplexTokenClass is the class for imaginary literal values such as 3i
+	// or 2.5i. The spelling always includes the trailing "i".
+	ComplexTokenClass
+
 	// ReservedTokenClass is the class for language keywords that cannot be used
 	// as identifiers: "for", "if", "func", "return", "var", etc.
 	ReservedTokenClass
@@ -70,6 +74,8 @@ func (c TokenClass) String() string {
 		return "Integer"
 	case FloatTokenClass:
 		return "Float"
+	case ComplexTokenClass:
+		return "Complex"
 	case ReservedTokenClass:
 		return "Reserved"
 	case SpecialTokenClass:

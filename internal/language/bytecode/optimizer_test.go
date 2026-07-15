@@ -230,6 +230,39 @@ func Test_tryConstantArithmetic_Float64(t *testing.T) {
 	}
 }
 
+// Test_tryConstantArithmetic_Complex128 verifies complex128 add/sub/mul fold,
+// but Div is deliberately left unfolded (falls through to executeFragment,
+// which runs the real divideByteCode and its zero-check).
+func Test_tryConstantArithmetic_Complex128(t *testing.T) {
+	v, ok := tryConstantArithmetic(Add, complex128(1+2i), complex128(3-1i))
+	if !ok || v != complex128(4+1i) {
+		t.Errorf("complex128 add: got (%v, %v), want (4+1i, true)", v, ok)
+	}
+
+	v, ok = tryConstantArithmetic(Sub, complex128(4+1i), complex128(3-1i))
+	if !ok || v != complex128(1+2i) {
+		t.Errorf("complex128 sub: got (%v, %v), want (1+2i, true)", v, ok)
+	}
+
+	v, ok = tryConstantArithmetic(Mul, complex128(1+2i), complex128(3-1i))
+	if !ok || v != complex128(5+5i) {
+		t.Errorf("complex128 mul: got (%v, %v), want (5+5i, true)", v, ok)
+	}
+
+	_, ok = tryConstantArithmetic(Div, complex128(4+1i), complex128(3-1i))
+	if ok {
+		t.Error("complex128 div should return (nil, false) -- not folded here")
+	}
+}
+
+// Test_tryConstantArithmetic_Complex64 verifies complex64 add/sub/mul fold.
+func Test_tryConstantArithmetic_Complex64(t *testing.T) {
+	v, ok := tryConstantArithmetic(Add, complex64(1+2i), complex64(3-1i))
+	if !ok || v != complex64(4+1i) {
+		t.Errorf("complex64 add: got (%v, %v), want (4+1i, true)", v, ok)
+	}
+}
+
 // Test_tryConstantArithmetic_StringConcat verifies string concatenation.
 func Test_tryConstantArithmetic_StringConcat(t *testing.T) {
 	v, ok := tryConstantArithmetic(Add, "foo", "bar")
@@ -587,7 +620,7 @@ func Test_Optimize_CollapsePushAndCreateAndStore(t *testing.T) {
 
 	mustOptimize(t, b)
 	assertSize(t, b, 1)
-	
+
 	i := instrAt(t, b, 0)
 	if i.Operation != CreateAndStore {
 		t.Fatalf("expected CreateAndStore, got %v", i.Operation)
@@ -930,10 +963,11 @@ func Test_Regression_TryCatch_GotError(t *testing.T) {
 // the candidate pattern window.
 //
 // Layout:
-//   0: Branch 1   ← targets address 1, which is inside the AtLine+AtLine window
-//   1: AtLine 5
-//   2: AtLine 6   ← normally: rule "Sequential AtLine" would remove addr 1
-//   3: Push 0
+//
+//	0: Branch 1   ← targets address 1, which is inside the AtLine+AtLine window
+//	1: AtLine 5
+//	2: AtLine 6   ← normally: rule "Sequential AtLine" would remove addr 1
+//	3: Push 0
 //
 // Because address 1 is a branch target, the AtLine+AtLine rule must NOT fire.
 func Test_Optimize_BranchSafety_NoFireWhenTargetInWindow(t *testing.T) {
@@ -999,21 +1033,22 @@ func Test_Optimize_BranchSafety_AllowsNonTargeted(t *testing.T) {
 // whose target is AFTER the removed instructions has its operand decremented.
 //
 // Layout:
-//   0: AtLine 5
-//   1: AtLine 6    ← rule collapses 0-1 → removes one instruction
-//   2: Push 0
-//   3: Branch 4    ← was targeting addr 4, should become addr 3 after -1
-//   4: Push 1
+//
+//	0: AtLine 5
+//	1: AtLine 6    ← rule collapses 0-1 → removes one instruction
+//	2: Push 0
+//	3: Branch 4    ← was targeting addr 4, should become addr 3 after -1
+//	4: Push 1
 //
 // After optimization: AtLine 6, Push 0, Branch 3, Push 1
 // (addr 4 → new addr 3 after deleting one instruction).
 func Test_Optimize_BranchAdjustment_AfterPatch(t *testing.T) {
 	b := New("branch adj")
-	b.Emit(AtLine, 5)  // 0
-	b.Emit(AtLine, 6)  // 1
-	b.Emit(Push, 0)    // 2
-	b.Emit(Branch, 4)  // 3 — targets addr 4
-	b.Emit(Push, 1)    // 4
+	b.Emit(AtLine, 5) // 0
+	b.Emit(AtLine, 6) // 1
+	b.Emit(Push, 0)   // 2
+	b.Emit(Branch, 4) // 3 — targets addr 4
+	b.Emit(Push, 1)   // 4
 	b.instructions = b.instructions[:b.nextAddress]
 
 	mustOptimize(t, b)
@@ -1038,18 +1073,21 @@ func Test_Optimize_BranchAdjustment_AfterPatch(t *testing.T) {
 // fires and the scanner backs up, a newly exposed opportunity is also captured.
 //
 // The sequence:
-//   Push StackMarker("let")
-//   Push 2
-//   CreateAndStore "x"
-//   DropToMarker StackMarker("let")
+//
+//	Push StackMarker("let")
+//	Push 2
+//	CreateAndStore "x"
+//	DropToMarker StackMarker("let")
 //
 // The 4-instruction "Unnecessary stack marker" rule fires first, yielding:
-//   Push 2
-//   CreateAndStore "x"
+//
+//	Push 2
+//	CreateAndStore "x"
 //
 // The scanner backs up and sees Push(2) + CreateAndStore("x"), which matches
 // "Collapse constant Push and CreateAndStore", collapsing to:
-//   CreateAndStore ["x", 2]
+//
+//	CreateAndStore ["x", 2]
 func Test_Optimize_Backtracking_CascadeOpportunity(t *testing.T) {
 	b := New("cascade backtrack")
 	b.Emit(Push, NewStackMarker("let"))

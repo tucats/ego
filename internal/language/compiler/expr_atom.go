@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
-	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 var anonStructCount atomic.Int32
@@ -139,6 +139,23 @@ func (c *Compiler) expressionAtom() error {
 
 			return nil
 		}
+	}
+
+	// An imaginary literal (e.g. "3i", "2.5i") always compiles to a
+	// complex128 constant, matching Go's rule that an untyped imaginary
+	// constant defaults to complex128 regardless of magnitude -- the same
+	// way a plain float literal always defaults to float64 above.
+	if t.IsClass(tokenizer.ComplexTokenClass) {
+		numericText := strings.TrimSuffix(text, "i")
+
+		if i, err := strconv.ParseFloat(numericText, 64); err == nil {
+			c.t.Advance(1)
+			c.b.Emit(bytecode.Push, data.Constant(complex(0, i)))
+
+			return nil
+		}
+
+		return c.compileError(errors.ErrInvalidValue).Context(text)
 	}
 
 	if t.IsClass(tokenizer.BooleanTokenClass) {

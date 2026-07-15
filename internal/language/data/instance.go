@@ -134,6 +134,10 @@ func InstanceOfType(t *Type) any {
 			return float32Model
 		case Float64Kind:
 			return float64Model
+		case Complex64Kind:
+			return complex64Model
+		case Complex128Kind:
+			return complex128Model
 		case StringKind:
 			return stringModel
 		case ChanKind:
@@ -242,7 +246,9 @@ func (t *Type) InstanceOf(superType *Type) any {
 // definitions).
 //
 // types[0] — if present, becomes the valueType (element type for arrays,
-//             base type for pointer/user types, value type for maps).
+//
+//	base type for pointer/user types, value type for maps).
+//
 // types[1] — if present, becomes the keyType (key type for maps).
 func NewType(name string, kind int, types ...*Type) *Type {
 	t := &Type{

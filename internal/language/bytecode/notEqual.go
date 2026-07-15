@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // notEqualByteCode implements the NotEqual opcode
@@ -196,6 +196,12 @@ func notEqualByteCode(c *Context, i any) error {
 
 		case float64:
 			result = v1.(float64) != v2.(float64)
+
+		case complex64:
+			result = v1.(complex64) != v2.(complex64)
+
+		case complex128:
+			result = v1.(complex128) != v2.(complex128)
 
 		case string:
 			result = v1.(string) != v2.(string)

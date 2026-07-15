@@ -18,9 +18,9 @@ import (
 // the symbol table before running the Ego program snippet.
 //
 // Three scenarios are covered:
-//   1. Open channel with a value already buffered: ok=true, v=datum.
-//   2. Open channel — verify the received value itself (not just ok).
-//   3. Closed, empty channel: ok=false, v=nil (the zero-value convention).
+//  1. Open channel with a value already buffered: ok=true, v=datum.
+//  2. Open channel — verify the received value itself (not just ok).
+//  3. Closed, empty channel: ok=false, v=nil (the zero-value convention).
 //
 // Note on settings: "ch" is injected straight into the runtime symbol table
 // rather than being declared with "make(chan, 1)" inside the Ego snippet.
@@ -261,7 +261,7 @@ func TestArbitraryCodeFragments(t *testing.T) {
 				x++
 
 				result := triple(x)
-			`, 
+			`,
 			want: 9,
 		},
 		// --- end BUG-63 regression tests ---------------------------------------
@@ -281,6 +281,31 @@ func TestArbitraryCodeFragments(t *testing.T) {
 			name: "Go-style legacy octal integer assignment (leading zero)",
 			text: "result := 0644",
 			want: 420,
+		},
+		{
+			name: "imaginary integer literal assignment",
+			text: "result := 3i",
+			want: complex128(complex(0, 3)),
+		},
+		{
+			name: "imaginary float literal assignment",
+			text: "result := 2.5i",
+			want: complex128(complex(0, 2.5)),
+		},
+		{
+			name: "complex128 cast from int",
+			text: "result := complex128(5)",
+			want: complex128(5),
+		},
+		{
+			name: "complex64 cast from float64",
+			text: "result := complex64(2.5)",
+			want: complex64(2.5),
+		},
+		{
+			name: "var complex128 declaration with zero value",
+			text: "var x complex128; result := x",
+			want: complex128(0),
 		},
 		{
 			name: "optional error catch",

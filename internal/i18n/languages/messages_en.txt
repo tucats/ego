@@ -285,6 +285,7 @@ column.count=incorrect number of columns
 column.name=invalid column name
 column.number=invalid column number
 column.width=invalid column width
+complex.value=cannot convert complex value; use real()/imag()
 compiler=internal compiler error
 conditional.bool=invalid conditional expression type
 config=while processing configuration

@@ -84,6 +84,14 @@ func (c *Compiler) unary() error {
 				i.Operand = -v
 				c.b.Opcodes()[addr] = *i
 
+			case complex64:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
+			case complex128:
+				i.Operand = -v
+				c.b.Opcodes()[addr] = *i
+
 			default:
 				c.b.Emit(bytecode.Negate, false)
 			}

@@ -41,3 +41,51 @@ func TestString_Time(t *testing.T) {
 		t.Errorf("String(time.Time) = %q, want %q", got, want)
 	}
 }
+
+func TestComplex128(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     any
+		want    complex128
+		wantErr bool
+	}{
+		{name: "nil", arg: nil, want: 0},
+		{name: "int", arg: 5, want: complex(5, 0)},
+		{name: "float64", arg: 3.5, want: complex(3.5, 0)},
+		{name: "complex64", arg: complex64(complex(1, 2)), want: complex(1, 2)},
+		{name: "complex128", arg: complex(3, 4), want: complex(3, 4)},
+		{name: "invalid string", arg: "not a complex", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Complex128(tt.arg)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Complex128(%#v) expected error, got none", tt.arg)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Complex128(%#v) unexpected error: %v", tt.arg, err)
+			}
+
+			if got != tt.want {
+				t.Errorf("Complex128(%#v) = %v, want %v", tt.arg, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestComplex64(t *testing.T) {
+	got, err := Complex64(5)
+	if err != nil {
+		t.Fatalf("Complex64(5) unexpected error: %v", err)
+	}
+
+	if got != complex64(complex(5, 0)) {
+		t.Errorf("Complex64(5) = %v, want (5+0i)", got)
+	}
+}

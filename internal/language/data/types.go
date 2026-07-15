@@ -66,6 +66,12 @@ const (
 	// Float64 (64-bit floating point) kind.
 	Float64Kind
 
+	// Complex64 (two float32 components) kind.
+	Complex64Kind
+
+	// Complex128 (two float64 components) kind.
+	Complex128Kind
+
 	// Unicode string kind.
 	StringKind
 
@@ -145,32 +151,34 @@ const (
 // These constants are used to map a type name to a string. This creates a single place
 // where the "common" name for built-in types is found.
 const (
-	InterfaceTypeName = "interface{}"
-	BoolTypeName      = "bool"
-	ByteTypeName      = "byte"
-	UInt8TypeName     = "uint8"
-	IntTypeName       = "int"
-	Int8TypeName      = "int8"
-	Int16TypeName     = "int16"
-	UInt16TypeName    = "uint16"
-	Int32TypeName     = "int32"
-	Int64TypeName     = "int64"
-	UInt32TypeName    = "uint32"
-	UInt64TypeName    = "uint64"
-	UIntTypeName      = "uint"
-	Float32TypeName   = "float32"
-	Float64TypeName   = "float64"
-	StringTypeName    = "string"
-	StructTypeName    = "struct"
-	MapTypeName       = "map"
-	PackageTypeName   = "package"
-	ErrorTypeName     = "error"
-	VoidTypeName      = "void"
-	FunctionTypeName  = "func"
-	UndefinedTypeName = "undefined"
-	ChanTypeName      = "chan"
-	TypeTypeName      = "type"
-	NilTypeName       = "nil"
+	InterfaceTypeName  = "interface{}"
+	BoolTypeName       = "bool"
+	ByteTypeName       = "byte"
+	UInt8TypeName      = "uint8"
+	IntTypeName        = "int"
+	Int8TypeName       = "int8"
+	Int16TypeName      = "int16"
+	UInt16TypeName     = "uint16"
+	Int32TypeName      = "int32"
+	Int64TypeName      = "int64"
+	UInt32TypeName     = "uint32"
+	UInt64TypeName     = "uint64"
+	UIntTypeName       = "uint"
+	Float32TypeName    = "float32"
+	Float64TypeName    = "float64"
+	Complex64TypeName  = "complex64"
+	Complex128TypeName = "complex128"
+	StringTypeName     = "string"
+	StructTypeName     = "struct"
+	MapTypeName        = "map"
+	PackageTypeName    = "package"
+	ErrorTypeName      = "error"
+	VoidTypeName       = "void"
+	FunctionTypeName   = "func"
+	UndefinedTypeName  = "undefined"
+	ChanTypeName       = "chan"
+	TypeTypeName       = "type"
+	NilTypeName        = "nil"
 )
 
 // These are miscellaneous constants used through-out the data package.
@@ -1426,6 +1434,9 @@ func KindOf(i any) int {
 	case *float32, *float64:
 		return PointerKind
 
+	case *complex64, *complex128:
+		return PointerKind
+
 	case bool:
 		return BoolKind
 
@@ -1450,14 +1461,26 @@ func KindOf(i any) int {
 	case int:
 		return IntKind
 
+	case uint:
+		return UIntKind
+
 	case int64:
 		return Int64Kind
+
+	case uint64:
+		return UInt64Kind
 
 	case float32:
 		return Float32Kind
 
 	case float64:
 		return Float64Kind
+
+	case complex64:
+		return Complex64Kind
+
+	case complex128:
+		return Complex128Kind
 
 	case string:
 		return StringKind
@@ -1503,7 +1526,7 @@ func IsNumeric(i any) bool {
 	}
 
 	switch actual := i.(type) {
-	case int8, int16, uint16, int32, uint32, int, uint, int64, uint64, byte, float32, float64:
+	case int8, int16, uint16, int32, uint32, int, uint, int64, uint64, byte, float32, float64, complex64, complex128:
 		return true
 
 	case *Scalar:
@@ -1515,7 +1538,9 @@ func IsNumeric(i any) bool {
 			actual.kind == Int32Kind ||
 			actual.kind == Int64Kind ||
 			actual.kind == Float32Kind ||
-			actual.kind == Float64Kind {
+			actual.kind == Float64Kind ||
+			actual.kind == Complex64Kind ||
+			actual.kind == Complex128Kind {
 			return true
 		}
 	}
@@ -1541,6 +1566,7 @@ func IsCoercible(t *Type) bool {
 		Int16Kind, UInt16Kind, Int32Kind, UInt32Kind,
 		IntKind, UIntKind, Int64Kind, UInt64Kind,
 		Float32Kind, Float64Kind,
+		Complex64Kind, Complex128Kind,
 		StringKind,
 	}
 
@@ -1634,6 +1660,12 @@ func TypeOf(i any) *Type {
 	case float64:
 		return Float64Type
 
+	case complex64:
+		return Complex64Type
+
+	case complex128:
+		return Complex128Type
+
 	case string:
 		return StringType
 
@@ -1669,6 +1701,12 @@ func TypeOf(i any) *Type {
 
 	case *float64:
 		return PointerType(Float64Type)
+
+	case *complex64:
+		return PointerType(Complex64Type)
+
+	case *complex128:
+		return PointerType(Complex128Type)
 
 	case *string:
 		return PointerType(StringType)

@@ -12,9 +12,9 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -819,14 +819,16 @@ func (c *Context) checkType(name string, value any) (any, error) {
 }
 
 // isNumericKind reports whether the given data.Kind is one of Ego's scalar
-// numeric kinds (any integer width, signed or unsigned, or either floating
-// point width). Used by checkType's strict-mode literal-constant coercion
-// path to decide whether an implicit conversion should even be attempted.
+// numeric kinds (any integer width, signed or unsigned, either floating
+// point width, or either complex width). Used by checkType's strict-mode
+// literal-constant coercion path to decide whether an implicit conversion
+// should even be attempted.
 func isNumericKind(kind int) bool {
 	switch kind {
 	case data.ByteKind, data.Int8Kind, data.Int16Kind, data.UInt16Kind,
 		data.Int32Kind, data.UInt32Kind, data.IntKind, data.UIntKind,
-		data.Int64Kind, data.UInt64Kind, data.Float32Kind, data.Float64Kind:
+		data.Int64Kind, data.UInt64Kind, data.Float32Kind, data.Float64Kind,
+		data.Complex64Kind, data.Complex128Kind:
 		return true
 	default:
 		return false

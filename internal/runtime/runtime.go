@@ -8,9 +8,11 @@ package runtime
 import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/packages"
 	"github.com/tucats/ego/internal/runtime/base64"
 	"github.com/tucats/ego/internal/runtime/cipher"
+	"github.com/tucats/ego/internal/runtime/cmplx"
 	"github.com/tucats/ego/internal/runtime/errors"
 	"github.com/tucats/ego/internal/runtime/exec"
 	"github.com/tucats/ego/internal/runtime/filepath"
@@ -35,7 +37,6 @@ import (
 	"github.com/tucats/ego/internal/runtime/time"
 	"github.com/tucats/ego/internal/runtime/util"
 	"github.com/tucats/ego/internal/runtime/uuid"
-	"github.com/tucats/ego/internal/language/symbols"
 )
 
 // AddPackages adds in the pre-defined package receivers to the given symbol
@@ -50,6 +51,7 @@ func AddPackages(s *symbols.SymbolTable) {
 	for _, name := range []string{
 		"base64",
 		"cipher",
+		"cmplx",
 		"errors",
 		"exec",
 		"filepath",
@@ -110,6 +112,9 @@ func AddPackage(name string) *data.Package {
 
 	case "cipher":
 		p = cipher.CipherPackage
+
+	case "cmplx":
+		p = cmplx.CmplxPackage
 
 	case "errors":
 		p = errors.ErrorsPackage

@@ -4,9 +4,9 @@ import (
 	"reflect"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -630,6 +630,42 @@ func tryConstantArithmetic(op Opcode, v1, v2 any) (any, bool) {
 			return a * b, true
 		case Div:
 			return a / b, true
+		}
+
+	case complex128:
+		// Div is deliberately not folded here: replicating the
+		// divideByteCode zero-check (which raises ErrDivisionByZero
+		// instead of Go's native complex Inf/NaN result) in a second
+		// place is unnecessary risk for a rare case -- a constant complex
+		// division simply falls through to executeFragment below, which
+		// runs the real, already-correct divideByteCode.
+		b, ok := v2.(complex128)
+		if !ok {
+			return nil, false
+		}
+
+		switch op {
+		case Add:
+			return a + b, true
+		case Sub:
+			return a - b, true
+		case Mul:
+			return a * b, true
+		}
+
+	case complex64:
+		b, ok := v2.(complex64)
+		if !ok {
+			return nil, false
+		}
+
+		switch op {
+		case Add:
+			return a + b, true
+		case Sub:
+			return a - b, true
+		case Mul:
+			return a * b, true
 		}
 
 	case string:

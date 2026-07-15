@@ -681,7 +681,7 @@ A single file may contain multiple `@test` blocks. Variables declared outside a 
 `ego test` (`internal/commands/test.go`) always calls `comp.AutoImport(true, symbolTable)` — the "import all" variant — for every test compilation, regardless of the `ego.compiler.import` setting (which defaults to `false` and only affects `ego run`). This means `.ego` files under `tests/` can reference the following packages with **no `import` statement**:
 
 ```text
-base64, cipher, errors, exec, filepath, fmt, io, json, math, os,
+base64, cipher, cmplx, errors, exec, filepath, fmt, io, json, math, os,
 profile, reflect, rest, sort, sql, strconv, strings, tables, time, util, uuid
 ```
 
@@ -810,6 +810,8 @@ All are documented with test cases; open items are tracked in `docs/FUNCTIONAL_I
 
 - **Dynamic mode now coerces scalar arguments at call boundaries.** Passing `"5"` to an `int` parameter coerces the value to `5` via `data.Coerce`. Non-coercible mismatches (e.g. `"abc"` for `int`) raise a catchable runtime error. Strict mode rejects mismatches earlier, at type-check time. (Fixed May 2026, FUNC-5.)
 - **String multiplication (`*`) no longer produces repetition.** The `"A" * 3` → `"AAA"` special case was removed from `internal/language/bytecode/math.go`. Both `"A" * 3` and `3 * "A"` now produce a runtime error, consistent with Go. Use `strings.Repeat` for intentional repetition. (Fixed May 2026, FUNC-6.)
+- **Real numbers coerce implicitly to `complex64`/`complex128` at assignment and call boundaries** (real part = value, imag = 0) — unlike Go, which requires an explicit conversion (`complex128(5)`) even for a typed variable, only relaxing this for untyped constants. The reverse direction (complex → real) is never implicit in either language: extracting a component always requires `real()`/`imag()`. See `tests/datamodel/complex_constants.ego`.
+- **Complex division by zero raises a runtime error** (`errors.ErrDivisionByZero`), not Go's native IEEE Inf/NaN result — consistent with how dividing a `float64` by `0` already errors in Ego rather than producing `+Inf`. See `internal/language/bytecode/math.go`'s `divideByteCode` and its test coverage in `math_test.go`.
 
 ### `nil` through `interface{}` parameters
 

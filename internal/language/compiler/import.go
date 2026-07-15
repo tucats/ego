@@ -9,14 +9,14 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/packages"
-	"github.com/tucats/ego/internal/runtime"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/runtime"
 )
 
 // This table contains the map of native (Go) package names that are remapped to the
@@ -28,6 +28,7 @@ var nativePackageNames = map[string]string{
 	"encode/json":            "json",
 	"database/sql":           "sql",
 	"github.com/google/uuid": "uuid",
+	"math/cmplx":             "cmplx",
 }
 
 // compileImport compiles an import statement. The "import" keyword has already

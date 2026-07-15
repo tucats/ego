@@ -1,0 +1,155 @@
+@test "datamodel: imaginary literal parsing"
+
+{
+    x := 3i
+    y := 2.5i
+    z := 0i
+
+    @assert T.Equal(x, complex128(complex(0, 3)))
+    @assert T.Equal(y, complex128(complex(0, 2.5)))
+    @assert T.Equal(z, complex128(0))
+    @assert string(reflect.Type(x)) == "complex128"
+}
+
+@test "datamodel: complex arithmetic"
+
+{
+    a := 1 + 2i
+    b := 3 - 1i
+
+    @assert T.Equal(a+b, complex(4, 1))
+    @assert T.Equal(a-b, complex(-2, 3))
+    @assert T.Equal(a*b, complex(5, 5))
+    @assert T.Equal((a*b)/b, a)
+    @assert T.Equal(-a, complex(-1, -2))
+}
+
+@test "datamodel: complex division by zero errors, matching float64 behavior"
+
+{
+    a := 1 + 2i
+    zero := 0i
+
+    try {
+        _ = a / zero
+        @fail "expected division by zero error"
+    } catch(e) {
+        @assert e.Code() == "div.zero"
+    }
+}
+
+@test "datamodel: complex64 and complex128 both work"
+
+{
+    a := complex64(1 + 2i)
+    b := complex64(3 - 1i)
+
+    @assert string(reflect.Type(a)) == "complex64"
+    @assert T.Equal(a+b, complex64(complex(4, 1)))
+}
+
+@test "datamodel: real numbers coerce implicitly to complex"
+
+{
+    var c complex128 = 5
+    @assert T.Equal(c, complex128(5))
+
+    c2 := complex128(3.5)
+    @assert T.Equal(c2, complex(3.5, 0))
+}
+
+@test "datamodel: complex to real is never implicit"
+
+{
+    c := 3 + 4i
+
+    try {
+        _ = int(c)
+        @fail "expected an error converting complex to int"
+    } catch(e) {
+        @assert e != nil
+    }
+
+    try {
+        _ = float64(c)
+        @fail "expected an error converting complex to float64"
+    } catch(e) {
+        @assert e != nil
+    }
+}
+
+@test "datamodel: complex() real() imag() builtins"
+
+{
+    c := complex(3.0, 4.0)
+
+    @assert T.Equal(c, complex(3, 4))
+    @assert T.Equal(real(c), 3.0)
+    @assert T.Equal(imag(c), 4.0)
+
+    c2 := complex(float32(1.5), float32(2.5))
+    @assert string(reflect.Type(c2)) == "complex64"
+}
+
+@test "datamodel: complex equality"
+
+{
+    a := 1 + 2i
+    b := 1 + 2i
+    c := 1 + 3i
+
+    @assert a == b
+    @assert a != c
+    @assert !(a == c)
+}
+
+@test "datamodel: complex is not orderable"
+
+{
+    a := 1 + 2i
+    b := 3 + 4i
+
+    try {
+        _ = a > b
+        @fail "expected an error, complex has no ordering"
+    } catch(e) {
+        @assert e != nil
+    }
+
+    try {
+        _ = a < b
+        @fail "expected an error, complex has no ordering"
+    } catch(e) {
+        @assert e != nil
+    }
+}
+
+@test "datamodel: complex has no modulo or exponent operator"
+
+{
+    a := 1 + 2i
+    b := 3 + 4i
+
+    try {
+        _ = a % b
+        @fail "expected an error, complex has no modulo"
+    } catch(e) {
+        @assert e != nil
+    }
+
+    try {
+        _ = a ^ 2
+        @fail "expected an error, complex has no exponent operator"
+    } catch(e) {
+        @assert e != nil
+    }
+}
+
+@test "datamodel: complex constant folding via const"
+
+{
+    const c = 1 + 2i
+    const d = c * (3 - 1i)
+
+    @assert T.Equal(d, complex(5, 5))
+}

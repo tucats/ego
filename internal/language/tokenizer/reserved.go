@@ -99,6 +99,12 @@ var (
 	// "float64" token.
 	Float64Token = NewTypeToken("float64")
 
+	// "complex64" token.
+	Complex64Token = NewTypeToken("complex64")
+
+	// "complex128" token.
+	Complex128Token = NewTypeToken("complex128")
+
 	// "for" token.
 	ForToken = NewReservedToken("for")
 
@@ -339,24 +345,26 @@ var (
 
 // TypeTokens is a list of tokens that represent built-in type names.
 var TypeTokens = map[Token]bool{
-	AnyToken:     true,
-	BoolToken:    true,
-	ByteToken:    true,
-	ChanToken:    true,
-	Int8Token:    true,
-	Int16Token:   true,
-	UInt16Token:  true,
-	Int32Token:   true,
-	UInt32Token:  true,
-	UInt64Token:  true,
-	IntToken:     true,
-	Int32Token:   true,
-	Int64Token:   true,
-	Float32Token: true,
-	Float64Token: true,
-	StringToken:  true,
-	StructToken:  true,
-	MapToken:     true,
+	AnyToken:        true,
+	BoolToken:       true,
+	ByteToken:       true,
+	ChanToken:       true,
+	Int8Token:       true,
+	Int16Token:      true,
+	UInt16Token:     true,
+	Int32Token:      true,
+	UInt32Token:     true,
+	UInt64Token:     true,
+	IntToken:        true,
+	Int32Token:      true,
+	Int64Token:      true,
+	Float32Token:    true,
+	Float64Token:    true,
+	Complex64Token:  true,
+	Complex128Token: true,
+	StringToken:     true,
+	StructToken:     true,
+	MapToken:        true,
 }
 
 // SpecialTokens is a list of tokens that are considered special semantic characters.
@@ -425,6 +433,8 @@ var ReservedWords = map[Token]bool{
 	FallthroughToken: true,
 	Float32Token:     true,
 	Float64Token:     true,
+	Complex64Token:   true,
+	Complex128Token:  true,
 	ForToken:         true,
 	FuncToken:        true,
 	GoToken:          true,

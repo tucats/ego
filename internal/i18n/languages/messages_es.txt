@@ -286,6 +286,7 @@ column.count=número incorrecto de columnas
 column.name=nombre de columna no válido
 column.number=número de columna no válido
 column.width=ancho de columna no válido
+complex.value=no se puede convertir el valor complejo; use real()/imag()
 compiler=error interno del compilador
 conditional.bool=tipo de expresión condicional no válido
 config=al procesar la configuración

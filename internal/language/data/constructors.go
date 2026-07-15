@@ -143,6 +143,24 @@ var Float64Type = &Type{
 	isBaseType: true,
 }
 
+// Complex64Type is an instance of the Complex64 type.
+var Complex64Type = &Type{
+	name:       Complex64TypeName,
+	kind:       Complex64Kind,
+	keyType:    nil,
+	valueType:  nil,
+	isBaseType: true,
+}
+
+// Complex128Type is an instance of the Complex128 type.
+var Complex128Type = &Type{
+	name:       Complex128TypeName,
+	kind:       Complex128Kind,
+	keyType:    nil,
+	valueType:  nil,
+	isBaseType: true,
+}
+
 // StringType is an instance of the String type.
 var StringType = &Type{
 	name:       StringTypeName,

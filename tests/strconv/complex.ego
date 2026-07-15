@@ -1,0 +1,66 @@
+// Tests for strconv.ParseComplex and strconv.FormatComplex.
+// These are native pass-through calls to Go's strconv package.
+
+@test "strconv: ParseComplex basic values"
+{
+    c, err := strconv.ParseComplex("3+4i", 128)
+    @assert err == nil
+    @assert c == 3+4i
+
+    c, err = strconv.ParseComplex("0+0i", 128)
+    @assert err == nil
+    @assert c == 0i
+
+    c, err = strconv.ParseComplex("3-4i", 128)
+    @assert err == nil
+    @assert c == 3-4i
+
+    @assert typeof(c) == complex128
+}
+
+@test "strconv: ParseComplex parenthesized form"
+{
+    c, err := strconv.ParseComplex("(3+4i)", 128)
+    @assert err == nil
+    @assert c == 3+4i
+}
+
+@test "strconv: ParseComplex real-only and imaginary-only forms"
+{
+    c, err := strconv.ParseComplex("3", 128)
+    @assert err == nil
+    @assert c == 3+0i
+
+    c, err = strconv.ParseComplex("4i", 128)
+    @assert err == nil
+    @assert c == 0+4i
+}
+
+@test "strconv: ParseComplex error for invalid input"
+{
+    _, err := strconv.ParseComplex("not a complex", 128)
+    @assert err != nil
+
+    _, err = strconv.ParseComplex("", 128)
+    @assert err != nil
+}
+
+@test "strconv: FormatComplex basic values"
+{
+    s := strconv.FormatComplex(3+4i, byte(103), (-1), 128)
+    @assert s == "(3+4i)"
+
+    s = strconv.FormatComplex(3-4i, byte(103), (-1), 128)
+    @assert s == "(3-4i)"
+
+    s = strconv.FormatComplex(0i, byte(103), (-1), 128)
+    @assert s == "(0+0i)"
+}
+
+@test "strconv: ParseComplex and FormatComplex round-trip"
+{
+    s := strconv.FormatComplex(3.5+4.5i, byte(103), (-1), 128)
+    c, err := strconv.ParseComplex(s, 128)
+    @assert err == nil
+    @assert c == 3.5+4.5i
+}

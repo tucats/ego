@@ -325,6 +325,38 @@ func Float32(v any) (float32, error) {
 	return b.(float32), nil
 }
 
+// Complex128 converts any value to complex128 by delegating to Coerce.
+func Complex128(v any) (complex128, error) {
+	if v == nil {
+		return 0, nil
+	}
+
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, Complex128Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(complex128), nil
+}
+
+// Complex64 converts any value to complex64 by delegating to Coerce.
+func Complex64(v any) (complex64, error) {
+	if v == nil {
+		return 0, nil
+	}
+
+	v = UnwrapConstant(v)
+
+	b, err := Coerce(v, Complex64Type)
+	if err != nil {
+		return 0, err
+	}
+
+	return b.(complex64), nil
+}
+
 // Bool converts any value to bool by delegating to Coerce.
 func Bool(v any) (bool, error) {
 	if v == nil {

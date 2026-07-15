@@ -260,6 +260,12 @@ func negateByteCode(c *Context, i any) error {
 	case float64:
 		return c.push(0.0 - value)
 
+	case complex64:
+		return c.push(-value)
+
+	case complex128:
+		return c.push(-value)
+
 	case string:
 		length := 0
 		for range value {
@@ -367,6 +373,15 @@ func notByteCode(c *Context, i any) error {
 
 	case float64:
 		return c.push(value == float64(0))
+
+	// Ego extends "!" beyond Go's bool-only rule to mean "equals zero" for
+	// every numeric type, including complex -- Go itself disallows "!" on
+	// any numeric type at all.
+	case complex64:
+		return c.push(value == 0)
+
+	case complex128:
+		return c.push(value == 0)
 
 	default:
 		return c.runtimeError(errors.ErrInvalidType)
@@ -484,6 +499,12 @@ func addByteCode(c *Context, i any) error {
 
 		case float64:
 			return c.push(v1.(float64) + v2.(float64))
+
+		case complex64:
+			return c.push(v1.(complex64) + v2.(complex64))
+
+		case complex128:
+			return c.push(v1.(complex128) + v2.(complex128))
 
 		case string:
 			return c.push(v1.(string) + v2.(string))
@@ -657,6 +678,12 @@ func subtractByteCode(c *Context, i any) error {
 	case float64:
 		return c.push(v1.(float64) - v2.(float64))
 
+	case complex64:
+		return c.push(v1.(complex64) - v2.(complex64))
+
+	case complex128:
+		return c.push(v1.(complex128) - v2.(complex128))
+
 	case string:
 		s := strings.ReplaceAll(v1.(string), v2.(string), "")
 
@@ -734,6 +761,12 @@ func multiplyByteCode(c *Context, i any) error {
 
 	case float64:
 		return c.push(v1.(float64) * v2.(float64))
+
+	case complex64:
+		return c.push(v1.(complex64) * v2.(complex64))
+
+	case complex128:
+		return c.push(v1.(complex128) * v2.(complex128))
 
 	default:
 		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())
@@ -941,6 +974,20 @@ func divideByteCode(c *Context, i any) error {
 		}
 
 		return c.push(v1.(float64) / v2.(float64))
+
+	case complex64:
+		if v2.(complex64) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(v1.(complex64) / v2.(complex64))
+
+	case complex128:
+		if v2.(complex128) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(v1.(complex128) / v2.(complex128))
 
 	default:
 		return c.runtimeError(errors.ErrInvalidType).Context(data.TypeOf(v1).String())

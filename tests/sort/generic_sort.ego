@@ -127,3 +127,13 @@
     @assert err != nil
     @assert v != nil   // in-place: the (unsorted) array is still returned
 }
+
+@test "sort: Sort on a complex128 array returns an error, not a panic"
+{
+    // complex128 has no natural ordering (no "<" in Go either), so it is
+    // deliberately not one of sort's supported element kinds -- this locks
+    // in that the rejection is a clean error, not a panic.
+    v, err := sort.Sort([]complex128{3 + 4i, 1 + 1i})
+    @assert err != nil
+    @assert v != nil
+}

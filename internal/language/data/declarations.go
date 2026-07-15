@@ -32,6 +32,8 @@ var uint64Model uint64 = 0
 var int64Model int64 = 0
 var float64Model float64 = 0.0
 var float32Model float32 = 0.0
+var complex64Model complex64 = 0
+var complex128Model complex128 = 0
 var boolModel = false
 var stringModel = ""
 var chanModel = NewChannel(1)
@@ -48,12 +50,14 @@ var int64Interface any = int64(0)
 var boolInterface any = false
 var float64Interface any = 0.0
 var float32Interface any = float32(0.0)
+var complex64Interface any = complex64(0)
+var complex128Interface any = complex128(0)
 var stringInterface any = ""
 
 // TypeDeclarations is the authoritative list of all type-token sequences that
 // the Ego compiler and runtime recognize.  Each entry has three fields:
 //   - Tokens  — the sequence of source-code tokens that spell the type
-//               (e.g. []string{"[", "]", "int"} for []int).
+//     (e.g. []string{"[", "]", "int"} for []int).
 //   - Model   — a Go zero value of that type; used by InstanceOfType.
 //   - Kind    — the *Type singleton for this type; used for comparisons.
 //
@@ -105,6 +109,16 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"[", "]", Float32TypeName},
 		NewArray(Float32Type, 0),
 		ArrayType(Float32Type),
+	},
+	{
+		[]string{"[", "]", Complex128TypeName},
+		NewArray(Complex128Type, 0),
+		ArrayType(Complex128Type),
+	},
+	{
+		[]string{"[", "]", Complex64TypeName},
+		NewArray(Complex64Type, 0),
+		ArrayType(Complex64Type),
 	},
 	{
 		[]string{"[", "]", StringTypeName},
@@ -190,6 +204,16 @@ var TypeDeclarations = []TypeDeclaration{
 		Float32Type,
 	},
 	{
+		[]string{Complex128TypeName},
+		complex128Model,
+		Complex128Type,
+	},
+	{
+		[]string{Complex64TypeName},
+		complex64Model,
+		Complex64Type,
+	},
+	{
 		[]string{StringTypeName},
 		stringModel,
 		StringType,
@@ -243,6 +267,16 @@ var TypeDeclarations = []TypeDeclaration{
 		[]string{"*", Float32TypeName},
 		&float32Interface,
 		PointerType(Float32Type),
+	},
+	{
+		[]string{"*", Complex128TypeName},
+		&complex128Interface,
+		PointerType(Complex128Type),
+	},
+	{
+		[]string{"*", Complex64TypeName},
+		&complex64Interface,
+		PointerType(Complex64Type),
 	},
 	{
 		[]string{"*", StringTypeName},

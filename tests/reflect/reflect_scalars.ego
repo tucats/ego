@@ -39,6 +39,18 @@
     @assert string(reflect.Reflect(float32(1.0)).Type) == "float32"
 }
 
+@test "reflect: Reflect() on complex64/complex128 values"
+{
+    // Confirms complex64/complex128 report correctly through reflect --
+    // this works automatically once data.TypeOf() recognizes the two
+    // native Go types, with no reflect-package-specific code of its own.
+    @assert string(reflect.Reflect(3 + 4i).Type) == "complex128"
+    @assert reflect.Reflect(3 + 4i).BaseType == complex128
+
+    @assert string(reflect.Reflect(complex64(3 + 4i)).Type) == "complex64"
+    @assert reflect.Reflect(complex64(3 + 4i)).BaseType == complex64
+}
+
 @test "reflect: Reflect() on []int array"
 {
     a := []int{1, 2, 3}

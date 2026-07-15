@@ -75,6 +75,32 @@ var StrconvPackage = data.NewPackageFromMap("strconv", map[string]any{
 		Value:    strconv.FormatBool,
 		IsNative: true,
 	},
+	"FormatComplex": data.Function{
+		Declaration: &data.Declaration{
+			Name: "FormatComplex",
+			Parameters: []data.Parameter{
+				{
+					Name: "c",
+					Type: data.Complex128Type,
+				},
+				{
+					Name: "format",
+					Type: data.ByteType,
+				},
+				{
+					Name: "precision",
+					Type: data.IntType,
+				},
+				{
+					Name: "bitsize",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strconv.FormatComplex,
+		IsNative: true,
+	},
 	"FormatFloat": data.Function{
 		Declaration: &data.Declaration{
 			Name: "FormatFloat",
@@ -190,6 +216,24 @@ var StrconvPackage = data.NewPackageFromMap("strconv", map[string]any{
 			Returns: []*data.Type{data.BoolType, data.ErrorType},
 		},
 		Value:    strconv.ParseBool,
+		IsNative: true,
+	},
+	"ParseComplex": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ParseComplex",
+			Parameters: []data.Parameter{
+				{
+					Name: "s",
+					Type: data.StringType,
+				},
+				{
+					Name: "bitSize",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.Complex128Type, data.ErrorType},
+		},
+		Value:    strconv.ParseComplex,
 		IsNative: true,
 	},
 	"ParseFloat": data.Function{

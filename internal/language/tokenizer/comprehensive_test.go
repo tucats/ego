@@ -372,6 +372,86 @@ func TestToken_Float(t *testing.T) {
 }
 
 // =============================================================================
+// Imaginary literals (ComplexTokenClass)
+// =============================================================================
+
+// TestLexer_ImaginaryLiterals confirms the lexer merges an adjacent
+// Integer/Float token and a following "i" identifier token into a single
+// ComplexTokenClass token, but leaves them unmerged when there's a gap
+// (matching Go's own grammar: "3i" is one token, "3 i" is two). isCode=true
+// is required to exercise the merge (it only runs inside the lexer's isCode
+// block), which means New() also auto-inserts a trailing statement
+// terminator -- only the leading token(s) are asserted on here.
+func TestLexer_ImaginaryLiterals(t *testing.T) {
+	tests := []struct {
+		name         string
+		src          string
+		wantClass    TokenClass
+		wantSpelling string
+	}{
+		{"integer imaginary literal", "3i", ComplexTokenClass, "3i"},
+		{"float imaginary literal", "2.5i", ComplexTokenClass, "2.5i"},
+		{"zero imaginary literal", "0i", ComplexTokenClass, "0i"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tk := New(tt.src, true)
+
+			if len(tk.Tokens) < 1 {
+				t.Fatalf("token count = %d, want at least 1 (%v)", len(tk.Tokens), tk.Tokens)
+			}
+
+			if tk.Tokens[0].class != tt.wantClass {
+				t.Errorf("class = %v, want %v", tk.Tokens[0].class, tt.wantClass)
+			}
+
+			if tk.Tokens[0].spelling != tt.wantSpelling {
+				t.Errorf("spelling = %q, want %q", tk.Tokens[0].spelling, tt.wantSpelling)
+			}
+		})
+	}
+}
+
+// TestLexer_ImaginaryLiteralRequiresAdjacency confirms a space between the
+// number and "i" prevents the merge, matching Go's grammar.
+func TestLexer_ImaginaryLiteralRequiresAdjacency(t *testing.T) {
+	tk := New("3 i", true)
+
+	if len(tk.Tokens) < 2 {
+		t.Fatalf("token count = %d, want at least 2 (%v)", len(tk.Tokens), tk.Tokens)
+	}
+
+	if tk.Tokens[0].class != IntegerTokenClass || tk.Tokens[0].spelling != "3" {
+		t.Errorf("first token = %v %q, want Integer \"3\"", tk.Tokens[0].class, tk.Tokens[0].spelling)
+	}
+
+	if tk.Tokens[1].class != IdentifierTokenClass || tk.Tokens[1].spelling != "i" {
+		t.Errorf("second token = %v %q, want Identifier \"i\"", tk.Tokens[1].class, tk.Tokens[1].spelling)
+	}
+}
+
+// TestLexer_ComplexTypeTokens confirms complex64/complex128 lex as type
+// tokens, matching float32/float64.
+func TestLexer_ComplexTypeTokens(t *testing.T) {
+	for _, name := range []string{"complex64", "complex128"} {
+		tk := New(name, true)
+
+		if len(tk.Tokens) < 1 {
+			t.Fatalf("%s: token count = %d, want at least 1", name, len(tk.Tokens))
+		}
+
+		if tk.Tokens[0].class != TypeTokenClass {
+			t.Errorf("%s: class = %v, want Type", name, tk.Tokens[0].class)
+		}
+
+		if tk.Tokens[0].spelling != name {
+			t.Errorf("%s: spelling = %q, want %q", name, tk.Tokens[0].spelling, name)
+		}
+	}
+}
+
+// =============================================================================
 // Token.Boolean
 // =============================================================================
 

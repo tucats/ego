@@ -27,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -414,6 +414,22 @@ func Test_negateByteCode_Float64(t *testing.T) {
 	tc.assertTopStack(float64(6.6))
 }
 
+// Test_negateByteCode_Complex128 verifies arithmetic negation of a complex128.
+func Test_negateByteCode_Complex128(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(3 + 4i))
+	err := negateByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex128(-3 - 4i))
+}
+
+// Test_negateByteCode_Complex64 verifies arithmetic negation of a complex64.
+func Test_negateByteCode_Complex64(t *testing.T) {
+	tc := newTestContext(t).withStack(complex64(3 + 4i))
+	err := negateByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex64(-3 - 4i))
+}
+
 // Test_negateByteCode_Byte verifies that negating a byte wraps around
 // (unsigned arithmetic: -2 mod 256 = 254).
 func Test_negateByteCode_Byte(t *testing.T) {
@@ -535,6 +551,22 @@ func Test_addByteCode_Float32(t *testing.T) {
 	err := addByteCode(tc.ctx, nil)
 	tc.assertNoError(err)
 	tc.assertTopStack(float32(7.6))
+}
+
+// Test_addByteCode_Complex128 verifies complex128 addition.
+func Test_addByteCode_Complex128(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(3-1i))
+	err := addByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex128(4 + 1i))
+}
+
+// Test_addByteCode_Complex64 verifies complex64 addition.
+func Test_addByteCode_Complex64(t *testing.T) {
+	tc := newTestContext(t).withStack(complex64(1+2i), complex64(3-1i))
+	err := addByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex64(4 + 1i))
 }
 
 // Test_addByteCode_Strings verifies string concatenation.
@@ -810,6 +842,14 @@ func Test_subtractByteCode_Float32(t *testing.T) {
 	tc.assertTopStack(float32(-5.6))
 }
 
+// Test_subtractByteCode_Complex128 verifies complex128 subtraction.
+func Test_subtractByteCode_Complex128(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(4+1i), complex128(3-1i))
+	err := subtractByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex128(1 + 2i))
+}
+
 // Test_subtractByteCode_MixedTypes verifies that int and byte are normalized
 // (byte promoted to int) before subtraction.
 func Test_subtractByteCode_MixedTypes(t *testing.T) {
@@ -930,6 +970,15 @@ func Test_multiplyByteCode_Float32(t *testing.T) {
 	err := multiplyByteCode(tc.ctx, nil)
 	tc.assertNoError(err)
 	tc.assertTopStack(float32(6.6))
+}
+
+// Test_multiplyByteCode_Complex128 verifies complex128 multiplication.
+// (1+2i) * (3-1i) = 3 - 1i + 6i - 2i^2 = 3 + 5i + 2 = 5 + 5i
+func Test_multiplyByteCode_Complex128(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(1+2i), complex128(3-1i))
+	err := multiplyByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex128(5 + 5i))
 }
 
 // Test_multiplyByteCode_BoolOR_TrueOrFalse verifies that multiplying booleans
@@ -1203,6 +1252,33 @@ func Test_divideByteCode_Float64DivByZero(t *testing.T) {
 // Test_divideByteCode_Float32DivByZero verifies float32 / 0 returns ErrDivisionByZero.
 func Test_divideByteCode_Float32DivByZero(t *testing.T) {
 	tc := newTestContext(t).withStack(float32(9), float32(0))
+	err := divideByteCode(tc.ctx, nil)
+	tc.assertError(err, errors.ErrDivisionByZero)
+}
+
+// Test_divideByteCode_Complex128 verifies complex128 division.
+// (5+5i) / (3-1i) = ((5+5i)(3+1i)) / ((3-1i)(3+1i)) = (10+20i) / 10 = 1+2i
+func Test_divideByteCode_Complex128(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(5+5i), complex128(3-1i))
+	err := divideByteCode(tc.ctx, nil)
+	tc.assertNoError(err)
+	tc.assertTopStack(complex128(1 + 2i))
+}
+
+// Test_divideByteCode_Complex128DivByZero verifies that complex128 / (0+0i)
+// returns ErrDivisionByZero rather than Go's native complex Inf/NaN result
+// (Ego's deliberate deviation from Go here, matching the existing float64
+// division-by-zero behavior above).
+func Test_divideByteCode_Complex128DivByZero(t *testing.T) {
+	tc := newTestContext(t).withStack(complex128(9), complex128(0))
+	err := divideByteCode(tc.ctx, nil)
+	tc.assertError(err, errors.ErrDivisionByZero)
+}
+
+// Test_divideByteCode_Complex64DivByZero verifies complex64 / (0+0i) returns
+// ErrDivisionByZero.
+func Test_divideByteCode_Complex64DivByZero(t *testing.T) {
+	tc := newTestContext(t).withStack(complex64(9), complex64(0))
 	err := divideByteCode(tc.ctx, nil)
 	tc.assertError(err, errors.ErrDivisionByZero)
 }

@@ -250,6 +250,18 @@
     @assert len(b) == 0
 }
 
+@test "json: Marshal - complex128 returns a catchable error, not a panic"
+{
+    // Go's own encoding/json cannot marshal complex numbers either; data.Sanitize
+    // has no complex case, so the raw value reaches encoding/json.Marshal
+    // unchanged and fails there with a clean error -- confirming no Ego-side
+    // handling is needed (or was accidentally missing) for this case.
+    c := 3 + 4i
+    b, err := json.Marshal(c)
+    @assert err != nil
+    @assert len(b) == 0
+}
+
 @test "json: MarshalIndent - basic 2-space indent"
 {
     anon := {age: 55, name: "Tom"}

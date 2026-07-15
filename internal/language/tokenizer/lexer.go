@@ -56,7 +56,7 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 				// line with no gap between them (next.pos == tok.pos + len(tok)).
 				if crush.adjacent {
 					for i := 0; i < len(crush.source)-1; i++ {
-						tok  := t.Tokens[len(t.Tokens)-len(crush.source)+i]
+						tok := t.Tokens[len(t.Tokens)-len(crush.source)+i]
 						next := t.Tokens[len(t.Tokens)-len(crush.source)+i+1]
 
 						if next.line != tok.line || next.pos != tok.pos+int32(len(tok.spelling)) {
@@ -92,6 +92,33 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 					t.Tokens = append(t.Tokens, nextToken)
 
 					break
+				}
+			}
+
+			// Check for an imaginary-literal suffix: an Integer or Float
+			// token immediately followed (no gap) by an Identifier token
+			// whose spelling is exactly "i" -- e.g. "3i" or "2.5i". Go's
+			// standard scanner has no notion of this suffix, so it always
+			// splits the source into two separate tokens; merge them back
+			// into a single ComplexTokenClass token here. Unlike the crush
+			// table above, this merge has a variable result spelling (the
+			// numeric text plus "i"), which the fixed-spelling crush
+			// mechanism cannot express, hence the separate check.
+			if len(t.Tokens) >= 2 {
+				last := len(t.Tokens) - 1
+				suffix := t.Tokens[last]
+				number := t.Tokens[last-1]
+
+				if suffix.class == IdentifierTokenClass && suffix.spelling == "i" &&
+					(number.class == IntegerTokenClass || number.class == FloatTokenClass) &&
+					suffix.line == number.line &&
+					suffix.pos == number.pos+int32(len(number.spelling)) {
+					merged := NewComplexToken(number.spelling + "i")
+					merged.line = number.line
+					merged.pos = number.pos
+
+					t.Tokens = t.Tokens[:last-1]
+					t.Tokens = append(t.Tokens, merged)
 				}
 			}
 		}

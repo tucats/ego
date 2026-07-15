@@ -131,6 +131,27 @@ var FunctionDictionary = map[string]FunctionDefinition{
 			// this two-value, catchable-error return exists (BUG-29).
 			Returns: []*data.Type{data.BoolType, data.ErrorType},
 		}},
+	"complex": {
+		MinArgCount:     2,
+		MaxArgCount:     2,
+		FunctionAddress: Complex,
+		Declaration: &data.Declaration{
+			Name: "complex",
+			Parameters: []data.Parameter{
+				{
+					Name: "r",
+					Type: data.InterfaceType,
+				},
+				{
+					Name: "i",
+					Type: data.InterfaceType,
+				},
+			},
+			// Single interface{} return: the actual result is complex64 or
+			// complex128 depending on the argument types (see Complex's doc
+			// comment), which can't be expressed as one fixed *data.Type.
+			Returns: []*data.Type{data.InterfaceType},
+		}},
 	"delete": {
 		MinArgCount:     1,
 		MaxArgCount:     2,
@@ -149,6 +170,22 @@ var FunctionDictionary = map[string]FunctionDefinition{
 				},
 			},
 			ArgCount: data.Range{1, 2},
+		}},
+	"imag": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: Imag,
+		Declaration: &data.Declaration{
+			Name: "imag",
+			Parameters: []data.Parameter{
+				{
+					Name: "c",
+					Type: data.InterfaceType,
+				},
+			},
+			// Single interface{} return: float32 for a complex64 argument,
+			// float64 for complex128 (see Imag's doc comment).
+			Returns: []*data.Type{data.InterfaceType},
 		}},
 	"index": {
 		MinArgCount:     2,
@@ -207,6 +244,22 @@ var FunctionDictionary = map[string]FunctionDefinition{
 			// make() returns a map, array or channel. InterfaceType is used
 			// here because the actual return type depends on the first argument
 			// at runtime.
+			Returns: []*data.Type{data.InterfaceType},
+		}},
+	"real": {
+		MinArgCount:     1,
+		MaxArgCount:     1,
+		FunctionAddress: Real,
+		Declaration: &data.Declaration{
+			Name: "real",
+			Parameters: []data.Parameter{
+				{
+					Name: "c",
+					Type: data.InterfaceType,
+				},
+			},
+			// Single interface{} return: float32 for a complex64 argument,
+			// float64 for complex128 (see Real's doc comment).
 			Returns: []*data.Type{data.InterfaceType},
 		}},
 	"sizeof": {

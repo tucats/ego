@@ -103,6 +103,12 @@ func FormatWithType(element any) string {
 	case float64:
 		return fmt.Sprintf("float64(%f)", actual)
 
+	case complex64:
+		return fmt.Sprintf("complex64(%s)", Format(actual))
+
+	case complex128:
+		return fmt.Sprintf("complex128(%s)", Format(actual))
+
 	case *Type:
 		return actual.String()
 
@@ -244,6 +250,16 @@ func Format(element any) string {
 
 	case float64:
 		return strconv.FormatFloat(v, 'g', 10, 64)
+
+	// Go-style "(3+4i)" output, matching Go's own %v formatting exactly
+	// (strconv.FormatComplex is what %v uses internally). bitSize controls
+	// the precision of the real/imaginary components, not the overall
+	// complex64/complex128 distinction.
+	case complex64:
+		return strconv.FormatComplex(complex128(v), 'g', -1, 64)
+
+	case complex128:
+		return strconv.FormatComplex(v, 'g', -1, 128)
 
 	case string:
 		return strconv.Quote(v)

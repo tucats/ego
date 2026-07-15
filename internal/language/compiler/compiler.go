@@ -800,6 +800,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		for _, name := range []string{
 			"1:base64",
 			"1:cipher",
+			"1:cmplx",
 			"1:errors",
 			"1:exec",
 			"1:filepath",

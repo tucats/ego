@@ -279,6 +279,7 @@ column.count=nombre de colonnes incorrect
 column.name=nom de colonne invalide
 column.number=numéro de colonne invalide
 column.width=largeur de colonne invalide
+complex.value=impossible de convertir la valeur complexe ; utilisez real()/imag()
 compiler=erreur interne du compilateur
 conditional.bool=type d'expression conditionnelle invalide
 config=lors du traitement de la configuration

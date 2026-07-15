@@ -36,6 +36,13 @@ func NewFloatToken(spelling string) Token {
 	return NewToken(FloatTokenClass, spelling)
 }
 
+// NewComplexToken creates a new complex token with the given spelling. A
+// ComplexToken contains an imaginary literal value such as "3i" or "2.5i" --
+// the spelling always includes the trailing "i".
+func NewComplexToken(spelling string) Token {
+	return NewToken(ComplexTokenClass, spelling)
+}
+
 // NewIdentifierToken creates a new identifier token with the given spelling. An IdentifierToken
 // contains a textual name that conforms to the _Ego_ syntax requirements.
 func NewIdentifierToken(spelling string) Token {
@@ -143,6 +150,7 @@ func (t Token) IsValue() bool {
 		t.class == IntegerTokenClass ||
 		t.class == ValueTokenClass ||
 		t.class == FloatTokenClass ||
+		t.class == ComplexTokenClass ||
 		t.class == BooleanTokenClass
 }
 

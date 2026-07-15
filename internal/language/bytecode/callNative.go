@@ -139,6 +139,12 @@ func convertToNative(c *Context, function *data.Function, functionArguments []an
 		case data.UInt64Kind:
 			nativeArgs[argumentIndex], err = data.UInt64(functionArgument)
 
+		case data.Complex64Kind:
+			nativeArgs[argumentIndex], err = data.Complex64(functionArgument)
+
+		case data.Complex128Kind:
+			nativeArgs[argumentIndex], err = data.Complex128(functionArgument)
+
 		// Make native arrays
 		case data.ArrayKind:
 			// Not an array, return an error
