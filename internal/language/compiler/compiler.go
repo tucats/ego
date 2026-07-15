@@ -91,6 +91,7 @@ type flagSet struct {
 	exitEnabled           bool // Only true in interactive mode
 	fragment              bool // True if this compilation is not a complete program
 	typeShadowing         bool // True if a variable may shadow a built-in type name (BUG-75)
+	slots                 bool // True if function-local variables may be resolved to compile-time slots (docs/SLOTS.md)
 }
 
 type importElement struct {
@@ -240,6 +241,16 @@ func New(name string) *Compiler {
 		typeShadowing = settings.GetBool(defs.TypeShadowingSetting)
 	}
 
+	// Is compile-time slot assignment enabled (docs/SLOTS.md)? Defaults to
+	// true; only an explicit "false" disables it. Read once here and cached in
+	// c.flags.slots, exactly like typeShadowing above, so the per-declaration
+	// and per-reference checks are simple field reads. This is a kill-switch
+	// independent of the peephole optimizer level.
+	slots := true
+	if v := settings.Get(defs.SlotsSetting); v != "" {
+		slots = settings.GetBool(defs.SlotsSetting)
+	}
+
 	// Create a new instance of the compiler.
 	return &Compiler{
 		b:                 bytecode.New(name),
@@ -262,6 +273,7 @@ func New(name string) *Compiler {
 			strictTypes:           typeChecking,
 			unusedVars:            unusedVarsErr,
 			typeShadowing:         typeShadowing,
+			slots:                 slots,
 		},
 	}
 }

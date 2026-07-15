@@ -1083,6 +1083,7 @@ compiler.full.stack=Display full stack contents during trace logging
 compiler.import=Automatically import common packages
 compiler.normalized=Symbol names are case-insensitive
 compiler.optimize=Enable bytecode optimizer
+compiler.slots=Resolve function locals to compile-time slots
 compiler.type.shadowing=If true, a variable name may shadow a built-in type name
 compiler.types=Specify strict, relaxed, or dynamic types
 compiler.unknown.var.error=If true, variables referenced without being set are an error

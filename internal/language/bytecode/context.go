@@ -764,8 +764,46 @@ func (c *Context) checkType(name string, value any) (any, error) {
 		return value, nil
 	}
 
+	// The map+chain lookup for the existing value is deliberately deferred
+	// until after the two cheap early-outs above, so a dynamic-mode store
+	// never pays for it. The remaining type-comparison logic is shared with
+	// the slot-based store path (checkTypeSlot) via checkTypeCore.
 	existingValue, ok := c.get(name)
-	if !ok || existingValue == nil {
+
+	return c.checkTypeCore(value, existingValue, ok, isConstant)
+}
+
+// checkTypeSlot is the slot-based counterpart of checkType (see docs/SLOTS.md):
+// it applies the same type-enforcement rules to a StoreSlot, reading the
+// destination's current value directly from the slot bank instead of resolving
+// it by name. The two share checkTypeCore for everything after the existing
+// value has been obtained; only the way that existing value is fetched differs.
+func (c *Context) checkTypeSlot(bank *symbols.SymbolTable, index int, value any) (any, error) {
+	isConstant := false
+
+	if constant, ok := value.(data.Immutable); ok {
+		value = constant.Value
+		isConstant = true
+	}
+
+	if c.typeStrictness == defs.NoTypeEnforcement || value == nil {
+		return value, nil
+	}
+
+	existingValue, ok := bank.GetSlot(index)
+
+	return c.checkTypeCore(value, existingValue, ok, isConstant)
+}
+
+// checkTypeCore holds the type-compatibility logic shared by checkType (name
+// based) and checkTypeSlot (slot based). By the time it is called, value has
+// already had any data.Immutable wrapper stripped (with isConstant recording
+// whether it was wrapped) and the NoTypeEnforcement / nil-value early-outs have
+// already been taken. exists reports whether existingValue was actually found;
+// a not-found or nil destination accepts any value, as does one still holding
+// symbols.UndefinedValue (declared but unassigned) or an interface{}.
+func (c *Context) checkTypeCore(value, existingValue any, exists, isConstant bool) (any, error) {
+	if !exists || existingValue == nil {
 		return value, nil
 	}
 

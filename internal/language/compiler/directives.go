@@ -855,6 +855,13 @@ func (c *Compiler) compileBlockDirective() error {
 		// We allow camel-case or non-camelcase versions.
 		typeShadowingFlag = "typeShadowing"
 		typeshadowingFlag = "typeshadowng"
+
+		// slotsFlag lets a test force the sub-compiler's c.flags.slots on or
+		// off directly, independent of the ego.compiler.slots profile setting,
+		// so a test can exercise both the slot-based and name-based access
+		// paths in isolation without saving and restoring the profile setting.
+		// See docs/SLOTS.md.
+		slotsFlag = "slots"
 	)
 
 	var (
@@ -881,6 +888,12 @@ func (c *Compiler) compileBlockDirective() error {
 		// block finishes compiling.
 		typeShadowing    = false
 		typeShadowingSet = false
+
+		// slots/slotsSet hold the value and presence of an explicit "slots="
+		// flag on this directive, applied directly to the sub-compiler's own
+		// c.flags.slots (see below), mirroring typeShadowing/typeShadowingSet.
+		slots    = false
+		slotsSet = false
 
 		// eofMarker holds the value of an "eof=" option, e.g.
 		// @compile eof="$EOF". It stays empty ("") unless that option is
@@ -978,6 +991,27 @@ func (c *Compiler) compileBlockDirective() error {
 			}
 
 			typeShadowingSet = true
+
+		case slotsFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next().Spelling()
+			switch strings.ToLower(flag) {
+			case trueFlag, onFlag, "1":
+				slots = true
+
+			case falseFlag, offFlag, "0":
+				slots = false
+
+			default:
+				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
+			}
+
+			slotsSet = true
 
 		case optimizeFlag, optFlag:
 			c.t.Advance(1)
@@ -1112,6 +1146,13 @@ func (c *Compiler) compileBlockDirective() error {
 	// parent compiler's flags and the global profile setting.
 	if typeShadowingSet {
 		subCompiler.flags.typeShadowing = typeShadowing
+	}
+
+	// Same treatment as typeShadowing above: only override the sub-compiler's
+	// c.flags.slots (already correctly seeded by New() or inherited in
+	// blockMode) when the directive explicitly asked with "slots=true|false".
+	if slotsSet {
+		subCompiler.flags.slots = slots
 	}
 
 	// Collect up all the tokens that make up the code to compile. These

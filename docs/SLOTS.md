@@ -1,6 +1,36 @@
 # Slot-Based Local Variable Access — Implementation Plan
 
-**Status:** planning (no implementation yet)
+**Status:** in progress — Phase 0 landed; Phase 1 foundation landed (predicate,
+feature flag, opcodes); emission wiring in progress.
+
+## Implementation progress log
+
+- **Design decisions (from Section 11):** Q1 → Option B is the target (slots
+  subsume Findings 4/8/11 scope-push elision for eligible functions), staged in
+  after Phase 1's Option-A cut. Q2 → refined closure rule: a literal disqualifies
+  its enclosing function only if the literal's body references an enclosing
+  declared name. Q3 → full introspection support, including the debugger. Q4 →
+  the legacy `Explode`/`explodeByteCode` opcode has been **deleted**.
+- **Gating (decided during implementation):** a feature flag
+  `ego.compiler.slots` (default **true**) acts as a kill-switch, cached in
+  `c.flags.slots`; independent of the peephole optimizer level so `ego test`
+  exercises slots. A per-block override `slots=true|false` is available on the
+  `@compile` directive, mirroring `typeShadowing=`.
+- **Phase 0 (complete, verified):** slot bank storage + accessors on
+  `SymbolTable` (`internal/language/symbols/slots.go`); 7 new opcodes
+  (`AllocateLocal`, `LoadSlot`, `StoreSlot`, `CreateAndStoreSlot`,
+  `SymbolOptCreateSlot`, `SymbolDeleteSlot`, `AddressOfSlot`) with
+  implementations in `internal/language/bytecode/slots.go`; `checkType`
+  refactored to share `checkTypeCore` with the slot path; inert `scope.slots`
+  bookkeeping field on the compiler.
+- **Phase 1 (in progress):** eligibility predicate
+  `functionBodyIsSlotEligible` (`internal/language/compiler/slots.go`) with the
+  Q2 closure refinement, covered by `slots_test.go`. **Remaining:** per-name
+  slot assignment threaded through `DefineSymbol`, the all-or-nothing conversion
+  of variable-access emission sites (params, `:=`/`var`, reads, `&x`, named
+  returns) to the slot opcodes for eligible functions, `AllocateLocal`
+  emission/back-patch, the `LocalNames` introspection table, and `.ego`
+  regression tests + re-profiling.
 **Origin:** `docs/PERFORMANCE.md`, [Finding 7](PERFORMANCE.md#8-finding-7-architectural-high-effort-high-ceiling--name-based-symbol-resolution) ("name-based symbol resolution"), corroborated by Findings 9, 11, 13, and 14.
 
 ---

@@ -99,6 +99,22 @@ type SymbolTable struct {
 	// the storage slice the value is stored.
 	values []*[]any
 
+	// The slot bank for compile-time-slotted local variables (see docs/SLOTS.md).
+	// When a function body is proven slot-eligible by the compiler, it emits an
+	// AllocateLocal <n> instruction at function entry, which calls AllocateLocals(n)
+	// on the just-pushed boundary table. That fills this field with a fixed-size
+	// []any (never grown), one entry per distinct parameter/local name in the
+	// function, each initialized to UndefinedValue{}. The LoadSlot/StoreSlot/etc.
+	// opcodes then read and write this array by integer index directly, bypassing
+	// the symbols map and the bin-math of the values array entirely.
+	//
+	// It is nil for every table belonging to a non-eligible function (the vast
+	// majority), and those tables use the name-based symbols/values mechanism
+	// exactly as before. A child block scope inside an eligible function has its
+	// own nil locals field and reaches the function's bank via LocalsBank(),
+	// which walks the parent chain to the nearest ancestor whose locals is set.
+	locals []any
+
 	// A unique identifier for the symbol table, used only for human-readable
 	// trace logging (see the ID() method below and PERFORMANCE.md Finding 1).
 	id uint64
