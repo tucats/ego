@@ -22,6 +22,22 @@ type scope struct {
 	depth   int                      // nesting depth at which this scope was created
 	usage   map[string]*errors.Error // nil entry = used; non-nil entry = declared but not yet used
 	symbols *symbols.SymbolTable
+
+	// idempotentDecls is set (only by compileForBody, see PERFORMANCE.md
+	// Finding 11) when this scope is a for-loop body's single, shared,
+	// whole-loop scope, and the compiler has already proven every top-level
+	// ":=" in the body declares a distinct name. When true, a simple
+	// (single-name) ":=" at THIS scope's own top level is compiled to the
+	// non-erroring SymbolOptCreate instead of SymbolCreate, so that the
+	// second and later iterations - which reuse this same runtime scope
+	// instead of getting a fresh one - do not fail with "symbol already
+	// exists" when the declaration re-runs. It defaults to false (ordinary,
+	// erroring SymbolCreate) for every other scope, including nested blocks
+	// pushed inside an idempotent loop body: PushSymbolScope always starts a
+	// new scope at false, so entering an "if"/nested "for"/etc. inside such a
+	// loop body automatically - and correctly - reverts to normal
+	// double-declaration detection for that nested scope's own declarations.
+	idempotentDecls bool
 }
 
 // The list of builtin predefined names that are always "found" during execution, and should not be
@@ -65,6 +81,31 @@ func newScope(name string, line int) scope {
 		depth:  line,
 		usage:  make(map[string]*errors.Error),
 	}
+}
+
+// markInnermostScopeIdempotentDecls flags the innermost (just-pushed) lexical
+// scope as one whose top-level ":=" declarations must not fail when the name
+// already exists (see the idempotentDecls field doc comment on scope, and
+// PERFORMANCE.md Finding 11). Only compileForBody calls this, immediately
+// after its own PushSymbolScope, and only for loop bodies already proven
+// safe by loopBodyIdempotentDeclEligible.
+func (c *Compiler) markInnermostScopeIdempotentDecls() {
+	if pos := len(c.scopes) - 1; pos >= 0 {
+		c.scopes[pos].idempotentDecls = true
+	}
+}
+
+// inIdempotentDeclScope reports whether the innermost lexical scope is
+// currently flagged by markInnermostScopeIdempotentDecls. See the
+// idempotentDecls field doc comment on scope for the full explanation; used
+// by assignmentTarget (lvalue.go) to decide between SymbolCreate and
+// SymbolOptCreate for a simple ":=" declaration.
+func (c *Compiler) inIdempotentDeclScope() bool {
+	if pos := len(c.scopes) - 1; pos >= 0 {
+		return c.scopes[pos].idempotentDecls
+	}
+
+	return false
 }
 
 // PushSymbolScope opens a new lexical scope. It is called whenever the compiler

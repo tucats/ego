@@ -1,0 +1,88 @@
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"sync"
+	"time"
+)
+
+// Config represents the bounds and resolution of the computation
+const (
+	minX      = -2.0
+	maxX      = 0.5
+	minY      = -1.25
+	maxY      = 1.25
+	width     = 200
+	height    = 200
+	maxIter   = 1000
+)
+
+// mandelbrot calculates the escape iteration for a single complex number
+func mandelbrot(cr, ci float64) int {
+	var zr, zi float64
+	for i := 0; i < maxIter; i++ {
+		// z^2 + c
+		zr2 := zr * zr
+		zi2 := zi * zi
+		if zr2+zi2 > 4.0 {
+			return i
+		}
+		zi = 2.0*zr*zi + ci
+		zr = zr2 - zi2 + cr
+	}
+	return maxIter
+}
+
+func main() {
+	// Set GOMAXPROCS to utilize all available CPU cores for concurrent execution
+	numCPU := runtime.NumCPU()
+	runtime.GOMAXPROCS(numCPU)
+
+	fmt.Printf("Calculating Mandelbrot set for %dx%d grid using %d threads (goroutines)...\n", width, height, numCPU)
+	
+	startTime := time.Now()
+
+	// Grid to hold computed results
+	data := make([][]int, height)
+	for i := range data {
+		data[i] = make([]int, width)
+	}
+
+	var wg sync.WaitGroup
+
+	// Dispatch worker threads. Rows are assigned by striping (row y goes to
+	// worker y % numCPU) rather than by splitting the grid into contiguous
+	// blocks of rows. The Mandelbrot set's per-pixel cost is wildly
+	// non-uniform - rows near the set's dense interior band take far more
+	// iterations than rows near the edges of the grid - so a contiguous
+	// block split gives some workers almost no work and others a hugely
+	// disproportionate share, and total wall time is bounded by the
+	// slowest (busiest) worker. Striping spreads the dense band's rows
+	// evenly across every worker instead.
+	for t := 0; t < numCPU; t++ {
+		wg.Add(1)
+		go func(threadID int) {
+			defer wg.Done()
+
+			for y := threadID; y < height; y = y + numCPU {
+				for x := 0; x < width; x++ {
+					// Map pixel coordinates to complex plane
+					cr := minX + float64(x)*(maxX-minX)/float64(width)
+					ci := minY + float64(y)*(maxY-minY)/float64(height)
+
+					// Compute
+					data[y][x] = mandelbrot(cr, ci)
+				}
+			}
+		}(t)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	duration := time.Since(startTime)
+	fmt.Printf("Computation completed in %v\n", duration)
+	//fmt.Printf("Sample point at center (500, 500) has value: %d\n", data[500][500])
+}
+

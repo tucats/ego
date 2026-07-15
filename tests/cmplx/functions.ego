@@ -108,6 +108,7 @@
     // native function call's argument types are checked before coercion in
     // --types strict, the same way math.Sqrt(4) also requires an explicit
     // float64(4) under strict mode (a pre-existing, unrelated behavior).
+    @type dynamic
     @assert cmplx.Sqrt(-1) == 1i
     @assert cmplx.Abs(5) == 5.0
 }

@@ -973,7 +973,7 @@ func Test_multiplyByteCode_Float32(t *testing.T) {
 }
 
 // Test_multiplyByteCode_Complex128 verifies complex128 multiplication.
-// (1+2i) * (3-1i) = 3 - 1i + 6i - 2i^2 = 3 + 5i + 2 = 5 + 5i
+// (1+2i) * (3-1i) = 3 - 1i + 6i - 2i^2 = 3 + 5i + 2 = 5 + 5i.
 func Test_multiplyByteCode_Complex128(t *testing.T) {
 	tc := newTestContext(t).withStack(complex128(1+2i), complex128(3-1i))
 	err := multiplyByteCode(tc.ctx, nil)
@@ -1257,7 +1257,7 @@ func Test_divideByteCode_Float32DivByZero(t *testing.T) {
 }
 
 // Test_divideByteCode_Complex128 verifies complex128 division.
-// (5+5i) / (3-1i) = ((5+5i)(3+1i)) / ((3-1i)(3+1i)) = (10+20i) / 10 = 1+2i
+// (5+5i) / (3-1i) = ((5+5i)(3+1i)) / ((3-1i)(3+1i)) = (10+20i) / 10 = 1+2i.
 func Test_divideByteCode_Complex128(t *testing.T) {
 	tc := newTestContext(t).withStack(complex128(5+5i), complex128(3-1i))
 	err := divideByteCode(tc.ctx, nil)

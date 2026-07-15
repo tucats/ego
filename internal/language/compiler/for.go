@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
@@ -207,8 +208,12 @@ func loopVariableEpilogue(name string) *bytecode.ByteCode {
 // patterns are simply left unoptimized (see the two inline notes below)
 // rather than chasing full precision.
 func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
-	pos := c.t.Mark()
+	// IF optimizations are off, no work here.
+	if settings.GetInt(defs.OptimizerSetting) == 0 {
+		return true
+	}
 
+	pos := c.t.Mark()
 	if pos >= len(c.t.Tokens) {
 		return true
 	}
@@ -271,6 +276,147 @@ func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
 	return true
 }
 
+// ---------------------------------------------------------------------------
+// PERFORMANCE.md Finding 11: shared loop scope even when the body declares
+// simple top-level locals
+//
+// loopBodyNeedsFreshScopePerIteration (above) treats ANY top-level ":="/"var"
+// as disqualifying, because reusing one scope for the whole loop would make
+// the second iteration's declaration collide with the first's - the
+// SymbolCreate opcode it compiles to errors out if the name already exists
+// in the current scope. But profiling a real workload (see PERFORMANCE.md
+// Section 13, "New workload - examples/mandelbrot3.ego", and Section 13's
+// original recursive-workload writeup) showed this is exactly the shape of a
+// very common, hot loop: declaring one or two scalar locals derived from the
+// loop's running state, every iteration, with no closures anywhere in sight.
+//
+// loopBodyIdempotentDeclEligible answers a narrower question than the
+// disqualifying scan above: given that a fresh-per-iteration scope WOULD
+// otherwise be required, is the only reason "yes" a set of simple top-level
+// ":=" declarations that this compiler can PROVE are individually safe to
+// let a loop share one scope for its entire run? A declaration is safe here
+// exactly when its name appears in exactly one top-level ":=" in the whole
+// body: since the compiler emits that declaration's bytecode exactly once
+// (loops branch back to already-compiled bytecode, they do not recompile
+// it), any single-occurrence name can only ever collide with ITSELF, one
+// iteration to the next - never with some other, textually distinct
+// declaration - which means it is safe to compile that one declaration site
+// to the non-erroring SymbolOptCreate opcode instead of SymbolCreate: the
+// first iteration creates the local, every later iteration finds it already
+// there and leaves it alone, and the very next instruction (Store) then
+// overwrites it with this iteration's freshly computed value regardless.
+//
+// This is deliberately narrower than the disqualifying scan in three ways,
+// each protecting a real correctness case:
+//
+//  1. "var" still fully disqualifies (falls back to the existing, safe,
+//     fresh-scope-per-iteration path). Nothing about "var" is inherently
+//     unsafe to extend this way, but var.go's declaration sites were not
+//     part of this change - only the single-name ":=" path in
+//     assignmentTarget (lvalue.go) was.
+//  2. A nested "for" or "switch" at the body's own top level is treated as
+//     disqualifying outright, not merely ignored. Both push their own scope
+//     for their init clause (see loopBodyNeedsFreshScopePerIteration's own
+//     KNOWN CONSERVATIVE GAP note), so a name declared there is not
+//     genuinely a loop-body-shared name in the sense this optimization
+//     needs - and, for "switch" in particular, this compiler does not
+//     currently have a proven-safe answer for whether reusing that scope
+//     across outer-loop iterations is sound, so it is excluded rather than
+//     assumed safe.
+//  3. Any name that appears in MORE than one top-level ":=" is left exactly
+//     as SymbolCreate would already require: this scan reports the whole
+//     loop as ineligible rather than only that one name, out of an
+//     abundance of caution, since a name declared twice at the same nominal
+//     scope depth is far more likely to be a genuine "no new variables on
+//     the left side of :=" bug than a legitimate pattern - and this scan's
+//     job is to prove safety, not to guess intent.
+//
+// Must be called with the tokenizer positioned exactly like
+// loopBodyNeedsFreshScopePerIteration expects (Peek(1) is the body's opening
+// "{"), and only when that function has already returned true for the same
+// body - callers should not bother running this scan otherwise, since an
+// already-safe-to-share body has nothing for it to add.
+// ---------------------------------------------------------------------------
+
+func (c *Compiler) loopBodyIdempotentDeclEligible() bool {
+	// If optimizations are off, not eligible
+	if settings.GetInt(defs.OptimizerSetting) == 0 {
+		return false
+	}
+	
+	pos := c.t.Mark()
+	if pos >= len(c.t.Tokens) || !c.t.Tokens[pos].Is(tokenizer.BlockBeginToken) {
+		return false
+	}
+
+	depth := 0
+	seen := map[string]bool{}
+
+	for i := pos; i < len(c.t.Tokens); i++ {
+		tok := c.t.Tokens[i]
+
+		switch {
+		case tok.Is(tokenizer.BlockBeginToken):
+			depth++
+
+		case tok.Is(tokenizer.BlockEndToken):
+			depth--
+
+			if depth == 0 {
+				return true
+			}
+
+		case tok.Is(tokenizer.FuncToken), tok.Is(tokenizer.GoToken), tok.Is(tokenizer.DeferToken),
+			tok.Is(tokenizer.VarToken):
+			return false
+
+		case depth == 1 && (tok.Is(tokenizer.ForToken) || tok.Is(tokenizer.SwitchToken)):
+			// See point 2 in the block comment above: a nested "for"/"switch"
+			// starting here has its own init-clause scope, not this body's,
+			// and this scan does not attempt to tell that apart from a plain
+			// top-level declaration - it just declines to optimize.
+			return false
+
+		case depth == 1 && tok.Is(tokenizer.DefineToken):
+			// Walk backward over the comma-separated identifier list that
+			// must immediately precede a ":=" (assignmentTarget/
+			// assignmentTargetList never allow anything else there), and
+			// record every declared name. "_" is never disqualifying: it is
+			// never actually stored under that name (see
+			// defs.DiscardedVariable handling in lvalue.go), so it can never
+			// collide with itself.
+			for j := i - 1; j >= pos; j-- {
+				prior := c.t.Tokens[j]
+
+				if prior.Is(tokenizer.CommaToken) {
+					continue
+				}
+
+				if prior.IsIdentifier() {
+					name := prior.Spelling()
+
+					if name != defs.DiscardedVariable {
+						if seen[name] {
+							return false
+						}
+
+						seen[name] = true
+					}
+
+					continue
+				}
+
+				break
+			}
+		}
+	}
+
+	// Unbalanced braces: malformed input the tokenizer would already have
+	// rejected elsewhere (and loopBodyNeedsFreshScopePerIteration would
+	// already have taken the safe path before this was ever called).
+	return false
+}
+
 // compileForBody compiles a for-loop's body block (the caller must not have
 // consumed the opening "{" yet), optionally splicing prologue and/or
 // epilogue bytecode immediately inside the body's own scope: prologue runs
@@ -297,13 +443,28 @@ func (c *Compiler) loopBodyNeedsFreshScopePerIteration() bool {
 // itself, exactly like compileRequiredBlock. If epilogue is non-nil, it MUST
 // contain its own PopScope (see loopVariableEpilogue) - this function will
 // not add a second one.
-func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIterationScope bool) error {
+//
+// idempotentDecls (see PERFORMANCE.md Finding 11 and loopBodyIdempotentDeclEligible)
+// marks the single shared scope this call is about to compile into as one
+// where a simple top-level ":=" should compile to the non-erroring
+// SymbolOptCreate instead of SymbolCreate. It must only be true when
+// perIterationScope is false - callers that need a fresh scope every
+// iteration never need this, since there is nothing for a fresh scope to
+// collide with in the first place.
+func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIterationScope, idempotentDecls bool) error {
 	if !perIterationScope && (prologue != nil || epilogue != nil) {
 		// Programming error in a caller, not a compile-time user error: a
 		// nil prologue/epilogue is what makes it safe to skip the
 		// per-iteration scope in the first place (see the Finding-4 comment
 		// block above compileForBody's doc comment).
 		return c.compileError(errors.ErrInternalCompiler).Context("compileForBody: perIterationScope=false with non-nil prologue/epilogue")
+	}
+
+	if perIterationScope && idempotentDecls {
+		// Programming error in a caller: see the idempotentDecls doc comment
+		// above - it is only meaningful for a scope shared across the whole
+		// loop, and a per-iteration scope never needs it.
+		return c.compileError(errors.ErrInternalCompiler).Context("compileForBody: perIterationScope=true with idempotentDecls=true")
 	}
 
 	// An empty body ("for i := range x {}") has no statements that could
@@ -320,6 +481,10 @@ func (c *Compiler) compileForBody(prologue, epilogue *bytecode.ByteCode, perIter
 
 	c.blockDepth++
 	c.PushSymbolScope()
+
+	if idempotentDecls {
+		c.markInnermostScopeIdempotentDecls()
+	}
 
 	if perIterationScope {
 		c.emitPushScope()
@@ -477,6 +642,17 @@ func (c *Compiler) simpleFor() error {
 	// a single scope for the whole loop.
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
+	// Fix (PERFORMANCE.md Finding 11): a body that only needed a fresh scope
+	// because of simple, individually-safe top-level ":=" declarations can
+	// still share one scope for the whole loop - see
+	// loopBodyIdempotentDeclEligible for the exact safety conditions.
+	idempotentDecls := false
+
+	if needsFreshScope && c.loopBodyIdempotentDeclEligible() {
+		needsFreshScope = false
+		idempotentDecls = true
+	}
+
 	if !needsFreshScope {
 		c.emitPushScope()
 	}
@@ -491,7 +667,7 @@ func (c *Compiler) simpleFor() error {
 	b1 := c.b.Mark()
 
 	// Compile loop body
-	if err := c.compileForBody(nil, nil, needsFreshScope); err != nil {
+	if err := c.compileForBody(nil, nil, needsFreshScope, idempotentDecls); err != nil {
 		return err
 	}
 
@@ -672,6 +848,14 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	// every iteration.
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
+	// Fix (PERFORMANCE.md Finding 11): see the identical comment in simpleFor.
+	idempotentDecls := false
+
+	if needsFreshScope && c.loopBodyIdempotentDeclEligible() {
+		needsFreshScope = false
+		idempotentDecls = true
+	}
+
 	if !needsFreshScope {
 		c.emitPushScope()
 	}
@@ -711,7 +895,7 @@ func (c *Compiler) rangeFor(indexName, valueName string) error {
 	}
 
 	// Loop body
-	if err := c.compileForBody(prologue, nil, needsFreshScope); err != nil {
+	if err := c.compileForBody(prologue, nil, needsFreshScope, idempotentDecls); err != nil {
 		return err
 	}
 
@@ -886,6 +1070,14 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// so it is outside the region the loop branches back to.
 	needsFreshScope := c.loopBodyNeedsFreshScopePerIteration()
 
+	// Fix (PERFORMANCE.md Finding 11): see the identical comment in simpleFor.
+	idempotentDecls := false
+
+	if needsFreshScope && c.loopBodyIdempotentDeclEligible() {
+		needsFreshScope = false
+		idempotentDecls = true
+	}
+
 	if !needsFreshScope {
 		c.emitPushScope()
 	}
@@ -926,11 +1118,24 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		// "for a[0] = 0; a[0] < n; a[0]++") starts with a Load of the base
 		// container instead, and has no single variable name to copy into a
 		// shadow scope, so it is left exactly as before.
+		//
+		// indexStore was already Seal()'d by assignmentTarget (lvalue.go) before
+		// it was returned to us, so when the optimizer is active (`-o 1` on
+		// large-enough bytecode, or always under `-o 2`) it may already have
+		// collapsed the ":=" shape above into a single CreateAndStore "i"
+		// instruction (see optimizations.go's "Create and store" rule) before
+		// this switch ever runs. Missing that case here used to make this scan
+		// see neither of the two patterns above, silently classifying a
+		// perfectly ordinary "for i := 0; ..." loop counter as NOT simple -
+		// which skipped the prologue/epilogue entirely and broke BUG-30's
+		// per-iteration closure capture for every loop compiled at optimizer
+		// level 2 (and any loop large enough to hit it at level 1). See
+		// docs/ISSUES.md for the bug entry this fixes.
 		isSimpleIndex := false
 
 		if firstInstr := indexStore.Instruction(0); firstInstr != nil {
 			switch firstInstr.Operation {
-			case bytecode.Store:
+			case bytecode.Store, bytecode.CreateAndStore:
 				isSimpleIndex = true
 
 			case bytecode.SymbolCreate:
@@ -947,7 +1152,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	}
 
 	// Loop body goes next
-	if err = c.compileForBody(prologue, epilogue, needsFreshScope); err != nil {
+	if err = c.compileForBody(prologue, epilogue, needsFreshScope, idempotentDecls); err != nil {
 		return err
 	}
 

@@ -325,7 +325,20 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 				return nil, err
 			}
 
-			bc.Emit(bytecode.SymbolCreate, name)
+			// PERFORMANCE.md Finding 11: inside a for-loop body scope that
+			// compileForBody has proven safe for it (see
+			// loopBodyIdempotentDeclEligible), a simple ":=" must not error
+			// when the name already exists - it means this is the second or
+			// later iteration reusing the loop's single shared scope, not a
+			// genuine duplicate declaration. SymbolOptCreate is the same
+			// non-erroring opcode assignmentTargetList already uses
+			// unconditionally for multi-target ":=" lists.
+			if c.inIdempotentDeclScope() {
+				bc.Emit(bytecode.SymbolOptCreate, name)
+			} else {
+				bc.Emit(bytecode.SymbolCreate, name)
+			}
+
 			c.DefineSymbol(name.Spelling())
 		}
 

@@ -72,6 +72,18 @@ type placeholder struct {
 	// variable name is definitely a string).
 	MustBeString bool
 
+	// ExcludeStackMarker, when true, rejects a match whose operand is a
+	// StackMarker. A bare "Push <placeholder>" pattern element is meant to
+	// capture a genuine value (a constant, a computed result, ...), but
+	// StackMarker pushes (Push Marker<let>, Push Marker<try>, ...) are frame
+	// sentinels a later DropToMarker/TryPop depends on finding on the real
+	// runtime stack — folding one away as if it were "the value" both
+	// corrupts the replacement operand and silently drops a push the
+	// matching drop instruction still expects. Rules that intentionally
+	// match a specific marker do so with a literal NewStackMarker(...)
+	// operand instead of a placeholder, so they are unaffected by this flag.
+	ExcludeStackMarker bool
+
 	// Operation controls any side effect performed when this placeholder is
 	// encountered: optNothing (default), optStore, OptCount, optRead, or
 	// optRunConstantFragment.
@@ -292,6 +304,19 @@ func (b *ByteCode) optimize(count int) (int, error) {
 				if pattern, ok := sourceInstruction.Operand.(placeholder); ok {
 					if pattern.MustBeString {
 						if _, ok := i.Operand.(string); !ok {
+							found = false
+
+							break
+						}
+					}
+
+					// If the pattern has a placeholder with ExcludeStackMarker, the
+					// real operand must not be a StackMarker frame sentinel. See the
+					// field's doc comment for why: a generic "Push <placeholder>"
+					// element would otherwise happily match a Push of a frame
+					// marker, which is never a genuine value to fold.
+					if pattern.ExcludeStackMarker {
+						if _, ok := i.Operand.(StackMarker); ok {
 							found = false
 
 							break

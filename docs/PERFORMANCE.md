@@ -27,7 +27,10 @@ they appear in the call graph.
 - [15. Finding 12 — `SetParent`'s cycle-detection walk is dead code on the hot `NewChildSymbolTable` path (largest single cost in this workload)](#15-finding-12--setparents-cycle-detection-walk-is-dead-code-on-the-hot-newchildsymboltable-path-largest-single-cost-in-this-workload)
 - [16. Finding 13 — the `__extensions` flag is redundantly round-tripped through an O(depth) symbol-table walk on every single call and return](#16-finding-13--the-__extensions-flag-is-redundantly-round-tripped-through-an-odepth-symbol-table-walk-on-every-single-call-and-return)
 - [17. Finding 14 (architectural) — `FindNextScope` and `callFramePop`'s package-clone check both walk the full ancestor chain on every operation](#17-finding-14-architectural--findnextscope-and-callframepops-package-clone-check-both-walk-the-full-ancestor-chain-on-every-operation)
-- [18. Summary table](#18-summary-table)
+- [18. New workload — `examples/mandelbrot3.ego` (goroutine-parallel Mandelbrot)](#18-new-workload--examplesmandelbrot3ego-goroutine-parallel-mandelbrot)
+- [19. Finding 15 — static contiguous row partitioning creates severe load imbalance](#19-finding-15--static-contiguous-row-partitioning-creates-severe-load-imbalance)
+- [20. Finding 16 — goroutine count scales negatively past ~2 concurrent workers (allocator/scheduler contention)](#20-finding-16--goroutine-count-scales-negatively-past-2-concurrent-workers-allocatorscheduler-contention)
+- [21. Summary table](#21-summary-table)
 
 ---
 
@@ -1472,6 +1475,155 @@ allocations). The figures above are left as originally measured (pre-Finding-9) 
 still the correct evidence for Finding 7's *existence*; they should not be read as Finding 7's
 current, post-Finding-9 cost.
 
+### Resolution (July 2026) — Finding 11
+
+Implemented recommendation #1 from the original write-up above, scoped down to the specific
+subset that could be proven safe without touching `IsConstant` (recommendation #2, which
+remains open and is not addressed here). This work was triggered by a follow-up performance
+pass focused on `examples/mandelbrot3.ego`, a goroutine-parallel Mandelbrot workload (see the
+new Section 18 below) whose hot inner loop is textually identical in shape to the one that
+originally motivated this finding: `zr2 := zr * zr; zi2 := zi * zi; if zr2+zi2 > 4.0 { return i
+}; ...`.
+
+**The mechanism.** A loop body that Finding 4's `loopBodyNeedsFreshScopePerIteration` would
+disqualify *solely* because of one or more top-level `:=` declarations (no closures, no `go`,
+no `defer`, no `var`, no nested `for`/`switch`) can still share a single scope for the entire
+loop, exactly like Finding 4's original optimization, as long as every top-level declared name
+is proven, at compile time, to be declared in exactly one place in the body's text. A new scan,
+`loopBodyIdempotentDeclEligible` (`internal/language/compiler/for.go`), performs that proof: it
+walks the same token range `loopBodyNeedsFreshScopePerIteration` already walked, collecting
+every name declared by a depth-1 `:=` (via a short backward scan over the comma-separated
+identifier list that syntactically must precede any `:=`), and returns `false` (safe path, no
+change in behavior) if any of the following hold:
+
+- a name is declared more than once at depth 1 (almost certainly a genuine "no new variables on
+  the left side of `:=`" bug, not a legitimate pattern - see the third point below),
+- a `var` appears at depth 1 (left disqualifying entirely; only `:=`'s call site was changed),
+- a `for` or `switch` appears at depth 1 (its own init clause would otherwise be mistaken for a
+  plain body-level declaration - the same ambiguity `loopBodyNeedsFreshScopePerIteration`'s own
+  "KNOWN CONSERVATIVE GAP" comment already documents, just now also excluded from the *new*
+  optimization rather than merely causing the *old*, safe fallback), or
+- a closure/`go`/`defer` appears anywhere (unchanged from Finding 4 - always disqualifying).
+
+When eligible, `simpleFor`/`rangeFor`/`iterationFor` push one scope for the whole loop (exactly
+as Finding 4 already does for declaration-free bodies) and mark that scope
+`idempotentDecls = true` via a new field on the compiler's (compile-time-only) `scope` bookkeeping
+struct (`internal/language/compiler/symbols.go`). `assignmentTarget` (`lvalue.go`), which compiles
+a single-name `:=`, checks this flag and emits the existing `SymbolOptCreate` opcode instead of
+`SymbolCreate` when it is set - the same non-erroring "create if not already present, otherwise
+leave the slot alone" opcode `assignmentTargetList` already uses unconditionally for multi-target
+`:=` lists (`a, b := f()`), for an unrelated reason (Go's "at least one new variable" rule for
+multi-assignment). Reusing it here means no new bytecode opcode was needed. Because the
+`Store` instruction that always immediately follows a `:=`'s create instruction runs regardless
+of which path `SymbolOptCreate` took, the loop-local's value is always correctly overwritten
+every iteration whether the slot was just created or already existed from a previous pass.
+
+**Why "declared exactly once" is the right safety bar, not "declared at all."** The naive version
+of this fix - make `:=` inside a shared loop scope unconditionally non-erroring - would have
+silently broken a real, if narrow, class of bug detection: `for i := 0; i < n; i++ { y := 1; y :=
+2 }` (a genuine, same-iteration, same-scope double declaration - invalid in Go, and currently
+correctly rejected by Ego at runtime via `symbols.ErrSymbolExists`) compiles its *second* `y :=`
+to the same opcode as its first, since both run in one execution of the loop body regardless of
+whether the enclosing scope is fresh-per-iteration or shared-for-the-whole-loop. Only a
+per-name, whole-body accounting - not merely "is this scope allowed to reuse declarations at
+all" - can tell that case apart from the legitimate "one name, declared once, naturally
+re-executed every iteration" case this optimization targets. `TestFinding11LocalDeclarationsAcrossIterations`'s
+`"genuine same-scope double declaration is still rejected at runtime"` case exists specifically
+to pin this down.
+
+**The scope-suppression-through-nesting property, and why it needed no extra code.** The new
+`idempotentDecls` field lives on the same `scope` struct that `PushSymbolScope`/`PopSymbolScope`
+already push and pop for *every* nested block in the compiler (`if`, nested `for`/`switch`, `try`,
+...) - a mechanism that predates this change and needed no modification. Because a freshly
+pushed `scope` always defaults to `idempotentDecls = false`, entering any nested block inside an
+eligible loop body automatically and correctly reverts to ordinary, erroring `SymbolCreate`
+semantics for that nested block's own declarations, and returning to the loop body's own
+top-level statements after the nested block closes automatically restores the eligible loop's
+`true` flag - simply because that is the scope on top of the stack again. No explicit
+save/restore logic had to be written for this; it falls out of scope-stack semantics that
+already existed.
+
+**Files modified:**
+
+- `internal/language/compiler/for.go` — added `loopBodyIdempotentDeclEligible` (with a large
+  design-rationale comment block, in the same style as Finding 4's own); `compileForBody` gained
+  a fourth parameter, `idempotentDecls bool`, with an internal-compiler-error guard against
+  `perIterationScope=true, idempotentDecls=true` (nonsensical - a fresh-per-iteration scope never
+  needs idempotent redeclaration) mirroring the existing `prologue`/`epilogue` guard; `simpleFor`,
+  `rangeFor`, and `iterationFor` each now call the new scan (only when
+  `loopBodyNeedsFreshScopePerIteration` already returned `true`) and, when eligible, flip to the
+  shared-scope path exactly as Finding 4's own `needsFreshScope = false` branch already does.
+  `conditionalFor` was left unmodified, for the same reason Finding 4 left it unmodified.
+- `internal/language/compiler/symbols.go` — added `idempotentDecls bool` to the `scope` struct
+  (with a doc comment explaining the field, its default, and its interaction with nested scopes);
+  added `markInnermostScopeIdempotentDecls()` (called once by `compileForBody`, only when
+  eligible) and `inIdempotentDeclScope()` (called by `assignmentTarget`).
+- `internal/language/compiler/lvalue.go` — `assignmentTarget`'s single-name `:=` branch now emits
+  `bytecode.SymbolOptCreate` instead of `bytecode.SymbolCreate` when `c.inIdempotentDeclScope()`
+  is true.
+- `internal/language/compiler/for_finding11_test.go` (new) — `TestLoopBodyIdempotentDeclEligible`
+  (14 cases directly exercising the new scan: single and multiple safe declarations, a
+  declaration nested inside an `if`, a genuine duplicate, a multi-target `:=`, discarded names,
+  `var`, function literals, `go`, `defer`, a nested `for`'s own init clause, a nested `switch`'s
+  own init clause, zero declarations, and malformed input) and
+  `TestFinding11LocalDeclarationsAcrossIterations` (5 cases: the classic/range/simple-`for{}` loop
+  forms each computing the correct result with a shared, reused scope; a Mandelbrot-shaped
+  two-declaration case matching the workload that motivated this fix; and the genuine
+  double-declaration case confirmed to still error at runtime).
+
+**Bug found while doing this work:** none. Unlike Findings 1 and 12 (each an incidental
+redundant-work discovery), this was a scoped feature addition with no adjacent defect uncovered.
+
+**Correctness verification:** beyond the new unit and integration tests described above, the full
+existing test suite was re-run unmodified: `go build ./...`, `go vet ./...`, and `go test ./...`
+(all packages, including `-race` on `internal/language/compiler`, `internal/language/bytecode`,
+and `internal/language/symbols` specifically, given this touches compile-time state that
+interacts with concurrently-executing goroutines at runtime) are all clean, and all 1,558 tests
+in `ego test tests/` continue to pass. Closures inside a loop that also has top-level
+declarations were specifically re-checked by hand (a case Finding 4's own disqualifying scan
+already excludes from *any* scope-sharing, so this change cannot affect it, but it was verified
+directly rather than assumed): a loop containing both `x := i * 10` and `func() int { return x }`
+still correctly gets a fresh per-iteration scope and each closure still captures its own
+iteration's value.
+
+**Re-profiling results — `examples/mandelbrot3.ego` (goroutine-parallel, `numCPU` workers, see
+Section 18 for full detail):**
+
+| Workload | Before Finding 11 | After Finding 11 | Change |
+| - | - | - | - |
+| `mandelbrot3.ego`, original (imbalanced) row split, 14 goroutines | 30.3s | 26.7s | **-12%** |
+| Row-balanced variant, 14 goroutines | 43.3s | 38.4s | **-11%** |
+| Row-balanced variant, 7 goroutines | 32.7s | 28.1s | **-14%** |
+| Row-balanced variant, 4 goroutines | 23.8s | 19.2s | **-19%** |
+| Row-balanced variant, 2 goroutines | 18.7s | 14.8s | **-21%** |
+| Row-balanced variant, 1 goroutine (no parallelism) | 22.2s | 15.9s | **-28%** |
+
+The single-goroutine case improved the *most* in percentage terms - expected, since with no
+concurrent allocation contention to begin with (see Finding 16 below), Finding 11's allocation-rate
+reduction is the *only* thing changing for that configuration, with nothing else confounding the
+measurement. Profiling the 14-goroutine row-balanced case specifically (`go tool pprof -top`)
+shows the composition shift predicted by Finding 5's thesis: `runtime.madvise` fell from
+**29.86% flat / 461s total CPU-seconds** to **8.57% flat / 396s total CPU-seconds**, `runtime.usleep`
+from 11.96% to 2.98%, and `runtime.lock2` from 12.13% to 3.14%, while
+`bytecode.(*Context).RunFromAddress`'s own flat share *rose* from 44.99% to 76.87% - not because
+interpreter dispatch got more expensive, but because removing so much allocation-driven
+GC/scheduler overhead left genuine interpreter work as a much larger fraction of a smaller total.
+
+**Honest assessment:** this is a real, broadly-applicable win (11-28% wall-clock, depending on
+configuration) and a meaningfully larger *proportional* reduction in GC/scheduler overhead
+specifically, exactly matching Finding 5's thesis one more time. It does **not**, however, fix the
+more surprising and more severe problem this same investigation surfaced: wall-clock time for
+this workload still gets *worse*, not better, as goroutine count increases past roughly 2 on the
+development machine used for this audit - a genuinely negative scaling curve, not merely
+diminishing returns. That problem (Finding 16, Section 20) is a different, deeper cost - allocator
+and scheduler contention *between* concurrently-running goroutines, not the per-iteration
+allocation *rate* within any single goroutine - and Finding 11 was never expected to fix it,
+only to shrink it. It did: see Finding 16's own re-measurement for the before/after comparison of
+the negative-scaling curve itself.
+
+**Test status:** `go build ./...`, `go vet ./...`, `go test ./...` (including `-race` on the three
+packages named above), and all 1,558 `ego test tests/` cases pass.
+
 ---
 
 ## 14. New workload — `examples/mandelbrot2.ego` (deep recursion, up to 800 stack levels)
@@ -1689,7 +1841,7 @@ a *smaller* total: `FindNextScope` alone is now 40.95% of all profiled time in t
 absolute cost fell only 14%). The combined cost of `FindNextScope`, `Root`/`IsRoot` (Finding 13),
 and `updatePackageFromLocalSymbols`/`IsClone` (Finding 14) is now **59.5%** of total profiled
 time (11.40s of 19.17s) — reinforcing that Findings 13 and 14 are the next highest-value targets
-in this workload, exactly as the Summary table (Section 18) already recommended.
+in this workload, exactly as the Summary table (Section 21) already recommended.
 
 **Honest assessment:** at -40.6%, this is the single largest wall-clock improvement measured on
 any *workload-specific* baseline in this report (Finding 4's -48/-49% was larger, but measured
@@ -2302,7 +2454,268 @@ a future look, but no longer the dominant story it was.
 
 ---
 
-## 18. Summary table
+## 18. New workload — `examples/mandelbrot3.ego` (goroutine-parallel Mandelbrot)
+
+Every workload profiled so far in this document runs single-threaded. `examples/mandelbrot3.ego`
+computes the same kind of Mandelbrot escape-time grid as Sections 10 and 14, but spreads the work
+across `runtime.NumCPU()` real goroutines with a `sync.WaitGroup` — a 200×200 grid, `maxIter =
+1000`, one goroutine per logical CPU, each computing a contiguous band of rows:
+
+```go
+func mandelbrot(cr, ci float64) int {
+    var zr, zi float64
+    for i := 0; i < maxIter; i++ {
+        zr2 := zr * zr
+        zi2 := zi * zi
+        if zr2+zi2 > 4.0 {
+            return i
+        }
+        zi = 2.0*zr*zi + ci
+        zr = zr2 - zi2 + cr
+    }
+    return maxIter
+}
+```
+
+This section exists to answer a question none of the earlier workloads could: **what happens to
+Ego's per-scope, per-call allocation costs (Findings 1, 2, 4, 8, 11-14) when many goroutines pay
+them concurrently, instead of one goroutine paying them serially?** The short answer, covered in
+Findings 15 and 16 below, is that the interaction is worse than simply "the same costs, N times
+over" — parallelism actively *amplifies* allocation-driven overhead in this interpreter today,
+to the point that a perfectly load-balanced 14-way split is slower than a badly load-balanced one.
+
+**Development machine for this section:** Apple M4 Pro, 14 logical CPUs (`hw.perflevel0.physicalcpu`
+= 10 performance cores, `hw.perflevel1.physicalcpu` = 4 efficiency cores). `runtime.NumCPU()` — and
+therefore this program's default goroutine count — is 14 on this machine; absolute wall-clock
+numbers below are specific to it, but the qualitative shape (severe load imbalance from a naive
+partition; wall-clock time getting *worse* past a small goroutine count) should generalize to any
+multi-core machine, since both effects are consequences of the workload's own structure and the
+interpreter's allocation behavior, not this specific core count or topology.
+
+**Baseline.** `time ego run examples/mandelbrot3.ego`, original (as-authored, before any change in
+this section): **~30.3s wall clock**, 214.15s user CPU, 4.39s system CPU, 709% average CPU
+utilization (`time`'s own accounting) across the run.
+
+**A parser gap found while building test variants for this section, unrelated to goroutines:**
+`for y := 0; y < height; y += numCPU { ... }` fails to compile ("missing '='") — the `for` loop's
+increment clause accepts a bare `i++`/`i--` or a full `i = expr`, but not a compound-assignment
+operator (`+=`, `-=`, ...) directly in that position, even though `+=` works perfectly as an
+ordinary statement. Every test variant built for this section therefore uses `y = y + numCPU`
+instead. Not investigated further or fixed as part of this pass (it is a parser limitation, not a
+performance issue), but worth a `docs/ISSUES.md` entry for whoever picks it up next.
+
+```sh
+ego run --pprof /tmp/mandel3.prof examples/mandelbrot3.ego
+go tool pprof -top -cum ./ego /tmp/mandel3.prof
+```
+
+```text
+(examples/mandelbrot3.ego, original, 14 goroutines — /tmp/mandel3.prof)
+Duration: 30.78s, Total samples = 171.36s (556.75%)
+      flat  flat%   sum%        cum   cum%
+    67.18s 39.20% 39.20%     85.51s 49.90%  bytecode.(*Context).RunFromAddress
+    50.66s 29.56% 68.77%     50.66s 29.56%  runtime.madvise
+    23.78s 13.88% 82.64%     23.78s 13.88%  runtime.usleep
+     4.78s  2.79% 85.43%      4.78s  2.79%  runtime.pthread_kill
+     0.06s 0.035% 93.07%     22.90s 13.36%  runtime.lock2
+     0.01s 0.0058% 93.27%     20.02s 11.68%  runtime.goschedImpl
+     0.01s 0.0058% 93.26%     19.32s 11.27%  runtime.findRunnable
+```
+
+`runtime.madvise` alone — the Go runtime returning and re-acquiring OS memory pages for the heap,
+called from `mheap.allocSpan` — is **29.56% of every CPU sample taken across all 14 goroutines
+combined**, a single line item larger than `RunFromAddress`'s own flat cost. Combined with
+`usleep`/`lock2`/`goschedImpl`/`findRunnable` (all scheduler/allocator contention, not genuine
+interpreter dispatch work), well over half of total CPU time goes to overhead **caused by**, not
+merely concurrent with, the workload's allocation rate — Finding 5's systemic diagnosis, now
+visible at goroutine scale.
+
+Two independent, and independently severe, problems turned out to be contributing to this profile,
+investigated as Findings 15 and 16 below.
+
+---
+
+## 19. Finding 15 — static contiguous row partitioning creates severe load imbalance
+
+**Impact:** on the development machine's 14-goroutine split, the busiest worker performs **255×**
+more Mandelbrot iterations than the idlest one, and **2.6×** more than the per-worker average —
+meaning total wall-clock time is bounded by one thread doing 2.6× its fair share of work while
+several others sit essentially idle for the entire run.
+
+### Evidence - Finding 15
+
+The original program divides the 200-row grid into 14 contiguous bands (`rowsPerGoroutine := height
+/ numCPU`; goroutine *t* gets rows `[t*14, (t+1)*14)`, with the last goroutine absorbing the
+4-row remainder). Independently re-implementing the exact per-pixel escape-time computation in
+Python, and summing total iterations per goroutine's row band under that same partition:
+
+| Goroutine | Rows | Total iterations | vs. average (709,275) |
+| - | - | - | - |
+| 0 | 0-13 | 7,255 | 0.01× |
+| 1 | 14-27 | 12,541 | 0.02× |
+| 2 | 28-41 | 140,056 | 0.20× |
+| 3 | 42-55 | 408,888 | 0.58× |
+| 4 | 56-69 | 1,004,882 | 1.42× |
+| 5 | 70-83 | 1,297,162 | 1.83× |
+| 6 | 84-97 | 1,738,866 | 2.45× |
+| **7** | **98-111** | **1,854,767** | **2.61× (busiest)** |
+| 8 | 112-125 | 1,468,111 | 2.07× |
+| 9 | 126-139 | 1,090,270 | 1.54× |
+| 10 | 140-153 | 673,508 | 0.95× |
+| 11 | 154-167 | 198,215 | 0.28× |
+| 12 | 168-181 | 24,131 | 0.03× |
+| 13 | 182-199 | 11,195 | 0.02× (idlest) |
+
+Total: 9,929,847 iterations across all 40,000 pixels; average per goroutine: 709,275.
+
+### Root cause - Finding 15
+
+The Mandelbrot set's per-pixel escape-time cost is wildly non-uniform: pixels inside or near the
+set's dense central cardioid/bulb region (roughly the middle third of this grid's *y* range) never
+escape within `maxIter` and pay the full 1000-iteration cost, while pixels far from the set escape
+in a handful of iterations. A contiguous block-of-rows partition, the natural first thing to write
+for "split N rows across N workers," happens to concentrate that dense region inside whichever
+single worker's row range overlaps it (goroutine 7 here) — while workers whose bands land entirely
+outside the dense region (0, 1, 12, 13) finish almost immediately and then sit idle for the rest of
+the run. Total wall-clock time for any statically-partitioned parallel loop is bounded by its
+*busiest* worker, not the average, so this partition strategy wastes the large majority of the
+parallelism the program otherwise successfully sets up.
+
+### Recommendation - Finding 15
+
+Stripe rows across workers (row *y* goes to worker `y % numCPU`) instead of splitting into
+contiguous blocks. Because the dense region is only a few dozen rows wide out of 200, striping
+spreads it evenly across every worker instead of concentrating it in one, which — for a *fixed*
+amount of total work — should equalize each worker's share far more closely than any static
+contiguous split ever can for a spatially-clustered cost function like this one.
+
+### Resolution — Finding 15
+
+Implemented in `examples/mandelbrot3.ego`: replaced the `rowsPerGoroutine`/contiguous-band
+dispatch loop with `for y := threadID; y < height; y = y + numCPU`, with a comment explaining why
+(the same reasoning as above). This is, unambiguously, a **more correct, more idiomatically
+parallel** version of the program — and it is also, counterintuitively, **slower in wall-clock
+time** under Ego's interpreter today, because it keeps every one of the 14 goroutines busy
+allocating for the *entire* run instead of letting most of them finish early: see Finding 16
+immediately below, which is the direct, and unexpected, consequence of fixing this one. Both
+findings are best read together; fixing load imbalance in isolation, without also understanding
+Finding 16, would look like a regression.
+
+---
+
+## 20. Finding 16 — goroutine count scales *negatively* past ~2 concurrent workers (allocator/scheduler contention)
+
+**Impact:** on a striped (load-balanced, Finding 15) version of this workload, wall-clock time gets
+**worse**, not just diminishingly better, as goroutine count increases beyond roughly 2 — a 14-goroutine
+run takes **nearly 3× as long** as a 2-goroutine run of the *same, evenly-divided* work on a
+14-logical-CPU machine.
+
+### Evidence - Finding 16
+
+Five variants of the striped (Finding 15) program were built, identical except for a fixed worker
+count (`numWorkers` replacing `runtime.NumCPU()`), and timed with `time ego run ...`:
+
+| Workers | Wall clock (before Finding 11) | User CPU | CPU util | Wall clock (after Finding 11) |
+| - | - | - | - | - |
+| 1 | 22.2s | 26.2s | 123% | 15.9s |
+| 2 | 18.7s | 41.1s | 227% | **14.8s (best, both before and after)** |
+| 4 | 23.8s | 97.2s | 416% | 19.2s |
+| 7 | 32.7s | 224.1s | 696% | 28.1s |
+| 10 | 34.1s | 328.9s | 979% | — (not re-measured after) |
+| 14 | 43.3s | 553.8s | 1294% | 38.4s |
+
+The curve is not merely flattening (diminishing returns from parallelism, which would be normal
+and expected) — it inflects and climbs *back up* past 2 workers, in both the before- and
+after-Finding-11 measurements. Total *CPU-seconds consumed* (the `user` column) grows
+**faster than linearly** with worker count for the *same fixed amount of total work* — 14 workers
+burn roughly 21× the CPU-seconds that 1 worker does to compute the exact same grid, not the ~14×
+that pure parallelism overhead-free scaling would predict.
+
+Profiling the 14-worker configuration (`go tool pprof -top`, before Finding 11) shows why: the
+same allocator/scheduler cost categories from Section 18's baseline profile, now consuming an even
+larger share of an even larger total:
+
+```text
+(striped, 14 workers, before Finding 11 — /tmp/mandel3_balanced.prof)
+Duration: 43.51s, Total samples = 461.35s (1060.30%)
+      flat  flat%    cum    cum%
+   207.56s 44.99%  249.25s 54.03%  bytecode.(*Context).RunFromAddress
+   137.78s 29.86%  137.78s 29.86%  runtime.madvise
+    55.16s 11.96%   55.16s 11.96%  runtime.usleep
+                     55.97s 12.13%  runtime.lock2  (cum)
+                     36.33s  7.87%  runtime.newstack (cum)
+                     36.10s  7.82%  runtime.schedule (cum)
+                     34.88s  7.56%  runtime.goschedImpl (cum)
+                     30.87s  6.69%  runtime.findRunnable (cum)
+```
+
+### What was ruled out - Finding 16
+
+Three Go-runtime tuning knobs were tested directly against the 14-worker configuration, on the
+theory that GC pause frequency or scheduler preemption signaling might be the direct cause:
+
+| Experiment | Wall clock | Change vs. default |
+| - | - | - |
+| `GOGC=100` (default) | 30.4s *(original, imbalanced baseline)* | — |
+| `GOGC=400` | 29.9s | -2% |
+| `GOGC=800` | 30.0s | -2% |
+| `GOGC=off` (imbalanced baseline) | 29.7s | -2% |
+| `GOGC=off` (striped, 14 workers) | 43.3s | **~0%** |
+| `GODEBUG=asyncpreemptoff=1` (striped, 14 workers) | 43.7s | **~0%** (slightly worse) |
+
+None of these materially changed wall-clock time, on either the imbalanced or the striped
+14-worker configuration. This rules out two plausible-sounding explanations: it is not primarily
+GC *pause frequency* (disabling GC entirely made essentially no difference), and it is not
+primarily asynchronous-preemption signaling overhead (disabling it made no difference either,
+if anything slightly worse). What's left is direct contention over shared memory-management
+infrastructure itself — most concretely, `runtime.madvise` calls issued from `mheap.allocSpan`,
+which on this platform (macOS/Darwin) are real, comparatively expensive syscalls, made by every
+core simultaneously as each independently churns through allocate/free cycles for per-scope
+`SymbolTable`s and their backing maps (Findings 1, 4, 8, 11-14) at a very high rate. More cores
+running this pattern *concurrently* does not just add up their individual allocation costs, it
+appears to make each individual allocation *more expensive*, consistent with contention over
+either the Go runtime's central heap-lock, or the underlying memory subsystem (cache-coherency
+traffic, TLB pressure) that scales with the number of cores hammering it at once — this pass did
+not have the tooling to distinguish between those two more precisely, which is exactly why this
+finding is being left open rather than "fixed."
+
+### Recommendation - Finding 16
+
+No low-risk, high-confidence interpreter-level fix was identified in this pass. Options considered:
+
+1. **Reduce the allocation rate further** (Finding 11, implemented as part of this same pass) —
+   helps every configuration proportionally (11-28% faster, see Finding 11's own re-measurement)
+   but does **not** change the *shape* of the negative-scaling curve: 2 workers remains faster than
+   14 both before and after. Expected: Finding 11 reduces how much each goroutine allocates, not
+   how goroutines contend with each other while allocating.
+2. **A genuinely lower-contention allocation path** — e.g., a `sync.Pool`-backed reuse scheme for
+   `SymbolTable`/backing-map objects, or a sharded/thread-local fast path in the Go runtime's
+   allocator interaction — is architecturally plausible and directly targets the mechanism
+   implicated above, but is a substantially bigger, riskier change than anything else in this
+   document (it touches the hottest, most safety-critical allocation path in the entire
+   interpreter) and was not attempted here. Worth a dedicated future investigation, ideally with
+   access to `GODEBUG=gctrace=1`/lower-level allocator tracing than this pass used.
+3. **Runtime tuning defaults for `ego run`** (e.g., shipping a non-default `GOGC` or `GOMEMLIMIT`)
+   — tested directly above and ruled out; would not move this workload's numbers.
+
+**Practical guidance for Ego users, in the meantime:** for CPU-bound, allocation-heavy Ego
+programs specifically (as opposed to I/O-bound goroutines, where this finding does not apply —
+concurrent I/O waits do not contend over the allocator), spawning `runtime.NumCPU()` goroutines is
+frequently counterproductive. On the development machine used for this audit, a fixed, small
+worker count (2) consistently minimized wall-clock time for this workload, both before and after
+Finding 11 — sizing goroutine count to "a small number, empirically tuned" rather than "one per
+logical CPU" is the safest actionable advice this investigation can offer today.
+
+**Status:** Open. This is a new, cross-goroutine extension of the systemic Finding 5 diagnosis
+(allocation-driven GC/scheduler overhead dominates wall-clock time) — Finding 5 was written from
+single-goroutine profiles and could not have surfaced the specifically *super-linear* cost of
+concurrent allocation this section measured; Finding 16 is the goroutine-scale corroborating
+evidence for exactly the same underlying thesis, at a severity Finding 5's original workloads had
+no way to expose.
+
+---
+
+## 21. Summary table
 
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
@@ -2316,19 +2729,24 @@ a future look, but no longer the dominant story it was.
 | 8 | Per-execution basic-block scopes (if/else, function bodies, etc.) | -30% on an if/else-in-a-loop workload; -10% on a no-locals function-call workload | Medium-High | Medium (compiler analysis; surfaced BUG-61) | Same category as Finding 4, one level lower | **Fixed** (July 2026) — see Resolution above |
 | 9 | `data.String()` has no `string` fast path, always calls `fmt.Sprintf` | **15.06% of total** in the Mandelbrot workload (97% of that inside one `fmt.Sprintf` line) | Low | Low | Implementation bug (wrong tool for the job, same shape as Finding 1) | **Fixed** (July 2026) — see Resolution above |
 | 10 | `atLineByteCode` writes `__line`/`__module` into the symbol table every statement | ~3-4% of total in the Mandelbrot workload; consumed almost solely by rare error-construction path | Low-Medium | Low-Medium | Implementation inefficiency (eager work for a rarely-read value) | Open |
-| 11 | Loop bodies with top-level `:=`/`var` still pay per-iteration scope cost; `IsConstant` full-chain walk on new declarations | ~7% combined (scope alloc) + ~3.8% (`IsConstant` walk) in the Mandelbrot workload | Medium-High | Medium-High (touches `:=` creation semantics; needs correctness care) | Extends Finding 4 to a case it deliberately excluded; corroborates Finding 7 | Open — needs design work before implementation |
+| 11 | Loop bodies with top-level `:=` still pay per-iteration scope cost; `IsConstant` full-chain walk on new declarations | ~7% + ~3.8% (`IsConstant`) in Mandelbrot; 11-28% wall clock on `mandelbrot3.ego` | Medium-High | Medium-High (touches `:=` semantics; needs care) | Extends Finding 4; corroborates Finding 7 | **Fixed** (July 2026) for `:=` — see Resolution; `IsConstant` walk and `var` still open |
 | 12 | `SetParent`'s cycle-detection walk is dead code on the hot `NewChildSymbolTable` path | **31.83% of total** in the recursive Mandelbrot workload — largest single flat cost in this report | Low | Low | Implementation bug (defensive check, provably unreachable at this call site) | **Fixed** (July 2026) — see Resolution above |
 | 13 | `__extensions` flag round-trips through an O(depth) symbol-table walk on every call/return | **~15.4% of total** in the recursive Mandelbrot workload (2.46% read + 2.47% write, both O(depth)) | Low-Medium | Low-Medium (one rare runtime-toggle path to preserve) | Implementation inefficiency (duplicates a value already tracked on `Context`) | **Partially fixed** (July 2026) — read side only; write side kept for correctness — see Resolution |
 | 14 | `FindNextScope` and `callFramePop`'s clone-check both walk the full ancestor chain per operation | **-66.9% wall clock** on the recursive Mandelbrot workload (17.27s → 5.71s) from Phases 1-3 | High (Phases 1-3 done; Phase 4 still High) | Medium-High for Phase 4 (needs design work) | Architectural — same category as Finding 7, specific to deep recursion | **Phases 1-3 fixed** (July 2026) — see Resolution above; Phase 4 declined, not implemented |
+| 15 | Static contiguous row partitioning creates severe load imbalance in `examples/mandelbrot3.ego` | Busiest goroutine did 255× the idlest's work, 2.6× the average, on a 14-way split | Low | Low | Sample-program bug (partitioning strategy), not an interpreter defect | **Fixed** (July 2026) — see Resolution above |
+| 16 | Goroutine count scales *negatively* past ~2 concurrent workers (allocator/scheduler contention) | 14-worker run took ~3× as long as a 2-worker run of the identical, evenly-divided work | High | High (touches core allocation path; needs dedicated investigation) | Systemic — goroutine-scale extension of Finding 5 | Open — GC/preemption tuning ruled out; no low-risk fix identified this pass |
 
 **Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → ~~13
-(partial)~~ → ~~14 (Phases 1-3)~~ → **10** → **11** → **14 (Phase 4, only if warranted)**, in
-that order, re-profiling after each change using the same `--pprof` workloads described in
-Section 1 (and, from this point on, also the Mandelbrot workloads in Sections 10 and 14) to
-confirm the expected compounding effect on Finding 5 before deciding whether Finding 7 is ever
-worth pursuing. Findings 1-4, 8, 9, and 12 are fully done; Finding 13 is done on its read side
-only, by design; Finding 14 is done for Phases 1-3, with Phase 4 explicitly declined (see its
-Resolution section). Re-profiling after each (see their Resolution sections) confirms each
+(partial)~~ → ~~14 (Phases 1-3)~~ → ~~11 (the `:=` case)~~ → ~~15~~ → **10** → **16** → **14
+(Phase 4, only if warranted)**, in that order, re-profiling after each change using the same
+`--pprof` workloads described in Section 1 (and, from this point on, also the Mandelbrot
+workloads in Sections 10, 14, and 18) to confirm the expected compounding effect on Finding 5
+before deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, 9, 12, and 15 are
+fully done; Finding 11 is done for its `:=` case, with the `IsConstant`-walk and `var` pieces
+of the original recommendation still open; Finding 13 is done on its read side only, by design;
+Finding 14 is done for Phases 1-3, with Phase 4 explicitly declined (see its Resolution
+section); Finding 16 was investigated but not fixed — see its own Recommendation section for
+why. Re-profiling after each (see their Resolution sections) confirms each
 predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no longer appears in
 the profile on this path at all; `ui.Log` argument construction is now uniformly guarded across
 248 inspected call sites; `pushScopeByteCode`/`NewChildSymbolTable` no longer appear at all in a
@@ -2352,6 +2770,25 @@ any single workload in this report. `runtime.kevent` and `runtime.madvise` (thre
 and memory management) remain present in every profile but are no longer anywhere near the
 dominant cost they were before Findings 4, 8, 9, 12, 13, and 14 on the workloads each one
 targeted.
+
+**Profiling a goroutine-parallel program (Section 18) added a dimension none of the earlier,
+single-threaded workloads could expose.** Finding 15 (fixing severe static-partition load
+imbalance in `examples/mandelbrot3.ego`) is a sample-program fix, not an interpreter fix, but it
+was necessary to get a clean signal for Finding 16, which is: wall-clock time for this workload
+gets *worse*, not just less-good, as goroutine count rises past roughly 2 concurrent workers on
+the 14-core development machine used for this audit — a genuinely negative scaling curve, caused
+by allocator/scheduler contention between goroutines rather than any per-goroutine inefficiency.
+Finding 11 (extending Finding 4's shared-loop-scope optimization to loop bodies with simple,
+proven-safe top-level `:=` declarations — the exact shape of `mandelbrot3.ego`'s hot inner loop)
+was implemented as part of this same investigation and delivered a real, broad win: **11-28%
+wall-clock reduction**, depending on goroutine count, and a much larger proportional cut to
+GC/scheduler overhead specifically (`runtime.madvise`'s share of total CPU time fell from 29.86%
+to 8.57% on the 14-goroutine case). It did **not**, however, change the *shape* of Finding 16's
+negative-scaling curve — 2 goroutines remained faster than 14 both before and after — confirming
+that Finding 16 is a distinct, deeper cost (cross-goroutine contention) from the per-iteration
+allocation *rate* Finding 11 targets. GC and async-preemption tuning were tested directly against
+Finding 16 and ruled out as explanations; no low-risk interpreter fix was identified for it in
+this pass, leaving it open as a systemic, goroutine-scale extension of Finding 5.
 
 **Profiling a deeply recursive program (Section 14) surfaced the largest, most severe cost
 shape in this entire report, and Findings 12-14 have now captured nearly all of it.** Findings

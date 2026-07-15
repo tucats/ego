@@ -392,15 +392,33 @@ var optimizations = []optimization{
 		//
 		// Replacement:
 		//   CreateAndStore  [<name>, <value>]
+		//
+		// Two guards protect this rule from re-firing on its own output (found
+		// via a real bug: the "?expr : fallback" optional operator generates
+		// "Push Marker<try>; <expr>; CreateAndStore <tempName>"; once <expr>
+		// itself folds down to a single Push, this rule correctly collapses
+		// that Push with CreateAndStore - but the scanner then backs up and can
+		// reconsider the *preceding* "Push Marker<try>" as a fresh match against
+		// the just-produced CreateAndStore, corrupting the temp variable's name
+		// and silently deleting the marker push a later DropToMarker/TryPop
+		// still expects to find):
+		//
+		//   - MustBeString on "name" ensures a CreateAndStore whose operand is
+		//     already a [name, value] pair from a prior fold (not a bare string)
+		//     is never matched again - the same guard "Constant storeAlways"
+		//     below already relies on for the identical reason.
+		//   - ExcludeStackMarker on "value" independently ensures a Push of a
+		//     StackMarker sentinel is never treated as "the value" to fold,
+		//     regardless of what the following CreateAndStore's operand shape is.
 		Description: "Collapse constant Push and CreateAndStore",
 		Pattern: []instruction{
 			{
 				Operation: Push,
-				Operand:   placeholder{Name: "value"},
+				Operand:   placeholder{Name: "value", ExcludeStackMarker: true},
 			},
 			{
 				Operation: CreateAndStore,
-				Operand:   placeholder{Name: "name"},
+				Operand:   placeholder{Name: "name", MustBeString: true},
 			},
 		},
 		Replacement: []instruction{

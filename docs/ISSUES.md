@@ -253,6 +253,8 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-83](#BUG-83) | BUG | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 | [BUG-84](#BUG-84) | BUG | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
 | [BUG-85](#BUG-85) | BUG | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
+| [BUG-86](#BUG-86) | BUG | A classic `for i := 0; ...` loop's closure-capture prologue/epilogue (BUG-30) is silently skipped whenever the bytecode optimizer is active, because `iterationFor`'s `isSimpleIndex` check doesn't recognize the optimizer-collapsed `CreateAndStore` shape of the loop counter's initializer. | ✓ |
+| [BUG-87](#BUG-87) | BUG | The optimizer's "Collapse constant Push and CreateAndStore" rule can re-fire on its own already-folded output and fold a `Push` of a `StackMarker` frame sentinel as if it were a real value, corrupting a generated temp variable's name and dropping a marker a later `DropToMarker`/`TryPop` needs. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -558,6 +560,8 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-83](#BUG-83) | MEDIUM | `time` package: `durationString` return-convention violation and a shared-singleton base type. | ✓ |
 | [BUG-84](#BUG-84) | MEDIUM | `util` package: `setLogger`, `getLogContents`, and `getPackage` violate the `(value, error)` return convention. | ✓ |
 | [BUG-85](#BUG-85) | MEDIUM | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
+| [BUG-86](#BUG-86) | HIGH | A classic `for i := 0; ...` loop's closure-capture prologue/epilogue (BUG-30) is silently skipped whenever the bytecode optimizer is active, because `iterationFor`'s `isSimpleIndex` check doesn't recognize the optimizer-collapsed `CreateAndStore` shape of the loop counter's initializer. | ✓ |
+| [BUG-87](#BUG-87) | HIGH | The optimizer's "Collapse constant Push and CreateAndStore" rule can re-fire on its own already-folded output and fold a `Push` of a `StackMarker` frame sentinel as if it were a real value, corrupting a generated temp variable's name and dropping a marker a later `DropToMarker`/`TryPop` needs. | ✓ |
 
 ---
 
@@ -8529,6 +8533,144 @@ verified it fails with the original "invalid field name" error when the `init()`
 reverted. `tests/packages/uuid.ego` adds an Ego-level test asserting both
 `x.String() == "00000000-0000-0000-0000-000000000000"` and `x == uuid.Nil()` for a bare
 `var x uuid.UUID`.
+
+---
+
+<a id="BUG-86"></a>
+
+### BUG-86 — Loop closure-capture (BUG-30) silently breaks whenever the bytecode optimizer is active
+
+**Severity:** HIGH
+
+**Description:**  
+Found while profiling `examples/mandelbrot3.ego` for `docs/PERFORMANCE.md` and
+re-running the existing regression suite with the optimizer forced on
+(`ego test tests/flow/for_loopvar.ego -o=2`). A classic `for i := 0; i < n; i++`
+loop whose body captures `i` in a closure must give each iteration its own copy of
+`i` (BUG-30, Go 1.22+ semantics); the fix for that lives in
+`iterationFor` (`internal/language/compiler/for.go`), which splices a per-iteration
+copy-in/copy-out prologue/epilogue around the loop body — but only when it detects
+the loop counter is a "simple" named variable, via:
+
+```go
+if firstInstr := indexStore.Instruction(0); firstInstr != nil {
+    switch firstInstr.Operation {
+    case bytecode.Store:
+        isSimpleIndex = true
+    case bytecode.SymbolCreate:
+        if second := indexStore.Instruction(1); second != nil && second.Operation == bytecode.Store {
+            isSimpleIndex = true
+        }
+    }
+}
+```
+
+`indexStore` (the loop counter's own `i := 0` initializer) is built by
+`assignmentTarget` (`lvalue.go`), which calls `bc.Seal()` on it before returning —
+sealing runs the peephole optimizer immediately, on that small buffer alone, whenever
+`ego.compiler.optimize` is `2` (always) or `1` with bytecode large enough to cross the
+conditional threshold. The optimizer's "Create and store" rule collapses
+`SymbolCreate "i"; Store "i"` into a single `CreateAndStore "i"` instruction *before*
+`isSimpleIndex`'s switch ever runs. Since neither case in the switch recognizes
+`bytecode.CreateAndStore`, an entirely ordinary loop counter was silently classified
+as "not simple," and the entire prologue/epilogue was skipped — every closure created
+in the loop body then captured the loop's single, shared, post-loop value of `i`
+instead of its own iteration's value, exactly the pre-Go-1.22 behavior BUG-30 exists
+to prevent:
+
+```ego
+var funcs []any
+for i := 0; i < 3; i++ {
+    funcs = append(funcs, func() int { return i })
+}
+funcs[0](), funcs[1](), funcs[2]()
+// want: 0, 1, 2   (BUG-30's own guarantee)
+// got with -o 2:  3, 3, 3
+```
+
+**Fix:**  
+`isSimpleIndex`'s switch also recognizes `bytecode.CreateAndStore` as a simple index
+(same case as `bytecode.Store`) — a `CreateAndStore` at `indexStore.Instruction(0)` can
+only arise from the optimizer having already collapsed the `":="` shape, since a plain
+`"for i = 0; ..."` (pre-declared variable, `"="` not `":="`) initializer is just a lone
+`Store` with nothing preceding it to collapse.
+
+Regression coverage: `internal/language/compiler/for_optimizer_regression_test.go`'s
+`TestForLoopClosureCapture_SurvivesOptimizer` forces
+`ego.compiler.optimize = 2` and asserts three closures created in a loop each capture
+a distinct value — confirmed failing (`3, 3, 3`) with the fix reverted. The full
+existing Ego-level suite, `tests/flow/for_loopvar.ego`, now also passes at `-o 1` and
+`-o 2`, not just the default `-o 0` it was previously only ever run at.
+
+---
+
+<a id="BUG-87"></a>
+
+### BUG-87 — Optimizer's constant-push/CreateAndStore collapse can fold a stack-frame marker into a variable's value
+
+**Severity:** HIGH
+
+**Description:**  
+Found investigating BUG-86 above: with the optimizer forced on, `tests/errors/optional.ego`
+failed with `unknown identifier: $2` — a compiler-generated temporary name used by the
+`?expr : fallback` optional operator (`Compiler.optional`, `expr_atom.go`), which emits:
+
+```text
+Push Marker<try>
+<bytecode for expr>
+CreateAndStore <generatedName>
+DropToMarker Marker<try>
+Load <generatedName>
+SymbolDelete <generatedName>
+```
+
+When a second `?expr : fallback` appears in the same scope and its `expr` is itself
+constant-foldable (e.g. `?(100/5) : 99`), the "Constant division fold" rule first
+collapses `Push ^100; Push ^5; Div` into a single `Push ^20`, leaving
+`Push Marker<try>; Push ^20; CreateAndStore "$2"; DropToMarker Marker<try>`. The
+"Collapse constant Push and CreateAndStore" rule then correctly fires once on
+`(Push ^20, CreateAndStore "$2")`, producing `CreateAndStore ["$2", 20]`. The scanner
+backs up to let the newly emitted instructions participate in further rounds (by
+design, so cascading opportunities aren't missed) — and lands back on
+`Push Marker<try>`. Because that rule's pattern used bare, unconstrained
+`placeholder{}` operands on both sides (`{Push <value>}, {CreateAndStore <name>}`),
+it matched *again*, this time treating `Marker<try>` as "the value" and the
+already-folded `["$2", 20]` pair as "the name" — corrupting the CreateAndStore's
+operand into a broken three-part shape and, critically, deleting the `Push Marker<try>`
+instruction outright, which the later `DropToMarker Marker<try>` still expected to
+find on the runtime stack. The net effect: `$2` was never actually stored under that
+name, so the later `Load "$2"` failed with "unknown identifier."
+
+This is a general hole in the peephole engine, not specific to the optional operator:
+any rule matching a bare `Push <placeholder>` immediately before some opcode that is
+*also* the collapsed target of another rule (as `CreateAndStore` is, via both this
+rule and the separate "Create and store" `SymbolCreate+Store` rule) is at risk of
+re-firing on its own output and absorbing a `StackMarker` frame sentinel as if it were
+ordinary data.
+
+**Fix:**  
+Added a new `ExcludeStackMarker` flag to the optimizer's `placeholder` type
+(`internal/language/bytecode/optimizer.go`), checked alongside the existing
+`MustBeString` flag during pattern matching: when set, a match is rejected if the real
+operand is a `StackMarker`. Applied it to "Collapse constant Push and
+CreateAndStore"'s `value` placeholder. Also added `MustBeString: true` to the same
+rule's `name` placeholder (the `CreateAndStore` side) — mirroring the guard the
+sibling "Constant storeAlways" rule already had for the identical reason — so a
+`CreateAndStore` whose operand is already a `[name, value]` pair from a prior fold
+(not a bare string) can never be matched a second time. Either guard alone would have
+prevented this specific failure; both were added since each independently closes off
+a different half of the same mechanism.
+
+Regression coverage:
+`internal/language/bytecode/optimizer_test.go`'s
+`Test_Optimize_CollapsePushAndCreateAndStore_DoesNotEatStackMarker` builds the exact
+`Push Marker<try>; Push 100; Push 5; Div; CreateAndStore "$1"; DropToMarker Marker<try>`
+sequence directly and asserts the marker survives and the CreateAndStore operand stays
+a clean two-element pair — confirmed failing (marker instruction deleted, corrupted
+three-part operand) with both guards reverted.
+`internal/language/compiler/for_optimizer_regression_test.go`'s
+`TestOptionalOperator_SurvivesOptimizer` exercises the same bug end-to-end through the
+compiler with `ego.compiler.optimize = 2`.
 
 ---
 

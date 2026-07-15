@@ -632,6 +632,67 @@ func Test_Optimize_CollapsePushAndCreateAndStore(t *testing.T) {
 	}
 }
 
+// Test_Optimize_CollapsePushAndCreateAndStore_DoesNotEatStackMarker is a
+// regression test for a real bug found while investigating the optional
+// operator ("?expr : fallback") failing under optimizer level 2: the
+// compiler emits "Push Marker<try>; <expr>; CreateAndStore <tempName>"
+// (see Compiler.optional in expr_atom.go). When <expr> itself folds down to
+// a single constant Push (e.g. "Push 100; Push 5; Div" -> "Push 20" via the
+// constant-division-fold rule), "Collapse constant Push and CreateAndStore"
+// correctly fires once on (Push 20, CreateAndStore "$N"). The scanner then
+// backs up and, without the MustBeString/ExcludeStackMarker guards added
+// alongside this test, could match AGAIN on (Push Marker<try>, CreateAndStore
+// ["$N", 20]) — treating the marker as "the value" and the already-folded
+// [name, value] pair as "the name", corrupting the temp variable's name and
+// silently deleting the marker push a later DropToMarker/TryPop still
+// expects on the runtime stack.
+func Test_Optimize_CollapsePushAndCreateAndStore_DoesNotEatStackMarker(t *testing.T) {
+	b := New("marker adjacent to foldable createandstore")
+	b.Emit(Push, NewStackMarker("try"))
+	b.Emit(Push, 100)
+	b.Emit(Push, 5)
+	b.Emit(Div)
+	b.Emit(CreateAndStore, "$1")
+	b.Emit(DropToMarker, NewStackMarker("try"))
+	b.instructions = b.instructions[:b.nextAddress]
+
+	mustOptimize(t, b)
+
+	// The division fold and the constant-push collapse should each fire
+	// once, but the marker push must survive intact and CreateAndStore's
+	// operand must remain a clean [name, value] pair - never absorbing the
+	// marker as a third element or as the "value".
+	if b.nextAddress != 3 {
+		t.Fatalf("expected 3 instructions (Push marker, CreateAndStore, DropToMarker), got %d: %#v",
+			b.nextAddress, b.instructions[:b.nextAddress])
+	}
+
+	marker := instrAt(t, b, 0)
+	if marker.Operation != Push {
+		t.Fatalf("expected instruction 0 to be Push, got %v", marker.Operation)
+	}
+
+	sm, ok := marker.Operand.(StackMarker)
+	if !ok || sm.label != "try" {
+		t.Fatalf("expected instruction 0 to push StackMarker(try), got %#v", marker.Operand)
+	}
+
+	create := instrAt(t, b, 1)
+	if create.Operation != CreateAndStore {
+		t.Fatalf("expected instruction 1 to be CreateAndStore, got %v", create.Operation)
+	}
+
+	arr, ok := create.Operand.([]any)
+	if !ok || len(arr) != 2 || arr[0] != "$1" || arr[1] != 20 {
+		t.Errorf("CreateAndStore operand = %#v, want [$1 20]", create.Operand)
+	}
+
+	drop := instrAt(t, b, 2)
+	if drop.Operation != DropToMarker {
+		t.Fatalf("expected instruction 2 to be DropToMarker, got %v", drop.Operation)
+	}
+}
+
 // Test_Optimize_UnnecessaryLetMarker verifies the 4-instruction
 // Push(let)+Push(const)+CreateAndStore(name)+DropToMarker(let) →
 // Push(const)+CreateAndStore(name).
