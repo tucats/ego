@@ -494,7 +494,9 @@ deciding silently, per the brief for this document.
    not just cheaper access within whatever scopes exist). Worth a decision
    before Phase 1 starts, since it affects how the eligibility predicate and
    `PushScope`/`PopScope` emission are threaded together from the start, even
-   if Option B's actual implementation is deferred to Phase 3.
+   if Option B's actual implementation is deferred to Phase 3. **The user
+   selects option B for Q1**
+
 2. **How aggressively should Phase 1's eligibility predicate treat
    closures?** This plan's default (Section 5.1) disqualifies the *entire
    enclosing function* if a closure/`go`/`defer` appears anywhere in its
@@ -506,7 +508,10 @@ deciding silently, per the brief for this document.
    in the enclosing function (a bounded, local check, not general escape
    analysis) — reducing false disqualifications without taking on the harder
    "upvalue" problem. Worth deciding before implementation since it changes
-   the predicate's shape, not just its precision.
+   the predicate's shape, not just its precision. **The user would like
+   the additional refinement of disqualifying if the closure's own body
+   references a name declared in teh enclosing function).**
+
 3. **Full enumeration of name-based introspection consumers.** Section 8
    names debugger, `recover()`/named-return access, and the "unread errors"
    extension as needing the `LocalNames` debug-table treatment, based on
@@ -515,12 +520,16 @@ deciding silently, per the brief for this document.
    expecting to enumerate a live function's *user* locals (as opposed to
    package/debug/admin uses, which are unaffected). This needs a dedicated
    `grep`-and-verify pass at the start of implementation, not an assumption
-   that Section 8's list is complete.
+   that Section 8's list is complete. **The user would like the additional
+   introspection support, especially to handle the debugger**.
+
 4. **Confirm `explodeByteCode`/`Explode` is genuinely unreachable from
    compiled Ego source** (Section 3.6) before relying on that in the
    eligibility predicate design. If some path does reach it (e.g. a REST
    service framework building bytecode by hand rather than through the
-   compiler), the predicate needs an explicit rule for it.
+   compiler), the predicate needs an explicit rule for it. **The user
+   has determined that this is legacy code and can be deleted**.
+   
 5. **Slot array sizing for pathologically large functions.** V1 gives every
    distinct name its own slot with no reuse across non-overlapping sibling
    blocks (Section 2, non-goals). This is very unlikely to matter in
