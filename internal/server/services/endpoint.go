@@ -178,6 +178,7 @@ func parseEndpointTerms(t *tokenizer.Tokenizer) (*endpointSpec, error) {
 
 		case next.IsIdentifier():
 			word := strings.ToLower(next.Spelling())
+			
 			t.Advance(1)
 
 			switch {

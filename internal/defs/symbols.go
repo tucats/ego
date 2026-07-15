@@ -14,13 +14,6 @@ const (
 	// the 'tables' REST API.
 	RowIDName = ReadonlyVariablePrefix + "row_id_"
 
-	// This is the name of a variable that holds the REST response body on behalf
-	// of an Ego program executing as a service. This special variable name is used
-	// as if it was part of the local symbol table of the service, but is always
-	// stored in the parent table, so it is accessible to the rest handler once the
-	// service has completed.
-	RestResponseName = InvisiblePrefix + "rest_response"
-
 	// This is the name of a variable that holds the $response structure used to communicate
 	// between HTTP Ego services and the native REST dispatcher in the service handler.
 	RestStructureName = "$response"

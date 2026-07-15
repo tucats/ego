@@ -13,6 +13,8 @@ import (
 	"github.com/tucats/ego/internal/router"
 )
 
+const adminKeyword = "admin"
+
 // DefineLibHandlers starts at a root location and a subpath, and recursively scans
 // the directories found to identify ".ego" programs that can be defined as
 // available service endpoints.
@@ -97,7 +99,7 @@ func DefineLibHandlers(r *router.Router, root, subpath string) error {
 
 		if authenticate {
 			if admin {
-				auth = "admin"
+				auth = adminKeyword
 			} else {
 				auth = "user"
 			}

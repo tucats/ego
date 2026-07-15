@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // SetConstant stores a constant for readonly use in the symbol table. Because this could be
@@ -102,17 +102,7 @@ func (s *SymbolTable) SetAlways(name string, v any) *SymbolTable {
 		return s
 	}
 
-	// Hack. If this is the defs.RestResponseName variable, we have
-	// to find the right table to put it in, which may be different
-	// that were we started.
 	symbolTable := s
-
-	if name == defs.RestResponseName {
-		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
-			symbolTable = symbolTable.parent
-		}
-	}
-
 	if s.shared.Load() {
 		symbolTable.Lock()
 		defer symbolTable.Unlock()
@@ -154,16 +144,7 @@ func (s *SymbolTable) SetWithAttributes(name string, v any, newAttr SymbolAttrib
 		return errors.ErrNoSymbolTable.In("SetWithAttributes")
 	}
 
-	// Hack. If this is the defs.RestResponseName variable, we have
-	// to find the right table to put it in, which may be different
-	// that were we started.
 	symbolTable := s
-
-	if name == defs.RestResponseName {
-		for symbolTable.parent != nil && symbolTable.parent.parent != nil {
-			symbolTable = symbolTable.parent
-		}
-	}
 
 	if s.shared.Load() {
 		symbolTable.Lock()
