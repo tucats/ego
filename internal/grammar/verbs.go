@@ -107,16 +107,8 @@ var VerbSubjectGrammar = []cli.Option{
 		ParmDesc:    "opt.type",
 	},
 	{
-		LongName:      "fmt",
-		OptionType:    cli.Subcommand,
-		Action:        commands.FmtAction,
-		Value:         FmtVerbGrammar,
-		Description:   "ego.verb.fmt",
-		ExpectedParms: defs.VariableParameterCount,
-		ParmDesc:      "parm.file",
-	},
-	{
 		LongName:      "format",
+		Aliases:       []string{"fmt"},
 		OptionType:    cli.Subcommand,
 		Value:         FormatVerbGrammar,
 		Description:   "ego.verb.format",

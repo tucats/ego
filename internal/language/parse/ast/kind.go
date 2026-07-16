@@ -11,10 +11,10 @@ const (
 	// KindInvalid is the zero value and marks an uninitialized or unknown node.
 	KindInvalid Kind = iota
 
-	// --- File / top level ---
+	// --- File / top level ---.
 	KindFile
 
-	// --- Declarations (SYNTAX.md section 5) ---
+	// --- Declarations (SYNTAX.md section 5) ---.
 	KindConstDecl
 	KindConstSpec
 	KindImportDecl
@@ -24,7 +24,7 @@ const (
 	KindVarDecl
 	KindVarSpec
 
-	// --- Types (SYNTAX.md section 6) ---
+	// --- Types (SYNTAX.md section 6) ---.
 	KindPrimitiveType
 	KindNamedType
 	KindQualifiedType
@@ -36,14 +36,14 @@ const (
 	KindStructType
 	KindField
 
-	// --- Functions (SYNTAX.md section 7) ---
+	// --- Functions (SYNTAX.md section 7) ---.
 	KindFuncDecl
 	KindFuncLit
 	KindReceiver
 	KindParam
 	KindReturnItem
 
-	// --- Statements (SYNTAX.md sections 3, 10, 11) ---
+	// --- Statements (SYNTAX.md sections 3, 10, 11) ---.
 	KindAssignStmt
 	KindIncDecStmt
 	KindSendStmt
@@ -68,7 +68,7 @@ const (
 	KindEmptyStmt
 	KindDirectiveStmt
 
-	// --- Expressions (SYNTAX.md sections 9, 14, 15) ---
+	// --- Expressions (SYNTAX.md sections 9, 14, 15) ---.
 	KindBinaryExpr
 	KindUnaryExpr
 	KindStarExpr

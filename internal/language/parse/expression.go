@@ -44,6 +44,7 @@ func (p *Parser) parseBinary(minPrec int) (ast.Node, error) {
 		}
 
 		start := left.Pos()
+		
 		p.next()
 
 		right, err := p.parseBinary(prec + 1)

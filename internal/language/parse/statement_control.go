@@ -420,6 +420,7 @@ func (p *Parser) parseCaseClause() (*ast.CaseClause, error) {
 			p.next()
 
 			clause.Fallthrough = true
+			
 			p.accept(tokenizer.SemicolonToken)
 
 			break

@@ -37,7 +37,7 @@ type ImportDecl struct {
 func (n *ImportDecl) Kind() Kind { return KindImportDecl }
 
 func (n *ImportDecl) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Specs))
 
 	for _, s := range n.Specs {
 		children = append(children, s)
@@ -69,7 +69,7 @@ type ConstDecl struct {
 func (n *ConstDecl) Kind() Kind { return KindConstDecl }
 
 func (n *ConstDecl) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Specs))
 
 	for _, s := range n.Specs {
 		children = append(children, s)
@@ -112,7 +112,7 @@ type VarDecl struct {
 func (n *VarDecl) Kind() Kind { return KindVarDecl }
 
 func (n *VarDecl) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Specs))
 
 	for _, s := range n.Specs {
 		children = append(children, s)
@@ -137,7 +137,7 @@ type VarSpec struct {
 func (n *VarSpec) Kind() Kind { return KindVarSpec }
 
 func (n *VarSpec) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Names))
 
 	for _, name := range n.Names {
 		children = append(children, name)
@@ -186,7 +186,7 @@ type Param struct {
 func (n *Param) Kind() Kind { return KindParam }
 
 func (n *Param) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Names))
 
 	for _, name := range n.Names {
 		children = append(children, name)

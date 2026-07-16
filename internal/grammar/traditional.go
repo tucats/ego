@@ -13,6 +13,15 @@ import (
 // app-cli framework).
 var ClassActionGrammar = []cli.Option{
 	{
+		LongName:      "fmt",
+		OptionType:    cli.Subcommand,
+		Action:        commands.FmtAction,
+		Value:         FmtVerbGrammar,
+		Description:   "ego.verb.fmt",
+		ExpectedParms: defs.VariableParameterCount,
+		ParmDesc:      "parm.file",
+	},
+	{
 		LongName:    "tokens",
 		Aliases:     []string{"blacklist"},
 		Description: "ego.tokens",

@@ -77,7 +77,7 @@ type FuncType struct {
 func (n *FuncType) Kind() Kind { return KindFuncType }
 
 func (n *FuncType) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Params))
 
 	for _, p := range n.Params {
 		children = append(children, p)
@@ -101,7 +101,7 @@ type InterfaceType struct {
 func (n *InterfaceType) Kind() Kind { return KindInterfaceType }
 
 func (n *InterfaceType) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Methods))
 
 	for _, m := range n.Methods {
 		children = append(children, m)
@@ -121,7 +121,7 @@ type StructType struct {
 func (n *StructType) Kind() Kind { return KindStructType }
 
 func (n *StructType) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Fields))
 
 	for _, f := range n.Fields {
 		children = append(children, f)
@@ -145,7 +145,7 @@ type Field struct {
 func (n *Field) Kind() Kind { return KindField }
 
 func (n *Field) Children() []Node {
-	var children []Node
+	children := make([]Node, 0, len(n.Names))
 
 	for _, name := range n.Names {
 		children = append(children, name)

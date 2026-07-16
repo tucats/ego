@@ -283,6 +283,7 @@ func (p *Parser) parseInterfaceType() (ast.Node, error) {
 		}
 
 		node.Methods = append(node.Methods, method)
+		
 		p.accept(tokenizer.SemicolonToken)
 	}
 

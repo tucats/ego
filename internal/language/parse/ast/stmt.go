@@ -185,7 +185,7 @@ type SwitchStmt struct {
 func (n *SwitchStmt) Kind() Kind { return KindSwitchStmt }
 
 func (n *SwitchStmt) Children() []Node {
-	var children []Node
+	children := make([]Node, 0)
 
 	children = append(children, nodes(n.Init, n.Tag)...)
 
