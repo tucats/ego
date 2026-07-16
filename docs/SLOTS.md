@@ -1,5 +1,12 @@
 # Slot-Based Local Variable Access — Implementation Plan
 
+**Note:** I have modified language in the code to use "registers" rather
+than slots, generally. There are still references to "register slots" to
+indicate the index into the register array in comments, but largely the
+instructions, variable names, and comments were modified in commit ac19f1ba3bc04e48ebd3773972a59e15f359244a to adopt registers as the preferred
+term. Note that _this_ document has not been thoroughly modified yet, so
+here "register" and "slot" are largely interchangeable terms.
+
 **Status:** landed — Phase 0, Phase 1, Q3 introspection, and all of Phase 2
 (2a–2e) are complete and functional. Slotted: body `:=` locals (with nested-block
 shadowing), iteration for-loop counters, `&x`, `*p`, `++`/compound-assign, fixed
@@ -7,7 +14,7 @@ and variadic **parameters**, **methods** (including the receiver), and
 **named-return variables**. Only range variables remain name-based (by design —
 they are driven by RangeNext). Slotted locals are fully visible to introspection
 by name (debugger `show symbols`/`print`, util.Symbols, error formatting). Gated
-by `ego.compiler.slots` (default on). All 1,573 Ego tests, the Go suite (incl.
+by `ego.compiler.registers` (default off). All 1,573 Ego tests, the Go suite (incl.
 `-race`), and the 122-case apitest REST suite pass with slots on and off; on a
 variable-access-heavy tight loop, wall-clock drops ~24% and
 `runtime.mapaccess2_faststr` falls from ~23% to ~3% of samples (see
@@ -31,16 +38,16 @@ scope-creation-bound workload makes it worthwhile.
   declared name. Q3 → full introspection support, including the debugger. Q4 →
   the legacy `Explode`/`explodeByteCode` opcode has been **deleted**.
 - **Gating (decided during implementation):** a feature flag
-  `ego.compiler.slots` (default **true**) acts as a kill-switch, cached in
-  `c.flags.slots`; independent of the peephole optimizer level so `ego test`
-  exercises slots. A per-block override `slots=true|false` is available on the
+  `ego.compiler.registers` (default **false**) enabled by opt level>2, cached in
+  `c.flags.registers`; independent of the peephole optimizer level so `ego test`
+  exercises slots. A per-block override `registers=true|false` is available on the
   `@compile` directive, mirroring `typeShadowing=`.
 - **Phase 0 (complete, verified):** slot bank storage + accessors on
   `SymbolTable` (`internal/language/symbols/slots.go`); 7 new opcodes
   (`AllocateLocal`, `LoadSlot`, `StoreSlot`, `CreateAndStoreSlot`,
   `SymbolOptCreateSlot`, `SymbolDeleteSlot`, `AddressOfSlot`) with
   implementations in `internal/language/bytecode/slots.go`; `checkType`
-  refactored to share `checkTypeCore` with the slot path; inert `scope.slots`
+  refactored to share `checkTypeCore` with the slot path; inert `scope.registers`
   bookkeeping field on the compiler.
 - **Phase 1 (in progress):** eligibility predicate
   `functionBodyIsSlotEligible` (`internal/language/compiler/slots.go`) with the
@@ -137,7 +144,7 @@ interoperate with — not proposed changes.
 
 `internal/language/symbols/tables.go` and `values.go`: a `SymbolTable` already
 stores its values in `values []*[]any` — a growable array of fixed-size bins,
-indexed by an integer `SymbolAttribute.slot`, specifically so that
+indexed by an integer `SymbolAttribute.register`, specifically so that
 `addressOfValue(slot)` pointers remain stable even as the table grows. **The
 map (`symbols map[string]*SymbolAttribute`) exists purely to translate a name to
 that integer slot** — the array-of-slots mechanism this plan wants already

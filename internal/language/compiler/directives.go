@@ -891,7 +891,7 @@ func (c *Compiler) compileBlockDirective() error {
 
 		// slots/slotsSet hold the value and presence of an explicit "slots="
 		// flag on this directive, applied directly to the sub-compiler's own
-		// c.flags.slots (see below), mirroring typeShadowing/typeShadowingSet.
+		// c.flags.registers (see below), mirroring typeShadowing/typeShadowingSet.
 		slots    = false
 		slotsSet = false
 
@@ -992,7 +992,7 @@ func (c *Compiler) compileBlockDirective() error {
 
 			typeShadowingSet = true
 
-		case slotsFlag:
+		case slotsFlag, "registers":
 			c.t.Advance(1)
 
 			if !c.t.IsNext(tokenizer.AssignToken) {

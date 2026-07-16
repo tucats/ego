@@ -1,7 +1,7 @@
 // Regression tests for compile-time slot-based local variable access
 // (docs/SLOTS.md). These exercise the slot machinery through ordinary Ego
 // programs; they must produce identical results with slots on (the default) and
-// off (ego.compiler.slots=false), which the full-suite differential run checks.
+// off (ego.compiler.registers=false), which the full-suite differential run checks.
 
 @test "slots: no cross-call bleed between activations"
 {

@@ -248,14 +248,15 @@ func New(name string) *Compiler {
 		typeShadowing = settings.GetBool(defs.TypeShadowingSetting)
 	}
 
-	// Is compile-time slot assignment enabled (docs/SLOTS.md)? Defaults to
-	// true; only an explicit "false" disables it. Read once here and cached in
-	// c.flags.slots, exactly like typeShadowing above, so the per-declaration
+	// Is compile-time register assignment enabled (docs/SLOTS.md)? Defaults to
+	// false, but both "run" and "test" commands will set the config value
+	// explicitly if optimization level is set to >2. Read once here and cached in
+	// c.flags.registers, exactly like typeShadowing above, so the per-declaration
 	// and per-reference checks are simple field reads. This is a kill-switch
 	// independent of the peephole optimizer level.
-	slots := true
+	registers := false
 	if v := settings.Get(defs.RegistersSetting); v != "" {
-		slots = settings.GetBool(defs.RegistersSetting)
+		registers = settings.GetBool(defs.RegistersSetting)
 	}
 
 	// Create a new instance of the compiler.
@@ -280,7 +281,7 @@ func New(name string) *Compiler {
 			strictTypes:           typeChecking,
 			unusedVars:            unusedVarsErr,
 			typeShadowing:         typeShadowing,
-			registers:             slots,
+			registers:             registers,
 		},
 	}
 }
