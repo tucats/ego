@@ -267,14 +267,18 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// past the return-type spec (peekFunctionBodyPos). Save/restore c.funcSlots
 	// around this whole function's compilation so a nested function (compiled
 	// while its enclosing function's context is live on c) never clobbers it.
-	// First cut still excludes methods (a receiver); named returns may coexist
-	// name-based with slotted parameters and body locals.
+	//
+	// Methods are eligible: their parameters and body locals are slotted while
+	// the receiver stays name-based (bound by GetThis, read by name), which
+	// composes cleanly since a name-based receiver and slotted locals share the
+	// same boundary table (map + bank) with no name overlap. Named returns
+	// likewise coexist name-based with a slotted function.
 	savedFuncSlots := c.funcSlots
 	c.funcSlots = nil
 
 	defer func() { c.funcSlots = savedFuncSlots }()
 
-	if slotPlaceholderAddr >= 0 && thisName.Is(tokenizer.EmptyToken) {
+	if slotPlaceholderAddr >= 0 {
 		if bodyPos := c.peekFunctionBodyPos(); bodyPos >= 0 {
 			savedMark := c.t.Mark()
 			c.t.Set(bodyPos)

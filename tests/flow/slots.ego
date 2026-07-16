@@ -148,6 +148,32 @@
     @assert joinInts([]int{1, 2, 3}) == 2006 // 1 + (1000+2) + (1000+3)
 }
 
+@test "slots: method with slotted params and body locals"
+{
+    // A method is slot-eligible: its parameter and body locals are slotted
+    // while the receiver stays name-based. Called repeatedly, activations must
+    // not bleed, and receiver mutation must persist.
+    type acc struct {
+        total int
+    }
+
+    func (a *acc) add(n int) int {
+        sum := 0
+        for i := 0; i < n; i++ {
+            sum = sum + i
+        }
+        a.total = a.total + sum
+
+        return a.total
+    }
+
+    object := acc{total: 10}
+
+    // add(4): sum = 0+1+2+3 = 6; total = 16, then 22.
+    @assert object.add(4) == 16
+    @assert object.add(4) == 22
+}
+
 @test "slots: recursion gives each activation fresh slots"
 {
     func fib(n int) int {
