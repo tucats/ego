@@ -587,29 +587,34 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 	} else {
 		returnName := ""
 
-		savedPos := c.t.Mark()
-
-		// The "identifier followed by identifier" shape normally means a
-		// named return value ("result int"), but "chan" is never a valid
-		// candidate for that first identifier: unlike every other type
-		// keyword, "chan" has no legal form where it is directly followed
-		// by another type-looking token except the malformed "chan T"
-		// mistake that BUG-72 taught every other type-spec context to
-		// reject outright (channels have no element type; use "chan"
-		// alone). Without this exclusion, "chan string" as a bare return
-		// type was silently reinterpreted as "a return value named chan,
-		// of type string" -- IsIdentifier() returns true for "chan"
-		// since BUG-72 classified it as TypeTokenClass, so the heuristic
-		// below would happily consume it as a name, and typeDeclaration()
-		// would then parse "string" alone with no error at all (BUG-74).
-		if c.t.Peek(1).IsIdentifier() && !c.t.Peek(1).Is(tokenizer.ChanToken) {
-			c.t.IsNext(tokenizer.PointerToken)
-
-			if c.t.Peek(2).IsIdentifier() {
-				c.t.Set(savedPos)
-
-				returnName = c.t.Next().Spelling()
-			}
+		// A named return value has the shape "name Type": a name token
+		// followed by a token that begins a type spec.
+		//
+		// The name is matched with IsIdentifier(), which deliberately accepts
+		// a primitive type name too ("int", "string", ...) so a named return
+		// may shadow a built-in type name -- "func f() (string string)" names
+		// the value "string" (BUG-75).
+		//
+		// "map" and "chan" are the exceptions: they are IsIdentifier()==true
+		// but are the start of their OWN type spec ("map[K]V"; a bare "chan"),
+		// never a name, so they are excluded here. Without the "map" exclusion
+		// an unnamed "map[string]int" return would be misread as a value named
+		// "map" of type "[]int" now that the second token is checked with
+		// isTypeStartToken (which accepts "["). The "chan" exclusion also keeps
+		// the malformed "chan T" form (BUG-72/BUG-74) flowing through to
+		// parseType, which diagnoses it, rather than being read as a value
+		// named "chan" of type T.
+		//
+		// The second token is checked with isTypeStartToken so the "*T",
+		// "[]T", and "func(...)..." return types are recognized as named
+		// returns too; the previous IsIdentifier()-only test on the second
+		// token missed all three because "*", "[", and "func" are not
+		// identifiers.
+		if c.t.Peek(1).IsIdentifier() &&
+			!c.t.Peek(1).Is(tokenizer.MapToken) &&
+			!c.t.Peek(1).Is(tokenizer.ChanToken) &&
+			isTypeStartToken(c.t.Peek(2)) {
+			returnName = c.t.Next().Spelling()
 		}
 
 		if (returnName == "" && len(c.returnVariables) > 0) ||
@@ -617,7 +622,7 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 			return nil, nil, true, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
-		k, err := c.typeDeclaration()
+		theType, err := c.parseType("", false)
 		if err != nil {
 			// Propagate the specific "chan T" diagnosis instead of masking
 			// it with the generic "invalid return type list" error, so a
@@ -630,7 +635,16 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 			return nil, nil, false, c.compileError(errors.ErrInvalidReturnTypeList)
 		}
 
-		t := data.TypeOf(k)
+		// The declared return type is normally canonicalized by round-tripping
+		// through a zero-value instance (data.TypeOf(data.InstanceOfType(...))).
+		// Function types (and any other type whose zero value is nil) have no
+		// usable instance, so that round-trip collapses to NilType and the
+		// return-value Coerce would then reject every value. Fall back to the
+		// parsed type directly when the instance yields no recoverable type.
+		t := theType
+		if k := data.InstanceOfType(theType); k != nil {
+			t = data.TypeOf(k)
+		}
 		returnList = append(returnList, t)
 		coercion.Emit(bytecode.Coerce, t)
 

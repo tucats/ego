@@ -173,6 +173,26 @@ func coerceStruct(value any, t *data.Type) (any, error) {
 	return structValue, nil
 }
 
+// isNillableKind reports whether nil is a valid value of the given type -- that
+// is, whether nil is that type's zero value. In Go (and Ego) these are the
+// pointer, function, map, slice, channel, and interface types; the built-in
+// "error" type is interface-like and included as well.
+func isNillableKind(t *data.Type) bool {
+	switch t.Kind() {
+	case data.PointerKind,
+		data.FunctionKind,
+		data.MapKind,
+		data.ArrayKind,
+		data.ChanKind,
+		data.InterfaceKind,
+		data.ErrorKind:
+		return true
+
+	default:
+		return false
+	}
+}
+
 // requireMatch checks if the specified value matches the type. The match must follow the
 // strict type enforcement rules.
 //
@@ -187,12 +207,16 @@ func requireMatch(c *Context, t *data.Type, v any) error {
 		return c.push(v)
 	}
 
-	// If the type is a pointer of some kind, and the value is nil, we allow it.
-	// The built-in "error" type gets the same treatment: its Kind is
-	// data.ErrorKind (not data.InterfaceKind, so the IsInterface() check above
-	// does not catch it), but a nil error is exactly Go's zero value for an
-	// error-typed return, parameter, or variable.
-	if v == nil && (t.IsPointer() || t.Kind() == data.ErrorKind) {
+	// nil is the zero value for every nillable type, so it must be accepted
+	// against any of them. Go allows nil for pointers, functions, maps,
+	// slices, channels, and interfaces; the built-in "error" type is
+	// interface-like and gets the same treatment (its Kind is data.ErrorKind,
+	// not data.InterfaceKind, so the IsInterface() check above does not catch
+	// it). Without the FunctionKind and ChanKind entries here, "return nil"
+	// from a function declared to return a func or a chan failed in strict
+	// mode with a spurious type mismatch even though nil is exactly that
+	// type's zero value.
+	if v == nil && isNillableKind(t) {
 		return c.push(v)
 	}
 

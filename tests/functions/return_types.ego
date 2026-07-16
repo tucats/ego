@@ -1,0 +1,296 @@
+// Comprehensive coverage of function return TYPES.
+//
+// For every category of type Ego supports as a return type -- scalars, narrow
+// numerics, pointers, slices, maps, function types, channels, structs,
+// interfaces/error, and user-defined named types -- this exercises both the
+// unnamed form ("func f() T") and the named form ("func f() (r T)").
+//
+// This locks in two things that were historically broken:
+//
+//   - The return-value coercion path. The compiler emits a Coerce instruction
+//     per declared return type; for a function-typed return it used to
+//     collapse to NilType (because a function's zero-value instance is nil),
+//     making a strict-mode return of any closure fail with a type mismatch.
+//
+//   - Named-return detection for compound types (BUG-76). The "name Type"
+//     shape was only recognized when the type token was a plain identifier, so
+//     "(r *int)", "(r []int)", and "(g func(int) int)" were rejected as an
+//     "invalid return type list" -- while still correctly NOT misreading an
+//     unnamed "map[string]int"/"chan" return, and still permitting a named
+//     return to shadow a built-in type name (BUG-75).
+//
+// Every test here must pass in both --types=strict and --types=dynamic.
+
+@test "returns: scalar types, unnamed"
+{
+    func i() int { return 7 }
+    func s() string { return "hi" }
+    func b() bool { return true }
+    func f() float64 { return 3.5 }
+
+    @assert i() == 7
+    @assert T.Equal(s(), "hi")
+    @assert b() == true
+    @assert f() == 3.5
+}
+
+@test "returns: scalar types, named"
+{
+    func i() (r int) { r = 7; return }
+    func s() (r string) { r = "hi"; return }
+    func b() (r bool) { r = true; return }
+
+    @assert i() == 7
+    @assert T.Equal(s(), "hi")
+    @assert b() == true
+}
+
+@test "returns: narrow numeric types are coerced"
+{
+    // The declared narrow type drives a lossless Coerce of the untyped
+    // constant. Normalize with int()/float32() for strict-mode comparison.
+    func b() byte { return 65 }
+    func i32() int32 { return 1000 }
+    func i64() int64 { return 5 }
+    func f32() float32 { return 1.5 }
+
+    @assert int(b()) == 65
+    @assert int(i32()) == 1000
+    @assert int(i64()) == 5
+    @assert f32() == float32(1.5)
+}
+
+@test "returns: pointer type, unnamed and named"
+{
+    func pnil() *int { return nil }
+    @assert pnil() == nil
+
+    func paddr(x *int) *int { return x }
+    n := 42
+    p := paddr(&n)
+    @assert *p == 42
+
+    func pnamed() (r *int) { return nil }
+    @assert pnamed() == nil
+}
+
+@test "returns: slice type, unnamed and named"
+{
+    func mk() []int { return []int{1, 2, 3} }
+    a := mk()
+    @assert len(a) == 3
+    @assert a[1] == 2
+
+    func mkNamed() (r []int) { r = []int{9, 8}; return }
+    b := mkNamed()
+    @assert len(b) == 2
+    @assert b[0] == 9
+}
+
+@test "returns: map type, unnamed and named"
+{
+    func mk() map[string]int { return map[string]int{"a": 1, "b": 2} }
+    m := mk()
+    @assert m["a"] == 1
+    @assert m["b"] == 2
+
+    func mkNamed() (r map[string]int) { r = map[string]int{"x": 7}; return }
+    n := mkNamed()
+    @assert n["x"] == 7
+}
+
+@test "returns: function type, unnamed, returns a closure"
+{
+    func makeAdder(base int) func(int) int {
+        return func(x int) int {
+            return base + x
+        }
+    }
+
+    add10 := makeAdder(10)
+    @assert add10(5) == 15
+    @assert add10(0) == 10
+}
+
+@test "returns: function type, named"
+{
+    func makeMul(k int) (fn func(int) int) {
+        fn = func(x int) int {
+            return x * k
+        }
+        return
+    }
+
+    triple := makeMul(3)
+    @assert triple(4) == 12
+    @assert triple(0) == 0
+}
+
+@test "returns: function type with multiple parameters"
+{
+    func combiner() func(int, int) int {
+        return func(a, b int) int {
+            return a + b
+        }
+    }
+
+    add := combiner()
+    @assert add(2, 3) == 5
+}
+
+@test "returns: function type with no parameters"
+{
+    func gen(seed int) func() int {
+        return func() int {
+            return seed + 1
+        }
+    }
+
+    g := gen(41)
+    @assert g() == 42
+}
+
+@test "returns: function type returning multiple values"
+{
+    func mk() func(int) (int, int) {
+        return func(x int) (int, int) {
+            return x, x * x
+        }
+    }
+
+    f := mk()
+    a, b := f(4)
+    @assert a == 4
+    @assert b == 16
+}
+
+@test "returns: channel type, unnamed and named"
+{
+    func mk() chan { return make(chan, 1) }
+    ch := mk()
+    ch <- 5
+    @assert <-ch == 5
+
+    func mkNamed() (c chan) { c = make(chan, 1); return }
+    ch2 := mkNamed()
+    ch2 <- 9
+    @assert <-ch2 == 9
+}
+
+@test "returns: struct value and struct pointer"
+{
+    type Point struct {
+        X int
+        Y int
+    }
+
+    func origin() Point { return Point{X: 0, Y: 0} }
+    o := origin()
+    @assert o.X == 0
+    @assert o.Y == 0
+
+    func at(a, b int) Point { return Point{X: a, Y: b} }
+    q := at(3, 4)
+    @assert q.X == 3
+    @assert q.Y == 4
+
+    func ptr(a int) *Point { return &Point{X: a, Y: a} }
+    r := ptr(7)
+    @assert r.X == 7
+    @assert r.Y == 7
+}
+
+@test "returns: error type, nil and non-nil"
+{
+    func ok() error { return nil }
+    @assert ok() == nil
+
+    func bad() error { return errors.New("boom") }
+    e := bad()
+    @assert e != nil
+}
+
+@test "returns: interface value holds any concrete type"
+{
+    // Extract the concrete value with a type assertion rather than comparing
+    // the interface value directly: a boxed value is wrapped in an Interface
+    // in dynamic mode, so "== 5" would not hold there.
+    func box(v interface{}) interface{} { return v }
+
+    boxedInt := box(5)
+    n := boxedInt.(int)
+    @assert n == 5
+
+    boxedStr := box("hi")
+    str := boxedStr.(string)
+    @assert T.Equal(str, "hi")
+}
+
+@test "returns: user-defined named type coerces the value"
+{
+    type Celsius float64
+    func freezing() Celsius { return Celsius(0.0) }
+    @assert freezing() == Celsius(0.0)
+
+    type ID int
+    func mkID(n int) (id ID) { id = ID(n); return }
+    @assert mkID(7) == ID(7)
+}
+
+@test "returns: multiple returns mixing compound types"
+{
+    func parse(ok bool) (func(int) int, error) {
+        if !ok {
+            return nil, errors.New("bad")
+        }
+
+        return func(x int) int { return x + 1 }, nil
+    }
+
+    fn, err := parse(true)
+    @assert err == nil
+    @assert fn(41) == 42
+
+    fn2, err2 := parse(false)
+    @assert fn2 == nil
+    @assert err2 != nil
+}
+
+@test "returns: named pointer, slice, and function returns"
+{
+    // These three named-return forms were rejected as an "invalid return type
+    // list" until the type token following the name was recognized as the
+    // start of a compound type (*T, []T, func(...) ...).
+    func p() (r *int) { return nil }
+    @assert p() == nil
+
+    func sl() (r []int) { r = []int{5}; return }
+    @assert sl()[0] == 5
+
+    func fn() (g func(int) int) {
+        g = func(x int) int { return x - 1 }
+        return
+    }
+    dec := fn()
+    @assert dec(10) == 9
+}
+
+@test "returns: named return may shadow a type name"
+{
+    // A named return whose NAME is a built-in type keyword is legal (the name
+    // shadows the type within the function). This must keep working alongside
+    // the compound-type named-return support.
+    func f() (string string) {
+        string = "shadowed"
+        return
+    }
+    @assert T.Equal(f(), "shadowed")
+
+    func g() (int []int) {
+        int = []int{1, 2}
+        return
+    }
+    r := g()
+    @assert len(r) == 2
+    @assert r[0] == 1
+}

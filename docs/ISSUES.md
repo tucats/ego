@@ -49,8 +49,8 @@ reflected in each area's summary table.
 - **Debugger Package Issues** (originally `DEBUGGER_ISSUES.md`): Documents behavioral anomalies, potential bugs, and design concerns found during a comprehensive review of the debugger package, which intercepts the ErrSignalDebugger sentinel from the bytecode.Context run loop to offer an interactive prompt.
 - **Security Issues** (originally `SECURITY_ISSUES.md`): Records known security weaknesses in Ego found via security code reviews (April-June 2026) across authentication, WebAuthn, the HTTP server, the tables and asset endpoints, profile encryption, dashboard code execution, and the OAuth2 Authorization/Resource Server. Each issue documents affected files, a description, a recommendation, and (where resolved) the resolution actually implemented.
 
-Across all six areas, this document currently tracks **272 issues**:
-**231 resolved** and **41 still open**. Open issues are
+Across all six areas, this document currently tracks **275 issues**:
+**234 resolved** and **41 still open**. Open issues are
 listed in their area's table with a blank status cell and include whatever
 Description/Recommendation the source audit already had — no resolution is
 invented for them here.
@@ -255,6 +255,9 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUG-85](#BUG-85) | BUG | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
 | [BUG-86](#BUG-86) | BUG | A classic `for i := 0; ...` loop's closure-capture prologue/epilogue (BUG-30) is silently skipped whenever the bytecode optimizer is active, because `iterationFor`'s `isSimpleIndex` check doesn't recognize the optimizer-collapsed `CreateAndStore` shape of the loop counter's initializer. | ✓ |
 | [BUG-87](#BUG-87) | BUG | The optimizer's "Collapse constant Push and CreateAndStore" rule can re-fire on its own already-folded output and fold a `Push` of a `StackMarker` frame sentinel as if it were a real value, corrupting a generated temp variable's name and dropping a marker a later `DropToMarker`/`TryPop` needs. | ✓ |
+| [BUG-88](#BUG-88) | BUG | A function-typed return (`func f() func(int) int`) is rejected under `--types strict` with a spurious `type mismatch: ..., nil` because the declared return type is round-tripped through a zero-value instance, which is `nil` for a function type and collapses the coercion target to `NilType`. | ✓ |
+| [BUG-89](#BUG-89) | BUG | A named return value whose type is a pointer, slice, or function (`func f() (r *int)`, `(r []int)`, `(g func(int) int)`) fails to compile with "invalid return type list", because the named-return detector only recognized a type token that was a plain identifier. | ✓ |
+| [BUG-90](#BUG-90) | BUG | Returning `nil` from a function declared to return a `func` or `chan` type fails under `--types strict` with a spurious type mismatch, even though `nil` is the zero value of both; only pointer and error types were treated as nil-compatible. | ✓ |
 | [BUILTIN-APPEND-1](#BUILTIN-APPEND-1) | BUILTIN-APPEND | Append skipped type inference when the first argument was a raw []any slice, always returning []interface{}. | ✓ |
 | [BUILTIN-CAST-1](#BUILTIN-CAST-1) | BUILTIN-CAST | castToStringValue used a byte-length check, so multi-byte Unicode character literals failed to cast. | ✓ |
 | [BUILTIN-CAST-2](#BUILTIN-CAST-2) | BUILTIN-CAST | Cast incorrectly returned ErrInvalidType when data.Coerce succeeded but produced a valid nil result. | ✓ |
@@ -562,6 +565,9 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-85](#BUG-85) | MEDIUM | `uuid.UUID`'s zero value (`var x uuid.UUID`) is an unusable struct with no native field, unlike Go's own valid nil-UUID zero value. | ✓ |
 | [BUG-86](#BUG-86) | HIGH | A classic `for i := 0; ...` loop's closure-capture prologue/epilogue (BUG-30) is silently skipped whenever the bytecode optimizer is active, because `iterationFor`'s `isSimpleIndex` check doesn't recognize the optimizer-collapsed `CreateAndStore` shape of the loop counter's initializer. | ✓ |
 | [BUG-87](#BUG-87) | HIGH | The optimizer's "Collapse constant Push and CreateAndStore" rule can re-fire on its own already-folded output and fold a `Push` of a `StackMarker` frame sentinel as if it were a real value, corrupting a generated temp variable's name and dropping a marker a later `DropToMarker`/`TryPop` needs. | ✓ |
+| [BUG-88](#BUG-88) | MEDIUM | A function-typed return (`func f() func(int) int`) is rejected under `--types strict` with a spurious `type mismatch: ..., nil` because the declared return type is round-tripped through a zero-value instance, which is `nil` for a function type and collapses the coercion target to `NilType`. | ✓ |
+| [BUG-89](#BUG-89) | MEDIUM | A named return value whose type is a pointer, slice, or function (`func f() (r *int)`, `(r []int)`, `(g func(int) int)`) fails to compile with "invalid return type list", because the named-return detector only recognized a type token that was a plain identifier. | ✓ |
+| [BUG-90](#BUG-90) | MEDIUM | Returning `nil` from a function declared to return a `func` or `chan` type fails under `--types strict` with a spurious type mismatch, even though `nil` is the zero value of both; only pointer and error types were treated as nil-compatible. | ✓ |
 
 ---
 
@@ -8671,6 +8677,154 @@ three-part operand) with both guards reverted.
 `internal/language/compiler/for_optimizer_regression_test.go`'s
 `TestOptionalOperator_SurvivesOptimizer` exercises the same bug end-to-end through the
 compiler with `ego.compiler.optimize = 2`.
+
+---
+
+<a id="BUG-88"></a>
+
+### BUG-88 — Function-typed return collapses its coercion target to NilType
+
+**Severity:** MEDIUM
+
+**Description:**  
+Under `--types strict`, any function that returns a function value failed at
+runtime with a spurious `type mismatch`:
+
+```ego
+func makeAdder(base int) func(int) int {
+    return func(x int) int { return base + x }
+}
+add10 := makeAdder(10)   // Error: at makeAdder(...), type mismatch: func(x int) int, nil
+```
+
+The compiler emits a `Coerce` instruction per declared return type so a returned
+value is checked/converted to the declared type. In `compileReturnTypes`
+(`internal/language/compiler/function.go`) that type was obtained by
+round-tripping the parsed type through a zero-value **instance**:
+`data.TypeOf(data.InstanceOfType(parsedType))`. This canonicalization works for
+scalars (`int → 0 → IntType`) and user types, but a function type's zero value
+is `nil` — `data.InstanceOfType` returns `nil` for `FunctionKind` (it has no
+model) — so `data.TypeOf(nil)` collapsed to `NilType`. The `Coerce` was then
+told to coerce the returned closure to `nil`, and strict-mode `requireMatch`
+rejected every value with `type mismatch: <closure type>, nil`.
+
+**Fix:**  
+`compileReturnTypes` now parses the return type directly with `c.parseType`
+and only applies the instance round-trip when the instance is non-`nil`,
+falling back to the parsed type otherwise:
+
+```go
+t := theType
+if k := data.InstanceOfType(theType); k != nil {
+    t = data.TypeOf(k)
+}
+```
+
+This preserves the existing canonicalization for scalar and user-defined types
+while using the real function type as the coercion target. The now-unused
+`typeDeclaration` helper (`internal/language/compiler/type.go`) — the only
+caller of the old round-trip — was removed.
+
+Regression coverage: `tests/functions/return_types.ego` — the
+"returns: function type, unnamed, returns a closure", "returns: function type,
+named", "returns: function type with multiple parameters", "returns: function
+type with no parameters", and "returns: function type returning multiple values"
+tests, all of which run under both `--types=strict` and `--types=dynamic`.
+
+---
+
+<a id="BUG-89"></a>
+
+### BUG-89 — Named return of a pointer, slice, or function type fails to compile
+
+**Severity:** MEDIUM
+
+**Description:**  
+A named return value whose type is a compound type introduced with `*`, `[`, or
+`func` was rejected at compile time in both type modes:
+
+```ego
+func f() (r *int) { return nil }               // Error: invalid return type list
+func f() (r []int) { r = []int{5}; return }    // Error: invalid return type list
+func f() (g func(int) int) { ... }             // Error: invalid return type list
+```
+
+The named-return detector in `compileReturnTypes`
+(`internal/language/compiler/function.go`) recognized the `name Type` shape only
+when the token following the name was itself an identifier
+(`c.t.Peek(2).IsIdentifier()`). `*`, `[`, and `func` are not identifiers, so a
+named return of a pointer, slice, or function type was never detected as a name;
+parsing then restarted on the name token, which is not a valid type, and the
+generic "invalid return type list" error was raised. (Named returns of scalar,
+map, `chan`, and user-defined types already worked because the token after the
+name was an identifier in those cases.)
+
+**Fix:**  
+The detector now checks the second token with `isTypeStartToken` (which accepts
+identifiers plus `*`, `[`, and `func`) rather than `IsIdentifier`. To keep an
+unnamed `map[string]int` or bare `chan` return from being misread as a value
+*named* `map`/`chan` — now that `[` is an accepted type-start token — the name
+position explicitly excludes the `map` and `chan` keywords, which are always the
+start of their own type spec, never a name. The name is still matched with
+`IsIdentifier`, so a named return may continue to shadow a primitive type
+keyword (`func f() (string string)`; see BUG-75), and the `chan` exclusion keeps
+the malformed `chan T` form (BUG-74) flowing through to `parseType` for
+diagnosis:
+
+```go
+if c.t.Peek(1).IsIdentifier() &&
+    !c.t.Peek(1).Is(tokenizer.MapToken) &&
+    !c.t.Peek(1).Is(tokenizer.ChanToken) &&
+    isTypeStartToken(c.t.Peek(2)) {
+    returnName = c.t.Next().Spelling()
+}
+```
+
+Regression coverage: `tests/functions/return_types.ego` — the "returns: named
+pointer, slice, and function returns" and "returns: named return may shadow a
+type name" tests, plus the named forms in the pointer/slice/map/channel/function
+tests, all under both `--types=strict` and `--types=dynamic`.
+
+---
+
+<a id="BUG-90"></a>
+
+### BUG-90 — nil rejected as a func or chan return value in strict mode
+
+**Severity:** MEDIUM
+
+**Description:**  
+Returning `nil` from a function declared to return a `func` or `chan` type
+failed under `--types strict`, even though `nil` is the zero value for both:
+
+```ego
+func f() func(int) int { return nil }   // Error: type mismatch: nil, func( int) int
+func f() chan { return nil }            // Error: type mismatch: nil, chan
+```
+
+Strict-mode `requireMatch` (`internal/language/bytecode/coerce.go`) admitted a
+`nil` value only when the target type was a pointer or the built-in `error`
+type: `if v == nil && (t.IsPointer() || t.Kind() == data.ErrorKind)`. Map,
+slice, and interface returns of `nil` happened to pass through a different path,
+but `func` and `chan` returns had no such escape and were rejected. This is the
+same class of gap as BUG-65 (the `error` type not treated as nil-compatible),
+extended to the remaining nillable kinds.
+
+**Fix:**  
+Replaced the pointer/error-only test with an `isNillableKind` helper that
+accepts `nil` for every type whose zero value is `nil` — pointer, function, map,
+slice, channel, interface, and error:
+
+```go
+if v == nil && isNillableKind(t) {
+    return c.push(v)
+}
+```
+
+Regression coverage: `tests/functions/return_types.ego` — the "returns: error
+type, nil and non-nil" and "returns: multiple returns mixing compound types"
+tests (the latter returns `nil` for a `func(int) int` value on its error path),
+under both `--types=strict` and `--types=dynamic`.
 
 ---
 

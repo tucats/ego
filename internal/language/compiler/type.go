@@ -43,19 +43,6 @@ func (c *Compiler) compileTypeDefinition() error {
 	return c.typeEmitter(typeName)
 }
 
-// typeDeclaration parses a type specification from the current token stream and
-// returns an instance value (the zero value) of that type. This is used in
-// contexts where a type is expected to produce a default value, such as in a
-// channel declaration or type-cast expression.
-func (c *Compiler) typeDeclaration() (any, error) {
-	theType, err := c.parseType("", false)
-	if err != nil {
-		return nil, err
-	}
-
-	return data.InstanceOfType(theType), nil
-}
-
 // parseTypeSpec reads a type specification token sequence and returns the
 // matching *data.Type. It handles the common shorthand forms used in var
 // declarations and parameter lists:
