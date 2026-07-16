@@ -17,10 +17,28 @@
     a := 1 + 2i
     b := 3 - 1i
 
+// x86 has some precision differences from ARM
+// so this exprssion is calulated here so we
+// can use read/imag to test the parts below.
+// The imaginaary part is off in the 64+ bit
+// space.
+
+    c := (a*b)/b
+    @assert T.Equal(real(c), real(a))
+
+// Gross fuzzy compare here of the imaginatry parts.
+    f1 := imag(c)
+    f2 := imag(a)
+    f3 := math.Abs(f1-f2)
+
+    @assert f3 < 0.00000000000001
+
+// Other basic operations with these values do 
+// not show hardward sensitivity the same way.
+
     @assert T.Equal(a+b, complex(4, 1))
     @assert T.Equal(a-b, complex(-2, 3))
     @assert T.Equal(a*b, complex(5, 5))
-    @assert T.Equal((a*b)/b, a)
     @assert T.Equal(-a, complex(-1, -2))
 }
 
