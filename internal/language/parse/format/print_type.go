@@ -48,6 +48,7 @@ func (p *printer) printStructType(n *ast.StructType) {
 	}
 
 	p.write("struct {")
+
 	p.indent++
 
 	for _, field := range n.Fields {
@@ -69,6 +70,7 @@ func (p *printer) printInterfaceType(n *ast.InterfaceType) {
 	}
 
 	p.write("interface {")
+
 	p.indent++
 
 	for _, method := range n.Methods {

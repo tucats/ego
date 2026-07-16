@@ -940,6 +940,7 @@ filter=Lista de cláusulas de filtro opcionales
 fmt.ast=Mostrar el árbol de sintaxis analizado en lugar del fuente formateado
 fmt.fragment=Analizar la entrada como una secuencia de instrucciones
 fmt.program=Analizar la entrada como un programa completo
+fmt.tabs=Número de espacios por nivel de sangría (predeterminado 4)
 fmt.write=Reescribir cada archivo nombrado en su lugar
 json.file=archivo | stdin
 json.indented=Si se establece, la salida está indentada para facilitar la lectura

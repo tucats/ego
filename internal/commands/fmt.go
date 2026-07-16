@@ -11,15 +11,16 @@ import (
 	"github.com/tucats/ego/internal/language/parse/format"
 )
 
-// FmtAction is the command handler for "ego fmt". It parses Ego source into an
-// abstract syntax tree and re-emits it in canonical form (the same pipeline a
-// future editor integration would use). With no file arguments it reads source
-// from standard input and writes the result to standard output.
+// FmtAction is the command handler for "ego format source". It parses Ego source
+// into an abstract syntax tree and re-emits it in canonical form (the same
+// pipeline a future editor integration would use). With no file arguments it
+// reads source from standard input and writes the result to standard output.
 //
 // Options:
 //
 //	--write  (-w)   rewrite each named file in place instead of printing
 //	--ast    (-a)   print the parsed syntax tree instead of formatted source
+//	--tabs   (-t)   number of spaces per indentation level (default 4)
 //	--fragment      parse as a bare statement sequence (REPL/@test style)
 //	--program       parse as a complete program (package/func at top level)
 //
@@ -28,12 +29,18 @@ import (
 //
 // Invoked by:
 //
-//	Verb: ego fmt [file...]
+//	Verb: ego format source [file...]
 func FmtAction(c *cli.Context) error {
 	writeInPlace := c.Boolean("write")
 	dumpAST := c.Boolean("ast")
 	fragment := c.Boolean("fragment")
 	program := c.Boolean("program")
+
+	// Indentation width in spaces; default to the formatter's default.
+	opts := format.Options{}
+	if tabs, found := c.Integer("tabs"); found {
+		opts.IndentWidth = tabs
+	}
 
 	fileNames := c.FindGlobal().Parameters
 
@@ -45,7 +52,7 @@ func FmtAction(c *cli.Context) error {
 			return errors.New(err)
 		}
 
-		out, err := renderSource(string(src), fragment, program, dumpAST)
+		out, err := renderSource(string(src), fragment, program, dumpAST, opts)
 		if err != nil {
 			return err
 		}
@@ -60,7 +67,7 @@ func FmtAction(c *cli.Context) error {
 			return errors.New(err)
 		}
 
-		out, err := renderSource(string(src), fragment, program, dumpAST)
+		out, err := renderSource(string(src), fragment, program, dumpAST, opts)
 		if err != nil {
 			return errors.New(err).Context(name)
 		}
@@ -82,8 +89,9 @@ func FmtAction(c *cli.Context) error {
 }
 
 // renderSource parses source according to the mode flags and returns either its
-// canonical formatting or, when dumpAST is true, a textual dump of the AST.
-func renderSource(source string, fragment, program, dumpAST bool) (string, error) {
+// canonical formatting (using opts) or, when dumpAST is true, a textual dump of
+// the AST.
+func renderSource(source string, fragment, program, dumpAST bool, opts format.Options) (string, error) {
 	file, err := parseSource(source, fragment, program)
 	if err != nil {
 		return "", err
@@ -93,7 +101,7 @@ func renderSource(source string, fragment, program, dumpAST bool) (string, error
 		return ast.Dump(file), nil
 	}
 
-	return format.File(file)
+	return format.FileWithOptions(file, opts)
 }
 
 // parseSource selects the parse entry point from the mode flags. With neither

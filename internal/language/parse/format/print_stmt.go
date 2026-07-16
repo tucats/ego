@@ -18,21 +18,27 @@ func (p *printer) printStmt(node ast.Node) {
 	// Statements.
 	case *ast.Block:
 		p.printBlock(n)
+
 	case *ast.EmptyStmt:
 		// Nothing to emit.
+
 	case *ast.ExprStmt:
 		p.printExpr(n.X)
+
 	case *ast.AssignStmt:
 		p.printExprList(n.Lhs)
 		p.write(" " + n.Op + " ")
 		p.printExprList(n.Rhs)
+
 	case *ast.IncDecStmt:
 		p.printExpr(n.X)
 		p.write(n.Op)
+
 	case *ast.SendStmt:
 		p.printExpr(n.Chan)
 		p.write(" <- ")
 		p.printExpr(n.Value)
+
 	case *ast.ReturnStmt:
 		p.write("return")
 
@@ -40,42 +46,56 @@ func (p *printer) printStmt(node ast.Node) {
 			p.write(" ")
 			p.printExprList(n.Results)
 		}
+
 	case *ast.BreakStmt:
 		p.write("break")
 		p.printOptionalLabel(n.Label)
+
 	case *ast.ContinueStmt:
 		p.write("continue")
 		p.printOptionalLabel(n.Label)
+
 	case *ast.LabeledStmt:
 		p.write(n.Label + ":")
 		p.newline()
 		p.printStmt(n.Stmt)
+
 	case *ast.DeferStmt:
 		p.write("defer ")
 		p.printExpr(n.Call)
+
 	case *ast.GoStmt:
 		p.write("go ")
 		p.printExpr(n.Call)
+
 	case *ast.IfStmt:
 		p.printIf(n)
+
 	case *ast.ForStmt:
 		p.printFor(n)
+
 	case *ast.SwitchStmt:
 		p.printSwitch(n)
+
 	case *ast.TryStmt:
 		p.printTry(n)
+
 	case *ast.PanicStmt:
 		p.write("panic(")
 		p.printExpr(n.Arg)
 		p.write(")")
+
 	case *ast.PrintStmt:
 		p.printPrint(n)
+
 	case *ast.CallStmt:
 		p.write("call ")
 		p.printExpr(n.Call)
+
 	case *ast.ThrowStmt:
 		p.write("throw ")
 		p.printExpr(n.X)
+
 	case *ast.ExitStmt:
 		p.write("exit")
 
@@ -83,21 +103,27 @@ func (p *printer) printStmt(node ast.Node) {
 			p.write(" ")
 			p.printExpr(n.Code)
 		}
+
 	case *ast.DirectiveStmt:
 		p.printDirective(n)
 
 	// Declarations.
 	case *ast.PackageDecl:
 		p.write("package " + n.Name)
+
 	case *ast.ImportDecl:
 		p.printImport(n)
+
 	case *ast.ConstDecl:
 		p.printConst(n)
+
 	case *ast.TypeDecl:
 		p.write("type " + n.Name.Name + " ")
 		p.printExpr(n.Type)
+
 	case *ast.VarDecl:
 		p.printVar(n)
+
 	case *ast.FuncDecl:
 		p.printFuncDecl(n)
 
@@ -124,6 +150,7 @@ func (p *printer) printBlock(block *ast.Block) {
 	}
 
 	p.write("{")
+
 	p.indent++
 
 	for _, stmt := range block.Stmts {
@@ -176,8 +203,10 @@ func (p *printer) printIf(n *ast.IfStmt) {
 	switch e := n.Else.(type) {
 	case *ast.IfStmt:
 		p.printIf(e)
+
 	case *ast.Block:
 		p.printBlock(e)
+
 	default:
 		p.printStmt(n.Else)
 	}
@@ -212,6 +241,7 @@ func (p *printer) printFor(n *ast.ForStmt) {
 		p.printExpr(n.Cond)
 		p.write("; ")
 		p.printStmt(n.Post)
+
 	case n.Cond != nil:
 		// Conditional form.
 		p.write(" ")
@@ -362,6 +392,7 @@ func prettyDirectiveArgs(rawArgs []string) (string, bool) {
 func (p *printer) printImport(n *ast.ImportDecl) {
 	if n.Parenthesized || len(n.Specs) > 1 {
 		p.write("import (")
+
 		p.indent++
 
 		for _, spec := range n.Specs {
@@ -396,6 +427,7 @@ func (p *printer) printImportSpec(spec *ast.ImportSpec) {
 func (p *printer) printConst(n *ast.ConstDecl) {
 	if n.Parenthesized || len(n.Specs) > 1 {
 		p.write("const (")
+
 		p.indent++
 
 		for _, spec := range n.Specs {
@@ -431,6 +463,7 @@ func (p *printer) printConstSpec(spec *ast.ConstSpec) {
 func (p *printer) printVar(n *ast.VarDecl) {
 	if n.Parenthesized || len(n.Specs) > 1 {
 		p.write("var (")
+
 		p.indent++
 
 		for _, spec := range n.Specs {

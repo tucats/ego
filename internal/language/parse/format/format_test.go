@@ -29,17 +29,17 @@ func TestFormatGolden(t *testing.T) {
 		{
 			name: "if-else",
 			src:  "if x>0 {y=1} else {y=2}",
-			want: "if x > 0 {\n\ty = 1\n} else {\n\ty = 2\n}\n",
+			want: "if x > 0 {\n    y = 1\n} else {\n    y = 2\n}\n",
 		},
 		{
 			name: "for-three-clause",
 			src:  "for i:=0;i<10;i++ {sum+=i}",
-			want: "for i := 0; i < 10; i++ {\n\tsum += i\n}\n",
+			want: "for i := 0; i < 10; i++ {\n    sum += i\n}\n",
 		},
 		{
 			name: "range",
 			src:  "for k,v:=range m {print k,v}",
-			want: "for k, v := range m {\n\tprint k, v\n}\n",
+			want: "for k, v := range m {\n    print k, v\n}\n",
 		},
 		{
 			name: "composite",
@@ -84,9 +84,33 @@ func main(){fmt.Println("hi")}`
 		t.Fatalf("Source error: %v", err)
 	}
 
-	want := "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hi\")\n}\n"
+	want := "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"hi\")\n}\n"
 	if got != want {
 		t.Errorf("program format\n  got:  %q\n  want: %q", got, want)
+	}
+}
+
+// TestIndentWidth checks that Options.IndentWidth controls the number of spaces
+// per level, and that a zero value falls back to the 4-space default.
+func TestIndentWidth(t *testing.T) {
+	cases := []struct {
+		width int
+		want  string
+	}{
+		{width: 0, want: "if x {\n    y = 1\n}\n"},
+		{width: 2, want: "if x {\n  y = 1\n}\n"},
+		{width: 8, want: "if x {\n        y = 1\n}\n"},
+	}
+
+	for _, c := range cases {
+		got, err := SourceWithOptions("if x {y=1}", true, Options{IndentWidth: c.width})
+		if err != nil {
+			t.Fatalf("width %d: %v", c.width, err)
+		}
+
+		if got != c.want {
+			t.Errorf("width %d\n  got:  %q\n  want: %q", c.width, got, c.want)
+		}
 	}
 }
 

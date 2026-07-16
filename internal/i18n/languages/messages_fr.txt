@@ -933,6 +933,7 @@ filter=Liste des clauses de filtre optionnelles
 fmt.ast=Afficher l'arbre syntaxique analysé au lieu du source formaté
 fmt.fragment=Analyser l'entrée comme une suite d'instructions
 fmt.program=Analyser l'entrée comme un programme complet
+fmt.tabs=Nombre d'espaces par niveau d'indentation (4 par défaut)
 fmt.write=Réécrire chaque fichier nommé sur place
 json.file=fichier | stdin
 json.indented=Si activé, la sortie est indentée pour améliorer la lisibilité

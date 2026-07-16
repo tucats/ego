@@ -950,6 +950,7 @@ filter=List of optional filter clauses
 fmt.ast=Print the parsed syntax tree instead of formatted source
 fmt.fragment=Parse the input as a bare statement fragment
 fmt.program=Parse the input as a complete program
+fmt.tabs=Number of spaces per indentation level (default 4)
 fmt.write=Rewrite each named file in place
 json.file=file | stdin
 json.indented=If set, output is indented for readaability

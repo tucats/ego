@@ -2,7 +2,8 @@
 // back into canonical Ego source text. It follows the same formatting rules as
 // Go's gofmt where they apply to Ego:
 //
-//   - Tab indentation, one tab per block-nesting level.
+//   - Space indentation, DefaultIndentWidth (4) spaces per block-nesting level
+//     by default; the width is configurable via Options.IndentWidth.
 //   - An opening "{" stays on the line of the construct it belongs to.
 //   - One statement per line.
 //   - A single space around binary operators and after commas; no space just
@@ -10,7 +11,8 @@
 //   - A blank line between top-level declarations of a full program.
 //
 // The typical entry point is Source, which parses source text and reprints it
-// canonically. Node and File print an already-built AST.
+// canonically. Node and File print an already-built AST. Each has a
+// ...WithOptions counterpart that takes formatting Options.
 //
 // TRIVIA: Because the tokenizer discards comments (see ast/node.go), the
 // formatter cannot yet reproduce them; comments are lost on a format round-trip.
@@ -29,10 +31,37 @@ import (
 	"github.com/tucats/ego/internal/language/parse/ast"
 )
 
-// Source parses Ego source text and returns its canonical formatting. When bare
-// is true the input is treated as a statement fragment (parse.ParseStatements);
-// otherwise it is treated as a complete program (parse.ParseProgram).
+// DefaultIndentWidth is the number of spaces per indentation level used when
+// Options.IndentWidth is not set (zero or negative).
+const DefaultIndentWidth = 4
+
+// Options controls formatting behavior.
+type Options struct {
+	// IndentWidth is the number of spaces emitted per block-nesting level. A
+	// value of zero or less selects DefaultIndentWidth.
+	IndentWidth int
+}
+
+// indentUnit returns the string emitted for one indentation level.
+func (o Options) indentUnit() string {
+	width := o.IndentWidth
+	if width <= 0 {
+		width = DefaultIndentWidth
+	}
+
+	return strings.Repeat(" ", width)
+}
+
+// Source parses Ego source text and returns its canonical formatting with
+// default options. When bare is true the input is treated as a statement
+// fragment (parse.ParseStatements); otherwise it is treated as a complete
+// program (parse.ParseProgram).
 func Source(source string, bare bool) (string, error) {
+	return SourceWithOptions(source, bare, Options{})
+}
+
+// SourceWithOptions is Source with explicit formatting options.
+func SourceWithOptions(source string, bare bool, opts Options) (string, error) {
 	var (
 		file *ast.File
 		err  error
@@ -48,12 +77,17 @@ func Source(source string, bare bool) (string, error) {
 		return "", err
 	}
 
-	return File(file)
+	return FileWithOptions(file, opts)
 }
 
-// File renders a parsed file to canonical source text.
+// File renders a parsed file to canonical source text with default options.
 func File(file *ast.File) (string, error) {
-	p := &printer{}
+	return FileWithOptions(file, Options{})
+}
+
+// FileWithOptions is File with explicit formatting options.
+func FileWithOptions(file *ast.File, opts Options) (string, error) {
+	p := newPrinter(opts)
 
 	p.printFile(file)
 
@@ -64,10 +98,16 @@ func File(file *ast.File) (string, error) {
 	return p.buf.String(), nil
 }
 
-// Node renders a single AST node to source text (without a trailing newline).
-// It is useful for formatting an isolated expression or statement.
+// Node renders a single AST node to source text (without a trailing newline)
+// using default options. It is useful for formatting an isolated expression or
+// statement.
 func Node(node ast.Node) (string, error) {
-	p := &printer{}
+	return NodeWithOptions(node, Options{})
+}
+
+// NodeWithOptions is Node with explicit formatting options.
+func NodeWithOptions(node ast.Node, opts Options) (string, error) {
+	p := newPrinter(opts)
 
 	p.printStmt(node)
 
@@ -79,12 +119,18 @@ func Node(node ast.Node) (string, error) {
 }
 
 // printer accumulates formatted output. indent is the current block-nesting
-// depth; err records the first failure (an unsupported node), after which all
-// further writes are suppressed.
+// depth; indentUnit is the string emitted per level; err records the first
+// failure (an unsupported node), after which all further writes are suppressed.
 type printer struct {
-	buf    strings.Builder
-	indent int
-	err    error
+	buf        strings.Builder
+	indent     int
+	indentUnit string
+	err        error
+}
+
+// newPrinter creates a printer configured from opts.
+func newPrinter(opts Options) *printer {
+	return &printer{indentUnit: opts.indentUnit()}
 }
 
 // write appends raw text to the output (unless an error has been recorded).
@@ -94,10 +140,15 @@ func (p *printer) write(s string) {
 	}
 }
 
+// indentation returns the whitespace for the current nesting depth.
+func (p *printer) indentation() string {
+	return strings.Repeat(p.indentUnit, p.indent)
+}
+
 // newline writes a line break followed by the current indentation.
 func (p *printer) newline() {
 	p.write("\n")
-	p.write(strings.Repeat("\t", p.indent))
+	p.write(p.indentation())
 }
 
 // fail records the first formatting error for an unsupported node.
@@ -132,7 +183,7 @@ func (p *printer) printFile(file *ast.File) {
 
 			if isDeclaration(file.Decls[i-1]) || isDeclaration(decl) {
 				p.write("\n")
-				p.write(strings.Repeat("\t", p.indent))
+				p.write(p.indentation())
 			}
 		}
 
