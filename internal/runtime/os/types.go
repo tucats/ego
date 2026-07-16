@@ -339,6 +339,42 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 		Value:    os.LookupEnv,
 		IsNative: true,
 	},
+	"Mkdir": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Mkdir",
+			Parameters: []data.Parameter{
+				{
+					Name:      "path",
+					Type:      data.StringType,
+					Sandboxed: true,
+				},
+				{
+					Name: "perm",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ErrorType},
+		},
+		Value: mkdir,
+	},
+	"MkdirAll": data.Function{
+		Declaration: &data.Declaration{
+			Name: "MkdirAll",
+			Parameters: []data.Parameter{
+				{
+					Name:      "path",
+					Type:      data.StringType,
+					Sandboxed: true,
+				},
+				{
+					Name: "perm",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ErrorType},
+		},
+		Value: mkdirAll,
+	},
 	"Open": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Open",
@@ -384,6 +420,22 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 		Sandboxed: true,
 		IsNative:  true,
 	},
+	"RemoveAll": data.Function{
+		Declaration: &data.Declaration{
+			Name: "RemoveAll",
+			Parameters: []data.Parameter{
+				{
+					Name:      "path",
+					Sandboxed: true,
+					Type:      data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.ErrorType},
+		},
+		Value:     os.RemoveAll,
+		Sandboxed: true,
+		IsNative:  true,
+	},
 	"Setenv": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Setenv",
@@ -415,6 +467,14 @@ var OsPackage = data.NewPackageFromMap("os", map[string]any{
 			Returns: []*data.Type{OsFileInfoType, data.ErrorType},
 		},
 		Value: stat,
+	},
+	"TempDir": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "TempDir",
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    os.TempDir,
+		IsNative: true,
 	},
 	"WriteFile": data.Function{
 		Declaration: &data.Declaration{

@@ -127,6 +127,59 @@ func changeMode(s *symbols.SymbolTable, args data.List) (any, error) {
 	return nil, nil
 }
 
+// mkdir implements os.Mkdir(), creating a single directory. The path is
+// resolved the same as any other sandboxed path argument (readFile, writeFile,
+// changeMode), and the mode is validated exactly like changeMode's.
+func mkdir(s *symbols.SymbolTable, args data.List) (any, error) {
+	path := sandboxName(SandBoxedIO(s), data.String(args.Get(0)))
+
+	mode, err := dirMode(args, 1, "Mkdir")
+	if err != nil {
+		return err, nil
+	}
+
+	if err := os.Mkdir(path, mode); err != nil {
+		return errors.New(err).In("Mkdir"), nil
+	}
+
+	return nil, nil
+}
+
+// mkdirAll implements os.MkdirAll(), creating a directory along with any parent
+// directories that do not yet exist. Like Go's os.MkdirAll, it is not an error
+// if the path already exists as a directory.
+func mkdirAll(s *symbols.SymbolTable, args data.List) (any, error) {
+	path := sandboxName(SandBoxedIO(s), data.String(args.Get(0)))
+
+	mode, err := dirMode(args, 1, "MkdirAll")
+	if err != nil {
+		return err, nil
+	}
+
+	if err := os.MkdirAll(path, mode); err != nil {
+		return errors.New(err).In("MkdirAll"), nil
+	}
+
+	return nil, nil
+}
+
+// dirMode validates and converts a directory-permission argument, mirroring the
+// uint32-range check used by writeFile and changeMode. The returned error is an
+// Ego error tagged with the calling function's name, ready to be returned as
+// the wrapper's error-typed result value.
+func dirMode(args data.List, index int, fnName string) (fs.FileMode, error) {
+	modeArg, err := args.GetInt(index)
+	if err != nil {
+		return 0, errors.ErrInvalidFunctionArgument.In(fnName).Context(modeArg)
+	}
+
+	if modeArg < 0 || modeArg > math.MaxInt32 {
+		return 0, errors.ErrInvalidFunctionArgument.In(fnName).Context(modeArg)
+	}
+
+	return fs.FileMode(uint32(modeArg)), nil
+}
+
 func sandboxName(flag bool, path string) string {
 	sandboxPrefix := settings.Get(defs.SandboxPathSetting)
 	if !flag || sandboxPrefix == "" {

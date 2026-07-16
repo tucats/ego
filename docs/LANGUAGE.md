@@ -5284,13 +5284,14 @@ if err != nil {
 }
 ```
 
-#### os.Remove(filename)
+#### os.Remove(filename) / os.RemoveAll(path)
 
 ```go
 func os.Remove(filename string) error
+func os.RemoveAll(path string) error
 ```
 
-The `Remove()` function deletes a single file (not a directory) from the file system,
+The `Remove()` function deletes a single file (or empty directory) from the file system,
 returning an error if it does not exist or cannot be removed.
 
 ```go
@@ -5298,6 +5299,54 @@ if err := os.Remove("NewData.txt"); err != nil {
     fmt.Println("could not remove file:", err)
 }
 ```
+
+`RemoveAll()` removes `path` and, if it is a directory, everything it contains, recursively.
+Matching Go's `os.RemoveAll()`, it returns a `nil` error if `path` does not exist (there is
+nothing to remove), so it is convenient for tearing down a scratch directory tree in one call:
+
+```go
+if err := os.RemoveAll(scratchDir); err != nil {
+    fmt.Println("could not remove directory tree:", err)
+}
+```
+
+Both `Remove()` and `RemoveAll()` are disallowed entirely when running in sandboxed mode --
+they are not merely confined to the sandbox root the way the read/write functions are.
+
+#### os.Mkdir(path, mode) / os.MkdirAll(path, mode)
+
+```go
+func os.Mkdir(path string, mode int) error
+func os.MkdirAll(path string, mode int) error
+```
+
+`Mkdir()` creates a single directory named `path`. It returns an error if `path` already
+exists, or if its parent directory does not exist. `MkdirAll()` creates `path` along with
+any parent directories that are missing, and -- matching Go's `os.MkdirAll()` -- returns a
+`nil` error if the directory already exists. As with any file mode, `mode` is usually written
+as an octal value (`0o755` or `0755`):
+
+```go
+// Create a two-level scratch area, then a file inside it.
+root := filepath.Join(os.TempDir(), "myapp-"+uuid.New().String(), "work")
+if err := os.MkdirAll(root, 0o755); err != nil {
+    fmt.Println("could not create directory:", err)
+    return
+}
+
+_ = os.WriteFile(filepath.Join(root, "data.txt"), "hello", 0o644)
+```
+
+#### os.TempDir()
+
+```go
+func os.TempDir() string
+```
+
+`TempDir()` returns the default directory to use for temporary files, exactly as Go's
+`os.TempDir()` does (honoring `$TMPDIR` and the platform default, e.g. `/tmp`). It does not
+create the directory or verify that it exists, and never returns an error -- it just reports
+the path. Combine it with `MkdirAll()` (as above) to build a private scratch area.
 
 #### os.Chmod(file, mode) / os.Chown(path, uid, gid)
 

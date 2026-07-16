@@ -16,31 +16,51 @@
 // (and set the sandbox root) without needing a real sandboxed session or
 // touching the persisted profile. Both the flag and the path take effect at
 // the exact point @sandbox appears in the file, not before.
+//
+// Each test builds an isolated two-level scratch tree under the OS temp
+// directory:
+//
+//   <tmp>/ego-sandbox-<uuid>/          (outer -- holds the "outside" file)
+//   <tmp>/ego-sandbox-<uuid>/root/     (inner -- becomes the sandbox root)
+//
+// Using a dedicated temp tree rather than the process's current directory
+// guarantees the parent of the sandbox root ("..") is always a real,
+// writable location, so the traversal payloads below actually reach a file
+// that exists -- the whole point of the test -- no matter where ego was
+// launched from (e.g. a read-only home directory).
 
 @test "os: sandboxed path traversal cannot escape the sandbox root"
 
 {
-    marker := "ego-sandbox-escape-test-" + uuid.New().String() + ".txt"
-    outsidePath := "../" + marker
+    outer := filepath.Join(os.TempDir(), "ego-sandbox-"+uuid.New().String())
+    root := filepath.Join(outer, "root")
+    @assert os.MkdirAll(root, 0o755) == nil
 
-    // Create a file just outside what will become the sandbox root, and a
-    // control file inside it. Both happen before sandboxing is enabled --
+    marker := "inside.txt"
+    outsideName := "outside.txt"
+    markerAbs := filepath.Join(root, marker)
+    outsideAbs := filepath.Join(outer, outsideName)
+
+    // Create a file just outside the sandbox root, and a control file inside
+    // it. Both happen (with absolute paths) before sandboxing is enabled --
     // this setup itself is not sandboxed.
-    @assert os.WriteFile(outsidePath, "should not be readable", 0o644) == nil
-    @assert os.WriteFile(marker, "safe, inside the sandbox", 0o644) == nil
+    @assert os.WriteFile(outsideAbs, "should not be readable", 0o644) == nil
+    @assert os.WriteFile(markerAbs, "safe, inside the sandbox", 0o644) == nil
 
-    // The current directory becomes the sandbox root.
-    @sandbox true path="."
+    // The inner directory becomes the sandbox root.
+    @sandbox true path=root
 
-    // Legitimate in-sandbox access still works normally.
+    // Legitimate in-sandbox access still works normally: a bare name resolves
+    // against the sandbox root.
     content, err := os.ReadFile(marker)
     @assert err == nil
     @assert string(content) == "safe, inside the sandbox"
 
-    // The traversal attempt must not reach the real file outside the
-    // sandbox root. The path is clamped back to the root itself, which is
-    // a directory, so reading it as a file fails rather than returning the
-    // outside file's contents.
+    // The traversal attempt must not reach the real file one level up. The
+    // path is clamped back to the root itself, which is a directory, so
+    // reading it as a file fails rather than returning the outside file's
+    // contents.
+    outsidePath := "../" + outsideName
     _, escapeErr := os.ReadFile(outsidePath)
     @assert escapeErr != nil
 
@@ -58,17 +78,18 @@
     // Clearing path along with the false flag is required here: the
     // sandbox root set above is an ephemeral *global* settings override,
     // not scoped to sandboxed mode, so leaving it set would keep
-    // subsequent native-passthrough calls (like os.Remove below) sandboxed
-    // even after "false" turns off this context's own sandboxedIO flag.
+    // subsequent native-passthrough calls (like os.RemoveAll below)
+    // sandboxed even after "false" turns off this context's own
+    // sandboxedIO flag.
     @sandbox false path=""
 
     // Confirm the outside file was never touched by the write attempt.
-    outsideContent, outsideErr := os.ReadFile(outsidePath)
+    outsideContent, outsideErr := os.ReadFile(outsideAbs)
     @assert outsideErr == nil
     @assert string(outsideContent) == "should not be readable"
 
-    @assert os.Remove(marker) == nil
-    @assert os.Remove(outsidePath) == nil
+    // Remove the whole scratch tree in one call.
+    @assert os.RemoveAll(outer) == nil
 }
 
 @test "os: Stat respects the sandbox root the same way Read/WriteFile do"
@@ -77,20 +98,26 @@
     // os.Stat shares the same sandboxName() helper as ReadFile/WriteFile/
     // Chmod (internal/runtime/os/files.go), so it is contained the same way.
     // The manifestation is different, though: ReadFile/WriteFile *error* on
-    // a clamped path because "." (the sandbox root) is a directory, not a
+    // a clamped path because the sandbox root is a directory, not a
     // readable/writable file. Stat succeeds on a directory, so a traversal
     // attempt does not error -- it silently resolves to stat'ing the sandbox
     // root itself. This is still full containment: the caller learns nothing
     // about the real file outside the root (the returned info describes the
     // root directory, not the escaped file), it just doesn't surface as an
     // error the way ReadFile/WriteFile do.
-    marker := "ego-sandbox-stat-test-" + uuid.New().String() + ".txt"
-    outsidePath := "../" + marker
+    outer := filepath.Join(os.TempDir(), "ego-sandbox-stat-"+uuid.New().String())
+    root := filepath.Join(outer, "root")
+    @assert os.MkdirAll(root, 0o755) == nil
 
-    @assert os.WriteFile(outsidePath, "should not be statable", 0o644) == nil
-    @assert os.WriteFile(marker, "safe, inside the sandbox", 0o644) == nil
+    marker := "inside.txt"
+    outsideName := "outside.txt"
+    markerAbs := filepath.Join(root, marker)
+    outsideAbs := filepath.Join(outer, outsideName)
 
-    @sandbox true path="."
+    @assert os.WriteFile(outsideAbs, "should not be statable", 0o644) == nil
+    @assert os.WriteFile(markerAbs, "safe, inside the sandbox", 0o644) == nil
+
+    @sandbox true path=root
 
     // Legitimate in-sandbox access still works normally.
     info, err := os.Stat(marker)
@@ -98,15 +125,14 @@
     @assert info.Name == marker
     @assert info.IsDir == false
 
-    // The traversal attempt clamps to the sandbox root ("."), a directory --
+    // The traversal attempt clamps to the sandbox root ("root"), a directory --
     // it does not error, but it also does not return the outside file's info.
-    escapeInfo, escapeErr := os.Stat(outsidePath)
+    escapeInfo, escapeErr := os.Stat("../" + outsideName)
     @assert escapeErr == nil
-    @assert escapeInfo.Name == "."
+    @assert escapeInfo.Name == "root"
     @assert escapeInfo.IsDir == true
 
     @sandbox false path=""
 
-    @assert os.Remove(marker) == nil
-    @assert os.Remove(outsidePath) == nil
+    @assert os.RemoveAll(outer) == nil
 }
