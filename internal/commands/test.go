@@ -12,15 +12,15 @@ import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/compiler"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/runtime/io"
-	"github.com/tucats/ego/internal/runtime/profile"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/compiler"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/runtime/io"
+	"github.com/tucats/ego/internal/runtime/profile"
 )
 
 // TestAction is the command handler for the ego TEST command. It compiles and runs
@@ -52,6 +52,12 @@ func TestAction(c *cli.Context) error {
 	// Get the repeat count, if provided. IF not given, default is 1
 	if count, found := c.Integer("count"); found && count > 0 {
 		repeatCount = count
+	}
+
+	// If the user specified the "disassemble" option, turn on the disassembler.
+	disassemble := c.Boolean(defs.DisassembleOption)
+	if disassemble {
+		ui.Active(ui.ByteCodeLogger, true)
 	}
 
 	// Set any options needed in the symbol table for test execution. For example,

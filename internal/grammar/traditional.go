@@ -1441,6 +1441,12 @@ var TestGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    defs.DisassembleOption,
+		Aliases:     []string{"disasm"},
+		Description: "run.disasm",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    defs.OptimizerOption,
 		ShortName:   "o",
 		Description: "run.optimize",
