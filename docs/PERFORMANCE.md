@@ -931,10 +931,20 @@ shape — slots eliminate the name-resolution cost, which is a large fraction of
 tight interpreted loop but a smaller one of a program dominated by float/complex
 arithmetic and garbage collection (Findings 5/6).
 
-**Not yet done (deferred, see SLOTS.md):** eliminating the nested-block
-`PushScope`/`PopScope` runtime tables entirely for eligible functions (Option B /
-Phase 3) — a separate scope-*creation* saving on top of this scope-*access*
-saving. That is tracked as its own item below.
+**Deliberately deferred (Option B / Phase 3, see SLOTS.md Section 5.3):**
+eliminating the nested-block `PushScope`/`PopScope` runtime tables entirely for
+eligible functions — a separate scope-*creation* saving on top of this
+scope-*access* saving. This was **measured and consciously not pursued**: after
+Findings 4/8/11 already collapsed per-iteration loop scopes down to a single
+shared scope, the residual scope-creation cost is below the profiler's noise
+floor — `NewChildSymbolTable`/`pushScopeByteCode`/`initializeValues` do not
+appear anywhere in the top 300 nodes of the slots-on tight-loop profile above
+(< ~0.1% of samples). Realizing Option B would also require threading through
+the delicate `break`/`continue` scope-unwind accounting, `try`'s deliberate
+scope retention, and the still-open BUG-61 (`switch`/`continue` cleanup) — a
+materially larger and riskier change than the measured payoff justifies. It is
+left on record as an unrealized future opportunity, to be revisited only if a
+scope-creation-bound workload ever makes it worthwhile.
 
 ---
 

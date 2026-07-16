@@ -1,15 +1,26 @@
 # Slot-Based Local Variable Access — Implementation Plan
 
-**Status:** in progress — Phase 0, Phase 1, Q3 introspection, and Phase 2a/2b
-landed and functional. Slotted: body `:=` locals, iteration counters, `&x`,
-`*p`, `++`/compound-assign, **fixed parameters** (via ArgSlot), and **methods**
-(receiver stays name-based). Still name-based: range vars, variadic params, the
-receiver, and named-return variables (which now coexist with an otherwise-slotted
-function). Slotted locals are visible to introspection by name (debugger,
-util.Symbols, error formatting). All 1571 Ego tests and the Go suite pass with
-slots on and off; a hot arithmetic loop runs ~24% faster with slots on.
-Remaining: slot named-return variables; authenticated apitest run (blocked on
-dev-server credentials); formal re-profiling writeup here.
+**Status:** landed — Phase 0, Phase 1, Q3 introspection, and all of Phase 2
+(2a–2e) are complete and functional. Slotted: body `:=` locals (with nested-block
+shadowing), iteration for-loop counters, `&x`, `*p`, `++`/compound-assign, fixed
+and variadic **parameters**, **methods** (including the receiver), and
+**named-return variables**. Only range variables remain name-based (by design —
+they are driven by RangeNext). Slotted locals are fully visible to introspection
+by name (debugger `show symbols`/`print`, util.Symbols, error formatting). Gated
+by `ego.compiler.slots` (default on). All 1,573 Ego tests, the Go suite (incl.
+`-race`), and the 122-case apitest REST suite pass with slots on and off; on a
+variable-access-heavy tight loop, wall-clock drops ~24% and
+`runtime.mapaccess2_faststr` falls from ~23% to ~3% of samples (see
+PERFORMANCE.md Finding 7 Resolution).
+
+**Phase 3 (Option B — nested-block scope-push elision): deliberately deferred.**
+Measured and consciously not pursued — after Findings 4/8/11 collapsed
+per-iteration loop scopes to a single shared scope, the residual scope-creation
+cost is below the profiler noise floor (< ~0.1% of the slots-on hot-loop
+profile), and realizing it would mean threading through the delicate
+break/continue unwind accounting, `try`'s scope retention, and the open BUG-61.
+Left as a documented future opportunity (Section 5.3), to revisit only if a
+scope-creation-bound workload makes it worthwhile.
 
 ## Implementation progress log
 
