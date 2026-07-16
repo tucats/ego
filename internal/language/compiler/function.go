@@ -190,6 +190,53 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// Also, add the module name and tokenizer to the current frame.
 	b.Emit(bytecode.Module, functionName.Spelling(), c.t)
 
+	// Build this function's own parameter name set first. parseParameterDeclaration
+	// (called in compileFunctionDefinition before us) already added them to c.scopes,
+	// so we must know them upfront to exclude them from the forbidden set below.
+	ownParams := make(map[string]bool)
+
+	for _, p := range parameters {
+		if p.name != "" && p.name != "_" && !strings.HasPrefix(p.name, "$") {
+			ownParams[p.name] = true
+		}
+	}
+
+	// docs/SLOTS.md Phase 2: decide slot-eligibility BEFORE binding the receiver
+	// and parameters, so they can all be slotted (the receiver's GetThis and the
+	// parameters' Arg are emitted just below). The predicate needs the body's
+	// opening brace, located with a read-only lookahead past the return-type
+	// spec (peekFunctionBodyPos). The seed includes the receiver name as well as
+	// the parameters so that a closure capturing either disqualifies the
+	// function. Save/restore c.funcSlots around this function's whole
+	// compilation so a nested function never clobbers it.
+	savedFuncSlots := c.funcSlots
+	c.funcSlots = nil
+
+	defer func() { c.funcSlots = savedFuncSlots }()
+
+	if slotPlaceholderAddr >= 0 {
+		if bodyPos := c.peekFunctionBodyPos(); bodyPos >= 0 {
+			seed := ownParams
+			if thisName.IsNot(tokenizer.EmptyToken) {
+				seed = make(map[string]bool, len(ownParams)+1)
+				for k := range ownParams {
+					seed[k] = true
+				}
+
+				seed[thisName.Spelling()] = true
+			}
+
+			savedMark := c.t.Mark()
+			c.t.Set(bodyPos)
+			eligible := c.functionBodyIsSlotEligible(seed)
+			c.t.Set(savedMark)
+
+			if eligible {
+				c.funcSlots = &slotContext{allocateAddr: slotPlaceholderAddr}
+			}
+		}
+	}
+
 	// If there was a "this" receiver variable defined, generate code to set
 	// it now, and handle whether the receiver is a pointer to the actual
 	// type object, or a copy of it.
@@ -199,30 +246,37 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// pointer-type marker after auto-dereferencing it: only a genuine
 	// pointer receiver (byValue == false) needs that; a value receiver
 	// still needs the bare dereferenced value for the $new() copy below.
+	//
+	// docs/SLOTS.md Phase 2: in a slot-eligible method the receiver is bound to
+	// a slot (allocateParamSlot + GetThis with an int slot operand), and the
+	// value-receiver $new copy reads/writes it through slot ops; otherwise the
+	// receiver stays name-based exactly as before.
 	if thisName.IsNot(tokenizer.EmptyToken) {
-		// EmitAt only auto-converts a bare tokenizer.Token operand to its
-		// spelling string (see bytecode.go); nested inside this []any, that
-		// conversion never runs, so thisName is converted explicitly here.
-		b.Emit(bytecode.GetThis, []any{thisName.Spelling(), byValue})
+		receiverName := thisName.Spelling()
 
-		// If it was by value, make a copy of that so the function can't
-		// modify the actual value.
-		if byValue {
-			b.Emit(bytecode.Load, "$new")
-			b.Emit(bytecode.Load, thisName)
-			b.Emit(bytecode.Call, 1)
-			b.Emit(bytecode.Store, thisName)
-		}
-	}
+		if slot, ok := c.allocateParamSlot(receiverName); ok {
+			b.Emit(bytecode.GetThis, []any{slot, byValue})
 
-	// Build this function's own parameter name set first. parseParameterDeclaration
-	// (called in compileFunctionDefinition before us) already added them to c.scopes,
-	// so we must know them upfront to exclude them from the forbidden set below.
-	ownParams := make(map[string]bool)
+			if byValue {
+				b.Emit(bytecode.Load, "$new")
+				c.emitLoadName(b, receiverName)
+				b.Emit(bytecode.Call, 1)
+				c.emitStoreName(b, receiverName)
+			}
+		} else {
+			// EmitAt only auto-converts a bare tokenizer.Token operand to its
+			// spelling string (see bytecode.go); nested inside this []any, that
+			// conversion never runs, so thisName is converted explicitly here.
+			b.Emit(bytecode.GetThis, []any{receiverName, byValue})
 
-	for _, p := range parameters {
-		if p.name != "" && p.name != "_" && !strings.HasPrefix(p.name, "$") {
-			ownParams[p.name] = true
+			// If it was by value, make a copy of that so the function can't
+			// modify the actual value.
+			if byValue {
+				b.Emit(bytecode.Load, "$new")
+				b.Emit(bytecode.Load, thisName)
+				b.Emit(bytecode.Call, 1)
+				b.Emit(bytecode.Store, thisName)
+			}
 		}
 	}
 
@@ -261,38 +315,10 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
-	// docs/SLOTS.md Phase 2: decide slot-eligibility BEFORE compiling parameters,
-	// so the parameters themselves can be slotted. The eligibility predicate
-	// needs the body's opening brace, located here with a read-only lookahead
-	// past the return-type spec (peekFunctionBodyPos). Save/restore c.funcSlots
-	// around this whole function's compilation so a nested function (compiled
-	// while its enclosing function's context is live on c) never clobbers it.
-	//
-	// Methods are eligible: their parameters and body locals are slotted while
-	// the receiver stays name-based (bound by GetThis, read by name), which
-	// composes cleanly since a name-based receiver and slotted locals share the
-	// same boundary table (map + bank) with no name overlap. Named returns
-	// likewise coexist name-based with a slotted function.
-	savedFuncSlots := c.funcSlots
-	c.funcSlots = nil
-
-	defer func() { c.funcSlots = savedFuncSlots }()
-
-	if slotPlaceholderAddr >= 0 {
-		if bodyPos := c.peekFunctionBodyPos(); bodyPos >= 0 {
-			savedMark := c.t.Mark()
-			c.t.Set(bodyPos)
-			eligible := c.functionBodyIsSlotEligible(ownParams)
-			c.t.Set(savedMark)
-
-			if eligible {
-				c.funcSlots = &slotContext{allocateAddr: slotPlaceholderAddr}
-			}
-		}
-	}
-
 	// Generate the parameter assignments. These are extracted from the automatic
 	// array named __args which is generated as part of the bytecode function call.
+	// Slot-eligibility was already decided above (before the receiver was bound),
+	// so slotted parameters compile to ArgSlot here.
 	for index, parameter := range parameters {
 		c.compileFunctionParameters(parameter, b, index)
 	}

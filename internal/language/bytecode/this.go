@@ -83,12 +83,21 @@ func loadThisByteCode(c *Context, i any) error {
 // opposed to "func (b *Builder) …").
 func getThisByteCode(c *Context, i any) error {
 	var (
-		this    string
-		byValue bool
+		this      string
+		slotIndex = -1
+		byValue   bool
 	)
 
+	// docs/SLOTS.md Phase 2: in a slot-eligible method the receiver is bound to
+	// a slot instead of by name. The compiler signals this by passing an int
+	// slot index as operand[0] (a plain string name otherwise).
 	if operands, ok := i.([]any); ok && len(operands) == 2 {
-		this = data.String(operands[0])
+		if idx, isInt := operands[0].(int); isInt {
+			slotIndex = idx
+		} else {
+			this = data.String(operands[0])
+		}
+
 		byValue, _ = operands[1].(bool)
 	} else {
 		this = data.String(i)
@@ -147,8 +156,24 @@ func getThisByteCode(c *Context, i any) error {
 			v = &boxed
 		}
 
-		c.setAlways(this, v)
-		c.symbols.MarkEphemeral(this)
+		// docs/SLOTS.md Phase 2: a slotted receiver is written into the slot
+		// bank. No MarkEphemeral is needed -- the bank belongs to this one call
+		// activation and is discarded with the boundary table, and proxy/clone
+		// tables copy the symbols map (not the bank), so a slotted receiver is
+		// ephemeral by construction.
+		if slotIndex >= 0 {
+			bank := c.symbols.LocalsBank()
+			if bank == nil {
+				return c.runtimeError(errors.ErrInternalCompiler).Context("GetThis: no locals bank in scope")
+			}
+
+			if !bank.SetSlot(slotIndex, v) {
+				return c.runtimeError(errors.ErrInternalCompiler).Context("GetThis: slot index out of range")
+			}
+		} else {
+			c.setAlways(this, v)
+			c.symbols.MarkEphemeral(this)
+		}
 
 		if ui.IsActive(ui.TraceLogger) {
 			ui.Log(ui.TraceLogger, "trace.getthis", ui.A{

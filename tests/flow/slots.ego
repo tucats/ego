@@ -174,6 +174,35 @@
     @assert object.add(4) == 22
 }
 
+@test "slots: value receiver is copied, pointer receiver mutates"
+{
+    // The receiver is slotted (Phase 2). A value receiver must give the method
+    // its own copy (mutations do not escape); a pointer receiver must mutate
+    // the caller's value.
+    type box struct {
+        v int
+    }
+
+    func (b box) tryMutate(delta int) int {
+        b.v = b.v + delta
+
+        return b.v
+    }
+
+    func (b *box) grow(delta int) int {
+        b.v = b.v + delta
+
+        return b.v
+    }
+
+    x := box{v: 5}
+
+    @assert x.tryMutate(10) == 15 // local copy
+    @assert x.v == 5              // caller unchanged
+    @assert x.grow(10) == 15
+    @assert x.v == 15             // caller changed
+}
+
 @test "slots: recursion gives each activation fresh slots"
 {
     func fib(n int) int {
