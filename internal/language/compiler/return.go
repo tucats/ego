@@ -1,8 +1,8 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
@@ -53,7 +53,9 @@ func (c *Compiler) compileReturn() error {
 				}
 
 				c.b.Append(bc)
-				c.b.Emit(bytecode.Store, c.returnVariables[count].Name)
+				// docs/SLOTS.md: assign an explicit return value into the named
+				// return variable, slot-aware.
+				c.emitStoreName(c.b, c.returnVariables[count].Name)
 
 				count++
 
@@ -80,7 +82,7 @@ func (c *Compiler) compileReturn() error {
 				return err
 			}
 
-			c.b.Emit(bytecode.Load, c.returnVariables[i].Name)
+			c.emitLoadName(c.b, c.returnVariables[i].Name)
 		}
 
 		c.b.Emit(bytecode.Return, len(c.returnVariables))

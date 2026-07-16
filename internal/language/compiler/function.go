@@ -351,6 +351,14 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 		c.DefineSymbol(rv.Name)
 
+		// docs/SLOTS.md Phase 2: bind a named return variable to a slot in a
+		// slot-eligible function (function-wide, like a parameter). No-op when
+		// slots are inactive. This is safe alongside recover(): any function with
+		// a "defer" (required for a deferred recover to read named returns) is
+		// disqualified by the eligibility predicate, so unwindPanic only ever
+		// reads name-based named returns.
+		c.allocateParamSlot(rv.Name)
+
 		if err := c.ReferenceSymbol(rv.Name); err != nil {
 			return nil, nil, err
 		}
@@ -414,7 +422,16 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.b.Emit(bytecode.PushScope)
 
 		for _, rv := range c.returnVariables {
-			cx.b.Emit(bytecode.CreateAndStore, []any{rv.Name, data.InstanceOfType(rv.Type)})
+			// docs/SLOTS.md Phase 2: initialize a slotted named return by pushing
+			// its zero value and StoreSlot; a name-based one uses CreateAndStore
+			// exactly as before. (The extra scope pushed above is retained either
+			// way to keep the PopScope balance unchanged.)
+			if idx, ok := cx.resolveSlot(rv.Name); ok {
+				cx.b.Emit(bytecode.Push, data.InstanceOfType(rv.Type))
+				cx.b.Emit(bytecode.StoreSlot, idx)
+			} else {
+				cx.b.Emit(bytecode.CreateAndStore, []any{rv.Name, data.InstanceOfType(rv.Type)})
+			}
 		}
 	}
 
@@ -443,7 +460,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// the return items onto the stack.
 	if c.returnVariables != nil {
 		for _, rv := range c.returnVariables {
-			cx.b.Emit(bytecode.Load, rv.Name)
+			cx.emitLoadName(cx.b, rv.Name)
 		}
 	}
 
@@ -476,7 +493,7 @@ func generateFunctionReturn(c *Compiler, cx *Compiler) error {
 		// If so, we need to push the return values on the stack
 		// in the reverse order they were declared.
 		for i := len(c.returnVariables) - 1; i >= 0; i = i - 1 {
-			cx.b.Emit(bytecode.Load, c.returnVariables[i].Name)
+			cx.emitLoadName(cx.b, c.returnVariables[i].Name)
 		}
 
 		cx.b.Emit(bytecode.Return, len(c.returnVariables))

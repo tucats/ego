@@ -217,6 +217,77 @@
     @assert fib(10) == 55
 }
 
+@test "slots: named return variables (bare, accumulated, explicit)"
+{
+    // Named returns are slotted in an eligible function (no defer/closure).
+    func divmod(a int, b int) (q int, r int) {
+        q = a / b
+        r = a - q*b
+
+        return
+    }
+
+    func accumulate(n int) (total int) {
+        for i := 0; i < n; i++ {
+            total = total + i
+        }
+
+        return
+    }
+
+    func explicit(n int) (out int, ok bool) {
+        if n > 0 {
+            return n * 2, true
+        }
+
+        return 0, false
+    }
+
+    q, r := divmod(17, 5)
+    @assert q == 3
+    @assert r == 2
+    @assert accumulate(5) == 10
+
+    x, present := explicit(4)
+    @assert x == 8
+    @assert present
+
+    y, absent := explicit(-1)
+    @assert y == 0
+    @assert !absent
+}
+
+@test "slots: named returns still work with a deferred recover (name-based)"
+{
+    // A function with a defer is NOT slot-eligible, so its named returns stay
+    // name-based; a deferred recover must still read and modify them.
+    func guarded(fail bool) (result int, msg string) {
+        defer func() {
+            if r := recover(); r != nil {
+                result = -1
+                msg = "caught"
+            }
+        }()
+
+        if fail {
+            panic("boom")
+        }
+
+        result = 42
+        msg = "ok"
+
+        return
+    }
+
+    r1, m1 := guarded(false)
+    @assert r1 == 42
+    @assert T.Equal(m1, "ok")
+
+    r2, m2 := guarded(true)
+    @assert r2 == -1
+    @assert T.Equal(m2, "caught")
+}
+
 @test "slots: closure-containing function falls back correctly"
 {
     // This function contains a capturing closure, so it is NOT slot-eligible
