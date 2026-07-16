@@ -645,7 +645,9 @@ func (c *Compiler) compileReturnTypes(fn tokenizer.Token, count int, wasVoid boo
 		if k := data.InstanceOfType(theType); k != nil {
 			t = data.TypeOf(k)
 		}
+
 		returnList = append(returnList, t)
+
 		coercion.Emit(bytecode.Coerce, t)
 
 		if returnName != "" {
@@ -701,7 +703,7 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 		// the parameter into a compile-time register slot using
 		// (ArgSlot [index, register, kind]) instead of by name
 		// (Arg [index, name, kind]), so body reads of the parameter compile
-		// to LoadRegister. allocateParamRegister returns false for a 
+		// to LoadRegister. allocateParamRegister returns false for a
 		// non-slotted context or an ineligible name (e.g. "_"), leaving
 		// the name-based path intact.
 		if register, ok := c.allocateParamSRegister(parameter.name); ok {

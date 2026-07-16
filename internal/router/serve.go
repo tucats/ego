@@ -22,6 +22,7 @@ import (
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/server/auth"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/validate"
@@ -229,20 +230,17 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Get the real name of the handler function, and clean it up by removing
 			// noisy prefixes supplied by the reflection system.
-			fn := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
-
-			for _, prefix := range []string{"github.com/tucats/ego/", "http/", "tables/"} {
-				fn = strings.TrimPrefix(fn, prefix)
-			}
+			functionName := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
+			functionName = data.StripGoPrefixes(functionName)
 
 			if route.filename != "" {
-				fn = fn + ", file " + strconv.Quote(route.filename)
+				functionName = functionName + ", file " + strconv.Quote(route.filename)
 			}
 
 			ui.Log(ui.RestLogger, "route.handler", ui.A{
 				"session":  sessionID,
 				"endpoint": route.endpoint,
-				"handler":  fn})
+				"handler":  functionName})
 		}
 	}
 

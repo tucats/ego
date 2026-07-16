@@ -1424,7 +1424,7 @@ func (t *Type) Name() string {
 // as a pointer type, without the pointer designation.
 
 func KindOf(i any) int {
-	switch i.(type) {
+	switch actual := i.(type) {
 	case *any, **sync.WaitGroup, **sync.Mutex, *string:
 		return PointerKind
 
@@ -1498,7 +1498,7 @@ func KindOf(i any) int {
 		return StructKind
 
 	case *Scalar:
-		return KindOf(i.(*Scalar).value)
+		return KindOf(actual.value)
 
 	// A channel is reference-typed in Ego (like Go's own channels), the
 	// same way *Map and *Struct above are -- not a pointer TO a channel.

@@ -380,9 +380,7 @@ func formatNativeGoValue(v any) string {
 	if vv.Kind() == reflect.Func {
 		fn := runtime.FuncForPC(reflect.ValueOf(v).Pointer())
 
-		name := fn.Name()
-		name = strings.Replace(name, "github.com/tucats/ego/internal/builtins.", "", 1)
-		name = strings.Replace(name, "github.com/tucats/ego/internal/", "", 1)
+		name := StripGoPrefixes(fn.Name())
 
 		if name == "" {
 			name = defs.Anon
@@ -545,4 +543,45 @@ func formatInterfaceArray(v []any) string {
 	}
 
 	return text.String()
+}
+
+// stripGoPrefixes is used to strip Go native fully-qualified package
+// prefix strings from names, so the value exposed to Ego doesn't
+// include insight into the internal structure of the Ego code.
+//
+// The strips are done in order, so a shorter string that matches
+// the start of a longer string must come later in the list. The
+// first match that hits is taken.
+// NOTE: If the package structure is modified, this is a key place
+// where that change must be reflected.
+func StripGoPrefixes(name string) string {
+	type subs struct {
+		replace, with string
+	}
+
+	stripList := []subs{
+		{replace: "github.com/tucats/ego/internal/builtins."},
+		{replace: "github.com/tucats/ego/internal/language/compiler.Test", with: "T."},
+		{replace: "github.com/tucats/ego/internal/language/compiler."},
+		{replace: "github.com/tucats/ego/internal/language/bytecode."},
+		{replace: "github.com/tucats/ego/internal/language/data."},
+		{replace: "github.com/tucats/ego/internal/language/debugger."},
+		{replace: "github.com/tucats/ego/internal/router."},
+		{replace: "github.com/tucats/ego/internal/runtime/"},
+		{replace: "github.com/tucats/ego/internal/runtime."},
+		{replace: "github.com/tucats/ego/internal/server/"},
+		{replace: "github.com/tucats/ego/internal/util/"},
+		{replace: "github.com/tucats/ego/internal"},
+	}
+
+	for _, strip := range stripList {
+		editedName := strings.Replace(name, strip.replace, strip.with, 1)
+		if editedName != name {
+			return editedName
+		}
+
+		name = editedName
+	}
+
+	return name
 }
