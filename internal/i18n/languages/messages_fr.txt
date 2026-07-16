@@ -323,7 +323,7 @@ endpoint.definition=définition d'endpoint invalide
 entry.not.found=nom de point d'entrée non défini
 eof.marker=marqueur de fin @compile introuvable avant la fin de la source
 equals=manque '='
-expected.subcommand=attendu l'un de
+expected.one.of=attendu l'un de
 expired=jeton expiré
 expression=expression manquante
 expression.term=terme manquant

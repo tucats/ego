@@ -329,7 +329,7 @@ endpoint.definition=invalid endpoint definition
 entry.not.found=undefined entrypoint name
 eof.marker=@compile eof marker not found before end of source
 equals=missing '='
-expected.subcommand=expected one of
+expected.one.of=expected one of
 expired=expired token
 expression=missing expression
 expression.term=missing term

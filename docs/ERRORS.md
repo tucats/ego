@@ -101,7 +101,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.entry.not.found | undefined entrypoint name |
 | error.eof.marker | @compile eof marker not found before end of source |
 | error.equals | missing '=' |
-| error.expected.subcommand | expected one of |
+| error.expected.one.of | expected one of |
 | error.expired | expired token |
 | error.expression | missing expression |
 | error.expression.term | missing term |

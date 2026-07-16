@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -11,9 +12,9 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // When used in a parameter count field, this value indicates that
@@ -427,10 +428,12 @@ func invokeAction(c *Context) error {
 		}
 
 		if len(expected) > 0 {
+			sort.Strings(expected)
+
 			return errors.ErrUnexpectedParameters.
 				Clone().
 				Context(g.Parameters[0]).
-				Chain(errors.ErrExpectedSubcommand.
+				Chain(errors.ErrExpectedOneOf.
 					Clone().
 					Context(strings.Join(expected, ", ")))
 		}
@@ -535,7 +538,18 @@ func validateOption(location *Option, value string, hasValue bool) error {
 		}
 
 		if !found {
-			return errors.ErrInvalidKeyword.Context(value)
+			expected := []string{}
+
+			for _, keyword := range location.Keywords {
+				expected = append(expected, keyword)
+			}
+
+			sort.Strings(expected)
+
+			return errors.ErrInvalidKeyword.
+				Context(value).
+				Chain(errors.ErrExpectedOneOf.
+					Context(strings.Join(expected, ", ")))
 		}
 
 	case BooleanType:
