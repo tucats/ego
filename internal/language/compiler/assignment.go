@@ -3,9 +3,9 @@ package compiler
 import (
 	"fmt"
 
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
@@ -65,6 +65,12 @@ func (c *Compiler) compileAssignment() error {
 	defer func() {
 		c.flags.inAssignment = false
 		c.flags.multipleTargets = false
+
+		// docs/SLOTS.md: any slot reserved for a ":=" target by
+		// assignmentTarget above is registered (made name-resolvable) only now,
+		// after the right-hand side has been compiled, so a shadowing
+		// "x := x + 1" resolved its RHS "x" to the outer binding.
+		c.registerPendingSlots()
 	}()
 
 	if storeLValue.StoreCount() > 1 {
@@ -111,7 +117,7 @@ func (c *Compiler) compileAssignment() error {
 		// and DropToMarker.  Any other shape is a qualified lvalue.
 		isSimpleLValue := storeLValue.Mark() == 2 &&
 			firstInstr != nil &&
-			firstInstr.Operation == bytecode.Store
+			(firstInstr.Operation == bytecode.Store || firstInstr.Operation == bytecode.StoreSlot)
 
 		if isSimpleLValue {
 			// --- Simple variable: x++ or x-- ---
@@ -151,6 +157,21 @@ func (c *Compiler) compileAssignment() error {
 			// The fix is the DropToMarker call below: it removes the exact
 			// "let" marker that assignmentTarget() pushed, restoring the
 			// stack to the depth it had before this statement began.
+			// docs/SLOTS.md: a slotted local's store is StoreSlot <index>;
+			// reproduce the read-modify-write against the same slot. A
+			// name-based local uses Load/Store <name> exactly as before.
+			if firstInstr.Operation == bytecode.StoreSlot {
+				idx := data.IntOrZero(firstInstr.Operand)
+
+				c.b.Emit(bytecode.LoadSlot, idx)
+				c.b.Emit(bytecode.Push, 1)
+				c.b.Emit(autoMode)
+				c.b.Emit(bytecode.StoreSlot, idx)
+				c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
+
+				return nil
+			}
+
 			t := data.String(firstInstr.Operand)
 
 			if err = c.ReferenceSymbol(t); err != nil {

@@ -1,9 +1,9 @@
 package compiler
 
 import (
-	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
@@ -138,7 +138,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 					return nil, err
 				}
 
-				bc.Emit(bytecode.Load, name)
+				c.emitLoadName(bc, name.Spelling())
 
 				needLoad = false
 			}
@@ -170,7 +170,7 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		}
 
 		names = append(names, name.Spelling())
-		patchStore(bc, name.Spelling(), false, false)
+		c.patchStore(bc, name.Spelling(), false, false, -1)
 
 		// A compound target's StoreIndex (emitted by patchStore just above)
 		// pushes its container back onto the stack on success -- storeInMap,
@@ -303,7 +303,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 				return nil, err
 			}
 
-			bc.Emit(bytecode.Load, name)
+			c.emitLoadName(bc, name.Spelling())
 
 			needLoad = false
 		}
@@ -318,6 +318,8 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 	if name.Spelling() == defs.DiscardedVariable {
 		bc.Emit(bytecode.Drop, 1)
 	} else {
+		declSlot := -1
+
 		if c.t.Peek(1).Is(tokenizer.DefineToken) {
 			// Reject shadowing a built-in type name when
 			// ego.compiler.type.shadowing is turned off (BUG-75).
@@ -325,15 +327,24 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 				return nil, err
 			}
 
-			// PERFORMANCE.md Finding 11: inside a for-loop body scope that
-			// compileForBody has proven safe for it (see
-			// loopBodyIdempotentDeclEligible), a simple ":=" must not error
-			// when the name already exists - it means this is the second or
-			// later iteration reusing the loop's single shared scope, not a
-			// genuine duplicate declaration. SymbolOptCreate is the same
-			// non-erroring opcode assignmentTargetList already uses
-			// unconditionally for multi-target ":=" lists.
-			if c.inIdempotentDeclScope() {
+			// docs/SLOTS.md: in a slot-eligible function, a simple ":=" of a
+			// slot-eligible name is given a compile-time slot instead of a
+			// runtime symbol-table entry. There is no separate "create" step -
+			// the slot already exists in the bank (AllocateLocal) - so no
+			// SymbolCreate is emitted; the reserved index is threaded to
+			// patchStore below, which emits the StoreSlot. Registration of the
+			// name is deferred (allocateSlot records it as pending) until the
+			// enclosing statement's RHS has been compiled, so a shadowing
+			// "x := x + 1" still reads the outer x.
+			if idx, ok := c.allocateSlot(name.Spelling()); ok {
+				declSlot = idx
+			} else if c.inIdempotentDeclScope() {
+				// PERFORMANCE.md Finding 11: inside a for-loop body scope that
+				// compileForBody has proven safe for it (see
+				// loopBodyIdempotentDeclEligible), a simple ":=" must not error
+				// when the name already exists - it means this is the second or
+				// later iteration reusing the loop's single shared scope, not a
+				// genuine duplicate declaration.
 				bc.Emit(bytecode.SymbolOptCreate, name)
 			} else {
 				bc.Emit(bytecode.SymbolCreate, name)
@@ -358,7 +369,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 		// the ordinary right-hand-side expression instead, which already
 		// leaves a plain received value on the stack -- so this lvalue no
 		// longer needs to special-case receives at all, only sends.
-		patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1).Is(tokenizer.ChannelReceiveToken))
+		c.patchStore(bc, name.Spelling(), isPointer, c.t.Peek(1).Is(tokenizer.ChannelReceiveToken), declSlot)
 	}
 
 	bc.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
@@ -382,7 +393,15 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 //   - StoreChan  if isChan is true  (channel send: ch <- value)
 //   - StoreViaPointer if isPointer is true  (pointer write: *p = value)
 //   - Store otherwise  (ordinary variable write)
-func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
+//
+// declSlot is the slot index reserved for a slotted ":=" declaration of name,
+// or -1 when this store is not such a declaration. When declSlot >= 0 the store
+// is emitted as StoreSlot with that index directly (the binding is not yet
+// name-resolvable - see allocateSlot's deferred registration). Otherwise, for
+// the ordinary variable-store case, emitStoreName resolves name to a StoreSlot
+// when it is an already-declared slotted local and a name-based Store when it is
+// not (a parameter, global, or list-declared name).
+func (c *Compiler) patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool, declSlot int) {
 	address := bc.Mark() - 1
 	instruction := bc.Instruction(address)
 
@@ -395,12 +414,12 @@ func patchStore(bc *bytecode.ByteCode, name string, isPointer, isChan bool) {
 	} else {
 		if isChan {
 			bc.Emit(bytecode.StoreChan, name)
+		} else if isPointer {
+			bc.Emit(bytecode.StoreViaPointer, name)
+		} else if declSlot >= 0 {
+			bc.Emit(bytecode.StoreSlot, declSlot)
 		} else {
-			if isPointer {
-				bc.Emit(bytecode.StoreViaPointer, name)
-			} else {
-				bc.Emit(bytecode.Store, name)
-			}
+			c.emitStoreName(bc, name)
 		}
 	}
 }

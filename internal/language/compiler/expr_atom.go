@@ -346,14 +346,14 @@ func (c *Compiler) compileSymbolValue(t tokenizer.Token) error {
 	}
 
 	if c.flags.extensionsEnabled && (autoMode != bytecode.NoOperation) {
-		c.b.Emit(bytecode.Load, t)
+		c.emitLoadName(c.b, t.Spelling())
 		c.b.Emit(bytecode.Dup)
 		c.b.Emit(bytecode.Push, 1)
 		c.b.Emit(autoMode)
-		c.b.Emit(bytecode.Store, t)
+		c.emitStoreName(c.b, t.Spelling())
 		c.t.Advance(2)
 	} else {
-		c.b.Emit(bytecode.Load, t)
+		c.emitLoadName(c.b, t.Spelling())
 		c.t.Advance(1)
 	}
 
@@ -553,7 +553,7 @@ func (c *Compiler) compilePointerDereference() error {
 			return err
 		}
 
-		c.b.Emit(bytecode.DeRef, name)
+		c.emitDeRefName(c.b, name.Spelling())
 	} else {
 		// Dereference of an expression requires creating a temp symbol
 		if err := c.expressionAtom(); err != nil {
@@ -598,7 +598,7 @@ func (c *Compiler) compileAddressOf() error {
 			return err
 		}
 
-		c.b.Emit(bytecode.AddressOf, name.Spelling())
+		c.emitAddressOfName(c.b, name.Spelling())
 	} else {
 		// Address of an expression requires creating a temp symbol
 		if err := c.expressionAtom(); err != nil {

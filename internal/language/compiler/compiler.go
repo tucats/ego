@@ -92,6 +92,7 @@ type flagSet struct {
 	fragment              bool // True if this compilation is not a complete program
 	typeShadowing         bool // True if a variable may shadow a built-in type name (BUG-75)
 	slots                 bool // True if function-local variables may be resolved to compile-time slots (docs/SLOTS.md)
+	suppressSlotDecl      bool // True while parsing a for-loop range index/value target, which must stay name-based (docs/SLOTS.md)
 }
 
 type importElement struct {
@@ -169,6 +170,12 @@ type Compiler struct {
 	// that must not be referenced in this nested named function body. Any reference to a
 	// name in this set is a compile-time error. Nil for closures and top-level functions.
 	forbiddenSymbols map[string]bool
+	// funcSlots is the active slot-allocation context while compiling a
+	// slot-eligible function body (docs/SLOTS.md), or nil otherwise. It is set
+	// up per function in generateFunctionBytecode; Clone copies the pointer so
+	// same-function sub-compiles (Expression, for-clauses) share it, and
+	// generateFunctionBytecode resets it so nested functions start fresh.
+	funcSlots        *slotContext
 	statementCount   int     // Number of statements in the current block
 	lineNumberOffset int     // Offset used for generating line number data in debug data
 	flags            flagSet // Used to hold parser state flags
@@ -333,6 +340,15 @@ func (c *Compiler) Clone(name string) *Compiler {
 	// (used by compiler/expression.go) still enforce the nested-function boundary.
 	clone.forbiddenSymbols = c.forbiddenSymbols
 	clone.ownParamNames = c.ownParamNames
+
+	// Share the slot-allocation context (docs/SLOTS.md). Expression() and the
+	// for-clause compilers clone the compiler to build sub-expressions of the
+	// SAME function, and those sub-compiles must see the same slot bindings, so
+	// the pointer is shared (not deep-copied). A nested FUNCTION definition also
+	// clones, but generateFunctionBytecode resets clone.funcSlots to nil before
+	// deciding that function's own eligibility, so slot numbering never leaks
+	// across a function boundary.
+	clone.funcSlots = c.funcSlots
 
 	// Copy the packages from the current compiler to the clone.
 	clone.packages = map[string]*data.Package{}

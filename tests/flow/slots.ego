@@ -1,0 +1,159 @@
+// Regression tests for compile-time slot-based local variable access
+// (docs/SLOTS.md). These exercise the slot machinery through ordinary Ego
+// programs; they must produce identical results with slots on (the default) and
+// off (ego.compiler.slots=false), which the full-suite differential run checks.
+
+@test "slots: no cross-call bleed between activations"
+{
+    // Each call gets its own slot bank; distinct arguments must not leak
+    // between activations of the same function.
+    func acc(base int) int {
+        total := base
+        for i := 0; i < 3; i++ {
+            step := i + 1
+            total = total + step
+        }
+        return total
+    }
+
+    @assert acc(0) == 6
+    @assert acc(100) == 106
+    @assert acc(0) == 6
+}
+
+@test "slots: nested block shadowing reads outer binding"
+{
+    func shadow() int {
+        x := 10
+        y := 0
+        {
+            x := x + 5
+            y = x
+        }
+        // The inner x (15) is gone; the outer x is still 10.
+        return x*100 + y
+    }
+
+    @assert shadow() == 1015
+}
+
+@test "slots: self-referential shadow in a deeper scope"
+{
+    func f() int {
+        n := 1
+        {
+            n := n + 1
+            {
+                n := n + 1
+                @assert n == 3
+            }
+            @assert n == 2
+        }
+        return n
+    }
+
+    @assert f() == 1
+}
+
+@test "slots: address-of a slotted local"
+{
+    func viaPointer() int {
+        v := 5
+        p := &v
+        *p = 42
+        return v
+    }
+
+    @assert viaPointer() == 42
+}
+
+@test "slots: iteration counter and body temps are slotted"
+{
+    func sumSquares(n int) int {
+        total := 0
+        for i := 0; i < n; i++ {
+            sq := i * i
+            total = total + sq
+        }
+        return total
+    }
+
+    @assert sumSquares(4) == 14 // 0 + 1 + 4 + 9
+}
+
+@test "slots: compound assignment and increment on slotted locals"
+{
+    func counter() int {
+        c := 0
+        c += 5
+        c++
+        c--
+        c = c * 2
+        return c
+    }
+
+    @assert counter() == 10
+}
+
+@test "slots: range variables remain correct (name-based)"
+{
+    func joinInts(parts []int) int {
+        sum := 0
+        for i, p := range parts {
+            if i > 0 {
+                sum = sum + 1000
+            }
+            sum = sum + p
+        }
+        return sum
+    }
+
+    @assert joinInts([]int{1, 2, 3}) == 2006 // 1 + (1000+2) + (1000+3)
+}
+
+@test "slots: recursion gives each activation fresh slots"
+{
+    func fib(n int) int {
+        if n < 2 {
+            return n
+        }
+        a := fib(n - 1)
+        b := fib(n - 2)
+        return a + b
+    }
+
+    @assert fib(10) == 55
+}
+
+@test "slots: closure-containing function falls back correctly"
+{
+    // This function contains a capturing closure, so it is NOT slot-eligible
+    // and uses the name-based path. It must still work identically.
+    func makeAdder(base int) func(int) int {
+        return func(x int) int {
+            return base + x
+        }
+    }
+
+    add10 := makeAdder(10)
+    @assert add10(5) == 15
+    @assert add10(0) == 10
+}
+
+@test "slots: struct value copy semantics preserved for slotted locals"
+{
+    type point struct {
+        x int
+        y int
+    }
+
+    func copies() int {
+        a := point{x: 1, y: 2}
+        b := a
+        b.x = 99
+        // a must be unaffected (struct value copy on ":=").
+        return a.x*100 + b.x
+    }
+
+    @assert copies() == 199
+}

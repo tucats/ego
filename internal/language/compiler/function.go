@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -154,6 +154,19 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	} else {
 		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
+
+	// docs/SLOTS.md: reserve the slot for this function's AllocateLocal here, on
+	// the boundary table just pushed, so the slot bank is reachable from every
+	// nested block scope. It is emitted as a NoOperation placeholder (which the
+	// run loop harmlessly skips) and patched to "AllocateLocal <n>" after the
+	// body compiles iff the function proves slot-eligible; otherwise it stays a
+	// NoOperation. Only named functions are slot candidates in this first cut.
+	slotPlaceholderAddr := -1
+	if !isLiteral && c.flags.slots {
+		slotPlaceholderAddr = b.Mark()
+		b.Emit(bytecode.NoOperation)
+	}
+
 	// Generate the argument check. For variadic functions, the minimum is
 	// the number of fixed parameters (all but the final variadic parameter),
 	// and the maximum is -1 (unlimited). For fixed-parameter-count functions,
@@ -331,6 +344,28 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.functionLocalScopeStart = len(cx.scopes)
 	}
 
+	// docs/SLOTS.md: this is a new function body, so it must NOT inherit the
+	// enclosing function's slot context (Clone shares the pointer for
+	// same-function sub-compiles). Reset it before deciding this function's own
+	// eligibility below.
+	cx.funcSlots = nil
+
+	// Decide slot-eligibility now that the tokenizer sits at the body's opening
+	// brace and cx.functionLocalScopeStart is known. First cut: a named function
+	// with no receiver and no named returns whose body passes
+	// functionBodyIsSlotEligible. When eligible, install the slot context so the
+	// body's ":=" declarations and identifier accesses compile to slot opcodes;
+	// scopeStart bounds slot resolution to this function's own scopes.
+	if slotPlaceholderAddr >= 0 &&
+		thisName.Is(tokenizer.EmptyToken) &&
+		len(c.returnVariables) == 0 &&
+		cx.functionBodyIsSlotEligible(ownParams) {
+		cx.funcSlots = &slotContext{
+			allocateAddr: slotPlaceholderAddr,
+			scopeStart:   cx.functionLocalScopeStart,
+		}
+	}
+
 	// If there is a return list, generate initializers in the local scope for them.
 	if c.returnVariables != nil {
 		cx.b.Emit(bytecode.PushScope)
@@ -351,6 +386,14 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// defer/RunDefers keeps its own scope exactly as before.
 	if err = cx.compileRequiredBlock(true, true); err != nil {
 		return nil, nil, err
+	}
+
+	// docs/SLOTS.md: the whole body is compiled, so the final slot count is
+	// known; patch the reserved placeholder into the real AllocateLocal. If the
+	// function proved ineligible, funcSlots is nil and the placeholder stays a
+	// harmless NoOperation.
+	if cx.funcSlots != nil {
+		b.EmitAt(cx.funcSlots.allocateAddr, bytecode.AllocateLocal, len(cx.funcSlots.names))
 	}
 
 	// If there was a named return list, we have an extra scope to pop. Then pull all
@@ -958,7 +1001,7 @@ func (c *Compiler) isUnnamedParameterList() bool {
 
 		case tok.Is(tokenizer.EndOfArrayToken), tok.Is(tokenizer.BlockEndToken):
 			depth--
-			
+
 			continue
 		}
 

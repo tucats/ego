@@ -1,7 +1,12 @@
 # Slot-Based Local Variable Access — Implementation Plan
 
-**Status:** in progress — Phase 0 landed; Phase 1 foundation landed (predicate,
-feature flag, opcodes); emission wiring in progress.
+**Status:** in progress — Phase 0 landed; Phase 1 landed and functional
+(predicate, feature flag, opcodes, and emission). Slotted locals, iteration
+counters, shadowing, `&x`, and `++`/compound-assign all compile to slot opcodes;
+range vars, params, receivers, and named returns remain name-based (Phase 2).
+All 1568 Ego tests and the Go suite pass with slots on and off; a hot arithmetic
+loop runs ~20% faster with slots on. Remaining: introspection (Q3), apitest,
+formal re-profiling; then Phase 2 breadth.
 
 ## Implementation progress log
 
