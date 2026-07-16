@@ -889,6 +889,53 @@ tree-walking-by-name symbol table can ultimately get, and worth having on record
 considering Ego's longer-term performance trajectory (up to and including a JIT, which would
 depend on exactly this kind of compile-time-resolved storage to be worthwhile at all).
 
+### Resolution (July 2026) — Finding 7
+
+Implemented, as the design and phasing planned in [docs/SLOTS.md](SLOTS.md). The
+compiler now resolves the well-defined locals of a **slot-eligible** function to
+integer slot indices at compile time, and reads/writes them through new
+slot-based bytecode instructions (`LoadSlot`, `StoreSlot`, `AllocateLocal`,
+`ArgSlot`, `AddressOfSlot`, …) that index a per-activation `[]any` slot bank
+directly — no name string, no `map[string]*SymbolAttribute` probe, no
+parent-chain walk. A function is eligible when a conservative one-time
+token-scan of its body finds no capturing closure, `go`, `defer`, or channel
+op; everything else falls back to the unchanged name-based path, so
+100% of dynamic-mode semantics are preserved. Behavior is identical with the
+optimization on or off — the full 1,573-case `ego test` suite, the Go test
+suite (incl. `-race`), and the 122-case `apitest` REST suite all pass either
+way. It is gated by the `ego.compiler.slots` kill-switch (default on).
+
+Coverage, after Phase 2: body `:=` locals (including nested-block shadowing),
+iteration for-loop counters, `&x`/`*p`, `++`/compound-assign, fixed and
+variadic **parameters**, **methods** (the receiver is slotted too), and
+**named return variables**. Slotted locals remain fully visible by name to
+cold-path introspection (the debugger's `show symbols`/`print`, `util.Symbols`,
+and error formatting) via a slot→name table carried with the bank.
+
+**Measured effect.** Using the same `ego run --pprof` methodology as the rest of
+this report, on a variable-access-heavy tight loop (`work(n)` reading a
+parameter and three locals every iteration, 200 × 50 000 iterations):
+
+| Metric (tight-loop workload) | slots off | slots on | change |
+| ---------------------------- | --------- | -------- | ------ |
+| Wall-clock (`time`, user)    | 7.86 s    | 6.04 s   | **−23%** |
+| `runtime.mapaccess2_faststr` (cum) | 1.59 s (22.98%) | 0.16 s (3.00%) | **≈ −90%** |
+| `SymbolTable.Get` (cum)      | 1.39 s (20.09%) | — (replaced by `loadSlotByteCode` at 0.69 s / 12.95%) | **≈ −50%** |
+
+The string-hashing map lookup this finding identified as the ceiling is very
+nearly gone on the hot path — `mapaccess2_faststr` drops from ~23% of total
+samples to ~3%. The realized whole-program speedup scales with how
+variable-access-bound a workload is: ~5–6% on the arithmetic/GC-bound Mandelbrot
+programs (Sections 10/14), ~23% on the tight loop above. This is the expected
+shape — slots eliminate the name-resolution cost, which is a large fraction of a
+tight interpreted loop but a smaller one of a program dominated by float/complex
+arithmetic and garbage collection (Findings 5/6).
+
+**Not yet done (deferred, see SLOTS.md):** eliminating the nested-block
+`PushScope`/`PopScope` runtime tables entirely for eligible functions (Option B /
+Phase 3) — a separate scope-*creation* saving on top of this scope-*access*
+saving. That is tracked as its own item below.
+
 ---
 
 ## 9. Finding 8 (design-level) — per-execution basic-block scopes: same idea as Finding 4, one level lower
