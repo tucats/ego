@@ -108,6 +108,7 @@ var VerbSubjectGrammar = []cli.Option{
 	},
 	{
 		LongName:      "format",
+		Aliases:       []string{"fmt"},
 		OptionType:    cli.Subcommand,
 		Value:         FormatVerbGrammar,
 		Description:   "ego.verb.format",

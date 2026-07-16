@@ -8,6 +8,15 @@ import (
 
 var FormatVerbGrammar = []cli.Option{
 	{
+		LongName:      "source",
+		OptionType:    cli.Subcommand,
+		Action:        commands.FmtAction,
+		Value:         FmtVerbGrammar,
+		Description:   "ego.verb.fmt",
+		ExpectedParms: defs.VariableParameterCount,
+		ParmDesc:      "parm.file",
+	},
+	{
 		LongName:      "json",
 		Description:   "ego.verb.format.json",
 		OptionType:    cli.Subcommand,
