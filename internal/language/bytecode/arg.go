@@ -38,12 +38,12 @@ func argByteCode(c *Context, i any) error {
 	return nil
 }
 
-// argSlotByteCode implements the ArgSlot opcode: the slot-based counterpart of
+// argRegisterByteCode implements the ArgSlot opcode: the slot-based counterpart of
 // Arg (docs/SLOTS.md Phase 2). Its operand is [argIndex, slotIndex, argType?];
 // it extracts, type-checks, and coerces the argument exactly like Arg, then
 // stores the value into slotIndex of the enclosing function's slot bank instead
 // of into the symbol-table map by name.
-func argSlotByteCode(c *Context, i any) error {
+func argRegisterByteCode(c *Context, i any) error {
 	argIndex, slotIndex, argType, err := parseArgSlotOperands(c, i)
 	if err != nil {
 		return err

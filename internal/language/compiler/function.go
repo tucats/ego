@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/bytecode"
@@ -155,15 +156,15 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		b.Emit(bytecode.PushScope, bytecode.BoundaryScope)
 	}
 
-	// docs/SLOTS.md: reserve the slot for this function's AllocateLocal here, on
-	// the boundary table just pushed, so the slot bank is reachable from every
+	// docs/SLOTS.md: reserve the register slot for this function's AllocateLocal here, on
+	// the boundary table just pushed, so the register bank is reachable from every
 	// nested block scope. It is emitted as a NoOperation placeholder (which the
 	// run loop harmlessly skips) and patched to "AllocateLocal <n>" after the
-	// body compiles iff the function proves slot-eligible; otherwise it stays a
-	// NoOperation. Only named functions are slot candidates in this first cut.
-	slotPlaceholderAddr := -1
-	if !isLiteral && c.flags.slots {
-		slotPlaceholderAddr = b.Mark()
+	// body compiles iff the function proves register-eligible; otherwise it stays a
+	// NoOperation. Only named functions are register candidates in this first cut.
+	registerPlaceholderAddr := -1
+	if !isLiteral && c.flags.registers {
+		registerPlaceholderAddr = b.Mark()
 		b.Emit(bytecode.NoOperation)
 	}
 
@@ -201,20 +202,20 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
-	// docs/SLOTS.md Phase 2: decide slot-eligibility BEFORE binding the receiver
+	// docs/SLOTS.md Phase 2: decide register-eligibility BEFORE binding the receiver
 	// and parameters, so they can all be slotted (the receiver's GetThis and the
 	// parameters' Arg are emitted just below). The predicate needs the body's
 	// opening brace, located with a read-only lookahead past the return-type
 	// spec (peekFunctionBodyPos). The seed includes the receiver name as well as
 	// the parameters so that a closure capturing either disqualifies the
-	// function. Save/restore c.funcSlots around this function's whole
+	// function. Save/restore c.funcRegisters around this function's whole
 	// compilation so a nested function never clobbers it.
-	savedFuncSlots := c.funcSlots
-	c.funcSlots = nil
+	savedFuncRegisters := c.funcRegisters
+	c.funcRegisters = nil
 
-	defer func() { c.funcSlots = savedFuncSlots }()
+	defer func() { c.funcRegisters = savedFuncRegisters }()
 
-	if slotPlaceholderAddr >= 0 {
+	if registerPlaceholderAddr >= 0 {
 		if bodyPos := c.peekFunctionBodyPos(); bodyPos >= 0 {
 			seed := ownParams
 			if thisName.IsNot(tokenizer.EmptyToken) {
@@ -228,11 +229,11 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 			savedMark := c.t.Mark()
 			c.t.Set(bodyPos)
-			eligible := c.functionBodyIsSlotEligible(seed)
+			eligible := c.functionBodyIsRegisterEligible(seed)
 			c.t.Set(savedMark)
 
 			if eligible {
-				c.funcSlots = &slotContext{allocateAddr: slotPlaceholderAddr}
+				c.funcRegisters = &registerContext{allocateAddr: registerPlaceholderAddr}
 			}
 		}
 	}
@@ -247,15 +248,16 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// pointer receiver (byValue == false) needs that; a value receiver
 	// still needs the bare dereferenced value for the $new() copy below.
 	//
-	// docs/SLOTS.md Phase 2: in a slot-eligible method the receiver is bound to
-	// a slot (allocateParamSlot + GetThis with an int slot operand), and the
-	// value-receiver $new copy reads/writes it through slot ops; otherwise the
-	// receiver stays name-based exactly as before.
+	// docs/SLOTS.md Phase 2: in a register-eligible method the receiver is
+	// bound to a register slot (allocateParamSlot + GetThis with an int
+	// register operand), and the value-receiver $new copy reads/writes it
+	// through register ops; otherwise the receiver stays name-based exactly
+	// as before.
 	if thisName.IsNot(tokenizer.EmptyToken) {
 		receiverName := thisName.Spelling()
 
-		if slot, ok := c.allocateParamSlot(receiverName); ok {
-			b.Emit(bytecode.GetThis, []any{slot, byValue})
+		if register, ok := c.allocateParamSRegister(receiverName); ok {
+			b.Emit(bytecode.GetThis, []any{register, byValue})
 
 			if byValue {
 				b.Emit(bytecode.Load, "$new")
@@ -317,8 +319,8 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 	// Generate the parameter assignments. These are extracted from the automatic
 	// array named __args which is generated as part of the bytecode function call.
-	// Slot-eligibility was already decided above (before the receiver was bound),
-	// so slotted parameters compile to ArgSlot here.
+	// Register-eligibility was already decided above (before the receiver was bound),
+	// so slotted parameters compile to ArgRegister here.
 	for index, parameter := range parameters {
 		c.compileFunctionParameters(parameter, b, index)
 	}
@@ -351,13 +353,13 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 
 		c.DefineSymbol(rv.Name)
 
-		// docs/SLOTS.md Phase 2: bind a named return variable to a slot in a
-		// slot-eligible function (function-wide, like a parameter). No-op when
-		// slots are inactive. This is safe alongside recover(): any function with
+		// docs/SLOTS.md Phase 2: bind a named return variable to a register in a
+		// register-eligible function (function-wide, like a parameter). No-op when
+		// registers are inactive. This is safe alongside recover(): any function with
 		// a "defer" (required for a deferred recover to read named returns) is
 		// disqualified by the eligibility predicate, so unwindPanic only ever
 		// reads name-based named returns.
-		c.allocateParamSlot(rv.Name)
+		c.allocateParamSRegister(rv.Name)
 
 		if err := c.ReferenceSymbol(rv.Name); err != nil {
 			return nil, nil, err
@@ -408,13 +410,13 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.functionLocalScopeStart = len(cx.scopes)
 	}
 
-	// docs/SLOTS.md: slot-eligibility was decided (and the parameters slotted)
+	// docs/SLOTS.md: register-eligibility was decided (and the parameters allocated)
 	// before the clone; cx now shares that context via Clone. Bind its scopeStart
-	// to this function's body scope so block-local slot resolution ignores any
-	// enclosing function's scopes (parameters resolve through funcSlots.params,
+	// to this function's body scope so block-local register resolution ignores any
+	// enclosing function's scopes (parameters resolve through funcREegisters.params,
 	// independent of scopeStart).
-	if cx.funcSlots != nil {
-		cx.funcSlots.scopeStart = cx.functionLocalScopeStart
+	if cx.funcRegisters != nil {
+		cx.funcRegisters.scopeStart = cx.functionLocalScopeStart
 	}
 
 	// If there is a return list, generate initializers in the local scope for them.
@@ -422,13 +424,13 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.b.Emit(bytecode.PushScope)
 
 		for _, rv := range c.returnVariables {
-			// docs/SLOTS.md Phase 2: initialize a slotted named return by pushing
-			// its zero value and StoreSlot; a name-based one uses CreateAndStore
-			// exactly as before. (The extra scope pushed above is retained either
-			// way to keep the PopScope balance unchanged.)
-			if idx, ok := cx.resolveSlot(rv.Name); ok {
+			// docs/SLOTS.md Phase 2: initialize a register-allocated named return
+			// by pushing its zero value and StoreSlot; a name-based one uses
+			// CreateAndStore exactly as before. (The extra scope pushed above
+			// is retained either way to keep the PopScope balance unchanged.)
+			if idx, ok := cx.resolveRegister(rv.Name); ok {
 				cx.b.Emit(bytecode.Push, data.InstanceOfType(rv.Type))
-				cx.b.Emit(bytecode.StoreSlot, idx)
+				cx.b.Emit(bytecode.StoreRegister, idx)
 			} else {
 				cx.b.Emit(bytecode.CreateAndStore, []any{rv.Name, data.InstanceOfType(rv.Type)})
 			}
@@ -448,12 +450,12 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		return nil, nil, err
 	}
 
-	// docs/SLOTS.md: the whole body is compiled, so the final slot count is
+	// docs/SLOTS.md: the whole body is compiled, so the final register count is
 	// known; patch the reserved placeholder into the real AllocateLocal. If the
-	// function proved ineligible, funcSlots is nil and the placeholder stays a
+	// function proved ineligible, funcRegisters is nil and the placeholder stays a
 	// harmless NoOperation.
-	if cx.funcSlots != nil {
-		b.EmitAt(cx.funcSlots.allocateAddr, bytecode.AllocateLocal, cx.funcSlots.names)
+	if cx.funcRegisters != nil {
+		b.EmitAt(cx.funcRegisters.allocateAddr, bytecode.AllocateLocal, cx.funcRegisters.names)
 	}
 
 	// If there was a named return list, we have an extra scope to pop. Then pull all
@@ -515,7 +517,9 @@ func (c *Compiler) storeOrInvokeFunction(b *bytecode.ByteCode, isLiteral bool, f
 	// Make sure the bytecode array is truncated to match the final size, so we don't
 	// end up pushing giant arrays of nils on the stack. This is also where optimizations
 	// are done, if enabled. Optionally, disassemble the generated bytecode at this point.	b.Seal()
-	b.Disasm(false)
+	if c.activePackageName == "" || settings.GetBool(defs.DisassemblePackagesSetting) {
+		b.Disasm(false)
+	}
 
 	// If it was a literal, push the body of the function (really, a bytecode expression
 	// of the function code) on the stack. Otherwise, let's store it in the symbol table
@@ -667,10 +671,10 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 		}
 
 		// docs/SLOTS.md Phase 2: the variadic parameter (an array) is bound into
-		// a slot when the function is slot-eligible, so body reads (e.g. a range
+		// a register when the function is register-eligible, so body reads (e.g. a range
 		// over it) compile to LoadSlot; otherwise it is stored by name.
-		if slot, ok := c.allocateParamSlot(parameter.name); ok {
-			b.Emit(bytecode.StoreSlot, slot)
+		if register, ok := c.allocateParamSRegister(parameter.name); ok {
+			b.Emit(bytecode.StoreRegister, register)
 		} else {
 			b.Emit(bytecode.StoreAlways, parameter.name)
 		}
@@ -679,19 +683,21 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 	} else {
 		// If this argument is not any or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
-		// docs/SLOTS.md Phase 2: in a slot-eligible function, bind the parameter
-		// into a compile-time slot (ArgSlot [index, slot, kind]) instead of by
-		// name (Arg [index, name, kind]), so body reads of the parameter compile
-		// to LoadSlot. allocateParamSlot returns false for a non-slotted context
-		// or an ineligible name (e.g. "_"), leaving the name-based path intact.
-		if slot, ok := c.allocateParamSlot(parameter.name); ok {
-			operands := []any{index, slot}
+		// docs/SLOTS.md Phase 2: in a register-eligible function, bind
+		// the parameter into a compile-time register slot using
+		// (ArgSlot [index, register, kind]) instead of by name
+		// (Arg [index, name, kind]), so body reads of the parameter compile
+		// to LoadRegister. allocateParamRegister returns false for a 
+		// non-slotted context or an ineligible name (e.g. "_"), leaving
+		// the name-based path intact.
+		if register, ok := c.allocateParamSRegister(parameter.name); ok {
+			operands := []any{index, register}
 
 			if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
 				operands = append(operands, parameter.kind)
 			}
 
-			b.Emit(bytecode.ArgSlot, operands)
+			b.Emit(bytecode.ArgRegister, operands)
 		} else {
 			operands := []any{index, parameter.name}
 

@@ -52,10 +52,10 @@ func allocateLocalByteCode(c *Context, i any) error {
 	return nil
 }
 
-// loadSlotByteCode implements the LoadSlot opcode: the slot equivalent of
+// loadRegisterByteCode implements the LoadSlot opcode: the slot equivalent of
 // loadByteCode. It pushes the value in the given slot (with any constant
 // wrapper unwrapped, matching Load).
-func loadSlotByteCode(c *Context, i any) error {
+func loadRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "LoadSlot")
 	if err != nil {
 		return err
@@ -69,14 +69,14 @@ func loadSlotByteCode(c *Context, i any) error {
 	return c.push(data.UnwrapConstant(v))
 }
 
-// storeSlotByteCode implements the StoreSlot opcode: the slot equivalent of
+// storeRegisterByteCode implements the StoreSlot opcode: the slot equivalent of
 // storeByteCode. It pops a value, applies the same type-compatibility check
 // (checkTypeSlot) and struct value-copy semantics (copyStructForValueSemantics)
 // as a named store, then writes it into the slot. Because slot readonly-ness is
 // resolved at compile time (see docs/SLOTS.md Section 6), no runtime "_"-prefix
 // check is performed here -- the compiler emits StoreSlot only for a writable
 // slot.
-func storeSlotByteCode(c *Context, i any) error {
+func storeRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "StoreSlot")
 	if err != nil {
 		return err
@@ -107,13 +107,13 @@ func storeSlotByteCode(c *Context, i any) error {
 	return nil
 }
 
-// createAndStoreSlotByteCode implements the CreateAndStoreSlot opcode: the slot
+// createAndStoreRegisterByteCode implements the CreateAndStoreSlot opcode: the slot
 // equivalent of createAndStoreByteCode for a ":=" declaration whose target is a
 // slot. Since the slot already exists (allocated by AllocateLocal), there is no
 // separate "create" step -- this is a store that additionally honors the
 // language-extension rule forbidding a bare type value unless extensions are
 // enabled, matching CreateAndStore.
-func createAndStoreSlotByteCode(c *Context, i any) error {
+func createAndStoreRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "CreateAndStoreSlot")
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func createAndStoreSlotByteCode(c *Context, i any) error {
 	return nil
 }
 
-// symbolCreateIfSlotByteCode implements the SymbolOptCreateSlot opcode: the slot
+// symbolCreateIfRegisterByteCode implements the SymbolOptCreateSlot opcode: the slot
 // equivalent of symbolCreateIfByteCode. For a slot, the storage always already
 // exists (AllocateLocal created it), so an idempotent "create if not present"
 // is a no-op beyond validating the bank and index. It exists so the compiler
@@ -149,7 +149,7 @@ func createAndStoreSlotByteCode(c *Context, i any) error {
 // a special case; see docs/SLOTS.md Section 6, which flags that this opcode may
 // prove entirely unnecessary once slot assignment subsumes Finding 11's
 // idempotent-declaration analysis.
-func symbolCreateIfSlotByteCode(c *Context, i any) error {
+func symbolCreateIfRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "SymbolOptCreateSlot")
 	if err != nil {
 		return err
@@ -162,11 +162,11 @@ func symbolCreateIfSlotByteCode(c *Context, i any) error {
 	return nil
 }
 
-// symbolDeleteSlotByteCode implements the SymbolDeleteSlot opcode: the slot
+// symbolDeleteRegisterByteCode implements the SymbolDeleteSlot opcode: the slot
 // equivalent of symbolDeleteByteCode. It resets the slot to UndefinedValue{},
 // the same state AllocateLocal established, so a later declaration or read sees
 // the slot as unassigned again.
-func symbolDeleteSlotByteCode(c *Context, i any) error {
+func symbolDeleteRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "SymbolDeleteSlot")
 	if err != nil {
 		return err
@@ -179,11 +179,11 @@ func symbolDeleteSlotByteCode(c *Context, i any) error {
 	return nil
 }
 
-// addressOfSlotByteCode implements the AddressOfSlot opcode: the slot
+// addressOfRegisterByteCode implements the AddressOfSlot opcode: the slot
 // equivalent of addressOfByteCode. It pushes a *any pointing directly at the
 // slot's storage. The bank is a single fixed-size array that is never grown
 // after AllocateLocal, so this address stays valid for the life of the call.
-func addressOfSlotByteCode(c *Context, i any) error {
+func addressOfRegisterByteCode(c *Context, i any) error {
 	bank, index, err := c.slotBank(i, "AddressOfSlot")
 	if err != nil {
 		return err

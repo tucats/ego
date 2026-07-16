@@ -9,18 +9,18 @@ import (
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
-// slotContext holds the per-function state for compile-time slot assignment
+// registerContext holds the per-function state for compile-time slot assignment
 // (docs/SLOTS.md). One is created in generateFunctionBytecode for each function
 // proven slot-eligible, and it lives on the compiler that compiles that
 // function's body. Nested functions get their own context (generateFunctionBytecode
 // resets it after Clone), so slot numbering never leaks across function boundaries.
-type slotContext struct {
-	// names maps each assigned slot index to the source name declared there.
-	// Its length is the total number of slots -- the operand patched into the
+type registerContext struct {
+	// names maps each assigned register slot index to the source name declared there.
+	// Its length is the total number of registers -- the operand patched into the
 	// function's AllocateLocal instruction -- and it doubles as the debug
 	// name/slot table consumed by introspection (Q3). A name that is shadowed
 	// in a nested block appears more than once, at different indices, which is
-	// correct: each distinct lexical binding gets its own slot.
+	// correct: each distinct lexical binding gets its own register.
 	names []string
 
 	// allocateAddr is the bytecode address of the placeholder instruction
@@ -35,35 +35,29 @@ type slotContext struct {
 	// never mistaken for this function's.
 	scopeStart int
 
-	// pending holds slot bindings whose index has been allocated (and whose
-	// StoreSlot has been emitted) but whose name->slot registration in the
+	// pending holds register slot bindings whose index has been allocated (and whose
+	// StoreSlot has been emitted) but whose name->register registration in the
 	// lexical scope is deferred until the declaring statement's right-hand side
 	// has finished compiling. This reproduces Go's rule that the new variable
 	// in "x := <rhs>" is not in scope while <rhs> is evaluated -- so a
 	// shadowing "x := x + 1" resolves the RHS "x" to the OUTER binding. See the
 	// KEY DESIGN FINDING note in docs/SLOTS.md.
-	pending []pendingSlotDecl
+	pending []pendingRegisterDecl
 
-	// params maps each parameter name to its slot index. Parameters are
+	// params maps each parameter name to its register slot index. Parameters are
 	// function-wide (they live for the whole call, not one lexical block), so
 	// they are resolved here rather than through the scope stack. resolveSlot
 	// checks the scope stack FIRST, so a body "x := ..." that shadows a
 	// parameter x correctly wins; only when no block-local binding matches does
-	// a name fall through to a parameter slot.
+	// a name fall through to a parameter register slot.
 	params map[string]int
 }
 
-// pendingSlotDecl is one deferred slot registration (see slotContext.pending).
-type pendingSlotDecl struct {
+// pendingRegisterDecl is one deferred slot registration (see slotContext.pending).
+type pendingRegisterDecl struct {
 	name     string
 	idx      int
 	scopePos int
-}
-
-// slotsActive reports whether the compiler is currently emitting code for a
-// slot-eligible function body.
-func (c *Compiler) slotsActive() bool {
-	return c.funcSlots != nil
 }
 
 // isRangeLoopAhead reports whether the tokenizer, positioned at the target of a
@@ -87,11 +81,11 @@ func (c *Compiler) isRangeLoopAhead() bool {
 	return false
 }
 
-// slotEligibleName reports whether name is one that slot assignment should
+// registerEligibleName reports whether name is one that register assignment should
 // handle at all: a real user binding, not the discard "_", a generated "$"
 // temporary, or a "_"-prefixed readonly constant (left name-based in this cut
 // so the readonly machinery in the name-based opcodes is unchanged).
-func slotEligibleName(name string) bool {
+func registerEligibleName(name string) bool {
 	if name == "" || name == defs.DiscardedVariable || strings.HasPrefix(name, "$") {
 		return false
 	}
@@ -103,22 +97,22 @@ func slotEligibleName(name string) bool {
 	return true
 }
 
-// allocateSlot reserves the next slot index for a ":="-declared name and
-// records a pending (deferred) registration for it, but does NOT yet make the
+// allocateRegister reserves the next register slot index for a ":="-declared name
+// and records a pending (deferred) registration for it, but does NOT yet make the
 // name resolvable -- registerPendingSlots does that once the declaring
 // statement's RHS is compiled. It returns the reserved index (for the StoreSlot
 // operand) and true, or (-1, false) when slots are inactive, suppressed, or
 // name is not slot-eligible, in which case the caller keeps the name-based
 // declaration.
-func (c *Compiler) allocateSlot(name string) (int, bool) {
-	if c.funcSlots == nil || c.flags.suppressSlotDecl || !slotEligibleName(name) {
+func (c *Compiler) allocateRegister(name string) (int, bool) {
+	if c.funcRegisters == nil || c.flags.suppressRegisterDecl || !registerEligibleName(name) {
 		return -1, false
 	}
 
-	idx := len(c.funcSlots.names)
-	c.funcSlots.names = append(c.funcSlots.names, name)
+	idx := len(c.funcRegisters.names)
+	c.funcRegisters.names = append(c.funcRegisters.names, name)
 
-	c.funcSlots.pending = append(c.funcSlots.pending, pendingSlotDecl{
+	c.funcRegisters.pending = append(c.funcRegisters.pending, pendingRegisterDecl{
 		name:     name,
 		idx:      idx,
 		scopePos: len(c.scopes) - 1,
@@ -127,46 +121,46 @@ func (c *Compiler) allocateSlot(name string) (int, bool) {
 	return idx, true
 }
 
-// registerPendingSlots makes every slot reserved since the last call resolvable
+// registerPendingRegisters makes every register reserved since the last call resolvable
 // by name, binding each into the lexical scope it was declared in. It is called
 // once the current declaring statement's RHS has been fully compiled (see the
 // deferred call in compileAssignment and the for-loop init flush), so an RHS
 // never sees a binding the same statement is introducing.
-func (c *Compiler) registerPendingSlots() {
-	if c.funcSlots == nil || len(c.funcSlots.pending) == 0 {
+func (c *Compiler) registerPendingRegisters() {
+	if c.funcRegisters == nil || len(c.funcRegisters.pending) == 0 {
 		return
 	}
 
-	for _, p := range c.funcSlots.pending {
+	for _, p := range c.funcRegisters.pending {
 		if p.scopePos < 0 || p.scopePos >= len(c.scopes) {
 			continue
 		}
 
-		if c.scopes[p.scopePos].slots == nil {
-			c.scopes[p.scopePos].slots = map[string]int{}
+		if c.scopes[p.scopePos].registers == nil {
+			c.scopes[p.scopePos].registers = map[string]int{}
 		}
 
-		c.scopes[p.scopePos].slots[p.name] = p.idx
+		c.scopes[p.scopePos].registers[p.name] = p.idx
 	}
 
-	c.funcSlots.pending = c.funcSlots.pending[:0]
+	c.funcRegisters.pending = c.funcRegisters.pending[:0]
 }
 
-// resolveSlot returns the slot index bound to name in the current function, and
-// true, if name resolves to one of this function's own slots. It walks the
-// lexical scope stack from innermost outward, stopping at the function's
-// scopeStart so that an enclosing function's slots are never returned. When
-// slots are inactive, or name is not a slotted local (a parameter, global,
-// package member, or generated temporary), it returns (-1, false) and the
-// caller falls back to the name-based opcode.
-func (c *Compiler) resolveSlot(name string) (int, bool) {
-	if c.funcSlots == nil {
+// resolveRegister returns the register slot index bound to name in the current
+// function, and true, if name resolves to one of this function's own registers.
+// It walks the lexical scope stack from innermost outward, stopping at the
+// function's scopeStart so that an enclosing function's registers are never
+// returned. When registers are inactive, or name is not a slotted local
+// (a parameter, global, package member, or generated temporary), it returns
+// (-1, false) and the caller falls back to the name-based opcode.
+func (c *Compiler) resolveRegister(name string) (int, bool) {
+	if c.funcRegisters == nil {
 		return -1, false
 	}
 
-	for i := len(c.scopes) - 1; i >= c.funcSlots.scopeStart && i >= 0; i-- {
-		if c.scopes[i].slots != nil {
-			if idx, ok := c.scopes[i].slots[name]; ok {
+	for i := len(c.scopes) - 1; i >= c.funcRegisters.scopeStart && i >= 0; i-- {
+		if c.scopes[i].registers != nil {
+			if idx, ok := c.scopes[i].registers[name]; ok {
 				return idx, true
 			}
 		}
@@ -174,32 +168,32 @@ func (c *Compiler) resolveSlot(name string) (int, bool) {
 
 	// A block-local binding takes precedence (checked above); fall through to a
 	// parameter slot only when no block-local binding shadows it.
-	if idx, ok := c.funcSlots.params[name]; ok {
+	if idx, ok := c.funcRegisters.params[name]; ok {
 		return idx, true
 	}
 
 	return -1, false
 }
 
-// allocateParamSlot reserves a slot for a function parameter (docs/SLOTS.md
+// allocateParamSRegister reserves a slot for a function parameter (docs/SLOTS.md
 // Phase 2). Unlike allocateSlot for ":=" locals, a parameter is registered
 // immediately (in the funcSlots.params map, not a lexical scope) and is
 // resolvable for the whole function body -- there is no RHS to defer past. It
 // returns the reserved index and true, or (-1, false) when slots are inactive
 // or the name is not slot-eligible (in which case the parameter is bound the
 // name-based way).
-func (c *Compiler) allocateParamSlot(name string) (int, bool) {
-	if c.funcSlots == nil || !slotEligibleName(name) {
+func (c *Compiler) allocateParamSRegister(name string) (int, bool) {
+	if c.funcRegisters == nil || !registerEligibleName(name) {
 		return -1, false
 	}
 
-	if c.funcSlots.params == nil {
-		c.funcSlots.params = map[string]int{}
+	if c.funcRegisters.params == nil {
+		c.funcRegisters.params = map[string]int{}
 	}
 
-	idx := len(c.funcSlots.names)
-	c.funcSlots.names = append(c.funcSlots.names, name)
-	c.funcSlots.params[name] = idx
+	idx := len(c.funcRegisters.names)
+	c.funcRegisters.names = append(c.funcRegisters.names, name)
+	c.funcRegisters.params[name] = idx
 
 	return idx, true
 }
@@ -207,7 +201,7 @@ func (c *Compiler) allocateParamSlot(name string) (int, bool) {
 // peekFunctionBodyPos returns the absolute token index of a function's body
 // opening brace, scanning forward from the current tokenizer position (which
 // sits just after the parameter list's ")", before any return-type spec). It is
-// a read-only Peek-only lookahead used to run the slot-eligibility predicate
+// a read-only Peek-only lookahead used to run the register-eligibility predicate
 // BEFORE the parameters are compiled, so parameters can themselves be slotted.
 // It returns -1 when the body brace cannot be confidently located -- notably
 // when a "struct"/"interface" type literal appears in the return spec, whose
@@ -247,8 +241,8 @@ func (c *Compiler) peekFunctionBodyPos() int {
 // through, so a non-slotted name (parameter, global, "$"-temporary)
 // transparently keeps its existing behavior.
 func (c *Compiler) emitLoadName(b *bytecode.ByteCode, name string) {
-	if idx, ok := c.resolveSlot(name); ok {
-		b.Emit(bytecode.LoadSlot, idx)
+	if idx, ok := c.resolveRegister(name); ok {
+		b.Emit(bytecode.LoadRegister, idx)
 	} else {
 		b.Emit(bytecode.Load, name)
 	}
@@ -257,8 +251,8 @@ func (c *Compiler) emitLoadName(b *bytecode.ByteCode, name string) {
 // emitAddressOfName emits an address-of for name into buffer b, choosing
 // AddressOfSlot for a slotted local and AddressOf otherwise.
 func (c *Compiler) emitAddressOfName(b *bytecode.ByteCode, name string) {
-	if idx, ok := c.resolveSlot(name); ok {
-		b.Emit(bytecode.AddressOfSlot, idx)
+	if idx, ok := c.resolveRegister(name); ok {
+		b.Emit(bytecode.AddressOfRegister, idx)
 	} else {
 		b.Emit(bytecode.AddressOf, name)
 	}
@@ -268,8 +262,8 @@ func (c *Compiler) emitAddressOfName(b *bytecode.ByteCode, name string) {
 // stack) into buffer b, choosing StoreSlot for a slotted local and Store
 // otherwise. This is the write counterpart of emitLoadName.
 func (c *Compiler) emitStoreName(b *bytecode.ByteCode, name string) {
-	if idx, ok := c.resolveSlot(name); ok {
-		b.Emit(bytecode.StoreSlot, idx)
+	if idx, ok := c.resolveRegister(name); ok {
+		b.Emit(bytecode.StoreRegister, idx)
 	} else {
 		b.Emit(bytecode.Store, name)
 	}
@@ -283,7 +277,7 @@ func (c *Compiler) emitStoreName(b *bytecode.ByteCode, name string) {
 // DeRef-temp idiom compilePointerDereference already uses for dereferencing an
 // arbitrary expression.
 func (c *Compiler) emitDeRefName(b *bytecode.ByteCode, name string) {
-	idx, ok := c.resolveSlot(name)
+	idx, ok := c.resolveRegister(name)
 	if !ok {
 		b.Emit(bytecode.DeRef, name)
 
@@ -291,12 +285,13 @@ func (c *Compiler) emitDeRefName(b *bytecode.ByteCode, name string) {
 	}
 
 	temp := data.GenerateName()
-	b.Emit(bytecode.LoadSlot, idx)
+
+	b.Emit(bytecode.LoadRegister, idx)
 	b.Emit(bytecode.StoreAlways, temp)
 	b.Emit(bytecode.DeRef, temp)
 }
 
-// This file implements the compile-time analysis behind slot-based local
+// This file implements the compile-time analysis behind register-based local
 // variable access (see docs/SLOTS.md). Phase 1 uses a single, deliberately
 // conservative token-level predicate -- in the same style as
 // blockBodyNeedsOwnScope / loopBodyNeedsFreshScopePerIteration -- to decide
@@ -307,7 +302,7 @@ func (c *Compiler) emitDeRefName(b *bytecode.ByteCode, name string) {
 // correctness, so every uncertain case takes the "not eligible" answer and
 // falls back to the existing, unchanged name-based path.
 
-// functionBodyIsSlotEligible reports whether the function body positioned at
+// functionBodyIsRegisterEligible reports whether the function body positioned at
 // the current tokenizer mark (the body's opening "{" or the combined "{}"
 // empty-block token) is eligible for compile-time slot assignment. seedNames
 // must contain the function's own parameter, named-return, and receiver names
@@ -335,7 +330,7 @@ func (c *Compiler) emitDeRefName(b *bytecode.ByteCode, name string) {
 // distinguishing the two would require full lexical resolution. Over-reporting
 // capture only forgoes an optimization; under-reporting it would be unsound, so
 // the scan is structured to never under-report.
-func (c *Compiler) functionBodyIsSlotEligible(seedNames map[string]bool) bool {
+func (c *Compiler) functionBodyIsRegisterEligible(seedNames map[string]bool) bool {
 	pos := c.t.Mark()
 	if pos >= len(c.t.Tokens) {
 		return false

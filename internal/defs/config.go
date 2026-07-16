@@ -159,6 +159,9 @@ const (
 	// The prefix for compiler configuration keys.
 	CompilerKeyPrefix = PrivilegedKeyPrefix + "compiler."
 
+	// Do we disassemble imported packages? Default is no.
+	DisassemblePackagesSetting = CompilerKeyPrefix + "disasm.packages"
+
 	// Do we normalize the case of all symbols to a common (lower) case
 	// string. If not true, symbol names are case-sensitive.
 	CaseNormalizedSetting = CompilerKeyPrefix + "normalized"
@@ -191,11 +194,11 @@ const (
 
 	// Should the compiler resolve well-defined local variables (parameters and
 	// block locals of a function proven to contain no capturing closures,
-	// "go", or "defer") to integer slots at compile time, bypassing name-based
-	// symbol-table lookup at runtime? Defaults to true. See docs/SLOTS.md. This
-	// is a kill-switch: setting it false makes every function fall back to the
-	// name-based access path, unchanged.
-	SlotsSetting = CompilerKeyPrefix + "slots"
+	// "go", or "defer") to integer "register" slots at compile time, bypassing
+	// name-based symbol-table lookup at runtime? Defaults to true. See
+	// docs/SLOTS.md. This is a kill-switch: setting it false makes every
+	// function fall back to the name-based access path, unchanged.
+	RegistersSetting = CompilerKeyPrefix + "registers"
 
 	// Should a variable that is declared but never used be an error?
 	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
@@ -613,7 +616,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	FullStackListingSetting:         true,
 	StaticTypesSetting:              true,
 	TypeShadowingSetting:            true,
-	SlotsSetting:                    true,
+	RegistersSetting:                true,
 	ApplicationServerSetting:        false,
 	LogonServerSetting:              true,
 	LogonTokenSetting:               false,

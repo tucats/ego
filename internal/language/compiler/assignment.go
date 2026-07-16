@@ -70,7 +70,7 @@ func (c *Compiler) compileAssignment() error {
 		// assignmentTarget above is registered (made name-resolvable) only now,
 		// after the right-hand side has been compiled, so a shadowing
 		// "x := x + 1" resolved its RHS "x" to the outer binding.
-		c.registerPendingSlots()
+		c.registerPendingRegisters()
 	}()
 
 	if storeLValue.StoreCount() > 1 {
@@ -117,7 +117,7 @@ func (c *Compiler) compileAssignment() error {
 		// and DropToMarker.  Any other shape is a qualified lvalue.
 		isSimpleLValue := storeLValue.Mark() == 2 &&
 			firstInstr != nil &&
-			(firstInstr.Operation == bytecode.Store || firstInstr.Operation == bytecode.StoreSlot)
+			(firstInstr.Operation == bytecode.Store || firstInstr.Operation == bytecode.StoreRegister)
 
 		if isSimpleLValue {
 			// --- Simple variable: x++ or x-- ---
@@ -160,13 +160,13 @@ func (c *Compiler) compileAssignment() error {
 			// docs/SLOTS.md: a slotted local's store is StoreSlot <index>;
 			// reproduce the read-modify-write against the same slot. A
 			// name-based local uses Load/Store <name> exactly as before.
-			if firstInstr.Operation == bytecode.StoreSlot {
+			if firstInstr.Operation == bytecode.StoreRegister {
 				idx := data.IntOrZero(firstInstr.Operand)
 
-				c.b.Emit(bytecode.LoadSlot, idx)
+				c.b.Emit(bytecode.LoadRegister, idx)
 				c.b.Emit(bytecode.Push, 1)
 				c.b.Emit(autoMode)
-				c.b.Emit(bytecode.StoreSlot, idx)
+				c.b.Emit(bytecode.StoreRegister, idx)
 				c.b.Emit(bytecode.DropToMarker, bytecode.NewStackMarker("let"))
 
 				return nil

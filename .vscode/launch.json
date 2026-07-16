@@ -123,7 +123,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}", 
-            "args": [ "run", "test.ego", "--optimize=2", "-t"]
+            "args": [ "run", "test.ego", "--optimize=3", "--disasm"]
         },
         {
             "name": "Debug test.ego",

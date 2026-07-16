@@ -40,12 +40,12 @@ const (
 	AtLine
 	Add
 	AddressOf
-	AddressOfSlot
+	AddressOfRegister
 	AllocateLocal
 	And
 	ArgCheck
 	Arg
-	ArgSlot
+	ArgRegister
 	Array
 	BeginCapture
 	BitAnd
@@ -57,7 +57,7 @@ const (
 	Constant
 	Copy
 	CreateAndStore
-	CreateAndStoreSlot
+	CreateAndStoreRegister
 	Defer
 	DeferStart
 	DeRef
@@ -89,7 +89,7 @@ const (
 	Load
 	LoadIndex
 	LoadSlice
-	LoadSlot
+	LoadRegister
 	LoadThis
 	Log
 	MakeArray
@@ -130,7 +130,7 @@ const (
 	Store
 	StoreAlways
 	StoreChan
-	StoreSlot
+	StoreRegister
 	StoreGlobal
 	StoreIndex
 	StoreIndexChan
@@ -141,9 +141,9 @@ const (
 	Swap
 	SymbolCreate
 	SymbolDelete
-	SymbolDeleteSlot
+	SymbolDeleteRegister
 	SymbolOptCreate
-	SymbolOptCreateSlot
+	SymbolOptCreateRegister
 	SyncOutputWriter
 	Template
 	Throw
@@ -179,130 +179,130 @@ const (
 )
 
 var opcodeNames = map[Opcode]string{
-	Add:                 "Add",
-	AddressOf:           "AddressOf",
-	AddressOfSlot:       "AddressOfSlot",
-	AllocateLocal:       "AllocateLocal",
-	And:                 "And",
-	ArgCheck:            "ArgCheck",
-	Arg:                 "Arg",
-	ArgSlot:             "ArgSlot",
-	Array:               "Array",
-	AtLine:              "AtLine",
-	BeginCapture:        "BeginCapture",
-	BitAnd:              "BitAnd",
-	BitOr:               "BitOr",
-	BitShift:            "BitShift",
-	Branch:              "Branch",
-	BranchFalse:         "BranchFalse",
-	BranchTrue:          "BranchTrue",
-	Call:                "Call",
-	Coerce:              "Coerce",
-	Console:             "Console",
-	Constant:            "Constant",
-	Copy:                "Copy",
-	CreateAndStore:      "CreateAndStore",
-	CreateAndStoreSlot:  "CreateAndStoreSlot",
-	Defer:               "Defer",
-	DeferStart:          "DeferStart",
-	DeRef:               "DeRef",
-	Div:                 "Div",
-	Drop:                "Drop",
-	DropToMarker:        "DropToMarker",
-	DumpPackages:        "DumpPackages",
-	DumpSymbols:         "DumpSymbols",
-	Dup:                 "Dup",
-	EndCapture:          "EndCapture",
-	EntryPoint:          "EntryPoint",
-	EntryPointExit:      "EntryPointExit",
-	Equal:               "Equal",
-	Exp:                 "Exp",
-	Flatten:             "Flatten",
-	FromFile:            "FromFile",
-	GetThis:             "GetThis",
-	GetVarArgs:          "GetVarArgs",
-	Go:                  "Go",
-	GreaterThan:         "GT",
-	GreaterThanOrEqual:  "GTEQ",
-	IfError:             "IfError",
-	Import:              "Import",
-	Increment:           "Increment",
-	InFile:              "InFile",
-	InPackage:           "InPackage",
-	LessThan:            "LT",
-	LessThanOrEqual:     "LTEQ",
-	Load:                "Load",
-	LoadIndex:           "LoadIndex",
-	LoadSlice:           "LoadSlice",
-	LoadSlot:            "LoadSlot",
-	LoadThis:            "LoadThis",
-	LocalCall:           "LocalCall",
-	Log:                 "Log",
-	MakeArray:           "MakeArray",
-	MakeMap:             "MakeMap",
-	Member:              "Member",
-	ModeCheck:           "ModeCheck",
-	Module:              "Module",
-	Modulo:              "Modulo",
-	Mul:                 "Mul",
-	Negate:              "Negate",
-	Newline:             "Newline",
-	NoOperation:         "NoOperation",
-	NotEqual:            "NotEqual",
-	Or:                  "Or",
-	Panic:               "Panic",
-	PopScope:            "PopScope",
-	PopTest:             "PopTest",
-	Print:               "Print",
-	Profile:             "Profile",
-	Push:                "Push",
-	PushScope:           "PushScope",
-	PushTest:            "PushTest",
-	RangeInit:           "RangeInit",
-	RangeNext:           "RangeNext",
-	ReadStack:           "ReadStack",
-	ReceiveChannel:      "ReceiveChannel",
-	RequiredType:        "RequiredType",
-	Recover:             "Recover",
-	Return:              "Return",
-	RunDefers:           "RunDefers",
-	UserPanic:           "UserPanic",
-	Sandbox:             "Sandbox",
-	Say:                 "Say",
-	SetThis:             "SetThis",
-	Signal:              "Signal",
-	StackCheck:          "StackCheck",
-	StaticTyping:        "StaticTyping",
-	Stop:                "Stop",
-	Store:               "Store",
-	StoreAlways:         "StoreAlways",
-	StoreChan:           "StoreChan",
-	StoreSlot:           "StoreSlot",
-	StoreGlobal:         "StoreGlobal",
-	StoreIndex:          "StoreIndex",
-	StoreIndexChan:      "StoreIndexChan",
-	StoreInto:           "StoreInto",
-	StoreViaPointer:     "StoreViaPointer",
-	Struct:              "Struct",
-	Sub:                 "Sub",
-	Swap:                "Swap",
-	SymbolCreate:        "SymbolCreate",
-	SymbolDelete:        "SymbolDelete",
-	SymbolDeleteSlot:    "SymbolDeleteSlot",
-	SymbolOptCreate:     "SymbolOptCreate",
-	SymbolOptCreateSlot: "SymbolOptCreateSlot",
-	SyncOutputWriter:    "SyncOutputWriter",
-	Template:            "Template",
-	Throw:               "Throw",
-	Timer:               "Timer",
-	Try:                 "Try",
-	TryPop:              "TryPop",
-	TryFlush:            "TryFlush",
-	TypeOf:              "TypeOf",
-	UnWrap:              "UnWrap",
-	ValueCopy:           "ValueCopy",
-	Wait:                "Wait",
-	WillCatch:           "WillCatch",
+	Add:                     "Add",
+	AddressOf:               "AddressOf",
+	AddressOfRegister:       "AddressOfRegister",
+	AllocateLocal:           "AllocateLocal",
+	And:                     "And",
+	ArgCheck:                "ArgCheck",
+	Arg:                     "Arg",
+	ArgRegister:             "ArgRegister",
+	Array:                   "Array",
+	AtLine:                  "AtLine",
+	BeginCapture:            "BeginCapture",
+	BitAnd:                  "BitAnd",
+	BitOr:                   "BitOr",
+	BitShift:                "BitShift",
+	Branch:                  "Branch",
+	BranchFalse:             "BranchFalse",
+	BranchTrue:              "BranchTrue",
+	Call:                    "Call",
+	Coerce:                  "Coerce",
+	Console:                 "Console",
+	Constant:                "Constant",
+	Copy:                    "Copy",
+	CreateAndStore:          "CreateAndStore",
+	CreateAndStoreRegister:  "CreateAndStoreRegister",
+	Defer:                   "Defer",
+	DeferStart:              "DeferStart",
+	DeRef:                   "DeRef",
+	Div:                     "Div",
+	Drop:                    "Drop",
+	DropToMarker:            "DropToMarker",
+	DumpPackages:            "DumpPackages",
+	DumpSymbols:             "DumpSymbols",
+	Dup:                     "Dup",
+	EndCapture:              "EndCapture",
+	EntryPoint:              "EntryPoint",
+	EntryPointExit:          "EntryPointExit",
+	Equal:                   "Equal",
+	Exp:                     "Exp",
+	Flatten:                 "Flatten",
+	FromFile:                "FromFile",
+	GetThis:                 "GetThis",
+	GetVarArgs:              "GetVarArgs",
+	Go:                      "Go",
+	GreaterThan:             "GT",
+	GreaterThanOrEqual:      "GTEQ",
+	IfError:                 "IfError",
+	Import:                  "Import",
+	Increment:               "Increment",
+	InFile:                  "InFile",
+	InPackage:               "InPackage",
+	LessThan:                "LT",
+	LessThanOrEqual:         "LTEQ",
+	Load:                    "Load",
+	LoadIndex:               "LoadIndex",
+	LoadSlice:               "LoadSlice",
+	LoadRegister:            "LoadRegister",
+	LoadThis:                "LoadThis",
+	LocalCall:               "LocalCall",
+	Log:                     "Log",
+	MakeArray:               "MakeArray",
+	MakeMap:                 "MakeMap",
+	Member:                  "Member",
+	ModeCheck:               "ModeCheck",
+	Module:                  "Module",
+	Modulo:                  "Modulo",
+	Mul:                     "Mul",
+	Negate:                  "Negate",
+	Newline:                 "Newline",
+	NoOperation:             "NoOperation",
+	NotEqual:                "NotEqual",
+	Or:                      "Or",
+	Panic:                   "Panic",
+	PopScope:                "PopScope",
+	PopTest:                 "PopTest",
+	Print:                   "Print",
+	Profile:                 "Profile",
+	Push:                    "Push",
+	PushScope:               "PushScope",
+	PushTest:                "PushTest",
+	RangeInit:               "RangeInit",
+	RangeNext:               "RangeNext",
+	ReadStack:               "ReadStack",
+	ReceiveChannel:          "ReceiveChannel",
+	RequiredType:            "RequiredType",
+	Recover:                 "Recover",
+	Return:                  "Return",
+	RunDefers:               "RunDefers",
+	UserPanic:               "UserPanic",
+	Sandbox:                 "Sandbox",
+	Say:                     "Say",
+	SetThis:                 "SetThis",
+	Signal:                  "Signal",
+	StackCheck:              "StackCheck",
+	StaticTyping:            "StaticTyping",
+	Stop:                    "Stop",
+	Store:                   "Store",
+	StoreAlways:             "StoreAlways",
+	StoreChan:               "StoreChan",
+	StoreRegister:           "StoreRegister",
+	StoreGlobal:             "StoreGlobal",
+	StoreIndex:              "StoreIndex",
+	StoreIndexChan:          "StoreIndexChan",
+	StoreInto:               "StoreInto",
+	StoreViaPointer:         "StoreViaPointer",
+	Struct:                  "Struct",
+	Sub:                     "Sub",
+	Swap:                    "Swap",
+	SymbolCreate:            "SymbolCreate",
+	SymbolDelete:            "SymbolDelete",
+	SymbolDeleteRegister:    "SymbolDeleteRegister",
+	SymbolOptCreate:         "SymbolOptCreate",
+	SymbolOptCreateRegister: "SymbolOptCreateRegister",
+	SyncOutputWriter:        "SyncOutputWriter",
+	Template:                "Template",
+	Throw:                   "Throw",
+	Timer:                   "Timer",
+	Try:                     "Try",
+	TryPop:                  "TryPop",
+	TryFlush:                "TryFlush",
+	TypeOf:                  "TypeOf",
+	UnWrap:                  "UnWrap",
+	ValueCopy:               "ValueCopy",
+	Wait:                    "Wait",
+	WillCatch:               "WillCatch",
 }
 
 // Initialize the dispatch map. This cannot be done as a static
@@ -321,12 +321,12 @@ func initializeDispatch() {
 
 		dispatchTable[Add] = addByteCode
 		dispatchTable[AddressOf] = addressOfByteCode
-		dispatchTable[AddressOfSlot] = addressOfSlotByteCode
+		dispatchTable[AddressOfRegister] = addressOfRegisterByteCode
 		dispatchTable[AllocateLocal] = allocateLocalByteCode
 		dispatchTable[And] = andByteCode
 		dispatchTable[ArgCheck] = argCheckByteCode
 		dispatchTable[Arg] = argByteCode
-		dispatchTable[ArgSlot] = argSlotByteCode
+		dispatchTable[ArgRegister] = argRegisterByteCode
 		dispatchTable[Array] = arrayByteCode
 		dispatchTable[AtLine] = atLineByteCode
 		dispatchTable[BeginCapture] = beginCaptureByteCode
@@ -342,7 +342,7 @@ func initializeDispatch() {
 		dispatchTable[Constant] = constantByteCode
 		dispatchTable[Copy] = copyByteCode
 		dispatchTable[CreateAndStore] = createAndStoreByteCode
-		dispatchTable[CreateAndStoreSlot] = createAndStoreSlotByteCode
+		dispatchTable[CreateAndStoreRegister] = createAndStoreRegisterByteCode
 		dispatchTable[Defer] = deferByteCode
 		dispatchTable[DeferStart] = deferStartByteCode
 		dispatchTable[DeRef] = deRefByteCode
@@ -374,7 +374,7 @@ func initializeDispatch() {
 		dispatchTable[Load] = loadByteCode
 		dispatchTable[LoadIndex] = loadIndexByteCode
 		dispatchTable[LoadSlice] = loadSliceByteCode
-		dispatchTable[LoadSlot] = loadSlotByteCode
+		dispatchTable[LoadRegister] = loadRegisterByteCode
 		dispatchTable[LoadThis] = loadThisByteCode
 		dispatchTable[LocalCall] = localCallByteCode
 		dispatchTable[Log] = logByteCode
@@ -416,7 +416,7 @@ func initializeDispatch() {
 		dispatchTable[Store] = storeByteCode
 		dispatchTable[StoreAlways] = storeAlwaysByteCode
 		dispatchTable[StoreChan] = storeChanByteCode
-		dispatchTable[StoreSlot] = storeSlotByteCode
+		dispatchTable[StoreRegister] = storeRegisterByteCode
 		dispatchTable[StoreGlobal] = storeGlobalByteCode
 		dispatchTable[StoreIndex] = storeIndexByteCode
 		dispatchTable[StoreIndexChan] = storeIndexChanByteCode
@@ -427,9 +427,9 @@ func initializeDispatch() {
 		dispatchTable[Swap] = swapByteCode
 		dispatchTable[SymbolCreate] = symbolCreateByteCode
 		dispatchTable[SymbolDelete] = symbolDeleteByteCode
-		dispatchTable[SymbolDeleteSlot] = symbolDeleteSlotByteCode
+		dispatchTable[SymbolDeleteRegister] = symbolDeleteRegisterByteCode
 		dispatchTable[SymbolOptCreate] = symbolCreateIfByteCode
-		dispatchTable[SymbolOptCreateSlot] = symbolCreateIfSlotByteCode
+		dispatchTable[SymbolOptCreateRegister] = symbolCreateIfRegisterByteCode
 		dispatchTable[SyncOutputWriter] = syncOutputWriterByteCode
 		dispatchTable[Template] = templateByteCode
 		dispatchTable[Throw] = throwByteCode

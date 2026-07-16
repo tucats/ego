@@ -370,7 +370,11 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	}
 
 	// If we are disassembling, do it now for the imported definitions.
-	importCompiler.b.Disasm(false)
+	// This is optional, based on the setting "ego.compiler.disasm.packages"
+	// to decide if we do or do not disassmeble packages; the default is false
+	if settings.GetBool(defs.DisassemblePackagesSetting) {
+		importCompiler.b.Disasm(false)
+	}
 
 	// If after the import we ended with mismatched block markers, complain
 	if importCompiler.blockDepth != 0 {

@@ -581,9 +581,9 @@ func (c *Compiler) compileFor() error {
 	// statement's flush. An ITERATION loop's counter, by contrast, IS driven by
 	// indexStore and is safe (and worthwhile) to slot. Detect which form this is
 	// with a read-only lookahead and suppress slot declaration only for range.
-	c.flags.suppressSlotDecl = c.isRangeLoopAhead()
+	c.flags.suppressRegisterDecl = c.isRangeLoopAhead()
 	indexStore, err := c.assignmentTarget()
-	c.flags.suppressSlotDecl = false
+	c.flags.suppressRegisterDecl = false
 
 	if err != nil {
 		return err
@@ -962,7 +962,7 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 	// init value has been compiled, so the condition/increment clauses and the
 	// body resolve the index to its slot. The init value never references the
 	// index, so registering after it is correct.
-	c.registerPendingSlots()
+	c.registerPendingRegisters()
 
 	if !c.t.IsNext(tokenizer.SemicolonToken) {
 		return c.compileError(errors.ErrMissingSemicolon)
@@ -1019,14 +1019,14 @@ func (c *Compiler) iterationFor(indexName, valueName string, indexStore *bytecod
 		// whether this is a simple variable or a qualified lvalue.
 		firstInstr := incrementStore.Instruction(0)
 		isSimple := firstInstr != nil && firstInstr.Operation == bytecode.Store
-		isSlot := firstInstr != nil && firstInstr.Operation == bytecode.StoreSlot
+		isSlot := firstInstr != nil && firstInstr.Operation == bytecode.StoreRegister
 
 		if isSlot {
 			// docs/SLOTS.md: a slotted loop counter's store is StoreSlot <index>;
 			// read it back with LoadSlot for the read-modify-write. The matching
 			// StoreSlot in incrementStore (appended by the caller) writes the
 			// incremented value back to the same slot.
-			incrementCode.Emit(bytecode.LoadSlot, firstInstr.Operand)
+			incrementCode.Emit(bytecode.LoadRegister, firstInstr.Operand)
 		} else if isSimple {
 			// Simple variable increment (the common case: i++ in a for loop).
 			t := data.String(firstInstr.Operand)

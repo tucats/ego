@@ -39,7 +39,7 @@ type scope struct {
 	// double-declaration detection for that nested scope's own declarations.
 	idempotentDecls bool
 
-	// slots maps each name declared in this lexical scope to the integer slot
+	// registers maps each name declared in this lexical scope to the integer slot
 	// index it occupies in the enclosing slot-eligible function's slot bank
 	// (see docs/SLOTS.md Section 5.2). It is populated only while compiling a
 	// slot-eligible function; for every other compilation it stays nil and the
@@ -47,7 +47,7 @@ type scope struct {
 	// block gets its own distinct slot number here, separate from any outer or
 	// sibling block's use of the same name, which is how compile-time slot
 	// assignment reproduces today's runtime shadowing semantics.
-	slots map[string]int
+	registers map[string]int
 }
 
 // The list of builtin predefined names that are always "found" during execution, and should not be

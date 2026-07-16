@@ -286,6 +286,12 @@ func configureOptimizer(c *cli.Context) {
 
 		settings.SetDefault(defs.OptimizerSetting, strconv.Itoa(optimize))
 	}
+
+	// If the optimier level is at least 3, also explicitly enable local variable
+	// "register" tracking.
+	if settings.GetInt(defs.OptimizerSetting) > 2 {
+		settings.SetDefault(defs.RegistersSetting, "true")
+	}
 }
 
 // Configure automatic import of well-known packages from the command line option.
@@ -529,7 +535,7 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 		}
 
 		comp.Fragment(true)
-		
+
 		b, err = comp.Compile(label, t)
 		if !errors.Nil(err) {
 			exitValue = 1

@@ -29,7 +29,7 @@ func slotEligible(t *testing.T, seed []string, body string) bool {
 
 	// The predicate expects the mark to sit AT the body's opening brace, so we
 	// do NOT consume it here.
-	return c.functionBodyIsSlotEligible(seedNames)
+	return c.functionBodyIsRegisterEligible(seedNames)
 }
 
 func TestFunctionBodyIsSlotEligible(t *testing.T) {

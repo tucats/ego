@@ -1152,7 +1152,7 @@ func (c *Compiler) compileBlockDirective() error {
 	// c.flags.slots (already correctly seeded by New() or inherited in
 	// blockMode) when the directive explicitly asked with "slots=true|false".
 	if slotsSet {
-		subCompiler.flags.slots = slots
+		subCompiler.flags.registers = slots
 	}
 
 	// Collect up all the tokens that make up the code to compile. These

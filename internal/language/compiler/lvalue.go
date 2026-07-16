@@ -336,7 +336,7 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 			// name is deferred (allocateSlot records it as pending) until the
 			// enclosing statement's RHS has been compiled, so a shadowing
 			// "x := x + 1" still reads the outer x.
-			if idx, ok := c.allocateSlot(name.Spelling()); ok {
+			if idx, ok := c.allocateRegister(name.Spelling()); ok {
 				declSlot = idx
 			} else if c.inIdempotentDeclScope() {
 				// PERFORMANCE.md Finding 11: inside a for-loop body scope that
@@ -417,7 +417,7 @@ func (c *Compiler) patchStore(bc *bytecode.ByteCode, name string, isPointer, isC
 		} else if isPointer {
 			bc.Emit(bytecode.StoreViaPointer, name)
 		} else if declSlot >= 0 {
-			bc.Emit(bytecode.StoreSlot, declSlot)
+			bc.Emit(bytecode.StoreRegister, declSlot)
 		} else {
 			c.emitStoreName(bc, name)
 		}
