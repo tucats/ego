@@ -167,7 +167,7 @@ func getThisByteCode(c *Context, i any) error {
 				return c.runtimeError(errors.ErrInternalCompiler).Context("GetThis: no locals bank in scope")
 			}
 
-			if !bank.SetSlot(slotIndex, v) {
+			if !bank.SetRegister(slotIndex, v) {
 				return c.runtimeError(errors.ErrInternalCompiler).Context("GetThis: slot index out of range")
 			}
 		} else {

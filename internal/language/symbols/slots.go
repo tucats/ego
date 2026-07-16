@@ -96,13 +96,13 @@ func (s *SymbolTable) LocalsBank() *SymbolTable {
 	return nil
 }
 
-// GetSlot returns the value stored in the given slot of this table's own bank.
+// GetRegister returns the value stored in the given slot of this table's own bank.
 // The bool result is false if this table owns no bank or the index is out of
 // range -- both of which indicate a compiler bug (a slot opcode was emitted
 // with no matching AllocateLocal, or with a bad index), not a normal runtime
 // condition. Callers that must tolerate a nested-block scope should resolve the
 // bank owner with LocalsBank() first and call this on that table.
-func (s *SymbolTable) GetSlot(index int) (any, bool) {
+func (s *SymbolTable) GetRegister(index int) (any, bool) {
 	if s == nil || index < 0 || index >= len(s.locals) {
 		return nil, false
 	}
@@ -110,10 +110,10 @@ func (s *SymbolTable) GetSlot(index int) (any, bool) {
 	return s.locals[index], true
 }
 
-// SetSlot writes a value into the given slot of this table's own bank. It
+// SetRegister writes a value into the given slot of this table's own bank. It
 // returns false (writing nothing) if this table owns no bank or the index is
 // out of range -- again a compiler-bug signal, not a normal condition.
-func (s *SymbolTable) SetSlot(index int, v any) bool {
+func (s *SymbolTable) SetRegister(index int, v any) bool {
 	if s == nil || index < 0 || index >= len(s.locals) {
 		return false
 	}
@@ -124,13 +124,13 @@ func (s *SymbolTable) SetSlot(index int, v any) bool {
 	return true
 }
 
-// AddressOfSlot returns the address of the given slot in this table's own bank,
+// AddressOfRegister returns the address of the given slot in this table's own bank,
 // or nil if this table owns no bank or the index is out of range. Because the
 // bank is a single fixed-size array that is never grown or reallocated after
 // AllocateLocals, this pointer stays valid for the life of the call activation
 // -- the same stability guarantee addressOfValue provides for the name-based
 // path, but without the bin indirection that machinery needs to preserve it.
-func (s *SymbolTable) AddressOfSlot(index int) *any {
+func (s *SymbolTable) AddressOfRegister(index int) *any {
 	if s == nil || index < 0 || index >= len(s.locals) {
 		return nil
 	}

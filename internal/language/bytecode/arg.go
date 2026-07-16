@@ -62,10 +62,10 @@ func argRegisterByteCode(c *Context, i any) error {
 	// Same value-copy rule as Arg (BUG-26): a struct value gets its own copy; a
 	// pointer-declared parameter is stored as received.
 	if argType != nil && argType.IsPointer() {
-		if !bank.SetSlot(slotIndex, v) {
+		if !bank.SetRegister(slotIndex, v) {
 			return c.runtimeError(errors.ErrInternalCompiler).Context("ArgSlot: slot index out of range")
 		}
-	} else if !bank.SetSlot(slotIndex, copyStructForValueSemantics(v)) {
+	} else if !bank.SetRegister(slotIndex, copyStructForValueSemantics(v)) {
 		return c.runtimeError(errors.ErrInternalCompiler).Context("ArgSlot: slot index out of range")
 	}
 

@@ -773,12 +773,12 @@ func (c *Context) checkType(name string, value any) (any, error) {
 	return c.checkTypeCore(value, existingValue, ok, isConstant)
 }
 
-// checkTypeSlot is the slot-based counterpart of checkType (see docs/SLOTS.md):
+// checkTypeRegister is the slot-based counterpart of checkType (see docs/SLOTS.md):
 // it applies the same type-enforcement rules to a StoreSlot, reading the
 // destination's current value directly from the slot bank instead of resolving
 // it by name. The two share checkTypeCore for everything after the existing
 // value has been obtained; only the way that existing value is fetched differs.
-func (c *Context) checkTypeSlot(bank *symbols.SymbolTable, index int, value any) (any, error) {
+func (c *Context) checkTypeRegister(bank *symbols.SymbolTable, index int, value any) (any, error) {
 	isConstant := false
 
 	if constant, ok := value.(data.Immutable); ok {
@@ -790,7 +790,7 @@ func (c *Context) checkTypeSlot(bank *symbols.SymbolTable, index int, value any)
 		return value, nil
 	}
 
-	existingValue, ok := bank.GetSlot(index)
+	existingValue, ok := bank.GetRegister(index)
 
 	return c.checkTypeCore(value, existingValue, ok, isConstant)
 }
