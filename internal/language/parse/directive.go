@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/internal/errors"
@@ -73,7 +74,7 @@ func (p *Parser) collectDirectiveArgs() []string {
 		if depth == 0 && tok.Spelling() == "eof" &&
 			p.t.Peek(2).Is(tokenizer.AssignToken) && p.t.Peek(3).IsString() {
 			marker := p.t.Peek(3).Spelling()
-			raw = append(raw, p.next().Spelling(), p.next().Spelling(), p.next().Spelling())
+			raw = append(raw, directiveArgText(p.next()), directiveArgText(p.next()), directiveArgText(p.next()))
 			raw = append(raw, p.consumeToMarker(marker)...)
 
 			continue
@@ -114,10 +115,23 @@ func (p *Parser) collectDirectiveArgs() []string {
 			}
 		}
 
-		raw = append(raw, p.next().Spelling())
+		raw = append(raw, directiveArgText(p.next()))
 	}
 
 	return raw
+}
+
+// directiveArgText returns the text to record for one directive-argument token.
+// String tokens are re-quoted (the lexer strips their quotes), so that the
+// captured RawArgs re-tokenize identically — which is what lets a directive such
+// as @test "a: b" survive a format/parse round-trip instead of its unquoted
+// content being re-split into separate tokens.
+func directiveArgText(tok tokenizer.Token) string {
+	if tok.IsString() {
+		return strconv.Quote(tok.Spelling())
+	}
+
+	return tok.Spelling()
 }
 
 // consumeToMarker consumes tokens up to and including the run whose concatenated
@@ -129,13 +143,13 @@ func (p *Parser) consumeToMarker(marker string) []string {
 	for !p.t.AtEnd() {
 		if n := p.markerRunLength(marker); n > 0 {
 			for i := 0; i < n; i++ {
-				raw = append(raw, p.next().Spelling())
+				raw = append(raw, directiveArgText(p.next()))
 			}
 
 			return raw
 		}
 
-		raw = append(raw, p.next().Spelling())
+		raw = append(raw, directiveArgText(p.next()))
 	}
 
 	return raw
