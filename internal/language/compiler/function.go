@@ -393,7 +393,7 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 	// function proved ineligible, funcSlots is nil and the placeholder stays a
 	// harmless NoOperation.
 	if cx.funcSlots != nil {
-		b.EmitAt(cx.funcSlots.allocateAddr, bytecode.AllocateLocal, len(cx.funcSlots.names))
+		b.EmitAt(cx.funcSlots.allocateAddr, bytecode.AllocateLocal, cx.funcSlots.names)
 	}
 
 	// If there was a named return list, we have an extra scope to pop. Then pull all

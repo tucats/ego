@@ -115,6 +115,15 @@ type SymbolTable struct {
 	// which walks the parent chain to the nearest ancestor whose locals is set.
 	locals []any
 
+	// localNames maps each slot index to the source name declared there,
+	// supplied by AllocateLocal alongside the bank. It is read-only metadata
+	// used ONLY on the cold introspection path (Names(), Get()-by-name, the
+	// debugger, error formatting) so slotted locals appear by name exactly like
+	// name-based ones; the hot LoadSlot/StoreSlot path never consults it. A
+	// name shadowed in a nested block appears at more than one index (see
+	// slotIndexByName, which returns the innermost).
+	localNames []string
+
 	// A unique identifier for the symbol table, used only for human-readable
 	// trace logging (see the ID() method below and PERFORMANCE.md Finding 1).
 	id uint64
@@ -577,10 +586,24 @@ func (s *SymbolTable) Names() []string {
 	s.Lock()
 	defer s.Unlock()
 
+	seen := map[string]bool{}
 	result := []string{}
 
 	for k := range s.symbols {
+		seen[k] = true
+
 		result = append(result, k)
+	}
+
+	// docs/SLOTS.md introspection: include this table's slotted locals so they
+	// enumerate by name alongside name-based symbols (deduplicated -- a name
+	// shadowed across nested blocks occupies several slots but is one name).
+	for _, name := range s.localNames {
+		if name != "" && !seen[name] {
+			seen[name] = true
+
+			result = append(result, name)
+		}
 	}
 
 	// Sort the list so it is deterministic.

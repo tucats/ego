@@ -74,6 +74,16 @@ func (s *SymbolTable) Get(name string) (any, bool) {
 		v = s.getValue(attr.slot)
 	}
 
+	// docs/SLOTS.md introspection: a slotted local is not in the symbols map;
+	// resolve it from this table's own bank so it is visible by name (debugger,
+	// error formatting, util.Symbols). This is checked before the parent walk so
+	// a local correctly shadows a same-named outer variable.
+	if !found && s.localNames != nil {
+		if sv, ok := s.slotValueByName(name); ok {
+			v, found = sv, true
+		}
+	}
+
 	if !found && !s.IsRoot() {
 		if s.parent == nil || s.parent == s {
 			panic("Symbol table parent infinite loop detected at " + s.Name)
@@ -127,6 +137,15 @@ func (s *SymbolTable) GetLocal(name string) (any, bool) {
 		v = s.getValue(attr.slot)
 	}
 
+	// docs/SLOTS.md introspection: resolve a slotted local by name from this
+	// table's own bank (GetLocal never walks parents, so this is the only place
+	// a slotted local can surface for it).
+	if !found && s.localNames != nil {
+		if sv, ok := s.slotValueByName(name); ok {
+			v, found = sv, true
+		}
+	}
+
 	if ui.IsActive(ui.SymbolLogger) {
 		status := notFound
 		attr = &SymbolAttribute{}
@@ -166,6 +185,17 @@ func (s *SymbolTable) GetWithAttributes(name string) (any, *SymbolAttribute, boo
 	attr, found := s.symbols[name]
 	if found {
 		v = s.getValue(attr.slot)
+	}
+
+	// docs/SLOTS.md introspection: surface a slotted local by name, with a
+	// synthetic attribute carrying its slot index (slotted locals are never
+	// readonly or ephemeral in this cut).
+	if !found && s.localNames != nil {
+		if idx, ok := s.slotIndexByName(name); ok {
+			v = s.locals[idx]
+			attr = &SymbolAttribute{slot: idx}
+			found = true
+		}
 	}
 
 	if !found && !s.IsRoot() {

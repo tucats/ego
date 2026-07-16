@@ -18,25 +18,58 @@ package symbols
 //     exactly one call activation on one goroutine and needs no locking. The
 //     methods below intentionally do not take the table mutex.
 
-// AllocateLocals attaches a fresh slot bank of exactly n entries to this table,
+// AllocateLocals attaches a fresh slot bank of len(names) entries to this table,
 // each initialized to UndefinedValue{} (matching what Create() stores for a
-// declared-but-unassigned name in the name-based path). It is called by the
+// declared-but-unassigned name in the name-based path), and records names as the
+// slot->name metadata table (see the localNames field). It is called by the
 // AllocateLocal opcode at the entry of a slot-eligible function, against the
-// boundary table that was just pushed for the call. A count of zero is legal
-// (an eligible function that declares no locals at all) and installs a
+// boundary table that was just pushed for the call. An empty names slice is
+// legal (an eligible function that declares no locals at all) and installs a
 // non-nil, empty bank so LocalsBank() still recognizes this table as the bank
 // owner.
-func (s *SymbolTable) AllocateLocals(n int) {
+func (s *SymbolTable) AllocateLocals(names []string) {
 	if s == nil {
 		return
 	}
 
-	bank := make([]any, n)
+	bank := make([]any, len(names))
 	for i := range bank {
 		bank[i] = UndefinedValue{}
 	}
 
 	s.locals = bank
+	s.localNames = names
+}
+
+// slotIndexByName resolves a name to a slot index in this table's own bank,
+// returning the index and true, or (-1, false) if the name is not a slotted
+// local here. It scans from the highest index down so that, when a name is
+// shadowed across nested blocks (appearing at more than one index), the
+// innermost (most-recently-declared) binding wins -- the intuitive choice for
+// introspection. This is a cold path (introspection only); the hot slot opcodes
+// never call it.
+func (s *SymbolTable) slotIndexByName(name string) (int, bool) {
+	if s == nil {
+		return -1, false
+	}
+
+	for i := len(s.localNames) - 1; i >= 0; i-- {
+		if s.localNames[i] == name {
+			return i, true
+		}
+	}
+
+	return -1, false
+}
+
+// slotValueByName returns the value of a slotted local by name from this table's
+// own bank, and true, or (nil, false) if the name is not a slotted local here.
+func (s *SymbolTable) slotValueByName(name string) (any, bool) {
+	if idx, ok := s.slotIndexByName(name); ok {
+		return s.locals[idx], true
+	}
+
+	return nil, false
 }
 
 // HasLocals reports whether this table owns a slot bank (i.e. AllocateLocals

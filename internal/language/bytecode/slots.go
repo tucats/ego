@@ -35,21 +35,19 @@ func (c *Context) slotBank(i any, opName string) (*symbols.SymbolTable, int, err
 }
 
 // allocateLocalByteCode implements the AllocateLocal opcode. Its operand is the
-// number of distinct locals the enclosing slot-eligible function declares. It
-// attaches a fresh, fixed-size slot bank of that size (every entry
-// UndefinedValue{}) to the current symbol table -- which is the boundary table
-// just pushed for this call activation. Emitted once, at function entry.
+// []string of local names the enclosing slot-eligible function declares, one per
+// slot index (the count is len(names)). It attaches a fresh, fixed-size slot
+// bank of that size (every entry UndefinedValue{}) to the current symbol table
+// -- the boundary table just pushed for this call activation -- together with
+// the names as slot->name introspection metadata (docs/SLOTS.md, Q3). Emitted
+// once, at function entry.
 func allocateLocalByteCode(c *Context, i any) error {
-	n, err := data.Int(i)
-	if err != nil {
-		return c.runtimeError(err)
+	names, ok := i.([]string)
+	if !ok {
+		return c.runtimeError(errors.ErrInternalCompiler).Context("AllocateLocal: operand is not a name list")
 	}
 
-	if n < 0 {
-		return c.runtimeError(errors.ErrInternalCompiler).Context("AllocateLocal: negative slot count")
-	}
-
-	c.symbols.AllocateLocals(n)
+	c.symbols.AllocateLocals(names)
 
 	return nil
 }

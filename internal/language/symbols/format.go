@@ -79,7 +79,17 @@ func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
 			continue
 		}
 
-		v := s.getValue(s.symbols[k].slot)
+		// A slotted local (docs/SLOTS.md) is not in the symbols map; fetch its
+		// value from the bank instead.
+		var v any
+		if attr, ok := s.symbols[k]; ok {
+			v = s.getValue(attr.slot)
+		} else if sv, ok := s.slotValueByName(k); ok {
+			v = sv
+		} else {
+			continue
+		}
+
 		omitType, omitSymbol, typeString := getFormattedTypeString(v, includeBuiltins)
 
 		if omitSymbol {
@@ -166,9 +176,23 @@ func getFormattedTypeString(v any, includeBuiltins bool) (bool, bool, string) {
 // with the hidden "__" prefix or a generated symbol that arts with a "$" prefix.
 func getVisibleSymbolNames(s *SymbolTable) []string {
 	keys := make([]string, 0)
+	seen := map[string]bool{}
 
 	for k := range s.symbols {
 		if !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
+			seen[k] = true
+
+			keys = append(keys, k)
+		}
+	}
+
+	// docs/SLOTS.md introspection: include slotted locals so they display in
+	// "show symbols" / util.Symbols alongside name-based symbols. Deduplicated,
+	// since a name shadowed across nested blocks occupies several slots.
+	for _, k := range s.localNames {
+		if k != "" && !seen[k] && !strings.HasPrefix(k, data.MetadataPrefix) && !strings.HasPrefix(k, "$") {
+			seen[k] = true
+
 			keys = append(keys, k)
 		}
 	}
@@ -269,15 +293,36 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 	// items.
 	keys := make([]string, 0)
 
+	seen := map[string]bool{}
+
 	for k := range s.symbols {
+		seen[k] = true
+
 		keys = append(keys, k)
+	}
+
+	// docs/SLOTS.md introspection: include slotted locals in the trace log too.
+	for _, k := range s.localNames {
+		if k != "" && !seen[k] {
+			seen[k] = true
+
+			keys = append(keys, k)
+		}
 	}
 
 	sort.Strings(keys)
 
 	// Now iterate over the keys in sorted order
 	for _, k := range keys {
-		v := s.getValue(s.symbols[k].slot)
+		// A slotted local is not in the symbols map; fetch it from the bank.
+		var v any
+		if attr, ok := s.symbols[k]; ok {
+			v = s.getValue(attr.slot)
+		} else if sv, ok := s.slotValueByName(k); ok {
+			v = sv
+		} else {
+			continue
+		}
 
 		typeString := ""
 
@@ -350,8 +395,22 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		attr := s.symbols[k]
-		v := s.getValue(attr.slot)
+		// A slotted local (docs/SLOTS.md) is not in the symbols map; fetch its
+		// value from the bank instead (slotted locals are never readonly here).
+		var (
+			v        any
+			readonly bool
+		)
+
+		if attr, ok := s.symbols[k]; ok {
+			v = s.getValue(attr.slot)
+			readonly = attr.Readonly
+		} else if sv, ok := s.slotValueByName(k); ok {
+			v = sv
+		} else {
+			continue
+		}
+
 		omitThisSymbol := false
 
 		dt := data.TypeOf(v)
@@ -420,7 +479,7 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 		row := make([]string, 4)
 		row[0] = k
 		row[1] = typeString
-		row[2] = data.String(attr.Readonly)
+		row[2] = data.String(readonly)
 		row[3] = data.Format(v)
 		rows = append(rows, row)
 	}

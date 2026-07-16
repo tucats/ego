@@ -140,6 +140,25 @@
     @assert add10(0) == 10
 }
 
+@test "slots: slotted locals are visible to introspection by name"
+{
+    // util.Symbols() must see slotted locals by name, exactly as it sees
+    // name-based ones (docs/SLOTS.md Q3 introspection). This is what the
+    // debugger's "show symbols" and error formatting rely on.
+    func introspect() bool {
+        total := 41
+        factor := 1
+        total = total + factor
+        syms := util.Symbols()
+        hasTotal := strings.Contains(syms, "total")
+        hasFactor := strings.Contains(syms, "factor")
+
+        return hasTotal && hasFactor
+    }
+
+    @assert introspect()
+}
+
 @test "slots: struct value copy semantics preserved for slotted locals"
 {
     type point struct {
