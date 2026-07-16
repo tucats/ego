@@ -1,12 +1,15 @@
 # Slot-Based Local Variable Access — Implementation Plan
 
-**Status:** in progress — Phase 0 landed; Phase 1 landed and functional
-(predicate, feature flag, opcodes, and emission). Slotted locals, iteration
-counters, shadowing, `&x`, and `++`/compound-assign all compile to slot opcodes;
-range vars, params, receivers, and named returns remain name-based (Phase 2).
-All 1568 Ego tests and the Go suite pass with slots on and off; a hot arithmetic
-loop runs ~20% faster with slots on. Remaining: introspection (Q3), apitest,
-formal re-profiling; then Phase 2 breadth.
+**Status:** in progress — Phase 0, Phase 1, Q3 introspection, and Phase 2a/2b
+landed and functional. Slotted: body `:=` locals, iteration counters, `&x`,
+`*p`, `++`/compound-assign, **fixed parameters** (via ArgSlot), and **methods**
+(receiver stays name-based). Still name-based: range vars, variadic params, the
+receiver, and named-return variables (which now coexist with an otherwise-slotted
+function). Slotted locals are visible to introspection by name (debugger,
+util.Symbols, error formatting). All 1571 Ego tests and the Go suite pass with
+slots on and off; a hot arithmetic loop runs ~24% faster with slots on.
+Remaining: slot named-return variables; authenticated apitest run (blocked on
+dev-server credentials); formal re-profiling writeup here.
 
 ## Implementation progress log
 
