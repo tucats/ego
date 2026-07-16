@@ -649,7 +649,15 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 			b.Emit(bytecode.RequiredType, parameter.kind)
 		}
 
-		b.Emit(bytecode.StoreAlways, parameter.name)
+		// docs/SLOTS.md Phase 2: the variadic parameter (an array) is bound into
+		// a slot when the function is slot-eligible, so body reads (e.g. a range
+		// over it) compile to LoadSlot; otherwise it is stored by name.
+		if slot, ok := c.allocateParamSlot(parameter.name); ok {
+			b.Emit(bytecode.StoreSlot, slot)
+		} else {
+			b.Emit(bytecode.StoreAlways, parameter.name)
+		}
+
 		c.DefineSymbol(parameter.name)
 	} else {
 		// If this argument is not any or a variable argument item,
