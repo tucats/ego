@@ -1,0 +1,104 @@
+// Tests for the built-in delete() function.
+//
+// delete() has several forms:
+//   delete(map, key)     removes a key/value pair from a map
+//   delete(array, index) removes the element at an index (shifting the rest)
+//   delete("name")       removes a variable from the current scope (Ego
+//                        extension; requires language extensions, which are
+//                        always enabled under "ego test")
+
+@test "builtins: delete a key from a map"
+{
+    m := map[string]int{"a": 1, "b": 2, "c": 3}
+    delete(m, "b")
+    @assert len(m) == 2
+    @assert m["a"] == 1
+    @assert m["c"] == 3
+}
+
+@test "builtins: delete returns the modified map"
+{
+    m := map[string]int{"a": 1, "b": 2}
+    r := delete(m, "a")
+    @assert len(r) == 1
+    @assert r["b"] == 2
+}
+
+@test "builtins: delete a missing map key is a no-op"
+{
+    m := map[string]int{"a": 1}
+    delete(m, "zzz")
+    @assert len(m) == 1
+    @assert m["a"] == 1
+}
+
+@test "builtins: delete an element from an array"
+{
+    a := [10, 20, 30, 40]
+    delete(a, 1)
+    @assert len(a) == 3
+    @assert a[0] == 10
+    @assert a[1] == 30
+    @assert a[2] == 40
+}
+
+@test "builtins: delete the first array element"
+{
+    a := ["a", "b", "c"]
+    delete(a, 0)
+    @assert len(a) == 2
+    @assert a[0] == "b"
+    @assert a[1] == "c"
+}
+
+@test "builtins: delete an out-of-range index is an error"
+{
+    caught := false
+    a := [1, 2, 3]
+    try {
+        delete(a, 99)
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
+
+@test "builtins: delete a variable by name (extension)"
+{
+    // delete("foo") removes the variable foo from the current scope at runtime.
+    // Referencing it afterward raises a catchable "unknown identifier" error.
+    foo := 99
+    delete("foo")
+
+    caught := false
+    try {
+        _ = foo
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
+
+@test "builtins: delete of a wrong-typed value is an error"
+{
+    caught := false
+    try {
+        delete(42, 1)
+    } catch {
+        caught = true
+    }
+    @assert caught
+}
+
+@test "builtins: delete with a bad argument count is an error"
+{
+    // A string first argument selects the variable-delete form, which takes
+    // exactly one argument; supplying a second is an argument-count error.
+    caught := false
+    try {
+        delete("foo", 1)
+    } catch {
+        caught = true
+    }
+    @assert caught
+}

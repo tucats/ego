@@ -1,4 +1,4 @@
-@test "io: read and write json files" {
+@test "json: read and write json files" {
 
 	a := { name: "Tom", age: 51 }
 

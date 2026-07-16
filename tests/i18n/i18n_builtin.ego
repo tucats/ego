@@ -3,7 +3,7 @@
 // catalog (the same one CLI and error messages are drawn from) rather than
 // only working inside a program that has defined its own @localization map.
 
-@test "packages: i18n.Language returns a non-empty language code"
+@test "i18n: i18n.Language returns a non-empty language code"
 {
     import "i18n"
 

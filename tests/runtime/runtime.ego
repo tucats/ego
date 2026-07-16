@@ -1,4 +1,4 @@
-@test "packages: runtime - call frames"
+@test "runtime: runtime - call frames"
 
 import "runtime"
 {
@@ -22,7 +22,7 @@ import "runtime"
 	nest1()
 }
 
-@test "packages: runtime - GOARCH and GOOS"
+@test "runtime: runtime - GOARCH and GOOS"
 {
 	// The _platform structure is a built-in-to-Ego structure that is seeded directly
 	// from the actual Go runtime for these values. So we are verifying that they are

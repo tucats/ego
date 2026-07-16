@@ -1,6 +1,6 @@
 import "errors"
 
-@test "io: Sscanf"
+@test "fmt: Sscanf"
 {
     x := 0
     n, e := fmt.Sscanf("name 35", "age %d", &x)

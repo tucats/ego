@@ -1,4 +1,4 @@
-@test "functions: time functions"
+@test "time: basic time functions"
 
 {
     // Parse the same time using a local time zone and UTC. They should match.

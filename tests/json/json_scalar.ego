@@ -1,4 +1,4 @@
-@test "packages: json normalized scalar decoding"
+@test "json: json normalized scalar decoding"
 {
 	data := "123"
 	bytes := []byte(data)

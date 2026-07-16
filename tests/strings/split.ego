@@ -1,6 +1,6 @@
 // Tests for Ego-specific features of the strings packages
 
-@test "packages: strings.Split(), optional separator"
+@test "strings: strings.Split(), optional separator"
 {
     a := strings.Split("first\nsecond\nthird")
     @assert len(a) == 3
@@ -9,7 +9,7 @@
     @assert a[2] == "third"
 }
 
-@test "packages: strings.Split, explicit newline separator"
+@test "strings: strings.Split, explicit newline separator"
 {
     a := strings.Split("first\nsecond\nthird", "\n")
     @assert len(a) == 3

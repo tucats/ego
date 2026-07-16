@@ -1,4 +1,4 @@
-@test "io: table sort"
+@test "tables: table sort"
 
 {
     h := []string{"Name", "Age", "Title"}

@@ -1,4 +1,4 @@
-@test "io: Scan" {
+@test "fmt: Scan" {
 
 	a := "Test 44 15.3"
 

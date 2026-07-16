@@ -1,0 +1,97 @@
+// Tests for the built-in make() function.
+//
+// make() constructs arrays, maps, and channels. For an array it takes a type
+// model and a size (and an optional, currently-ignored capacity) and fills the
+// result with the zero value for the element type. For a map it takes a map
+// type and an optional size. For a channel it takes chan and a buffer size.
+
+@test "builtins: make an int slice of zeros"
+{
+    a := make([]int, 5)
+    @assert len(a) == 5
+    @assert a[0] == 0
+    @assert a[4] == 0
+}
+
+@test "builtins: make a string slice of empty strings"
+{
+    a := make([]string, 3)
+    @assert len(a) == 3
+    @assert a[0] == ""
+    @assert a[2] == ""
+}
+
+@test "builtins: make a bool slice of false"
+{
+    a := make([]bool, 2)
+    @assert len(a) == 2
+    @assert a[0] == false
+    @assert a[1] == false
+}
+
+@test "builtins: make a float64 slice of zeros"
+{
+    a := make([]float64, 3)
+    @assert len(a) == 3
+    @assert a[0] == 0.0
+}
+
+@test "builtins: make a size-zero slice"
+{
+    a := make([]int, 0)
+    @assert len(a) == 0
+}
+
+@test "builtins: make a slice with a capacity argument"
+{
+    // The third argument (capacity) is accepted but currently ignored for the
+    // resulting length, which is still the size argument.
+    a := make([]int, 2, 10)
+    @assert len(a) == 2
+}
+
+@test "builtins: made slice elements are assignable"
+{
+    a := make([]int, 3)
+    a[1] = 42
+    @assert a[1] == 42
+    @assert a[0] == 0
+}
+
+@test "builtins: make an empty map"
+{
+    m := make(map[string]int)
+    @assert len(m) == 0
+    m["x"] = 10
+    @assert m["x"] == 10
+    @assert len(m) == 1
+}
+
+@test "builtins: make a map with a size argument"
+{
+    // The size argument is currently ignored for Ego maps; the map is empty.
+    m := make(map[int]string, 4)
+    @assert len(m) == 0
+}
+
+@test "builtins: make a buffered channel"
+{
+    ch := make(chan, 2)
+    ch <- 100
+    @assert len(ch) == 1
+    ch <- 200
+    @assert len(ch) == 2
+}
+
+@test "builtins: make with a negative size is an error"
+{
+    // A negative size is rejected explicitly rather than being passed to Go's
+    // make(), which would panic uncatchably (BUILTIN-MAKE-1).
+    caught := false
+    try {
+        _ = make([]int, -1)
+    } catch {
+        caught = true
+    }
+    @assert caught
+}

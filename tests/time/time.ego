@@ -1,5 +1,5 @@
 
-@test "packages: time.Time object type"
+@test "time: time.Time object type"
 
 {
 
@@ -48,7 +48,7 @@
     @assert t == nil
 }
 
-@test "packages: time.Parse nested in fmt.Println (BUG-32)"
+@test "time: time.Parse nested in fmt.Println (BUG-32)"
 {
     // Regression test for BUG-32 (third reproducer in docs/ISSUES.md).
     // time.Parse returns two values (time.Time, error) via the same

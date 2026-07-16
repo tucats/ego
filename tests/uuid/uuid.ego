@@ -1,4 +1,4 @@
-@test "packages: uuid" {
+@test "uuid: Gibberish" {
 
 	// Test of "Gibberish" function, which produces a string of lower-case
 	// characters and digits representing the UUID value, which does not
@@ -29,7 +29,7 @@
 // normal, catchable (nil, error) pair rather than aborting the program.
 // Prior to the fix, this whole test file would abort with an uncatchable
 // runtime error before ever reaching the @assert statements below.
-@test "packages: uuid.Parse invalid input is catchable" {
+@test "uuid: uuid.Parse invalid input is catchable" {
 
 	// The two-value form documented in docs/LANGUAGE.md: id is nil and err
 	// describes the failure, with no program-terminating error.
@@ -46,7 +46,7 @@
 // constructor, so InstanceOf fell back to an empty struct with no native
 // field at all, and every method call failed with "invalid field name for
 // type: native value".
-@test "packages: uuid zero value is a usable nil UUID" {
+@test "uuid: uuid zero value is a usable nil UUID" {
 	var x uuid.UUID
 
 	@assert x.String() == "00000000-0000-0000-0000-000000000000"

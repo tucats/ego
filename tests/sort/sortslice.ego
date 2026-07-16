@@ -1,4 +1,4 @@
-@test "functions: sort.Slice()"
+@test "sort: sort.Slice()"
 
 {
     a := []int{ 101, 5, 33, -55, 239, 3, 66}

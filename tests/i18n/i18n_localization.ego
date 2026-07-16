@@ -1,5 +1,5 @@
 
-@test "packages: i18n localization"
+@test "i18n: i18n localization"
 import "i18n"
 
 {

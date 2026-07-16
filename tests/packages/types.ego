@@ -1,4 +1,4 @@
-@test "packages: types"
+@test "packages: accessing user package types"
 
 // Import references path relative to 
 

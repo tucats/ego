@@ -60,6 +60,7 @@ var predefinedNames = map[string]bool{
 	"len":     true,
 	"append":  true,
 	"typeof":  true,
+	"sizeof":  true,
 	"index":   true,
 	"panic":   true,
 	"recover": true,

@@ -1,5 +1,5 @@
 
-@test "functions: strings.Camel()"
+@test "strings: strings.Camel()"
 {
 	@assert T.Equal(strings.Camel("test") , "Test" )
 	@assert T.Equal(strings.Camel("teST") , "Test" )

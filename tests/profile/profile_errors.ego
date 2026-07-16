@@ -22,32 +22,32 @@
 // makes the "outside test mode" half of this rule untestable from an .ego
 // test file; it can only be observed via "ego run".
 
-@test "packages: profile.Get on a restricted key is a catchable error"
+@test "profile: profile.Get on a restricted key is a catchable error"
 {
     v, err := profile.Get("ego.server.token.key")
     @assert err != nil
     @assert v == ""
 }
 
-@test "packages: profile.Set on a restricted key is a catchable error"
+@test "profile: profile.Set on a restricted key is a catchable error"
 {
     err := profile.Set("ego.server.token.key", "hack")
     @assert err != nil
 }
 
-@test "packages: profile.Delete on a restricted key is a catchable error"
+@test "profile: profile.Delete on a restricted key is a catchable error"
 {
     err := profile.Delete("ego.server.token.key")
     @assert err != nil
 }
 
-@test "packages: profile.Set on a nonexistent ego.* key is a catchable error"
+@test "profile: profile.Set on a nonexistent ego.* key is a catchable error"
 {
     err := profile.Set("ego.brand.new.key.that.does.not.exist", "value")
     @assert err != nil
 }
 
-@test "packages: profile user-defined key round trip has no error"
+@test "profile: profile user-defined key round trip has no error"
 {
     key := "myapp.test." + uuid.New().String()
 

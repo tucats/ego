@@ -1,4 +1,4 @@
-@test "io: Printf two-value return"
+@test "fmt: Printf two-value return"
 {
     @capture printed := {
         n, err := fmt.Printf("hello %d\n", 42)
@@ -8,7 +8,7 @@
     @assert printed == "hello 42\n"
 }
 
-@test "io: Printf single-value return still works"
+@test "fmt: Printf single-value return still works"
 {
     @capture printed := {
         n := fmt.Printf("hello %d\n", 42)
@@ -17,7 +17,7 @@
     @assert printed == "hello 42\n"
 }
 
-@test "io: Print two-value return"
+@test "fmt: Print two-value return"
 {
     // Go's fmt.Print only inserts a space between two operands when
     // NEITHER of them is a string -- "hello", "world" are both strings, so
@@ -32,7 +32,7 @@
     @assert printed == "helloworld"
 }
 
-@test "io: Print single-value return still works"
+@test "fmt: Print single-value return still works"
 {
     @capture printed := {
         n := fmt.Print("hello", "world")
@@ -41,7 +41,7 @@
     @assert printed == "helloworld"
 }
 
-@test "io: Println two-value return"
+@test "fmt: Println two-value return"
 {
     @capture printed := {
         n, err := fmt.Println("hello")
@@ -51,7 +51,7 @@
     @assert printed == "hello\n"
 }
 
-@test "io: Println single-value return still works"
+@test "fmt: Println single-value return still works"
 {
     @capture printed := {
         n := fmt.Println("hello")
@@ -60,7 +60,7 @@
     @assert printed == "hello\n"
 }
 
-@test "io: Printf return values reused across calls"
+@test "fmt: Printf return values reused across calls"
 {
     @capture printed := {
         n, e := fmt.Printf("a=%d\n", 1)
@@ -74,7 +74,7 @@
     @assert printed == "a=1\nbb=22\n"
 }
 
-@test "io: Sprintf collapses %% with no substitution arguments (BUG-48)"
+@test "fmt: Sprintf collapses %% with no substitution arguments (BUG-48)"
 {
     // Regression test for BUG-48: a format string containing %% but no
     // substitution arguments must still collapse %% to a literal %.

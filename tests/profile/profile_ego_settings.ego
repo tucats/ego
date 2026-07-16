@@ -29,7 +29,7 @@
 // override rather than the persisted value -- see the delete test below for
 // why that distinction matters.
 
-@test "packages: profile.Set on an ego.* key updates profile.Get immediately"
+@test "profile: profile.Set on an ego.* key updates profile.Get immediately"
 {
     import "profile"
 
@@ -46,7 +46,7 @@
     @assert profile.Get("ego.compiler.type.shadowing") == original
 }
 
-@test "packages: profile.Delete on an ego.* key clears the ephemeral override"
+@test "profile: profile.Delete on an ego.* key clears the ephemeral override"
 {
     import "profile"
 

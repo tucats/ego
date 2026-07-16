@@ -1,5 +1,5 @@
 // Test the strings.Tokenizer() function
-@test "packages: strings.Tokenizer"
+@test "strings: strings.Tokenizer"
 {
 	a := "3 <- x"
 	b := strings.Tokenize(a)
@@ -15,7 +15,7 @@
 	@assert b[2].spelling == "x"
 }
 
-@test "packages: strings.Tokenizer merges compound tokens (BUG-51)"
+@test "strings: strings.Tokenizer merges compound tokens (BUG-51)"
 {
 	// Worked example from docs/LANGUAGE.md: "{}" and "<-" are each a single
 	// token, so this tokenizes to 9 tokens, not 11.
@@ -34,7 +34,7 @@
 	@assert t[8].spelling == ")"
 }
 
-@test "packages: strings.Tokenizer result type is []struct, not [][]struct (BUG-80)"
+@test "strings: strings.Tokenizer result type is []struct, not [][]struct (BUG-80)"
 {
     // Regression test: tokenize() built its result array with
     // data.NewArray(data.ArrayType(data.StructType), ...) -- an extra,
@@ -49,7 +49,7 @@
     @assert string(reflect.Type(toks)) == "[]struct{kind string, spelling string}"
 }
 
-@test "packages: strings.Tokenizer does not leak auto-inserted semicolons"
+@test "strings: strings.Tokenizer does not leak auto-inserted semicolons"
 {
 	// Merging compound tokens requires tokenizing in "code" mode, which also
 	// enables Go-style automatic semicolon insertion at the end of lines.

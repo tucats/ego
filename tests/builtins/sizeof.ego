@@ -1,0 +1,87 @@
+// Tests for the Ego-specific sizeof() built-in.
+//
+// sizeof() returns an approximation of the number of bytes required to store a
+// value in the Go runtime. For fixed-width scalar types the result is the exact
+// native width; for dynamically sized values (strings, arrays, maps, structs)
+// it walks the value recursively and sums the memory actually in use, so exact
+// totals are implementation detail -- these tests assert the stable properties.
+//
+// sizeof() is a language extension; extensions are always enabled under
+// "ego test", so no configuration is required here.
+
+@test "builtins: sizeof fixed-width integers"
+{
+    @assert sizeof(int8(1)) == 1
+    @assert sizeof(int16(1)) == 2
+    @assert sizeof(int32(1)) == 4
+    @assert sizeof(int64(1)) == 8
+}
+
+@test "builtins: sizeof a byte is one"
+{
+    @assert sizeof(byte(1)) == 1
+}
+
+@test "builtins: sizeof floats by width"
+{
+    @assert sizeof(float32(1.0)) == 4
+    @assert sizeof(float64(1.0)) == 8
+}
+
+@test "builtins: sizeof a bool is one"
+{
+    @assert sizeof(true) == 1
+    @assert sizeof(false) == 1
+}
+
+@test "builtins: integer widths order by size"
+{
+    @assert sizeof(int8(1)) < sizeof(int16(1))
+    @assert sizeof(int16(1)) < sizeof(int32(1))
+    @assert sizeof(int32(1)) < sizeof(int64(1))
+}
+
+@test "builtins: sizeof a string grows with its length"
+{
+    // Each additional byte of string content adds one byte to the reported
+    // size, on top of the fixed string-header overhead.
+    base := sizeof("")
+    @assert sizeof("hello") > base
+    @assert sizeof("hello") == base + 5
+}
+
+@test "builtins: sizeof a longer string is larger"
+{
+    @assert sizeof("abcdefghij") > sizeof("abc")
+}
+
+@test "builtins: sizeof a larger array is larger"
+{
+    small := [1, 2]
+    big := [1, 2, 3, 4, 5, 6]
+    @assert sizeof(big) > sizeof(small)
+}
+
+@test "builtins: sizeof a larger map is larger"
+{
+    small := map[string]int{"a": 1}
+    big := map[string]int{"a": 1, "b": 2, "c": 3}
+    @assert sizeof(big) > sizeof(small)
+}
+
+@test "builtins: sizeof a struct is positive"
+{
+    type Point struct {
+        X int
+        Y int
+    }
+    p := Point{X: 1, Y: 2}
+    @assert sizeof(p) > 0
+}
+
+@test "builtins: sizeof nil reports negative one"
+{
+    // A nil value has no measurable storage; the underlying sizing library
+    // reports -1 for it.
+    @assert sizeof(nil) == -1
+}

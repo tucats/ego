@@ -1,5 +1,5 @@
 
-@test "packages: os.Expand with lookup function"
+@test "os: os.Expand with lookup function"
 
 // Test using a lookup function written in Ego
 {

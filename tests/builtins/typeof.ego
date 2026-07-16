@@ -4,7 +4,7 @@
 // that compared actual.String() to the string v2. This was removed; comparisons
 // against type constants (typeof(n) == int) are the correct form.
 
-@test "typeof: type == matching type constant"
+@test "bultins: typeof type == matching type constant"
 {
     n := 42
     @assert typeof(n) == int

@@ -1,5 +1,5 @@
 
-@test "packages: io.File object type"
+@test "io: io.File object type"
 
 {
     name := "file-" + uuid.New().String()

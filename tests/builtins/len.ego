@@ -1,0 +1,69 @@
+// Tests for the built-in len() function.
+//
+// len() reports the number of elements in a string (bytes), array, map, or the
+// number of items currently buffered in a channel. A nil argument reports 0.
+
+@test "builtins: len of a string counts bytes"
+{
+    @assert len("hello") == 5
+}
+
+@test "builtins: len of an empty string is zero"
+{
+    @assert len("") == 0
+}
+
+@test "builtins: len of an array counts elements"
+{
+    a := [10, 20, 30, 40]
+    @assert len(a) == 4
+}
+
+@test "builtins: len of an empty array is zero"
+{
+    a := []int{}
+    @assert len(a) == 0
+}
+
+@test "builtins: len of a map counts keys"
+{
+    m := map[string]int{"a": 1, "b": 2, "c": 3}
+    @assert len(m) == 3
+}
+
+@test "builtins: len of an empty map is zero"
+{
+    m := map[string]int{}
+    @assert len(m) == 0
+}
+
+@test "builtins: len of nil is zero"
+{
+    @assert len(nil) == 0
+}
+
+@test "builtins: len of a buffered channel"
+{
+    // len(channel) returns the number of items currently buffered, matching
+    // Go's semantics (BUILTIN-LENGTH-1).
+    ch := make(chan, 5)
+    ch <- 1
+    ch <- 2
+    ch <- 3
+    @assert len(ch) == 3
+}
+
+@test "builtins: len of a drained channel is zero"
+{
+    ch := make(chan, 2)
+    ch <- 1
+    _ = <-ch
+    @assert len(ch) == 0
+}
+
+@test "builtins: len reflects array shrink after delete"
+{
+    a := [1, 2, 3, 4]
+    delete(a, 0)
+    @assert len(a) == 3
+}

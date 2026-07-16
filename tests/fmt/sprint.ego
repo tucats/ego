@@ -21,53 +21,53 @@
 // using the same per-argument formatting helper (formatUsingString) that
 // Print/Println/Sprintf already share.
 
-@test "io: Sprint returns a string instead of printing"
+@test "fmt: Sprint returns a string instead of printing"
 {
     s := fmt.Sprint("hello")
     @assert s == "hello"
 }
 
-@test "io: Sprint inserts no space between two adjacent strings"
+@test "fmt: Sprint inserts no space between two adjacent strings"
 {
     @assert fmt.Sprint("hello", "world") == "helloworld"
 }
 
-@test "io: Sprint inserts a space between two adjacent non-strings"
+@test "fmt: Sprint inserts a space between two adjacent non-strings"
 {
     @assert fmt.Sprint(1, 2) == "1 2"
 }
 
-@test "io: Sprint inserts no space when only one adjacent operand is a string"
+@test "fmt: Sprint inserts no space when only one adjacent operand is a string"
 {
     @assert fmt.Sprint("a", 1) == "a1"
     @assert fmt.Sprint(1, "a") == "1a"
 }
 
-@test "io: Sprint spacing rule applies independently to each adjacent pair"
+@test "fmt: Sprint spacing rule applies independently to each adjacent pair"
 {
     // 1,2 -> neither is a string, space. 2,"x" -> one is a string, no
     // space. "x",3 -> one is a string, no space.
     @assert fmt.Sprint(1, 2, "x", 3) == "1 2x3"
 }
 
-@test "io: Sprint with a single argument has no separators to insert"
+@test "fmt: Sprint with a single argument has no separators to insert"
 {
     @assert fmt.Sprint(42) == "42"
 }
 
-@test "io: Sprint with no arguments returns an empty string"
+@test "fmt: Sprint with no arguments returns an empty string"
 {
     @assert fmt.Sprint() == ""
 }
 
-@test "io: Sprint works with mixed scalar types"
+@test "fmt: Sprint works with mixed scalar types"
 {
     @assert fmt.Sprint(true, false) == "true false"
     @assert fmt.Sprint(1.5, 2.5) == "1.5 2.5"
     @assert fmt.Sprint("pi is", 3.14) == "pi is3.14"
 }
 
-@test "io: Print inserts no space between two adjacent strings (spacing fix)"
+@test "fmt: Print inserts no space between two adjacent strings (spacing fix)"
 {
     @capture printed := {
         fmt.Print("hello", "world")
@@ -75,7 +75,7 @@
     @assert printed == "helloworld"
 }
 
-@test "io: Print inserts a space between two adjacent non-strings (spacing fix)"
+@test "fmt: Print inserts a space between two adjacent non-strings (spacing fix)"
 {
     @capture printed := {
         fmt.Print(1, 2)
@@ -83,7 +83,7 @@
     @assert printed == "1 2"
 }
 
-@test "io: Print inserts no space when only one adjacent operand is a string (spacing fix)"
+@test "fmt: Print inserts no space when only one adjacent operand is a string (spacing fix)"
 {
     @capture printed := {
         fmt.Print("Count:", 5)
@@ -91,7 +91,7 @@
     @assert printed == "Count:5"
 }
 
-@test "io: Println always inserts a space, regardless of type"
+@test "fmt: Println always inserts a space, regardless of type"
 {
     // Println's own rule -- always space, regardless of type -- is
     // unrelated to the Print/Sprint rule above (Print/Sprint only space
@@ -109,7 +109,7 @@
     @assert printed2 == "1 2\n"
 }
 
-@test "io: Print and Sprint agree on formatting for the same arguments"
+@test "fmt: Print and Sprint agree on formatting for the same arguments"
 {
     // Print writes to output, Sprint returns the string -- but both share
     // formatPrintArgs internally, so their output for identical arguments
