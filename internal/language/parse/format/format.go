@@ -116,10 +116,11 @@ func kindName(node ast.Node) string {
 	return node.Kind().String()
 }
 
-// printFile renders the top-level declarations/statements of a file. For a full
-// program, consecutive top-level declarations are separated by a blank line, as
-// gofmt does; for a bare fragment the statements are printed one per line with
-// no extra blank lines, matching the body of a function.
+// printFile renders the top-level declarations/statements of a file. Following
+// gofmt, a blank line separates top-level declarations (and functions) from
+// their neighbors, but consecutive plain statements — which Ego, unlike Go,
+// permits at the top level — are printed one per line with no blank line
+// between them.
 func (p *printer) printFile(file *ast.File) {
 	if file == nil {
 		return
@@ -129,8 +130,7 @@ func (p *printer) printFile(file *ast.File) {
 		if i > 0 {
 			p.newline()
 
-			if !file.Bare {
-				// A blank line between top-level declarations of a program.
+			if isDeclaration(file.Decls[i-1]) || isDeclaration(decl) {
 				p.write("\n")
 				p.write(strings.Repeat("\t", p.indent))
 			}
@@ -141,5 +141,17 @@ func (p *printer) printFile(file *ast.File) {
 
 	if len(file.Decls) > 0 {
 		p.write("\n")
+	}
+}
+
+// isDeclaration reports whether a top-level node is a declaration or function
+// definition, which gofmt sets off from its neighbors with a blank line.
+func isDeclaration(node ast.Node) bool {
+	switch node.Kind() {
+	case ast.KindPackageDecl, ast.KindImportDecl, ast.KindConstDecl,
+		ast.KindTypeDecl, ast.KindVarDecl, ast.KindFuncDecl:
+		return true
+	default:
+		return false
 	}
 }

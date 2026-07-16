@@ -309,19 +309,53 @@ func (p *printer) printPrint(n *ast.PrintStmt) {
 	}
 }
 
-// printDirective renders a compile-time directive or macro invocation. Argument
-// tokens are re-joined with single spaces.
-//
-// TRIVIA: RawArgs holds token spellings, so string-literal arguments have lost
-// their surrounding quotes and are reprinted unquoted. Faithful directive
-// reprinting needs the parser to retain argument token classes; that is part of
-// the same comment/trivia follow-up.
+// printDirective renders a compile-time directive or macro invocation. Most
+// directives (e.g. @assert, @error, @status) take an ordinary expression as
+// their argument, so the captured argument tokens are re-parsed and pretty-
+// printed to get canonical spacing ("math.Sin(0.0) == 0.0" rather than the raw
+// token join "math . Sin ( 0.0 ) == 0.0"). Directives whose arguments are not a
+// single expression — anything containing a block, or that fails to re-parse —
+// fall back to the raw space-joined token spellings.
 func (p *printer) printDirective(n *ast.DirectiveStmt) {
 	p.write("@" + n.Name)
 
-	if len(n.RawArgs) > 0 {
-		p.write(" " + strings.Join(n.RawArgs, " "))
+	if len(n.RawArgs) == 0 {
+		return
 	}
+
+	if pretty, ok := prettyDirectiveArgs(n.RawArgs); ok {
+		p.write(" " + pretty)
+
+		return
+	}
+
+	p.write(" " + strings.Join(n.RawArgs, " "))
+}
+
+// prettyDirectiveArgs attempts to render directive argument tokens as a
+// canonically-formatted single-line expression. It returns false (so the caller
+// uses the raw join) when the arguments contain a block, do not re-parse as a
+// single statement, or would format across multiple lines.
+func prettyDirectiveArgs(rawArgs []string) (string, bool) {
+	for _, tok := range rawArgs {
+		if tok == "{" || tok == "}" || tok == "{}" {
+			return "", false
+		}
+	}
+
+	// Re-parse the joined tokens. Formatting is delegated to Node, which shares
+	// this package's printer, so the result is canonical.
+	out, err := Source(strings.Join(rawArgs, " "), true)
+	if err != nil {
+		return "", false
+	}
+
+	out = strings.TrimRight(out, "\n")
+	if out == "" || strings.Contains(out, "\n") {
+		return "", false
+	}
+
+	return out, true
 }
 
 // printImport renders an import declaration, grouped or single.

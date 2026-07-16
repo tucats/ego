@@ -53,6 +53,7 @@ func Test_grammarMissingActions(t *testing.T) {
 			"internal/cli/config.SetDescriptionAction": true,
 			"internal/cli/config.SetOutputAction":      true,
 			"internal/commands.FormatJSON":             true,
+			"internal/commands.FmtAction":              true,
 		}
 
 		for key, count2 := range a2 {
