@@ -261,6 +261,32 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		}
 	}
 
+	// docs/SLOTS.md Phase 2: decide slot-eligibility BEFORE compiling parameters,
+	// so the parameters themselves can be slotted. The eligibility predicate
+	// needs the body's opening brace, located here with a read-only lookahead
+	// past the return-type spec (peekFunctionBodyPos). Save/restore c.funcSlots
+	// around this whole function's compilation so a nested function (compiled
+	// while its enclosing function's context is live on c) never clobbers it.
+	// First cut still excludes methods (a receiver); named returns may coexist
+	// name-based with slotted parameters and body locals.
+	savedFuncSlots := c.funcSlots
+	c.funcSlots = nil
+
+	defer func() { c.funcSlots = savedFuncSlots }()
+
+	if slotPlaceholderAddr >= 0 && thisName.Is(tokenizer.EmptyToken) {
+		if bodyPos := c.peekFunctionBodyPos(); bodyPos >= 0 {
+			savedMark := c.t.Mark()
+			c.t.Set(bodyPos)
+			eligible := c.functionBodyIsSlotEligible(ownParams)
+			c.t.Set(savedMark)
+
+			if eligible {
+				c.funcSlots = &slotContext{allocateAddr: slotPlaceholderAddr}
+			}
+		}
+	}
+
 	// Generate the parameter assignments. These are extracted from the automatic
 	// array named __args which is generated as part of the bytecode function call.
 	for index, parameter := range parameters {
@@ -344,26 +370,13 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		cx.functionLocalScopeStart = len(cx.scopes)
 	}
 
-	// docs/SLOTS.md: this is a new function body, so it must NOT inherit the
-	// enclosing function's slot context (Clone shares the pointer for
-	// same-function sub-compiles). Reset it before deciding this function's own
-	// eligibility below.
-	cx.funcSlots = nil
-
-	// Decide slot-eligibility now that the tokenizer sits at the body's opening
-	// brace and cx.functionLocalScopeStart is known. First cut: a named function
-	// with no receiver and no named returns whose body passes
-	// functionBodyIsSlotEligible. When eligible, install the slot context so the
-	// body's ":=" declarations and identifier accesses compile to slot opcodes;
-	// scopeStart bounds slot resolution to this function's own scopes.
-	if slotPlaceholderAddr >= 0 &&
-		thisName.Is(tokenizer.EmptyToken) &&
-		len(c.returnVariables) == 0 &&
-		cx.functionBodyIsSlotEligible(ownParams) {
-		cx.funcSlots = &slotContext{
-			allocateAddr: slotPlaceholderAddr,
-			scopeStart:   cx.functionLocalScopeStart,
-		}
+	// docs/SLOTS.md: slot-eligibility was decided (and the parameters slotted)
+	// before the clone; cx now shares that context via Clone. Bind its scopeStart
+	// to this function's body scope so block-local slot resolution ignores any
+	// enclosing function's scopes (parameters resolve through funcSlots.params,
+	// independent of scopeStart).
+	if cx.funcSlots != nil {
+		cx.funcSlots.scopeStart = cx.functionLocalScopeStart
 	}
 
 	// If there is a return list, generate initializers in the local scope for them.
@@ -611,15 +624,29 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 	} else {
 		// If this argument is not any or a variable argument item,
 		// generate code to validate/coerce the value to a given type.
-		// Generate code to store the value on top of the stack into the local
-		// symbol for the parameter name.
-		operands := []any{index, parameter.name}
+		// docs/SLOTS.md Phase 2: in a slot-eligible function, bind the parameter
+		// into a compile-time slot (ArgSlot [index, slot, kind]) instead of by
+		// name (Arg [index, name, kind]), so body reads of the parameter compile
+		// to LoadSlot. allocateParamSlot returns false for a non-slotted context
+		// or an ineligible name (e.g. "_"), leaving the name-based path intact.
+		if slot, ok := c.allocateParamSlot(parameter.name); ok {
+			operands := []any{index, slot}
 
-		if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
-			operands = append(operands, parameter.kind)
+			if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
+				operands = append(operands, parameter.kind)
+			}
+
+			b.Emit(bytecode.ArgSlot, operands)
+		} else {
+			operands := []any{index, parameter.name}
+
+			if !parameter.kind.IsUndefined() && !parameter.kind.IsKind(data.VarArgsKind) {
+				operands = append(operands, parameter.kind)
+			}
+
+			b.Emit(bytecode.Arg, operands)
 		}
 
-		b.Emit(bytecode.Arg, operands)
 		c.DefineSymbol(parameter.name)
 	}
 }

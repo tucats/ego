@@ -43,6 +43,14 @@ type slotContext struct {
 	// shadowing "x := x + 1" resolves the RHS "x" to the OUTER binding. See the
 	// KEY DESIGN FINDING note in docs/SLOTS.md.
 	pending []pendingSlotDecl
+
+	// params maps each parameter name to its slot index. Parameters are
+	// function-wide (they live for the whole call, not one lexical block), so
+	// they are resolved here rather than through the scope stack. resolveSlot
+	// checks the scope stack FIRST, so a body "x := ..." that shadows a
+	// parameter x correctly wins; only when no block-local binding matches does
+	// a name fall through to a parameter slot.
+	params map[string]int
 }
 
 // pendingSlotDecl is one deferred slot registration (see slotContext.pending).
@@ -164,7 +172,73 @@ func (c *Compiler) resolveSlot(name string) (int, bool) {
 		}
 	}
 
+	// A block-local binding takes precedence (checked above); fall through to a
+	// parameter slot only when no block-local binding shadows it.
+	if idx, ok := c.funcSlots.params[name]; ok {
+		return idx, true
+	}
+
 	return -1, false
+}
+
+// allocateParamSlot reserves a slot for a function parameter (docs/SLOTS.md
+// Phase 2). Unlike allocateSlot for ":=" locals, a parameter is registered
+// immediately (in the funcSlots.params map, not a lexical scope) and is
+// resolvable for the whole function body -- there is no RHS to defer past. It
+// returns the reserved index and true, or (-1, false) when slots are inactive
+// or the name is not slot-eligible (in which case the parameter is bound the
+// name-based way).
+func (c *Compiler) allocateParamSlot(name string) (int, bool) {
+	if c.funcSlots == nil || !slotEligibleName(name) {
+		return -1, false
+	}
+
+	if c.funcSlots.params == nil {
+		c.funcSlots.params = map[string]int{}
+	}
+
+	idx := len(c.funcSlots.names)
+	c.funcSlots.names = append(c.funcSlots.names, name)
+	c.funcSlots.params[name] = idx
+
+	return idx, true
+}
+
+// peekFunctionBodyPos returns the absolute token index of a function's body
+// opening brace, scanning forward from the current tokenizer position (which
+// sits just after the parameter list's ")", before any return-type spec). It is
+// a read-only Peek-only lookahead used to run the slot-eligibility predicate
+// BEFORE the parameters are compiled, so parameters can themselves be slotted.
+// It returns -1 when the body brace cannot be confidently located -- notably
+// when a "struct"/"interface" type literal appears in the return spec, whose
+// own braces would defeat the first-"{"-at-depth-0 heuristic; such a function is
+// simply treated as ineligible.
+func (c *Compiler) peekFunctionBodyPos() int {
+	base := c.t.Mark()
+	depth := 0
+
+	for i := 1; base+i-1 < len(c.t.Tokens); i++ {
+		t := c.t.Peek(i)
+
+		switch {
+		case t.Is(tokenizer.StartOfListToken):
+			depth++
+
+		case t.Is(tokenizer.EndOfListToken):
+			depth--
+
+		case t.Is(tokenizer.StructToken), t.Is(tokenizer.InterfaceToken):
+			return -1
+
+		case depth == 0 && (t.Is(tokenizer.BlockBeginToken) || t.Is(tokenizer.EmptyBlockToken)):
+			return base + i - 1
+
+		case t.Is(tokenizer.EndOfTokens):
+			return -1
+		}
+	}
+
+	return -1
 }
 
 // emitLoadName emits a load of name into buffer b, choosing LoadSlot when name

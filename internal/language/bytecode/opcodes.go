@@ -45,6 +45,7 @@ const (
 	And
 	ArgCheck
 	Arg
+	ArgSlot
 	Array
 	BeginCapture
 	BitAnd
@@ -185,6 +186,7 @@ var opcodeNames = map[Opcode]string{
 	And:                 "And",
 	ArgCheck:            "ArgCheck",
 	Arg:                 "Arg",
+	ArgSlot:             "ArgSlot",
 	Array:               "Array",
 	AtLine:              "AtLine",
 	BeginCapture:        "BeginCapture",
@@ -324,6 +326,7 @@ func initializeDispatch() {
 		dispatchTable[And] = andByteCode
 		dispatchTable[ArgCheck] = argCheckByteCode
 		dispatchTable[Arg] = argByteCode
+		dispatchTable[ArgSlot] = argSlotByteCode
 		dispatchTable[Array] = arrayByteCode
 		dispatchTable[AtLine] = atLineByteCode
 		dispatchTable[BeginCapture] = beginCaptureByteCode

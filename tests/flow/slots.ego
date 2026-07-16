@@ -21,6 +21,43 @@
     @assert acc(0) == 6
 }
 
+@test "slots: parameter reads and a body local shadowing a parameter"
+{
+    // Parameters are slotted (Phase 2); a body ":=" of the same name must
+    // shadow the parameter within its block and revert afterward.
+    func f(x int, y int) int {
+        sum := x + y
+        {
+            x := x * 10
+            sum = sum + x
+        }
+        // x is the parameter again here.
+        return sum*100 + x
+    }
+
+    // f(2,3): sum=5; inner x=20 -> sum=25; return 25*100 + 2 = 2502
+    @assert f(2, 3) == 2502
+}
+
+@test "slots: struct parameter is copied, not aliased"
+{
+    type box struct {
+        v int
+    }
+
+    func mutate(b box) int {
+        b.v = 999
+        return b.v
+    }
+
+    original := box{v: 7}
+    inside := mutate(original)
+
+    // The parameter copy was mutated; the caller's struct is untouched.
+    @assert inside == 999
+    @assert original.v == 7
+}
+
 @test "slots: nested block shadowing reads outer binding"
 {
     func shadow() int {
