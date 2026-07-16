@@ -31,11 +31,14 @@ IDENTIFIER  ::= letter { letter | digit | "_" }
                 (* must begin with a letter or underscore *)
 
 INTEGER     ::= decimalDigits
+              | "0" octalDigits                    (* bare leading-zero octal *)
               | "0b" binaryDigits
               | "0o" octalDigits
               | "0x" hexDigits
 
 FLOAT       ::= decimalDigits "." decimalDigits [ exponent ]
+
+IMAGINARY   ::= ( decimalDigits | FLOAT ) "i"      (* complex128 imaginary literal, e.g. 3i, 2.5i *)
 
 STRING      ::= '"' { unicodeChar } '"'
               | '`' { unicodeChar } '`'
@@ -54,9 +57,13 @@ The following identifiers are reserved and cannot be used as symbol names:
 break       case        const       continue    default
 defer       else        fallthrough  for         func
 go          if          import      interface   make
-nil         package     range       return      switch
-type        var
+nil         package     panic       range       recover
+return      switch      type        var
 ```
+
+`panic` and `recover` are ordinary reserved words (not extension-gated),
+matching Go. Most primitive type names are also reserved — including the
+complex types `complex64` and `complex128` (see [Types](#6-types)).
 
 ### 1.2 Extension Reserved Words
 
@@ -64,8 +71,7 @@ These words are reserved only when language extensions are enabled
 (see [Language Extensions](#9-language-extensions)):
 
 ```text
-assert      call        catch       exit        panic
-print       try
+call        catch       exit        print       throw       try
 ```
 
 ---
@@ -219,7 +225,9 @@ typeSpec       ::= "*" typeSpec                        (* pointer *)
 primitiveType  ::= "bool" | "byte" | "chan"
                  | "int" | "int8" | "int16" | "int32" | "int64"
                  | "uint" | "uint8" | "uint16" | "uint32" | "uint64"
-                 | "float32" | "float64" | "string"
+                 | "float32" | "float64"
+                 | "complex64" | "complex128"
+                 | "string"
 
 funcTypeSpec   ::= "func" "(" [ paramList ] ")" [ returnTypes ]
 
@@ -234,6 +242,15 @@ structField    ::= identList typeSpec
 
 funcDecl       ::= IDENTIFIER "(" [ paramList ] ")" [ returnTypes ]
 ```
+
+The `complex64` and `complex128` types hold Go-style complex numbers. A value
+is written either as an imaginary literal (`3i`, `2.5i`) added to a real part
+(`3 + 4i`) or built with the `complex(real, imag)` builtin; the `real(c)` and
+`imag(c)` builtins extract the components. A real number coerces implicitly to
+a complex value (imaginary part 0) at assignment and call boundaries, but the
+reverse always requires `real()`/`imag()`. Complex division by zero raises a
+runtime error rather than yielding an IEEE Inf/NaN. The `cmplx` package
+mirrors Go's `math/cmplx`.
 
 ---
 
@@ -365,6 +382,7 @@ atom           ::= macroInvocation
                  | structLiteral
                  | INTEGER
                  | FLOAT
+                 | IMAGINARY
                  | BOOLEAN
                  | RUNE
                  | STRING
@@ -594,6 +612,10 @@ Only valid in test mode (programs run via `ego test`). Fails the current test
 case if the first expression is not `true`. The optional second expression is a
 string message included in the failure report.
 
+In current practice, `assert` is not lexed as a reserved word, so test
+assertions are written with the [`@assert`](#12-directives) directive
+(`@assert expr`) rather than this statement form.
+
 ### 11.6 exit
 
 ```ebnf
@@ -638,6 +660,7 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | `@compile` | `{ flag } ( block \| eof-delimited code ) [ catch ]` | Compile a block or program fragment in an isolated sub-compiler — see [12.2](#122-compile) |
 | `@debug` | — | Enable debug logging |
 | `@define` | `IDENT { "," IDENT }` | Pre-declare global variables |
+| `@dump_errors` | — | Dump the error-message catalog (localization `error.` class) |
 | `@endpoint` | `[ method ] [ "path=" ] STRING [ "media=" STRING { "," STRING } ] [ "permissions=" STRING { "," STRING } ] [ "parameter=" STRING { "," STRING } ] [ "authenticated" \| "admin" \| "root" ]` | Declare service endpoint path, method, media types, permissions, and parameter validation — see [`@endpoint`](SERVER.md#directives) in SERVER.md |
 | `@entrypoint` | `[ IDENT ]` | Set entry-point function name (default `main`) |
 | `@error` | `[ expression ]` | Signal a compile-time error |
@@ -650,10 +673,12 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | `@line` | `INTEGER` | Override the recorded source line number |
 | `@localization` | `mapLiteral` | Set a runtime localization table |
 | `@log` | `IDENT [ expression ]` | Emit a log entry at the named level |
+| `@optimizer` | `on \| off \| always` | Enable/disable the bytecode optimizer for subsequently compiled code — see [12.3](#123-optimizer) |
 | `@package` | `IDENT { "," IDENT \| "*" }` | Dump package symbol information |
 | `@packages` | — | Dump all loaded package names |
 | `@pass` | — | Record a test-pass result |
-| `@profile` | `start\|stop\|report\|dump` | Control the runtime profiler |
+| `@profile` | `start\|enable\|on \| stop\|disable\|off \| report \| dump\|print` | Control the runtime profiler |
+| `@sandbox` | `( true \| false ) [ "path=" expression ]` | Set the filesystem sandbox (test mode only) — see [12.4](#124-sandbox) |
 | `@status` | `expression` | Set the HTTP response status code |
 | `@symbols` | `[ expression ]` | Dump the current symbol table |
 | `@template` | `IDENT expression` | Compile a text template |
@@ -732,6 +757,34 @@ The flags, which may appear in any combination and order before
 | `unknown` | `boolLiteral` | Override the "unknown symbol is a compile error" setting for this compilation only. |
 | `optimize` | `optimizeLevel` | Override the compiler optimization level for this compilation only. `off`/`false`/`0` disables it, `low`/`1` optimizes conditionally, `high`/`2` always optimizes. |
 | `eof` | `STRING` | Delimit `compileBody` with a text marker instead of `{ }` braces (see above). |
+
+### 12.3 @optimizer
+
+```ebnf
+optimizerDirective ::= "@" "optimizer" optimizerMode
+
+optimizerMode      ::= "on" | "true" | "1"        (* conditional optimization *)
+                     | "off" | "false" | "0"      (* disable *)
+                     | "always"                   (* force optimization: level 2 *)
+```
+
+Sets the bytecode-optimizer level for code compiled after the directive. The
+setting persists until changed again or until the compilation unit ends. Under
+`ego test` the optimizer is off by default; use `@optimizer on` in a test file
+only when exercising optimizer-specific behavior.
+
+### 12.4 @sandbox
+
+```ebnf
+sandboxDirective ::= "@" "sandbox" ( "true" | "false" ) [ "path=" expression ]
+```
+
+Valid only in test mode (`ego test`). Enables or disables the filesystem I/O
+sandbox for subsequent statements. The optional `path=` clause is any
+expression (not just a string literal), letting a test compute the sandbox
+root — for example from a temp-directory helper. When `path=` is omitted the
+previously configured sandbox root is left untouched; an explicit `path=""`
+clears it.
 
 ---
 
@@ -819,6 +872,7 @@ diverges from the Go specification:
 | Optional expression | Not present | `?expr : default` traps runtime errors, extension |
 | Range array literal | Not present | `[1:5]` → `[]int{1,2,3,4,5}` |
 | Multi-char rune literal | Not present | `'abc'` → `[]int32{…}`, extension |
+| Complex numbers | `complex64`/`complex128`, `3i` literals, `complex`/`real`/`imag` | Same types and builtins; but real→complex coerces implicitly, and complex ÷ 0 raises a runtime error instead of Inf/NaN |
 | `exit` statement | Not present | Present in REPL / interactive mode |
 | Directives (`@...`) | Not present | Compile-time directives for server, test, and tool use |
 | Goroutine tracking | Manual | `@wait` directive blocks until all goroutines finish |
@@ -863,7 +917,7 @@ declStmt         ::= constDecl | importDecl | packageDecl | typeDecl | varDecl
 execStmt         ::= assignStmt | breakStmt | callStmt | continueStmt
                    | deferStmt | exitStmt | forStmt | funcCallStmt | goStmt
                    | ifStmt | panicStmt | printStmt | returnStmt
-                   | switchStmt | tryStmt | assertStmt
+                   | switchStmt | throwStmt | tryStmt | assertStmt
 
 (* --- Declarations --- *)
 constDecl        ::= "const" ( constSpec | "(" { constSpec [ ";" ] } ")" )
@@ -884,7 +938,8 @@ typeSpec         ::= "*" typeSpec | "[" "]" typeSpec
                    | primitiveType | IDENTIFIER | IDENTIFIER "." IDENTIFIER
 primitiveType    ::= "bool" | "byte" | "chan" | "int" | "int8" | "int16"
                    | "int32" | "int64" | "uint" | "uint8" | "uint16"
-                   | "uint32" | "uint64" | "float32" | "float64" | "string"
+                   | "uint32" | "uint64" | "float32" | "float64"
+                   | "complex64" | "complex128" | "string"
 funcTypeSpec     ::= "func" "(" [ paramList ] ")" [ returnTypes ]
 interfaceTypeSpec::= "interface" "{" { funcDecl [ ";" ] } "}"
 structTypeSpec   ::= "struct" "{" { structField [ ";" ] } "}"
@@ -939,7 +994,7 @@ atom             ::= macroInvocation | ifExpression | optionalExpression
                    | "&" addressTarget | "*" atom | "<-" reference
                    | "(" expression ")"
                    | arrayLiteral | mapLiteral | structLiteral
-                   | INTEGER | FLOAT | BOOLEAN | RUNE | STRING
+                   | INTEGER | FLOAT | IMAGINARY | BOOLEAN | RUNE | STRING
                    | typeCast | typeRef | IDENTIFIER [ incOp ]
 ifExpression     ::= "if" expression "{" expression "}" "else" "{" expression "}"
 optionalExpression
@@ -1007,4 +1062,7 @@ boolLiteral      ::= "true" | "false" | "on" | "off" | "1" | "0"
 optimizeLevel    ::= "off" | "false" | "low" | "high" | INTEGER
 compileBody      ::= block | { token }
 catchClause      ::= "catch" [ "(" IDENTIFIER ")" ] block
+optimizerDirective ::= "@" "optimizer" ( "on" | "true" | "1"
+                                       | "off" | "false" | "0" | "always" )
+sandboxDirective ::= "@" "sandbox" ( "true" | "false" ) [ "path=" expression ]
 ```
