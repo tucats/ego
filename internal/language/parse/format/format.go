@@ -14,13 +14,14 @@
 // canonically. Node and File print an already-built AST. Each has a
 // ...WithOptions counterpart that takes formatting Options.
 //
-// TRIVIA: Because the tokenizer discards comments (see ast/node.go), the
-// formatter cannot yet reproduce them; comments are lost on a format round-trip.
-// Restoring them is the follow-up tracked by the "TRIVIA:" breadcrumbs across
-// the parse packages. A second known approximation is operator spacing: gofmt
-// varies spacing by precedence ("a*b + c*d"); this printer uses a single space
-// around every binary operator. Both are documented refinements, not
-// correctness bugs.
+// Comments are preserved: the tokenizer captures them into a side list, the
+// parser carries them on ast.File.Comments, and the printer interleaves them
+// with the tree by source line (see print_comment.go). Placement is approximate
+// in a few cases documented there, but no comment is dropped.
+//
+// Known approximation: operator spacing. gofmt varies spacing by precedence
+// ("a*b + c*d"); this printer uses a single space around every binary operator.
+// That is a documented refinement, not a correctness bug.
 package format
 
 import (
@@ -126,6 +127,13 @@ type printer struct {
 	indent     int
 	indentUnit string
 	err        error
+
+	// comments is the source's comment list (from ast.File.Comments), and ci is
+	// a monotonic cursor into it. Together they let the printer interleave
+	// comments with the tree as it walks nodes in source order. See
+	// print_comment.go.
+	comments []ast.Comment
+	ci       int
 }
 
 // newPrinter creates a printer configured from opts.
@@ -177,20 +185,54 @@ func (p *printer) printFile(file *ast.File) {
 		return
 	}
 
-	for i, decl := range file.Decls {
-		if i > 0 {
+	p.comments = file.Comments
+	p.ci = 0
+
+	// wrote tracks whether any output has been produced yet, so the first line
+	// is not preceded by a separator. sep emits a line break before an item,
+	// optionally as a blank line.
+	wrote := false
+
+	sep := func(blank bool) {
+		if wrote {
 			p.newline()
 
-			if isDeclaration(file.Decls[i-1]) || isDeclaration(decl) {
+			if blank {
 				p.write("\n")
 				p.write(p.indentation())
 			}
 		}
 
-		p.printStmt(decl)
+		wrote = true
 	}
 
-	if len(file.Decls) > 0 {
+	for i, decl := range file.Decls {
+		// A blank line separates this declaration from the previous output, per
+		// gofmt; it is consumed by whichever item (leading comment or the
+		// declaration itself) is emitted first for this decl.
+		blank := i > 0 && (isDeclaration(file.Decls[i-1]) || isDeclaration(decl))
+
+		for p.ci < len(p.comments) && p.comments[p.ci].Line < decl.Pos().Line {
+			sep(blank)
+			blank = false
+
+			p.write(p.comments[p.ci].Text)
+			p.ci++
+		}
+
+		sep(blank)
+		p.printStmt(decl)
+		p.emitTrailingComment(decl.Pos().Line)
+	}
+
+	// Any comments after the last declaration (e.g. a trailing file footer).
+	for p.hasPendingComments() {
+		sep(false)
+		p.write(p.comments[p.ci].Text)
+		p.ci++
+	}
+
+	if wrote {
 		p.write("\n")
 	}
 }

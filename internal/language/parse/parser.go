@@ -21,9 +21,9 @@
 // offending token and its source location; a partial tree may also be returned
 // for tooling that wants to inspect what parsed.
 //
-// TRIVIA: Comments are discarded by the tokenizer and therefore absent from the
-// AST. See the package comment in ast/node.go for the breadcrumb trail to the
-// follow-up work that will preserve them for a canonical formatter.
+// Comments are preserved: the tokenizer captures them into a side list and the
+// parser copies them onto File.Comments in source order (see collectComments),
+// where the formatter can reproduce them. See ast/node.go for the model.
 package parse
 
 import (
@@ -103,8 +103,30 @@ func (p *Parser) parseFile(bare bool) (*ast.File, error) {
 	}
 
 	file.Finish = p.here()
+	file.Comments = p.collectComments()
 
 	return file, nil
+}
+
+// collectComments converts the comments captured by the tokenizer into ast
+// comments, preserving source order.
+func (p *Parser) collectComments() []ast.Comment {
+	raw := p.t.Comments
+	if len(raw) == 0 {
+		return nil
+	}
+
+	comments := make([]ast.Comment, len(raw))
+	for i, c := range raw {
+		comments[i] = ast.Comment{
+			Text:   c.Text,
+			Line:   c.Line,
+			Column: c.Column,
+			Block:  c.Block,
+		}
+	}
+
+	return comments
 }
 
 // ------------------------------------------------------------------
@@ -149,6 +171,17 @@ func (p *Parser) here() ast.Position {
 	line, col := tok.Location()
 
 	return ast.Position{Line: line, Column: col}
+}
+
+// end returns the source position just past the most recently consumed token.
+// Unlike here (which points at the next, not-yet-consumed token), this reflects
+// where the just-parsed construct actually ended, which matters for correlating
+// trailing comments and for a block's closing-brace line.
+func (p *Parser) end() ast.Position {
+	tok := p.t.Peek(0)
+	line, col := tok.Location()
+
+	return ast.Position{Line: line, Column: col + len(tok.Spelling())}
 }
 
 // errorHere builds a located parse error from errConst, attaching the spelling

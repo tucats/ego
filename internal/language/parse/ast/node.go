@@ -19,23 +19,15 @@
 //   - Cheap dispatch. Every node reports a Kind, a small integer tag that lets
 //     consumers switch on node type without reflection or large type switches.
 //
-// # Comments / trivia (known gap)
+// # Comments
 //
-// The Ego tokenizer is built on Go's scanner and discards comment tokens, so
-// the AST produced today carries NO comment or whitespace trivia. This is an
-// accepted limitation for the initial AST work. A future canonical formatter
-// will need comments; when that work begins, the trail to follow is:
-//
-//   - internal/language/tokenizer/lexer.go — where Go's scanner is driven and
-//     comments are currently dropped; comment tokens would have to be captured
-//     here and threaded through the Tokenizer's token stream.
-//   - This package — add a Comment node type and comment-attachment fields
-//     (leading/trailing) on BaseNode so the formatter can re-emit them.
-//   - internal/language/parse/parser.go — attach captured comment trivia to the
-//     nearest node during parsing.
-//
-// Search the codebase for the string "TRIVIA:" to find every breadcrumb left
-// for that follow-up task.
+// Comments are captured (they are not attached to individual nodes). The
+// tokenizer collects them into a side list keyed by source position; the parser
+// copies that list onto File.Comments in source order (see comment.go); and the
+// formatter interleaves them with the tree by comparing source line numbers.
+// This position-based model keeps the node types free of comment bookkeeping
+// while still letting a canonical rewrite reproduce every comment. Whitespace
+// trivia (blank-line runs) is still not modeled; only comments are preserved.
 package ast
 
 // Position identifies a location in the original source text. Line and Column

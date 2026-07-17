@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/tucats/ego/internal/language/parse"
 )
 
 // TestFormatGolden checks canonical output for representative constructs. Input
@@ -112,6 +114,124 @@ func TestIndentWidth(t *testing.T) {
 			t.Errorf("width %d\n  got:  %q\n  want: %q", c.width, got, c.want)
 		}
 	}
+}
+
+// TestCommentPreservation checks that leading, trailing, and standalone
+// comments survive a format and land in sensible positions.
+func TestCommentPreservation(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "leading-and-trailing",
+			src:  "// count\nx := 1 // one",
+			want: "// count\nx := 1  // one\n",
+		},
+		{
+			name: "standalone-between",
+			src:  "x := 1\n// separator\ny := 2",
+			want: "x := 1\n// separator\ny := 2\n",
+		},
+		{
+			name: "inside-block",
+			src:  "if x {\n// inner\ny = 1 // set\n}",
+			want: "if x {\n    // inner\n    y = 1  // set\n}\n",
+		},
+		{
+			name: "block-comment",
+			src:  "x := 1\n/* note */\ny := 2",
+			want: "x := 1\n/* note */\ny := 2\n",
+		},
+		{
+			name: "trailing-in-block",
+			src:  "func f() {\nreturn // done\n// last\n}",
+			want: "func f() {\n    return  // done\n    // last\n}\n",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := Source(c.src, true)
+			if err != nil {
+				t.Fatalf("Source(%q): %v", c.src, err)
+			}
+
+			if got != c.want {
+				t.Errorf("Source(%q)\n  got:  %q\n  want: %q", c.src, got, c.want)
+			}
+		})
+	}
+}
+
+// TestNoCommentLost verifies that every comment in the input appears in the
+// formatted output for the whole corpus — the core guarantee behind in-place
+// rewriting. Placement may be approximate, but nothing is dropped.
+func TestNoCommentLost(t *testing.T) {
+	root := repoRoot(t)
+
+	var files []string
+
+	for _, dir := range []string{"tests", "lib/packages"} {
+		_ = filepath.Walk(filepath.Join(root, dir), func(path string, info os.FileInfo, err error) error {
+			if err == nil && info != nil && !info.IsDir() && strings.HasSuffix(path, ".ego") {
+				files = append(files, path)
+			}
+
+			return nil
+		})
+	}
+
+	if len(files) == 0 {
+		t.Skip("no corpus files found")
+	}
+
+	var lost int
+
+	for _, path := range files {
+		src, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		got, err := Source(string(src), true)
+		if err != nil {
+			continue
+		}
+
+		// Every "//" or "/*" that starts a comment in the source must still
+		// start a comment in the output. We compare comment counts, which the
+		// parser exposes via the file's Comments list.
+		wantN := countComments(t, string(src))
+		gotN := countComments(t, got)
+
+		if gotN < wantN {
+			lost++
+
+			if lost <= 10 {
+				rel, _ := filepath.Rel(root, path)
+				t.Logf("comments lost in %s: had %d, kept %d", rel, wantN, gotN)
+			}
+		}
+	}
+
+	if lost > 0 {
+		t.Errorf("%d files lost comments on format", lost)
+	}
+}
+
+// countComments parses source as a fragment and returns the number of comments
+// the parser recorded.
+func countComments(t *testing.T, source string) int {
+	t.Helper()
+
+	file, err := parse.ParseStatements(source)
+	if err != nil {
+		return 0
+	}
+
+	return len(file.Comments)
 }
 
 // TestFormatIdempotent checks the essential property of a canonical formatter:

@@ -143,7 +143,12 @@ func (p *printer) printBlock(block *ast.Block) {
 		return
 	}
 
-	if len(block.Stmts) == 0 {
+	// An empty block may still carry comments between its braces; keep it "{}"
+	// only when there is genuinely nothing (statements or pending inner
+	// comments) to place inside.
+	innerComments := p.commentsBefore(block.End().Line)
+
+	if len(block.Stmts) == 0 && !innerComments {
 		p.write("{}")
 
 		return
@@ -154,13 +159,24 @@ func (p *printer) printBlock(block *ast.Block) {
 	p.indent++
 
 	for _, stmt := range block.Stmts {
+		p.emitLeadingComments(stmt.Pos().Line)
 		p.newline()
 		p.printStmt(stmt)
+		p.emitTrailingComment(stmt.Pos().Line)
 	}
+
+	// Flush comments that fall inside the block after the last statement.
+	p.emitLeadingComments(block.End().Line)
 
 	p.indent--
 	p.newline()
 	p.write("}")
+}
+
+// commentsBefore reports whether a pending comment falls on a line before the
+// given source line.
+func (p *printer) commentsBefore(line int) bool {
+	return p.ci < len(p.comments) && p.comments[p.ci].Line < line
 }
 
 // printExprList renders a comma-separated list of expressions.
@@ -296,8 +312,10 @@ func (p *printer) printCaseClause(clause *ast.CaseClause) {
 	p.indent++
 
 	for _, stmt := range clause.Body {
+		p.emitLeadingComments(stmt.Pos().Line)
 		p.newline()
 		p.printStmt(stmt)
+		p.emitTrailingComment(stmt.Pos().Line)
 	}
 
 	if clause.Fallthrough {

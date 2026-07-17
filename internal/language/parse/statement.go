@@ -107,7 +107,10 @@ func (p *Parser) parseBlock() (*ast.Block, error) {
 		return nil, err
 	}
 
-	block.SetSpan(start, p.here())
+	// Use the closing brace's own position (not the next token) so the block's
+	// end line is exactly the "}" line — the boundary the formatter uses when
+	// flushing comments that fall inside the block.
+	block.SetSpan(start, p.end())
 
 	return block, nil
 }

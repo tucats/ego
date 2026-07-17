@@ -22,6 +22,11 @@ type Tokenizer struct {
 	// The token stream for the current source text.
 	Tokens []Token
 
+	// Comments captured during lexing, in source order. These are held apart
+	// from the main token stream so existing token consumers are unaffected;
+	// see comment.go.
+	Comments []Comment
+
 	// The current position in the token stream.
 	TokenP int
 

@@ -10,6 +10,12 @@ type File struct {
 	BaseNode
 	Decls []Node
 	Bare  bool
+
+	// Comments holds every comment in the source, in source order. They are not
+	// attached to individual nodes; the formatter interleaves them with the tree
+	// by comparing source line numbers. Nil when the file was built without
+	// comment information.
+	Comments []Comment
 }
 
 func (n *File) Kind() Kind       { return KindFile }

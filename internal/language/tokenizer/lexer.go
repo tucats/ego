@@ -20,6 +20,13 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 	s.Init(strings.NewReader(src))
 
+	// Receive comment tokens instead of silently skipping them. The scanner's
+	// default GoTokens mode recognizes comments but has SkipComments set;
+	// clearing that bit makes Scan return scanner.Comment tokens, which we
+	// divert into the side comment list (see below). The main token stream is
+	// unchanged because comment tokens never reach t.Tokens.
+	s.Mode &^= scanner.SkipComments
+
 	// Redirect any lexical scanning errors to the tokenizer log, if enabled.
 	s.Error = func(s *scanner.Scanner, msg string) {
 		if ui.IsActive(ui.TokenLogger) {
@@ -32,6 +39,23 @@ func (t *Tokenizer) lexer(src string, isCode bool) {
 
 	// Scan as long as there are tokens left.
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
+		// Comment tokens are diverted to the side comment list and never enter
+		// the main token stream, so downstream consumers are unaffected — except
+		// that a "//" comment ending a line may have absorbed the synthetic
+		// statement-terminating ";" that splitLines appended. When it did, put
+		// that semicolon back into the stream so the statement terminates here.
+		if tok == scanner.Comment {
+			if t.captureComment(s.TokenText(), s.Line, s.Position.Column) {
+				semi := SemicolonToken
+				semi.line = int32(s.Line)
+				semi.pos = int32(s.Position.Column)
+
+				t.Tokens = append(t.Tokens, semi)
+			}
+
+			continue
+		}
+
 		// Based on classifying the spelling, decide what kind of token it is. This includes validating the
 		// token against lists of known token types, or determining if the text is a valid constant of some type.
 		nextToken := classifyTokenBySpelling(s.TokenText())
