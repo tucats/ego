@@ -96,7 +96,14 @@ func FileWithOptions(file *ast.File, opts Options) (string, error) {
 		return "", p.err
 	}
 
-	return p.buf.String(), nil
+	// Trailing blank lines are always removed, leaving a single terminating
+	// newline (or nothing, for empty output).
+	out := strings.TrimRight(p.buf.String(), " \t\n")
+	if out == "" {
+		return "", nil
+	}
+
+	return out + "\n", nil
 }
 
 // Node renders a single AST node to source text (without a trailing newline)
@@ -207,16 +214,16 @@ func (p *printer) printFile(file *ast.File) {
 	}
 
 	for i, decl := range file.Decls {
-		// A blank line separates this declaration from the previous output, per
-		// gofmt; it is consumed by whichever item (leading comment or the
-		// declaration itself) is emitted first for this decl.
-		blank := i > 0 && (isDeclaration(file.Decls[i-1]) || isDeclaration(decl))
+		// A blank line separates this declaration from the previous output; it is
+		// consumed by whichever item (leading comment or the declaration itself)
+		// is emitted first for this decl.
+		blank := i > 0 && needFileBlank(file.Decls[i-1], decl)
 
 		for p.ci < len(p.comments) && p.comments[p.ci].Line < decl.Pos().Line {
 			sep(blank)
 			blank = false
 
-			p.write(p.comments[p.ci].Text)
+			p.writeComment(p.comments[p.ci].Text)
 			p.ci++
 		}
 
@@ -228,13 +235,31 @@ func (p *printer) printFile(file *ast.File) {
 	// Any comments after the last declaration (e.g. a trailing file footer).
 	for p.hasPendingComments() {
 		sep(false)
-		p.write(p.comments[p.ci].Text)
+		p.writeComment(p.comments[p.ci].Text)
 		p.ci++
 	}
 
 	if wrote {
 		p.write("\n")
 	}
+}
+
+// needFileBlank decides whether a blank line separates two adjacent top-level
+// items. It applies the same statement-layout rules used inside blocks, plus
+// gofmt's convention of a blank line between top-level declarations — except
+// that a run of "var" declarations is kept grouped (a blank follows the group,
+// not each member).
+func needFileBlank(prev, cur ast.Node) bool {
+	// Consecutive var declarations stay grouped.
+	if prev.Kind() == ast.KindVarDecl && cur.Kind() == ast.KindVarDecl {
+		return false
+	}
+
+	if blankBetweenStmts(prev, cur) {
+		return true
+	}
+
+	return isDeclaration(prev) || isDeclaration(cur)
 }
 
 // isDeclaration reports whether a top-level node is a declaration or function

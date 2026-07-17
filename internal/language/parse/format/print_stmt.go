@@ -158,7 +158,13 @@ func (p *printer) printBlock(block *ast.Block) {
 
 	p.indent++
 
-	for _, stmt := range block.Stmts {
+	for i, stmt := range block.Stmts {
+		// Insert a blank line between statements where the layout rules call for
+		// one. The first statement (preceded by "{") never gets one.
+		if i > 0 && blankBetweenStmts(block.Stmts[i-1], stmt) {
+			p.write("\n")
+		}
+
 		p.emitLeadingComments(stmt.Pos().Line)
 		p.newline()
 		p.printStmt(stmt)
@@ -171,6 +177,80 @@ func (p *printer) printBlock(block *ast.Block) {
 	p.indent--
 	p.newline()
 	p.write("}")
+}
+
+// blankBetweenStmts reports whether a blank line should separate two adjacent
+// statements. It encodes the layout rules that are independent of nesting level
+// (they apply both inside a block and among top-level statements). Because it
+// returns a single boolean and the caller emits exactly one blank line, rules
+// that overlap on the same gap never stack up into multiple blank lines:
+//
+//   - A group of consecutive "var" declarations stays together, with a blank
+//     line after the group.
+//   - A blank line follows a function definition.
+//   - A blank line surrounds a "for" loop (before it and after its "}").
+//   - A blank line follows an @-directive that carries a block (e.g. @compile).
+//   - A blank line precedes a "return", "break", or "continue".
+//   - A blank line precedes an "if" statement.
+func blankBetweenStmts(prev, cur ast.Node) bool {
+	// Rules that place a blank line after the previous statement.
+	switch {
+	case prev.Kind() == ast.KindVarDecl:
+		// Consecutive vars are grouped; a blank follows the last one.
+		return cur.Kind() != ast.KindVarDecl
+	case prev.Kind() == ast.KindFuncDecl:
+		return true
+	case isForLike(prev):
+		return true
+	case directiveHasBlock(prev):
+		return true
+	}
+
+	// Rules that place a blank line before the current statement.
+	if isJumpStmt(cur) || cur.Kind() == ast.KindIfStmt || isForLike(cur) {
+		return true
+	}
+
+	return false
+}
+
+// isForLike reports whether a node is a for loop, including a labeled for loop.
+// In Ego only for loops may be labeled, so a labeled statement is always a loop.
+func isForLike(node ast.Node) bool {
+	switch node.Kind() {
+	case ast.KindForStmt, ast.KindLabeledStmt:
+		return true
+	default:
+		return false
+	}
+}
+
+// isJumpStmt reports whether a node is a return, break, or continue statement.
+func isJumpStmt(node ast.Node) bool {
+	switch node.Kind() {
+	case ast.KindReturnStmt, ast.KindBreakStmt, ast.KindContinueStmt:
+		return true
+	default:
+		return false
+	}
+}
+
+// directiveHasBlock reports whether a node is an @-directive whose arguments
+// include a "{ ... }" block (such as @compile or @capture). Such a directive's
+// captured argument tokens contain a brace.
+func directiveHasBlock(node ast.Node) bool {
+	directive, ok := node.(*ast.DirectiveStmt)
+	if !ok {
+		return false
+	}
+
+	for _, arg := range directive.RawArgs {
+		if arg == "{" || arg == "}" || arg == "{}" {
+			return true
+		}
+	}
+
+	return false
 }
 
 // commentsBefore reports whether a pending comment falls on a line before the

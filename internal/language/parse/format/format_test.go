@@ -116,6 +116,75 @@ func TestIndentWidth(t *testing.T) {
 	}
 }
 
+// TestBlankLineRules checks the statement-spacing rules: a blank line before
+// return/break/continue and before if (unless first in the block), a var group
+// followed by a blank, a blank after a directive-with-block, and no trailing
+// blank lines.
+func TestBlankLineRules(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "blank-before-return",
+			src:  "func f() {\nx := 1\nreturn x\n}",
+			want: "func f() {\n    x := 1\n\n    return x\n}\n",
+		},
+		{
+			name: "no-blank-first-return",
+			src:  "func f() {\nreturn 1\n}",
+			want: "func f() {\n    return 1\n}\n",
+		},
+		{
+			name: "var-group-then-blank",
+			src:  "func f() {\nvar x int\nvar y int\nx = 1\n}",
+			want: "func f() {\n    var x int\n    var y int\n\n    x = 1\n}\n",
+		},
+		{
+			name: "blank-before-if",
+			src:  "func f() {\nx := 1\nif x > 0 {\nprint x\n}\n}",
+			want: "func f() {\n    x := 1\n\n    if x > 0 {\n        print x\n    }\n}\n",
+		},
+		{
+			name: "blank-before-break",
+			src:  "func f() {\nfor {\nx := 1\nbreak\n}\n}",
+			want: "func f() {\n    for {\n        x := 1\n\n        break\n    }\n}\n",
+		},
+		{
+			name: "blanks-around-for",
+			src:  "func f() {\nx := 1\nfor i := 0; i < 2; i++ {\nprint i\n}\ny := 2\n}",
+			want: "func f() {\n    x := 1\n\n    for i := 0; i < 2; i++ {\n        print i\n    }\n\n    y := 2\n}\n",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := Source(c.src, false)
+			if err != nil {
+				t.Fatalf("Source(%q): %v", c.src, err)
+			}
+
+			if got != c.want {
+				t.Errorf("Source(%q)\n  got:  %q\n  want: %q", c.src, got, c.want)
+			}
+		})
+	}
+}
+
+// TestNoTrailingBlankLines checks that trailing blank lines are stripped,
+// leaving a single terminating newline.
+func TestNoTrailingBlankLines(t *testing.T) {
+	got, err := Source("x := 1\n\n\n", true)
+	if err != nil {
+		t.Fatalf("Source: %v", err)
+	}
+
+	if got != "x := 1\n" {
+		t.Errorf("got %q, want %q", got, "x := 1\n")
+	}
+}
+
 // TestCommentPreservation checks that leading, trailing, and standalone
 // comments survive a format and land in sensible positions.
 func TestCommentPreservation(t *testing.T) {
@@ -143,6 +212,21 @@ func TestCommentPreservation(t *testing.T) {
 			name: "block-comment",
 			src:  "x := 1\n/* note */\ny := 2",
 			want: "x := 1\n/* note */\ny := 2\n",
+		},
+		{
+			// A multi-line block comment must not pick up a stray ";" from the
+			// tokenizer's synthetic line endings, and its interior lines are
+			// re-indented to the block level.
+			name: "multiline-block-comment",
+			src:  "func f() {\n/* line A\n   line B */\nx := 1\n}",
+			want: "func f() {\n    /* line A\n    line B */\n    x := 1\n}\n",
+		},
+		{
+			// A star comment aligns each "*" one column right of "/*", as gofmt
+			// does, honoring the current block indentation.
+			name: "star-comment-aligned",
+			src:  "func f() {\n/*\n * one\n * two\n */\nx := 1\n}",
+			want: "func f() {\n    /*\n     * one\n     * two\n     */\n    x := 1\n}\n",
 		},
 		{
 			name: "trailing-in-block",

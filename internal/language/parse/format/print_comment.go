@@ -1,5 +1,7 @@
 package format
 
+import "strings"
+
 // This file adds comment reproduction to the formatter. Comments live on
 // ast.File.Comments in source order (the tokenizer captures them into a side
 // list; see tokenizer/comment.go). The printer holds that list plus a monotonic
@@ -27,7 +29,7 @@ package format
 func (p *printer) emitLeadingComments(beforeLine int) {
 	for p.ci < len(p.comments) && p.comments[p.ci].Line < beforeLine {
 		p.newline()
-		p.write(p.comments[p.ci].Text)
+		p.writeComment(p.comments[p.ci].Text)
 		p.ci++
 	}
 }
@@ -37,9 +39,63 @@ func (p *printer) emitLeadingComments(beforeLine int) {
 // comment that trailed it on the same source line.
 func (p *printer) emitTrailingComment(line int) {
 	if p.ci < len(p.comments) && p.comments[p.ci].Line == line {
-		p.write("  " + p.comments[p.ci].Text)
+		p.write("  ")
+		p.writeComment(p.comments[p.ci].Text)
 		p.ci++
 	}
+}
+
+// writeComment writes a comment, re-indenting the interior lines of a multi-line
+// (block) comment to the current indentation. splitLines strips the original
+// interior indentation during tokenization, so this restores a consistent block
+// indent rather than leaving those lines at column zero.
+//
+// A "star comment" — one whose every continuation line begins with "*" — is
+// aligned as gofmt does: each "*" sits one column to the right of the "/*"
+// opener, so the stars line up beneath the "*" of "/*".
+func (p *printer) writeComment(text string) {
+	if !strings.Contains(text, "\n") {
+		p.write(text)
+
+		return
+	}
+
+	lines := strings.Split(text, "\n")
+	indent := p.indentation()
+	star := isStarComment(lines)
+
+	// The first line is written at the cursor (already positioned by the
+	// caller); continuation lines get their own indentation.
+	p.write(lines[0])
+
+	for _, line := range lines[1:] {
+		p.write("\n")
+
+		if star {
+			// line already begins with "*" (splitLines trimmed leading space);
+			// the extra space aligns it under the "*" of "/*".
+			p.write(indent + " " + line)
+		} else {
+			p.write(indent + line)
+		}
+	}
+}
+
+// isStarComment reports whether a split block comment is a "star comment": every
+// line after the first, ignoring leading whitespace, begins with "*". Such
+// comments (including the closing "*/" line) get their stars aligned.
+func isStarComment(lines []string) bool {
+	if len(lines) < 2 {
+		return false
+	}
+
+	for _, line := range lines[1:] {
+		if !strings.HasPrefix(strings.TrimLeft(line, " \t"), "*") {
+			return false
+		}
+	}
+
+	return true
 }
 
 // hasPendingComments reports whether any comments remain to be emitted.

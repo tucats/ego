@@ -36,11 +36,18 @@ func (t *Tokenizer) captureComment(text string, line, column int) bool {
 	block := strings.HasPrefix(text, "/*")
 	absorbedSemicolon := false
 
-	if !block {
+	if block {
+		// splitLines runs per line and does not track block-comment state, so it
+		// appends lineEnding ("  ;") to every interior line of a multi-line
+		// "/* ... */" comment, landing that suffix inside the comment text just
+		// before each newline. Remove those so the comment reads as written.
+		text = strings.ReplaceAll(text, lineEnding+"\n", "\n")
+	} else {
 		// splitLines appends lineEnding ("  ;") to lines that do not end in a
 		// continuation rune; for a line that ends in a "//" comment, that suffix
-		// lands inside the comment text. Remove it (and any residual trailing
-		// whitespace) so the comment reads as written.
+		// lands at the end of the comment text. Remove it (and any residual
+		// trailing whitespace) so the comment reads as written. When it was
+		// present, a statement terminator was lost to the comment (see caller).
 		if strings.HasSuffix(text, lineEnding) {
 			absorbedSemicolon = true
 			text = strings.TrimSuffix(text, lineEnding)
