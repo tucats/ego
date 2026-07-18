@@ -930,6 +930,7 @@ dsns.revoke.permissions=Liste des noms de permissions à révoquer
 dsns.revoke.username=Nom d'utilisateur dont les permissions sont révoquées
 dsns.show.metadata=Si spécifié, affiche les métadonnées du schéma de base de données au lieu des permissions
 filter=Liste des clauses de filtre optionnelles
+fmt.analysis=Exécuter l'analyse de symboles/portées et afficher les diagnostics
 fmt.ast=Afficher l'arbre syntaxique analysé au lieu du source formaté
 fmt.fragment=Analyser l'entrée comme une suite d'instructions
 fmt.program=Analyser l'entrée comme un programme complet

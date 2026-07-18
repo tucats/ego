@@ -133,12 +133,6 @@ func (p *Parser) collectComments() []ast.Comment {
 // Token cursor helpers
 // ------------------------------------------------------------------
 
-// peek returns the token at the given 1-based offset from the current position
-// without consuming it. peek(1) is the next token.
-func (p *Parser) peek(offset int) tokenizer.Token {
-	return p.t.Peek(offset)
-}
-
 // next consumes and returns the next token.
 func (p *Parser) next() tokenizer.Token {
 	return p.t.Next()

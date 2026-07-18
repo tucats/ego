@@ -47,9 +47,71 @@ func (p *Parser) parseDirective() (ast.Node, error) {
 
 	node := &ast.DirectiveStmt{Name: nameTok.Spelling()}
 	node.RawArgs = p.collectDirectiveArgs()
+	node.Args = parseDirectiveExprArgs(node.Name, node.RawArgs)
 	node.SetSpan(start, p.here())
 
 	return node, nil
+}
+
+// directivesWithExprArgs lists directives whose entire argument list, per
+// their grammar in docs/SYNTAX.md section 12, is exactly one optional
+// expression and nothing else -- no leading declared identifier, no flags,
+// no block. For exactly these, parseDirectiveExprArgs below can safely
+// re-parse RawArgs as a real expression and populate DirectiveStmt.Args, so
+// that tooling built on the AST (e.g. internal/language/parse/resolve) can
+// see identifier references inside a directive's argument instead of only
+// raw token spellings.
+//
+// Deliberately excluded, and left as a future TRIVIA item alongside the
+// block-bearing directives noted above: any directive whose argument mixes a
+// declared identifier with an expression (@global, @log, @template), a
+// comma-separated identifier list (@define, @package), a block (@capture,
+// @compile), or a statement rather than an expression (@json, @text) --
+// re-parsing those as a bare expression would either fail outright or,
+// worse, silently misinterpret a declared name as a referenced one.
+var directivesWithExprArgs = map[string]bool{
+	"assert":  true,
+	"error":   true,
+	"fail":    true,
+	"status":  true,
+	"symbols": true,
+}
+
+// parseDirectiveExprArgs is a best-effort enrichment: for a directive in
+// directivesWithExprArgs, it re-parses the already-captured rawArgs token
+// spellings (joined back into source text -- directiveArgText already
+// re-quotes string tokens so this round-trips correctly) as a single
+// expression using a fresh, fully isolated Parser. It never affects the
+// outer parse: on any error, or if the sub-parse does not consume every
+// token (meaning this directive instance doesn't actually match the assumed
+// single-expression shape), it simply returns nil, leaving RawArgs as the
+// only record of the arguments -- exactly today's behavior.
+//
+// A fresh Parser's tokenizer always carries a trailing EndOfTokens sentinel
+// (plus, in code mode, a possible auto-inserted semicolon before it) that
+// parseExpression correctly leaves unconsumed -- so completion is checked by
+// skipping any such trailing semicolon and requiring EndOfTokens next, not
+// by Tokenizer.AtEnd(), which would never be true even on a fully successful
+// single-expression parse.
+func parseDirectiveExprArgs(name string, rawArgs []string) []ast.Node {
+	if !directivesWithExprArgs[name] || len(rawArgs) == 0 {
+		return nil
+	}
+
+	sub := New(strings.Join(rawArgs, " "))
+
+	expr, err := sub.parseExpression()
+	if err != nil || expr == nil {
+		return nil
+	}
+
+	sub.t.AnyNext(tokenizer.SemicolonToken)
+
+	if !sub.t.Peek(1).Is(tokenizer.EndOfTokens) {
+		return nil
+	}
+
+	return []ast.Node{expr}
 }
 
 // collectDirectiveArgs consumes the tokens making up a directive's arguments and

@@ -16,6 +16,11 @@ var FmtVerbGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "analysis",
+		Description: "fmt.analysis",
+		OptionType:  cli.BooleanType,
+	},
+	{
 		LongName:    "ast",
 		ShortName:   "a",
 		Aliases:     []string{"tree"},

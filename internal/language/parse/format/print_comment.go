@@ -30,6 +30,7 @@ func (p *printer) emitLeadingComments(beforeLine int) {
 	for p.ci < len(p.comments) && p.comments[p.ci].Line < beforeLine {
 		p.newline()
 		p.writeComment(p.comments[p.ci].Text)
+
 		p.ci++
 	}
 }
@@ -41,6 +42,7 @@ func (p *printer) emitTrailingComment(line int) {
 	if p.ci < len(p.comments) && p.comments[p.ci].Line == line {
 		p.write("  ")
 		p.writeComment(p.comments[p.ci].Text)
+		
 		p.ci++
 	}
 }

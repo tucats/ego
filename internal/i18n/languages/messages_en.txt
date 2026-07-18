@@ -947,6 +947,7 @@ dsns.revoke.permissions=List of permission names to revoke
 dsns.revoke.username=Username being revoked permissions
 dsns.show.metadata=If specified, show database schema metadata instead of permissions
 filter=List of optional filter clauses
+fmt.analysis=Run symbol/scope analysis and print any diagnostics
 fmt.ast=Print the parsed syntax tree instead of formatted source
 fmt.fragment=Parse the input as a bare statement fragment
 fmt.program=Parse the input as a complete program

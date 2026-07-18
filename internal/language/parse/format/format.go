@@ -224,6 +224,7 @@ func (p *printer) printFile(file *ast.File) {
 			blank = false
 
 			p.writeComment(p.comments[p.ci].Text)
+
 			p.ci++
 		}
 
@@ -236,6 +237,7 @@ func (p *printer) printFile(file *ast.File) {
 	for p.hasPendingComments() {
 		sep(false)
 		p.writeComment(p.comments[p.ci].Text)
+		
 		p.ci++
 	}
 
