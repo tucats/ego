@@ -6738,6 +6738,17 @@ runes := strings.Chars("test")
 The value of `runes` is an string array with values ["t", "e", "s", "t"].
 If the string is an empty string, it results in an array of zero elements.
 
+#### strings.Clone(text)
+
+The `Clone` function returns a copy of the given string. Because Ego strings
+are already immutable values, this is primarily useful for parity with Go's
+`strings` package.
+
+```go
+a := "hello"
+b := strings.Clone(a)
+```
+
 #### strings.Compare(a, b)
 
 The `Compare` function compares two string values, and returns an integer containing
@@ -6780,6 +6791,18 @@ characters in the substring (there are instances of "s", "a", and "t"). The
 value of `b` is false because the string does not contain any instances of
 ("x", "y", or "z")
 
+#### strings.ContainsRune(str, r)
+
+The `ContainsRune` function reports whether the given rune (character)
+appears anywhere in the string.
+
+```go
+a := strings.ContainsRune("hello", 'e')
+b := strings.ContainsRune("hello", 'z')
+```
+
+In this example, `a` is `true` and `b` is `false`.
+
 #### strings.Count(string, substr)
 
 The `Count()` function counts the number of non-overlapping occurrences of a
@@ -6806,6 +6829,32 @@ before, after, found := strings.Cut("user@example.com", "@")
 In this example `before` is `"user"`, `after` is `"example.com"`, and `found`
 is `true`. If the separator is not present, `before` is the original string,
 `after` is an empty string, and `found` is `false`.
+
+#### strings.CutPrefix(text, prefix)
+
+The `CutPrefix` function removes the given prefix from the string, if
+present, returning the remainder and a boolean indicating whether the prefix
+was found.
+
+```go
+after, found := strings.CutPrefix("foobar", "foo")
+```
+
+In this example, `after` is `"bar"` and `found` is `true`. If the prefix is
+not present, `after` is the original string and `found` is `false`.
+
+#### strings.CutSuffix(text, suffix)
+
+The `CutSuffix` function removes the given suffix from the string, if
+present, returning the remainder and a boolean indicating whether the suffix
+was found.
+
+```go
+before, found := strings.CutSuffix("foobar", "bar")
+```
+
+In this example, `before` is `"foo"` and `found` is `true`. If the suffix is
+not present, `before` is the original string and `found` is `false`.
 
 #### strings.EqualFold(a, b)
 
@@ -6892,12 +6941,60 @@ fmt.Println(strings.Format("%05d", 42))                     // 00042
 fmt.Println(strings.Format("plain text"))                   // plain text
 ```
 
+#### strings.HasPrefix(text, prefix) / strings.HasSuffix(text, suffix)
+
+The `HasPrefix` and `HasSuffix` functions report whether a string begins or
+ends with the given substring, respectively.
+
+```go
+a := strings.HasPrefix("hello world", "hello")
+b := strings.HasSuffix("hello world", "world")
+```
+
+In this example, both `a` and `b` are `true`. An empty prefix or suffix
+always matches.
+
 #### strings.Index(string, test)
 
 The `Index` function searches a string for the first occurrence of the test
 string. If it is found, it returns the character position of the first
 character in `string` that contains the value of `test`. If no instance of
 the test string is found, the function returns -1.
+
+#### strings.IndexAny(text, chars)
+
+The `IndexAny` function returns the index of the first instance of any
+character from `chars` found in `text`, or -1 if none of the characters are
+present.
+
+```go
+n := strings.IndexAny("hello", "aeiou")
+```
+
+In this example, `n` is `1`, the position of the first vowel.
+
+#### strings.IndexByte(text, c)
+
+The `IndexByte` function returns the index of the first instance of the byte
+`c` in `text`, or -1 if not present. The byte value must be cast explicitly,
+for example `byte('l')`.
+
+```go
+n := strings.IndexByte("hello", byte('l'))
+```
+
+In this example, `n` is `2`.
+
+#### strings.IndexRune(text, r)
+
+The `IndexRune` function returns the index of the first instance of the rune
+(character) `r` in `text`, or -1 if not present.
+
+```go
+n := strings.IndexRune("hello", 'l')
+```
+
+In this example, `n` is `2`.
 
 #### strings.Ints(string)
 
@@ -6913,6 +7010,20 @@ The value of `runes` is an integer array with values [116, 101, 115, 116] which
 are the Unicode character values for the letters "t", "e", "s", and "t". If
 the string passed is is am empty string, the `Ints` function returns an empty
 array.
+
+#### strings.LastIndex(text, substr) / strings.LastIndexAny(text, chars) / strings.LastIndexByte(text, c)
+
+These functions are the same as `Index`, `IndexAny`, and `IndexByte`, except
+they return the position of the _last_ matching occurrence instead of the
+first. Each returns -1 if there is no match.
+
+```go
+a := strings.LastIndex("go gopher", "go")
+b := strings.LastIndexAny("hello", "aeiou")
+c := strings.LastIndexByte("hello", byte('l'))
+```
+
+In this example, `a` is `3`, `b` is `4`, and `c` is `3`.
 
 #### strings.Left(string, count)
 
@@ -7035,6 +7146,30 @@ b := strings.Split(a, ", ")
 This uses the string ", " as the delimiter. Note that this must exactly match, so
 the space is significant. The value of b will be "101", "553", "223", "59"].
 
+#### strings.SplitAfter(text, separator)
+
+Like `Split`, but each element of the resulting array includes the separator
+that follows it (except possibly the last).
+
+```go
+a := strings.SplitAfter("a,b,c", ",")
+```
+
+In this example, `a` is `["a,", "b,", "c"]`.
+
+#### strings.SplitAfterN(text, separator, n) / strings.SplitN(text, separator, n)
+
+These behave like `SplitAfter` and `Split` respectively, but stop after at
+most `n` substrings. A negative `n` means no limit (the same as the
+unbounded form); an `n` of zero returns an empty array.
+
+```go
+a := strings.SplitAfterN("a,b,c", ",", 2)
+b := strings.SplitN("a,b,c", ",", 2)
+```
+
+In this example, `a` is `["a,", "b,c"]` and `b` is `["a", "b,c"]`.
+
 #### strings.String(n1, n2...)
 
 The `String()` function will construct a string from an array of numeric values or
@@ -7127,6 +7262,19 @@ Note that @template creates a symbol with the given template, but that value
 can only be used in the call to strings.Template() to identify the specific
 template to use.
 
+#### strings.Title(text)
+
+The `Title()` function returns a copy of the string with the first letter of
+each space-separated word converted to uppercase.
+
+```go
+a := strings.Title("hello world")
+```
+
+In this example, `a` is `"Hello World"`. Note that Go itself deprecates this
+function in favor of Unicode-aware casing packages for anything beyond basic
+ASCII text; it is included here for parity with the full `strings` API.
+
 #### strings.ToLower(string)
 
 The `ToLower()` function converts the characters of a string to the lowercase
@@ -7153,6 +7301,30 @@ b := strings.ToUpper(a)
 
 In this example, the value of `b` will be "BANG+OLAFSEN".
 
+#### strings.ToTitle(string)
+
+The `ToTitle()` function converts every character of a string to its
+Unicode title case (for most characters, this is the same as uppercase).
+
+```go
+a := strings.ToTitle("hello")
+```
+
+In this example, the value of `a` will be "HELLO".
+
+#### strings.ToValidUTF8(text, replacement)
+
+The `ToValidUTF8()` function returns a copy of the string with each run of
+invalid UTF-8 byte sequences replaced by the given replacement string.
+Adjacent invalid bytes are collapsed into a single replacement.
+
+```go
+a := strings.ToValidUTF8("hello", "?")
+```
+
+In this example, since `"hello"` is already valid UTF-8, `a` is unchanged:
+`"hello"`.
+
 #### strings.Tokenize(string)
 
 The `Tokenize()` function uses the built-in tokenizer to break
@@ -7177,6 +7349,22 @@ into decimal integers, so the resulting structure for this token would be
 ```text
 {kind: "Integer", spelling: "5"}
 ```
+
+#### strings.Trim(text, cutset) / strings.TrimLeft(text, cutset) / strings.TrimRight(text, cutset)
+
+The `Trim` function removes any leading and trailing characters that appear
+in `cutset` from the string. `TrimLeft` and `TrimRight` do the same, but only
+from the beginning or end of the string, respectively.
+
+```go
+a := strings.Trim("  hello  ", " ")
+b := strings.TrimLeft("xxhello", "x")
+c := strings.TrimRight("helloxx", "x")
+```
+
+In this example, `a` is `"hello"`, `b` is `"hello"`, and `c` is `"hello"`.
+Unlike `TrimSpace`, the cutset is a set of individual characters to remove,
+not a fixed substring.
 
 #### strings.TrimPrefix(text, prefix)
 

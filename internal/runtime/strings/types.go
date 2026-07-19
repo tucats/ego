@@ -130,6 +130,20 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		},
 		Value: chars,
 	},
+	"Clone": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Clone",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.Clone,
+		IsNative: true,
+	},
 	"Compare": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Compare",
@@ -184,6 +198,24 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		Value:    strings.ContainsAny,
 		IsNative: true,
 	},
+	"ContainsRune": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ContainsRune",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "r",
+					Type: data.Int32Type,
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value:    strings.ContainsRune,
+		IsNative: true,
+	},
 	"Count": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Count",
@@ -218,6 +250,42 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 			Returns: []*data.Type{data.StringType, data.StringType, data.BoolType},
 		},
 		Value:    strings.Cut,
+		IsNative: true,
+	},
+	"CutPrefix": data.Function{
+		Declaration: &data.Declaration{
+			Name: "CutPrefix",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "prefix",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType, data.BoolType},
+		},
+		Value:    strings.CutPrefix,
+		IsNative: true,
+	},
+	"CutSuffix": data.Function{
+		Declaration: &data.Declaration{
+			Name: "CutSuffix",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "suffix",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType, data.BoolType},
+		},
+		Value:    strings.CutSuffix,
 		IsNative: true,
 	},
 	"EqualFold": data.Function{
@@ -270,6 +338,42 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		},
 		Value: format,
 	},
+	"HasPrefix": data.Function{
+		Declaration: &data.Declaration{
+			Name: "HasPrefix",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "prefix",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value:    strings.HasPrefix,
+		IsNative: true,
+	},
+	"HasSuffix": data.Function{
+		Declaration: &data.Declaration{
+			Name: "HasSuffix",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "suffix",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.BoolType},
+		},
+		Value:    strings.HasSuffix,
+		IsNative: true,
+	},
 	"Index": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Index",
@@ -286,6 +390,60 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 			Returns: []*data.Type{data.IntType},
 		},
 		Value:    strings.Index,
+		IsNative: true,
+	},
+	"IndexAny": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IndexAny",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "chars",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.IndexAny,
+		IsNative: true,
+	},
+	"IndexByte": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IndexByte",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "c",
+					Type: data.ByteType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.IndexByte,
+		IsNative: true,
+	},
+	"IndexRune": data.Function{
+		Declaration: &data.Declaration{
+			Name: "IndexRune",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "r",
+					Type: data.Int32Type,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.IndexRune,
 		IsNative: true,
 	},
 	"Generate": data.Function{
@@ -341,6 +499,60 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 			Returns: []*data.Type{data.StringType},
 		},
 		Value:    strings.Join,
+		IsNative: true,
+	},
+	"LastIndex": data.Function{
+		Declaration: &data.Declaration{
+			Name: "LastIndex",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "substr",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.LastIndex,
+		IsNative: true,
+	},
+	"LastIndexAny": data.Function{
+		Declaration: &data.Declaration{
+			Name: "LastIndexAny",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "chars",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.LastIndexAny,
+		IsNative: true,
+	},
+	"LastIndexByte": data.Function{
+		Declaration: &data.Declaration{
+			Name: "LastIndexByte",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "c",
+					Type: data.ByteType,
+				},
+			},
+			Returns: []*data.Type{data.IntType},
+		},
+		Value:    strings.LastIndexByte,
 		IsNative: true,
 	},
 	"Left": data.Function{
@@ -488,6 +700,68 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		},
 		Value: split,
 	},
+	"SplitAfter": data.Function{
+		Declaration: &data.Declaration{
+			Name: "SplitAfter",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "separator",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.StringType)},
+		},
+		Value:    strings.SplitAfter,
+		IsNative: true,
+	},
+	"SplitAfterN": data.Function{
+		Declaration: &data.Declaration{
+			Name: "SplitAfterN",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "separator",
+					Type: data.StringType,
+				},
+				{
+					Name: "n",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.StringType)},
+		},
+		Value:    strings.SplitAfterN,
+		IsNative: true,
+	},
+	"SplitN": data.Function{
+		Declaration: &data.Declaration{
+			Name: "SplitN",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "separator",
+					Type: data.StringType,
+				},
+				{
+					Name: "n",
+					Type: data.IntType,
+				},
+			},
+			Returns: []*data.Type{data.ArrayType(data.StringType)},
+		},
+		Value:    strings.SplitN,
+		IsNative: true,
+	},
 	"String": data.Function{
 		Declaration: &data.Declaration{
 			Name:     "String",
@@ -559,6 +833,20 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		},
 		Value: evaluateTemplate,
 	},
+	"Title": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Title",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.Title, //nolint:staticcheck // deprecated in Go stdlib; kept for parity with the full strings API
+		IsNative: true,
+	},
 	"ToLower": data.Function{
 		Declaration: &data.Declaration{
 			Name: "ToLower",
@@ -587,6 +875,38 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 		Value:    strings.ToUpper,
 		IsNative: true,
 	},
+	"ToTitle": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ToTitle",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.ToTitle,
+		IsNative: true,
+	},
+	"ToValidUTF8": data.Function{
+		Declaration: &data.Declaration{
+			Name: "ToValidUTF8",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "replacement",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.ToValidUTF8,
+		IsNative: true,
+	},
 	"Tokenize": data.Function{
 		Declaration: &data.Declaration{
 			Name: "Tokenize",
@@ -599,6 +919,60 @@ var StringsPackage = data.NewPackageFromMap("strings", map[string]any{
 			Returns: []*data.Type{data.ArrayType(StringsTokenArrayType)},
 		},
 		Value: tokenize,
+	},
+	"Trim": data.Function{
+		Declaration: &data.Declaration{
+			Name: "Trim",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "cutset",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.Trim,
+		IsNative: true,
+	},
+	"TrimLeft": data.Function{
+		Declaration: &data.Declaration{
+			Name: "TrimLeft",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "cutset",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.TrimLeft,
+		IsNative: true,
+	},
+	"TrimRight": data.Function{
+		Declaration: &data.Declaration{
+			Name: "TrimRight",
+			Parameters: []data.Parameter{
+				{
+					Name: "text",
+					Type: data.StringType,
+				},
+				{
+					Name: "cutset",
+					Type: data.StringType,
+				},
+			},
+			Returns: []*data.Type{data.StringType},
+		},
+		Value:    strings.TrimRight,
+		IsNative: true,
 	},
 	"TrimPrefix": data.Function{
 		Declaration: &data.Declaration{

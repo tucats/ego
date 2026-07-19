@@ -99,6 +99,45 @@
     @assert strings.Repeat("abc", 0) == ""
 }
 
+@test "strings: Clone"
+{
+    a := "hello"
+    b := strings.Clone(a)
+    @assert b == "hello"
+    @assert strings.Clone("") == ""
+}
+
+@test "strings: Trim, TrimLeft, TrimRight"
+{
+    @assert strings.Trim("  hello  ", " ") == "hello"
+    @assert strings.Trim("xxhelloxx", "x") == "hello"
+    @assert strings.Trim("hello", "x") == "hello"
+    @assert strings.Trim("", "x") == ""
+
+    @assert strings.TrimLeft("  hello  ", " ") == "hello  "
+    @assert strings.TrimLeft("xxhello", "x") == "hello"
+    @assert strings.TrimLeft("hello", "x") == "hello"
+
+    @assert strings.TrimRight("  hello  ", " ") == "  hello"
+    @assert strings.TrimRight("helloxx", "x") == "hello"
+    @assert strings.TrimRight("hello", "x") == "hello"
+}
+
+@test "strings: Title and ToTitle"
+{
+    @assert strings.Title("hello world") == "Hello World"
+    @assert strings.Title("") == ""
+
+    @assert strings.ToTitle("hello") == "HELLO"
+    @assert strings.ToTitle("") == ""
+}
+
+@test "strings: ToValidUTF8"
+{
+    @assert strings.ToValidUTF8("hello", "?") == "hello"
+    @assert strings.ToValidUTF8("", "?") == ""
+}
+
 @test "strings: Camel"
 {
     // Camel converts to title case: first character uppercase, remainder lowercase.

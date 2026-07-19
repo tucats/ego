@@ -126,6 +126,73 @@
     @assert strings.EqualFold("sillyStuff", "sillystuff") == true
 }
 
+@test "strings: ContainsRune"
+{
+    @assert strings.ContainsRune("hello", 'e')
+    @assert strings.ContainsRune("hello", 'h')
+    @assert !strings.ContainsRune("hello", 'z')
+    @assert !strings.ContainsRune("", 'a')
+}
+
+@test "strings: HasPrefix and HasSuffix"
+{
+    @assert strings.HasPrefix("hello world", "hello")
+    @assert !strings.HasPrefix("hello world", "world")
+    @assert strings.HasPrefix("hello", "")
+    @assert strings.HasPrefix("", "")
+    @assert !strings.HasPrefix("", "x")
+
+    @assert strings.HasSuffix("hello world", "world")
+    @assert !strings.HasSuffix("hello world", "hello")
+    @assert strings.HasSuffix("hello", "")
+    @assert strings.HasSuffix("", "")
+    @assert !strings.HasSuffix("", "x")
+}
+
+@test "strings: IndexAny, IndexByte, IndexRune"
+{
+    @assert strings.IndexAny("hello", "aeiou") == 1
+    @assert strings.IndexAny("hello", "xyz") == (-1)
+    @assert strings.IndexAny("", "abc") == (-1)
+
+    @assert strings.IndexByte("hello", byte('l')) == 2
+    @assert strings.IndexByte("hello", byte('z')) == (-1)
+
+    @assert strings.IndexRune("hello", 'l') == 2
+    @assert strings.IndexRune("hello", 'z') == (-1)
+}
+
+@test "strings: LastIndex, LastIndexAny, LastIndexByte"
+{
+    @assert strings.LastIndex("go gopher", "go") == 3
+    @assert strings.LastIndex("hello", "xyz") == (-1)
+
+    @assert strings.LastIndexAny("hello", "aeiou") == 4
+    @assert strings.LastIndexAny("hello", "xyz") == (-1)
+
+    @assert strings.LastIndexByte("hello", byte('l')) == 3
+    @assert strings.LastIndexByte("hello", byte('z')) == (-1)
+}
+
+@test "strings: CutPrefix and CutSuffix"
+{
+    after, found := strings.CutPrefix("foobar", "foo")
+    @assert found == true
+    @assert after == "bar"
+
+    after2, found2 := strings.CutPrefix("foobar", "xyz")
+    @assert found2 == false
+    @assert after2 == "foobar"
+
+    before, found3 := strings.CutSuffix("foobar", "bar")
+    @assert found3 == true
+    @assert before == "foo"
+
+    before2, found4 := strings.CutSuffix("foobar", "xyz")
+    @assert found4 == false
+    @assert before2 == "foobar"
+}
+
 @test "strings: EqualFold returns a real bool (BUG-79)"
 {
     // Regression test: EqualFold's declared Returns was StringType even

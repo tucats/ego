@@ -56,6 +56,40 @@
     @assert len(a) == 0
 }
 
+@test "strings: SplitAfter"
+{
+    a := strings.SplitAfter("a,b,c", ",")
+    @assert len(a) == 3
+    @assert a[0] == "a,"
+    @assert a[1] == "b,"
+    @assert a[2] == "c"
+}
+
+@test "strings: SplitAfterN"
+{
+    a := strings.SplitAfterN("a,b,c", ",", 2)
+    @assert len(a) == 2
+    @assert a[0] == "a,"
+    @assert a[1] == "b,c"
+
+    b := strings.SplitAfterN("a,b,c", ",", -1)
+    @assert len(b) == 3
+}
+
+@test "strings: SplitN"
+{
+    a := strings.SplitN("a,b,c", ",", 2)
+    @assert len(a) == 2
+    @assert a[0] == "a"
+    @assert a[1] == "b,c"
+
+    b := strings.SplitN("a,b,c", ",", 0)
+    @assert len(b) == 0
+
+    c := strings.SplitN("a,b,c", ",", -1)
+    @assert len(c) == 3
+}
+
 @test "packages: strings.String, multiple int values"
 {
     a := strings.String(65, 66, 67)
