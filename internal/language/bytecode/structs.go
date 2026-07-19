@@ -625,12 +625,30 @@ func storeInMap(c *Context, a *data.Map, key any, value any) error {
 //  1. Bounds check: the subscript must be in the range [0, array.Len()).
 //     An out-of-range subscript returns ErrArrayIndex.
 //
-//  2. Type check (strict mode only): when the context enforces
-//     StrictTypeEnforcement, the existing element at that index is
-//     compared against the new value's Go type using reflect.TypeOf.
-//     If they differ and the existing element is non-nil, ErrInvalidVarType
-//     is returned.  The nil guard allows initial population of a newly
-//     allocated array (all elements start as nil) without a type error.
+//  2. Type check: for a typed (non-interface) array, the existing element at
+//     that index is compared against the new value's Go type using
+//     reflect.TypeOf. If they differ and the existing element is non-nil,
+//     the type-checking mode governs what happens next (mirrors the BUG-15
+//     fix applied to append(), see internal/builtins/append.go):
+//
+//     strict (0):  reject immediately with ErrInvalidVarType.
+//     relaxed (1): attempt to coerce the value to the existing element's
+//     type; return the coercion error if that fails.
+//     dynamic (2): same as relaxed -- coerce if possible, error if not.
+//
+//     An array declared as []interface{} imposes no element-type
+//     constraint and is excluded from this check entirely, in every mode --
+//     same as append().
+//
+//     fix BUG-46: dynamic mode previously widened the array's declared
+//     element type to []interface{} (via array.MakeAny()) instead of
+//     coercing or rejecting the value, silently lying about the array's
+//     type from that point on. Dynamic mode now behaves like relaxed mode,
+//     consistent with append() and map value assignment (data.Map.Set),
+//     both of which already reject a wrong-typed value in every mode.
+//
+//     The nil guard allows initial population of a newly allocated array
+//     (all elements start as nil) without a type error.
 //
 // On success the updated array is pushed onto the stack.
 func storeInArray(c *Context, array *data.Array, subscript int, v any) error {
@@ -639,26 +657,18 @@ func storeInArray(c *Context, array *data.Array, subscript int, v any) error {
 	}
 
 	vv, _ := array.Get(subscript)
-	if vv != nil && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
-		switch c.typeStrictness {
-		// Strict mode means this is an error
-		case defs.StrictTypeEnforcement:
+	if vv != nil && !array.Type().IsInterface() && (reflect.TypeOf(vv) != reflect.TypeOf(v)) {
+		if c.typeStrictness == defs.StrictTypeEnforcement {
 			return c.runtimeError(errors.ErrInvalidVarType)
+		}
 
-		// Relaxed mode means we will endeavor to translate the
-		// value to the array type on behalf of the user.
-		case defs.RelaxedTypeEnforcement:
-			var err error
+		// Relaxed and dynamic modes both attempt to coerce the value to
+		// the array's existing element type on the caller's behalf.
+		var err error
 
-			v, err = data.Coerce(v, vv)
-			if err != nil {
-				return err
-			}
-
-		// Dynamic mode just means we convert the destination array
-		// to []any
-		default:
-			array.MakeAny()
+		v, err = data.Coerce(v, vv)
+		if err != nil {
+			return c.runtimeError(err)
 		}
 	}
 

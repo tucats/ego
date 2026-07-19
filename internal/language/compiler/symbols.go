@@ -356,6 +356,23 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 		return nil
 	}
 
+	// Remember whether the caller itself already considered a not-yet-
+	// existing name acceptable -- i.e. this call came from
+	// ReferenceOrDefineSymbol, used when compiling a simple lvalue target
+	// that may turn out to be a fresh declaration ("neverReferenced := 1").
+	// That case must still register a genuine new "declared but unused"
+	// entry below. This is distinct from mustExist being forced to false
+	// just below for names the compiler can never see declared at all
+	// (generated names, invisible "__"-prefixed runtime globals, trial
+	// compilations, server mode) -- those are reads of something that
+	// already "exists" at runtime even though no compile-time scope ever
+	// declared it, and must be marked used immediately, not registered as
+	// a new unused declaration. Conflating the two (fixed as part of
+	// support for BUG-46 test) previously caused every simple ":=" target to
+	// silently skip unused-variable detection, because both paths funneled
+	// through the same "define it now" call.
+	allowImplicitDefine := !mustExist
+
 	// Generated variable names cannot be tracked this way.
 	if strings.HasPrefix(name, "$") || strings.HasPrefix(name, "__") || c.flags.trial {
 		mustExist = false
@@ -397,7 +414,7 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 	// If the symbol wasn't ever found, check the compilation symbol table and
 	// the root symbol table.
 	if !found {
-		err = c.resolveExternalSymbol(name, mustExist)
+		err = c.resolveExternalSymbol(name, mustExist, allowImplicitDefine)
 	}
 
 	return err
@@ -411,7 +428,16 @@ func (c *Compiler) validateSymbol(name string, mustExist bool) error {
 // ErrUnknownSymbol error is recorded for later reporting (deferred so
 // that forward references inside a package can be resolved by the time
 // the compilation unit closes).
-func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
+//
+// allowImplicitDefine distinguishes the two different reasons mustExist can
+// end up false here (see validateSymbol): a genuine implicit declaration
+// (ReferenceOrDefineSymbol, e.g. a simple ":=" lvalue target) versus a read
+// of a name the compiler can never see declared (generated names, invisible
+// "__"-prefixed runtime globals, trial compilations, server mode). Only the
+// former should register a fresh "declared but unused" entry; the latter
+// must be marked used immediately so a single, one-time read of such a name
+// is never flagged as an unused variable (BUG-46 test-writing fix).
+func (c *Compiler) resolveExternalSymbol(name string, mustExist bool, allowImplicitDefine bool) error {
 	var (
 		err error
 	)
@@ -456,15 +482,56 @@ func (c *Compiler) resolveExternalSymbol(name string, mustExist bool) error {
 		// Store this unknown symbol for later error reporting
 		c.symbolErrors[name] = errors.New(err)
 		err = nil
-	} else {
-		// If this isn't the usage where a test compilation of a fragment is being
-		// performed, then even though it doesn't exist, we still want to mark it as used.
-		if !c.flags.trial {
+	} else if !c.flags.trial {
+		// Not a test compilation of a fragment. Which of the two mustExist == false
+		// cases (see validateSymbol) applies decides what "not found anywhere" means:
+		if allowImplicitDefine {
+			// A genuine implicit declaration (ReferenceOrDefineSymbol) -- this call
+			// IS the declaration, so register it as a fresh, deliberately unused
+			// entry, exactly like an explicit ":=" would via DefineSymbol.
 			c.DefineSymbol(name)
+		} else {
+			// A read of a name the compiler can never see declared (generated
+			// names, invisible "__"-prefixed runtime globals, server mode). This
+			// call IS the read, so mark it used immediately rather than
+			// registering it as newly declared-and-unused.
+			c.markSymbolAsUsed(name)
 		}
 	}
 
 	return err
+}
+
+// markSymbolAsUsed records name in the innermost scope's usage map as
+// already used (a nil entry), so a lone reference to a name that is not
+// required to exist at compile time (mustExist == false in validateSymbol
+// -- e.g. a "__"-prefixed runtime global such as __type_checking, which is
+// injected directly into the symbol table by bytecode and never appears in
+// any compile-time scope) is not flagged as an unused variable.
+//
+// This must NOT go through DefineSymbol: DefineSymbol registers a name as
+// declared-but-unused, on the assumption a later ReferenceSymbol call for
+// the same name will clear it. Here there is no corresponding declaration
+// -- this call IS the read -- so a name referenced exactly once in the
+// entire compilation unit would otherwise be recorded as "created" by this
+// call and never subsequently "used", producing a spurious
+// ErrUnusedVariable at scope close. Directly writing a nil entry marks it
+// used from the start, matching what an ordinary ReferenceSymbol call does
+// when it finds an existing, already-used entry.
+func (c *Compiler) markSymbolAsUsed(name string) {
+	if name == "" || name == "_" || strings.HasPrefix(name, "$") {
+		return
+	}
+
+	if len(c.scopes) == 0 {
+		c.PushSymbolScope()
+	}
+
+	pos := len(c.scopes) - 1
+
+	if _, found := c.scopes[pos].usage[name]; !found {
+		c.scopes[pos].usage[name] = nil
+	}
 }
 
 // isPackageSymbol returns true if name resolves to a symbol inside the

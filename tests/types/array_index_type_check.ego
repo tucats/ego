@@ -1,0 +1,262 @@
+// Tests for BUG-46 fix: assigning to an element of a typed array must not
+// silently degrade the array's declared type to []interface{}.
+//
+// Before the fix, in dynamic mode (the default), a[i] = <wrong type value>
+// succeeded silently and converted the array's declared element type from,
+// e.g., []int to []interface{} -- exactly the same class of bug BUG-15 fixed
+// for append(). After the fix, dynamic mode behaves like relaxed mode: it
+// attempts to coerce the value to the array's existing element type, and
+// errors (leaving the array untouched) if no coercion is possible. Strict
+// mode already rejected any mismatch outright and is unaffected by this fix;
+// tests for it are included here for completeness/regression coverage.
+//
+// This file is run as part of the shared `ego test tests/` suite, which may
+// be invoked under any ambient type-checking mode (`--types strict|relaxed|
+// dynamic`, default dynamic). Tests whose outcome is genuinely mode-dependent
+// (a value that strict mode rejects outright but relaxed/dynamic can coerce)
+// branch on the runtime.Types() state (0 = strict, 1 = relaxed, 2 =
+// dynamic; set by the `@type` directive or the --types flag, see
+// staticTypingByteCode in internal/language/bytecode/types.go) instead of
+// assuming one fixed outcome. Tests whose value is not coercible under any
+// mode (e.g. a non-numeric string into []int) assert a single outcome, since
+// they must error identically regardless of the ambient mode.
+
+import "runtime"
+
+@test "types: array idx assign rejects bad type (dynamic)"
+{
+    // Exact reproducer from BUG-46: storing a non-numeric string into []int.
+    a := []int{1, 2, 3}
+    caught := false
+    try {
+        a[1] = "hello"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    // The array must remain unmodified, both in value and declared type.
+    @assert a[1] == 2
+    @assert string(typeof(a)) == "[]int"
+}
+
+@test "types: array idx assign string into int by mode"
+{
+    // Whether "42" -> int coerces or is rejected depends on the ambient
+    // type-checking mode (the runtime.Types() state  set by @type or the
+    // --types CLI flag: 0 = strict, 1 = relaxed, 2 = dynamic). Strict mode
+    // rejects any type mismatch outright; relaxed and dynamic both attempt
+    // coercion (and this particular value is coercible).
+    a := []int{1, 2, 3}
+    caught := false
+    try {
+        a[1] = "42"
+    } catch {
+        caught = true
+    }
+
+    if runtime.Types() == "strict" {
+        @assert caught
+        @assert a[1] == 2
+    } else {
+        @assert !caught
+        @assert a[1] == 42
+    }
+    @assert string(typeof(a)) == "[]int"
+}
+
+@test "types: array idx assign int into float64 by mode"
+{
+    f := []float64{1.1, 2.2, 3.3}
+    caught := false
+    try {
+        f[0] = 7
+    } catch {
+        caught = true
+    }
+
+    if runtime.Types() == "strict" {
+        @assert caught
+        @assert f[0] == 1.1
+    } else {
+        @assert !caught
+        @assert f[0] == 7.0
+    }
+    @assert string(typeof(f)) == "[]float64"
+}
+
+@test "types: array idx assign rejects string into float64"
+{
+    f := []float64{1.1, 2.2, 3.3}
+    caught := false
+    try {
+        f[0] = "oops"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert f[0] == 1.1
+    @assert string(typeof(f)) == "[]float64"
+}
+
+@test "types: array idx assign int into string by mode"
+{
+    s := []string{"a", "b", "c"}
+    caught := false
+    try {
+        s[0] = 42
+    } catch {
+        caught = true
+    }
+
+    if runtime.Types() == "strict" {
+        @assert caught
+        @assert s[0] == "a"
+    } else {
+        @assert !caught
+        @assert s[0] == "42"
+    }
+    @assert string(typeof(s)) == "[]string"
+}
+
+@test "types: array idx assign rejects array into bool"
+{
+    b := []bool{true, false, true}
+    caught := false
+    try {
+        b[0] = []int{1, 2}
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert b[0] == true
+    @assert string(typeof(b)) == "[]bool"
+}
+
+@test "types: array idx assign int into byte array by mode"
+{
+    // []byte arrays store values in a native []byte slice internally, a
+    // different code path from other typed arrays -- exercise it too.
+    b := []byte{10, 20, 30}
+    caught := false
+    try {
+        b[1] = 99
+    } catch {
+        caught = true
+    }
+
+    if runtime.Types() == "strict" {
+        @assert caught
+        @assert int(b[1]) == 20
+    } else {
+        @assert !caught
+        @assert int(b[1]) == 99
+    }
+    @assert string(typeof(b)) == "[]byte"
+}
+
+@test "types: array idx assign rejects bad type into byte array"
+{
+    b := []byte{10, 20, 30}
+    caught := false
+    try {
+        b[1] = "nope"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert int(b[1]) == 20
+    @assert string(typeof(b)) == "[]byte"
+}
+
+@test "types: array idx assign interface array accepts any type"
+{
+    // An untyped (interface) array imposes no element-type constraint, and
+    // is unaffected by the BUG-46 fix.
+    mixed := []interface{}{"x", 1, true}
+    mixed[0] = 3.14
+    mixed[1] = "now a string"
+    @assert mixed[0] == 3.14
+    @assert mixed[1] == "now a string"
+    @assert string(typeof(mixed)) == "[]interface{}"
+}
+
+@test "types: array idx assign strict mode rejects mismatch"
+{
+    @type strict
+
+    a := []int{1, 2, 3}
+    caught := false
+    try {
+        a[1] = "hello"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert a[1] == 2
+    @assert string(typeof(a)) == "[]int"
+
+    @type dynamic
+}
+
+@test "types: array idx assign strict mode allows exact type match"
+{
+    @type strict
+
+    a := []int{1, 2, 3}
+    a[1] = 99
+    @assert a[1] == 99
+    @assert string(typeof(a)) == "[]int"
+
+    @type dynamic
+}
+
+@test "types: array idx assign relaxed mode coerces numeric string"
+{
+    @type relaxed
+
+    a := []int{1, 2, 3}
+    a[1] = "42"
+    @assert a[1] == 42
+    @assert string(typeof(a)) == "[]int"
+
+    @type dynamic
+}
+
+@test "types: array idx assign relaxed mode rejects bad type"
+{
+    @type relaxed
+
+    a := []int{1, 2, 3}
+    caught := false
+    try {
+        a[1] = "hello"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert a[1] == 2
+    @assert string(typeof(a)) == "[]int"
+
+    @type dynamic
+}
+
+@test "types: array idx assign never widens to interface{}"
+{
+    // Regression guard for the core BUG-46 symptom: whether the assignment
+    // is accepted (via coercion) or rejected, the array's declared element
+    // type must never change to []interface{} as a side effect.
+    a := []int{1, 2, 3}
+
+    caught := false
+    try {
+        a[1] = "hello"
+    } catch {
+        caught = true
+    }
+    @assert caught
+    @assert string(typeof(a)) != "[]interface{}"
+
+    a[1] = 5 // still usable as a normal []int afterward
+    @assert a[1] == 5
+    @assert string(typeof(a)) == "[]int"
+}

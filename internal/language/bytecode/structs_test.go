@@ -749,6 +749,200 @@ func Test_storeInArray_StrictModeNilExistingAllowsWrite(t *testing.T) {
 	tc.assertNoError(err)
 }
 
+// ─── BUG-46 regression: dynamic/relaxed mode array element type integrity ───
+//
+// Before the fix, storeInArray's NoTypeEnforcement (dynamic) branch called
+// array.MakeAny() on any Go-type mismatch between the new value and the
+// existing element, silently widening the array's declared element type to
+// []interface{} instead of rejecting or coercing the value. This is
+// inconsistent with append() (BUG-15 fix) and data.Map.Set, both of which
+// reject a wrong-typed value in every type-checking mode. These tests drive
+// storeInArray directly, across several element types, in both the default
+// (dynamic) test context and an explicit relaxed-mode context, verifying
+// that:
+//
+//   - A value that cannot be coerced to the existing element type is
+//     rejected with an error, and the array's declared type is untouched.
+//   - A value that CAN be coerced (e.g. a numeric string into []int) is
+//     coerced and stored, again without changing the array's declared type.
+
+// Test_storeInArray_DynamicModeIncompatibleTypeRejected verifies that in the
+// default (dynamic/NoTypeEnforcement) test context, storing a value with no
+// valid coercion into a typed array returns an error rather than silently
+// widening the array to []interface{}. This is the exact reproducer
+// from BUG-46: []int, assigning a non-numeric string.
+func Test_storeInArray_DynamicModeIncompatibleTypeRejected(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t) // default typeStrictness is NoTypeEnforcement
+
+	err := storeInArray(tc.ctx, arr, 1, "hello")
+
+	tc.assertError(err, errors.ErrInvalidInteger)
+
+	if !arr.Type().IsType(data.IntType) {
+		t.Fatalf("array type changed to %v, want []int preserved after a rejected write", arr.Type())
+	}
+
+	v, _ := arr.Get(1)
+	if v != 2 {
+		t.Errorf("element 1 = %v, want unchanged 2 after a rejected write", v)
+	}
+}
+
+// Test_storeInArray_DynamicModeCoercesCompatibleValue verifies that a value
+// which CAN be coerced to the array's element type (a numeric string into
+// []int) is coerced and stored, and the array keeps its declared type.
+func Test_storeInArray_DynamicModeCoercesCompatibleValue(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t)
+
+	err := storeInArray(tc.ctx, arr, 1, "42")
+
+	tc.assertNoError(err)
+
+	if !arr.Type().IsType(data.IntType) {
+		t.Fatalf("array type changed to %v, want []int preserved after a coerced write", arr.Type())
+	}
+
+	v, _ := arr.Get(1)
+	if v != 42 {
+		t.Errorf("element 1 = %v, want coerced 42", v)
+	}
+}
+
+// Test_storeInArray_DynamicModeFloatArrayCoercesInt verifies the fix across a
+// different element type: an int value stored into a []float64 array is
+// coerced to float64 rather than degrading the array to []interface{}.
+func Test_storeInArray_DynamicModeFloatArrayCoercesInt(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.Float64Type, 1.5, 2.5, 3.5)
+	tc := newTestContext(t)
+
+	err := storeInArray(tc.ctx, arr, 0, 7)
+
+	tc.assertNoError(err)
+
+	if !arr.Type().IsType(data.Float64Type) {
+		t.Fatalf("array type changed to %v, want []float64 preserved", arr.Type())
+	}
+
+	v, _ := arr.Get(0)
+	if v != float64(7) {
+		t.Errorf("element 0 = %v (%T), want coerced float64(7)", v, v)
+	}
+}
+
+// Test_storeInArray_DynamicModeFloatArrayRejectsIncompatible verifies that a
+// []float64 array rejects a non-numeric string in dynamic mode instead of
+// widening to []interface{}.
+func Test_storeInArray_DynamicModeFloatArrayRejectsIncompatible(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.Float64Type, 1.5, 2.5, 3.5)
+	tc := newTestContext(t)
+
+	err := storeInArray(tc.ctx, arr, 0, "not a number")
+
+	tc.assertError(err, errors.ErrInvalidFloatValue)
+
+	if !arr.Type().IsType(data.Float64Type) {
+		t.Fatalf("array type changed to %v, want []float64 preserved after a rejected write", arr.Type())
+	}
+}
+
+// Test_storeInArray_DynamicModeBoolArrayRejectsIncompatible verifies the fix
+// for a []bool array: a value with no valid bool coercion is rejected rather
+// than silently widening the array's declared type.
+func Test_storeInArray_DynamicModeBoolArrayRejectsIncompatible(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.BoolType, true, false, true)
+	tc := newTestContext(t)
+
+	err := storeInArray(tc.ctx, arr, 0, []any{1, 2})
+
+	tc.assertError(err, errors.ErrInvalidBooleanValue)
+
+	if !arr.Type().IsType(data.BoolType) {
+		t.Fatalf("array type changed to %v, want []bool preserved after a rejected write", arr.Type())
+	}
+}
+
+// Test_storeInArray_DynamicModeStringArrayCoercesInt verifies that storing an
+// int into a []string array coerces the value to its string representation
+// instead of degrading the array's declared type.
+func Test_storeInArray_DynamicModeStringArrayCoercesInt(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.StringType, "a", "b", "c")
+	tc := newTestContext(t)
+
+	err := storeInArray(tc.ctx, arr, 0, 42)
+
+	tc.assertNoError(err)
+
+	if !arr.Type().IsType(data.StringType) {
+		t.Fatalf("array type changed to %v, want []string preserved", arr.Type())
+	}
+
+	v, _ := arr.Get(0)
+	if v != "42" {
+		t.Errorf("element 0 = %v, want coerced \"42\"", v)
+	}
+}
+
+// Test_storeInArray_RelaxedModeIncompatibleTypeRejected verifies that
+// explicit relaxed mode behaves the same as dynamic mode for an
+// uncoercible value: reject with an error, array type preserved. Relaxed
+// mode already had this behavior before the BUG-46 fix; this test guards
+// against a regression now that dynamic mode shares the same code path.
+func Test_storeInArray_RelaxedModeIncompatibleTypeRejected(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+
+	err := storeInArray(tc.ctx, arr, 1, "hello")
+
+	tc.assertError(err, errors.ErrInvalidInteger)
+
+	if !arr.Type().IsType(data.IntType) {
+		t.Fatalf("array type changed to %v, want []int preserved after a rejected write", arr.Type())
+	}
+}
+
+// Test_storeInArray_RelaxedModeCoercesCompatibleValue mirrors the dynamic
+// mode coercion test under explicit relaxed mode.
+func Test_storeInArray_RelaxedModeCoercesCompatibleValue(t *testing.T) {
+	arr := data.NewArrayFromInterfaces(data.IntType, 1, 2, 3)
+	tc := newTestContext(t).withTypeStrictness(defs.RelaxedTypeEnforcement)
+
+	err := storeInArray(tc.ctx, arr, 1, "42")
+
+	tc.assertNoError(err)
+
+	v, _ := arr.Get(1)
+	if v != 42 {
+		t.Errorf("element 1 = %v, want coerced 42", v)
+	}
+}
+
+// Test_storeInArray_InterfaceArrayAcceptsAnyType verifies that a []interface{}
+// array is excluded from the element-type check entirely (same exclusion
+// append() applies, see internal/builtins/append.go), in every type-checking
+// mode: storing a value of a different Go type than what is currently at
+// that index must succeed without any coercion attempt or error.
+func Test_storeInArray_InterfaceArrayAcceptsAnyType(t *testing.T) {
+	for _, mode := range []int{defs.StrictTypeEnforcement, defs.RelaxedTypeEnforcement, defs.NoTypeEnforcement} {
+		arr := data.NewArrayFromInterfaces(data.InterfaceType, "x", 1, true)
+		tc := newTestContext(t).withTypeStrictness(mode)
+
+		err := storeInArray(tc.ctx, arr, 1, "now a string")
+
+		tc.assertNoError(err)
+
+		v, _ := arr.Get(1)
+		if v != "now a string" {
+			t.Errorf("mode %d: element 1 = %v, want \"now a string\" stored verbatim", mode, v)
+		}
+
+		if !arr.Type().IsInterface() {
+			t.Errorf("mode %d: array type changed to %v, want []interface{} preserved", mode, arr.Type())
+		}
+	}
+}
+
 // ─── Section 5: storeMethodInType ────────────────────────────────────────────
 
 // Test_storeMethodInType_WithBytecode verifies that a *ByteCode value with a
