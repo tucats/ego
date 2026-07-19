@@ -134,7 +134,7 @@
         if true {
             x = 2
         }
-        fmt.Println(x)
+        @assert x== 2
     } catch(e) {
         @fail "unexpected compile error: " + e.Error()
     }

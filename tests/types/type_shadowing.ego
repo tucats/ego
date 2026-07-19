@@ -195,7 +195,7 @@
 
     @compile block typeShadowing=false {
         x := 5
-        fmt.Println(x)
+        _ = x
     } catch {
         failed = true
     }
@@ -209,7 +209,8 @@
 
     @compile block typeShadowing=true {
         int := 5
-        fmt.Println(int)
+        y := int * 10
+        @assert y == 50
     } catch {
         failed = true
     }
@@ -227,7 +228,7 @@
 
     @compile block {
         int := 5
-        fmt.Println(int)
+        @assert int == 5
     } catch {
         failed = true
     }
