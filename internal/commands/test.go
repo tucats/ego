@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/compiler"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/runtime/io"
@@ -66,6 +67,7 @@ func TestAction(c *cli.Context) error {
 	settings.SetDefault(defs.SandboxPathSetting, "")
 	symbols.RootSymbolTable.SetAlways(defs.ExtensionsVariable, true)
 	symbols.RootSymbolTable.SetAlways("_testcount", 0)
+	symbols.RootSymbolTable.SetAlways("_testfailcount", 0)
 
 	exitValue := 0
 	startTime := time.Now()
@@ -198,26 +200,66 @@ func TestAction(c *cli.Context) error {
 					msg := fmt.Sprintf("%s: %v\n", i18n.L("Error"), err.Error())
 
 					os.Stderr.Write([]byte(msg))
+				} else if failCount, found := symbols.RootSymbolTable.Get("_testfailcount"); found {
+					// A compile-time or runtime failure inside any single
+					// @test no longer aborts the run (see compileTestBody in
+					// internal/language/compiler/testing.go) -- each test
+					// reports its own FAIL and execution continues with the
+					// rest of the file. That means ctx.Run() returning nil no
+					// longer implies every test passed, so the accumulated
+					// fail count has to be checked explicitly to still fail
+					// the overall "ego test" invocation when it should.
+					if n, _ := data.Int(failCount); n > 0 {
+						exitValue = 2
+					}
 				}
 			}
 		}
+
+		// Print the summary before possibly returning early below, so a run
+		// with failed (but not aborted) tests still reports the full
+		// picture -- how many tests ran and how many of those failed --
+		// rather than being silently replaced by just the terminating
+		// error. A hard abort (a compile error outside of any @test, or an
+		// uncaught runtime error that wasn't a test failure at all) still
+		// preempts this, same as always, since exitValue's other sources
+		// (1 and the non-fail-count path to 2) mean the run never made it
+		// this far into the file.
+		iterations := ""
+		if repeatCount > 1 {
+			iterations = fmt.Sprintf(" over %d iterations", repeatCount)
+		}
+
+		// "_testcount" only counts PASSED tests and "_testfailcount" only
+		// counts FAILED ones (see emitTestPass/emitTestFail in
+		// internal/language/compiler/testing.go), so the total the summary
+		// reports is their sum, not "_testcount" alone.
+		passed := 0
+		if testCount, found := symbols.RootSymbolTable.Get("_testcount"); found {
+			passed, _ = data.Int(testCount)
+		}
+
+		failed := 0
+		if failCount, found := symbols.RootSymbolTable.Get("_testfailcount"); found {
+			failed, _ = data.Int(failCount)
+		}
+
+		countString := ""
+		if passed+failed > 0 {
+			countString = fmt.Sprintf(" a total of %d", passed+failed)
+		}
+
+		failString := ""
+		if failed > 0 {
+			failString = fmt.Sprintf(", %d failed", failed)
+		}
+
+		fmt.Printf("TEST: Completed%s tests%s%s in %s\n", countString, failString, iterations, time.Since(startTime).String())
 
 		if exitValue > 0 {
 			return errors.ErrTerminatedWithErrors
 		}
 	}
-
-	iterations := ""
-	if repeatCount > 1 {
-		iterations = fmt.Sprintf(" over %d iterations", repeatCount)
-	}
-
-	countString := ""
-	if testCount, found := symbols.RootSymbolTable.Get("_testcount"); found {
-		countString = fmt.Sprintf(" a total of %d", testCount)
-	}
-
-	fmt.Printf("TEST: Completed%s tests%s in %s\n", countString, iterations, time.Since(startTime).String())
 
 	return nil
 }
@@ -358,9 +400,10 @@ func readTestFile(name string) (string, error) {
 		}
 	}
 
-	// Convert []byte to string and add a trailing @pass directive. If there is
-	// already one in the file, this is ignored.
-	text := string(content) + "\n@pass\n"
-
-	return text, nil
+	// Every @test now closes itself out (PASS or FAIL) as soon as its own
+	// body finishes -- see compileTestBody in
+	// internal/language/compiler/testing.go -- so there is no longer a need
+	// to append a synthetic trailing @pass to close out the last test in
+	// the file (the @pass directive itself has been removed).
+	return string(content), nil
 }

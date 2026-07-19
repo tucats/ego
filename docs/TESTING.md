@@ -114,6 +114,19 @@ fail.
 A single file can contain more than one `@test`; each test gets it's own name and is
 reported to the console as a new test execution.
 
+Everything from a `@test` directive up to the next `@test` (or the end of the file) is
+that test's own body, and is compiled and guarded independently of every other test in
+the file. If that body fails to compile, or raises an uncaught runtime error (most
+commonly a failed `@assert`), the test is reported as failed -- a `(FAIL)` status line
+in the same format as a passing test's `(PASS)` line, immediately followed by the
+underlying error -- and `ego test` moves on to compile and run the rest of the file's
+tests normally. Neither kind of failure aborts the whole file the way it used to; a
+single broken or failing test no longer hides whether any of the others in the same
+file are passing. (The one deliberate exception is `@fail`, described below, which is
+still an unconditional, unrecoverable stop by design.) A test that reaches its own end
+without error is automatically reported as passed -- there is no directive needed to
+mark it so; see `@pass`'s removal, noted at the end of this section.
+
 ### @assert
 
 The `@assert` accepts a single expression that must be resolvable to a boolean value:
@@ -123,8 +136,9 @@ The `@assert` accepts a single expression that must be resolvable to a boolean v
 ```
 
 If the expression resolves to `true`, no error is flagged and execution continues.
-If the expression resolves to `false`, the test stops executing and the source text of
-the expression itself is printed as the error message on the console.
+If the expression resolves to `false`, the CURRENT test stops executing, is reported
+as failed with the source text of the expression itself as the error message, and
+`ego test` continues on to the next test in the file (see `@test` above).
 
 ### @capture
 
@@ -226,7 +240,7 @@ independently of the context's own sandboxed-IO flag. See
 `tests/os/sandbox_escape.ego` for a complete, self-cleaning example.
 
 `@sandbox` may only appear when the compiler is running in test mode — the
-same restriction as `@test`/`@assert`/`@pass`. Ordinary compiled Ego source,
+same restriction as `@test`/`@assert`. Ordinary compiled Ego source,
 including untrusted code submitted to the dashboard's sandboxed "run code"
 handler, has no way to reach the underlying `Sandbox` opcode, so it cannot use
 this directive to lift its own sandbox restrictions or repoint the sandbox
@@ -246,11 +260,17 @@ executed.
 ### @fail
 
 The `@fail` is used to unilaterally fail the test. This is a fatal error; i.e. the
-remainder of the test does not execute and an error is reported. The `@fail`
-directive cannot be caught in a `try...catch...` block. (If you need to generate
-a non-fatal error message that can be caught, use `@error`) There is no conditional expression.
-This is a simpler version of using `@assert fail ...`. This is most commonly used in
-tests that are validating flow-of-control, such as:
+remainder of the test does not execute and an error is reported. Unlike a failed
+`@assert`, `@fail` is deliberately unconditional and unrecoverable: it cannot be caught
+by a `try...catch...` block, and -- unique among the ways a test can fail -- it aborts
+the ENTIRE remaining test run, not just the current test (`@test`'s own per-test
+compile/runtime guard, described above, cannot catch it either; `@fail` flushes that
+guard's `try`/`catch` state before signaling, specifically so it can't be). Reach for
+`@fail` only when reaching a given line is itself the bug and there is no sense in
+letting anything else run afterward. (If you need to generate a non-fatal error message
+that can be caught, use `@error`.) There is no conditional expression. This is a
+simpler version of using `@assert fail ...`. This is most commonly used in tests that
+are validating flow-of-control, such as:
 
 ```go
     count := 5
@@ -261,10 +281,16 @@ tests that are validating flow-of-control, such as:
     }
 ```
 
-### @pass
+### @pass (removed)
 
-This should be the last directive or statement in the test. If the test has not incurred
-any errors at this point, a PASS message is added to the output console.
+`@pass` used to be required as the last statement of a test to record a passing result,
+and `ego test` used to silently append an implicit trailing `@pass` to every file so the
+last test in it (which has no following `@test` to trigger a close) still got reported.
+Both were a legacy of an earlier, more primitive implementation. Every test now closes
+and reports itself -- PASS or FAIL -- automatically as soon as its own body finishes
+(see `@test` above), so `@pass` is never required and the directive has been removed
+entirely. Existing test files that still called it explicitly have had those calls
+deleted; there is no replacement directive to reach for.
 
 ---
 
@@ -320,22 +346,32 @@ is no enclosing function frame. This means:
 
 **Output capture.** This is driven per-test, not once for the whole file. Each
 `@test "..."` directive compiles to code that turns capture on (the `Console`
-opcode, backed by `ctx.EnableConsoleOutput(false)`) and prints a "TEST: ..."
-header into the resulting buffer; the implicit or explicit `@pass` that ends the
-test appends the "(PASS)"/timing text to that same buffer and then flushes the
-whole thing to the console in one shot (the `Say` opcode) before resetting
-output back to the real console. So everything a single test prints —
-its header, whatever the test body itself printed, and its result line — is
-gathered into one buffer and shown as one contiguous block, which is why
-`ego test`'s output shows each test's own prints immediately above its
-"(PASS)" line rather than scattered across the run. Code that writes directly
-to `os.Stderr` or uses `ui.Log` is not affected. See also the `@capture`
-directive above, which uses a related but independent mechanism to redirect
-a specific block's output into a variable instead of the console.
+opcode, backed by `ctx.EnableConsoleOutput(false)`) and starts the elapsed-time
+clock, but prints nothing yet. Whatever the test body itself prints accumulates
+in that same buffer as it runs. Only once the test's outcome is known -- it
+reached its own end without error, or it failed to compile or raised an
+uncaught runtime error -- does the compiler-generated code print the complete
+"TEST: <description> ... (PASS)" or "TEST: <description> ... (FAIL)" line and
+flush the whole buffer to the console in one shot (the `Say` opcode), before
+resetting output back to the real console. So everything a single test
+prints — whatever the test body itself printed, followed by its one summary
+line — is gathered into one buffer and shown as one contiguous block, with
+the summary line always coming last and never interrupted partway through by
+the test's own output. A failed test's underlying error is printed as a
+separate, immediately-following line once console output is back to normal.
+Code that writes directly to `os.Stderr` or uses `ui.Log` is not affected. See
+also the `@capture` directive above, which uses a related but independent
+mechanism to redirect a specific block's output into a variable instead of
+the console.
 
-**Error handling.** Errors returned by the bytecode run loop cause both
-environments to terminate with an error message. In `ego test` the error is
-prefixed with the test name so it is clear which test failed.
+**Error handling.** In `ego run`, an error returned by the bytecode run loop
+terminates the program with an error message. In `ego test`, each `@test`
+guards its own body in a compile-time and runtime try/catch (see `@test`
+above): a compile error or an uncaught runtime error is caught, reported
+against that specific test's own `(FAIL)` line, and execution moves on to the
+next test. Nothing in a normal test file terminates the whole run early
+anymore except `@fail`, which is deliberately excluded from that guard (see
+`@fail` above).
 
 **Symbol tables.** The `T` variable (the testing object) isn't pre-populated by
 the Go-level test runner itself — it's created at runtime by the compiled

@@ -77,7 +77,7 @@ ego test tests/flow/      # subset by subdirectory
 ego test path/to/file.ego # single file
 ```
 
-Tests use directives `@test`, `@assert`, `@fail`, `@error`, `@pass`. See `tests/README.md` for the full spec.
+Tests use directives `@test`, `@assert`, `@fail`, `@error`. See `tests/README.md` for the full spec.
 
 ### Timeout guard for goroutine tests
 
@@ -676,6 +676,21 @@ ego test tests/math/trig.ego  # single file
 
 A single file may contain multiple `@test` blocks. Variables declared outside a `{}` block are shared across blocks in the same file — use unique names to avoid collisions.
 
+### Each `@test` is independently guarded — a broken test doesn't hide the others
+
+Everything from one `@test` directive up to the next (or EOF) is compiled and run in an
+isolated clone of the compiler, wrapped in a try/catch (see `compileTestBody` in
+`internal/language/compiler/testing.go`). A compile error or an uncaught runtime error
+(most commonly a failed `@assert`) inside one test is caught, reported as that test's
+own `(FAIL)` line followed by the underlying error, and `ego test` moves on to compile
+and run the rest of the file's tests normally — neither kind of failure aborts the
+whole file. `@fail` is the one deliberate exception: it flushes the try/catch stack
+before signaling, specifically so it remains an unconditional, unrecoverable stop for
+the entire run (use it only for flow-of-control checks where reaching that line is
+itself the bug). The `@pass` directive has been removed entirely — every test now
+closes and reports itself automatically as soon as its own body finishes, so there is
+nothing to call to mark success.
+
 ### Auto-imported packages — do not add explicit imports in `tests/*.ego`
 
 `ego test` (`internal/commands/test.go`) always calls `comp.AutoImport(true, symbolTable)` — the "import all" variant — for every test compilation, regardless of the `ego.compiler.import` setting (which defaults to `false` and only affects `ego run`). This means `.ego` files under `tests/` can reference the following packages with **no `import` statement**:
@@ -693,11 +708,10 @@ This does **not** apply to library source under `lib/packages/*.ego` (e.g. `lib/
 
 | Directive | Behavior |
 | --------- | -------- |
-| `@test "name"` | Starts a named test; creates the `testing` package |
-| `@assert expr` | Fails (fatally) if `expr` is not `true`; uses expression source text as the error message |
-| `@fail "msg"` | Unconditionally fails (fatal, not catchable) |
+| `@test "name"` | Starts a named test; creates the `testing` package. Everything up to the next `@test` (or EOF) is that test's own body, compiled and run under its own compile-time and runtime guard — see below |
+| `@assert expr` | Fails the current test if `expr` is not `true`; uses expression source text as the error message. Reported as that test's own `(FAIL)`; does not abort the rest of the file |
+| `@fail "msg"` | Unconditionally fails the current test AND aborts the entire remaining test run (fatal, not catchable — deliberately excluded from `@test`'s own guard) |
 | `@error "msg"` | Generates a non-fatal runtime error (catchable in `try/catch`) |
-| `@pass` | Records a pass if no errors have occurred |
 | `@optimizer on` | Enables the optimizer for subsequently compiled code |
 | `@optimizer off` | Disables the optimizer for subsequently compiled code |
 | `@compile [flags] { code } [catch [(e)] {...}]` | Compiles `code` in an isolated sub-compiler; see below |

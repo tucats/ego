@@ -55,8 +55,9 @@ func logByteCode(c *Context, i any) error {
 // of NewLine to end buffered output, but the output is only displayed if we are
 // not in --quiet mode.
 //
-// This is used by the code generated from @test and @pass, for example, to allow
-// test logging to be quiet if necessary.
+// This is used by the code generated for @test's own PASS/FAIL close-out
+// (see emitTestPass/emitTestFail in internal/language/compiler/testing.go),
+// for example, to allow test logging to be quiet if necessary.
 func sayByteCode(c *Context, i any) error {
 	msg := ""
 	if c.captureBuffer != nil {

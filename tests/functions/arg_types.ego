@@ -61,7 +61,6 @@
     }
     _ = result
     _ = err
-    @pass
 }
 
 @test "functions: int times string is an error"

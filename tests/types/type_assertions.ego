@@ -89,7 +89,6 @@
         @fail "type assertion should have raised an error, got: " + string(s)
     } catch {
         // Error is expected and correct; no need to inspect the error value.
-        @pass
     }
 }
 

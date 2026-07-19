@@ -94,7 +94,6 @@ language and tool set patterned off of the _Go_ programming language.
    2. [The `@test` directive](#at-test)
    3. [The `@assert` directive](#at-assert)
    4. [The `@fail` directive](#at-fail)
-   5. [The `@pass` directive](#at-pass)
 
 &nbsp;
 &nbsp;

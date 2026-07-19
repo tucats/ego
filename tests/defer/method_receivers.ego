@@ -45,7 +45,6 @@
     }()
 
     wg.Wait()
-    @pass
 }
 
 @test "defer: sync.Mutex via defer mu.Unlock()"
@@ -60,7 +59,6 @@
 
     // If useMutex returns without deadlock, the deferred Unlock worked.
     useMutex()
-    @pass
 }
 
 @test "defer: BUG-43, receiver is frozen at defer-statement time"

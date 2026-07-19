@@ -676,7 +676,6 @@ names are treated as user-defined macro invocations (see [Macros](#13-macros)).
 | `@optimizer` | `on \| off \| always` | Enable/disable the bytecode optimizer for subsequently compiled code — see [12.3](#123-optimizer) |
 | `@package` | `IDENT { "," IDENT \| "*" }` | Dump package symbol information |
 | `@packages` | — | Dump all loaded package names |
-| `@pass` | — | Record a test-pass result |
 | `@profile` | `start\|enable\|on \| stop\|disable\|off \| report \| dump\|print` | Control the runtime profiler |
 | `@sandbox` | `( true \| false ) [ "path=" expression ]` | Set the filesystem sandbox (test mode only) — see [12.4](#124-sandbox) |
 | `@status` | `expression` | Set the HTTP response status code |

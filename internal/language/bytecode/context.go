@@ -180,9 +180,9 @@ type Context struct {
 	// what it was before, whatever that happened to be.
 	//
 	// This is a completely separate mechanism from captureBuffer/
-	// EnableConsoleOutput above. Those implement a single on/off switch used
-	// by the "@test"/"@pass" directives to gather up everything a single
-	// test prints and show it as one tidy line; that switch has no memory of
+	// EnableConsoleOutput above. Those implement a single on/off switch the
+	// "@test" directive uses to gather up everything a single test prints
+	// and show it as one tidy line; that switch has no memory of
 	// "what it was before" (turning it back on always means "go back to the
 	// real terminal", full stop). If "@capture" reused that same switch, an
 	// "@capture" block used INSIDE an "@test" (the whole point of this

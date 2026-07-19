@@ -42,7 +42,6 @@ const (
 	OptimizerDirective     = "optimizer"
 	PackageDirective       = "package"
 	PackagesDirective      = "packages"
-	PassDirective          = "pass"
 	ProfileDirective       = "profile"
 	SandboxDirective       = "sandbox"
 	StatusDirective        = "status"
@@ -146,9 +145,6 @@ func (c *Compiler) compileDirective() error {
 
 	case PackagesDirective:
 		return c.packagesDirective(false)
-
-	case PassDirective:
-		return c.TestPass()
 
 	case ProfileDirective:
 		return c.profileDirective()
@@ -640,7 +636,7 @@ func (c *Compiler) extensionsDirective() error {
 // ego.runtime.sandbox.path profile setting.
 //
 // It may only appear when the compiler is running in test mode (the same
-// restriction and rationale as testDirective/Assert/TestPass): ordinary
+// restriction and rationale as testDirective/Assert): ordinary
 // compiled Ego source -- including untrusted code submitted to the
 // dashboard's sandboxed "run code" handler -- has no way to reach the
 // Sandbox opcode this emits, so it cannot use this directive to lift its

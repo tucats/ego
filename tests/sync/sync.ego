@@ -30,7 +30,6 @@ import "errors"
     mu.Lock()
     mu.Unlock()
 
-    @pass
 }
 
 @test "sync: Mutex TryLock reports availability correctly"
@@ -85,7 +84,6 @@ import "errors"
     wg.Done()
     wg.Wait()
 
-    @pass
 }
 
 @test "sync: WaitGroup extra Done is catchable, not a crash"
@@ -128,7 +126,6 @@ import "errors"
     // ...and unlocking mu1 must still work normally.
     mu1.Unlock()
 
-    @pass
 }
 
 @test "sync: RWMutex normal write lock and unlock cycle"
@@ -141,7 +138,6 @@ import "errors"
     mu.Lock()
     mu.Unlock()
 
-    @pass
 }
 
 @test "sync: RWMutex supports multiple concurrent readers"
@@ -156,7 +152,6 @@ import "errors"
     mu.RUnlock()
     mu.RUnlock()
 
-    @pass
 }
 
 @test "sync: RWMutex TryLock and TryRLock report availability correctly"
@@ -273,5 +268,4 @@ import "errors"
     // ...and unlocking mu1 must still work normally.
     mu1.Unlock()
 
-    @pass
 }

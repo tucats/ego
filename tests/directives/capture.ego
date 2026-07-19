@@ -58,8 +58,8 @@
 @test "capture: output before, inside, and after @capture all land correctly"
 {
     // This is the single most important regression test for @capture: it
-    // proves the directive composes correctly with the "@test"/"@pass"
-    // machinery's own output-capturing (every @test block already gathers
+    // proves the directive composes correctly with @test's own
+    // output-capturing machinery (every @test block already gathers
     // up everything it prints into one "TEST: ... (PASS)" line). Before
     // this test was written, an earlier version of the implementation
     // could have left @test's own capture buffer corrupted after an
