@@ -93,6 +93,17 @@ type flagSet struct {
 	typeShadowing         bool // True if a variable may shadow a built-in type name (BUG-75)
 	registers             bool // True if function-local variables may be resolved to compile-time slots (docs/SLOTS.md)
 	suppressRegisterDecl  bool // True while parsing a for-loop range index/value target, which must stay name-based (docs/SLOTS.md)
+
+	// pendingReceiverCall is set to true immediately after emitting a SetThis
+	// instruction for an upcoming "X.Y(...)" call, and is read and reset back
+	// to false by the very next functionCall() invocation (which, per the
+	// grammar in reference(), always immediately follows). This lets
+	// functionCall() tell the runtime, via the Call instruction's operand,
+	// whether this specific call was compiled from dot-call syntax (so a
+	// SetThis really did push a pending receiver value that must be consumed)
+	// or a plain call (so nothing was pushed and nothing should be popped).
+	// See CALL-11 in docs/ISSUES.md.
+	pendingReceiverCall bool
 }
 
 type importElement struct {

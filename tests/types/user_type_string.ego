@@ -28,3 +28,47 @@
 
    @assert fmt.Sprint(x) == "False"
 }
+
+@test "types: String() nested inside a receiver call"
+{
+   // Regression test tying together two fixes from the same CALL-11
+   // investigation (docs/ISSUES.md):
+   //
+   //  1. formatUsingString (internal/runtime/fmt/print.go) invokes a
+   //     type's String() method by directly constructing and running a
+   //     *bytecode.Context, bypassing the normal callByteCode dispatch
+   //     entirely. It has no Call instruction of its own for callByteCode to
+   //     gate a receiver-stack pop on, so it must stage the receiver via
+   //     Context.SetPendingReceiver directly (see that method's doc
+   //     comment) rather than relying on GetThis popping the receiver stack
+   //     the old way.
+   //
+   //  2. That fmt.Sprint(x) call is itself nested inside the argument list
+   //     of an unrelated receiver method call (f.WriteString), which is
+   //     exactly CALL-11's trigger shape. Before both fixes landed, this
+   //     combination either corrupted WriteString's receiver or failed to
+   //     resolve String()'s own receiver ("f", "unknown identifier").
+   type Foo int
+
+   func (f Foo) String() string {
+      if f == 0 {
+         return "False"
+      }
+
+      return "True"
+   }
+
+   var x Foo
+   x = Foo(0)
+
+   f, err := os.Create("call11-string-" + uuid.New().String() + ".txt")
+   @assert err == nil
+
+   n, err2 := f.WriteString("value=" + fmt.Sprint(x))
+   @assert err2 == nil
+   @assert n > 6
+
+   name := f.Name()
+   @assert f.Close() == nil
+   @assert os.Remove(name) == nil
+}

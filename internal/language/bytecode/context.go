@@ -136,6 +136,25 @@ type Context struct {
 	// the current this value is popped from the stack.
 	receiverStack []this
 
+	// pendingReceiver/pendingReceiverOK stage the receiver value (if any) that
+	// callByteCode already popped off receiverStack for the *ByteCode call
+	// currently being set up by callBytecodeFunction. callBytecodeFunction
+	// unconditionally overwrites both fields on every invocation -- whether or
+	// not this particular call had a receiver -- so no staleness can ever
+	// survive from one call to the next. The GetThis opcode, if compiled into
+	// the callee's own prologue (i.e. the callee declared a receiver), reads
+	// and consumes these fields as literally its first action, before the run
+	// loop can execute any other instruction (including a nested call) that
+	// might otherwise overwrite them again. If the callee has no GetThis at
+	// all (a plain function called via dot-syntax, e.g. io.DirList(...)),
+	// these fields are simply left unread and are overwritten by the next
+	// call -- an implicit, zero-effort discard. This replaces GetThis's old
+	// direct receiverStack pop, which had no way to tell "no receiver was
+	// ever pushed for me" apart from "someone else's receiver leaked here"
+	// (see CALL-11 in docs/ISSUES.md).
+	pendingReceiver   any
+	pendingReceiverOK bool
+
 	// This manages the list of defer statements. Each defer statement generates code
 	// and context information for it's execution. Defer operations are executed in the
 	// order they were added, and the execution of the defer statements is performed

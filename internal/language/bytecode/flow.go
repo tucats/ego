@@ -7,12 +7,12 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/util/profiling"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/util/profiling"
 )
 
 /*

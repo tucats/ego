@@ -5,6 +5,13 @@ package bytecode
 //
 //   getThisByteCode — GetThis opcode
 //
+// getThisByteCode reads Context.pendingReceiver/pendingReceiverOK, which
+// callBytecodeFunction stages for it (see CALL-11 in docs/ISSUES.md) --
+// these tests set those fields directly rather than going through
+// callBytecodeFunction, to isolate GetThis's own dereference/boxing logic
+// from the call-setup machinery tested separately in
+// callBytecodeFunction_test.go.
+//
 // # BUG-64 (docs/ISSUES.md)
 //
 // getThisByteCode auto-dereferences an Ego pointer (*any) receiver so field
@@ -36,7 +43,7 @@ func Test_getThisByteCode_PointerReceiverExplicitPointer(t *testing.T) {
 	ptr := &boxed
 
 	tc := newTestContext(t)
-	tc.ctx.PushThis("b", ptr)
+	tc.ctx.pendingReceiver, tc.ctx.pendingReceiverOK = ptr, true
 
 	err := getThisByteCode(tc.ctx, []any{"b", false})
 
@@ -67,7 +74,7 @@ func Test_getThisByteCode_PointerReceiverAutoAddress(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.PushThis("b", s) // no *any wrapper - the auto-address case
+	tc.ctx.pendingReceiver, tc.ctx.pendingReceiverOK = s, true // no *any wrapper - the auto-address case
 
 	err := getThisByteCode(tc.ctx, []any{"b", false})
 
@@ -96,7 +103,7 @@ func Test_getThisByteCode_ValueReceiverExplicitPointer(t *testing.T) {
 	ptr := &boxed
 
 	tc := newTestContext(t)
-	tc.ctx.PushThis("c", ptr)
+	tc.ctx.pendingReceiver, tc.ctx.pendingReceiverOK = ptr, true
 
 	err := getThisByteCode(tc.ctx, []any{"c", true})
 
@@ -122,7 +129,7 @@ func Test_getThisByteCode_ValueReceiverAutoAddress(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.PushThis("c", s)
+	tc.ctx.pendingReceiver, tc.ctx.pendingReceiverOK = s, true
 
 	err := getThisByteCode(tc.ctx, []any{"c", true})
 
@@ -147,7 +154,7 @@ func Test_getThisByteCode_PlainNameOperand(t *testing.T) {
 	s := data.NewStructFromMap(map[string]any{"n": 1})
 
 	tc := newTestContext(t)
-	tc.ctx.PushThis("b", s)
+	tc.ctx.pendingReceiver, tc.ctx.pendingReceiverOK = s, true
 
 	err := getThisByteCode(tc.ctx, "b")
 
@@ -164,7 +171,8 @@ func Test_getThisByteCode_PlainNameOperand(t *testing.T) {
 }
 
 // Test_getThisByteCode_EmptyReceiverStack verifies that GetThis is a no-op
-// (no error, no symbol created) when the receiver stack is empty.
+// (no error, no symbol created) when no receiver is pending
+// (pendingReceiverOK == false, its zero value).
 func Test_getThisByteCode_EmptyReceiverStack(t *testing.T) {
 	tc := newTestContext(t)
 

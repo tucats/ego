@@ -12,7 +12,16 @@ import (
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
-func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.List) (any, error), savedDefinition *data.Function, fullScope bool, args []any) error {
+// receiverValue/receiverOK are the value (if any) callByteCode already popped
+// from the receiver stack for this call -- see the comment in call.go. Every
+// call reaching this function was necessarily made via "X.Y(...)" dot-call
+// syntax (wrapper-style runtime functions are only ever package or receiver
+// members, never assignable to a plain variable the way native function
+// values are), so receiverOK is expected to always be true here in practice;
+// it is still checked rather than assumed, so a hypothetical bare call to a
+// variable holding a wrapper function value degrades to "no receiver bound"
+// instead of misbehaving (see CALL-11 in docs/ISSUES.md).
+func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.List) (any, error), savedDefinition *data.Function, fullScope bool, args []any, receiverValue any, receiverOK bool) error {
 	var (
 		parentTable *symbols.SymbolTable
 		err         error
@@ -68,7 +77,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	functionSymbols.SetAlways(defs.SandboxedIOSymbolName, c.sandboxedIO.Load())
 	functionSymbols.SetAlways(defs.SandboxedExecSymbolName, c.sandboxedExec.Load())
 
-	if v, ok := c.popThis(); ok {
+	if receiverOK {
 		// Auto-deref: a pointer-receiver Ego method's own receiver parameter is
 		// bound as a boxed *any (see the BUG-64 fix commentary in this.go's
 		// getThisByteCode). If that method's body calls another receiver
@@ -82,6 +91,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 		// receiver looks like. This does not affect mutation propagation --
 		// the boxed value and its unboxed contents share the same underlying
 		// reference (*data.Struct or similar).
+		v := receiverValue
 		if ptr, ok := v.(*any); ok && ptr != nil {
 			v = *ptr
 		}

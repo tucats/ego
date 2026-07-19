@@ -53,8 +53,25 @@ const none = "<none>"
 // updatePackageFromLocalSymbols logic in callFramePop, which walks the whole
 // parent chain regardless of which call path created the frame.  No separate
 // clone path is required here.
-func callBytecodeFunction(c *Context, function *ByteCode, args []any, argsConst []bool) error {
+//
+// receiverValue/receiverOK are the value (if any) callByteCode already popped
+// from the receiver stack for this call. They are staged, unconditionally,
+// into c.pendingReceiver/c.pendingReceiverOK for the GetThis opcode compiled
+// into the callee's own prologue to consume -- but only if the callee
+// actually declared a receiver. A *ByteCode value carries no reliable
+// "this function has a receiver" signal at this dispatch point (unlike a
+// native function's dp.Declaration.Type), so this function cannot know
+// whether the staged value will ever be read; if the callee has no GetThis,
+// the staged value is simply overwritten by the next call and never
+// consumed. This is what finally lets a receiver method call like
+// f.WriteString(...) nest around a plain Ego-source function call like
+// io.DirList(...) without the two calls' receiver-stack traffic getting
+// mixed up (see CALL-11 in docs/ISSUES.md).
+func callBytecodeFunction(c *Context, function *ByteCode, args []any, argsConst []bool, receiverValue any, receiverOK bool) error {
 	var parentTable *symbols.SymbolTable
+
+	c.pendingReceiver = receiverValue
+	c.pendingReceiverOK = receiverOK
 
 	isLiteral := function.IsLiteral()
 

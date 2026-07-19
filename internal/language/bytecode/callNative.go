@@ -18,7 +18,17 @@ import (
 
 // Make a call to a native (Go) function. The function value is found in the function
 // declaration, along with definitions of the parameters and return type.
-func callNative(c *Context, dp *data.Function, args []any) error {
+//
+// receiverValue/receiverOK are the value (if any) callByteCode already popped
+// from the receiver stack on this call's behalf -- see the comment in call.go
+// for why that pop now happens exactly once, at the shared dispatch point,
+// gated on a compile-time-known "this call had a SetThis" signal, rather than
+// being guessed here from dp.Declaration.Type (see CALL-11 in
+// docs/ISSUES.md). A receiver-less native function (dp.Declaration.Type ==
+// nil) simply ignores receiverValue/receiverOK -- whether or not a value was
+// popped, it was already fully consumed by call.go, so there is nothing left
+// to discard here.
+func callNative(c *Context, dp *data.Function, args []any, receiverValue any, receiverOK bool) error {
 	var (
 		result any
 		err    error
@@ -45,24 +55,13 @@ func callNative(c *Context, dp *data.Function, args []any) error {
 	// Call the native function and get the result. It's either a direct call if there
 	// is no receiver, else a receiver call.
 	if dp.Declaration.Type == nil {
-		// The compiler always emits SetThis for "X.Y(...)" call syntax -- it
-		// cannot know at compile time whether Y is a genuine receiver method
-		// or (as here) a plain package-scope function that merely needed X to
-		// resolve the Member lookup. Discard the resulting stale receiver-
-		// stack entry so it stays balanced; otherwise a receiver method call
-		// nested around this one (e.g. f.WriteString("x" + os.Hostname()))
-		// would wrongly pop this entry instead of its own receiver.
-		_, _ = c.popThis()
-
 		result, err = CallDirect(dp.Value, nativeArgs...)
 	} else {
-		// Get the receiver value
-		v, ok := c.popThis()
-		if !ok {
+		if !receiverOK {
 			return c.runtimeError(errors.ErrNoFunctionReceiver).Context(dp.Declaration.Name)
 		}
 
-		result, err = CallWithReceiver(v, dp.Declaration.Name, nativeArgs...)
+		result, err = CallWithReceiver(receiverValue, dp.Declaration.Name, nativeArgs...)
 	}
 
 	// If it went okay see what post-processing is  needed to convert the result Go

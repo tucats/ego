@@ -142,7 +142,7 @@ func savedDecl(paramCount int, variadic bool, argCount data.Range) *data.Functio
 func Test_callRuntimeFunction_DataListResult_MultiAssignment(t *testing.T) {
 	tc := newTestContext(t).withNextOpcode(StackCheck)
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 
@@ -176,7 +176,7 @@ func Test_callRuntimeFunction_DataListResult_MultiAssignment(t *testing.T) {
 func Test_callRuntimeFunction_DataListResult_SingleValueContext(t *testing.T) {
 	tc := newTestContext(t)
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 
@@ -192,7 +192,7 @@ func Test_callRuntimeFunction_DataListResult_SingleValueContext(t *testing.T) {
 func Test_callRuntimeFunction_ScalarResult(t *testing.T) {
 	tc := newTestContext(t)
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnScalarResult, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnScalarResult, nil, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack(99)
@@ -206,7 +206,7 @@ func Test_callRuntimeFunction_ScalarResult(t *testing.T) {
 func Test_callRuntimeFunction_GoErrorPropagated(t *testing.T) {
 	tc := newTestContext(t)
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnGoError, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnGoError, nil, false, []any{}, nil, false)
 
 	tc.assertError(err, errors.ErrAssert)
 	tc.assertStackEmpty()
@@ -219,7 +219,7 @@ func Test_callRuntimeFunction_GoErrorPropagated(t *testing.T) {
 func Test_callRuntimeFunction_ArgsForwardedToFunction(t *testing.T) {
 	tc := newTestContext(t)
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnEchoFirstArg, nil, false, []any{"hello"})
+	err := callRuntimeFunction(tc.ctx, runtimeFnEchoFirstArg, nil, false, []any{"hello"}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack("hello")
@@ -241,7 +241,7 @@ func Test_callRuntimeFunction_TooFewArgs(t *testing.T) {
 	// Function expects 2 args; we supply 0.
 	saved := savedDecl(2, false, data.Range{})
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{}, nil, false)
 
 	tc.assertError(err, errors.ErrArgumentCount)
 }
@@ -254,7 +254,7 @@ func Test_callRuntimeFunction_TooManyArgs(t *testing.T) {
 	// Function expects 1 arg; we supply 3.
 	saved := savedDecl(1, false, data.Range{})
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{1, 2, 3})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{1, 2, 3}, nil, false)
 
 	tc.assertError(err, errors.ErrArgumentCount)
 }
@@ -267,7 +267,7 @@ func Test_callRuntimeFunction_ExactArgCount(t *testing.T) {
 	// Function expects 1 arg; we supply exactly 1.
 	saved := savedDecl(1, false, data.Range{})
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{42})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{42}, nil, false)
 
 	tc.assertNoError(err)
 }
@@ -282,7 +282,7 @@ func Test_callRuntimeFunction_VariadicAcceptsMoreThanMin(t *testing.T) {
 
 	// Supplying 5 args should be well within the range.
 	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false,
-		[]any{1, 2, 3, 4, 5})
+		[]any{1, 2, 3, 4, 5}, nil, false)
 
 	tc.assertNoError(err)
 }
@@ -297,7 +297,7 @@ func Test_callRuntimeFunction_ExplicitArgCountRange(t *testing.T) {
 
 	// 3 args is within range — should succeed.
 	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false,
-		[]any{1, 2, 3})
+		[]any{1, 2, 3}, nil, false)
 
 	tc.assertNoError(err)
 }
@@ -310,7 +310,7 @@ func Test_callRuntimeFunction_ExplicitArgCountRange_TooFew(t *testing.T) {
 	// ArgCount [2, 4] → at least 2 required; 1 should fail.
 	saved := savedDecl(1, false, data.Range{2, 4})
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{1})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{1}, nil, false)
 
 	tc.assertError(err, errors.ErrArgumentCount)
 }
@@ -342,7 +342,7 @@ func Test_callRuntimeFunction_FullScopeTrue(t *testing.T) {
 		return data.NewList("no-parent", nil), nil
 	}
 
-	err := callRuntimeFunction(tc.ctx, captureFn, nil, true /*fullScope*/, []any{})
+	err := callRuntimeFunction(tc.ctx, captureFn, nil, true /*fullScope*/, []any{}, nil, false)
 
 	tc.assertNoError(err)
 
@@ -352,16 +352,15 @@ func Test_callRuntimeFunction_FullScopeTrue(t *testing.T) {
 }
 
 // Test_callRuntimeFunction_ReceiverInjectedIntoFunctionScope verifies that
-// when a "this" receiver is on the context's receiver stack, it is injected
+// when the caller (callByteCode) passes a receiver value, it is injected
 // into the function's symbol table under defs.ThisVariable ("__this") before
-// the function is called.
+// the function is called. callRuntimeFunction no longer pops the receiver
+// stack itself (see CALL-11 in docs/ISSUES.md) -- callByteCode does that
+// exactly once and passes the result down as parameters.
 func Test_callRuntimeFunction_ReceiverInjectedIntoFunctionScope(t *testing.T) {
 	tc := newTestContext(t)
 
-	// Push a receiver value so popThis() finds it.
-	tc.ctx.PushThis("receiver", "my-receiver-value")
-
-	err := callRuntimeFunction(tc.ctx, runtimeFnThatInspectsThis, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnThatInspectsThis, nil, false, []any{}, "my-receiver-value", true)
 
 	tc.assertNoError(err)
 
@@ -370,14 +369,13 @@ func Test_callRuntimeFunction_ReceiverInjectedIntoFunctionScope(t *testing.T) {
 	tc.assertTopStack("my-receiver-value")
 }
 
-// Test_callRuntimeFunction_NoReceiverWhenStackEmpty verifies that when the
-// receiver stack is empty, __this is NOT injected and the function receives
-// an empty symbol table entry for that name.
+// Test_callRuntimeFunction_NoReceiverWhenStackEmpty verifies that when no
+// receiver value is passed in (receiverOK == false), __this is NOT injected
+// and the function receives an empty symbol table entry for that name.
 func Test_callRuntimeFunction_NoReceiverWhenStackEmpty(t *testing.T) {
 	tc := newTestContext(t)
-	// receiverStack starts empty — no pushThis call.
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnThatInspectsThis, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnThatInspectsThis, nil, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 
@@ -402,7 +400,7 @@ func Test_callRuntimeFunction_ContextInjectedWhenFlagSet(t *testing.T) {
 
 	// Call with 0 user args. With Context=true, 1 extra arg (*Context) is
 	// appended, so the function should see 1 argument in total.
-	err := callRuntimeFunction(tc.ctx, runtimeFnThatCountsArgs, saved, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnThatCountsArgs, saved, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack(1) // one arg: the injected *Context
@@ -415,7 +413,7 @@ func Test_callRuntimeFunction_ContextNotInjectedWhenFlagUnset(t *testing.T) {
 	tc := newTestContext(t)
 
 	// nil savedDefinition → no context injection.
-	err := callRuntimeFunction(tc.ctx, runtimeFnThatCountsArgs, nil, false, []any{1, 2})
+	err := callRuntimeFunction(tc.ctx, runtimeFnThatCountsArgs, nil, false, []any{1, 2}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack(2) // exactly the two args we passed, no extras
@@ -458,7 +456,7 @@ func Test_callRuntimeFunction_DefinitionFullScope(t *testing.T) {
 	defer delete(builtins.FunctionDictionary, testKey)
 
 	// Pass fullScope=false; the definition should override it to true.
-	err := callRuntimeFunction(tc.ctx, fullScopeFn, nil, false /*fullScope*/, []any{})
+	err := callRuntimeFunction(tc.ctx, fullScopeFn, nil, false /*fullScope*/, []any{}, nil, false)
 
 	tc.assertNoError(err)
 
@@ -483,7 +481,7 @@ func Test_callRuntimeFunction_SandboxedFunctionBlocked(t *testing.T) {
 		Declaration: &data.Declaration{Name: "blockedFn"},
 	}
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{}, nil, false)
 
 	tc.assertError(err, errors.ErrNoPrivilegeForOperation)
 }
@@ -499,7 +497,7 @@ func Test_callRuntimeFunction_SandboxedContextNonSandboxedFunction(t *testing.T)
 		Declaration: &data.Declaration{Name: "allowedFn"},
 	}
 
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, saved, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 }
@@ -513,7 +511,7 @@ func Test_callRuntimeFunction_NilSavedDefNoSandboxPanic(t *testing.T) {
 	tc.ctx.sandboxedIO.Store(true)
 
 	// nil savedDefinition: savedDefinition.Sandboxed would panic without guard.
-	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{})
+	err := callRuntimeFunction(tc.ctx, runtimeFnReturning42, nil, false, []any{}, nil, false)
 
 	// Should succeed (nil guard short-circuits the sandbox check).
 	tc.assertNoError(err)
@@ -548,7 +546,7 @@ func Test_callRuntimeFunction_SandboxFlagsVisibleInFunctionSymbols(t *testing.T)
 		tc := newTestContext(t).withNextOpcode(StackCheck)
 		tc.ctx.Sandboxed(true)
 
-		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{})
+		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{}, nil, false)
 		tc.assertNoError(err)
 
 		// Push order puts Get(0) (io) on top, then exec, then the trailing nil error.
@@ -565,7 +563,7 @@ func Test_callRuntimeFunction_SandboxFlagsVisibleInFunctionSymbols(t *testing.T)
 		tc := newTestContext(t).withNextOpcode(StackCheck)
 		tc.ctx.Sandboxed(false)
 
-		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{})
+		err := callRuntimeFunction(tc.ctx, captureFn, nil, false /*fullScope*/, []any{}, nil, false)
 		tc.assertNoError(err)
 
 		if got, _ := tc.ctx.Pop(); got != false {

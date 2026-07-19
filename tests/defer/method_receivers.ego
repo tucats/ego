@@ -200,6 +200,50 @@
     @assert out[0] == 99
 }
 
+@test "defer: deferred receiver call still binds"
+{
+    // Regression test for the CALL-11 fix's defer-specific corner
+    // (docs/ISSUES.md): the synthesized bytecode that replays a deferred
+    // call (invokeDeferredStatements/invokePanicDefers) has no SetThis of
+    // its own -- it seeds the replay context's receiver stack directly from
+    // whatever deferByteCode captured when the "defer" statement first ran.
+    // The Call instruction's operand must still correctly signal that a
+    // receiver is pending, or the deferred receiver method call fails to
+    // bind its receiver under the new callByteCode-gated pop.
+    //
+    // The deferred expression itself also nests an Ego-source no-receiver
+    // call (io.DirList) in its arguments, mirroring the CALL-11 trigger
+    // pattern one level deeper: at the moment deferByteCode captures the
+    // receiver stack, it must capture exactly the entry belonging to the
+    // deferred receiver call, not a leftover from the nested call.
+    //
+    // Uses a value receiver (matching the other BUG-43 tests in this file)
+    // to isolate the CALL-11 defer-replay behavior being tested here from a
+    // separate, pre-existing limitation observed while writing this test:
+    // an auto-addressed POINTER-receiver method invoked via defer does not
+    // persist its mutation back to the original variable, even without any
+    // CALL-11-style nested call involved. That is unrelated to this fix and
+    // is not exercised by any existing test in this file either.
+    type Recorder struct {
+        out []string
+    }
+
+    func (r Recorder) Record(extra string, dest *[]string) {
+        *dest = append(r.out, "recorded:" + extra)
+    }
+
+    func run(dest *[]string) {
+        r := Recorder{}
+        defer r.Record(io.DirList("."), dest)
+    }
+
+    var result []string
+    run(&result)
+
+    @assert len(result) == 1
+    @assert strings.Contains(result[0], "recorded:")
+}
+
 @test "defer: BUG-43, repeated defer inside a loop does not error"
 {
     // The receiver/argument temp variables use StoreAlways (not

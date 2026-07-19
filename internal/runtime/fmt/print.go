@@ -294,8 +294,12 @@ func formatUsingString(s *symbols.SymbolTable, v any) (string, error) {
 					// There are no arguments to a String function.
 					stringSymbols.SetAlways(defs.ArgumentListVariable,
 						data.NewArrayFromInterfaces(data.InterfaceType))
-					// But there is a "this" variable.
-					ctx.PushThis(typeDef.Name(), v)
+					// But there is a "this" variable. GetThis (compiled into
+					// the String() method's own prologue) now reads the
+					// pending receiver staged here rather than popping the
+					// receiver stack directly -- see CALL-11 in
+					// docs/ISSUES.md and the SetPendingReceiver doc comment.
+					ctx.SetPendingReceiver(v)
 					// Run the String function. If it fails, return error as the string
 					// @TODO fix this with proper return next.
 					if err := ctx.Run(); err != nil {

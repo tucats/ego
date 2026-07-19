@@ -59,10 +59,54 @@ func callByteCode(c *Context, i any) error {
 	// Argument count is in operand. It can be offset by a
 	// value held in the context cause during argument processing.
 	// Normally, this value is zero.
-	argc := data.IntOrZero(i) + c.argCountDelta
+	//
+	// The operand is either a bare int (argc) -- the common case, used by
+	// every call site that isn't a compiled "X.Y(...)" dot-call -- or the
+	// two-element form []any{argc, true}, emitted only by functionCall()
+	// (see expr_function.go) when the compiler knows a SetThis was just
+	// emitted for this specific call. hasReceiver being true is the only
+	// reliable signal that a value is genuinely pending on the receiver
+	// stack for *this* call, as opposed to some other call nested inside
+	// this one's own argument list, or an enclosing call further out (see
+	// CALL-11 in docs/ISSUES.md for the full history of why guessing this
+	// from the callee's runtime type instead is unsafe).
+	var (
+		argc        int
+		hasReceiver bool
+	)
+
+	if operands, ok := i.([]any); ok && len(operands) == 2 {
+		argc = data.IntOrZero(operands[0])
+		hasReceiver, _ = operands[1].(bool)
+	} else {
+		argc = data.IntOrZero(i)
+	}
+
+	argc += c.argCountDelta
 	c.argCountDelta = 0
 	fullSymbolVisibility := c.fullSymbolScope
 	savedDefinition = nil
+
+	// If this call was compiled from dot-call syntax, exactly one value is
+	// pending on the receiver stack (pushed by the SetThis that immediately
+	// preceded this call) and must be consumed exactly once, right here,
+	// before dispatching to any callee kind. This is now the ONLY place the
+	// receiver stack is popped -- callNative, callRuntimeFunction, and
+	// callBytecodeFunction all receive the value (or its absence) as a
+	// parameter instead of popping it themselves, which eliminates the
+	// double-pop / never-popped asymmetry that caused CALL-11. When
+	// hasReceiver is false, the receiver stack is never touched, which is
+	// what fixes the "bare call to a variable holding a native/wrapper
+	// function value steals an enclosing call's receiver" variant of the
+	// same bug.
+	var (
+		receiverValue any
+		receiverOK    bool
+	)
+
+	if hasReceiver {
+		receiverValue, receiverOK = c.popThis()
+	}
 
 	// Determine if language extensions are supported. This is required
 	// for variable length argument lists that are not variadic.
@@ -208,7 +252,7 @@ func callByteCode(c *Context, i any) error {
 		// If this is a native function, we can just call it directly using
 		// reflection, and that will push the result for us and we're done.
 		if dp.IsNative {
-			return callNative(c, &dp, args)
+			return callNative(c, &dp, args, receiverValue, receiverOK)
 		}
 	}
 
@@ -216,16 +260,19 @@ func callByteCode(c *Context, i any) error {
 	// on the type to what and how we call...
 	switch function := functionPointer.(type) {
 	case *data.Type:
-		// Calls to a type are really an attempt to cast the value.
+		// Calls to a type are really an attempt to cast the value. A cast
+		// never has a receiver of its own; if hasReceiver was true (e.g. a
+		// user-defined package type referenced via dot-call syntax), the pop
+		// above has already discarded it, exactly as intended.
 		return callTypeCast(function, args, c)
 
 	case *ByteCode:
 		// Push a call frame on the stack and redirect the flow to the new function.
-		return callBytecodeFunction(c, function, args, argsConst)
+		return callBytecodeFunction(c, function, args, argsConst, receiverValue, receiverOK)
 
 	case func(*symbols.SymbolTable, data.List) (any, error):
 		// Call an Ego runtime
-		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args)
+		return callRuntimeFunction(c, function, savedDefinition, fullSymbolVisibility, args, receiverValue, receiverOK)
 
 	case error:
 		return c.runtimeError(errors.ErrUnusedErrorReturn)

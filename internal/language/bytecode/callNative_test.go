@@ -1451,7 +1451,7 @@ func Test_callNative_SandboxedFunctionBlocked(t *testing.T) {
 		},
 	}
 
-	err := callNative(tc.ctx, dp, []any{})
+	err := callNative(tc.ctx, dp, []any{}, nil, false)
 
 	tc.assertError(err, errors.ErrNoPrivilegeForOperation)
 }
@@ -1474,7 +1474,7 @@ func Test_callNative_NonSandboxedFunctionNotBlocked(t *testing.T) {
 		},
 	}
 
-	err := callNative(tc.ctx, dp, []any{float64(-5.0)})
+	err := callNative(tc.ctx, dp, []any{float64(-5.0)}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack(5.0)
@@ -1500,7 +1500,7 @@ func Test_callNative_ArgCountMismatch(t *testing.T) {
 	}
 
 	// Pass only one argument where two are declared.
-	err := callNative(tc.ctx, dp, []any{float64(3.0)})
+	err := callNative(tc.ctx, dp, []any{float64(3.0)}, nil, false)
 
 	tc.assertError(err, errors.ErrArgumentCount)
 }
@@ -1520,7 +1520,7 @@ func Test_callNative_DirectCall_Float64(t *testing.T) {
 		},
 	}
 
-	err := callNative(tc.ctx, dp, []any{float64(-7.5)})
+	err := callNative(tc.ctx, dp, []any{float64(-7.5)}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack(7.5)
@@ -1541,7 +1541,7 @@ func Test_callNative_DirectCall_String(t *testing.T) {
 		},
 	}
 
-	err := callNative(tc.ctx, dp, []any{"  trim me  "})
+	err := callNative(tc.ctx, dp, []any{"  trim me  "}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack("trim me")
@@ -1565,27 +1565,37 @@ func Test_callNative_ReceiverCall_NoReceiverInStack(t *testing.T) {
 	}
 
 	// Receiver stack is empty — popThis will return (nil, false).
-	err := callNative(tc.ctx, dp, []any{})
+	err := callNative(tc.ctx, dp, []any{}, nil, false)
 
 	tc.assertError(err, errors.ErrNoFunctionReceiver)
 }
 
-// Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry is a
-// regression test for CALL-11 (docs/ISSUES.md): the compiler emits SetThis
+// Test_callNative_NoReceiverFunction_NeverTouchesReceiverStack is a
+// regression test for CALL-11 (docs/ISSUES.md). The compiler emits SetThis
 // for any "X.Y(...)" call syntax, including a no-receiver package function
 // like os.Hostname(), because it cannot tell at compile time whether Y is a
-// genuine receiver method. Before this fix, callNative's no-receiver branch
-// (Declaration.Type == nil) never popped that pushed entry, leaving it on
-// the receiver stack to be wrongly consumed by the next real receiver call
-// that ran popThis() -- typically an enclosing call, e.g.
-// f.WriteString("x" + os.Hostname()) would corrupt WriteString's receiver.
-// callNative must now discard the stale entry itself.
-func Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry(t *testing.T) {
+// genuine receiver method. That used to mean callNative itself had to guess
+// whether to pop and discard a stale receiver-stack entry -- guessing wrong
+// either leaked a leftover entry into an enclosing receiver call (the
+// original bug) or, once callNative started unconditionally discarding,
+// stole a *different* call's legitimately-pending entry (a second variant of
+// the same bug; see the CALL-11 write-up in docs/ISSUES.md for both).
+//
+// The fix moves that decision entirely out of callNative: callByteCode
+// (call.go) now pops the receiver stack exactly once, only when the Call
+// instruction's own operand says this specific call had a SetThis, and
+// passes the result to callNative as plain parameters. callNative must
+// therefore never read or mutate c.receiverStack directly, regardless of
+// what receiverOK it was given -- this test asserts a stale entry already on
+// the stack survives a callNative invocation completely untouched.
+func Test_callNative_NoReceiverFunction_NeverTouchesReceiverStack(t *testing.T) {
 	tc := newTestContext(t)
 
-	// Simulate the compiler's SetThis for a nested no-receiver call, e.g.
-	// the "os" in "os.Hostname()" used inside an enclosing call's arguments.
-	tc.ctx.PushThis("staleReceiver", "should not leak")
+	// An entry that, under the old design, a no-receiver callNative call
+	// might have wrongly popped (either leaking it forward or incorrectly
+	// discarding it). It belongs to nobody in this test and must still be
+	// there, completely unchanged, afterward.
+	tc.ctx.PushThis("unrelatedReceiver", "unrelated-value")
 
 	dp := &data.Function{
 		IsNative: true,
@@ -1597,16 +1607,27 @@ func Test_callNative_NoReceiverFunction_DiscardsStaleReceiverStackEntry(t *testi
 		},
 	}
 
-	err := callNative(tc.ctx, dp, []any{"  trim me  "})
+	// receiverOK is false here: this call site is simulating a bare/no-
+	// receiver dispatch where callByteCode determined no SetThis preceded
+	// this specific call, so it never popped anything for it.
+	err := callNative(tc.ctx, dp, []any{"  trim me  "}, nil, false)
 
 	tc.assertNoError(err)
 	tc.assertTopStack("trim me")
 
-	// The stale entry must have been discarded, not left behind for a
-	// subsequent popThis() (representing an enclosing receiver call) to
-	// wrongly consume.
+	// The pre-existing entry must be exactly as it was -- untouched, not
+	// consumed and not duplicated.
+	v, ok := tc.ctx.popThis()
+	if !ok {
+		t.Fatal("expected the pre-existing receiver stack entry to survive a no-receiver callNative call, but the stack was empty")
+	}
+
+	if v != "unrelated-value" {
+		t.Errorf("receiver stack entry value: got %v, want %q", v, "unrelated-value")
+	}
+
 	if _, ok := tc.ctx.popThis(); ok {
-		t.Fatal("expected receiver stack to be empty after a no-receiver call, but found a leftover entry")
+		t.Fatal("expected exactly one entry on the receiver stack, found more")
 	}
 }
 

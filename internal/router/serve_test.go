@@ -47,7 +47,7 @@ func TestNegotiateLanguage(t *testing.T) {
 		},
 		{
 			name:           "Accept-Language names only unsupported languages, falls back to server default",
-			acceptLanguage: "de,it,ja",
+			acceptLanguage: "de,it,xx",
 			want:           "en",
 		},
 	}

@@ -137,8 +137,18 @@ func (c *Compiler) compileDotReference() error {
 	// If the next token is "(" this is a method call. Emit SetThis so that
 	// the runtime stores the receiver value in the implicit "this" variable
 	// before transferring control to the method.
+	//
+	// pendingReceiverCall records, for the immediately-following functionCall()
+	// invocation, that a receiver value really was pushed for this specific
+	// call (see CALL-11 in docs/ISSUES.md) — the compiler cannot yet tell
+	// whether lastName will turn out to be a genuine receiver method or a
+	// plain package-scope function, but it can always tell whether SetThis was
+	// emitted, which is exactly the fact the runtime needs to know whether to
+	// consume the receiver stack for this call.
 	if c.t.Peek(1).Is(tokenizer.StartOfListToken) {
 		c.b.Emit(bytecode.SetThis)
+
+		c.flags.pendingReceiverCall = true
 	}
 
 	// Emit the Member instruction to dereference the field.

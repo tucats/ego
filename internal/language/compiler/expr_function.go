@@ -18,7 +18,19 @@ import (
 // After all arguments are compiled, a Call instruction is emitted with the
 // argument count as its operand. The runtime uses this count to pop the right
 // number of values off the evaluation stack to pass to the function.
+//
+// hasReceiver is captured from c.flags.pendingReceiverCall and immediately
+// reset, *before* any argument expressions are compiled, because those
+// argument expressions can themselves contain nested "X.Y(...)" calls that
+// set and consume the same flag for their own, unrelated, call (see CALL-11
+// in docs/ISSUES.md). Capturing it up front, rather than re-reading it after
+// compiling arguments, ensures this call's own Call instruction reports
+// whether *this* call had a receiver pushed for it, not whatever the flag
+// happened to hold after the last nested call resolved.
 func (c *Compiler) functionCall() error {
+	hasReceiver := c.flags.pendingReceiverCall
+	c.flags.pendingReceiverCall = false
+
 	argc := 0 // number of argument expressions compiled so far
 
 	for c.t.Peek(1).IsNot(tokenizer.EndOfListToken) {
@@ -61,7 +73,20 @@ func (c *Compiler) functionCall() error {
 
 	// Emit the Call instruction. The runtime will pop argc values from the
 	// stack and pass them to the function whose value is just below them.
-	c.b.Emit(bc.Call, argc)
+	//
+	// When hasReceiver is true, the operand is the two-element form
+	// []any{argc, true} instead of a bare argc, telling callByteCode that a
+	// SetThis was emitted for this call and it must consume exactly one entry
+	// from the receiver stack before dispatching (see CALL-11 in
+	// docs/ISSUES.md). Every other call site that emits a Call instruction
+	// (macro invocations, defaults, defer replay, etc.) continues to use the
+	// bare-argc form, which callByteCode treats as "no receiver pending" --
+	// exactly today's behavior.
+	if hasReceiver {
+		c.b.Emit(bc.Call, []any{argc, true})
+	} else {
+		c.b.Emit(bc.Call, argc)
+	}
 
 	return nil
 }

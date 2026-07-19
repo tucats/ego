@@ -106,7 +106,7 @@ func TestNegotiateLanguage(t *testing.T) {
 		},
 		{
 			name:   "no supported language anywhere in the header",
-			header: "de,it,ja",
+			header: "de,it,xx",
 			want:   "",
 		},
 		{

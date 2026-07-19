@@ -37,3 +37,79 @@
     @assert f.Close() == nil
     @assert os.Remove(name) == nil
 }
+
+@test "functions: Ego-source func nested in receiver"
+{
+    // Regression test for the second half of CALL-11 (docs/ISSUES.md),
+    // fixed in this session: unlike a NATIVE no-receiver function (covered
+    // above), an Ego-SOURCE no-receiver function called via dot-syntax --
+    // such as io.DirList, compiled to a *ByteCode value rather than a native
+    // Go function -- has no reliable "does this function have a receiver"
+    // signal available at the call-dispatch point. Before the fix, nesting
+    // one inside a receiver method call's arguments left its SetThis-pushed
+    // entry stranded on the receiver stack, silently corrupting the
+    // enclosing call's receiver.
+    f, err := os.Create("call11-src-" + uuid.New().String() + ".txt")
+    @assert err == nil
+
+    // io.DirList (an Ego-source, no-receiver package function) is nested
+    // directly in the argument expression of a receiver method call
+    // (f.WriteString).
+    n, err2 := f.WriteString("x" + io.DirList("."))
+    @assert err2 == nil
+    @assert n > 1
+
+    name := f.Name()
+    @assert f.Close() == nil
+    @assert os.Remove(name) == nil
+}
+
+@test "functions: bare call nested in receiver call"
+{
+    // Regression test for a variant of CALL-11 discovered while
+    // re-validating the issue: a BARE call -- no dot-syntax at all, e.g. a
+    // local variable holding a function value -- nested inside a receiver
+    // method call's arguments. Since no SetThis is ever emitted for this
+    // kind of call, an over-eager fix that always discards a receiver-stack
+    // entry on every no-receiver call (rather than gating strictly on
+    // whether SetThis preceded THIS specific call) would wrongly steal the
+    // enclosing call's receiver instead.
+    toUpper := strings.ToUpper
+
+    f, err := os.Create("call11-bare-" + uuid.New().String() + ".txt")
+    @assert err == nil
+
+    n, err2 := f.WriteString("x" + toUpper("y"))
+    @assert err2 == nil
+    @assert n == 2
+
+    name := f.Name()
+    @assert f.Close() == nil
+    @assert os.Remove(name) == nil
+}
+
+@test "functions: multiple nested calls in one receiver call"
+{
+    // Broader regression check: several nested calls of different kinds --
+    // native no-receiver (os.Hostname), Ego-source no-receiver (io.DirList),
+    // and a bare call to a local function variable -- all appearing in the
+    // SAME receiver call's argument list, plus a second, unrelated receiver
+    // call afterward to confirm the receiver stack is left perfectly
+    // balanced (not just "good enough to avoid an error this time").
+    toUpper := strings.ToUpper
+
+    f, err := os.Create("call11-multi-" + uuid.New().String() + ".txt")
+    @assert err == nil
+
+    n, err2 := f.WriteString("a" + os.Hostname() + "b" + io.DirList(".") + "c" + toUpper("d"))
+    @assert err2 == nil
+    @assert n > 4
+
+    // A second, independent receiver call must still bind the correct
+    // receiver after all that nested-call traffic.
+    name := f.Name()
+    @assert strings.Contains(name, "call11-multi-")
+
+    @assert f.Close() == nil
+    @assert os.Remove(name) == nil
+}

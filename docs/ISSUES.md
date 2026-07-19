@@ -275,7 +275,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [BUILTIN-TYPES-1](#BUILTIN-TYPES-1) | BUILTIN-TYPES | typeOf returned a bare string "<builtin>" for builtin functions instead of a *data.Type, breaking the uniform return contract. | ✓ |
 | [CALL-1](#CALL-1) | CALL | Argument count mismatch silently ignored for non-variadic functions with default ArgCount | ✓ |
 | [CALL-10](#CALL-10) | CALL | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
-| [CALL-11](#CALL-11) | CALL | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
+| [CALL-11](#CALL-11) | CALL | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | ✓ |
 | [CALL-12](#CALL-12) | CALL | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
 | [CALL-13](#CALL-13) | CALL | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
 | [CALL-14](#CALL-14) | CALL | `util.Symbols()`/`util.SymbolTables()` can't see the caller's own local variables (missing `Scope: true`) | ✓ |
@@ -568,6 +568,7 @@ This area records general Ego-language bugs discovered through systematic testin
 | [BUG-88](#BUG-88) | MEDIUM | A function-typed return (`func f() func(int) int`) is rejected under `--types strict` with a spurious `type mismatch: ..., nil` because the declared return type is round-tripped through a zero-value instance, which is `nil` for a function type and collapses the coercion target to `NilType`. | ✓ |
 | [BUG-89](#BUG-89) | MEDIUM | A named return value whose type is a pointer, slice, or function (`func f() (r *int)`, `(r []int)`, `(g func(int) int)`) fails to compile with "invalid return type list", because the named-return detector only recognized a type token that was a plain identifier. | ✓ |
 | [BUG-90](#BUG-90) | MEDIUM | Returning `nil` from a function declared to return a `func` or `chan` type fails under `--types strict` with a spurious type mismatch, even though `nil` is the zero value of both; only pointer and error types were treated as nil-compatible. | ✓ |
+| [BUG-91](#BUG-91) | MEDIUM | A pointer-receiver method called via `defer` on an auto-addressed (non-pointer) variable mutates a copy instead of the original, silently discarding the deferred call's effect. | |
 
 ---
 
@@ -8890,6 +8891,79 @@ under both `--types=strict` and `--types=dynamic`.
 
 ---
 
+<a id="BUG-91"></a>
+
+### BUG-91 — Auto-addressed pointer-receiver method via `defer` mutates a copy, not the original
+
+**Severity:** MEDIUM
+
+**Discovered by:** manual testing while writing regression coverage for the
+CALL-11 fix (see the CALL area, `CALL-11`); unrelated to that fix itself —
+reproduces identically on code paths CALL-11 never touches.
+
+**Status: OPEN**
+
+**Description:**  
+A pointer-receiver method (`func (r *T) Method()`) called via `defer` on a
+*non-pointer* variable — the case where Go's (and Ego's) "auto-address" rule
+implicitly takes `&r` at the call site — silently mutates a throwaway copy
+instead of the original variable. The direct (non-deferred) call works
+correctly; only the deferred form is affected:
+
+```ego
+type Recorder struct {
+    out []string
+}
+
+func (r *Recorder) Record(extra string) {
+    r.out = append(r.out, "recorded:" + extra)
+}
+
+var r Recorder
+r.Record("hello")
+fmt.Println(r.out)              // ["recorded:hello"] -- correct
+
+var r2 Recorder
+defer r2.Record("hello")
+// ... after the enclosing function returns and the defer fires ...
+fmt.Println(r2.out)             // [] -- WRONG, should also be ["recorded:hello"]
+```
+
+Explicitly-pointer-typed receivers are unaffected — `p := &Recorder{...}; defer
+p.Record(...)` works correctly, which is why none of the existing `defer`
+regression tests (`tests/defer/method_receivers.ego`, all of which use either
+an explicit `*T` parameter or a value receiver) caught this: the bug requires
+the specific combination of a non-pointer receiver variable *and* a
+pointer-declared receiver method.
+
+**Probable cause:**  
+`hoistDeferReceiver` (`internal/language/compiler/defer.go`) is the BUG-43
+fix's receiver-freezing logic: it compiles the deferred call's receiver chain
+immediately (at `defer`-statement time, not when the deferred call eventually
+runs), unconditionally emits `bytecode.ValueCopy`, and stores the result into
+a generated temp variable — rewriting `defer r.Method(args)` into
+`defer $tempName.Method(args)`. This is exactly correct for a *value*
+receiver (the whole point of BUG-43: later mutations to the original `r` must
+not be visible through the deferred call). But when `Method` has a *pointer*
+receiver and `r` requires auto-addressing, copying `r`'s value into
+`$tempName` and then auto-addressing `$tempName` at call time takes the
+address of the **copy**, not of the original `r` — so the deferred call's
+field writes land on a value that is discarded once the temp variable goes
+out of scope, and the original variable is never touched.
+
+**Suggested fix:**  
+`hoistDeferReceiver` needs to know, at the point it decides whether to freeze
+the receiver, whether the target method has a pointer or value receiver (this
+information is available from the method's declaration, resolved via the same
+type-lookup machinery `compileDotReference` already uses). When the receiver
+is a pointer receiver, the correct freeze is to take the receiver's *address*
+now (`&r`, stored into `$tempName` as a pointer) rather than copying its
+value — mirroring, at defer time, exactly the auto-address Ego already
+performs at ordinary (non-deferred) call time. A value receiver keeps the
+existing `ValueCopy` behavior unchanged.
+
+---
+
 ### Testing Methodology
 
 All bugs were found by writing small Ego programs to `/tmp/test_*.ego` and running
@@ -11449,7 +11523,7 @@ if address < 0 || address > c.bc.nextAddress {
 | [CALL-8](#CALL-8) | `makeNativeArrayArgument` missing `Int64Kind` and `Float32Kind` for `*data.Array` conversion | ✓ |
 | [CALL-9](#CALL-9) | `CallWithReceiver` panics when method name is not found on receiver | ✓ |
 | [CALL-10](#CALL-10) | `synthesizeDefinition` sets `MinArgCount = -1` for zero-parameter variadic functions | ✓ |
-| [CALL-11](#CALL-11) | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | |
+| [CALL-11](#CALL-11) | Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments | ✓ |
 | [CALL-12](#CALL-12) | Sandbox flags set by `Context.Sandboxed()` invisible to runtime functions called from top-level code | ✓ |
 | [CALL-13](#CALL-13) | `tables.Find()`'s callback can't see enclosing-scope symbols (missing `Scope: true`) | ✓ |
 | [CALL-14](#CALL-14) | `util.Symbols()`/`util.SymbolTables()` can't see the caller's own local variables (missing `Scope: true`) | ✓ |
@@ -12025,11 +12099,38 @@ why the clamp is needed.
 
 ### CALL-11 — Receiver-stack corruption when a package-function call is nested inside a receiver method call's arguments
 
-**Affected functions:** `callNative` (fixed for native/wrapper functions), `callBytecodeFunction` (still open for Ego-source functions)  
-**Files:** `bytecode/callNative.go`, `bytecode/callBytecodeFunction.go`, `bytecode/call.go`, `compiler/expr_reference.go`  
+**Affected functions:** `callByteCode`, `callNative`, `callRuntimeFunction`, `callBytecodeFunction`, `getThisByteCode`, `emitDeferredCall` (new), `formatUsingString`  
+**Files:** `internal/language/bytecode/call.go`, `callNative.go`, `callRuntimeFunction.go`, `callBytecodeFunction.go`, `this.go`, `defer.go`, `context.go`, `internal/language/compiler/expr_reference.go`, `expr_function.go`, `compiler.go`, `internal/runtime/fmt/print.go`  
 **Risk:** High when triggered — silently corrupts the receiver of an enclosing method call, producing a misleading "no function receiver" error (in principle it could instead dispatch to the wrong receiver's method rather than erroring, since it consumes whatever entry happens to be on top of the stack)  
-**Discovered by:** manual testing while writing `rest` package documentation examples (`conn.Base("https://" + os.Hostname() + ...)`)  
-**Status: PARTIALLY RESOLVED (native/wrapper functions fixed; Ego-source no-receiver functions still open)**
+**Discovered by:** manual testing while writing `rest` package documentation examples (`conn.Base("https://" + os.Hostname() + ...)`); re-validated and completed in a later session, which also found two further variants of the same bug family (see below)  
+**Status: RESOLVED**
+
+#### CALL-11: Revalidation
+
+Before implementing a fix, the previously-documented "still open" case was
+re-confirmed still reproducible exactly as described (`f.WriteString("x" +
+io.DirList("/tmp"))` → `no function receiver: WriteString`). Investigating it
+turned up two further variants of the same underlying bug family that were
+not previously documented:
+
+- **A bare call could steal an enclosing receiver.** `callNative.go`'s
+  no-receiver branch discarded a stale `receiverStack` entry
+  *unconditionally* (the partial fix noted below), which fixed the
+  nested-dot-call case but, symmetrically, meant a **bare** call — no dot
+  syntax at all, e.g. `toa := strconv.Itoa; ...toa(42)...` nested inside a
+  receiver call's arguments — would wrongly pop and discard the *enclosing*
+  call's genuine receiver, since nothing distinguished "this call had its own
+  `SetThis`" from "some other call's entry happens to be on top right now".
+- **`fmt.Sprint`/`String()` formatting bypassed the whole mechanism.**
+  `formatUsingString` (`internal/runtime/fmt/print.go`) invokes a type's
+  `String()` method by directly constructing a `*bytecode.Context` and
+  calling `Run()` on it — entirely bypassing `callByteCode`/
+  `callBytecodeFunction`. It seeded the receiver via the old `PushThis` +
+  `GetThis`-pops-`receiverStack` mechanism, so any fix that moved receiver
+  consumption out of `GetThis` had to give this caller an equivalent way to
+  stage a receiver (see `SetPendingReceiver` below); missing this initially
+  broke `fmt.Sprint(x)` for any type with a custom `String()` method with
+  "unknown identifier" errors inside `String()` itself.
 
 #### CALL-11: Description
 
@@ -12104,32 +12205,121 @@ uses that solely to decide whether to emit a `GetThis` opcode into the
 callee's own prologue. Nothing currently surfaces that fact to the
 caller-side dispatch code in `callBytecodeFunction`.
 
-#### CALL-11: Suggested fix
+#### CALL-11: Why "unconditionally pop in callBytecodeFunction" alone is unsafe
 
-Two narrowly-scoped options were considered and rejected:
+The originally-suggested fix ("have `callBytecodeFunction` pop
+`receiverStack` unconditionally, mirroring `callRuntimeFunction`") turns out
+to be unsafe by itself, which the bare-call variant above demonstrates
+concretely: `callRuntimeFunction`/`callNative` can get away with treating
+"receiver pending" as a function of the *callee's* shape only because every
+call that reaches them was necessarily made via `X.Y(...)` dot syntax — a
+wrapper or native function is never reachable any other way. `*ByteCode`
+values have no such guarantee: an Ego-source function can be called via dot
+syntax (`io.DirList(...)`) *or* as a bare identifier (a local variable
+holding a function value, or a directly-named function call). Popping
+unconditionally on every `*ByteCode` call — regardless of which syntax
+produced it — pops an entry that was never pushed for a bare call, stealing
+whatever the *enclosing* call's own `SetThis` had legitimately pushed. The
+fix therefore could not rely on the callee's type or shape at all; it needed
+a signal, verified at the exact call site, of whether *this* call had a
+`SetThis` of its own.
 
-- Inspecting the callee's compiled instructions for a leading `GetThis` is
-  fragile (order-dependent on other prologue opcodes like
-  `PushScope`/`ArgCheck`).
-- Having `callBytecodeFunction` unconditionally pop `receiverStack`
-  (mirroring `callRuntimeFunction`) is unsafe on its own: a function *with* a
-  receiver would then be double-popped — once by `callBytecodeFunction`, once
-  by its own `GetThis` opcode — desyncing the stack for whatever comes after.
+#### CALL-11: Fix — compile-time receiver signal + single dispatch-point pop
 
-A complete fix likely needs to unify the two consumption points for
-functions *with* a receiver: have `callBytecodeFunction` pop `receiverStack`
-unconditionally (like `callRuntimeFunction` already does) and store the
-value into the new scope's `defs.ThisVariable`, then change `GetThis`
-(`this.go:getThisByteCode`) to stop popping `receiverStack` itself and
-instead just read `defs.ThisVariable` (which `callBytecodeFunction` will
-already have set), applying the existing byValue-copy/pointer-boxing logic to
-that value. This consolidates all receiver-stack consumption into the two
-call-site dispatchers (`callNative`, `callBytecodeFunction`, both
-unconditional) and removes the callee-side pop entirely, eliminating the
-asymmetry that causes this bug family. This touches core call/receiver
-plumbing exercised by every method call in the language, so it needs its own
-dedicated regression pass across the full receiver/method/closure test suite
-before landing.
+The compiler already knows, unambiguously, whether it just emitted `SetThis`
+for the call about to be compiled — it's the same condition
+(`compileDotReference` peeking that `(` follows) that triggers the emission
+in the first place. That fact just wasn't being threaded through to the
+`Call` instruction itself. The fix carries it there and moves *all* receiver
+consumption to the one place that can act on it correctly:
+
+- **`compiler.go`:** added `flagSet.pendingReceiverCall`, set to `true`
+  immediately after `compileDotReference` (`expr_reference.go`) emits
+  `SetThis`.
+- **`expr_function.go`:** `functionCall()` captures and resets this flag
+  *before* compiling any argument expressions (arguments can contain their
+  own nested dot-calls that set and consume the same flag for an unrelated
+  call — capturing late would read the wrong call's answer). The `Call`
+  instruction's operand becomes `[]any{argc, true}` when a receiver is
+  pending, or the unchanged bare `argc` int otherwise — every other emission
+  site (`macro.go`, `var.go`, `function.go`'s `$new` copy, `exit.go`,
+  `directives.go`, `testing.go`) is untouched and keeps emitting the bare
+  form, which `callByteCode` treats exactly as before: no receiver pending.
+- **`call.go`:** `callByteCode` parses either operand shape, and — when (and
+  only when) `hasReceiver` is `true` — pops exactly one entry off
+  `receiverStack`, once, before dispatching to *any* callee kind (`*data.Type`
+  casts, `error`, the default-invalid-call case, and the three real callables
+  all just receive/ignore this single, correctly-gated pop). This is the only
+  remaining place `receiverStack` is ever popped.
+- **`callNative.go`, `callRuntimeFunction.go`:** both now take the popped
+  `(receiverValue, receiverOK)` as plain parameters instead of calling
+  `c.popThis()` themselves. A receiver-less native function simply ignores
+  them; a receiver-requiring one uses `receiverValue` directly (or errors if
+  `!receiverOK`, unchanged from before).
+- **`callBytecodeFunction.go`:** also takes `(receiverValue, receiverOK)` as
+  parameters and unconditionally stages them into two new `*Context` fields,
+  `pendingReceiver`/`pendingReceiverOK` (`context.go`), overwriting whatever
+  was staged for the *previous* `*ByteCode` call every single time — so no
+  staleness can ever survive across calls. `callBytecodeFunction` still has
+  no way to know whether the callee it's about to run has a receiver at all;
+  it no longer needs to. If the callee has no `GetThis` (a plain function),
+  the staged value is simply never read and is overwritten by the next call —
+  an implicit, zero-cost discard.
+- **`this.go`:** `getThisByteCode` (`GetThis`) no longer touches
+  `receiverStack` — it reads and clears `pendingReceiver`/`pendingReceiverOK`
+  instead, applying the existing byValue-copy/pointer-boxing logic unchanged.
+  Since `GetThis` runs as literally the first real instruction of a receiver
+  method's compiled prologue (right after `PushScope`/`ArgCheck`/`InPackage`/
+  `Module`, before any instruction that could itself dispatch a nested call),
+  it always consumes exactly the value `callBytecodeFunction` staged for
+  *this* call, before anything else has a chance to overwrite it.
+- **`defer.go`:** the synthesized bytecode that replays a deferred call
+  (`invokeDeferredStatements`, `invokePanicDefers`) builds its own `Call`
+  instruction by hand and has no `SetThis` of its own — it seeds the replay
+  context's `receiverStack` directly from whatever `deferByteCode` captured
+  at `defer`-statement time. The new `emitDeferredCall` helper mirrors
+  `functionCall()`'s operand choice: the two-element `hasReceiver` form when
+  `deferTask.receiverStack` captured an entry, the bare form otherwise.
+- **`this.go` (`SetPendingReceiver`), `internal/runtime/fmt/print.go`:** the
+  one caller outside the `bytecode` package that builds and runs a
+  `*bytecode.Context` by hand to invoke a `String()` method
+  (`formatUsingString`) has no `Call` instruction for `callByteCode` to gate
+  a pop on either. It now calls the new exported `Context.SetPendingReceiver`
+  directly instead of the old `PushThis`, staging the receiver the same way
+  `callBytecodeFunction` would have.
+
+This consolidates every receiver-stack push/pop into `SetThis`/`LoadThis`
+(push) and `callByteCode` (the only remaining pop), removing the callee-side
+`GetThis` pop entirely and eliminating the whole asymmetry class by
+construction: a value is now popped if and only if a `SetThis` genuinely
+preceded *this* call, decided at compile time, never guessed at runtime from
+the callee's shape.
+
+**Regression coverage:**
+
+- Go: `internal/language/bytecode/call11_test.go` (new — end-to-end
+  `callByteCode`-level reproductions of both the original nested-dot-call
+  bug and the bare-call variant, a defer-replay test, and an
+  `emitDeferredCall` operand-shape unit test), plus updated tests in
+  `callNative_test.go`, `callRuntimeFunction_test.go`,
+  `callBytecodeFunction_test.go`, and `this_test.go` reflecting the new
+  parameter-passing contract.
+- Ego: `tests/functions/chained_receivers.ego` (extended with three new
+  `@test` blocks: Ego-source no-receiver function nested in a receiver call,
+  a bare-call variant, and several nested calls of different kinds in one
+  receiver call), `tests/defer/method_receivers.ego` (new "deferred receiver
+  call still binds" test, combining the defer-replay fix with a nested
+  Ego-source call), `tests/types/user_type_string.ego` (new test combining
+  the `formatUsingString`/`SetPendingReceiver` fix with a nested receiver
+  call).
+- Full existing suites (`go test ./...`, `go test -race ./...`, `ego test
+  tests/` — 1654 tests) pass with no regressions.
+
+While re-validating this issue and building its regression coverage, an
+unrelated pre-existing bug was also found and recorded separately: see
+[BUG-91](#BUG-91) (a pointer-receiver method called via `defer` on an
+auto-addressed variable mutates a copy, not the original — reproduces
+identically with no CALL-11-style nesting involved).
 
 ---
 

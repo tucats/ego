@@ -103,7 +103,17 @@ func getThisByteCode(c *Context, i any) error {
 		this = data.String(i)
 	}
 
-	if v, ok := c.popThis(); ok {
+	// Consume the value callBytecodeFunction staged for this call (see the
+	// comment on Context.pendingReceiver and CALL-11 in docs/ISSUES.md).
+	// This used to pop c.receiverStack directly, which had no way to
+	// distinguish "nothing was ever pushed for me" from "an unrelated call's
+	// leftover entry is sitting here" -- callBytecodeFunction now guarantees
+	// pendingReceiver/pendingReceiverOK reflect exactly this call, and only
+	// this call, every single time.
+	if v, ok := c.pendingReceiver, c.pendingReceiverOK; ok {
+		c.pendingReceiver = nil
+		c.pendingReceiverOK = false
+
 		// Auto-deref: if the caller passed a pointer variable (&T) as the
 		// receiver, the value on the "this" stack is *any (an Ego pointer).
 		// Dereference it to the underlying value so that both value receivers
@@ -195,6 +205,25 @@ func (c *Context) PushThis(name string, v any) {
 	}
 
 	c.receiverStack = append(c.receiverStack, this{name, v})
+}
+
+// SetPendingReceiver stages v as the receiver value for the *next* GetThis
+// opcode this Context executes, exactly as if callBytecodeFunction had just
+// been called with (v, true) -- see the Context.pendingReceiver comment and
+// CALL-11 in docs/ISSUES.md.
+//
+// This exists for the one caller (internal/runtime/fmt's formatUsingString,
+// which formats a value by directly invoking its String() method's compiled
+// bytecode) that constructs and runs a *bytecode.Context by hand instead of
+// going through the normal callByteCode/callBytecodeFunction dispatch path.
+// That caller has no Call instruction of its own for callByteCode to gate a
+// receiver-stack pop on, so it must stage the receiver value directly, the
+// same way callBytecodeFunction would have. Do not use this from within the
+// bytecode package itself -- everything reached through the normal Call
+// dispatch already gets this staged automatically.
+func (c *Context) SetPendingReceiver(v any) {
+	c.pendingReceiver = v
+	c.pendingReceiverOK = true
 }
 
 // popThis removes a receiver value from this "this" stack.

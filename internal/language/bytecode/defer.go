@@ -84,6 +84,30 @@ func deferByteCode(c *Context, i any) error {
 	return nil
 }
 
+// emitDeferredCall emits the Call instruction for a replayed deferred call
+// (used by both invokeDeferredStatements and invokePanicDefers). Unlike a
+// normally-compiled "X.Y(...)" call, this synthesized bytecode has no
+// preceding SetThis of its own -- deferByteCode instead captured whatever
+// receiver value(s) were already pending on the receiver stack at the time
+// the defer statement was compiled and stashed them directly in
+// deferTask.receiverStack (see deferByteCode above), and the caller has
+// already seeded the replay context's receiver stack with them
+// (cx.receiverStack = deferTask.receiverStack).
+//
+// callByteCode now only pops the receiver stack when the Call instruction's
+// own operand says a receiver is pending (CALL-11) -- it no longer infers
+// this from the callee's runtime type -- so this replay bytecode must signal
+// that explicitly, exactly the way functionCall() does at normal compile
+// time: use the two-element operand form when a receiver was captured, and
+// the bare argument count otherwise.
+func emitDeferredCall(cb *ByteCode, deferTask deferStatement) {
+	if len(deferTask.receiverStack) > 0 {
+		cb.Emit(Call, []any{len(deferTask.args), true})
+	} else {
+		cb.Emit(Call, len(deferTask.args))
+	}
+}
+
 // runDefersByteCode is the bytecode for the run-defers statement.
 func runDefersByteCode(c *Context, i any) error {
 	if len(c.deferStack) > 0 {
@@ -109,7 +133,10 @@ func (c *Context) invokePanicDefers() error {
 			cb.Emit(Push, deferTask.args[j])
 		}
 
-		cb.Emit(Call, len(deferTask.args))
+		// emitDeferredCall (see below) chooses the Call operand shape based on
+		// whether deferTask.receiverStack has a value waiting to be consumed --
+		// mirroring what functionCall() does at normal compile time (CALL-11).
+		emitDeferredCall(cb, deferTask)
 
 		s := c.symbols
 		if deferTask.symbols != nil {
@@ -152,7 +179,7 @@ func (c *Context) invokeDeferredStatements() error {
 			cb.Emit(Push, deferTask.args[j])
 		}
 
-		cb.Emit(Call, len(deferTask.args))
+		emitDeferredCall(cb, deferTask)
 
 		s := c.symbols
 		if deferTask.symbols != nil {

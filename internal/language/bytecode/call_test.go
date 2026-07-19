@@ -404,7 +404,7 @@ func Test_callRuntimeFunction_NilDefinition_SandboxedNoPanic(t *testing.T) {
 
 	// Call with savedDefinition=nil (bare function, no data.Function wrapper).
 	// Must not panic.
-	err := callRuntimeFunction(tc.ctx, fn, nil /*savedDefinition*/, false, []any{})
+	err := callRuntimeFunction(tc.ctx, fn, nil /*savedDefinition*/, false, []any{}, nil, false)
 
 	tc.assertNoError(err)
 }
