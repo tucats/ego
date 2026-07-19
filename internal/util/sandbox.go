@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -21,6 +22,14 @@ import (
 // resolves ".." segments above sandboxRoot with no verification at all).
 // This version instead joins, cleans, and verifies containment against the
 // normalized result, which cannot be fooled by how the raw input is spelled.
+//
+// String cleaning alone still cannot catch a symlink *inside* the sandbox that
+// points to a target outside it (e.g. "sandbox/escape -> /etc", then
+// io.Open("escape/passwd")): the raw string "sandbox/escape/passwd" is
+// trivially within the root, yet the OS follows the symlink to /etc/passwd on
+// open. To close that gap, once a string-safe candidate is chosen it is passed
+// through resolveWithinSandbox, which resolves symlinks against the real
+// filesystem and re-verifies containment before returning.
 func SandboxJoin(sandboxRoot, path string) string {
 	if sandboxRoot == "" {
 		return path
@@ -33,18 +42,81 @@ func SandboxJoin(sandboxRoot, path string) string {
 	// returned), leave it as-is rather than joining it onto sandboxRoot a
 	// second time.
 	if cleanedPath := filepath.Clean(path); withinRoot(cleanedPath, sandboxRoot) {
-		return cleanedPath
+		return resolveWithinSandbox(cleanedPath, sandboxRoot)
 	}
 
 	// Otherwise, join path onto sandboxRoot and verify the cleaned result
 	// still lives inside sandboxRoot.
 	if joined := filepath.Clean(filepath.Join(sandboxRoot, path)); withinRoot(joined, sandboxRoot) {
-		return joined
+		return resolveWithinSandbox(joined, sandboxRoot)
 	}
 
 	// path attempted to escape sandboxRoot -- clamp it back to the sandbox
 	// root itself rather than returning a location outside it.
 	return sandboxRoot
+}
+
+// resolveWithinSandbox takes a candidate path already confirmed to be within
+// sandboxRoot as a *string* and additionally guarantees it does not escape via
+// a symlink on the real filesystem. It resolves symlinks on the longest
+// portion of candidate that actually exists on disk and re-checks containment
+// against the resolved sandbox root. If the resolved location escapes the
+// sandbox, the sandbox root is returned instead.
+//
+// When the sandbox root does not exist on disk, there is nothing inside it to
+// follow, so the string candidate is returned unchanged -- this preserves the
+// pure-string behavior relied on by callers (and tests) that operate on
+// not-yet-created sandbox directories.
+func resolveWithinSandbox(candidate, sandboxRoot string) string {
+	// Resolve the sandbox root itself; if it is a symlink, its real location
+	// is the true boundary to measure containment against. If it does not
+	// exist, fall back to the string candidate.
+	resolvedRoot, err := filepath.EvalSymlinks(sandboxRoot)
+	if err != nil {
+		return candidate
+	}
+
+	// Walk up from candidate to the longest ancestor that exists on disk.
+	// Anything below that does not yet exist and therefore cannot be a
+	// symlink, so only the existing prefix needs symlink resolution. Because
+	// the sandbox root exists (EvalSymlinks succeeded above) and candidate is
+	// a string-descendant of it, this walk stops at sandboxRoot at the latest.
+	existing := candidate
+
+	for {
+		if _, err := os.Lstat(existing); err == nil {
+			break
+		}
+
+		parent := filepath.Dir(existing)
+		if parent == existing {
+			// Reached the filesystem root without finding an existing path;
+			// nothing to resolve.
+			return candidate
+		}
+
+		existing = parent
+	}
+
+	resolved, err := filepath.EvalSymlinks(existing)
+	if err != nil {
+		return candidate
+	}
+
+	// A symlink in the existing prefix redirected outside the sandbox -- clamp
+	// back to the sandbox root rather than handing back an outside location.
+	if !withinRoot(resolved, resolvedRoot) {
+		return sandboxRoot
+	}
+
+	// Re-attach the not-yet-existing remainder of candidate onto the resolved
+	// (symlink-free) prefix so callers creating new files still get the full
+	// intended path.
+	if rel, err := filepath.Rel(existing, candidate); err == nil && rel != "." {
+		return filepath.Join(resolved, rel)
+	}
+
+	return resolved
 }
 
 // withinRoot reports whether cleanPath (already filepath.Clean'd) is equal to

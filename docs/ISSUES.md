@@ -292,7 +292,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [CODE-M1](#CODE-M1) | CODE | No request body size limit on POST /admin/run | ✓ |
 | [CODE-M2](#CODE-M2) | CODE | Global trace logger state mutated per-request without synchronization | ✓ |
 | [CODE-M3](#CODE-M3) | CODE | Client-supplied session UUID not validated or bound to the authenticated user | ✓ |
-| [CODE-M4](#CODE-M4) | CODE | Sandbox I/O path confinement can be bypassed via symlinks | |
+| [CODE-M4](#CODE-M4) | CODE | Sandbox I/O path confinement can be bypassed via symlinks | ✓ |
 | [CODE-M5](#CODE-M5) | CODE | Language extensions enabled in sandboxed symbol table | |
 | [COERCE-1](#COERCE-1) | COERCE | `NeedsCoerce` returns the wrong answer when the `Push` operand does not match the target type | ✓ |
 | [COERCE-2](#COERCE-2) | COERCE | `data.UInt` accessor panics with a type assertion failure | ✓ |
@@ -18528,7 +18528,7 @@ above.
 | [CODE-M1](#CODE-M1) | Medium | No request body size limit on `POST /admin/run` | ✓ |
 | [CODE-M2](#CODE-M2) | Medium | Global trace logger state mutated per-request without synchronization | ✓ |
 | [CODE-M3](#CODE-M3) | Medium | Client-supplied session UUID not validated or bound to the authenticated user | ✓ |
-| [CODE-M4](#CODE-M4) | Medium | Sandbox I/O path confinement can be bypassed via symlinks | |
+| [CODE-M4](#CODE-M4) | Medium | Sandbox I/O path confinement can be bypassed via symlinks | ✓ |
 | [CODE-M5](#CODE-M5) | Medium | Language extensions enabled in sandboxed symbol table | |
 | [CODE-L1](#CODE-L1) | Low | Full user-submitted code body written to REST log | ✓ |
 
@@ -18801,7 +18801,19 @@ Note that `filepath.EvalSymlinks` requires the file to already exist; for
 write operations (creating new files) that will not yet exist, verify the
 parent directory instead.
 
-**Status:** Open — not yet resolved.
+**Status:** Resolved. The three per-package `sandboxName` implementations were
+previously consolidated into `util.SandboxJoin`
+(`internal/util/sandbox.go`), which every I/O caller now routes through. That
+function now performs symlink resolution in addition to string containment: a
+string-safe candidate is passed to `resolveWithinSandbox`, which resolves the
+longest actually-existing prefix of the candidate with `filepath.EvalSymlinks`
+and re-verifies containment against the resolved sandbox root. If the resolved
+location escapes the sandbox it is clamped back to the sandbox root; the
+not-yet-existing remainder (for write/create operations) is re-attached onto
+the resolved, symlink-free prefix. When the sandbox root does not exist on
+disk there is nothing to follow, so the pure-string result is returned
+unchanged. Covered by `TestSandboxJoin_SymlinkEscape` and
+`TestSandboxJoin_SymlinkInsideAllowed` in `internal/util/sandbox_test.go`.
 
 ---
 

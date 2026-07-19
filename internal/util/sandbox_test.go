@@ -1,6 +1,10 @@
 package util
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestSandboxJoin(t *testing.T) {
 	const root = "/sandbox/root"
@@ -34,6 +38,99 @@ func TestSandboxJoin(t *testing.T) {
 				t.Errorf("SandboxJoin(%q, %q) = %q escapes sandbox root %q", root, tt.path, got, root)
 			}
 		})
+	}
+}
+
+// TestSandboxJoin_SymlinkEscape covers CODE-M4: a symlink created inside the
+// sandbox pointing to a location outside it must not let subsequent path
+// resolution escape the sandbox. String-only containment cannot catch this;
+// SandboxJoin resolves symlinks against the real filesystem and clamps back to
+// the sandbox root when the target escapes.
+func TestSandboxJoin_SymlinkEscape(t *testing.T) {
+	// The sandbox lives under a real temp directory; "outside" is a sibling
+	// directory NOT under the sandbox, holding a file we must not be able to
+	// reach through the sandbox.
+	base := t.TempDir()
+	sandbox := filepath.Join(base, "sandbox")
+	outside := filepath.Join(base, "outside")
+
+	for _, dir := range []string{sandbox, outside} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("mkdir %q: %v", dir, err)
+		}
+	}
+
+	secret := filepath.Join(outside, "passwd")
+	if err := os.WriteFile(secret, []byte("secret"), 0o644); err != nil {
+		t.Fatalf("write %q: %v", secret, err)
+	}
+
+	// escape -> outside, created inside the sandbox.
+	if err := os.Symlink(outside, filepath.Join(sandbox, "escape")); err != nil {
+		t.Skipf("symlinks unsupported on this platform: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+	}{
+		{"symlink to existing outside file", "escape/passwd"},
+		{"symlink to not-yet-existing outside file", "escape/newfile.txt"},
+		{"bare symlink directory", "escape"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SandboxJoin(sandbox, tt.path)
+
+			// The returned path must not resolve to a location outside the
+			// sandbox once its own symlinks are followed.
+			resolved, err := filepath.EvalSymlinks(got)
+			if err != nil {
+				resolved = got
+			}
+
+			resolvedSandbox, err := filepath.EvalSymlinks(sandbox)
+			if err != nil {
+				resolvedSandbox = sandbox
+			}
+
+			if !withinRoot(filepath.Clean(resolved), filepath.Clean(resolvedSandbox)) {
+				t.Errorf("SandboxJoin(%q, %q) = %q which resolves to %q, outside sandbox %q",
+					sandbox, tt.path, got, resolved, resolvedSandbox)
+			}
+		})
+	}
+}
+
+// TestSandboxJoin_SymlinkInsideAllowed confirms a symlink that stays inside the
+// sandbox is still resolved and honored rather than being rejected.
+func TestSandboxJoin_SymlinkInsideAllowed(t *testing.T) {
+	sandbox := t.TempDir()
+
+	real := filepath.Join(sandbox, "real")
+	if err := os.MkdirAll(real, 0o755); err != nil {
+		t.Fatalf("mkdir %q: %v", real, err)
+	}
+
+	if err := os.WriteFile(filepath.Join(real, "file.txt"), []byte("ok"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+
+	if err := os.Symlink(real, filepath.Join(sandbox, "link")); err != nil {
+		t.Skipf("symlinks unsupported on this platform: %v", err)
+	}
+
+	got := SandboxJoin(sandbox, "link/file.txt")
+
+	resolved, err := filepath.EvalSymlinks(got)
+	if err != nil {
+		t.Fatalf("EvalSymlinks(%q): %v", got, err)
+	}
+
+	want, _ := filepath.EvalSymlinks(filepath.Join(real, "file.txt"))
+	if resolved != want {
+		t.Errorf("SandboxJoin(%q, %q) resolved to %q, want %q", sandbox, "link/file.txt", resolved, want)
 	}
 }
 

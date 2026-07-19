@@ -1,6 +1,7 @@
 package io
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/tucats/ego/internal/cli/settings"
@@ -8,6 +9,16 @@ import (
 )
 
 func Test_sandboxName(t *testing.T) {
+	// When the sandbox root exists on disk, sandboxName now resolves symlinks
+	// (CODE-M4) and returns the real path. On macOS "/tmp" is itself a symlink
+	// to "/private/tmp", so the expected result for a real, existing sandbox
+	// root must be computed rather than assumed to equal the raw string join.
+	// On Linux "/tmp" is a plain directory and EvalSymlinks is a no-op.
+	tmpResolved, err := filepath.EvalSymlinks("/tmp")
+	if err != nil {
+		tmpResolved = "/tmp"
+	}
+
 	tests := []struct {
 		name    string
 		sandbox string
@@ -43,7 +54,7 @@ func Test_sandboxName(t *testing.T) {
 		{
 			name:    "/tmp/foo",
 			sandbox: "/tmp",
-			want:    "/tmp/foo",
+			want:    filepath.Join(tmpResolved, "foo"),
 		},
 		{
 			name:    "/tmp/foo",
