@@ -524,6 +524,7 @@ roman.numeral=número romano no válido
 roman.range=Los enteros romanos deben estar en el rango de 1..3999
 row.number=número de fila no válido
 rune.value=valor de rune no válido
+runtime=error interno de tiempo de ejecución
 sandbox.path=ruta de sandbox no válida
 scan.eof=EOF
 scan.expected.integer=se esperaba un entero

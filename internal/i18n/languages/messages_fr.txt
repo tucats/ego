@@ -517,6 +517,7 @@ roman.numeral=chiffre romain invalide
 roman.range=Les entiers romains doivent être dans la plage de 1..3999
 row.number=numéro de ligne invalide
 rune.value=valeur de rune invalide
+runtime=erreur d'exécution interne
 sandbox.path=chemin de sandbox invalide
 scan.eof=EOF
 scan.expected.integer=entier attendu

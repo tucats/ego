@@ -523,6 +523,7 @@ roman.numeral=invalid Roman numeral
 roman.range=Roman integers must be in range of 1..3999
 row.number=invalid row number
 rune.value=invalid rune value
+runtime=internal runtime error
 sandbox.path=invalid sandbox path
 scan.eof=EOF
 scan.expected.integer=expected integer

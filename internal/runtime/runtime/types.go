@@ -22,14 +22,22 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 			Name:    "Buildtime",
 			Returns: []*data.Type{time.TimeType, data.ErrorType},
 		},
-		Value: egoBuildTime,
+		Value: buildTime,
 	},
 	"Types": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Types",
 			Returns: []*data.Type{data.StringType},
 		},
-		Value: egoTypes,
+		Value: types,
+	},
+
+	"Mode": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "Mode",
+			Returns: []*data.Type{data.StringType},
+		},
+		Value: mode,
 	},
 	"Ego": data.Function{
 		Declaration: &data.Declaration{
