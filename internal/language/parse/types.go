@@ -283,7 +283,7 @@ func (p *Parser) parseInterfaceType() (ast.Node, error) {
 		}
 
 		node.Methods = append(node.Methods, method)
-		
+
 		p.accept(tokenizer.SemicolonToken)
 	}
 
@@ -443,9 +443,10 @@ func foldParamCells(cells []cellData) []*ast.Param {
 	}
 
 	var (
-		params  []*ast.Param
 		pending []*ast.Ident
 	)
+
+	params := make([]*ast.Param, 0)
 
 	for _, c := range cells {
 		if named && c.bareName != nil {

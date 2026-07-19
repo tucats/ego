@@ -83,26 +83,19 @@ func (c *Compiler) testDirective() error {
 	// Sanity check; the can't be longer than 48 characters or the
 	// formatting of the output gets weird. So truncate the string
 	// to 48 chars max, including "..." if truncation happens.
-
-	result := strings.Builder{}
-
-	descLen := 0
-	for range testDescription {
-		descLen++
-	}
-
-	if descLen > 48 {
-		for i, ch := range testDescription {
-			if i >= 46 {
-				result.WriteString("...")
-
-				break
-			}
-
-			result.WriteRune(ch)
-		}
-
-		testDescription = result.String()
+	//
+	// This -- and the pad calculation below, via PadString -- must count
+	// runes, not bytes: a description containing any multi-byte UTF-8
+	// character (an em-dash, say) has more bytes than visible characters,
+	// so len() (byte count) both truncates it too short and pads it too
+	// little relative to plain-ASCII descriptions, producing a ragged
+	// column of "(PASS)"/"(FAIL)" markers instead of an aligned one. See
+	// CLAUDE.md's "@test name constraints" for why descriptions are
+	// supposed to be ASCII-only in the first place -- this just keeps the
+	// alignment correct regardless.
+	descRunes := []rune(testDescription)
+	if len(descRunes) > 48 {
+		testDescription = string(descRunes[:46]) + "..."
 	}
 
 	// Create an instance of the object, and assign the value to
@@ -112,12 +105,7 @@ func (c *Compiler) testDirective() error {
 	test := data.NewStruct(testType)
 	test.SetAlways("description", testDescription)
 
-	padSize := 50 - len(testDescription)
-	if padSize < 0 {
-		padSize = 0
-	}
-
-	pad := strings.Repeat(" ", padSize)
+	pad := PadString(testDescription, 50)
 
 	c.b.Emit(bytecode.Push, test)
 
@@ -390,7 +378,67 @@ func (c *Compiler) compileTestBody(testDescription, pad string) error {
 		c.b.Emit(bytecode.Push, compileErr)
 		c.b.Emit(bytecode.Signal, nil)
 	} else {
+		// Bracket the test code with a capture operation
+		c.b.Emit(bytecode.BeginCapture)
+
 		c.b.Append(bc)
+
+		c.b.Emit(bytecode.EndCapture)
+
+		// EndCapture only restores Context.output -- it deliberately does
+		// not touch the "fmt" package's own notion of where to write (see
+		// the long comment at the top of bytecode/capture.go). Without
+		// this, defs.StdoutWriterSymbol in the symbol table would still
+		// point at the buffer BeginCapture installed above, and any
+		// fmt.Println reachable later in this scope would silently write
+		// into a buffer nobody ever reads again.
+		c.b.Emit(bytecode.SyncOutputWriter)
+
+		// The EndCapture will leave a string on the stack containing any output
+		// generated during the test run. The following code is essentially:
+		//   if len(text) == 0 {
+		//		drop text
+		//	 } else {
+		//		print "TEST: .... (OUTPUT)"
+		//		print text
+		//	 }
+
+		c.b.Emit(bytecode.Dup)
+		c.b.Emit(bytecode.Load, "len")
+		c.b.Emit(bytecode.Swap)
+		c.b.Emit(bytecode.Call, 1)
+		c.b.Emit(bytecode.Push, 0)
+		c.b.Emit(bytecode.Equal)
+
+		elsePatch := c.b.Mark()
+		c.b.Emit(bytecode.BranchTrue, 0)
+
+		// Both Print instructions below pop exactly one item, so they must
+		// NOT be combined into a single "Print, 2" -- printByteCode inserts
+		// a separator space before every item after the first when a
+		// single Print instruction pops more than one, which would put a
+		// stray leading space in front of the captured text.
+		//
+		// Also deliberately NOT a Say here: Say is the one-time, end-of-test
+		// operation (see emitTestPass/emitTestFail below) that drains the
+		// per-test capture buffer installed by "Console false" and hands it
+		// to ui.Say, gated by quiet mode. Calling it here would drain and
+		// reset that buffer early, so the test's own end-of-test Say call
+		// would find it already empty and print a spurious blank line
+		// instead of quietly no-op'ing. Print instead, into the still-open
+		// buffer, and let that one end-of-test Say flush everything --
+		// this OUTPUT block and the PASS/FAIL line -- together.
+		text := "TEST: " + testDescription + pad + "(OUTPUT)\n"
+		c.b.Emit(bytecode.Push, text)
+		c.b.Emit(bytecode.Print)
+		c.b.Emit(bytecode.Print)
+
+		exitPatch := c.b.Mark()
+		c.b.Emit(bytecode.Branch, 0)
+		c.b.SetAddressHere(elsePatch)
+
+		c.b.Emit(bytecode.Drop) // it was empty output, toss it
+		c.b.SetAddressHere(exitPatch)
 	}
 
 	c.b.Emit(bytecode.DropToMarker, tryMarker)
@@ -827,4 +875,23 @@ func (c *Compiler) File() error {
 	c.b.Emit(bytecode.InFile, fileName)
 
 	return nil
+}
+
+// PadString returns the whitespace needed to right-pad s so that
+// "s + PadString(s, width)" is exactly width runes wide -- not bytes, so a
+// string containing multi-byte UTF-8 characters (an em-dash, say) is
+// measured by its visible character count, not its encoded size. If s is
+// already width runes or longer, it returns "" (no padding, never a
+// negative amount).
+//
+// This exists specifically so the @test PASS/FAIL/OUTPUT columns in "ego
+// test" output line up regardless of what a test's description string
+// contains; see testDirective's use of it for the full rationale.
+func PadString(s string, width int) string {
+	n := width - len([]rune(s))
+	if n <= 0 {
+		return ""
+	}
+
+	return strings.Repeat(" ", n)
 }
