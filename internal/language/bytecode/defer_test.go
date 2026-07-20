@@ -547,15 +547,18 @@ func Test_deferByteCode_ReceiverCapture_MultipleNewReceivers_DEFER1(t *testing.T
 	}
 }
 
-// Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture verifies the
-// behavior when deferThisSize is 0 (empty receiver stack at defer-start).
-// The condition `deferThisSize > 0` guards the capture block, so even if new
-// receivers have been pushed, nothing is captured.
+// Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_Captures verifies the
+// DEFER-2 fix: when deferThisSize is 0 (empty receiver stack at defer-start)
+// but a receiver was nonetheless pushed for the deferred call, that receiver is
+// captured into the deferStatement and trimmed from the live stack -- exactly
+// as it is for the deferThisSize > 0 case.
 //
-// This is documented as DEFER-2: a deferred method call made from a context
-// where no previous receivers existed will not have its receivers stored,
-// potentially causing the deferred function to run without its method receiver.
-func Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture(t *testing.T) {
+// Note: current compiled output never actually reaches this state (defer is a
+// statement, so deferThisSize is always 0, and the deferred call is wrapped in
+// a closure so no receiver is pushed live between DeferStart and Defer). This
+// test pins the correct behavior for any future defer form that does leave a
+// receiver pending, replacing the earlier guard that silently dropped it.
+func Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_Captures(t *testing.T) {
 	tc := newTestContext(t)
 	fn := New("top-level-method")
 
@@ -574,16 +577,16 @@ func Test_deferByteCode_ReceiverCapture_ZeroDeferThisSize_NoCapture(t *testing.T
 
 	entry := tc.ctx.deferStack[0]
 
-	// Current behavior: no receivers captured because deferThisSize == 0.
-	// See DEFER-2 in docs/bytecode_issues.md.
-	if len(entry.receiverStack) != 0 {
-		t.Errorf("DEFER-2: expected 0 captured receivers (deferThisSize=0), got %v",
-			entry.receiverStack)
+	// DEFER-2 fix: the pushed receiver is captured into the defer statement.
+	wantReceivers := []this{R0}
+	if !reflect.DeepEqual(entry.receiverStack, wantReceivers) {
+		t.Errorf("DEFER-2: expected captured receivers %v (deferThisSize=0), got %v",
+			wantReceivers, entry.receiverStack)
 	}
 
-	// Receiver stack is unchanged (condition was false, no trim occurred).
-	if len(tc.ctx.receiverStack) != 1 {
-		t.Errorf("receiverStack: expected unchanged len=1, got %v", tc.ctx.receiverStack)
+	// The live receiver stack is trimmed back to its pre-defer (empty) state.
+	if len(tc.ctx.receiverStack) != 0 {
+		t.Errorf("receiverStack: expected trimmed to len=0, got %v", tc.ctx.receiverStack)
 	}
 }
 

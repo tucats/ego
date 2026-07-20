@@ -64,7 +64,22 @@ func deferByteCode(c *Context, i any) error {
 	// and the receiver stack size is now larger, it means the defer expression
 	// included receiver values. We need to capture these values and store them
 	// in the defer stack object.
-	if c.deferThisSize > 0 && (c.deferThisSize < len(c.receiverStack)) {
+	//
+	// In current compiled output this block is not reached: `defer` is a
+	// statement, so it is compiled at a statement boundary where the receiver
+	// stack is always empty (receivers are pushed and popped within a single
+	// call expression), making deferThisSize always 0; and the deferred call
+	// is wrapped in a closure (defer f() -> defer func(){ f() }()), so every
+	// receiver setup happens inside that closure body when the defer later
+	// runs, never on this parent stack between DeferStart and Defer. The block
+	// is kept correct-by-construction for any future defer form that does leave
+	// a receiver pending. The guard is `deferThisSize <= len` (not `< len`
+	// gated on `deferThisSize > 0`): when deferThisSize is 0 and a receiver was
+	// nonetheless pushed, everything on the stack belongs to the deferred call
+	// and must be captured too (DEFER-2). The previous `deferThisSize > 0`
+	// guard silently dropped that receiver and left it stranded on the live
+	// stack.
+	if c.deferThisSize < len(c.receiverStack) {
 		// Capture every receiver added SINCE deferStart — those start at index
 		// deferThisSize.  The previous formula (len-deferThisSize) was wrong
 		// when the number of new receivers differed from deferThisSize (DEFER-1).
