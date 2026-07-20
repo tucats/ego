@@ -1,5 +1,110 @@
 # Ego Release Notes
 
+## Ego 1.9 "Meatloaf"
+
+"I could see paradise by the dashboard light..."
+
+Lots of new stuff, and more than 300 bug fixes, including functional
+issues, missing capabilities, language edge-cases, and security vulnerabilities
+are fixed in this release. It also includes lots of new features, like
+a new web-based dashboard, new OAUTH support, and lots more.
+
+This is the first release where some tests and new features were implemented
+with the support of AI. This included security audits, language compliance
+testing, the new dashboard, and much of the OAUTH2 support. In particular,
+Claude Code and the Opus 4.8 model were used.
+
+The docs/ directory now contains exhaustive documentation on much of Ego,
+including both internal specifications, designs, tools, and implementation
+notes, as well as user-facing documentation on the language, command line
+tools, server adminstration, API endpoint specifications, debugging Ego
+programs, and using the new Dashboard.
+
+This version now includes localizations for English, French, Spanish,
+and Japanese.
+
+### 1.9 Language Features
+
+* Compiler optimizations for better symbol scope management and local
+  symbol storage can result in 30% to 150% performance improvements in
+  some cases.
+* Added support for complex numbers, and a new cmplx package to support
+  extended math operations on complex values.
+* Full support for scalar type specifications; i.e `type foo int32`
+* Channel support now matches Go language and includes typed channels.
+* `throw` statement compliments`try`/`catch` when extensions enabled.
+  Also supports Go-style `panic` and `recover()` logic.
+* Full support for `++` and `--` on qualified expressions, like `a[3]++`
+* `break` support in `switch`, ability to `continue` to a label in `for`.
+* Support for `iota` in `const` declarations.
+* Full supprot for all signed and unsigned integer types.
+
+### 1.9 Runtime Features
+
+* Lots of Go-standard runtime functions that were missing from packages
+  were added or made more Go-compliant. This includes base64, cmplx, 
+  filepath, fmt, io, json, math, os, sort, strconv, strings, time, and
+  uuid packges.
+* New `runtime` package support for Ego state, cpu configuration for
+  thread support, and Ego stack reporting.
+* Adopted native SQLite3 implementation, `cgo` no longer used.
+
+
+### 1.9 Command Line Features
+
+* Test program output format updated to remove a lot of the noise from
+  test output. New features for capturing stdout during tests and being
+  able to test the compiler within a @test block were added.
+* New commands for formatting JSON files or Ego source files. The JSON
+  formatter includes the ability to query the resulting JSON to extract
+  subsets or individual values. The Ego source formatter will also validate
+  syntax and variable usage without having to compile and run the program.
+* New `ego rest` command simplifies scripting endpoint calls to Ego server.
+
+
+### 1.9 Server Features
+
+* Ego can use an external OAUTH2 server for authentication and permissions.
+* Ego can be an OAUTH2 server for other users
+* Ego supports passkey logins from web clients.
+* User permissions standardization, mapping to OAUTH scope names.
+* More expressive @endpoint specification supprorts permission checking,
+  media type validation, etc.
+* Basic clustering support.
+
+### 1.9 Dashboard Features
+
+The new web dashboard can be accessed using the /ui endpoint to the
+server. It requires authenticatio using an Ego name, and allowed
+authentication via passcode or username/password. Most features
+require a user with `ego.root` or admin privileges, or `ego.code`
+to just be able to use a sandboxed version of the Code tab. The
+main features of the dashboard include:
+
+* Status tab shows current server status, resources, caches, etc.
+* User tab show user names, allows user editing.
+* DSNs tab show defined data source names, allows DSN editing.
+* Tables tab shows contents of tables in a DSN.
+* SQL tab allows arbitrary SQL execution against DSNs.
+* Code tab allows execution of arbitrary Ego code.
+* Log tab shows server log, allows search and log configuraiton.
+
+### 1.9 Bug Fix Features
+
+See docs/ISSUES.md for an _exhaustive_ list of significant bug fixes
+in this release. Some highlights include:
+
+* Added much more robust defenses against DoS and authentication attacks,
+  including better standards compliance, use of more advanced encryption
+  and hashing logic, constant-time encryption functions, better sandbox
+  support in the file system, better SQL and JSON injection defenses,
+  and rate limiting for sensitive endpoints.
+* Tons of fixes to make variable scope act like Go, including in `for`,
+  `switch`, `defer`, and function closures.
+* Numerous race conditions eliminated, allowing proper parallelization
+  of `go` routines and Ego REST handlers.
+
+
 ## Ego 1.8 "Mushy Peas"
 
 This release is being pushed out with relatively few changes because it contains
