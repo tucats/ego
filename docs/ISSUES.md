@@ -297,7 +297,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [COERCE-1](#COERCE-1) | COERCE | `NeedsCoerce` returns the wrong answer when the `Push` operand does not match the target type | ✓ |
 | [COERCE-2](#COERCE-2) | COERCE | `data.UInt` accessor panics with a type assertion failure | ✓ |
 | [COMPARE-1](#COMPARE-1) | COMPARE | `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests | ✓ |
-| [COMPARE-2](#COMPARE-2) | COMPARE | `notEqualByteCode` uses value types instead of pointer types for composite cases | |
+| [COMPARE-2](#COMPARE-2) | COMPARE | `notEqualByteCode` uses value types instead of pointer types for composite cases | ✓ |
 | [COMPARE-3](#COMPARE-3) | COMPARE | `int8` missing from signed-integer case in four ordering functions | ✓ |
 | [COMPARE-4](#COMPARE-4) | COMPARE | Four comparison operators returned raw errors without `c.runtimeError` decoration | ✓ |
 | [CONTEXT-1](#CONTEXT-1) | CONTEXT | `GetModuleName` panics with a nil pointer dereference when `bc` is nil | ✓ |
@@ -12746,7 +12746,7 @@ on the stack rather than catching a panic.
 | ID | Summary | Status |
 | :-- | :-- | :-- |
 | [COMPARE-1](#COMPARE-1) | `notEqualByteCode` and `greaterThanOrEqualByteCode` had no tests | ✓ |
-| [COMPARE-2](#COMPARE-2) | `notEqualByteCode` uses value types instead of pointer types for composite cases | |
+| [COMPARE-2](#COMPARE-2) | `notEqualByteCode` uses value types instead of pointer types for composite cases | ✓ |
 | [COMPARE-4](#COMPARE-4) | Four comparison operators returned raw errors without `c.runtimeError` decoration | ✓ |
 | [COMPARE-3](#COMPARE-3) | `int8` missing from signed-integer case in four ordering functions | ✓ |
 
@@ -12788,9 +12788,10 @@ and unsigned integers.
 **File:** `bytecode/notEqual.go`  
 **Risk:** Medium — comparing two `*data.Map`, `*data.Array`, or `*data.Struct`
 values with `!=` silently returns `false` (equal) even when the values differ  
-**Discovered by:** `Test_notEqualByteCode_MapNotEqual_CurrentlyBroken`,
-`Test_notEqualByteCode_ArrayNotEqualValues_CurrentlyBroken`  
-**Status: OPEN**
+**Discovered by:** `Test_notEqualByteCode_MapNotEqual`,
+`Test_notEqualByteCode_ArrayNotEqualValues` (both since renamed from their
+original `_CurrentlyBroken` forms)  
+**Status: RESOLVED**
 
 #### COMPARE-2: Description
 
@@ -12816,9 +12817,12 @@ inner switch with no matching case, leaving `result` at its zero value (`false`)
 Compare with `equalByteCode`, which correctly uses `*data.Map`, `*data.Array`,
 and `*data.Struct`.
 
-#### COMPARE-2: Suggested fix
+#### COMPARE-2: Fix
 
-Replace the three value-type cases with pointer types:
+The three value-type cases were replaced with pointer types in
+`bytecode/notEqual.go`, mirroring `equalByteCode` so that `!=` is the exact
+logical inverse of `==` for composites (including the type-mismatch handling —
+a composite compared against a different type is always "not equal"):
 
 ```go
 case *data.Map:
@@ -12827,16 +12831,26 @@ case *data.Map:
 case *data.Array:
     if array, ok := v2.(*data.Array); ok {
         result = !actual.DeepEqual(array)
+    } else {
+        result = true // different types are always not equal
     }
 
 case *data.Struct:
     str, ok := v2.(*data.Struct)
-    result = !ok || !reflect.DeepEqual(actual, str)
+    if !ok {
+        result = true // different types are always not equal
+    } else {
+        result = !reflect.DeepEqual(actual, str)
+    }
 ```
 
-After the fix, invert the bug-documentation assertions in
-`Test_notEqualByteCode_MapNotEqual_CurrentlyBroken` and
-`Test_notEqualByteCode_ArrayNotEqualValues_CurrentlyBroken`.
+The bug-documentation tests were inverted to assert correct behavior and
+renamed to drop the `_CurrentlyBroken` suffix:
+`Test_notEqualByteCode_MapNotEqual`, `Test_notEqualByteCode_ArrayNotEqualValues`
+(plus `_ArrayEqualValues`, `_StructEqual`, `_StructNotEqual` for the equal-value
+and struct paths). Verified end-to-end at the Ego language level:
+`!=` on differing arrays, maps, and structs returns `true`, and on equal ones
+returns `false`.
 
 ---
 
