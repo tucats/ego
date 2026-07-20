@@ -346,7 +346,7 @@ Every issue in this document, sorted alphabetically by identifier, for direct lo
 | [JSON-M3](#JSON-M3) | JSON | json.Unmarshal into a struct returned an error for unknown JSON fields instead of ignoring them (as Go does). | ✓ |
 | [LOAD-1](#LOAD-1) | LOAD | `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration | ✓ |
 | [LOAD-2](#LOAD-2) | LOAD | `explodeByteCode` doc comment incorrectly described the operand as "a struct" | ✓ |
-| [LOAD-3](#LOAD-3) | LOAD | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | |
+| [LOAD-3](#LOAD-3) | LOAD | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | ✓ |
 | [LOGIN-C1](#LOGIN-C1) | LOGIN | Passwords hashed with bare, unsalted SHA-256, enabling parallel rainbow-table cracking | ✓ |
 | [LOGIN-C2](#LOGIN-C2) | LOGIN | No brute-force or rate-limiting protection on the login endpoint | ✓ |
 | [LOGIN-H1](#LOGIN-H1) | LOGIN | Timing attack possible via non-constant-time password comparison | ✓ |
@@ -13622,7 +13622,7 @@ still produce the correct bool results after the dead code was removed.
 | :-- | :-- | :-- |
 | [LOAD-1](#LOAD-1) | `explodeByteCode` returned raw error from `c.Pop()` without `c.runtimeError` decoration | ✓ |
 | [LOAD-2](#LOAD-2) | `explodeByteCode` doc comment incorrectly described the operand as "a struct" | ✓ |
-| [LOAD-3](#LOAD-3) | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | |
+| [LOAD-3](#LOAD-3) | `Test_explodeByteCode` in `data_test.go` exits early on the first matched error, silently skipping later table cases | ✓ |
 
 <a id="LOAD-1"></a>
 
@@ -13735,7 +13735,7 @@ The comment was rewritten to describe the actual behavior accurately:
 **File:** `bytecode/data_test.go`  
 **Risk:** Low — test coverage gap only; the production function was correct  
 **Discovered by:** code review of `data_test.go` during the `load.go` audit  
-**Status: DOCUMENTED**
+**Status: RESOLVED** (moot — the test and the code it exercised were removed)
 
 #### LOAD-3: Description
 
@@ -13775,16 +13775,16 @@ The same pattern (`return` inside a `t.Run` closure) is correct and exits
 only the sub-test — but here there is no `t.Run` wrapper, so `return`
 terminates the outer function.
 
-#### LOAD-3: Non-fix rationale
+#### LOAD-3: Resolution
 
-The comprehensive new tests in `bytecode/load_test.go` cover the missing
-paths (non-map type, stack underflow, stack marker) using the standard
-`newTestContext` helper pattern, so the coverage gap is now filled.
-
-The original `Test_explodeByteCode` in `data_test.go` is left as-is to avoid
-churn in a file that is outside the scope of this audit.  A future cleanup
-should either add `t.Run` wrappers (making each case a named sub-test) or replace the
-bare `return` with `continue` to let the loop reach cases 3 and 4.
+Moot. The `Explode` bytecode opcode and its `explodeByteCode` implementation
+were subsequently removed from the language, and `Test_explodeByteCode` was
+deleted along with them — a July 2026 audit confirmed no `Explode`,
+`explodeByteCode`, or `Test_explodeByteCode` reference remains anywhere in the
+codebase (the only surviving "explode" identifiers are the unrelated
+`ResHandle.explode` helper in `internal/resources/` and a fixture option name
+in a CLI test). With the test gone there is no early-return coverage gap left
+to fix.
 
 ---
 
