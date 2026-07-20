@@ -292,7 +292,11 @@ func executeAdminDebug(session int, user, code, debugInput string, tracing bool,
 		// Editor debug runs use a fresh child table so each run starts clean.
 		s = symbols.NewChildSymbolTable("debug-editor", s)
 
-		bc, compileErr := compiler.CompileString("dashboard", code)
+		// Extensions are enabled for dashboard code: the CODE-M5 audit
+		// confirmed no extension-gated feature widens the sandbox (enforced at
+		// runtime via Sandboxed(true) below), and library packages the code may
+		// import require extension syntax to compile.
+		bc, compileErr := compiler.CompileString("dashboard", code, true)
 		if compileErr != nil {
 			return codeRunResponse{
 				ProgramOutput: compileErr.Error(),
@@ -395,7 +399,9 @@ func executeAdminEgo(session *router.Session, source string, console bool, trace
 		s = symbols.NewChildSymbolTable("editor", s)
 	}
 
-	bc, err := compiler.CompileString("dashboard", source)
+	// Extensions enabled: safe under sandbox per the CODE-M5 audit, and needed
+	// so imported library packages (which use extension syntax) still compile.
+	bc, err := compiler.CompileString("dashboard", source, true)
 	if err != nil {
 		return "", err
 	}

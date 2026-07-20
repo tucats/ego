@@ -161,7 +161,9 @@ func debuggerPrompt(c *bytecode.Context, sessionContext *session) error {
 				// whether this is an interactive or API-mode session.
 				text := strings.ReplaceAll("fmt.Println("+strings.Replace(tokens.GetSource(), "print", "", 1)+")", "\n", "")
 
-				bc, err := compiler.CompileString("print command", text)
+				// The interactive debugger runs the full language, so extensions
+				// are enabled for the compiled print expression.
+				bc, err := compiler.CompileString("print command", text, true)
 				if err == nil {
 					// Make a new child table so we can put the console writer in
 					// the temporary scope for non-interactive sessions.  The local

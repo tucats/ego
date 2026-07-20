@@ -122,7 +122,7 @@ func TestBUG25FallthroughAsFinalStatement(t *testing.T) {
 		}
 	`
 
-	_, err := CompileString(t.Name(), program)
+	_, err := CompileString(t.Name(), program, true)
 	if errors.Nil(err) {
 		t.Fatalf("expected a compile error, but compilation succeeded")
 	}
@@ -148,7 +148,7 @@ func TestBUG25FallthroughAfterDefaultDeclaredEarlier(t *testing.T) {
 		}
 	`
 
-	_, err := CompileString(t.Name(), program)
+	_, err := CompileString(t.Name(), program, true)
 	if errors.Nil(err) {
 		t.Fatalf("expected a compile error, but compilation succeeded")
 	}
@@ -433,7 +433,7 @@ func TestBUG31ContinueInsideSwitchWithNoEnclosingLoopIsCompileError(t *testing.T
 		}
 	`
 
-	_, err := CompileString(t.Name(), program)
+	_, err := CompileString(t.Name(), program, true)
 	if errors.Nil(err) {
 		t.Fatalf("expected a compile error, but compilation succeeded")
 	}

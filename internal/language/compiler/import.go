@@ -352,6 +352,15 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	importCompiler.flags.debuggerActive = c.flags.debuggerActive
 	importCompiler.importStack = append([]importElement{}, c.importStack...)
 
+	// Inherit the parent's extension state directly rather than re-reading the
+	// process-global ExtensionsEnabledSetting via New(). This keeps imported
+	// package compilation deterministic and independent of any global the
+	// top-level compile may (or, since CODE-M5, may no longer) have set --
+	// library packages such as math and http use extension syntax (throw,
+	// try/catch) and must compile with the same extension state as the code
+	// importing them.
+	importCompiler.flags.extensionsEnabled = c.flags.extensionsEnabled
+
 	defer importCompiler.Close()
 
 	// Scan the package definition to see if there are any package types we need to elevate

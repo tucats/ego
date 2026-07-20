@@ -15,22 +15,24 @@ func RunString(name string, s *symbols.SymbolTable, programText string) error {
 }
 
 // CompileString tokenizes programText and compiles it, returning the resulting
-// bytecode without executing it. Extensions are enabled and the function depth
-// is pre-set to 1 so that top-level statements are accepted without requiring
-// a function body wrapper. This is the compile-only counterpart of RunString,
-// intended for callers that need to run the bytecode in a custom way (e.g.
-// under the interactive debugger).
-func CompileString(name string, programText string) (*bytecode.ByteCode, error) {
-	oldState := defs.True
-	if !settings.GetBool(defs.ExtensionsEnabledSetting) {
-		oldState = defs.False
-	}
-
-	defer settings.SetDefault(defs.ExtensionsEnabledSetting, oldState)
-
-	settings.SetDefault(defs.ExtensionsEnabledSetting, defs.True)
-
-	c := New(name).SetExtensionsEnabled(true)
+// bytecode without executing it. The function depth is pre-set to 1 so that
+// top-level statements are accepted without requiring a function body wrapper.
+// This is the compile-only counterpart of RunString, intended for callers that
+// need to run the bytecode in a custom way (e.g. under the interactive
+// debugger).
+//
+// The extensions parameter selects whether language extensions (try/catch,
+// print, throw, ?:, etc.) are permitted in the compiled unit. It is set
+// directly on this compiler instance and inherited by any import sub-compiler
+// (see compileImport). Earlier versions instead mutated the process-global
+// ExtensionsEnabledSetting for the duration of the call so that nested
+// import-time New() calls would observe it; that leaked the flag across every
+// other goroutine compiling concurrently (a real cross-session hazard for the
+// dashboard, which compiles user code per request -- CODE-M5) and forced
+// extensions on regardless of the caller's intent. Passing the value
+// explicitly keeps it local to this compilation and its imports.
+func CompileString(name string, programText string, extensions bool) (*bytecode.ByteCode, error) {
+	c := New(name).SetExtensionsEnabled(extensions)
 	c.functionDepth = 1
 	c.flags.fragment = true
 
