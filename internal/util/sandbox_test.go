@@ -108,16 +108,16 @@ func TestSandboxJoin_SymlinkEscape(t *testing.T) {
 func TestSandboxJoin_SymlinkInsideAllowed(t *testing.T) {
 	sandbox := t.TempDir()
 
-	real := filepath.Join(sandbox, "real")
-	if err := os.MkdirAll(real, 0o755); err != nil {
-		t.Fatalf("mkdir %q: %v", real, err)
+	realPath := filepath.Join(sandbox, "real")
+	if err := os.MkdirAll(realPath, 0o755); err != nil {
+		t.Fatalf("mkdir %q: %v", realPath, err)
 	}
 
-	if err := os.WriteFile(filepath.Join(real, "file.txt"), []byte("ok"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(realPath, "file.txt"), []byte("ok"), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
 
-	if err := os.Symlink(real, filepath.Join(sandbox, "link")); err != nil {
+	if err := os.Symlink(realPath, filepath.Join(sandbox, "link")); err != nil {
 		t.Skipf("symlinks unsupported on this platform: %v", err)
 	}
 
@@ -128,7 +128,7 @@ func TestSandboxJoin_SymlinkInsideAllowed(t *testing.T) {
 		t.Fatalf("EvalSymlinks(%q): %v", got, err)
 	}
 
-	want, _ := filepath.EvalSymlinks(filepath.Join(real, "file.txt"))
+	want, _ := filepath.EvalSymlinks(filepath.Join(realPath, "file.txt"))
 	if resolved != want {
 		t.Errorf("SandboxJoin(%q, %q) resolved to %q, want %q", sandbox, "link/file.txt", resolved, want)
 	}

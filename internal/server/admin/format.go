@@ -2,8 +2,12 @@ package admin
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"strings"
+	"time"
 
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/parse"
@@ -37,6 +41,7 @@ type formatRequest struct {
 type formatResponse struct {
 	Formatted string `json:"formatted,omitempty"`
 	Error     string `json:"error,omitempty"`
+	Elapsed   string `json:"elapsed,omitempty"`
 }
 
 // FormatCodeHandler is the HTTP handler for POST /admin/format. It parses the
@@ -51,24 +56,54 @@ type formatResponse struct {
 func FormatCodeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var req formatRequest
 
+	start := time.Now()
+
 	// Limit body size before decoding to prevent memory exhaustion, mirroring
 	// the same guard on POST /admin/run (CODE-M1).
 	r.Body = http.MaxBytesReader(w, r.Body, maxFormatBodyBytes)
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		status := http.StatusBadRequest
-		if _, ok := err.(*http.MaxBytesError); ok {
-			status = http.StatusRequestEntityTooLarge
+	// If the content type is text, we just assume the entire body
+	// is the code.
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(strings.ToLower(contentType), "text") {
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+		req.Code = string(bodyBytes)
+	} else {
+		// Otherwise, parse it as a well-formed JSON request.
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			status := http.StatusBadRequest
+			if _, ok := err.(*http.MaxBytesError); ok {
+				status = http.StatusRequestEntityTooLarge
+			}
+
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+		}
 	}
 
 	if len(req.Code) > maxFormatCodeBytes {
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.format.too.large"), http.StatusRequestEntityTooLarge)
 	}
 
+	if ui.IsActive(ui.RestLogger) {
+		fake := formatRequest{Code: req.Code}
+		if len(fake.Code) > 80 {
+			fake.Code = fake.Code[:80]
+		}
+
+		b, _ := json.MarshalIndent(fake, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b),
+		})
+	}
+
 	var resp formatResponse
+
+	resp.Elapsed = time.Since(start).String()
 
 	if file, err := parse.ParseAuto(req.Code); err != nil {
 		resp.Error = err.Error()
@@ -81,6 +116,24 @@ func FormatCodeHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 
 	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+
+	if ui.IsActive(ui.RestLogger) {
+		fake := formatResponse{
+			Formatted: resp.Formatted,
+			Error:     resp.Error,
+			Elapsed:   resp.Elapsed,
+		}
+
+		if len(fake.Formatted) > 80 {
+			fake.Formatted = fake.Formatted[:80]
+		}
+
+		b, _ := json.MarshalIndent(fake, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b),
+		})
+	}
 
 	return http.StatusOK
 }
