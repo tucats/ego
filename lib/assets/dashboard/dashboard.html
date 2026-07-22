@@ -396,7 +396,9 @@
 <div id="code" class="tab-content">
     <!-- Dark-themed code editor panel, mirroring the standalone webapp -->
     <div id="code-ui">
-        <!-- Toolbar: split Run/Trace button, spinner, and view toggles -->
+        <!-- Toolbar: split Run/Debug button, spinner, and a Configure button
+             (right-justified) that opens the code-config-overlay sheet where
+             Trace/Format/Console are set. -->
         <div id="code-toolbar">
             <div id="code-run-wrap">
                 <button id="code-run-btn">&#9654; Run</button>
@@ -407,17 +409,8 @@
                 </div>
             </div>
             <span id="code-spinner"></span>
-            <div class="code-toolbar-sep"></div>
-            <button id="code-trace-toggle" class="code-toggle-btn" title="Enable trace logging for the next run">
-                Trace <span id="code-trace-toggle-indicator">&#x25A3;</span>
-            </button>
-            <div class="code-toolbar-sep"></div>
-            <button id="code-format-toggle" class="code-toggle-btn" title="Reformat the editor source before Run/Debug">
-                Format <span id="code-format-toggle-indicator">&#x25A3;</span>
-            </button>
-            <div class="code-toolbar-sep"></div>
-            <button id="code-console-toggle" class="code-toggle-btn" title="Show or hide the Console panel">
-                Console <span id="code-console-toggle-indicator">&#x25A3;</span>
+            <button id="code-config-btn" class="code-toggle-btn" title="Configure Trace, Format, and Console settings" style="margin-left:auto;">
+                &#x2699; Configure&hellip;
             </button>
         </div>
 
@@ -560,6 +553,49 @@
         </div>
         <div class="sheet-buttons">
             <button onclick="hideSettings()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Code tab Configure sheet — slides in from the right when Configure is
+     clicked in the Code toolbar. Each row is a toggle switch followed by a
+     short explanatory sentence, matching the main Settings sheet's style;
+     new Code tab settings can be added here as additional rows. -->
+<div id="code-config-overlay" onclick="overlayBackdropClick(event)">
+    <div id="code-config-sheet">
+        <h2>Code Settings</h2>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="code-config-trace">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Trace</span>
+                <span class="settings-hint">Enable trace logging for Run/Debug. Stays on until you turn it off, but resets to off if you reload the page.</span>
+            </div>
+        </div>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="code-config-format">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Format</span>
+                <span class="settings-hint">Reformat the editor source with the server's parser before each Run/Debug. Remembered across sessions.</span>
+            </div>
+        </div>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="code-config-console">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="settings-label-group">
+                <span class="settings-label">Console</span>
+                <span class="settings-hint">Show the Console panel for running one-off statements alongside the editor. Remembered across sessions.</span>
+            </div>
+        </div>
+        <div class="sheet-buttons">
+            <button onclick="hideCodeConfig()">Close</button>
         </div>
     </div>
 </div>

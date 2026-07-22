@@ -181,6 +181,42 @@ body {
     line-height: 1.4;
 }
 
+/* ==========================================================================
+   Code tab Configure sheet — right-side slide-in panel
+   Structurally identical to the Settings sheet above (same .settings-row /
+   .toggle-switch / .settings-label-group / .settings-label / .settings-hint
+   classes are reused), just a separate overlay/sheet pair so it can be
+   opened independently from the Code tab's own toolbar. The 1rem gap on
+   #code-config-sheet is what gives each toggle+description row its small
+   separating space from the next.
+   ========================================================================== */
+#code-config-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#code-config-sheet {
+    background: #fff;
+    width: 380px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+#code-config-sheet h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+    color: #1C6EA4;
+}
+
 #server-info {
     display: flex;
     flex-direction: column;
@@ -1921,16 +1957,9 @@ body.dark #code-ui {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Vertical separator between toolbar groups */
-.code-toolbar-sep {
-    width: 1px;
-    height: 1.4rem;
-    background: var(--cbrd);
-    margin: 0 0.2rem;
-    flex-shrink: 0;
-}
-
-/* Toggle buttons (e.g. "Console") in the code toolbar */
+/* Toolbar button that opens the code-config-overlay sheet (Trace/Format/
+   Console settings). Also used historically for the toolbar toggle buttons
+   it replaced, hence the shared "code-toggle-btn" name. */
 .code-toggle-btn {
     display: flex;
     align-items: center;
@@ -1947,17 +1976,6 @@ body.dark #code-ui {
 }
 
 .code-toggle-btn:hover { background: var(--cbrdh); color: var(--ct); }
-
-.code-toggle-btn.active {
-    background: var(--cbrdh);
-    color: var(--ct);
-}
-
-/* The filled/open square indicator inside the button */
-#code-console-toggle-indicator {
-    font-size: 0.9rem;
-    line-height: 1;
-}
 
 /* When #code-ui has the hide-console class, collapse the divider + pane */
 #code-ui.hide-console #code-console-divider,
@@ -2677,7 +2695,8 @@ body.dark #table-detail-sheet,
 body.dark #dsn-detail-sheet,
 body.dark #logger-config-sheet,
 body.dark #config-sheet,
-body.dark #settings-sheet {
+body.dark #settings-sheet,
+body.dark #code-config-sheet {
     background: #16213e;
     color: #cdd6f4;
 }
@@ -2858,10 +2877,11 @@ body.dark .data-edit-null-btn:hover { background: #2a3a5a; }
 body.dark #data-content tbody tr:hover td { background: #1a3a5a; }
 
 /* Settings sheet */
-body.dark #settings-sheet h2  { color: #7eb8f7; }
-body.dark #settings-note      { color: #666; }
-body.dark .settings-label     { color: #cdd6f4; }
-body.dark .settings-hint      { color: #666; }
+body.dark #settings-sheet h2    { color: #7eb8f7; }
+body.dark #settings-note        { color: #666; }
+body.dark .settings-label       { color: #cdd6f4; }
+body.dark .settings-hint        { color: #666; }
+body.dark #code-config-sheet h2 { color: #7eb8f7; }
 
 
 /* SQL tab */
