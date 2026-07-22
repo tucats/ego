@@ -150,11 +150,19 @@ accepted as shorthand for an empty block.
 constDecl      ::= "const" ( constSpec
                            | "(" { constSpec [ ";" ] } ")" )
 
-constSpec      ::= IDENTIFIER "=" expression
+constSpec      ::= IDENTIFIER [ typeSpec ] "=" expression
 ```
 
 The right-hand side must be a constant expression; the compiler rejects any
 reference to a non-constant symbol.
+
+An optional type may appear between the name and `=`, as in Go
+(`const Monday weekday = iota`). The constant's value is converted to that
+named type, so it carries the type through to any symbol assigned from it —
+enabling method dispatch, typed `switch` cases, and `reflect.Type`. Inside a
+grouped `const(...)` block a spec that omits `= expression` repeats the
+previous spec's expression _and_ its type; a later spec that supplies its own
+`= expression` with no type resets the type back to untyped.
 
 ### 5.2 import
 
@@ -920,7 +928,7 @@ execStmt         ::= assignStmt | breakStmt | callStmt | continueStmt
 
 (* --- Declarations --- *)
 constDecl        ::= "const" ( constSpec | "(" { constSpec [ ";" ] } ")" )
-constSpec        ::= IDENTIFIER "=" expression
+constSpec        ::= IDENTIFIER [ typeSpec ] "=" expression
 importDecl       ::= "import" ( importSpec | "(" { importSpec [ ";" ] } ")" )
 importSpec       ::= [ IDENTIFIER ] STRING
 packageDecl      ::= "package" IDENTIFIER

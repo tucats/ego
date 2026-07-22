@@ -547,9 +547,15 @@ func (p *printer) printConst(n *ast.ConstDecl) {
 	}
 }
 
-// printConstSpec renders "Name = value" (the "= value" clause is optional).
+// printConstSpec renders "Name [type] [= value]" (the type and the "= value"
+// clause are each optional).
 func (p *printer) printConstSpec(spec *ast.ConstSpec) {
 	p.write(spec.Name.Name)
+
+	if spec.Type != nil {
+		p.write(" ")
+		p.printExpr(spec.Type)
+	}
 
 	if spec.Value != nil {
 		p.write(" = ")

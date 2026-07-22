@@ -58,6 +58,16 @@ func TestFormatGolden(t *testing.T) {
 			src:  `s:=[]int{}`,
 			want: "s := []int{}\n",
 		},
+		{
+			name: "typed-const-single",
+			src:  `const Red color=5`,
+			want: "const Red color = 5\n",
+		},
+		{
+			name: "typed-const-group",
+			src:  `const(Monday weekday=iota;Tuesday;Wednesday)`,
+			want: "const (\n    Monday weekday = iota\n    Tuesday\n    Wednesday\n)\n",
+		},
 	}
 
 	for _, c := range cases {

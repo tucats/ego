@@ -83,6 +83,12 @@ func (c *Compiler) compileConst() error {
 	haveLastExpr := false
 	lastExprMark := 0
 
+	// lastType remembers the most recently declared explicit type so that a
+	// spec which repeats the previous one (no "= expr" of its own) inherits its
+	// type as well as its expression, per Go's ConstSpec rules. A spec that
+	// supplies its own "= expr" with no type resets this back to nil.
+	var lastType *data.Type
+
 	// Scan over the list (possibly a single item) and compile each
 	// constant. These are essentially expressions which are stored
 	// away as readonly symbols.
@@ -114,10 +120,36 @@ func (c *Compiler) compileConst() error {
 			err error
 		)
 
+		// Optional explicit type: Go's ConstSpec is
+		// "IdentifierList [ [ Type ] '=' ExpressionList ]", so a type may sit
+		// between the name and the "=". We only attempt to parse one when the
+		// next token could actually begin a type (an identifier, "*", "[", or
+		// "func"); anything else -- notably a literal, a ";", or the block
+		// terminator -- is left for the "=" handling below so that malformed
+		// specs still report the original "missing '='" error. A type, when
+		// present, must be followed by "= expr" -- it cannot be repeated on its
+		// own, so we require the "=" here rather than falling through to the
+		// repetition path (which would leave the type token unconsumed).
+		var constType *data.Type
+
+		if isTypeStartToken(c.t.Peek(1)) {
+			constType, err = c.parseType("", false)
+			if err != nil {
+				return err
+			}
+
+			if !c.t.Peek(1).Is(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrMissingEqual)
+			}
+		}
+
 		if c.t.IsNext(tokenizer.AssignToken) {
-			// Normal case: "Name = expr". Remember where this expression's
-			// tokens start so a later spec can repeat it if needed.
+			// Normal case: "Name [Type] = expr". Remember where this expression's
+			// tokens start so a later spec can repeat it if needed. Record this
+			// spec's type (possibly nil) so repeated specs inherit it and later
+			// untyped specs reset it.
 			lastExprMark = c.t.Mark()
+			lastType = constType
 
 			vx, err = c.Expression(true)
 			if err != nil {
@@ -163,6 +195,20 @@ func (c *Compiler) compileConst() error {
 		c.constants = append(c.constants, nameSpelling)
 
 		c.b.Append(vx)
+
+		// If this spec has (or inherits) an explicit type, convert the value to
+		// that named type before storing it, so a typed constant like
+		// "Monday weekday = iota" carries the "weekday" type through to any
+		// symbol assigned from it (enabling method dispatch, typed switch cases,
+		// etc.). We reuse the same type-cast sequence the var declaration path
+		// uses ("Push type; Swap; Call 1") rather than bytecode.Coerce, because
+		// Coerce reduces the value to the base kind and loses the named type.
+		if lastType != nil {
+			c.b.Emit(bytecode.Push, lastType)
+			c.b.Emit(bytecode.Swap)
+			c.b.Emit(bytecode.Call, 1)
+		}
+
 		c.b.Emit(bytecode.Constant, nameSpelling)
 
 		// Advance iota for the next spec in this block, per Go's rule that it

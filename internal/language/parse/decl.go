@@ -145,7 +145,7 @@ func (p *Parser) parseConst() (ast.Node, error) {
 	return node, nil
 }
 
-// parseConstSpec parses "IDENTIFIER = expression" (SYNTAX.md: constSpec).
+// parseConstSpec parses "IDENTIFIER [type] = expression" (SYNTAX.md: constSpec).
 func (p *Parser) parseConstSpec() (*ast.ConstSpec, error) {
 	start := p.here()
 
@@ -157,6 +157,20 @@ func (p *Parser) parseConstSpec() (*ast.ConstSpec, error) {
 	name := p.ident()
 
 	spec := &ast.ConstSpec{Name: name}
+
+	// Go's ConstSpec allows an optional type between the name and "=" (the
+	// typed-constant form "Name Type = expr"). We only parse a type when a
+	// token that can begin one follows the name; a grouped spec that repeats
+	// the previous expression has neither a type nor an "=" here, so its next
+	// token (a ";" or ")") is not a type start and Type stays nil.
+	if !p.at(tokenizer.AssignToken) && p.startsTypeSpec(p.t.Peek(1)) {
+		typ, err := p.parseTypeSpec()
+		if err != nil {
+			return nil, err
+		}
+
+		spec.Type = typ
+	}
 
 	// The "= value" clause is optional so that grouped constants that omit it
 	// (repeating the previous expression, as in an iota-style block) still

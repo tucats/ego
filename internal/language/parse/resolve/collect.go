@@ -99,11 +99,18 @@ func registerVarSpec(info *Info, scope *Scope, spec *ast.VarSpec, kind SymbolKin
 	}
 }
 
-// registerConstSpec declares a const's name into scope, inferring its type
-// from a literal Value the same way ":="/"var" do (see inferLiteralType).
+// registerConstSpec declares a const's name into scope. It uses the explicit
+// type of a typed constant ("Name Type = expr") when present, and otherwise
+// infers the type from a literal Value the same way ":="/"var" do (see
+// inferLiteralType).
 func registerConstSpec(info *Info, scope *Scope, spec *ast.ConstSpec) {
 	if spec.Name == nil || spec.Name.Name == "" {
 		return
+	}
+
+	typ := spec.Type
+	if typ == nil {
+		typ = inferLiteralType(spec.Value)
 	}
 
 	info.declare(scope, &Symbol{
@@ -111,7 +118,7 @@ func registerConstSpec(info *Info, scope *Scope, spec *ast.ConstSpec) {
 		Kind:      KindConst,
 		DeclNode:  spec,
 		DeclIdent: spec.Name,
-		Type:      inferLiteralType(spec.Value),
+		Type:      typ,
 		Storage:   fileScopeStorage(scope),
 	})
 }

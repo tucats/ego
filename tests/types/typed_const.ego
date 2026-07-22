@@ -1,0 +1,236 @@
+// Tests for typed constant declarations, e.g.
+//
+//	type weekday int
+//	const (
+//	    Monday weekday = iota
+//	    Tuesday
+//	    ...
+//	)
+//
+// Go's ConstSpec is "IdentifierList [ [ Type ] '=' ExpressionList ]", so a
+// type may appear between the constant name and the "=". Before this was
+// supported the compiler rejected the type token with a spurious "missing '='"
+// error. A typed constant must carry its named type through to any symbol
+// assigned from it, so method dispatch, typed switch cases, and reflect.Type
+// all see the named type rather than the bare underlying type.
+//
+// Type names are registered file-wide (not per @test block), so each block
+// below uses its own distinct type name to avoid collisions.
+
+@test "types: single non-list typed constant carries its type"
+{
+    type color1 int
+
+    const Red color1 = 5
+
+    @assert reflect.Type(Red) == color1
+    @assert int(Red) == 5
+}
+
+@test "types: typed iota sequence carries type on every spec"
+{
+    // This is the original reported example: a weekday enum built with iota.
+    type weekday2 int
+
+    const (
+        Monday weekday2 = iota
+        Tuesday
+        Wednesday
+        Thursday
+        Friday
+        Saturday
+        Sunday
+    )
+
+    // Every spec -- the first (with the explicit type) and each repeat -- is a
+    // weekday2, not a bare int.
+    @assert reflect.Type(Monday) == weekday2
+    @assert reflect.Type(Tuesday) == weekday2
+    @assert reflect.Type(Sunday) == weekday2
+
+    // iota still advances one per spec, and the repeated specs inherit the
+    // "= iota" expression as well as the type.
+    @assert int(Monday) == 0
+    @assert int(Tuesday) == 1
+    @assert int(Wednesday) == 2
+    @assert int(Sunday) == 6
+}
+
+@test "types: value assigned from a typed constant keeps the type"
+{
+    type weekday3 int
+
+    const (
+        Mon weekday3 = iota
+        Tue
+        Wed
+    )
+
+    x := Tue
+    @assert reflect.Type(x) == weekday3
+    @assert int(x) == 1
+}
+
+@test "types: method dispatch through a typed constant"
+{
+    type weekday4 int
+
+    const (
+        Mon weekday4 = iota
+        Tue
+        Wed
+    )
+
+    func (w weekday4) String() string {
+        switch w {
+        case Mon:
+            return "Monday"
+
+        case Tue:
+            return "Tuesday"
+
+        case Wed:
+            return "Wednesday"
+
+        default:
+            return "Unknown"
+        }
+    }
+
+    // Dispatch directly on the constant, and on a value assigned from it.
+    @assert Mon.String() == "Monday"
+
+    day := Wed
+    @assert day.String() == "Wednesday"
+}
+
+@test "types: typed constants match typed switch cases"
+{
+    type weekday5 int
+
+    const (
+        Mon weekday5 = iota
+        Tue
+        Wed
+    )
+
+    classify := func(w weekday5) string {
+        switch w {
+        case Mon:
+            return "start"
+
+        case Wed:
+            return "middle"
+
+        default:
+            return "other"
+        }
+    }
+
+    @assert classify(Mon) == "start"
+    @assert classify(Wed) == "middle"
+    @assert classify(Tue) == "other"
+}
+
+@test "types: typed constant from a non-iota literal expression"
+{
+    type size1 int
+
+    const (
+        Small  size1 = 10
+        Medium size1 = 20
+        Large  size1 = 30
+    )
+
+    @assert reflect.Type(Medium) == size1
+    @assert int(Small) == 10
+    @assert int(Large) == 30
+}
+
+@test "types: typed constant with an iota arithmetic expression"
+{
+    type bit1 int
+
+    const (
+        _         = iota // discard 0
+        KB bit1   = 1 << (10 * iota)
+        MB
+        GB
+    )
+
+    @assert reflect.Type(KB) == bit1
+    @assert reflect.Type(GB) == bit1
+    @assert int(KB) == 1024
+    @assert int(MB) == 1048576
+    @assert int(GB) == 1073741824
+}
+
+@test "types: an untyped spec after a typed one resets the type"
+{
+    // Only specs that repeat a typed spec inherit its type. A spec that
+    // supplies its own "= expr" with no type is untyped, and any specs that
+    // repeat *it* are untyped too -- matching Go's ConstSpec rules.
+    type mixed1 int
+
+    const (
+        A mixed1 = iota // typed
+        B               // repeats A: typed, iota == 1
+        C = 100         // own expr, no type: untyped, resets the type
+        D               // repeats C: untyped, value 100
+    )
+
+    @assert reflect.Type(A) == mixed1
+    @assert reflect.Type(B) == mixed1
+    @assert reflect.Type(C) != mixed1
+    @assert reflect.Type(D) != mixed1
+
+    @assert int(A) == 0
+    @assert int(B) == 1
+    @assert C == 100
+    @assert D == 100
+}
+
+@test "types: named string constant carries its type"
+{
+    type name1 string
+
+    const Greeting name1 = "hello"
+
+    @assert reflect.Type(Greeting) == name1
+    @assert string(Greeting) == "hello"
+}
+
+@test "types: typed constant compares equal to its underlying literal"
+{
+    type weekday6 int
+
+    const (
+        Mon weekday6 = iota
+        Tue
+    )
+
+    // A named scalar decays to its underlying value in comparisons, so a typed
+    // constant still compares equal to the plain literal it represents.
+    @assert Mon == 0
+    @assert Tue == 1
+    @assert Tue > Mon
+}
+
+@test "types: a literal where a type is expected still requires equals"
+{
+    // The optional-type detection must not swallow a malformed spec: a numeric
+    // literal after the name is not a type, so this must still report the
+    // original "missing '='" compile error rather than "no such type".
+    var compileFailed bool
+
+    @compile block {
+        const (
+            Foo 42
+        )
+    } catch(e) {
+        compileFailed = true
+        @assert e.Code() == "equals"
+    }
+
+    @assert compileFailed == true
+}

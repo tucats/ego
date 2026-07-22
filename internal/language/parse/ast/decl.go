@@ -86,15 +86,19 @@ func (n *ConstDecl) Children() []Node {
 
 func (n *ConstDecl) String() string { return "ConstDecl" }
 
-// ConstSpec is "Name = Value".
+// ConstSpec is "Name [Type] = Value". Type is nil for an untyped constant; it
+// is set for Go's typed-constant form "Name Type = Value". Value is nil when a
+// grouped spec omits "= expr" to repeat the previous spec's expression (as in
+// an iota-style block), in which case it also inherits that spec's type.
 type ConstSpec struct {
 	BaseNode
 	Name  *Ident
+	Type  Node
 	Value Node
 }
 
 func (n *ConstSpec) Kind() Kind       { return KindConstSpec }
-func (n *ConstSpec) Children() []Node { return nodes(n.Name, n.Value) }
+func (n *ConstSpec) Children() []Node { return nodes(n.Name, n.Type, n.Value) }
 func (n *ConstSpec) String() string   { return "ConstSpec" }
 
 // TypeDecl is "type Name Type".
