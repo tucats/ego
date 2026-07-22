@@ -72,5 +72,6 @@
     s, err := strings.Substitution("Hi {{First}}!", person)
     @assert err == nil
     @assert s == "Hi Tom!"
-    @assert string(reflect.Type(strings.Substitution)) == "funcSubstitution(text string, values interface{}) (string, error)"
+    @assert fmt.Sprint(strings.Substitution) == "Substitution(text string, values interface{}) (string, error)"
+    @assert string(reflect.Type(strings.Substitution)) == "func(text string, values interface{}) (string, error)"
 }

@@ -169,5 +169,6 @@
     // reflect.Type(strings.Ints) reported "... int" instead of "... []int".
     // The runtime value itself was always a correct []int array -- only the
     // declaration/reflection metadata was wrong.
-    @assert string(reflect.Type(strings.Ints)) == "funcInts([text string]) []int"
+    @assert string(strings.Ints) == "Ints([text string]) []int"
+    @assert string(reflect.Type(strings.Ints)) == "func(text string) []int"
 }

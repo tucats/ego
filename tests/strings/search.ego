@@ -202,5 +202,5 @@
     // correct bool -- only the declaration/reflection metadata was wrong.
     v := strings.EqualFold("Go", "go")
     @assert reflect.Type(v) == bool
-    @assert string(reflect.Type(strings.EqualFold)) == "funcEqualFold(a string, b string) bool"
+    @assert string(reflect.Type(strings.EqualFold)) == "func(a string, b string) bool"
 }
