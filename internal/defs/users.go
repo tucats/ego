@@ -47,6 +47,11 @@ type LogonResponse struct {
 	// Capabilities of the user
 	CanAdmin bool `json:"admin"`
 	CanCode  bool `json:"coder"`
+
+	// InactivityTimeout is the ego.server.dashboard.inactivity setting's value
+	// (a Go duration string, e.g. "15m"), so the dashboard can apply the
+	// server-configured idle timeout instead of a hard-coded default.
+	InactivityTimeout string `json:"inactivityTimeout,omitempty"`
 }
 
 // AuthenticateResponse is the response sent back from a request to validate

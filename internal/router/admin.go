@@ -122,6 +122,10 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.CanAdmin = session.Admin
 	response.CanCode = session.Admin || util.InList(defs.CodeRunPermission, session.Permissions...)
 
+	// Tell the dashboard how long it should wait for user activity before
+	// signing out, so it doesn't need its own hard-coded default.
+	response.InactivityTimeout = dashboardInactivityTimeout()
+
 	// Convert the response to JSON and write it to the response and we're done.
 	_ = util.WriteJSON(w, response, &session.ResponseLength)
 
@@ -136,6 +140,20 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	}
 
 	return http.StatusOK
+}
+
+// dashboardInactivityTimeout returns the configured ego.server.dashboard.inactivity
+// duration string, defaulting to "15m" (and persisting that default) when unset.
+// Shared by LogonHandler here and issueToken in webauthn.go so both the
+// password and passkey dashboard login paths report the same value.
+func dashboardInactivityTimeout() string {
+	timeout := settings.Get(defs.DashboardInactivityTimeoutSetting)
+	if timeout == "" {
+		timeout = "15m"
+		settings.SetDefault(defs.DashboardInactivityTimeoutSetting, timeout)
+	}
+
+	return timeout
 }
 
 // DownHandler fields incoming requests to the /services/admin/down endpoint.

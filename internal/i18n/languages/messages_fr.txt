@@ -1110,6 +1110,7 @@ server.child.services=Utiliser des processus enfants pour exécuter les services
 server.child.services.limit=Nombre maximum de services enfants à exécuter simultanément
 server.child.services.retain=Si vrai, conserver les fichiers de charge utile du service enfant après sa fin
 server.child.services.dir=Emplacement des fichiers de requête et de réponse transitoires (par défaut /tmp)
+server.dashboard.inactivity=Délai d'inactivité du tableau de bord (par défaut : 15m)
 server.database.empty.filter.error=Si vrai, les valeurs de filtre vides sont traitées comme des erreurs
 server.database.empty.rowset.error=Si vrai, les valeurs d'ensemble de lignes vides sont traitées comme des erreurs
 server.database.partial.insert.error=Si vrai, les insertions partielles sont traitées comme des erreurs

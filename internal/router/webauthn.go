@@ -141,20 +141,20 @@ import (
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
-	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/caches"
-	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/runtime/cipher"
-	auth "github.com/tucats/ego/internal/server/auth"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokens"
+	"github.com/tucats/ego/internal/runtime/cipher"
+	auth "github.com/tucats/ego/internal/server/auth"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 const webAuthnChallengeCookie = "webauthn_challenge"
@@ -302,10 +302,11 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Status:     http.StatusOK,
 		},
-		Token:      tokenStr,
-		Expiration: time.Now().Add(duration).Format(time.UnixDate),
-		CanAdmin:   isAdmin,
-		CanCode:    canCode,
+		Token:             tokenStr,
+		Expiration:        time.Now().Add(duration).Format(time.UnixDate),
+		CanAdmin:          isAdmin,
+		CanCode:           canCode,
+		InactivityTimeout: dashboardInactivityTimeout(),
 	}
 
 	if t, err := tokens.Unwrap(tokenStr, 0); err == nil {

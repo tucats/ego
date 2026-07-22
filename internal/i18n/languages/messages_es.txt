@@ -1117,6 +1117,7 @@ server.child.services=Usar procesos hijos para ejecutar servicios en lugar de hi
 server.child.services.limit=Número máximo de servicios hijos a ejecutar simultáneamente
 server.child.services.retain=Si es verdadero, conservar los archivos de carga útil del servicio hijo tras finalizar
 server.child.services.dir=Ubicación para archivos de solicitud y respuesta transitorios (por defecto es /tmp)
+server.dashboard.inactivity=Duración de inactividad del panel (por defecto: 15m)
 server.database.empty.filter.error=Si es verdadero, los valores de filtro vacíos se tratan como errores
 server.database.empty.rowset.error=Si es verdadero, los valores de conjunto de filas vacíos se tratan como errores
 server.database.partial.insert.error=Si es verdadero, las inserciones parciales se tratan como errores
