@@ -78,6 +78,25 @@ body {
     display: block;
 }
 
+/* Current-user reminder line at the top of the dropdown, and the
+   separator that follows it. Hidden via JS (toggleHamburgerMenu) when
+   no one is logged in. */
+.hamburger-user {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hamburger-separator {
+    height: 1px;
+    margin: 0 0.5rem;
+    background: #e0e4ea;
+}
+
 .hamburger-item {
     display: block;
     width: 100%;
@@ -2497,6 +2516,8 @@ body.dark .hamburger-item         { color: #cdd6f4; }
 body.dark .hamburger-item:hover   { background: #2a3a5a; }
 body.dark .hamburger-item-danger  { color: #f38ba8; }
 body.dark .hamburger-item-danger:hover { background: #3a1a1a; }
+body.dark .hamburger-user         { color: #cdd6f4; }
+body.dark .hamburger-separator    { background: #2a3a5a; }
 
 /* Tab bar */
 body.dark .tab-container {
