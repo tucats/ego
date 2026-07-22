@@ -33,17 +33,17 @@
         },
         {
             "name": "ego.compiler.extensions present",
-            "query": "items.ego\\.compiler\\.normalized",
+            "query": "items.ego\\.compiler\\.normalized.value",
             "op": "exists"
         },
         {
             "name": "ego.log.retains matches saved value",
-            "query": "items.ego\\.log\\.retain",
+            "query": "items.ego\\.log\\.retain.value",
             "value": "{{LOGGER_RETAIN}}"
         },
         {
             "name": "ego.logon.token redacted",
-            "query": "items.ego\\.logon\\.token",
+            "query": "items.ego\\.logon\\.token.value",
             "value": "********"
         }
     ]
