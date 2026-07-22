@@ -196,10 +196,10 @@ var SqlPackage = data.NewPackageFromMap("sql", map[string]any{
 		},
 		Value: openDatabase,
 	},
-	"Database":         Database,
-	"Rows":             RowsType,
-	data.TypeMDKey:     data.PackageType("sql"),
-	data.ReadonlyMDKey: true,
+	"Database": Database,
+	"Rows":     RowsType,
+	// data.TypeMDKey:     data.PackageType("sql"),
+	// data.ReadonlyMDKey: true,
 })
 
 // Field name constants for the two Ego struct types managed by this package.

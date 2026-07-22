@@ -3,12 +3,11 @@ package bytecode
 import (
 	"reflect"
 	"runtime"
-	"strings"
 
 	"github.com/tucats/ego/internal/builtins"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -30,7 +29,7 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 
 	definition := builtins.FindFunction(function)
 	name := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
-	name = strings.Replace(name, "github.com/tucats/ego/", "", 1)
+	name = data.StripGoPrefixes(name)
 
 	if definition == nil && savedDefinition != nil && savedDefinition.Declaration != nil {
 		definition = synthesizeDefinition(definition, name, savedDefinition)

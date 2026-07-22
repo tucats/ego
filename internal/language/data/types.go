@@ -712,8 +712,13 @@ func (t Type) String() string {
 	switch t.kind {
 	case FunctionKind:
 		f := t.functions[t.name]
+		d := Declaration{
+			Parameters: f.Declaration.Parameters,
+			Returns:    f.Declaration.Returns,
+			Variadic:   f.Declaration.Variadic,
+		}
 
-		return "func" + f.Declaration.String()
+		return "func" + d.String()
 
 	case TypeKind:
 		name := t.name
@@ -740,6 +745,10 @@ func (t Type) String() string {
 		return "[]" + t.valueType.String()
 
 	case PackageKind:
+		if t.Name() == "" {
+			return "package"
+		}
+
 		return "package " + t.name
 
 	case StructKind:
@@ -1588,6 +1597,9 @@ func TypeOf(i any) *Type {
 	}
 
 	switch v := i.(type) {
+	case Immutable:
+		return TypeOf(v.Value)
+
 	case Function:
 		return &Type{
 			name:      v.Declaration.Name,
@@ -1713,6 +1725,9 @@ func TypeOf(i any) *Type {
 
 	case *bool:
 		return PointerType(BoolType)
+
+	case Package:
+		return PackageType("")
 
 	case *Package:
 		return PointerType(TypeOf(*v))

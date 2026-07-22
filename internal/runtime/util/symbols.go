@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/tables"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -55,10 +55,10 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 	// columns for the scope and table names in the output.
 	scopeColumns := []string{}
 	if selectedScope < 0 {
-		scopeColumns = []string{i18n.L("Scope"), i18n.L("Table"), i18n.L("Boundary")}
+		scopeColumns = []string{i18n.L("Scope"), i18n.L("Table")}
 	}
 
-	t, _ := tables.New(append(scopeColumns, []string{"Symbol", i18n.L("Type"), i18n.L("Readonly"), i18n.L("Value")}...))
+	t, _ := tables.New(append(scopeColumns, []string{"Symbol", i18n.L("Type"), i18n.L("Value")}...))
 
 	if index, found := t.Column("Scope"); found {
 		_ = t.SetAlignment(index, tables.AlignmentCenter)
@@ -89,8 +89,6 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 			name = "*" + syms.Name
 		}
 
-		boundary := strconv.FormatBool(syms.IsBoundary())
-
 		scope := strconv.Itoa(scopeLevel)
 
 		// Get the sets of rows for this table. If the table is empty,
@@ -106,7 +104,7 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 				if selectedScope >= 0 {
 					_ = t.AddRow(row)
 				} else {
-					rowData := append([]string{scope, name, boundary}, row...)
+					rowData := append([]string{scope, name}, row...)
 
 					if !json {
 						name = ""
@@ -121,8 +119,8 @@ func formatSymbols(s *symbols.SymbolTable, args data.List) (any, error) {
 				_ = t.AddRow([]string{"", "", "", "", ""})
 			}
 		} else if !json {
-			_ = t.AddRow([]string{scope, name, boundary, "<no symbols>", "", "", ""})
-			_ = t.AddRow([]string{"", "", "", "", "", "", ""})
+			_ = t.AddRow([]string{scope, name, "<no symbols>", "", "", ""})
+			_ = t.AddRow([]string{"", "", "", "", "", ""})
 		}
 
 		// If we were only doing a specific scope, bail out now.

@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
@@ -389,9 +390,13 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 	keys := getVisibleSymbolNames(s)
 
 	// Now iterate over the keys in sorted order
-	for _, k := range keys {
+	for _, symbolName := range keys {
+		if symbolName == "_platform" {
+			continue
+		}
+
 		// reserved words are not valid symbol names
-		if tokenizer.NewReservedToken(k).IsReserved(false) {
+		if tokenizer.NewReservedToken(symbolName).IsReserved(false) {
 			continue
 		}
 
@@ -402,16 +407,20 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			readonly bool
 		)
 
-		if attr, ok := s.symbols[k]; ok {
+		if attr, ok := s.symbols[symbolName]; ok {
 			v = s.getValue(attr.slot)
 			readonly = attr.Readonly
-		} else if sv, ok := s.slotValueByName(k); ok {
+		} else if sv, ok := s.slotValueByName(symbolName); ok {
 			v = sv
 		} else {
 			continue
 		}
 
 		omitThisSymbol := false
+
+		if symbolName == "Monday" {
+			fmt.Println("DEBUG: Monday")
+		}
 
 		dt := data.TypeOf(v)
 		typeString := dt.String()
@@ -476,11 +485,18 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 			continue
 		}
 
-		row := make([]string, 4)
-		row[0] = k
+		valueString := data.Format(v)
+
+		if readonly || strings.HasPrefix(symbolName, defs.ReadonlyVariablePrefix) {
+			if !strings.HasPrefix(valueString, "^") {
+				valueString = "^" + valueString
+			}
+		}
+
+		row := make([]string, 3)
+		row[0] = symbolName
 		row[1] = typeString
-		row[2] = data.String(readonly)
-		row[3] = data.Format(v)
+		row[2] = valueString
 		rows = append(rows, row)
 	}
 
