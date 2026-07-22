@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	cliconfig "github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
@@ -42,8 +43,10 @@ func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	// Build a result map: for each requested key, look up its value in the
 	// settings store. Token-related keys are replaced with the elided placeholder
-	// so they cannot be extracted via this endpoint.
-	config := map[string]string{}
+	// so they cannot be extracted via this endpoint. Each item also carries its
+	// localized description (in the caller's own language) so the dashboard can
+	// show it as a tooltip without a second round-trip.
+	config := map[string]defs.ConfigItem{}
 
 	for _, item := range items {
 		var value string
@@ -54,7 +57,10 @@ func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 			value = settings.Get(item)
 		}
 
-		config[item] = value
+		config[item] = defs.ConfigItem{
+			Value:       value,
+			Description: cliconfig.Description(session.Language, item),
+		}
 	}
 
 	// Wrap the map in the standard response envelope and write it as JSON.
@@ -89,12 +95,12 @@ func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http
 	// configuration store (persisted profile + command-line overrides).
 	items := settings.Keys()
 
-	config := map[string]string{}
+	config := map[string]defs.ConfigItem{}
 
 	for _, item := range items {
 		var value string
 
-		if util.InList(item, "ego.server.token", "ego.server.token.key", "ego.logon.token") {
+		if util.InList(item, "ego.server.token", "ego.server.token.key", "ego.logon.token", "ego.logon.refresh.token") {
 			// Hard-coded token keys are always elided.
 			value = defs.ElidedPassword
 		} else if strings.Contains(item, "password") || strings.Contains(item, "credentials") {
@@ -104,7 +110,10 @@ func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http
 			value = settings.Get(item)
 		}
 
-		config[item] = value
+		config[item] = defs.ConfigItem{
+			Value:       value,
+			Description: cliconfig.Description(session.Language, item),
+		}
 	}
 
 	response := defs.ConfigResponse{

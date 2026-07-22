@@ -110,6 +110,26 @@
     </div>
 </div>
 
+<!-- Config item detail popup -- a small centered dialog (not a right-side
+     slide-in sheet, unlike the rest of the app's overlays) opened by clicking
+     a row in the Configuration sheet above. Shows the setting's full name and
+     current value on one line, and its description below in the same style
+     as the Settings sheet's hint text. z-index above #config-overlay so it
+     layers on top of it, matching the #dsn-perm-edit-overlay precedent for a
+     sheet nested over another already-open one. -->
+<div id="config-item-overlay" onclick="overlayBackdropClick(event)">
+    <div id="config-item-sheet">
+        <div class="config-item-header">
+            <span id="config-item-key" class="config-item-key"></span>
+            <span id="config-item-value" class="config-item-value"></span>
+        </div>
+        <p id="config-item-desc" class="settings-hint"></p>
+        <div class="sheet-buttons">
+            <button onclick="hideConfigItemDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
 <div id="users" class="tab-content">
     <div class="tab-toolbar">
         <button class="toolbar-add-btn" onclick="showNewUserSheet()" title="Create new user">&#43; New User</button>
@@ -523,13 +543,14 @@
 
         <div class="settings-group-heading">Appearance</div>
         <div class="settings-row">
-            <label class="toggle-switch">
-                <input type="checkbox" id="setting-dark-mode">
-                <span class="toggle-slider"></span>
-            </label>
+            <div class="settings-segmented" id="setting-dark-mode" role="radiogroup" aria-label="Dark mode">
+                <button type="button" class="settings-segmented-btn" data-value="auto">Auto</button>
+                <button type="button" class="settings-segmented-btn" data-value="on">On</button>
+                <button type="button" class="settings-segmented-btn" data-value="off">Off</button>
+            </div>
             <div class="settings-label-group">
                 <span class="settings-label">Dark mode</span>
-                <span class="settings-hint">Use a dark color scheme for all tabs. The Code tab always uses its own dark theme regardless of this setting.</span>
+                <span class="settings-hint">Use a dark color scheme for all tabs, or "Auto" to match your browser/OS setting. The Code tab always uses its own dark theme regardless of this setting.</span>
             </div>
         </div>
 

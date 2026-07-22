@@ -246,6 +246,25 @@ func SetDescriptionAction(c *cli.Context) error {
 	return nil
 }
 
+// Description returns the localized help text for a configuration key (which
+// already includes its "ego." prefix, e.g. "ego.server.token.expiration"), in
+// the given language ("en", "fr", "es", "ja", ...). CLI callers that want the
+// process's own configured locale should pass i18n.DefaultLanguage(); REST
+// handlers should pass the requesting session's language instead (which may
+// be "" -- i18n.Text falls back to English for an empty or unrecognized
+// language, the same behavior other per-request localization already relies
+// on). Returns "" if no description is registered for the key.
+func Description(language, key string) string {
+	msg := "config." + key
+
+	desc := i18n.Text(language, msg)
+	if desc == msg {
+		return ""
+	}
+
+	return desc
+}
+
 func DescribeAction(c *cli.Context) error {
 	verbose := c.Boolean(defs.VerboseOption)
 
@@ -254,11 +273,9 @@ func DescribeAction(c *cli.Context) error {
 	t, _ := tables.New([]string{i18n.L("Key"), i18n.L("Value"), i18n.L("Description")})
 
 	for key := range defs.ValidSettings {
-		msg := "config." + key
-
-		desc := i18n.T(msg)
-		if desc == msg {
-			desc = "-- Need description for key: " + msg
+		desc := Description(i18n.DefaultLanguage(), key)
+		if desc == "" {
+			desc = "-- Need description for key: config." + key
 		}
 
 		value := settings.Get(key)

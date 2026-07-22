@@ -315,12 +315,21 @@ type ServerStatus struct {
 // When requesting a list of configuration settings, provide an array of strings.
 type ConfigListRequest []string
 
+// ConfigItem is one entry in a ConfigResponse's Items map: the setting's
+// current value plus its localized description (the same text "ego describe
+// config" shows), so a caller like the dashboard's Configuration sheet can
+// show a tooltip for each item without a second round-trip.
+type ConfigItem struct {
+	Value       string `json:"value"`
+	Description string `json:"description,omitempty"`
+}
+
 type ConfigResponse struct {
 	ServerInfo `json:"server"`
-	Status     int               `json:"status,omitempty"`
-	Message    string            `json:"msg,omitempty"`
-	Count      int               `json:"count"`
-	Items      map[string]string `json:"items"`
+	Status     int                   `json:"status,omitempty"`
+	Message    string                `json:"msg,omitempty"`
+	Count      int                   `json:"count"`
+	Items      map[string]ConfigItem `json:"items"`
 }
 
 // When getting information about blacklisted tokens, this is the info for

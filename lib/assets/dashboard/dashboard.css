@@ -1653,6 +1653,38 @@ body.dark .user-id { color: #666; }
     transform: translateX(16px);
 }
 
+/* Segmented control — for a settings-row that needs more than an on/off
+   toggle (e.g. Dark mode's On / Off / Auto). Three (or more) equal-width
+   buttons in a single bordered pill; exactly one carries .active at a time. */
+.settings-segmented {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.settings-segmented-btn {
+    padding: 0.3rem 0.65rem;
+    background: #fff;
+    color: #555;
+    border: none;
+    border-right: 1px solid #ccc;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.settings-segmented-btn:last-child { border-right: none; }
+
+.settings-segmented-btn:hover { background: #f0f4fa; }
+
+.settings-segmented-btn.active {
+    background: #1C6EA4;
+    color: #fff;
+}
+
 #logger-cancel-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
@@ -1751,6 +1783,66 @@ body.dark .user-id { color: #666; }
 
 #config-content table tbody tr:nth-child(even) td {
     background: #f0f4fa;
+}
+
+/* Every row in the config table opens the detail popup below when clicked
+   (or tapped -- there's no separate touch affordance to design for, since a
+   click/tap is the only interaction this needs). */
+.config-row {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Config item detail popup
+   A small centered dialog (not a right-side slide-in sheet like the rest of
+   the app's overlays) opened by clicking a row in #config-content. z-index
+   is one layer above #config-overlay's 1000 so it stacks on top of the
+   already-open Configuration sheet, the same pattern already used by
+   #dsn-perm-edit-overlay nesting over #dsn-detail-overlay.
+   ========================================================================== */
+#config-item-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1100;
+    justify-content: center;
+    align-items: center;
+}
+
+#config-item-sheet {
+    background: #fff;
+    width: 420px;
+    max-width: 90vw;
+    max-height: 80vh;
+    padding: 1.5rem 1.75rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+}
+
+.config-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+}
+
+.config-item-key {
+    color: #1C6EA4;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.config-item-value {
+    color: #333;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-all;
 }
 
 #config-close-btn {
@@ -2767,6 +2859,9 @@ body.dark #config-content table td {
 }
 body.dark #config-content table td:first-child { color: #7eb8f7; }
 body.dark #config-content table tbody tr:nth-child(even) td { background: #202040; }
+body.dark #config-item-sheet { background: #16213e; color: #cdd6f4; }
+body.dark .config-item-key   { color: #7eb8f7; }
+body.dark .config-item-value { color: #cdd6f4; }
 body.dark #config-close-btn {
     background: #222244;
     color: #cdd6f4;
@@ -2839,6 +2934,10 @@ body.dark #settings-note          { color: #666; }
 body.dark .settings-label         { color: #cdd6f4; }
 body.dark .settings-hint          { color: #666; }
 body.dark .settings-group-heading { color: #7eb8f7; }
+body.dark .settings-segmented     { border-color: #2a3a5a; }
+body.dark .settings-segmented-btn { background: #16213e; color: #cdd6f4; border-right-color: #2a3a5a; }
+body.dark .settings-segmented-btn:hover { background: #2a3a5a; }
+body.dark .settings-segmented-btn.active { background: #1C5080; color: #fff; }
 
 
 /* SQL tab */
