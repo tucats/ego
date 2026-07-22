@@ -683,6 +683,23 @@ body {
 
 body.dark .user-id { color: #666; }
 
+/* Users tab — flex column so the toolbar stays fixed and the user list
+   scrolls independently. Previously this tab had no height/overflow rules
+   at all, so a user list longer than the viewport was simply clipped by
+   body's overflow:hidden with no way to scroll to the rest of it. */
+#users {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#user-content {
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink below its content size */
+    overflow-y: auto;
+}
+
 /* Clickable table rows in the Users tab */
 #user-content tbody tr {
     cursor: pointer;
@@ -690,6 +707,23 @@ body.dark .user-id { color: #666; }
 
 #user-content tbody tr:hover td {
     background: #dce8f7;  /* blue tint on hover to signal the row is clickable */
+}
+
+/* DSNs tab — flex column so the toolbar stays fixed and the DSN list
+   scrolls independently. Previously this tab had no height/overflow rules
+   at all, so a DSN list longer than the viewport was simply clipped by
+   body's overflow:hidden with no way to scroll to the rest of it. */
+#dsns {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#dsns-content {
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink below its content size */
+    overflow-y: auto;
 }
 
 /* Clickable DSN rows — clicking navigates to the Tables tab for that DSN */
@@ -874,8 +908,24 @@ body.dark .user-id { color: #666; }
 #new-dsn-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
-   Tables tab — clickable rows
+   Tables tab — flex column so the toolbar stays fixed and the table list
+   scrolls independently. Previously this tab had no height/overflow rules
+   at all, so a table list longer than the viewport was simply clipped by
+   body's overflow:hidden with no way to scroll to the rest of it.
    ========================================================================== */
+#tables {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#tables-content {
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink below its content size */
+    overflow-y: auto;
+}
+
 #tables-content tbody tr {
     cursor: pointer;
 }
@@ -2146,13 +2196,21 @@ body.dark #code-debug-line-band {
 #code-console-divider:hover,
 #code-console-divider.dragging { background: var(--ca); }
 
-/* Console section — label | history | input row */
+/* Console section — label | history | input row.
+   The input row (not a scrollable area) is the pane's last child and, when
+   the pane sits flush against the bottom of the window, its own bottom edge
+   is what macOS Safari's window-corner rounding clips -- padding inside
+   #code-console-history (a sibling higher up) doesn't reach it. Padding the
+   pane itself adds a blank gap after the input row instead; the flex-basis
+   is grown by the same amount so the history area doesn't lose real estate
+   to make room for it. */
 #code-console-pane {
     display: flex;
     flex-direction: column;
-    flex: 0 0 150px;
+    flex: 0 0 calc(150px + 2.5rem);
     min-height: 60px;
     overflow: hidden;
+    padding-bottom: 2.5rem;
     background: var(--cb);
 }
 
@@ -2206,15 +2264,20 @@ body.dark #code-debug-line-band {
     line-height: 1.6;
 }
 
-/* Debugger panel — shown below the output pane while a debug session is active */
+/* Debugger panel — shown below the output pane while a debug session is
+   active. Same corner-clip reasoning as #code-console-pane above: its input
+   row is a fixed (non-scrolling) last child, and this panel's bottom edge
+   reaches the true bottom of the window whenever the Console panel is
+   hidden -- so it gets the same padding-bottom + grown flex-basis treatment. */
 #code-debugger-panel {
     display: flex;
     flex-direction: column;
-    flex: 0 0 220px;        /* fixed initial height, user can resize if desired */
+    flex: 0 0 calc(220px + 2.5rem);   /* fixed initial height, user can resize if desired */
     min-height: 120px;
     border-top: 2px solid var(--cbrdh);
     background: var(--cb2);
     overflow: hidden;
+    padding-bottom: 2.5rem;
 }
 
 /* Scrollable area for debugger messages (step info, breakpoints, show output) */
@@ -3661,5 +3724,36 @@ body.dark .sql-wiz-rename-input {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
+}
+
+/* ==========================================================================
+   Corner-clip safety padding
+   Recent macOS Safari versions round the browser window's corners
+   aggressively enough that content occupying the true last pixel rows of
+   the viewport gets visually clipped -- this is a compositing effect of the
+   browser chrome applied after layout, so it isn't reflected in
+   scrollHeight/clientHeight or anything else observable from JS, and can't
+   be detected or corrected programmatically.
+   Every independently-scrollable content panel gets extra bottom padding
+   (~2 lines' worth) here so only blank space, never real content, can ever
+   land in that clipped zone -- however far a panel happens to be scrolled.
+   This is a single shared rule (rather than baking padding-bottom into each
+   panel's own padding shorthand) so the list of affected panels stays easy
+   to audit in one place. It is deliberately the LAST rule in this file so
+   its bottom-only value always wins the cascade over each panel's own
+   padding shorthand declared earlier, while leaving their top/left/right
+   padding untouched.
+   ========================================================================== */
+#memory-scroll,
+#user-content,
+#dsns-content,
+#tables-content,
+#data-content,
+#log-content,
+#sql-results,
+#code-output-pane,
+#code-console-history,
+#code-debug-output {
+    padding-bottom: 2.5rem;
 }
 body.dark .sql-wiz-rename-input:focus { border-color: #4a90e2; }
