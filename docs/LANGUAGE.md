@@ -1,6 +1,6 @@
 # The _Ego_ Language
 
-Version 1.8
+Version 1.9
 
 This document describes the language _Ego_, which is a scripting
 language and tool set patterned off of the _Go_ programming language.
@@ -8284,7 +8284,7 @@ Scope    Table                 Boundary    Symbol    Type              Readonly 
                                             ...
                                             x         int               false       5
                                             y         string            false       "hello"
-  2      *root                 true        _version  string            true        "1.8-1896"
+  2      *root                 true        _version  string            true        "1.9-1896"
                                             ...
 ```
 

@@ -6,7 +6,7 @@
 
 Module path: `github.com/tucats/ego`
 
-Current version: stored in `tools/buildver.txt` (format `MAJOR.MINOR-BUILD`, e.g. `1.8-1518`).
+Current version: stored in `tools/buildver.txt` (format `MAJOR.MINOR-BUILD`, e.g. `1.9-1518`).
 
 ---
 
