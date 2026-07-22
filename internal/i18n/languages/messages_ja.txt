@@ -157,6 +157,7 @@ admin.session.invalid=無効なセッションID値: {{value}}
 admin.server.stopped=サーバーが停止しました
 admin.run.too.large=コードペイロードが大きすぎます
 admin.run.session.invalid=無効なセッションID
+admin.format.too.large=コードペイロードが大きすぎます
 ambiguous.permission=権限名が予約名と競合しているか、綴りが間違っています
 arg.count=関数の引数の数が正しくありません
 arg.list=内部エラー: 無効なローカル関数引数リスト

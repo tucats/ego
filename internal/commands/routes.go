@@ -55,6 +55,14 @@ func defineStaticRoutes() *router.Router {
 		Class(router.AdminRequestCounter).
 		Permissions(defs.CodeRunPermission)
 
+	// Parse and reformat Ego source submitted from the dashboard Code tab's
+	// Format toggle. Same permission as /admin/run since it's the same
+	// Code tab feature set.
+	r.New(defs.AdminFormatPath, admin.FormatCodeHandler, http.MethodPost).
+		Authentication(true, false).
+		Class(router.AdminRequestCounter).
+		Permissions(defs.CodeRunPermission)
+
 	// Get the current validation dictionary. Can request a specific method and
 	// path to retrieve using parameters.
 	r.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).

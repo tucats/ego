@@ -176,7 +176,8 @@ func renderSource(source string, fragment, program, dumpAST bool, opts format.Op
 }
 
 // parseSource selects the parse entry point from the mode flags. With neither
-// flag set it tries program mode first and falls back to fragment mode.
+// flag set it tries program mode first and falls back to fragment mode (see
+// parse.ParseAuto).
 func parseSource(source string, fragment, program bool) (*ast.File, error) {
 	switch {
 	case fragment:
@@ -184,11 +185,6 @@ func parseSource(source string, fragment, program bool) (*ast.File, error) {
 	case program:
 		return parse.ParseProgram(source)
 	default:
-		file, err := parse.ParseProgram(source)
-		if err != nil {
-			return parse.ParseStatements(source)
-		}
-
-		return file, nil
+		return parse.ParseAuto(source)
 	}
 }

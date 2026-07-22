@@ -165,6 +165,7 @@ admin.session.invalid=Valor de id de sesión no válido: {{value}}
 admin.server.stopped=Servidor detenido
 admin.run.too.large=la carga útil de código es demasiado grande
 admin.run.session.invalid=id de sesión no válido
+admin.format.too.large=la carga útil de código es demasiado grande
 ambiguous.permission=El nombre de permiso entra en conflicto con un nombre reservado, o fue mal escrito
 arg.count=conteo incorrecto de argumentos de función
 arg.list=error interno: lista de argumentos de función local no válida

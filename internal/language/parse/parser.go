@@ -78,6 +78,22 @@ func ParseStatements(source string) (*ast.File, error) {
 	return New(source).parseFile(true)
 }
 
+// ParseAuto parses source as a complete program first; if that fails, it
+// retries as a bare statement fragment. This is the same auto-detection
+// "ego format" uses when neither --fragment nor --program is given, and is
+// the right default for any caller that accepts either form without asking
+// the user to say which one they meant (e.g. formatting whatever is
+// currently in an editor buffer, which may be a full program or a REPL-style
+// fragment depending on what's being edited).
+func ParseAuto(source string) (*ast.File, error) {
+	file, err := ParseProgram(source)
+	if err != nil {
+		return ParseStatements(source)
+	}
+
+	return file, nil
+}
+
 // parseFile is the shared driver for both entry points. It walks the token
 // stream, parsing one statement at a time until the tokens are exhausted.
 func (p *Parser) parseFile(bare bool) (*ast.File, error) {

@@ -158,6 +158,7 @@ admin.session.invalid=Valeur d'identifiant de session invalide : {{value}}
 admin.server.stopped=Serveur arrêté
 admin.run.too.large=la charge utile du code est trop volumineuse
 admin.run.session.invalid=identifiant de session invalide
+admin.format.too.large=la charge utile du code est trop volumineuse
 ambiguous.permission=Le nom de permission est en conflit avec un nom réservé, ou a été mal orthographié
 arg.count=nombre incorrect d'arguments de fonction
 arg.list=erreur interne : liste d'arguments de fonction locale invalide

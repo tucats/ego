@@ -164,6 +164,7 @@ admin.session.invalid=Invalid session id value: {{value}}
 admin.server.stopped=Server stopped
 admin.run.too.large=code payload too large
 admin.run.session.invalid=invalid session id
+admin.format.too.large=code payload too large
 ambiguous.permission=permission name conflicts with reserved name, or was misspelled
 arg.count=incorrect function argument count
 arg.list=internal error: invalid local function argument list
