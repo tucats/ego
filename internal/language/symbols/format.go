@@ -418,10 +418,6 @@ func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
 
 		omitThisSymbol := false
 
-		if symbolName == "Monday" {
-			fmt.Println("DEBUG: Monday")
-		}
-
 		dt := data.TypeOf(v)
 		typeString := dt.String()
 

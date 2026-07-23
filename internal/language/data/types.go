@@ -1789,6 +1789,19 @@ func TypeOf(i any) *Type {
 			}
 		}
 
+		// If this is a builtin function, call it a builtin type.
+		reflectedData := fmt.Sprintf("%#v", v)
+		testString := "(func(*symbols.SymbolTable, data.List) (interface {}, error))"
+
+		if strings.HasPrefix(reflectedData, testString) {
+			return FunctionType(&Function{
+				Declaration: &Declaration{
+					Name: "",
+				},
+			},
+			)
+		}
+
 		return InterfaceType
 	}
 }
