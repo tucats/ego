@@ -14,10 +14,11 @@ package bytecode
 //  1. Struct-based types (Path A):
 //     When the type is a StructKind, or a TypeKind whose base type is a
 //     StructKind, the function handles special Go-native struct types that
-//     cannot be constructed generically.  Currently two are handled:
+//     cannot be constructed generically.  Currently one is handled:
 //       - time.Duration  — wraps an int64 nanosecond count
-//       - time.Month     — wraps an int in the range 1–12
 //     Any other struct type returns ErrInvalidFunctionTypeCall.
+//     (time.Month used to be handled here too, but it is now a plain scalar
+//     type that casts through Path B like any other named integer type.)
 //
 //  2. Scalar / array types (Path B):
 //     All other types delegate to builtins.Cast, which handles numeric
@@ -30,9 +31,9 @@ package bytecode
 // callTypeCast directly with a *data.Type and an argument slice, and then
 // asserts either the error returned or the value pushed onto the stack.
 //
-// Helper functions makeDurationType and makeMonthType construct minimal
-// *data.Type values that satisfy the native-name checks inside callTypeCast
-// without requiring the full runtime/time package to be imported.
+// Helper function makeDurationType constructs a minimal *data.Type value that
+// satisfies the native-name check inside callTypeCast without requiring the
+// full runtime/time package to be imported.
 
 import (
 	"testing"
@@ -54,12 +55,6 @@ import (
 func makeDurationType() *data.Type {
 	return data.TypeDefinition("Duration", data.StructureType()).
 		SetNativeName(defs.TimeDurationTypeName)
-}
-
-// makeMonthType returns a *data.Type that represents time.Month for tests.
-func makeMonthType() *data.Type {
-	return data.TypeDefinition("Month", data.StructureType()).
-		SetNativeName(defs.TimeMonthTypeName)
 }
 
 // makeUnknownStructType returns a struct-based type whose NativeName is NOT one
@@ -252,105 +247,12 @@ func Test_callTypeCast_Duration_EmptyArgs(t *testing.T) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 3: Path A — time.Month cast
+// Section 3: Path A — unrecognized struct type
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// time.Month maps an integer in the range 1–12 to a calendar month.
-// Values outside that range are rejected with ErrInvalidValue.
-
-// Test_callTypeCast_Month_June verifies a mid-range valid month value.
-func Test_callTypeCast_Month_June(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{6}, tc.ctx)
-
-	tc.assertNoError(err)
-	tc.assertTopStack(time.June) // time.June == time.Month(6)
-}
-
-// Test_callTypeCast_Month_January verifies the lower boundary (1 = January).
-func Test_callTypeCast_Month_January(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{1}, tc.ctx)
-
-	tc.assertNoError(err)
-	tc.assertTopStack(time.January)
-}
-
-// Test_callTypeCast_Month_December verifies the upper boundary (12 = December).
-func Test_callTypeCast_Month_December(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{12}, tc.ctx)
-
-	tc.assertNoError(err)
-	tc.assertTopStack(time.December)
-}
-
-// Test_callTypeCast_Month_Zero verifies that 0 is below the valid range and
-// returns ErrInvalidValue (months are 1-based in Go's time package).
-func Test_callTypeCast_Month_Zero(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{0}, tc.ctx)
-
-	tc.assertError(err, errors.ErrInvalidValue)
-	tc.assertStackEmpty()
-}
-
-// Test_callTypeCast_Month_Thirteen verifies that 13 exceeds the valid range.
-func Test_callTypeCast_Month_Thirteen(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{13}, tc.ctx)
-
-	tc.assertError(err, errors.ErrInvalidValue)
-	tc.assertStackEmpty()
-}
-
-// Test_callTypeCast_Month_Negative verifies that a negative value is also
-// rejected.
-func Test_callTypeCast_Month_Negative(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{-1}, tc.ctx)
-
-	tc.assertError(err, errors.ErrInvalidValue)
-	tc.assertStackEmpty()
-}
-
-// Test_callTypeCast_Month_NonNumericArg verifies that a non-numeric argument
-// is rejected with a runtime error from data.Int conversion failure.
-func Test_callTypeCast_Month_NonNumericArg(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{"July"}, tc.ctx)
-
-	if err == nil {
-		t.Error("expected error for non-numeric Month arg, got nil")
-	}
-
-	tc.assertStackEmpty()
-}
-
-// Test_callTypeCast_Month_EmptyArgs verifies the CALL-7 fix for the Month
-// type: an empty argument slice must return ErrArgumentCount, not panic.
-func Test_callTypeCast_Month_EmptyArgs(t *testing.T) {
-	tc := newTestContext(t)
-
-	err := callTypeCast(makeMonthType(), []any{}, tc.ctx)
-
-	tc.assertError(err, errors.ErrArgumentCount)
-	tc.assertStackEmpty()
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 4: Path A — unrecognized struct type
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// A struct-based type whose NativeName is not "time.Duration" or "time.Month"
-// falls through to the default case and returns ErrInvalidFunctionTypeCall.
+// A struct-based type whose NativeName is not "time.Duration" falls through to
+// the default case and returns ErrInvalidFunctionTypeCall. (time.Month is no
+// longer a struct type; it casts through Path B like any other scalar.)
 
 // Test_callTypeCast_UnknownStructType verifies that a TypeKind-wrapping-Struct
 // type with an unrecognized NativeName returns ErrInvalidFunctionTypeCall.

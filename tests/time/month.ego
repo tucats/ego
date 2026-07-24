@@ -1,0 +1,116 @@
+// Tests for the time.Month type and its String() method, plus the exported
+// month constants.
+//
+// time.Month is a named integer type (January == 1 ... December == 12, matching
+// Go's time.Month) returned by Time.Month() and accepted by time.Date. It was
+// reworked from a native struct into a plain scalar type -- exactly like
+// time.Weekday -- so its values compare with "==", carry their type through
+// assignment, and render their name via a String() method. The package exports
+// time.January .. time.December as typed constants.
+
+@test "time: Month of a known date"
+{
+    utc := time.FixedZone("UTC", 0)
+
+    // 2024-07-04 is in July.
+    m := time.Date(2024, time.Month(7), 4, 0, 0, 0, 0, utc).Month()
+
+    @assert m.String() == "July"
+    @assert int(m) == 7
+    @assert reflect.Type(m) == time.Month
+}
+
+@test "time: Month value cast from int"
+{
+    // time.Month(n) converts an int to the named type; String() renders the
+    // month name. Boundary values 1 and 12 map to January and December.
+    @assert time.Month(1).String() == "January"
+    @assert time.Month(6).String() == "June"
+    @assert time.Month(12).String() == "December"
+
+    @assert reflect.Type(time.Month(3)) == time.Month
+}
+
+@test "time: Month equality and comparison"
+{
+    // The rework makes Month values compare with "==" (a native time.Month
+    // previously did not, so even time.Month(7) == time.Month(7) was false).
+    @assert time.Month(7) == time.Month(7)
+    @assert time.Month(7) != time.Month(6)
+
+    utc := time.FixedZone("UTC", 0)
+    a := time.Date(2024, time.Month(7), 4, 0, 0, 0, 0, utc).Month()
+    b := time.Date(1999, time.Month(7), 20, 0, 0, 0, 0, utc).Month()
+
+    @assert a == b               // same month, different years
+    @assert a == time.Month(7)   // computed month == cast value
+    @assert a == time.July       // computed month == constant
+}
+
+@test "time: Month prints via its String() method"
+{
+    utc := time.FixedZone("UTC", 0)
+    m := time.Date(2024, time.Month(3), 15, 0, 0, 0, 0, utc).Month() // March
+
+    @capture viaPrintln := {
+        fmt.Println(m)
+    }
+    @assert viaPrintln == "March\n"
+
+    @capture viaPrint := {
+        fmt.Print(m)
+    }
+    @assert viaPrint == "March"
+}
+
+@test "time: Month formats with %v, %s, %d verbs"
+{
+    utc := time.FixedZone("UTC", 0)
+    m := time.Date(2024, time.Month(3), 15, 0, 0, 0, 0, utc).Month() // March == 3
+
+    // %v and %s dispatch the Month's String() method; %d formats the integer.
+    @assert fmt.Sprintf("%v", m) == "March"
+    @assert fmt.Sprintf("%s", m) == "March"
+    @assert fmt.Sprintf("%d", m) == "3"
+}
+
+@test "time: Month.String() on an out-of-range value returns a placeholder"
+{
+    // Matching Go's time.Month.String(), a value outside 1..12 yields a
+    // placeholder string rather than raising an error.
+    @assert time.Month(0).String() == "%!Month(0)"
+    @assert time.Month(13).String() == "%!Month(13)"
+    @assert time.Month(-1).String() == "%!Month(-1)"
+
+    @assert fmt.Sprintf("%v", time.Month(99)) == "%!Month(99)"
+}
+
+@test "time: month constants (time.January .. time.December)"
+{
+    // The package exports Month constants matching Go (January == 1).
+    @assert int(time.January) == 1
+    @assert int(time.July) == 7
+    @assert int(time.December) == 12
+
+    @assert time.January.String() == "January"
+    @assert time.December.String() == "December"
+    @assert reflect.Type(time.March) == time.Month
+
+    // Constants can be passed directly to time.Date and compared against a
+    // computed month.
+    utc := time.FixedZone("UTC", 0)
+    t := time.Date(2024, time.July, 4, 0, 0, 0, 0, utc)
+    @assert t.Month() == time.July
+    @assert t.Format("2006-01-02") == "2024-07-04"
+}
+
+@test "time: Now().Month() is a valid month"
+{
+    names := []string{"January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"}
+
+    m := time.Now().Month()
+
+    @assert int(m) >= 1 && int(m) <= 12
+    @assert m.String() == names[int(m)-1]
+}

@@ -667,13 +667,18 @@ func TestTimeString_OutputParsesBack(t *testing.T) {
 // fmt.Println/fmt.Print (internal/runtime/fmt's formatUsingString) fall back
 // to data.Format for any value that isn't a *data.Struct with a registered
 // Ego-level "String" function. Before this fix, TimeType, TimeDurationType,
-// TimeLocationType, and TimeMonthType had no data.Type.format function
-// registered (via SetFormatFunc), so data.Format's default case reflected
-// over the raw Go value and printed its internal struct layout (e.g.
+// and TimeLocationType had no data.Type.format function registered (via
+// SetFormatFunc), so data.Format's default case reflected over the raw Go
+// value and printed its internal struct layout (e.g.
 // "time.Duration int64 1h30m0s") instead of calling the value's own
 // String() method, even though .String() and %v already produced the
 // correct human-readable text. The fix registers a format function for
-// each of the four types so data.Format agrees with .String()/%v.
+// each of these native types so data.Format agrees with .String()/%v.
+//
+// (TimeMonthType was originally part of this set, but Month is now a plain
+// scalar type -- like Weekday -- whose values are *data.Scalar wrappers, never
+// bare time.Month values, so it formats via its String() method and needs no
+// SetFormatFunc.)
 
 func TestFormat_TimeDuration_MatchesString(t *testing.T) {
 	d := 90 * time.Minute
@@ -711,13 +716,3 @@ func TestFormat_TimeLocation_MatchesString(t *testing.T) {
 	}
 }
 
-func TestFormat_TimeMonth_MatchesString(t *testing.T) {
-	m := time.July
-
-	got := data.Format(m)
-	want := m.String()
-
-	if got != want {
-		t.Errorf("data.Format(time.Month) = %q, want %q (to match .String())", got, want)
-	}
-}

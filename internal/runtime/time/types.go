@@ -93,11 +93,14 @@ var TimeType = data.TypeDefinition("Time", data.StructureType()).
 		Type:    data.OwnType,
 		Returns: []*data.Type{data.IntType},
 	}, nil).
-	DefineNativeFunction("Month", &data.Declaration{
+	// Month() wraps its result as a Month scalar (like Weekday() does) rather
+	// than passing the native time.Month straight through, so callers get a
+	// value that compares and formats via the Month type.
+	DefineFunction("Month", &data.Declaration{
 		Name:    "Month",
 		Type:    data.OwnType,
 		Returns: []*data.Type{TimeMonthType},
-	}, nil).
+	}, month).
 	DefineNativeFunction("String", &data.Declaration{
 		Name:    "String",
 		Type:    data.OwnType,
@@ -213,23 +216,18 @@ var TimeLocationType = data.TypeDefinition("Location", data.PointerType(data.Str
 			Returns: []*data.Type{data.StringType},
 		}, nil).FixSelfReferences()
 
-var TimeMonthType = data.TypeDefinition("Month", data.StructureType()).
-	SetNativeName(defs.TimeMonthTypeName).
+// Month is a named integer type modeled exactly like Weekday above (and like
+// Go's own time.Month, which is "type Month int"). It was previously a native
+// struct wrapping time.Month, which predated scalar-type support and made month
+// values fail "==" comparisons; as a plain scalar it compares, formats via its
+// String() method, and needs no SetFormatFunc/native-name machinery.
+var TimeMonthType = data.TypeDefinition("Month", data.IntType).
 	SetPackage("time").
-	// Same BUG-56 root cause as above, found during the same survey:
-	// without this, printing a bare time.Month shows "time.Month int July"
-	// instead of "July".
-	SetFormatFunc(func(v any) string {
-		m, _ := v.(time.Month)
-
-		return m.String()
-	}).
-	DefineNativeFunction("String",
+	DefineFunction("String",
 		&data.Declaration{
 			Name:    "String",
-			Type:    data.OwnType,
 			Returns: []*data.Type{data.StringType},
-		}, nil).FixSelfReferences()
+		}, monthString)
 
 var TimePackage = data.NewPackageFromMap("time", map[string]any{
 	"Now": data.Function{
@@ -279,8 +277,11 @@ var TimePackage = data.NewPackageFromMap("time", map[string]any{
 				},
 			},
 		},
-		Value:    time.Date,
-		IsNative: true,
+		// Date is an Ego wrapper (not a direct native pass-through) so it can
+		// accept a Month scalar for the month argument: the native reflection
+		// call would otherwise need a Go time.Month and reject a plain int. The
+		// wrapper unwraps the scalar and reconstructs the time.Month itself.
+		Value: date,
 	},
 	"FixedZone": data.Function{
 		Declaration: &data.Declaration{

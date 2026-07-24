@@ -662,22 +662,6 @@ func Test_makeNativePackageTypeArgument_DurationFromInt(t *testing.T) {
 	}
 }
 
-// Test_makeNativePackageTypeArgument_MonthFromInt verifies that an int
-// argument is converted to time.Month when the type is time.Month.
-func Test_makeNativePackageTypeArgument_MonthFromInt(t *testing.T) {
-	monthType := makeMonthType() // NativeName = "time.Month"
-
-	got, err := makeNativePackageTypeArgument(monthType, 6, 0)
-
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if got != time.June {
-		t.Errorf("month from int: got %v, want June", got)
-	}
-}
-
 // Test_makeNativePackageTypeArgument_TypeMismatch verifies that passing a
 // value whose Go type does not match the declared native name returns
 // ErrArgumentType.

@@ -1,10 +1,10 @@
 // Tests for the time.Weekday type and its String() method, plus the exported
-// day-of-week and month constants.
+// day-of-week constants. (Month has parallel coverage in month.ego.)
 //
 // time.Weekday is a named integer type returned by Time.Weekday(). It follows
 // Go's convention (Sunday == 0 ... Saturday == 6) and carries a String() method
 // that renders the English day name. The package exports time.Sunday ..
-// time.Saturday and time.January .. time.December as typed constants.
+// time.Saturday as typed constants.
 
 @test "time: Weekday of a known date"
 {
@@ -126,24 +126,4 @@
     utc := time.FixedZone("UTC", 0)
     w := time.Date(2024, time.Month(1), 20, 0, 0, 0, 0, utc).Weekday() // Saturday
     @assert w == time.Saturday
-}
-
-@test "time: month constants (time.January .. time.December)"
-{
-    // The package also exports Month constants matching Go (January == 1). They
-    // stringify to their names and can be passed directly to time.Date.
-    //
-    // NOTE: Month is a native type whose values do not compare equal with "=="
-    // (a pre-existing limitation unrelated to these constants -- even
-    // time.Month(7) == time.Month(7) is false), so these tests compare via
-    // String() rather than ==.
-    @assert time.January.String() == "January"
-    @assert time.July.String() == "July"
-    @assert time.December.String() == "December"
-    @assert reflect.Type(time.March) == time.Month
-
-    utc := time.FixedZone("UTC", 0)
-    t := time.Date(2024, time.July, 4, 0, 0, 0, 0, utc)
-    @assert t.Month().String() == "July"
-    @assert t.Format("2006-01-02") == "2024-07-04"
 }

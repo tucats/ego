@@ -194,9 +194,6 @@ func makeNativePackageTypeArgument(t *data.Type, functionArgument any, argumentI
 			switch nativeName {
 			case defs.TimeDurationTypeName:
 				functionArgument = time.Duration(actual)
-
-			case defs.TimeMonthTypeName:
-				functionArgument = time.Month(actual)
 			}
 
 		default:

@@ -112,6 +112,7 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 				itemType := data.TypeOf(item)
 				typeName := itemType.TypeString()
 				args.Set(count, typeName)
+
 			case "V":
 				// Replace the %V with %s
 				fmtString = fmtString[:pos] + "%s" + fmtString[pos+2:]
@@ -119,6 +120,7 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 				// Replace the value with string representation of the type
 				text := data.FormatWithType(args.Get(count))
 				args.Set(count, text)
+
 			case "v", "s":
 				// A named scalar (e.g. a "type Weekday int" value) carries its
 				// Ego type's String() method. Handing the raw *data.Scalar to
@@ -135,8 +137,10 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 					}
 
 					fmtString = fmtString[:pos] + "%s" + fmtString[pos+2:]
+					
 					args.Set(count, text)
 				}
+				
 			default:
 				// For any other verb (%d, %x, %f, ...) a named scalar must be
 				// unwrapped to its underlying primitive; otherwise Go's fmt

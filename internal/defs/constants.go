@@ -150,6 +150,5 @@ const (
 // Native type names we do special handling for.
 const (
 	TimeDurationTypeName = "time.Duration"
-	TimeMonthTypeName    = "time.Month"
 	TimeLocationTypeName = "time.Location"
 )
