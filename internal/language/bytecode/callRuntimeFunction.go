@@ -76,6 +76,11 @@ func callRuntimeFunction(c *Context, function func(*symbols.SymbolTable, data.Li
 	functionSymbols.SetAlways(defs.SandboxedIOSymbolName, c.sandboxedIO.Load())
 	functionSymbols.SetAlways(defs.SandboxedExecSymbolName, c.sandboxedExec.Load())
 
+	// Stamp the current race state into the symbol table. This can be used if
+	// the runtime function turns around to call bytecode (such as the fmt
+	// package using a String() function provided by bytecode)
+	functionSymbols.SetAlways(defs.TraceSymbolName, c.Tracing())
+
 	if receiverOK {
 		// Auto-deref: a pointer-receiver Ego method's own receiver parameter is
 		// bound as a boxed *any (see the BUG-64 fix commentary in this.go's

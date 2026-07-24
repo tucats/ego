@@ -146,4 +146,7 @@ const (
 
 	// Boolean value set to indicate the context cannot do exec operations.
 	SandboxedExecSymbolName = InvisiblePrefix + "sandboxed_exec"
+
+	// Boolean vaue set to indicate if tracing is enabled in this scope.
+	TraceSymbolName = InvisiblePrefix + "tracing"
 )
