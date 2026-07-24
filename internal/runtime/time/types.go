@@ -3,9 +3,17 @@ package time
 import (
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/language/data"
 )
+
+var TimeWeekdayType = data.TypeDefinition("Weekday", data.IntType).
+	SetPackage("time").
+	DefineFunction("String",
+		&data.Declaration{
+			Name:    "String",
+			Returns: []*data.Type{data.StringType},
+		}, weekdayString)
 
 var TimeType = data.TypeDefinition("Time", data.StructureType()).
 	SetNativeName("time.Time").
@@ -112,7 +120,15 @@ var TimeType = data.TypeDefinition("Time", data.StructureType()).
 		Name:    "SleepUntil",
 		Type:    data.OwnType,
 		Returns: []*data.Type{data.ErrorType},
-	}, sleepUntil).FixSelfReferences()
+	}, sleepUntil).
+	// SleepUntil is an Ego-specific addition with no Go equivalent -- Go
+	// code does the same thing with time.Sleep(time.Until(t)).
+	DefineFunction("Weekday", &data.Declaration{
+		Name:    "Weekday",
+		Type:    data.OwnType,
+		Returns: []*data.Type{TimeWeekdayType},
+	}, weekday).
+	FixSelfReferences()
 
 var TimeDurationType = data.TypeDefinition("Duration", data.StructureType()).
 	SetNativeName(defs.TimeDurationTypeName).
@@ -391,4 +407,5 @@ var TimePackage = data.NewPackageFromMap("time", map[string]any{
 	"Duration": TimeDurationType,
 	"Location": TimeLocationType,
 	"Month":    TimeMonthType,
+	"Weekday":  TimeWeekdayType,
 })

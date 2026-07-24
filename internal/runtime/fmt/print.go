@@ -119,6 +119,32 @@ func stringPrintFormat(s *symbols.SymbolTable, args data.List) (any, error) {
 				// Replace the value with string representation of the type
 				text := data.FormatWithType(args.Get(count))
 				args.Set(count, text)
+			case "v", "s":
+				// A named scalar (e.g. a "type Weekday int" value) carries its
+				// Ego type's String() method. Handing the raw *data.Scalar to
+				// Go's fmt bypasses that method -- Go instead calls the Scalar's
+				// own Go String(), which only exposes the underlying value ("5"
+				// rather than "Friday"). Format it here the same way
+				// Print/Println/Sprint do, then pass Go a plain string.
+				// Non-scalar arguments are left untouched so Go's native %v/%s
+				// handling (widths, structs, slices, ...) is preserved.
+				if _, ok := args.Get(count).(*data.Scalar); ok {
+					text, err := formatUsingString(s, args.Get(count))
+					if err != nil {
+						return nil, err
+					}
+
+					fmtString = fmtString[:pos] + "%s" + fmtString[pos+2:]
+					args.Set(count, text)
+				}
+			default:
+				// For any other verb (%d, %x, %f, ...) a named scalar must be
+				// unwrapped to its underlying primitive; otherwise Go's fmt
+				// receives the *data.Scalar wrapper and prints its struct layout
+				// (e.g. "&{... 5}") instead of the number.
+				if scalar, ok := args.Get(count).(*data.Scalar); ok {
+					args.Set(count, scalar.Value())
+				}
 			}
 		}
 	}
@@ -271,7 +297,25 @@ func formatUsingString(s *symbols.SymbolTable, v any) (string, error) {
 	}
 
 	if typeDef != nil {
+		// Let's see if the typedef helps us out by providing a String() function.
 		if f := typeDef.Function("String"); f != nil {
+			// Is it a function wrapped as a data.Function declaration?
+			if fmt, ok := f.(data.Function); ok {
+				if fmt, ok := fmt.Value.(func(s *symbols.SymbolTable, args data.List) (any, error)); ok {
+					local := symbols.NewChildSymbolTable("local to format", s)
+					local.SetAlways(defs.ThisVariable, v)
+
+					if si, err := fmt(local, data.NewList()); err == nil {
+						if str, ok := si.(string); ok {
+							return str, nil
+						} else {
+							return "", errors.ErrInvalidReturnValue.Context(typeDef.Name() + ".String()")
+						}
+					}
+				}
+			}
+
+			// Is is the direct access to the runtime function itself?
 			if fmt, ok := f.(func(s *symbols.SymbolTable, args data.List) (any, error)); ok {
 				local := symbols.NewChildSymbolTable("local to format", s)
 				local.SetAlways(defs.ThisVariable, v)
@@ -285,7 +329,7 @@ func formatUsingString(s *symbols.SymbolTable, v any) (string, error) {
 				}
 			}
 
-			// Might also be bytecode String function.
+			// Is it a bytecode String function?
 			if fmt, ok := f.(data.Function); ok { // Create a symbol table to use for the slice comparator callback function.
 				if fn, ok := fmt.Value.(*bytecode.ByteCode); ok {
 					stringSymbols := symbols.NewChildSymbolTable(fmt.Declaration.Name, s)

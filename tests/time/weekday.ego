@@ -1,0 +1,149 @@
+// Tests for the time.Weekday type and its String() method, plus the exported
+// day-of-week and month constants.
+//
+// time.Weekday is a named integer type returned by Time.Weekday(). It follows
+// Go's convention (Sunday == 0 ... Saturday == 6) and carries a String() method
+// that renders the English day name. The package exports time.Sunday ..
+// time.Saturday and time.January .. time.December as typed constants.
+
+@test "time: Weekday of a known date"
+{
+    utc := time.FixedZone("UTC", 0)
+
+    // 2024-01-15 is a Monday.
+    w := time.Date(2024, time.Month(1), 15, 10, 30, 0, 0, utc).Weekday()
+
+    @assert w.String() == "Monday"
+    @assert int(w) == 1
+    @assert reflect.Type(w) == time.Weekday
+}
+
+@test "time: Weekday covers a full week (Sunday=0 .. Saturday=6)"
+{
+    utc := time.FixedZone("UTC", 0)
+    names := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+
+    // 2024-01-14 is a Sunday, so the seven days starting there span one week
+    // and exercise every Weekday value and name in order.
+    for i := 0; i < 7; i++ {
+        w := time.Date(2024, time.Month(1), 14+i, 12, 0, 0, 0, utc).Weekday()
+
+        @assert int(w) == i
+        @assert w.String() == names[i]
+    }
+}
+
+@test "time: Weekday value cast from int"
+{
+    // time.Weekday(n) converts an int to the named type; String() then renders
+    // the day name. Boundary values 0 and 6 map to Sunday and Saturday.
+    @assert time.Weekday(0).String() == "Sunday"
+    @assert time.Weekday(3).String() == "Wednesday"
+    @assert time.Weekday(6).String() == "Saturday"
+
+    @assert reflect.Type(time.Weekday(2)) == time.Weekday
+}
+
+@test "time: Weekday equality and comparison"
+{
+    utc := time.FixedZone("UTC", 0)
+
+    // Two Mondays a week apart are the same weekday.
+    a := time.Date(2024, time.Month(1), 15, 0, 0, 0, 0, utc).Weekday()
+    b := time.Date(2024, time.Month(1), 22, 0, 0, 0, 0, utc).Weekday()
+
+    @assert a == b
+    @assert a == time.Weekday(1) // weekday == weekday
+    @assert a == 1               // named scalar decays to int in comparison
+    @assert a != time.Weekday(2)
+}
+
+@test "time: Weekday prints via its String() method"
+{
+    // Like the Month/Duration/Location BUG-56 tests, printing a Weekday with
+    // Println/Print should yield the day name, not the underlying integer.
+    utc := time.FixedZone("UTC", 0)
+    w := time.Date(2024, time.Month(1), 19, 0, 0, 0, 0, utc).Weekday() // Friday
+
+    @capture viaPrintln := {
+        fmt.Println(w)
+    }
+    @assert viaPrintln == "Friday\n"
+
+    @capture viaPrint := {
+        fmt.Print(w)
+    }
+    @assert viaPrint == "Friday"
+}
+
+@test "time: Weekday formats with %v, %s, %d verbs"
+{
+    utc := time.FixedZone("UTC", 0)
+    w := time.Date(2024, time.Month(1), 19, 0, 0, 0, 0, utc).Weekday() // Friday == 5
+
+    // %v and %s dispatch the Weekday's String() method (matching Go), while %d
+    // formats the underlying integer.
+    @assert fmt.Sprintf("%v", w) == "Friday"
+    @assert fmt.Sprintf("%s", w) == "Friday"
+    @assert fmt.Sprintf("%d", w) == "5"
+}
+
+@test "time: Now().Weekday() is a valid day"
+{
+    names := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+
+    w := time.Now().Weekday()
+
+    @assert int(w) >= 0 && int(w) <= 6
+    @assert w.String() == names[int(w)]
+}
+
+@test "time: Weekday.String() on an out-of-range value returns a placeholder"
+{
+    // Matching Go's time.Weekday.String(), a value outside 0..6 yields a
+    // placeholder string rather than raising an error, so String() never fails.
+    @assert time.Weekday(9).String() == "%!Weekday(9)"
+    @assert time.Weekday(-1).String() == "%!Weekday(-1)"
+
+    // The placeholder also flows through %v/%s formatting without a throw.
+    @assert fmt.Sprintf("%v", time.Weekday(42)) == "%!Weekday(42)"
+}
+
+@test "time: day-of-week constants (time.Sunday .. time.Saturday)"
+{
+    // The package exports Weekday constants matching Go (Sunday == 0). Each is a
+    // time.Weekday, so it stringifies to its name and compares equal to the
+    // corresponding Weekday value.
+    @assert int(time.Sunday) == 0
+    @assert int(time.Wednesday) == 3
+    @assert int(time.Saturday) == 6
+
+    @assert time.Monday.String() == "Monday"
+    @assert reflect.Type(time.Friday) == time.Weekday
+    @assert time.Friday == time.Weekday(5)
+
+    // The idiomatic comparison against a computed weekday works.
+    utc := time.FixedZone("UTC", 0)
+    w := time.Date(2024, time.Month(1), 20, 0, 0, 0, 0, utc).Weekday() // Saturday
+    @assert w == time.Saturday
+}
+
+@test "time: month constants (time.January .. time.December)"
+{
+    // The package also exports Month constants matching Go (January == 1). They
+    // stringify to their names and can be passed directly to time.Date.
+    //
+    // NOTE: Month is a native type whose values do not compare equal with "=="
+    // (a pre-existing limitation unrelated to these constants -- even
+    // time.Month(7) == time.Month(7) is false), so these tests compare via
+    // String() rather than ==.
+    @assert time.January.String() == "January"
+    @assert time.July.String() == "July"
+    @assert time.December.String() == "December"
+    @assert reflect.Type(time.March) == time.Month
+
+    utc := time.FixedZone("UTC", 0)
+    t := time.Date(2024, time.July, 4, 0, 0, 0, 0, utc)
+    @assert t.Month().String() == "July"
+    @assert t.Format("2006-01-02") == "2024-07-04"
+}

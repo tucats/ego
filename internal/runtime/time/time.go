@@ -3,9 +3,9 @@ package time
 import (
 	"time"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -19,6 +19,7 @@ func String(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	return t.Format(time.UnixDate), nil
 }
+
 
 // sleepUntil implements t.SleepUntil(). It is an Ego-specific convenience
 // method with no direct Go equivalent -- Go code does the equivalent with

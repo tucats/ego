@@ -25,3 +25,34 @@ const (
 	StampMicro = "Jan _2 15:04:05.000000"
 	StampNano  = "Jan _2 15:04:05.000000000"
 )
+
+// Days of the week, matching Go's time.Weekday values (Sunday == 0). These are
+// typed as Weekday so comparisons like "t.Weekday() == time.Saturday" work and
+// each constant's String() renders its day name.
+const (
+	Sunday Weekday = iota
+	Monday
+	Tuesday
+	Wednesday
+	Thursday
+	Friday
+	Saturday
+)
+
+// Months of the year, matching Go's time.Month values (January == 1). Typed as
+// Month so they can be passed directly to time.Date and compared against
+// t.Month().
+const (
+	January Month = 1 + iota
+	February
+	March
+	April
+	May
+	June
+	July
+	August
+	September
+	October
+	November
+	December
+)
