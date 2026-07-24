@@ -39,6 +39,7 @@ package bytecode
 // Keep each method focused on one concern and document its behavior.
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
@@ -272,6 +273,35 @@ func (tc *testContext) assertTopStack(want any) {
 
 	if !reflect.DeepEqual(v, want) {
 		tc.t.Errorf("assertTopStack:\n  got  %v (%T)\n  want %v (%T)", v, v, want, want)
+	}
+}
+
+// assertTopStackComplexApprox pops one item from the stack and checks that it
+// is a complex128 whose real and imaginary parts are each within tolerance of
+// want.  This tolerant comparison exists because some x86 implementations
+// evaluate complex arithmetic using 80-bit extended-precision registers, so a
+// division such as (5+5i)/(3-1i) can land a few ulps away from the exact
+// mathematical result (e.g. 1+1.9999999999998i instead of 1+2i).  An exact
+// reflect.DeepEqual would then fail on those platforms.
+func (tc *testContext) assertTopStackComplexApprox(want complex128, tolerance float64) {
+	tc.t.Helper()
+
+	v, err := tc.ctx.Pop()
+	if err != nil {
+		tc.t.Errorf("assertTopStackComplexApprox: Pop failed: %v", err)
+
+		return
+	}
+
+	got, ok := v.(complex128)
+	if !ok {
+		tc.t.Errorf("assertTopStackComplexApprox:\n  got  %v (%T)\n  want %v (complex128)", v, v, want)
+
+		return
+	}
+
+	if math.Abs(real(got)-real(want)) > tolerance || math.Abs(imag(got)-imag(want)) > tolerance {
+		tc.t.Errorf("assertTopStackComplexApprox:\n  got  %v\n  want %v (tolerance %g)", got, want, tolerance)
 	}
 }
 
