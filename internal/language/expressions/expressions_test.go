@@ -5,12 +5,13 @@
 package expressions
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -118,7 +119,7 @@ func TestNew(t *testing.T) {
 		{
 			name: "Float divide by zero ",
 			expr: "3.33 / 0.0 ",
-			want: nil,
+			want: math.Inf(1),
 		},
 		{
 			name: "Order precedence",

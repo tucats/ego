@@ -43,9 +43,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 )
 
@@ -273,6 +273,76 @@ func (tc *testContext) assertTopStack(want any) {
 
 	if !reflect.DeepEqual(v, want) {
 		tc.t.Errorf("assertTopStack:\n  got  %v (%T)\n  want %v (%T)", v, v, want, want)
+	}
+}
+
+// assertTopStackInf64 pops one item from the stack and checks that it
+// is a math.Inf value.  The test fails if the stack is empty or if the
+// popped value is not an Inf value.
+func (tc *testContext) assertTopStackInf64(sign int) {
+	var signChar string
+
+	tc.t.Helper()
+
+	switch {
+	case sign < 0:
+		signChar = "-"
+
+	case sign > 0:
+		signChar = "+"
+
+	default:
+		signChar = "+/-"
+	}
+
+	v, err := tc.ctx.Pop()
+	if err != nil {
+		tc.t.Errorf("assertTopStackInf: Pop failed: %v", err)
+
+		return
+	}
+
+	if f, ok := v.(float64); ok {
+		if !math.IsInf(f, sign) {
+			tc.t.Errorf("assertTopStackInf:\n  got  %v (%T)\n  want %sInf)", v, v, signChar)
+		}
+	} else {
+		tc.t.Errorf("assertTopStackInf:\n  got  %v (%T)\n  want %sInf", v, v, signChar)
+	}
+}
+
+// assertTopStackInf pops one item from the stack and checks that it
+// is a math.Inf value.  The test fails if the stack is empty or if the
+// popped value is not an Inf value.
+func (tc *testContext) assertTopStackInf32(sign int) {
+	var signChar string
+
+	tc.t.Helper()
+
+	switch {
+	case sign < 0:
+		signChar = "-"
+
+	case sign > 0:
+		signChar = "+"
+
+	default:
+		signChar = "+/-"
+	}
+
+	v, err := tc.ctx.Pop()
+	if err != nil {
+		tc.t.Errorf("assertTopStackInf: Pop failed: %v", err)
+
+		return
+	}
+
+	if f, ok := v.(float32); ok {
+		if !math.IsInf(float64(f), sign) {
+			tc.t.Errorf("assertTopStackInf:\n  got  %v (%T)\n  want %sInf)", v, v, signChar)
+		}
+	} else {
+		tc.t.Errorf("assertTopStackInf:\n  got  %v (%T)\n  want %sInf", v, v, signChar)
 	}
 }
 

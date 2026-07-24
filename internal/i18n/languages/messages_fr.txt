@@ -1094,6 +1094,7 @@ logon.token.expiration=Date d'expiration du jeton de connexion actuel
 logon.refresh.token=Jeton de renouvellement OAuth2 stocké (géré automatiquement)
 runtime.deep.scope=Si vrai, toutes les tables de symboles dans la portée sont visibles
 runtime.exec=Si vrai, autoriser les opérations os.Exec()
+runtime.float.div.zero.error=Si vrai, la division en virgule flottante par zéro est une erreur d'exécution
 runtime.panics=Si vrai, panic() provoque une panique dans Ego
 runtime.path=La valeur actuelle de EGO_PATH
 runtime.path.lib=L'emplacement du répertoire lib. Par défaut EGO_PATH

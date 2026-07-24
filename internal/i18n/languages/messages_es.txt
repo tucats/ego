@@ -1101,6 +1101,7 @@ logon.token.expiration=Cuándo expirará el token de inicio de sesión actual
 logon.refresh.token=Token de actualización OAuth2 almacenado (gestionado automáticamente)
 runtime.deep.scope=Si es verdadero, todas las tablas de símbolos en el ámbito son visibles
 runtime.exec=Si es verdadero, permitir operaciones os.Exec()
+runtime.float.div.zero.error=Si es verdadero, la división de punto flotante por cero es un error de tiempo de ejecución
 runtime.panics=Si es verdadero, panic() hace que Ego entre en pánico
 runtime.path=El valor actual de EGO_PATH
 runtime.path.lib=La ubicación del directorio lib. Por defecto es EGO_PATH

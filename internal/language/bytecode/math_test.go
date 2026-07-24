@@ -27,6 +27,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
@@ -1241,19 +1242,44 @@ func Test_divideByteCode_IntDivByZero(t *testing.T) {
 	tc.assertError(err, errors.ErrDivisionByZero)
 }
 
-// Test_divideByteCode_Float64DivByZero verifies that float64 / 0 returns
-// ErrDivisionByZero (Ego does not produce IEEE 754 ±Inf).
-func Test_divideByteCode_Float64DivByZero(t *testing.T) {
+// Test_divideByteCode_ErrFloat64DivByZero verifies that float64 / 0 returns
+// an error when ego.runtime.float.div.zero is true, instead of IEEE 754 +Inf).
+func Test_divideByteCode_ErrFloat64DivByZero(t *testing.T) {
+	// Save the current value, and set the default to throw
+	// runtime error on floating div-by-zero. Reset when done.
+	saved := settings.Get(defs.RuntimeDivZeroError)
+	settings.SetDefault(defs.RuntimeDivZeroError, "true")
+	defer settings.SetDefault(defs.RuntimeDivZeroError, saved)
+
 	tc := newTestContext(t).withStack(float64(9), float64(0))
 	err := divideByteCode(tc.ctx, nil)
 	tc.assertError(err, errors.ErrDivisionByZero)
+}
+
+// Test_divideByteCode_Float64DivByZero verifies that float64 / 0 returns
+// IEEE 754 +Inf).
+func Test_divideByteCode_Float64DivByZero(t *testing.T) {
+	tc := newTestContext(t).withStack(float64(9), float64(0))
+	err := divideByteCode(tc.ctx, nil)
+	tc.assertError(err, nil)
+	tc.assertTopStackInf64(1)
+}
+
+// Test_divideByteCode_Float64DivByZero verifies that -float64 / 0 returns
+// IEEE 754 -Inf).
+func Test_divideByteCode_NegFloat64DivByZero(t *testing.T) {
+	tc := newTestContext(t).withStack(float64(-9), float64(0))
+	err := divideByteCode(tc.ctx, nil)
+	tc.assertError(err, nil)
+	tc.assertTopStackInf64(-1)
 }
 
 // Test_divideByteCode_Float32DivByZero verifies float32 / 0 returns ErrDivisionByZero.
 func Test_divideByteCode_Float32DivByZero(t *testing.T) {
 	tc := newTestContext(t).withStack(float32(9), float32(0))
 	err := divideByteCode(tc.ctx, nil)
-	tc.assertError(err, errors.ErrDivisionByZero)
+	tc.assertError(err, nil)
+	tc.assertTopStackInf32(1)
 }
 
 // Test_divideByteCode_Complex128 verifies complex128 division.

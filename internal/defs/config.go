@@ -138,6 +138,10 @@ const (
 	// a shorter single-line version.
 	FullStackTraceSetting = RuntimeKeyPrefix + "stack.trace"
 
+	// If true, division by zero of a floating point value generates an
+	// error. By default (false), it follows Go behavior of a +/-Inf value.
+	RuntimeDivZeroError = RuntimeKeyPrefix + "float.div.zero.error"
+
 	// REST CONFIGURATION KEYS
 	// The prefix for all REST  configuration keys.
 	RestKeyPrefix = RuntimeKeyPrefix + "rest."
@@ -689,6 +693,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ClusterNameSetting:                true,
 	ClusterPingIntervalSetting:        true,
 	ClusterPingTimeoutSetting:         true,
+	RuntimeDivZeroError:               true,
 	// OAuth2 Authorization Server settings — all user-settable.
 	OAuthASEnabledSetting:           true,
 	OAuthASKeyFileSetting:           true,

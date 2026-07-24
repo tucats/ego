@@ -962,14 +962,14 @@ func divideByteCode(c *Context, i any) error {
 		return c.push(v1.(int64) / v2.(int64))
 
 	case float32:
-		if v2.(float32) == 0 {
+		if c.divZero && v2.(float32) == 0 {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 
 		return c.push(v1.(float32) / v2.(float32))
 
 	case float64:
-		if v2.(float64) == 0 {
+		if c.divZero && v2.(float64) == 0 {
 			return c.runtimeError(errors.ErrDivisionByZero)
 		}
 

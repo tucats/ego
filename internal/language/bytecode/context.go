@@ -210,6 +210,11 @@ type Context struct {
 	// goroutine can update the context at a time.
 	mux sync.RWMutex
 
+	// if true, dividing by zero with a floating point value triggers a runtime
+	// error. If false (the default), it just produces a +/-Inf which matches Go
+	// behavior.
+	divZero bool
+
 	// If there is a go routine associated with this context, this is the error state
 	// if any.
 	goErr error
@@ -410,6 +415,7 @@ func NewContext(s *symbols.SymbolTable, b *ByteCode) *Context {
 		deferStack:           make([]deferStatement, 0),
 		throwUncheckedErrors: settings.GetBool(defs.ThrowUncheckedErrorsSetting),
 		fullStackTrace:       settings.GetBool(defs.FullStackTraceSetting),
+		divZero:              settings.GetBool(defs.RuntimeDivZeroError),
 		tryStack:             make([]tryInfo, 0),
 		rangeStack:           make([]*rangeDefinition, 0),
 		timerStack:           make([]time.Time, 0),

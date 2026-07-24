@@ -1093,6 +1093,7 @@ logon.token.expiration=現在のログオントークンの有効期限
 logon.refresh.token=保存されたOAuth2リフレッシュトークン (自動的に管理)
 runtime.deep.scope=trueの場合、スコープ内のすべてのシンボルテーブルが表示される
 runtime.exec=trueの場合、os.Exec() 操作を許可
+runtime.float.div.zero.error=trueの場合、浮動小数点数のゼロ除算はランタイムエラーになる
 runtime.panics=trueの場合、panic() がEgoをパニックさせる
 runtime.path=現在のEGO_PATH値
 runtime.path.lib=libディレクトリの場所。デフォルトはEGO_PATH
