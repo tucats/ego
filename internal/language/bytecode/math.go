@@ -480,7 +480,7 @@ func addByteCode(c *Context, i any) error {
 			return c.push(v1.(uint32) + v2.(uint32))
 
 		case uint:
-			return c.push(uint(v1.(uint32)) + uint(v2.(uint32)))
+			return c.push(v1.(uint) + v2.(uint))
 
 		case uint64:
 			return c.push(v1.(uint64) + v2.(uint64))
@@ -902,6 +902,13 @@ func divideByteCode(c *Context, i any) error {
 		}
 
 		return c.push(v1.(byte) / v2.(byte))
+
+	case int8:
+		if v2.(int8) == 0 {
+			return c.runtimeError(errors.ErrDivisionByZero)
+		}
+
+		return c.push(v1.(int8) / v2.(int8))
 
 	case uint16:
 		if v2.(uint16) == 0 {

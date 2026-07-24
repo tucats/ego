@@ -385,6 +385,9 @@ func coerceFloat32(v any) (any, error) {
 	case int:
 		return float32(value), nil
 
+	case uint:
+		return float32(value), nil
+
 	case uint64:
 		return float32(value), nil
 
