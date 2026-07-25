@@ -2,6 +2,7 @@ package rest
 
 import (
 	"github.com/tucats/ego/internal/language/data"
+	egoTime "github.com/tucats/ego/internal/runtime/time"
 )
 
 var RestClientType = data.TypeDefinition("Client",
@@ -16,6 +17,19 @@ var RestClientType = data.TypeDefinition("Client",
 		DefineField("Headers", data.MapType(data.StringType, data.StringType)).
 		DefineField("Cookies", data.ArrayType(data.InterfaceType)).
 		DefineFunctions(map[string]data.Function{
+			"SetTimeout": {
+				Declaration: &data.Declaration{
+					Name: "SetTimeout",
+					Parameters: []data.Parameter{
+						{
+							Name: "duration",
+							Type: egoTime.TimeDurationType,
+						},
+					},
+					Returns: []*data.Type{data.OwnType},
+				},
+				Value: setTimeout,
+			},
 			"Base": {
 				Declaration: &data.Declaration{
 					Name: "Base",
@@ -29,7 +43,6 @@ var RestClientType = data.TypeDefinition("Client",
 				},
 				Value: setBase,
 			},
-
 			"Debug": {
 				Declaration: &data.Declaration{
 					Name: "Debug",

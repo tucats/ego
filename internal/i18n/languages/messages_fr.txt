@@ -510,6 +510,7 @@ readonly.write=tentative invalide de modifier une valeur en lecture seule
 request=requête ou contenu invalide
 request.too.large=corps de la requête trop volumineux
 reserved.name=nom de paramètre de profil réservé
+rest=erreur lors du traitement de la requête REST
 rest.closed=client REST fermé
 resource.handle=erreur interne, utilisation invalide d'un descripteur de ressource nul
 return.list=liste de types de retour invalide

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"gopkg.in/resty.v1"
 )
@@ -65,6 +66,8 @@ func New(s *symbols.SymbolTable, args data.List) (any, error) {
 	}
 
 	client.SetTLSClientConfig(config)
+	// Default timeout on a request is 5 seconds
+	client.SetTimeout(time.Second * 5)
 
 	r := data.NewStruct(RestClientType).FromBuiltinPackage()
 
@@ -108,6 +111,26 @@ func setDebug(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	flag := data.BoolOrFalse((args.Get(0)))
 	r.SetDebug(flag)
+
+	return this, nil
+}
+
+// setTimeout implements the Settimeout() rest client function. This specifies a boolean value that
+// enables or disables debug logging for the client.
+func setTimeout(s *symbols.SymbolTable, args data.List) (any, error) {
+	r, err := getClient(s)
+	if err != nil {
+		return nil, err
+	}
+
+	this := getThis(s)
+
+	// The argument must be a duration
+	durationValue := args.Get(0)
+
+	if d, ok := durationValue.(time.Duration); ok {
+		r.SetTimeout(d)
+	}
 
 	return this, nil
 }

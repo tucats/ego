@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/util"
 	"gopkg.in/resty.v1"
@@ -55,7 +55,7 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		err = errors.New(e2)
+		err = errors.ErrRest.Context(e2.Error()).In("Get()")
 
 		return data.NewList(nil, err), err
 	}
@@ -163,7 +163,7 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		err = errors.New(e2)
+		err = errors.ErrRest.Context(e2.Error()).In("Post()")
 
 		return data.NewList(nil, err), err
 	}
@@ -264,7 +264,7 @@ func doPut(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		err = errors.New(e2)
+		err = errors.ErrRest.Context(e2.Error()).In("Put()")
 
 		return data.NewList(nil, err), err
 	}
@@ -365,7 +365,7 @@ func doPatch(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		err = errors.New(e2)
+		err = errors.ErrRest.Context(e2.Error()).In("Patch()")
 
 		return data.NewList(nil, err), err
 	}
@@ -458,7 +458,7 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 	if e2 != nil {
 		this.SetAlways(statusFieldName, http.StatusServiceUnavailable)
 
-		err = errors.New(e2)
+		err = errors.ErrRest.Context(e2.Error()).In("Delete()")
 
 		return data.NewList(nil, err), err
 	}

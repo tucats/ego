@@ -61,6 +61,17 @@ func ExecuteTest(test *defs.Test) error {
 	tlsConfiguration := &tls.Config{InsecureSkipVerify: true}
 	client.SetTLSClientConfig(tlsConfiguration)
 
+	// Set a duration timeout for requests, so we don't hang on a missing or
+	// invalid server, but fail immediately. The default duration is two
+	// seconds, but can be overridden by the REQUEST_TIMEOUT value in the
+	// dictionary.
+	durationString := "2s"
+	if duration, found := dictionary.Dictionary["REQUEST_TIMEOUT"]; found {
+		durationString = duration
+	}
+	duration, err := time.ParseDuration(durationString)
+	client.SetTimeout(duration)
+
 	r := client.NewRequest()
 
 	// Update the body, headers and URLstring with the dictionary values

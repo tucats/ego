@@ -151,7 +151,7 @@ func main() {
 		}
 
 		if err != nil {
-			if strings.Contains(err.Error(), defs.AbortError) {
+			if strings.Contains(err.Error(), defs.AbortError) || err.Error() == defs.ErrAbort.Error() {
 				fmt.Printf("Server testing unavailable, %v\n", err)
 
 				err = nil
@@ -269,6 +269,20 @@ func runTests(path string) error {
 
 		duration, err = TestFile(name)
 		if err != nil && strings.Contains(err.Error(), defs.AbortError) {
+			if lastErr == nil {
+				lastErr = defs.ErrAbort
+			}
+
+			break
+		}
+
+		// Also handle deadline exceeded, which means nobody was really listening.
+		// Sometimes, nginx wiht no configured service will just timeout...
+		if err != nil && strings.Contains(err.Error(), "deadline exceeded") {
+			if lastErr == nil {
+				lastErr = defs.ErrAbort
+			}
+
 			break
 		}
 

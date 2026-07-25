@@ -509,6 +509,7 @@ readonly.write=読み取り専用の値を変更する無効な試み
 request=無効なリクエストまたはコンテンツ
 request.too.large=リクエストボディが大きすぎます
 reserved.name=予約されたプロファイル設定名
+rest=RESTリクエストの処理中にエラーが発生しました
 rest.closed=RESTクライアントが閉じられています
 resource.handle=内部エラー: nilリソースハンドルの無効な使用
 return.list=無効な戻り値の型リスト

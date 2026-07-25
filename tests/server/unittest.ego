@@ -4,6 +4,8 @@
     @global ServerAvailable true
 
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+    d := time.ParseDuration("1s")
+    conn.SetTimeout(d)
 
     _, err := conn.Get("admin/heartbeat")
     if err != nil {
