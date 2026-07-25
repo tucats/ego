@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // memberByteCode implements the Member opcode: it loads a named member
@@ -223,7 +223,14 @@ func getNativePackageMemberValue(mv any, name string, c *Context) (any, error) {
 	// string and look up name directly in the Ego package registry for that
 	// type, regardless of whether Go's own reflection recognizes it as a
 	// real method.
+	//
+	// There is a guard on passing in nil for the member, or a failure of the
+	// reflect package to make sense of the value.
 	gt := reflect.TypeOf(mv)
+	if mv == nil || gt == nil {
+		return nil, c.runtimeError(errors.ErrUnknownNativeField).Context(name)
+	}
+
 	text := gt.String()
 
 	if parts := strings.Split(text, "."); len(parts) == 2 {
