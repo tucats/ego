@@ -58,6 +58,14 @@ func defineStaticRoutes() *router.Router {
 	// Parse and reformat Ego source submitted from the dashboard Code tab's
 	// Format toggle. Same permission as /admin/run since it's the same
 	// Code tab feature set.
+	r.New(defs.AdminASTPath, admin.ASTHandler, http.MethodPost).
+		Authentication(true, false).
+		Class(router.AdminRequestCounter).
+		Permissions(defs.CodeRunPermission)
+
+	// Parse and reformat Ego source submitted from the dashboard Code tab's
+	// Format toggle. Same permission as /admin/run since it's the same
+	// Code tab feature set.
 	r.New(defs.AdminFormatPath, admin.FormatCodeHandler, http.MethodPost).
 		Authentication(true, false).
 		Class(router.AdminRequestCounter).
