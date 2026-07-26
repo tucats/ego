@@ -1,29 +1,30 @@
 @test "server: admin - log on to server"
 {
 	@global ServerAddr os.Hostname() + ".local"
+    @global ServerAvailable true 
 
     // Empty username in the New() call means no authentication provided.
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")
+    
+    // Set a timeout duration of one second on rest requests. If the timeout
+    // is exceeded on the heartbeat test, we assume the server is not running.
+    d := time.ParseDuration("1s")
+    conn.SetTimeout(d)
 
     // First, lets try to see if the server is even running. If not, then
     // we'll skip all these tests.
-    try {
-        _ := conn.Get("admin/heartbeat/")
-    } catch {
-        if index(__error, "connection refused") > 0 {
-            fmt.Println("Admin server tests will not be run, server unavailable")
-            return
-        }
-
-        if index(__error, "no such host") > 0 {
-            fmt.Println("Admin server tests will not be run, server unavailable")
-            return
-        }
-
-        fmt.Println("Failed, ", __error)
+    _, err := conn.Get("admin/heartbeat/")
+    if err != nil {
+        fmt.Println("Admin server tests will not be run, server unavailable")
+        ServerAvailable = false
 
         return
     }
+
+    // For the rest of the tests, assume a longer timeout of five seconds
+    // in case the test server is slammed.
+    d = time.ParseDuration("5s")
+    conn.SetTimeout(d)
 
     credentials := { username: "admin", password: "password"}
     r := conn.Post("services/admin/logon/", credentials)
@@ -41,6 +42,10 @@
 
 @test "server: admin - get server cache info"
 {
+    if !ServerAvailable {
+        return
+    }
+
 	conn := rest.New().Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json").Token(AuthToken)
 
    r := conn.Get("/admin/caches")
@@ -72,6 +77,10 @@
 
 @test "server: admin - get server logger status"
 {
+    if !ServerAvailable {
+        return
+    }
+    
     conn := rest.New().
         Base("https://" + ServerAddr + ":443").
         Verify(false).

@@ -70,7 +70,7 @@ type Node interface {
 
 	// String returns a short, human-readable description of the node, primarily
 	// for debugging and test output. It is not a source-reconstruction; that is
-	// the job of the (future) formatter.
+	// the job of the formatter.
 	String() string
 }
 

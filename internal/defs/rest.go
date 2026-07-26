@@ -29,28 +29,29 @@ const (
 	AdminMemoryPath     = AdminPath + "memory"
 	AdminRunPath        = AdminPath + "run"
 	AdminFormatPath     = AdminPath + "format"
+	AdminASTPath        = AdminPath + "ast"
 	AdminTokenPath      = AdminPath + "tokens/"
 	AdminResourcesPath  = AdminPath + "resources"
 	AdminTokenIDPath    = AdminTokenPath + "{{id}}"
 	AdminValidationPath = AdminPath + "validation/"
 
-	AdminUsersNamePath       = AdminUsersPath + "%s"
-	AdminConfigPath          = AdminPath + "config"
-	AssetsPath               = "/assets/"
-	DSNPath                  = "/dsns/"
-	DSNNamePath              = DSNPath + "{{dsn}}/"
-	DSNBeginPath             = DSNNamePath + "begin"
-	DSNCommitPath            = DSNNamePath + "commit"
-	DSNRollbackPath          = DSNNamePath + "rollback"
-	TablesPath               = DSNNamePath + "tables/"
-	TablesNamePath           = TablesPath + "%s"
-	TablesRowsPath           = TablesPath + "{{table}}/rows"
-	TablesSQLPath            = TablesPath + SQLPseudoTable
+	AdminUsersNamePath = AdminUsersPath + "%s"
+	AdminConfigPath    = AdminPath + "config"
+	AssetsPath         = "/assets/"
+	DSNPath            = "/dsns/"
+	DSNNamePath        = DSNPath + "{{dsn}}/"
+	DSNBeginPath       = DSNNamePath + "begin"
+	DSNCommitPath      = DSNNamePath + "commit"
+	DSNRollbackPath    = DSNNamePath + "rollback"
+	TablesPath         = DSNNamePath + "tables/"
+	TablesNamePath     = TablesPath + "%s"
+	TablesRowsPath     = TablesPath + "{{table}}/rows"
+	TablesSQLPath      = TablesPath + SQLPseudoTable
 	// DSNMetadataPath is the endpoint that returns compact schema metadata for
 	// every table in the named DSN (column names and types). The "@" prefix
 	// follows the same convention as @sql and @permissions pseudo-table names,
 	// distinguishing it from a real table named "metadata".
-	DSNMetadataPath = DSNNamePath + "@metadata"
+	DSNMetadataPath          = DSNNamePath + "@metadata"
 	ServicesPath             = "/services/"
 	ServicesDownPath         = ServicesPath + "admin/down/"
 	ServicesLogonPath        = ServicesPath + "admin/logon"
@@ -74,9 +75,9 @@ const (
 	ServicesClusterFlushPath    = ServicesPath + "cluster/flush"
 	ServicesClusterShutdownPath = ServicesPath + "cluster/shutdown"
 	ServicesClusterRemovePath   = ServicesPath + "cluster/remove"
-	TablesPermissionsPath             = TablesPath + PermissionsPseudoTable
-	TablesNamePermissionsPath         = TablesPath + "{{table}}/permissions"
-	UIPath                            = "/ui"
+	TablesPermissionsPath       = TablesPath + PermissionsPseudoTable
+	TablesNamePermissionsPath   = TablesPath + "{{table}}/permissions"
+	UIPath                      = "/ui"
 
 	// OAuth2 Authorization Server endpoints — registered at the server root using
 	// the standard OIDC path conventions so that any compliant client library can
@@ -154,18 +155,18 @@ const (
 	JSONMediaType = "application/json"
 	HTMLMediaType = "application/html"
 
-	EgoMediaType                  = "application/vnd.ego."
-	SQLStatementsMediaType        = EgoMediaType + "sql+json"
-	RowSetMediaType               = EgoMediaType + "rows+json"
-	AbstractRowSetMediaType       = EgoMediaType + "rows.abstract+json"
-	TransactionMediaType          = EgoMediaType + "transaction+json"
-	RowCountMediaType             = EgoMediaType + "rowcount+json"
-	TableMetadataMediaType        = EgoMediaType + "columns+json"
-	TablesMediaType               = EgoMediaType + "tables+json"
+	EgoMediaType            = "application/vnd.ego."
+	SQLStatementsMediaType  = EgoMediaType + "sql+json"
+	RowSetMediaType         = EgoMediaType + "rows+json"
+	AbstractRowSetMediaType = EgoMediaType + "rows.abstract+json"
+	TransactionMediaType    = EgoMediaType + "transaction+json"
+	RowCountMediaType       = EgoMediaType + "rowcount+json"
+	TableMetadataMediaType  = EgoMediaType + "columns+json"
+	TablesMediaType         = EgoMediaType + "tables+json"
 	// DSNMetadataMediaType is the Content-Type for the @metadata endpoint response.
 	// It contains a compact summary of every table in a DSN (table names + column
 	// name/type pairs), suitable for schema discovery without per-table requests.
-	DSNMetadataMediaType = EgoMediaType + "metadata+json"
+	DSNMetadataMediaType          = EgoMediaType + "metadata+json"
 	ErrorMediaType                = EgoMediaType + "error+json"
 	UserMediaType                 = EgoMediaType + "user+json"
 	DSNMediaType                  = EgoMediaType + "dsn+json"

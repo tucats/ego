@@ -516,6 +516,7 @@ readonly.write=invalid attempt to modify a read-only value
 request=invalid request or content
 request.too.large=request body too large
 reserved.name=reserved profile setting name
+rest=error processing REST request
 rest.closed=rest client closed
 resource.handle=internal error, invalid use of nil resource handle
 return.list=invalid return type list

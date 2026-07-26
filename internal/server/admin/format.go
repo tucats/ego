@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/parse"
+	"github.com/tucats/ego/internal/language/parse/ast"
 	"github.com/tucats/ego/internal/language/parse/format"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/util"
@@ -39,9 +41,99 @@ type formatRequest struct {
 //	Formatted — the canonically reformatted source. Empty when Error is set.
 //	Error     — non-empty when the source could not be parsed.
 type formatResponse struct {
+	Server    defs.ServerInfo
 	Formatted string `json:"formatted,omitempty"`
 	Error     string `json:"error,omitempty"`
 	Elapsed   string `json:"elapsed,omitempty"`
+}
+
+// astResponse is the JSON body returned by POST /admin/ast.
+//
+//	Formatted — the canonically reformatted source. Empty when Error is set.
+//	Error     — non-empty when the source could not be parsed.
+type astResponse struct {
+	Server  defs.ServerInfo
+	Ast     ast.Node `json:"ast,omitempty"`
+	Error   string   `json:"error,omitempty"`
+	Elapsed string   `json:"elapsed,omitempty"`
+}
+
+// ASTHandler is the HTTP handler for POST /admin/ast. It parses the
+// submitted Ego source (trying complete-program form first, falling back to
+// bare statement-fragment form via parse.ParseAuto -- the same auto-detection
+// "ego format" uses) and returns it as a JSON expression of the AST tree.
+//
+// A parse error is reported in the response body's Error field with HTTP 200,
+// matching the established convention already used by /admin/run: a program
+// that doesn't parse is a normal, expected client outcome (the user's source
+// has a mistake), not a server failure.
+func ASTHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	var req formatRequest
+
+	start := time.Now()
+
+	// Limit body size before decoding to prevent memory exhaustion, mirroring
+	// the same guard on POST /admin/run (CODE-M1).
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormatBodyBytes)
+
+	// If the content type is text, we just assume the entire body
+	// is the code.
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(strings.ToLower(contentType), "text") {
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		}
+
+		req.Code = string(bodyBytes)
+	} else {
+		// Otherwise, parse it as a well-formed JSON request.
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			status := http.StatusBadRequest
+			if _, ok := err.(*http.MaxBytesError); ok {
+				status = http.StatusRequestEntityTooLarge
+			}
+
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+		}
+	}
+
+	if len(req.Code) > maxFormatCodeBytes {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.format.too.large"), http.StatusRequestEntityTooLarge)
+	}
+
+	if ui.IsActive(ui.RestLogger) {
+		fake := formatRequest{Code: req.Code}
+		if len(fake.Code) > 80 {
+			fake.Code = fake.Code[:80]
+		}
+
+		b, _ := json.MarshalIndent(fake, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b),
+		})
+	}
+
+	var (
+		err        error
+		resp       astResponse
+		syntaxTree *ast.File
+	)
+
+	resp.Server = util.MakeServerInfo(session.ID)
+	resp.Elapsed = time.Since(start).String()
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if syntaxTree, err = parse.ParseAuto(req.Code); err != nil {
+		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+	}
+
+	resp.Ast = syntaxTree
+	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+
+	return http.StatusOK
 }
 
 // FormatCodeHandler is the HTTP handler for POST /admin/format. It parses the
@@ -104,6 +196,7 @@ func FormatCodeHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	var resp formatResponse
 
 	resp.Elapsed = time.Since(start).String()
+	resp.Server = util.MakeServerInfo(session.ID)
 
 	if file, err := parse.ParseAuto(req.Code); err != nil {
 		resp.Error = err.Error()

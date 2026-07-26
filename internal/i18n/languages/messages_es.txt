@@ -517,6 +517,7 @@ readonly.write=intento no válido de modificar un valor de solo lectura
 request=solicitud o contenido no válido
 request.too.large=el cuerpo de la solicitud es demasiado grande
 reserved.name=nombre de configuración de perfil reservado
+rest=error al procesar la solicitud REST
 rest.closed=cliente REST cerrado
 resource.handle=error interno, uso no válido de un manejador de recursos nulo
 return.list=lista de tipos de retorno no válida
