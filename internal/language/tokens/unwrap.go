@@ -92,7 +92,7 @@ func Unwrap(tokenString string, session int) (*Token, error) {
 	// t.Expires is in the past (i.e., the token is expired).
 	d := time.Since(t.Expires)
 	if d.Seconds() > 0 {
-		ui.Log(ui.AuthLogger, "auth.expired", ui.A{
+		ui.Log(ui.AuthLogger, "auth.expired.token", ui.A{
 			"session": session,
 			"id":      t.TokenID})
 

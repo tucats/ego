@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokens"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // Validate determines if a token is valid and returns true/false. The reason a
@@ -74,7 +74,7 @@ func Extract(s *symbols.SymbolTable, args data.List) (any, error) {
 	// Has the expiration passed?
 	if time.Since(t.Expires).Seconds() > 0 {
 		if ui.IsActive(ui.AuthLogger) {
-			ui.Log(ui.AuthLogger, "auth.expired", ui.A{
+			ui.Log(ui.AuthLogger, "auth.expired.token", ui.A{
 				"session": session,
 				"id":      t.TokenID})
 		}
