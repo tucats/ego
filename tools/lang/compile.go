@@ -287,7 +287,7 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 		}
 
 		// Warn if the base (absent substitutions) message length is big.
-		if n := strippedLength(message); n > 100 {
+		if n := strippedLength(message); n > 104 {
 			long[key] = longMessage{
 				filename:   filename,
 				lineNumber: lineNumber + 1,
@@ -313,7 +313,7 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 
 		for _, key := range keys {
 			info := long[key]
-			fmt.Printf("%s:%-4d : %s is %d characters without subs)\n",
+			fmt.Printf("%s:%-4d : %s is %d characters (without subs)\n",
 				info.filename, info.lineNumber, info.key, info.length)
 		}
 	}
