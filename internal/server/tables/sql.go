@@ -157,7 +157,7 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 
 					w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-					b := util.WriteJSON(w, response, &db.Session.ResponseLength)
+					b := util.WriteJSON(w, db.Session.Response(), http.StatusOK, response)
 
 					if ui.IsActive(ui.RestLogger) {
 						ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -266,9 +266,11 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 		status := http.StatusOK
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
-		w.WriteHeader(status)
+		// The status is not sent here: util.WriteJSON below issues it, because it may
+		// first need to add a Content-Encoding header, and headers set after
+		// WriteHeader() are silently discarded.
 
-		b := util.WriteJSON(w, response, &db.Session.ResponseLength)
+		b := util.WriteJSON(w, db.Session.Response(), status, response)
 
 		ui.Log(ui.TableLogger, "sql.read.rows", ui.A{
 			"session": db.Session.ID,

@@ -207,7 +207,7 @@ func RunCodeHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 
-	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 
 	// Prepare the body to be logged as well. If the text is longer than
 	// 120 characters, let's truncate it. We only do this if the logger

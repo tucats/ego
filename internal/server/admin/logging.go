@@ -116,7 +116,7 @@ func GetLoggingHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.LogStatusMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -175,7 +175,7 @@ func PurgeLogHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -73,7 +73,7 @@ func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.ConfigMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -124,7 +124,7 @@ func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.ConfigMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

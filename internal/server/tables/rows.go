@@ -104,7 +104,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b := util.WriteJSON(w, response, &session.ResponseLength)
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
@@ -240,7 +240,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -685,9 +685,11 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 		status := http.StatusOK
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
-		w.WriteHeader(status)
+		// The status is not sent here: util.WriteJSON below issues it, because it may
+		// first need to add a Content-Encoding header, and headers set after
+		// WriteHeader() are silently discarded.
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), status, response)
 
 		ui.Log(ui.TableLogger, "table.read", ui.A{
 			"session": session.ID,
@@ -806,9 +808,11 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		status := http.StatusOK
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-		w.WriteHeader(status)
+		// The status is not sent here: util.WriteJSON below issues it, because it may
+		// first need to add a Content-Encoding header, and headers set after
+		// WriteHeader() are silently discarded.
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), status, response)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

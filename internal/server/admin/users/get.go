@@ -42,7 +42,7 @@ func GetUserHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 			Status:     http.StatusOK,
 		}
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

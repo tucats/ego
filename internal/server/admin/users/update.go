@@ -152,7 +152,7 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 			User:       u,
 		}
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -186,9 +186,11 @@ func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	// Convert the result to JSON and write to the response payload and we are done.
 	w.Header().Set("Content-Type", defs.JSONMediaType)
-	w.WriteHeader(http.StatusOK)
+	// The status is not sent here: util.WriteJSON below issues it, because it may
+	// first need to add a Content-Encoding header, and headers set after
+	// WriteHeader() are silently discarded.
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -297,9 +299,11 @@ func ReadAllPermissions(session *router.Session, w http.ResponseWriter, r *http.
 	response.Count = count
 	response.Status = http.StatusOK
 
-	w.WriteHeader(http.StatusOK)
+	// The status is not sent here: util.WriteJSON below issues it, because it may
+	// first need to add a Content-Encoding header, and headers set after
+	// WriteHeader() are silently discarded.
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

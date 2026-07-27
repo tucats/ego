@@ -159,6 +159,15 @@ const (
 	// depend on the default system trust store.
 	RestClientServerCert = RestKeyPrefix + "server.cert"
 
+	// RestClientCompressionSetting controls whether REST client calls tell the server
+	// that they are willing to receive a gzip-compressed response body. The default,
+	// when the setting is absent, is true. Setting this to false makes the client ask
+	// for uncompressed responses, which is useful when capturing raw traffic with a
+	// network analyzer. Note that the response body itself is decompressed
+	// transparently either way, so this setting never changes what the caller sees --
+	// only what travels over the network.
+	RestClientCompressionSetting = RestKeyPrefix + "compression"
+
 	// COMPILER CONFIGURATION KEYS
 	// The prefix for compiler configuration keys.
 	CompilerKeyPrefix = PrivilegedKeyPrefix + "compiler."
@@ -314,6 +323,15 @@ const (
 	// logged as a response payload to the /log service request. This is
 	// normally off and should only be enable when debugging logging.
 	ServerLogResponseSetting = ServerKeyPrefix + "log.response"
+
+	// ServerCompressionThresholdSetting is the smallest response payload size, in
+	// bytes, that the server will gzip before sending. Payloads smaller than this
+	// are always sent uncompressed, because the gzip envelope and the CPU cost are
+	// not repaid on a body that already fits in a packet or two. Compression is only
+	// ever applied when the client's Accept-Encoding header says it can decode gzip.
+	// A value of zero disables response compression entirely. When the setting is
+	// not present, util.DefaultCompressionThreshold (4096) is used.
+	ServerCompressionThresholdSetting = ServerKeyPrefix + "compression.threshold"
 
 	// Indicator if /service requests are executed by a child process instead
 	// of in-process.
@@ -690,6 +708,8 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerIdleTimeoutSetting:          true,
 	ServerMaxBodySizeSetting:          true,
 	ServerMaxItemLimitSetting:         true,
+	ServerCompressionThresholdSetting: true,
+	RestClientCompressionSetting:      true,
 	ClusterNameSetting:                true,
 	ClusterPingIntervalSetting:        true,
 	ClusterPingTimeoutSetting:         true,

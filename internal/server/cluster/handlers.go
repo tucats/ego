@@ -42,7 +42,7 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -100,7 +100,7 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
-	util.WriteJSON(w, response, &session.ResponseLength)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK
 }
@@ -189,7 +189,7 @@ func ClusterRemoveHandler(session *router.Session, w http.ResponseWriter, r *htt
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
-	util.WriteJSON(w, response, &session.ResponseLength)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK
 }

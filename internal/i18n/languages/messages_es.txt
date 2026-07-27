@@ -1107,6 +1107,7 @@ runtime.panics=Si es verdadero, panic() hace que Ego entre en pánico
 runtime.path=El valor actual de EGO_PATH
 runtime.path.lib=La ubicación del directorio lib. Por defecto es EGO_PATH
 runtime.precision.error=Si es verdadero, las conversiones que resultan en pérdida de datos son un error
+runtime.rest.compression=Si es verdadero, las llamadas del cliente REST aceptan cargas útiles de respuesta comprimidas con gzip
 runtime.rest.errors=Si es verdadero, los errores de la API REST se devuelven como errores en tiempo de ejecución
 runtime.rest.server.cert=Ubicación del archivo CERT del servidor
 runtime.rest.timeout=Cuando está presente, duración del tiempo de espera REST
@@ -1115,6 +1116,7 @@ runtime.stack.trace=Si es verdadero, mostrar el contenido parcial de la pila dur
 runtime.symbol.allocation=Tamaño de asignación predeterminado de extensiones de tabla de símbolos
 runtime.unchecked.errors=Si es verdadero, los errores no verificados se devuelven como errores en tiempo de ejecución
 server.cache.size=Número de programas de servicio a cachear en memoria
+server.compression.threshold=Tamaño mínimo de la carga útil de respuesta en bytes que el servidor comprimirá
 server.child.services=Usar procesos hijos para ejecutar servicios en lugar de hilos
 server.child.services.limit=Número máximo de servicios hijos a ejecutar simultáneamente
 server.child.services.retain=Si es verdadero, conservar los archivos de carga útil del servicio hijo tras finalizar
@@ -1625,6 +1627,9 @@ rest.start=*** INICIO DE NUEVA SOLICITUD ***
 rest.start.info={{method}} {{path}} desde {{host}} ({{size|zero "ningún"}}{{size|zero "" |one " byte de" |many " bytes de"}} contenido de solicitud)
 rest.parameter.values=Parámetro {{key}} = {{values|list}}
 rest.header.values=Encabezado {{key}} = {{values|list}}
+rest.apply.encoding=Codificación de respuesta aceptada: {{encoding}}
+rest.response.compressed=Carga útil de respuesta de {{size}} bytes comprimida a {{sent}} bytes ({{percent}}% más pequeña)
+rest.response.decompressed=Carga útil de respuesta de {{size}} bytes expandida a {{sent}} bytes
 rest.server.log=La carga útil de respuesta del registro del servidor contiene {{lines}} registros de tipo {{type}}
 rest.media.check=Validando solicitud contra tipos de medios aceptados: {{media|list}}
 rest.request={{method}} {{endpoint}} desde {{host}}

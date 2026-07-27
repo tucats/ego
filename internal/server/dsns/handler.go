@@ -64,7 +64,7 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListPermsMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -131,7 +131,7 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNListMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -168,7 +168,7 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -218,7 +218,7 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -310,7 +310,7 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -424,7 +424,7 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -154,7 +154,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-			b := util.WriteJSON(w, response, &session.ResponseLength)
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -338,7 +338,7 @@ func readAbstractRowData(db *database.Database, q string, session *router.Sessio
 
 	w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -440,7 +440,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
-		b := util.WriteJSON(w, response, &session.ResponseLength)
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

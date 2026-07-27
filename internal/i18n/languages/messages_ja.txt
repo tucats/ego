@@ -1099,6 +1099,7 @@ runtime.panics=trueの場合、panic() がEgoをパニックさせる
 runtime.path=現在のEGO_PATH値
 runtime.path.lib=libディレクトリの場所。デフォルトはEGO_PATH
 runtime.precision.error=trueの場合、データ損失をもたらす変換はエラーになる
+runtime.rest.compression=trueの場合、RESTクライアント呼び出しはgzip圧縮されたレスポンスペイロードを受け入れる
 runtime.rest.errors=trueの場合、REST APIエラーはランタイムエラーとして返される
 runtime.rest.server.cert=サーバーCERTファイルの場所
 runtime.rest.timeout=存在する場合、RESTタイムアウトの期間値
@@ -1107,6 +1108,7 @@ runtime.stack.trace=trueの場合、トレース中にスタックの一部の�
 runtime.symbol.allocation=シンボルテーブル拡張のデフォルト割り当てサイズ
 runtime.unchecked.errors=trueの場合、未チェックのエラーはランタイムエラーとして返される
 server.cache.size=メモリにキャッシュするサービスプログラムの数
+server.compression.threshold=サーバーが圧縮するレスポンスペイロードの最小サイズ(バイト)
 server.child.services=スレッドの代わりに子プロセスを使用してサービスを実行
 server.child.services.limit=同時に実行する子サービスの最大数
 server.child.services.retain=trueの場合、サービス終了後も子サービスのペイロードファイルを保持
@@ -1604,6 +1606,9 @@ rest.start=*** 新しいリクエストを開始 ***
 rest.start.info={{method}} {{path}} ({{host}} から) (リクエストコンテンツ {{size|zero "なし"}}{{size|zero ""|one "バイト"|many "バイト"}})
 rest.parameter.values=パラメーター {{key}} = {{values|list}}
 rest.header.values=ヘッダー {{key}} = {{values|list}}
+rest.apply.encoding=受け入れるレスポンスエンコーディング: {{encoding}}
+rest.response.compressed={{size}}バイトのレスポンスペイロードを{{sent}}バイトに圧縮しました({{percent}}%削減)
+rest.response.decompressed={{size}}バイトのレスポンスペイロードを{{sent}}バイトに展開しました
 rest.server.log=サーバーログレスポンスペイロードには{{lines}}件の {{type}} レコードが含まれています
 rest.media.check=受け入れられるメディアタイプに対してリクエストを検証中: {{media|list}}
 rest.request={{method}} {{endpoint}} ({{host}} から)

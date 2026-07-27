@@ -110,7 +110,7 @@ func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	// Ego's cache media type, then serialize the response struct to JSON and
 	// write it to the response writer.
 	w.Header().Add(defs.ContentTypeHeader, defs.CacheMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	// If the REST logger is enabled, record the full response body so that
 	// it appears in the server log for debugging.

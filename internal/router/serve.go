@@ -162,6 +162,7 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Filename:            route.filename,
 			AcceptsJSON:         json,
 			AcceptsText:         text,
+			AcceptsGzip:         util.AcceptsGzip(r),
 			Language:            negotiateLanguage(r),
 			Redirect:            route.redirect,
 			Validations:         route.Validations(),

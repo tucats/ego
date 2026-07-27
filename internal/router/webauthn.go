@@ -315,7 +315,7 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 
 	w.Header().Add(defs.ContentTypeHeader, defs.LogonMediaType)
 
-	_ = util.WriteJSON(w, response, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		response.Token = egostrings.TruncateMiddle(tokenStr, 10)
@@ -372,7 +372,7 @@ func WebAuthnConfigHandler(session *Session, w http.ResponseWriter, r *http.Requ
 		Msg:      "",
 	}
 
-	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
 		"body":    string(b),
@@ -432,7 +432,7 @@ func WebAuthnLoginBeginHandler(session *Session, w http.ResponseWriter, r *http.
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
 
-	b := util.WriteJSON(w, options, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, options)
 	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
 		"body":    string(b),
@@ -568,7 +568,7 @@ func WebAuthnRegisterBeginHandler(session *Session, w http.ResponseWriter, r *ht
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
 
-	b := util.WriteJSON(w, options, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, options)
 	ui.Log(ui.AuthLogger, "auth.webauth.options", ui.A{
 		"session": session.ID,
 		"body":    string(b),
@@ -639,7 +639,9 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 		"user":    session.User})
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
-	w.WriteHeader(http.StatusOK)
+	// The status is not sent here: util.WriteJSON below issues it, because it may
+	// first need to add a Content-Encoding header, and headers set after
+	// WriteHeader() are silently discarded.
 
 	resp := struct {
 		Server  defs.ServerInfo `json:"server"`
@@ -651,7 +653,7 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 		Message: i18n.T("msg.passkey.registered"),
 	}
 
-	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
 		"body":    string(b),
@@ -705,7 +707,9 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 	}
 
 	w.Header().Set(defs.ContentTypeHeader, defs.JSONMediaType)
-	w.WriteHeader(http.StatusOK)
+	// The status is not sent here: util.WriteJSON below issues it, because it may
+	// first need to add a Content-Encoding header, and headers set after
+	// WriteHeader() are silently discarded.
 
 	resp := struct {
 		Server  defs.ServerInfo `json:"server"`
@@ -717,7 +721,7 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 		Message: i18n.T("msg.passkeys.cleared"),
 	}
 
-	b := util.WriteJSON(w, resp, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
 		"body":    string(b),

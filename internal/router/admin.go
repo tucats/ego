@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -127,7 +128,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	response.InactivityTimeout = dashboardInactivityTimeout()
 
 	// Convert the response to JSON and write it to the response and we're done.
-	_ = util.WriteJSON(w, response, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		// Need to obscure the token value for logging purposes.
@@ -255,12 +256,15 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	// If the caller wants a JSON payload, form a JSON package that contains the
 	// representation of the log lines along with the server information.
 	if session.AcceptsJSON {
-		r := defs.LogTextResponse{
+		// Note this is named "payload" rather than the shorter "r" used elsewhere,
+		// because "r" is already the incoming *http.Request in this function and that
+		// request is needed below to find out whether the client accepts compression.
+		payload := defs.LogTextResponse{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Lines:      lines,
 		}
 
-		if b, err := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer); err == nil {
+		if b, err := json.MarshalIndent(payload, ui.JSONIndentPrefix, ui.JSONIndentSpacer); err == nil {
 			if ui.IsActive(ui.RestLogger) {
 				if settings.GetBool(defs.ServerLogResponseSetting) {
 					ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -275,12 +279,13 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 				}
 			}
 
-			w.Header().Set("Content-Type", defs.LogLinesJSONMediaType)
-			w.WriteHeader(http.StatusOK)
-
 			minifiedBytes := []byte(egostrings.JSONMinify(string(b)))
-			_, _ = w.Write(minifiedBytes)
-			session.ResponseLength += len(minifiedBytes)
+
+			// Log payloads can be very large, so hand the body to the shared writer that
+			// gzips it when the client advertised support for gzip and the payload is big
+			// enough to be worth compressing. It also sets the Content-Type, the status,
+			// and (when it compresses) the Content-Encoding and Vary headers for us.
+			writeLogPayload(session, w, defs.LogLinesJSONMediaType, minifiedBytes)
 		} else {
 			ui.Log(ui.RestLogger, "rest.error", ui.A{
 				"session": session.ID,
@@ -289,15 +294,19 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 	} else if session.AcceptsText {
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-
 		// The caller wants text, so the response payload is just raw text from the log.
+		// The lines are assembled into a single buffer rather than written one at a time,
+		// because the decision to compress depends on knowing the total payload size
+		// before any of it is sent. This is safe for memory: the number of lines is
+		// bounded by the "tail" parameter, which defaults to 50.
+		var buffer bytes.Buffer
+
 		for _, line := range lines {
-			line = ui.FormatJSONLogEntryAsText(line)
-			_, _ = w.Write([]byte(line + "\n"))
-			session.ResponseLength += len(line) + 1
+			buffer.WriteString(ui.FormatJSONLogEntryAsText(line))
+			buffer.WriteString("\n")
 		}
+
+		writeLogPayload(session, w, "text/plain", buffer.Bytes())
 	} else {
 		// Something other than JSON or TEXT requested; we don't know how to handle it.
 		ui.Log(ui.RestLogger, "auth.bad.media", ui.A{
@@ -307,6 +316,31 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	}
 
 	return status
+}
+
+// writeLogPayload sends a completed log response body to the client, compressing it
+// with gzip when the client said it can accept gzip and the payload is large enough
+// for compression to be worthwhile. Both the JSON and the plain-text forms of the log
+// response go through here so the two share identical compression behavior.
+//
+// Server log responses are the largest payloads this server routinely produces -- a
+// few hundred log lines is easily hundreds of kilobytes of highly repetitive text --
+// which is why this endpoint in particular is worth compressing.
+//
+// The session's ResponseLength is updated with the number of bytes actually sent, so
+// the request line written to the server log reports the true size on the network --
+// the compressed size when compression was applied. WriteMaybeCompressed reports the
+// before-and-after sizes to the REST logger itself, so both numbers stay available when
+// debugging without this function having to log anything of its own.
+func writeLogPayload(session *Session, w http.ResponseWriter, contentType string, body []byte) {
+	_, err := util.WriteMaybeCompressed(w, session.Response(), http.StatusOK, contentType, body)
+	if err != nil {
+		// A write error means the client went away mid-response. There is nothing left
+		// to send it -- the status line has already gone out -- so just record the fact.
+		ui.Log(ui.RestLogger, "rest.error", ui.A{
+			"session": session.ID,
+			"error":   err})
+	}
 }
 
 // AuthenticateHandler is the native endpoint for the /services/admin/authenticate

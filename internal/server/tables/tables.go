@@ -109,7 +109,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
-			b := util.WriteJSON(w, response, &session.ResponseLength)
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -492,7 +492,6 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-			w.WriteHeader(http.StatusOK)
 
 			resp := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
@@ -501,9 +500,8 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 				Message:    i18n.T("msg.server.table.deleted", ui.A{"name": tableName}),
 			}
 
-			b, _ := json.MarshalIndent(resp, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-			w.Write(b)
-			session.ResponseLength += len(b)
+			// WriteJSON issues the status itself, so no WriteHeader call belongs above.
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

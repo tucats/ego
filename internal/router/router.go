@@ -129,6 +129,19 @@ type Session struct {
 	// True if the request will accept a TEXT response
 	AcceptsText bool
 
+	// AcceptsGzip is true if the client told us, using the standard
+	// "Accept-Encoding" request header, that it can decode a gzip-compressed
+	// response body. Like AcceptsJSON and AcceptsText, it is worked out once
+	// when the Session is created (see serve.go) so that individual handlers
+	// do not each have to parse the header themselves.
+	//
+	// Handlers pass this flag to util.WriteJSON, which compresses the response
+	// only when the client can accept it AND the payload is large enough to be
+	// worth compressing. Table and log responses are the ones that benefit:
+	// a rowset repeats every column name on every row, so it typically shrinks
+	// by a factor of ten or more.
+	AcceptsGzip bool
+
 	// Language is the language this response should be written in, such
 	// as "en", "es", or "fr". It is figured out once, when the Session is
 	// first created, by reading the "Accept-Language" header the client
@@ -180,6 +193,26 @@ type Session struct {
 	// response. Populated from the "limit" query parameter by the server
 	// request handler; zero means no explicit limit was requested.
 	Limit int
+}
+
+// Response bundles the parts of this Session that the response writers in the util
+// package need: whether the client can accept a compressed body, the session ID used
+// to label log entries, and the counter that accumulates the response size.
+//
+// Handlers pass the result to util.WriteJSON and util.WriteMaybeCompressed. Those
+// functions cannot take a *Session directly, because the util package is imported by
+// this one and depending on it in return would be an import cycle -- so the values are
+// copied into a plain struct that util owns.
+//
+// Note this returns a value containing a POINTER to ResponseLength, not a copy of it,
+// so the writers update the real counter on this Session rather than a detached copy.
+// That in turn means Response() must be called on a *Session, which every handler has.
+func (s *Session) Response() util.ResponseInfo {
+	return util.ResponseInfo{
+		SessionID:   s.ID,
+		AcceptsGzip: s.AcceptsGzip,
+		Length:      &s.ResponseLength,
+	}
 }
 
 // Route describes the mapping of an endpoint to a function. This includes the

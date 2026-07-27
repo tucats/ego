@@ -1125,6 +1125,7 @@ runtime.panics=If true, panic() causes Ego to panic
 runtime.path=The current EGO_PATH value
 runtime.path.lib=The location of the lib directory. Defaults to EGO_PATH
 runtime.precision.error=If true, conversions that result in data loss are an error
+runtime.rest.compression=If true, REST client calls accept gzip-compressed response payloads
 runtime.rest.errors=If true, REST API errors are returned as runtime errors
 runtime.rest.server.cert=Location of the server CERT file
 runtime.rest.timeout=When present, duration of REST timeout Value
@@ -1133,6 +1134,7 @@ runtime.stack.trace=If true, show partial stack contents during trace
 runtime.symbol.allocation=Default allocation size of symbol table extensions
 runtime.unchecked.errors=If true, unchecked errors are returned as runtime errors
 server.cache.size=Number of service programs to cache in memory
+server.compression.threshold=Smallest response payload size in bytes that the server will compress
 server.child.services=Use child processes to execute services instead of threads
 server.child.services.limit=Maximum number of child services to run simultaneously
 server.child.services.retain=If true, keep child service payload files after service ends
@@ -1638,6 +1640,9 @@ rest.start=*** START NEW REQUEST ***
 rest.start.info={{method}} {{path}} from {{host}} ({{size|zero "no"}}{{size|zero "" |one " byte of" |many " bytes of"}} request content)
 rest.parameter.values=Parameter {{key}} = {{values|list}}
 rest.header.values=Header {{key}} = {{values|list}}
+rest.apply.encoding=Accepted response encoding: {{encoding}}
+rest.response.compressed=Response payload of {{size}} bytes compressed to {{sent}} bytes ({{percent}}% smaller)
+rest.response.decompressed=Response payload of {{size}} bytes expanded to {{sent}} bytes
 rest.server.log=Server log response payload contains {{lines}} {{type}} records
 rest.media.check=Validating request against accepted media types: {{media|list}}
 rest.request={{method}} {{endpoint}} from {{host}}

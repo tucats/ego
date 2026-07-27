@@ -1100,6 +1100,7 @@ runtime.panics=Si vrai, panic() provoque une panique dans Ego
 runtime.path=La valeur actuelle de EGO_PATH
 runtime.path.lib=L'emplacement du répertoire lib. Par défaut EGO_PATH
 runtime.precision.error=Si vrai, les conversions qui entraînent une perte de données sont une erreur
+runtime.rest.compression=Si vrai, les appels du client REST acceptent des charges utiles de réponse compressées en gzip
 runtime.rest.errors=Si vrai, les erreurs de l'API REST sont retournées comme des erreurs d'exécution
 runtime.rest.server.cert=Emplacement du fichier CERT du serveur
 runtime.rest.timeout=Lorsque présent, durée du délai d'expiration REST
@@ -1108,6 +1109,7 @@ runtime.stack.trace=Si vrai, afficher le contenu partiel de la pile pendant la t
 runtime.symbol.allocation=Taille d'allocation par défaut des extensions de table de symboles
 runtime.unchecked.errors=Si vrai, les erreurs non vérifiées sont retournées comme des erreurs d'exécution
 server.cache.size=Nombre de programmes de service à mettre en cache en mémoire
+server.compression.threshold=Taille minimale de la charge utile de réponse en octets que le serveur compressera
 server.child.services=Utiliser des processus enfants pour exécuter les services au lieu de fils d'exécution
 server.child.services.limit=Nombre maximum de services enfants à exécuter simultanément
 server.child.services.retain=Si vrai, conserver les fichiers de charge utile du service enfant après sa fin
@@ -1618,6 +1620,9 @@ rest.start=*** DÉBUT DE LA NOUVELLE REQUÊTE ***
 rest.start.info={{method}} {{path}} depuis {{host}} ({{size|zero "aucun"}}{{size|zero "" |one " octet de" |many " octets de"}} contenu de la requête)
 rest.parameter.values=Paramètre {{key}} = {{values|list}}
 rest.header.values=En-tête {{key}} = {{values|list}}
+rest.apply.encoding=Encodage de réponse accepté : {{encoding}}
+rest.response.compressed=Charge utile de réponse de {{size}} octets compressée à {{sent}} octets ({{percent}}% plus petite)
+rest.response.decompressed=Charge utile de réponse de {{size}} octets étendue à {{sent}} octets
 rest.server.log=La charge utile de réponse du journal du serveur contient {{lines}} enregistrements de type {{type}}
 rest.media.check=Validation de la requête par rapport aux types de médias acceptés : {{media|list}}
 rest.request={{method}} {{endpoint}} depuis {{host}}

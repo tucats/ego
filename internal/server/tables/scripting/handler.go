@@ -58,17 +58,16 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 			Status:     200,
 		}
 
-		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
 		ui.Log(ui.TableLogger, "table.tx.affected", ui.A{
 			"session":    session.ID,
 			"operations": len(tasks),
 			"affected":   0})
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+
+		// WriteJSON minifies the payload, compresses it when the client can accept
+		// that, and issues the status itself -- so no WriteHeader call belongs here.
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, r)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -318,8 +317,6 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 					Status:     http.StatusOK,
 				}
 
-				b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
 				ui.Log(ui.TableLogger, "table.tx.done", ui.A{
 					"session":    session.ID,
 					"operations": len(tasks),
@@ -327,9 +324,11 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 					"rows":       len(rows)})
 
 				w.Header().Add(defs.ContentTypeHeader, defs.RowSetMediaType)
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write(b)
-				session.ResponseLength += len(b)
+
+				// A transaction that ends in a read can return a large rowset, so this
+				// is one of the responses most worth compressing. WriteJSON handles
+				// that, and issues the status itself.
+				b := util.WriteJSON(w, session.Response(), http.StatusOK, r)
 
 				if ui.IsActive(ui.RestLogger) {
 					ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -348,17 +347,14 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 			Status:     http.StatusOK,
 		}
 
-		b, _ := json.MarshalIndent(r, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-
 		ui.Log(ui.TableLogger, "table.tx.affected", ui.A{
 			"session":    session.ID,
 			"operations": len(tasks),
 			"affected":   rowsAffected})
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(b)
-		session.ResponseLength += len(b)
+
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, r)
 
 		if ui.IsActive(ui.RestLogger) {
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

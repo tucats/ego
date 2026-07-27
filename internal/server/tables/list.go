@@ -125,7 +125,7 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 
 			w.Header().Add(defs.ContentTypeHeader, defs.TablesMediaType)
 
-			b := util.WriteJSON(w, response, &session.ResponseLength)
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

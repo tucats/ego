@@ -147,7 +147,7 @@ func TokenListHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TokensMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -184,7 +184,7 @@ func TokenFlushHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	w.Header().Add(defs.ContentTypeHeader, defs.JSONMediaType)
 	// The blank identifier _ discards the returned byte slice because this
 	// handler does not log the response body.
-	_ = util.WriteJSON(w, response, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK
 }

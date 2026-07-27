@@ -47,6 +47,10 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.Header.Add("Content-Type", ms)
 	}
 
+	// Tell the server we can accept a gzip-compressed response body. The payload is
+	// decoded again before the Ego program sees it, so this is invisible to the script.
+	applyContentEncoding(r)
+
 	AddAgent(r, defs.ClientAgent)
 
 	logRequest(r, "GET", url)
@@ -66,7 +70,8 @@ func doGet(s *symbols.SymbolTable, args data.List) (any, error) {
 	status := response.StatusCode()
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
-	rb := string(response.Body())
+	// responseBody() undoes any compression the HTTP client did not already undo.
+	rb := string(responseBody(response))
 
 	if isJSON && ((status >= http.StatusOK && status <= 299) || strings.HasPrefix(rb, "{") || strings.HasPrefix(rb, "[")) {
 		var jsonResponse any
@@ -156,6 +161,10 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.Header.Set("Content-Type", ms+"; charset=utf-8")
 	}
 
+	// Tell the server we can accept a gzip-compressed response body. The payload is
+	// decoded again before the Ego program sees it, so this is invisible to the script.
+	applyContentEncoding(r)
+
 	AddAgent(r, defs.ClientAgent)
 	logRequest(r, "POST", url)
 
@@ -174,7 +183,8 @@ func doPost(s *symbols.SymbolTable, args data.List) (any, error) {
 	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
-	rb := string(response.Body())
+	// responseBody() undoes any compression the HTTP client did not already undo.
+	rb := string(responseBody(response))
 
 	if isJSON {
 		var jsonResponse any
@@ -257,6 +267,10 @@ func doPut(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.Header.Set("Content-Type", ms+"; charset=utf-8")
 	}
 
+	// Tell the server we can accept a gzip-compressed response body. The payload is
+	// decoded again before the Ego program sees it, so this is invisible to the script.
+	applyContentEncoding(r)
+
 	AddAgent(r, defs.ClientAgent)
 	logRequest(r, "PUT", url)
 
@@ -275,7 +289,8 @@ func doPut(s *symbols.SymbolTable, args data.List) (any, error) {
 	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
-	rb := string(response.Body())
+	// responseBody() undoes any compression the HTTP client did not already undo.
+	rb := string(responseBody(response))
 
 	if isJSON {
 		var jsonResponse any
@@ -358,6 +373,10 @@ func doPatch(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.Header.Set("Content-Type", ms+"; charset=utf-8")
 	}
 
+	// Tell the server we can accept a gzip-compressed response body. The payload is
+	// decoded again before the Ego program sees it, so this is invisible to the script.
+	applyContentEncoding(r)
+
 	AddAgent(r, defs.ClientAgent)
 	logRequest(r, "PATCH", url)
 
@@ -376,7 +395,8 @@ func doPatch(s *symbols.SymbolTable, args data.List) (any, error) {
 	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
-	rb := string(response.Body())
+	// responseBody() undoes any compression the HTTP client did not already undo.
+	rb := string(responseBody(response))
 
 	if isJSON {
 		var jsonResponse any
@@ -451,6 +471,10 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 		r.Header.Add("Content-Type", ms)
 	}
 
+	// Tell the server we can accept a gzip-compressed response body. The payload is
+	// decoded again before the Ego program sees it, so this is invisible to the script.
+	applyContentEncoding(r)
+
 	AddAgent(r, defs.ClientAgent)
 	logRequest(r, "DELETE", url)
 
@@ -469,7 +493,8 @@ func doDelete(s *symbols.SymbolTable, args data.List) (any, error) {
 	this.SetAlways(cookiesFieldName, fetchCookies(response))
 	this.SetAlways(statusFieldName, status)
 	this.SetAlways(headersFieldName, headerMap(response))
-	rb := string(response.Body())
+	// responseBody() undoes any compression the HTTP client did not already undo.
+	rb := string(responseBody(response))
 
 	if isJSON {
 		var jsonResponse any
@@ -554,13 +579,17 @@ func logResponse(r *resty.Response) {
 			"cookie": v})
 	}
 
-	if len(r.Body()) > 0 {
+	// Log the decoded payload rather than the raw bytes, so that a compressed response
+	// appears in the log as readable text instead of gzip binary.
+	body := responseBody(r)
+
+	if len(body) > 0 {
 		if bodyAsText {
 			ui.Log(ui.RestLogger, "rest.response.body.text", ui.A{
-				"body": string(r.Body())})
+				"body": string(body)})
 		} else {
 			ui.Log(ui.RestLogger, "rest.response.body.bytes", ui.A{
-				"body": r.Body()})
+				"body": body})
 		}
 	}
 }

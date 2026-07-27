@@ -184,6 +184,7 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.runtime.path | The current EGO_PATH value |
 | ego.runtime.path.lib | The location of the lib directory. Defaults to EGO_PATH |
 | ego.runtime.precision.error | If true, conversions that result in data loss are an error |
+| ego.runtime.rest.compression | If true, REST client calls accept gzip-compressed response payloads |
 | ego.runtime.rest.errors | If true, REST API errors are returned as runtime errors |
 | ego.runtime.rest.server.cert | Location of the server CERT file |
 | ego.runtime.rest.timeout | When present, duration of REST timeout value |
@@ -197,6 +198,7 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.server.child.services.dir | Location for transient request and response files (default is /tmp) |
 | ego.server.child.services.limit | Maximum number of child services to run simultaneously |
 | ego.server.child.services.retain | If true, keep child service payload files after service ends |
+| ego.server.compression.threshold | Smallest response payload size in bytes that the server will compress |
 | ego.server.database.empty.filter.error | If true, empty filter values are treated as errors |
 | ego.server.database.empty.rowset.error | If true, empty rowset values are treated as errors |
 | ego.server.database.partial.insert.error | If true, partial inserts are treated as errors |

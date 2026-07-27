@@ -131,7 +131,7 @@ func ASTHandler(session *router.Session, w http.ResponseWriter, r *http.Request)
 	}
 
 	resp.Ast = syntaxTree
-	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 
 	return http.StatusOK
 }
@@ -208,7 +208,7 @@ func FormatCodeHandler(session *router.Session, w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 
-	_ = util.WriteJSON(w, resp, &session.ResponseLength)
+	_ = util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 
 	if ui.IsActive(ui.RestLogger) {
 		fake := formatResponse{

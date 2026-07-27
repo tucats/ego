@@ -152,7 +152,7 @@ func DSNMetadataHandler(session *router.Session, w http.ResponseWriter, r *http.
 
 	w.Header().Set(defs.ContentTypeHeader, defs.DSNMetadataMediaType)
 
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

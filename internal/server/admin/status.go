@@ -80,7 +80,7 @@ func GetResourcesHandler(session *router.Session, w http.ResponseWriter, r *http
 	// util.WriteJSON serializes response to JSON, writes it to w, and returns
 	// the raw bytes so we can log them below.  session.ResponseLength is
 	// updated so the server can report how many bytes were sent.
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

@@ -71,6 +71,9 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// request types to the request.
 	applyMediaTypes(mediaTypes, r)
 
+	// Tell the server whether we can accept a compressed response body.
+	applyContentEncoding(r)
+
 	// Add the agent type to the request.
 	AddAgent(r, agentType)
 
@@ -144,6 +147,13 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		}
 	}
 
+	// Read the response payload once, up front, undoing any compression that the HTTP
+	// client library did not already undo for us. Every use of the payload below works
+	// from this slice, so the rest of the function never has to think about encoding.
+	bodyBytes := responseBody(restResponse)
+
+	logCompressionSavings(restResponse, len(bodyBytes))
+
 	if status != http.StatusOK && response == nil {
 		return mapStatusToError(status, url)
 	}
@@ -161,7 +171,6 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		errorResponse := map[string]any{}
 
 		if textReply {
-			bodyBytes := restResponse.Body()
 			if v, ok := response.(*string); ok {
 				*v = string(bodyBytes)
 			} else {
@@ -183,13 +192,13 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 			}
 		}
 
-		err := json.Unmarshal(restResponse.Body(), &errorResponse)
+		err := json.Unmarshal(bodyBytes, &errorResponse)
 		if err == nil {
 			// Check for both "msg" and "message" fields
 			if msg, found := errorResponse["msg"]; found {
 				if ui.IsActive(ui.RestLogger) {
 					ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
-						"body": string(restResponse.Body())})
+						"body": string(bodyBytes)})
 				}
 
 				// Don't throw the server stopped error as a real error. A 503 status
@@ -205,7 +214,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 			if msg, found := errorResponse["message"]; found {
 				if ui.IsActive(ui.RestLogger) {
 					ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
-						"body": string(restResponse.Body())})
+						"body": string(bodyBytes)})
 				}
 
 				if ui.IsActive(ui.InternalLogger) {
@@ -225,7 +234,6 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 
 	if response != nil {
 		if textReply {
-			bodyBytes := restResponse.Body()
 			if v, ok := response.(*string); ok {
 				*v = string(bodyBytes)
 			} else {
@@ -240,11 +248,11 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 							"body": string(bodyBytes)})
 					}
 
-					err = storeResponse(restResponse, response, err)
+					err = storeResponse(restResponse, bodyBytes, response, err)
 				}
 			}
 		} else {
-			err = storeResponse(restResponse, response, err)
+			err = storeResponse(restResponse, bodyBytes, response, err)
 		}
 	}
 
@@ -282,4 +290,76 @@ func applyMediaTypes(mediaTypes []string, r *resty.Request) {
 
 	r.Header.Add("Content-Type", sendMediaType)
 	r.Header.Add("Accept", receiveMediaType)
+}
+
+// applyContentEncoding tells the server whether this client is willing to receive a
+// compressed response body, by setting the request's Accept-Encoding header.
+//
+// Compressing large responses (server log payloads in particular, which are big and
+// highly repetitive) can cut the number of bytes on the network by roughly ten to one.
+//
+// There is a subtlety worth understanding here. Go's HTTP transport quietly adds
+// "Accept-Encoding: gzip" to any outgoing request that does not already set that
+// header, and transparently decompresses the reply. That means compression is on by
+// default whether or not this function exists. Consequently:
+//
+//   - Setting the header to "gzip" ourselves is mostly about making the intent visible
+//     in logs and packet captures; the behavior is unchanged.
+//   - Setting the header to "identity" is the only way to genuinely turn compression
+//     off, because merely leaving the header out lets Go put "gzip" back.
+//
+// Either way the caller receives a fully decoded body, so this setting only changes
+// what travels over the network, never what the program sees.
+func applyContentEncoding(r *resty.Request) {
+	// Compression is enabled unless it has been explicitly turned off in the
+	// configuration. An absent setting means "use the default", which is on.
+	encoding := "gzip"
+
+	if value := settings.Get(defs.RestClientCompressionSetting); value != "" && !settings.GetBool(defs.RestClientCompressionSetting) {
+		encoding = "identity"
+	}
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.Log(ui.RestLogger, "rest.apply.encoding", ui.A{
+			"encoding": encoding})
+	}
+
+	r.Header.Set("Accept-Encoding", encoding)
+}
+
+// logCompressionSavings writes a REST log entry describing how much a compressed
+// response saved on the network, given the size of the payload after decoding.
+//
+// The size actually received is read from the raw HTTP response's ContentLength, which
+// is the value of the response's Content-Length header. That header is not always
+// present: when a server does not know the final size before it starts sending (a
+// large response written incrementally), it uses "chunked" transfer encoding instead
+// and ContentLength is reported as -1. In that case the saving cannot be measured, so
+// only the fact of compression is logged.
+func logCompressionSavings(restResponse *resty.Response, decodedSize int) {
+	if !ui.IsActive(ui.RestLogger) {
+		return
+	}
+
+	// An empty Content-Encoding means the transport already stripped the header after
+	// decompressing, or the response was never compressed at all. Either way there is
+	// nothing to report.
+	if !strings.EqualFold(restResponse.Header().Get("Content-Encoding"), "gzip") {
+		return
+	}
+
+	wireSize := -1
+	if raw := restResponse.RawResponse; raw != nil {
+		wireSize = int(raw.ContentLength)
+	}
+
+	percent := 0
+	if wireSize >= 0 && decodedSize > 0 {
+		percent = 100 - (wireSize * 100 / decodedSize)
+	}
+
+	ui.Log(ui.RestLogger, "rest.response.compressed", ui.A{
+		"size":    decodedSize,
+		"sent":    wireSize,
+		"percent": percent})
 }

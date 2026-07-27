@@ -149,7 +149,7 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TransactionResponseMediaType)
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 	ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 		"session": session.ID,
 		"body":    string(b)})

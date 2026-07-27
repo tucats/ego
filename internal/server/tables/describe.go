@@ -153,7 +153,7 @@ func sendColumnResponse(columns []defs.DBColumn, nullableColumns map[string]bool
 	w.Header().Add(defs.ContentTypeHeader, defs.TableMetadataMediaType)
 
 	// Convert the response object to JSON and write it to the response.
-	b := util.WriteJSON(w, response, &session.ResponseLength)
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

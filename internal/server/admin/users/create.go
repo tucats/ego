@@ -86,7 +86,9 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	if _, err := auth.SetUser(s, data.NewList(args)); err == nil {
 		if u, err := auth.AuthService.ReadUser(session.ID, userInfo.Name, false); err == nil {
 			w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
-			w.WriteHeader(http.StatusOK)
+			// The status is not sent here: util.WriteJSON below issues it, because it may
+			// first need to add a Content-Encoding header, and headers set after
+			// WriteHeader() are silently discarded.
 
 			// Never return the password hash to the client — replace it with
 			// the elided placeholder string defined in defs.
@@ -97,7 +99,7 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 				User:       u,
 				Status:     http.StatusOK,
 			}
-			b := util.WriteJSON(w, response, &session.ResponseLength)
+			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
