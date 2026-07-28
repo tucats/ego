@@ -3,14 +3,17 @@ package commands
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/runtime/rest"
 )
 
@@ -71,43 +74,56 @@ func RestPatch(c *cli.Context) error {
 
 func restAction(c *cli.Context, method string) error {
 	var (
-		requestBody interface{}
-		response    interface{}
+		requestBody any
+		response    any
+		contentType string
 	)
 
 	// Get the URL from the parameter, and make it a full URL.
-	url := c.FindGlobal().Parameters[0]
+	urlString := c.FindGlobal().Parameters[0]
 
-	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+	if !strings.HasPrefix(urlString, "http://") && !strings.HasPrefix(urlString, "https://") {
 		appServer := settings.Get(defs.ApplicationServerSetting)
 		if appServer == "" {
 			appServer = settings.Get(defs.LogonServerSetting)
 		}
 
-		url = strings.TrimPrefix(url, "/")
+		urlString = strings.TrimPrefix(urlString, "/")
 		appServer = strings.TrimSuffix(appServer, "/")
 
-		url = appServer + "/" + url
+		urlString = appServer + "/" + urlString
 	}
 
+	// Did the user specify parameter values to pass on the URL?
 	if params, found := c.StringList("params"); found {
 		list := map[string][]string{}
 
 		for _, param := range params {
+			// Most parameters a key=value, but if the user
+			// just specifid key, assume a blank second parameter.
 			kv := strings.SplitN(param, "=", 2)
+			if len(kv) == 1 {
+				kv = append(kv, "")
+			}
+
 			list[kv[0]] = append(list[kv[0]], kv[1])
 		}
 
 		first := true
 		for key, values := range list {
 			if first {
-				url += "?"
+				urlString += "?"
 				first = false
 			} else {
-				url += "&"
+				urlString += "&"
 			}
 
-			url += key + "=" + strings.Join(values, ",")
+			valueString := strings.TrimSpace(strings.Join(values, ","))
+			if len(valueString) == 0 {
+				urlString += key
+			} else {
+				urlString += key + "=" + url.QueryEscape(valueString)
+			}
 		}
 	}
 
@@ -134,14 +150,30 @@ func restAction(c *cli.Context, method string) error {
 		if strings.HasPrefix(body, "@") {
 			fn := body[1:]
 
-			b, err := ui.ReadJSONFile(fn)
-			if err != nil {
-				return errors.New(err)
-			}
+			// If the filepath ends in .json, we read it as a JSON file
+			// and decode it into an object to pass to the api.
+			if filepath.Ext(fn) == ".json" {
+				b, err := ui.ReadJSONFile(fn)
+				if err != nil {
+					return errors.New(err)
+				}
 
-			err = json.Unmarshal(b, &requestBody)
-			if err != nil {
-				return errors.New(err)
+				err = json.Unmarshal(b, &requestBody)
+				if err != nil {
+					return errors.New(err)
+				}
+
+				contentType = "application/json"
+			} else {
+				// Not a JSON file, we read the body as one large string
+				// and pass that as the body.
+				b, err := os.ReadFile(fn)
+				if err != nil {
+					return errors.New(err)
+				}
+
+				requestBody = string(b)
+				contentType = "application/text"
 			}
 		} else {
 			requestBody = body
@@ -160,7 +192,11 @@ func restAction(c *cli.Context, method string) error {
 		requestBody = body
 	}
 
-	err := rest.Exchange(url, method, requestBody, &response, defs.ClientAgent, media...)
+	if len(media) == 0 {
+		media = []string{"application/json", contentType}
+	}
+
+	err := rest.Exchange(urlString, method, requestBody, &response, defs.ClientAgent, media...)
 
 	if errors.Nil(err) {
 		if isJSON {
@@ -168,7 +204,7 @@ func restAction(c *cli.Context, method string) error {
 
 			b, err = json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
 			if err == nil {
-				ui.Say(string(b))
+				c.JSON(string(b))
 			}
 		} else {
 			text := data.Format(response)

@@ -11,12 +11,12 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 	"gopkg.in/resty.v1"
 )
 
@@ -69,7 +69,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 
 	// Using the optional parameters, validate and add any specific media
 	// request types to the request.
-	applyMediaTypes(mediaTypes, r)
+	textBody := applyMediaTypes(mediaTypes, r)
 
 	// Tell the server whether we can accept a compressed response body.
 	applyContentEncoding(r)
@@ -78,18 +78,22 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	AddAgent(r, agentType)
 
 	if body != nil {
-		b, err := json.MarshalIndent(body, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-		if err != nil {
-			return errors.New(err)
-		}
+		if textBody {
+			r.SetBody(body)
+		} else {
+			b, err := json.MarshalIndent(body, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+			if err != nil {
+				return errors.New(err)
+			}
 
-		bodyText := string(b)
-		if ui.IsActive(ui.RestLogger) {
-			ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
-				"body": bodyText})
-		}
+			bodyText := string(b)
+			if ui.IsActive(ui.RestLogger) {
+				ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+					"body": bodyText})
+			}
 
-		r.SetBody([]byte(egostrings.JSONMinify(bodyText)))
+			r.SetBody([]byte(egostrings.JSONMinify(bodyText)))
+		}
 	}
 
 	// Before we execute the request (which can stall out) let's start a short Go
@@ -266,7 +270,8 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 // Lets figure out what media types we're sending and receiving. By default, they
 // are anonymous JSON. But if the call included one or two strings, they are used
 // as the receiving and sending media types respectively.
-func applyMediaTypes(mediaTypes []string, r *resty.Request) {
+// The return value is set if the content is meant to be text (not marshalled as JSON).
+func applyMediaTypes(mediaTypes []string, r *resty.Request) bool {
 	receiveMediaType := defs.JSONMediaType
 	sendMediaType := defs.JSONMediaType
 
@@ -290,6 +295,10 @@ func applyMediaTypes(mediaTypes []string, r *resty.Request) {
 
 	r.Header.Add("Content-Type", sendMediaType)
 	r.Header.Add("Accept", receiveMediaType)
+
+	// Return flag indicating if the body is meant to be marshalled or not.
+	// If true, it's text and should be left alone.
+	return strings.Contains(strings.ToLower(sendMediaType), "text")
 }
 
 // applyContentEncoding tells the server whether this client is willing to receive a
