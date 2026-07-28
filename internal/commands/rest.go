@@ -198,7 +198,9 @@ func restAction(c *cli.Context, method string) error {
 
 	err := rest.Exchange(urlString, method, requestBody, &response, defs.ClientAgent, media...)
 
-	if errors.Nil(err) {
+	// If everything went well, show us the result. Note that if verbose is on, we don't do this
+	// as the Exchange() call above has already dumped the response body.
+	if errors.Nil(err) && !verbose {
 		if isJSON {
 			var b []byte
 
