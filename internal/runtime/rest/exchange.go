@@ -69,7 +69,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 
 	// Using the optional parameters, validate and add any specific media
 	// request types to the request.
-	textBody := applyMediaTypes(mediaTypes, r)
+	sendText, _ := applyMediaTypes(mediaTypes, r)
 
 	// Tell the server whether we can accept a compressed response body.
 	applyContentEncoding(r)
@@ -78,7 +78,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	AddAgent(r, agentType)
 
 	if body != nil {
-		if textBody {
+		if sendText {
 			r.SetBody(body)
 		} else {
 			b, err := json.MarshalIndent(body, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
@@ -236,6 +236,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 		}
 	}
 
+	// Successful exchange, what do we do with the reply if we get one?
 	if response != nil {
 		if textReply {
 			if v, ok := response.(*string); ok {
@@ -271,7 +272,7 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 // are anonymous JSON. But if the call included one or two strings, they are used
 // as the receiving and sending media types respectively.
 // The return value is set if the content is meant to be text (not marshalled as JSON).
-func applyMediaTypes(mediaTypes []string, r *resty.Request) bool {
+func applyMediaTypes(mediaTypes []string, r *resty.Request) (bool, bool) {
 	receiveMediaType := defs.JSONMediaType
 	sendMediaType := defs.JSONMediaType
 
@@ -298,7 +299,10 @@ func applyMediaTypes(mediaTypes []string, r *resty.Request) bool {
 
 	// Return flag indicating if the body is meant to be marshalled or not.
 	// If true, it's text and should be left alone.
-	return strings.Contains(strings.ToLower(sendMediaType), "text")
+	sendText := strings.Contains(strings.ToLower(sendMediaType), "text")
+	receivedText := strings.Contains(strings.ToLower(receiveMediaType), "text")
+
+	return sendText, receivedText
 }
 
 // applyContentEncoding tells the server whether this client is willing to receive a

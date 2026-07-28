@@ -196,7 +196,15 @@ func restAction(c *cli.Context, method string) error {
 		media = []string{"application/json", contentType}
 	}
 
-	err := rest.Exchange(urlString, method, requestBody, &response, defs.ClientAgent, media...)
+	var err error
+
+	if isJSON {
+		err = rest.Exchange(urlString, method, requestBody, &response, defs.ClientAgent, media...)
+	} else {
+		var r string
+		err = rest.Exchange(urlString, method, requestBody, &r, defs.ClientAgent, media...)
+		response = r
+	}
 
 	// If everything went well, show us the result. Note that if verbose is on, we don't do this
 	// as the Exchange() call above has already dumped the response body.
@@ -209,8 +217,12 @@ func restAction(c *cli.Context, method string) error {
 				c.JSON(string(b))
 			}
 		} else {
-			text := data.Format(response)
-			ui.Say(text)
+			if text, ok := response.(string); ok {
+				ui.Say(text)
+			} else {
+				text := data.Format(response)
+				ui.Say(text)
+			}
 		}
 	}
 
