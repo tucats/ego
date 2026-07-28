@@ -15,6 +15,8 @@ import (
 	"gopkg.in/resty.v1"
 )
 
+var VersionString string
+
 func ExecuteTest(test *defs.Test) error {
 	var (
 		err  error
@@ -60,7 +62,7 @@ func ExecuteTest(test *defs.Test) error {
 	client := resty.New()
 	tlsConfiguration := &tls.Config{InsecureSkipVerify: true}
 	client.SetTLSClientConfig(tlsConfiguration)
-
+	client.Header.Set("User-Agent", fmt.Sprint("apitest ", VersionString))
 	// Set a duration timeout for requests, so we don't hang on a missing or
 	// invalid server, but fail immediately. The default duration is two
 	// seconds, but can be overridden by the REQUEST_TIMEOUT value in the

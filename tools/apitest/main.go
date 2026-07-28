@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/apitest/dictionary"
 	"github.com/tucats/apitest/formats"
 	"github.com/tucats/apitest/logging"
+	"github.com/tucats/apitest/tester"
 	"github.com/tucats/validator"
 )
 
@@ -31,6 +32,12 @@ func main() {
 	)
 
 	now := time.Now()
+
+	if BuildVersion == "developer build" {
+		tester.VersionString = "internal testing tool; resty.v1"
+	} else {
+		tester.VersionString = BuildVersion
+	}
 
 	// Load data structures into the dictionary.
 	validate, err = validator.New(&defs.Test{})
