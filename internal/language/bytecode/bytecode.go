@@ -427,8 +427,19 @@ func (b *ByteCode) SetAddressHere(mark int) error {
 // instruction. This is often used when an address has been
 // saved and we need to update a branch destination, usually
 // for a backwards branch operation.
+//
+// INDEX-2: the guard used to be "mark > b.nextAddress", which admitted
+// mark == b.nextAddress -- one past the last emitted instruction. On a sealed
+// bytecode (where Seal() truncates instructions to nextAddress) that indexed
+// past the end of the slice and panicked; on an unsealed one it silently
+// patched an instruction slot that had not been emitted yet. The mark comes
+// from a caller-saved position that may no longer be valid (see the
+// SetAddress(0, ...) call in compiler/lvalue.go, which is issued against a
+// bytecode that can legitimately be empty), so it is not trustworthy. The
+// bound is now exclusive, and is also checked against the physical length of
+// the instruction slice.
 func (b *ByteCode) SetAddress(mark int, address int) error {
-	if mark > b.nextAddress || mark < 0 {
+	if mark < 0 || mark >= b.nextAddress || mark >= len(b.instructions) {
 		return errors.ErrInvalidBytecodeAddress
 	}
 
@@ -498,14 +509,28 @@ func (b *ByteCode) Opcodes() []instruction {
 
 // Remove removes an instruction from the bytecode. The address is
 // >= 0 it is the absolute address of the instruction to remove.
-// Otherwise, it is the offset from the end of the bytecode to remove.
+// Otherwise, it is the offset from the end of the bytecode to remove,
+// so -1 names the last emitted instruction.
+//
+// INDEX-3: this had no bounds check at all, so any address at or past the end
+// of the instruction stream panicked on the slice expressions below. The
+// negative-offset arithmetic was also backwards: "b.nextAddress - address"
+// with a negative address moves *forward* past the end of the stream instead
+// of back from it, so Remove(-1) reliably panicked rather than removing the
+// last instruction. The offset is now added, and an address that does not name
+// an emitted instruction is a no-op (matching Delete, which already ignores an
+// invalid position).
 func (b *ByteCode) Remove(address int) {
-	if address >= 0 {
-		b.instructions = append(b.instructions[:address], b.instructions[address+1:]...)
-	} else {
-		offset := b.nextAddress - address
-		b.instructions = append(b.instructions[:offset], b.instructions[offset+1:]...)
+	position := address
+	if position < 0 {
+		position = b.nextAddress + address
 	}
+
+	if position < 0 || position >= b.nextAddress || position >= len(b.instructions) {
+		return
+	}
+
+	b.instructions = append(b.instructions[:position], b.instructions[position+1:]...)
 
 	b.nextAddress = b.nextAddress - 1
 	b.optimized = false

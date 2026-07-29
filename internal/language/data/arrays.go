@@ -372,6 +372,11 @@ func (a *Array) SetBytes(buf []byte) error {
 
 // Force the size of the array. Existing values are retained if the
 // array grows; existing values are truncated if the size is reduced.
+//
+// INDEX-9: the grow step of the []byte path padded by "size - len(a.data)"
+// rather than "size - len(a.bytes)". Since a.data is empty for a byte array,
+// that appended a full "size" bytes onto the existing contents, leaving the
+// array at len(a.bytes)+size instead of the requested size.
 func (a *Array) SetSize(size int) *Array {
 	if a == nil {
 		return nil
@@ -388,7 +393,7 @@ func (a *Array) SetSize(size int) *Array {
 		if size < len(a.bytes) {
 			a.bytes = a.bytes[:size]
 		} else {
-			a.bytes = append(a.bytes, make([]byte, size-len(a.data))...)
+			a.bytes = append(a.bytes, make([]byte, size-len(a.bytes))...)
 		}
 
 		return a
@@ -500,6 +505,13 @@ func (a *Array) Set(index int, value any) error {
 // Simplified Set() that does no type checking. Used internally to
 // load values into an array that is known to be of the correct
 // kind.
+//
+// INDEX-8: the bounds check compared index against len(a.data) even for a
+// []byte array, whose elements live in a.bytes with a.data left empty. That
+// made every SetAlways against a byte array a silent no-op -- the guard
+// rejected index 0 of a perfectly valid array -- while the write below
+// addressed a.bytes. The check now uses the same backing store as the write,
+// mirroring what Set already does.
 func (a *Array) SetAlways(index int, value any) *Array {
 	if a == nil {
 		return nil
@@ -509,7 +521,11 @@ func (a *Array) SetAlways(index int, value any) *Array {
 		return a
 	}
 
-	if index < 0 || index >= len(a.data) {
+	if a.valueType.Kind() == ByteKind {
+		if index < 0 || index >= len(a.bytes) {
+			return a
+		}
+	} else if index < 0 || index >= len(a.data) {
 		return a
 	}
 
@@ -618,12 +634,26 @@ func (a *Array) StringWithType() string {
 // Fetch a slice of the underlying array and return it as an array of interfaces.
 // This can't be used directly as a new array, but can be used to create a new
 // array.
+//
+// INDEX-7: this had two defective bounds checks. Both ends were compared
+// against len(a.data), but for a []byte array the elements live in a.bytes and
+// a.data is empty -- so every non-empty slice of a byte array was rejected as
+// out of bounds while the byte path below sliced a.bytes unchecked. And "last
+// < first" was never tested, so a reversed range such as GetSlice(5, 2) passed
+// the guard and panicked on the slice expression. The bounds are now taken from
+// whichever backing store the array's type actually uses (matching Set, which
+// already branches this way), and the range order is checked.
 func (a *Array) GetSlice(first, last int) ([]any, error) {
 	if a == nil {
 		return nil, errors.ErrNilPointerReference
 	}
 
-	if first < 0 || last < 0 || first > len(a.data) || last > len(a.data) {
+	size := len(a.data)
+	if a.valueType.Kind() == ByteType.kind {
+		size = len(a.bytes)
+	}
+
+	if first < 0 || last < first || first > size || last > size {
 		return nil, errors.ErrArrayBounds
 	}
 

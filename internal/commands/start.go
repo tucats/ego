@@ -130,6 +130,14 @@ func Start(c *cli.Context) error {
 
 func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string, error) {
 	logID := uuid.New()
+
+	// args[0] is the server image path, read in several places below (and
+	// spliced into a rebuilt argument list). An empty list has no image to
+	// launch, so reject it here rather than indexing an empty slice.
+	if len(args) == 0 {
+		return logID, nil, errors.ErrInvalidArgumentList.Clone().Context("server")
+	}
+
 	hasSessionID := false
 	logNameArg := 0
 	userDatabaseArg := 0
@@ -153,26 +161,41 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 			insecure = true
 		}
 
-		// Is there a specific session ID already assigned?
-		if v == "--session-uuid" {
-			logID = uuid.MustParse(args[i+1])
-			hasSessionID = true
+		// INDEX-14: each option below records or reads the position of its
+		// value as i+1 without confirming a value follows it. args comes
+		// straight from the user's command line (and, on a restart, from the
+		// saved server status file), so any of these flags can legitimately
+		// appear last. Reading args[i+1] then panicked, as did the later
+		// args[userDatabaseArg] / args[logNameArg] fixups, which trusted the
+		// recorded position. A flag with no value is now ignored, leaving the
+		// corresponding default to be appended below.
+		hasValue := i+1 < len(args)
 
-			break
+		// Is there a specific session ID already assigned?
+		if v == "--session-uuid" && hasValue {
+			// Do not use uuid.MustParse here: a malformed value on the command
+			// line is a user error, not a programming error, and must not
+			// panic. A bad UUID leaves the generated logID in place.
+			if parsed, err := uuid.Parse(args[i+1]); err == nil {
+				logID = parsed
+				hasSessionID = true
+
+				break
+			}
 		}
 
 		// Is there a debug log identified?
-		if v == "--log" || v == "-l" {
+		if (v == "--log" || v == "-l") && hasValue {
 			loggingNamesArg = i + 1
 		}
 
 		// Is there a file of user authentication data specified?
-		if v == "--users" || v == "-u" {
+		if (v == "--users" || v == "-u") && hasValue {
 			userDatabaseArg = i + 1
 		}
 
 		// Is there a log file to use as the server's stdout?
-		if v == "--log-file" {
+		if v == "--log-file" && hasValue {
 			logNameArg = i + 1
 		}
 	}
@@ -202,13 +225,31 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 
 	// If there wasn't a debug flag, consider adding one if there is a
 	// default in the configuration.
+	//
+	// INDEX-15: this splices two elements in at position 1, which shifts every
+	// argument after the program name two places to the right. The positions
+	// recorded during the scan above were not adjusted to match, so the
+	// args[userDatabaseArg] and args[logNameArg] fixups below then rewrote
+	// whichever unrelated arguments had moved into those slots -- silently
+	// corrupting the server's command line rather than normalizing a path.
+	// The recorded positions are shifted by the same amount as the arguments.
 	if loggingNamesArg == 0 {
 		if defaultLoggingNames := settings.Get(defs.ServerDefaultLogSetting); defaultLoggingNames != "" {
+			const insertedArgs = 2
+
 			newArgs := make([]string, 3)
 			newArgs[0] = args[0]
 			newArgs[1] = "--log"
 			newArgs[2] = defaultLoggingNames
 			args = append(newArgs, args[1:]...)
+
+			if userDatabaseArg > 0 {
+				userDatabaseArg += insertedArgs
+			}
+
+			if logNameArg > 0 {
+				logNameArg += insertedArgs
+			}
 		}
 	}
 

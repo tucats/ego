@@ -1541,6 +1541,7 @@ optimizer.stats={{count}} {{count|cardinal optimisation, optimisations}} trouvé
 optimizer.existing.code=Application de correctif, code existant
 optimizer.new.code=Application de correctif, nouveau code
 optimizer.dest.error=Erreur lors de l'analyse de la destination, {{error}}
+optimizer.patch.range=Plage de correctif non valide, début {{start}}, taille {{size}}
 
 panic={{msg}}
 
@@ -1581,6 +1582,7 @@ pkg.runtime.unknown=Paquet {{name}} pas encore défini
 resource.create=Création avec sql : {{sql}}
 resource.createif=Création si inexistant avec sql : {{sql}}
 resource.delete=Suppression avec sql : {{sql}}
+resource.explode.fields=Explode a trouvé {{fields}} champs de structure mais seulement {{columns}} colonnes
 resource.explode.invalid=Explosion invalide sur le type {{type}}
 resource.insert=Insertion avec sql : {{sql}}
 resource.parms=avec les paramètres : {{list|list}}

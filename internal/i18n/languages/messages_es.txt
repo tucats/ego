@@ -1548,6 +1548,7 @@ optimizer.stats=Se encontraron {{count}} {{count|cardinal optimización, optimiz
 optimizer.existing.code=Parcheando, código existente
 optimizer.new.code=Parcheando, código nuevo
 optimizer.dest.error=Error al analizar el destino, {{error}}
+optimizer.patch.range=Rango de parche no válido, inicio {{start}}, tamaño {{size}}
 
 panic={{msg}}
 
@@ -1588,6 +1589,7 @@ pkg.runtime.unknown=Paquete {{name}} aún no definido
 resource.create=Crear usando sql: {{sql}}
 resource.createif=Crear si no existe usando sql: {{sql}}
 resource.delete=Eliminar usando sql: {{sql}}
+resource.explode.fields=Explode encontró {{fields}} campos de estructura pero solo {{columns}} columnas
 resource.explode.invalid=Explosión no válida en el tipo {{type}}
 resource.insert=Insertar usando sql: {{sql}}
 resource.parms=usando parámetros: {{list|list}}

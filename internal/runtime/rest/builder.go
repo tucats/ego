@@ -31,9 +31,20 @@ func URLBuilder(initialParts ...any) *urlString {
 	if len(initialParts) > 0 {
 		format := data.String(initialParts[0])
 
+		// Rewrite each "{{name}}" placeholder as a "%v" format verb. An
+		// unterminated "{{" (no matching "}}" after it) cannot be rewritten;
+		// stop scanning and leave the remaining text alone rather than
+		// re-splicing the same prefix on every pass, which grew the string
+		// without bound and never terminated.
 		for strings.Contains(format, "{{") {
 			start := strings.Index(format, "{{")
-			end := strings.Index(format, "}}")
+
+			end := strings.Index(format[start:], "}}")
+			if end < 0 {
+				break
+			}
+
+			end += start
 			format = format[:start] + "%v" + format[end+2:]
 		}
 
@@ -52,11 +63,26 @@ func URLBuilder(initialParts ...any) *urlString {
 // %s or %d. The array of parts items is read to fill in the format operators in
 // the format string. Any remaining items in the parts array are treated as
 // URL parameter values to add to the URL.
+//
+// INDEX-12: the substitution count is derived from the format string, but it
+// was used to slice parts without checking that there were that many arguments
+// to consume. A format with more verbs than arguments -- or one containing a
+// literal "%%", which strings.Count reports as two -- panicked on
+// parts[:substitutions]. Every current caller happens to pass a balanced
+// format and argument list, so this is latent rather than live, but the guard
+// is wrong and Path is exported. Copying only what is available leaves any
+// surplus verbs to be rendered by fmt as "%!v(MISSING)", which is the normal
+// Go behavior for a short argument list rather than a crash.
 func (u *urlString) Path(format string, parts ...any) *urlString {
 	substitutions := strings.Count(format, "%")
 
-	subs := make([]any, substitutions)
-	copy(subs, parts[:substitutions])
+	available := substitutions
+	if available > len(parts) {
+		available = len(parts)
+	}
+
+	subs := make([]any, available)
+	copy(subs, parts[:available])
 
 	u.buffer.WriteString(fmt.Sprintf(format, subs...))
 

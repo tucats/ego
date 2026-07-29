@@ -20,15 +20,41 @@ func PrintProfileReport() error {
 	performanceMux.Lock()
 	defer performanceMux.Unlock()
 
-	keys := make([]string, 0, len(PerformanceData))
-
-	for name := range PerformanceData {
-		parts := strings.Split(name, ":")
-		key := fmt.Sprintf("%s:%4s#%s", parts[0], parts[1], name)
-		keys = append(keys, key)
+	// Build a sort key for each entry. A profile key is "module:line", so the
+	// sort key right-aligns the line number ("%4s") to make the report sort
+	// numerically within a module rather than lexically ("10" before "9").
+	//
+	// INDEX-16: this used parts[0] and parts[1] from splitting on ":", and the
+	// loop below used parts[1] from splitting on "#". Neither index is
+	// trustworthy: the module component is a source file name supplied by the
+	// user, so it can contain both separators. A module name containing ":"
+	// silently mis-parsed, and one containing "#" made the recovered lookup key
+	// wrong, so PerformanceData returned a nil counter and count.Load() panicked
+	// on a nil pointer. Splitting from the right on the last ":" identifies the
+	// line number correctly, and the original key is now carried alongside the
+	// sort key instead of being re-parsed out of it.
+	type profileEntry struct {
+		sortKey string
+		name    string
 	}
 
-	sort.Strings(keys)
+	entries := make([]profileEntry, 0, len(PerformanceData))
+
+	for name := range PerformanceData {
+		module, line := name, ""
+		if at := strings.LastIndex(name, ":"); at >= 0 {
+			module, line = name[:at], name[at+1:]
+		}
+
+		entries = append(entries, profileEntry{
+			sortKey: fmt.Sprintf("%s:%4s", module, line),
+			name:    name,
+		})
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].sortKey < entries[j].sortKey
+	})
 
 	t, err := tables.New([]string{i18n.L("Location"), i18n.L("Count")})
 	if err != nil {
@@ -43,11 +69,15 @@ func PrintProfileReport() error {
 	// No pagination for this report.
 	t.SetPagination(0, 0)
 
-	for _, key := range keys {
-		parts := strings.Split(key, "#")
-		count := PerformanceData[parts[1]]
+	for _, entry := range entries {
+		// The name came from ranging over PerformanceData, so the counter is
+		// always present; the check keeps a nil map value from reaching Load().
+		count := PerformanceData[entry.name]
+		if count == nil {
+			continue
+		}
 
-		err = t.AddRowItems(parts[1], count.Load())
+		err = t.AddRowItems(entry.name, count.Load())
 		if err != nil {
 			return err
 		}

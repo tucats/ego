@@ -1561,6 +1561,7 @@ optimizer.stats=Found {{count}} {{count|cardinal optimization, optimizations}} f
 optimizer.existing.code=Patching, existing code
 optimizer.new.code=Patching, new code
 optimizer.dest.error=Error parsing destination, {{error}}
+optimizer.patch.range=Patch range invalid, start {{start}}, size {{size}}
 
 panic={{msg}}
 
@@ -1601,6 +1602,7 @@ pkg.runtime.unknown=Package {{name}} not yet defined
 resource.create=Create using sql: {{sql}}
 resource.createif=Create if-not-exists using sql: {{sql}}
 resource.delete=Delete using sql: {{sql}}
+resource.explode.fields=Explode found {{fields}} struct fields but only {{columns}} columns
 resource.explode.invalid=Invalid explode on type {{type}}
 resource.insert=Insert using sql: {{sql}}
 resource.parms=using parameters: {{list|list}}

@@ -1527,6 +1527,7 @@ optimizer.stats={{count}}件の最適化が見つかり、正味 {{change}} 命�
 optimizer.existing.code=パッチ適用中、既存のコード
 optimizer.new.code=パッチ適用中、新しいコード
 optimizer.dest.error=宛先の解析エラー、{{error}}
+optimizer.patch.range=パッチ範囲が無効です。開始 {{start}}、サイズ {{size}}
 
 panic={{msg}}
 
@@ -1567,6 +1568,7 @@ pkg.runtime.unknown=パッケージ {{name}} はまだ定義されていませ�
 resource.create=sqlを使用して作成: {{sql}}
 resource.createif=sqlを使用してif-not-existsで作成: {{sql}}
 resource.delete=sqlを使用して削除: {{sql}}
+resource.explode.fields=explodeは{{fields}}個の構造体フィールドを検出しましたが、列は{{columns}}個しかありません
 resource.explode.invalid=型 {{type}} での無効なexplode
 resource.insert=sqlを使用して挿入: {{sql}}
 resource.parms=パラメーターを使用: {{list|list}}

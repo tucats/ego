@@ -243,10 +243,23 @@ func dumpPackagesByteCode(c *Context, i any) error {
 		lastKind := ""
 		kind := ""
 
+		// INDEX-17: item[1:] and fields[1] both assumed makePackageItemList's
+		// "<digit><kind> <text>" shape held for every entry, with no check.
+		// Part of <text> is data.Format() output for an arbitrary package
+		// value, so a malformed entry panicked here rather than being omitted
+		// from the report.
 		for _, item := range items {
+			if item == "" {
+				continue
+			}
+
 			item = item[1:]
 
 			fields := strings.SplitN(item, " ", 2)
+			if len(fields) < 2 {
+				continue
+			}
+
 			if fields[0] != lastKind {
 				lastKind = fields[0]
 				kind = lastKind
