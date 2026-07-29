@@ -1138,6 +1138,7 @@ server.insecure.redirect=Si es verdadero, configura un redireccionador de los pu
 server.max.body.size=Tamaño máximo del cuerpo de la solicitud en bytes
 server.max.item.limit=Número máximo de elementos devueltos por una solicitud GET paginada
 server.memory.log.interval=La duración entre entradas de registro de uso de memoria del servidor
+server.panic.recovery=Si es verdadero, un pánico del manejador se registra y se devuelve como HTTP 500
 server.piddir=Directorio donde se almacenan los archivos PID del servidor
 server.read.header.timeout=Tiempo máximo para recibir todos los encabezados HTTP de la solicitud
 server.read.timeout=Tiempo máximo permitido para leer la solicitud HTTP completa incluyendo el cuerpo (ej. "30s")
@@ -1747,6 +1748,9 @@ server.service.dir=Explorando directorio {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Definición de endpoint no válida en {{file}}: {{error}}
 server.interrupt=El servidor recibió la señal de apagado SIGINT
+server.panic.recovered=Recuperado de un pánico en la sesión {{session}}, {{method}} {{path}}, {{error}}
+server.panic.stack=Traza de pila del pánico para la sesión {{session}}, {{stack}}
+server.panic.task=Recuperado de un pánico en la tarea en segundo plano {{task}}, {{error}}
 server.shutdown=Servidor apagado por la función de administración
 server.request={{status}} {{method}} {{path}} desde {{host}}{{user|label "; usuario "}}; longitud {{length}}; contenido {{type}}; transcurrido {{elapsed}}
 server.memory=Memoria: Asignada({{alloc|%8.3f}}) Total({{total|%8.3f}}) Sistema({{system|%8.3f}}) GC({{cycles}})
@@ -1771,6 +1775,7 @@ server.max.runtime=Este servidor se apagará automáticamente después de {{elap
 server.webauthn.no.rpid=Las claves de acceso están habilitadas pero ego.server.webauthn.rpid no está configurado
 
 services.invalid.ignored=Ignorando valor no válido para {{name}}: {{value}}
+services.body.invalid=El campo _body de la respuesta para la sesión {{session}} no es un arreglo de bytes, sino {{type}}
 services.cache.add=Almacenando en caché la unidad de compilación para {{endpoint}}
 services.cache.aged=El endpoint {{endpoint}} quedó obsoleto en la caché
 services.cache.use=Usando la compilación de servicio en caché para {{endpoint}}

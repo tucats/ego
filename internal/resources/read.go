@@ -46,7 +46,13 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 		defer rows.Close()
 	}
 
-	if err == nil {
+	// NILPTR-5: the "rows != nil" test above shows the author knew Query might
+	// hand back a nil result set, but the loop below then called rows.Next()
+	// guarded only by "err == nil". Those are not the same condition: a driver
+	// that returns (nil, nil) -- or any wrapper around Query that forgets to
+	// convert a nil result into an error -- lands in the loop with a nil rows
+	// and panics. Requiring both conditions makes the two checks agree.
+	if err == nil && rows != nil {
 		for rows.Next() {
 			rowData := make([]any, len(r.Columns))
 			rowDataPointers := make([]any, len(r.Columns))

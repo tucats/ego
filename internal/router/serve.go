@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,6 +42,84 @@ func (nopCloser) Close() error { return nil }
 
 var ServerShutdownLock sync.Mutex
 
+// reportRequestPanic is the server's last-resort panic handler. It is called
+// from a deferred function at the top of ServeHTTP while the stack of a
+// panicking request is being unwound, and receives the value that recover()
+// returned.
+//
+// IMPORTANT, and easy to get wrong: this function does NOT call recover()
+// itself. Go only lets recover() stop a panic when it is called *directly* by
+// the deferred function -- one extra layer of function call and it returns nil
+// and the panic keeps going. So the recover() lives in the deferred closure in
+// ServeHTTP, and the value it produced is passed down to here.
+//
+// NILPTR-1: Some background on why this exists, for anyone new to Go.
+//
+// A panic (from a nil-pointer dereference, an out-of-range index, a failed type
+// assertion, ...) unwinds the current goroutine. Go's net/http package puts its
+// own recover() at the connection level, so a panicking handler does NOT kill
+// the server process -- that much was already safe. What was missing:
+//
+//   - The client got no response at all. net/http just closes the connection,
+//     so the caller sees a broken connection rather than an HTTP 500, and has
+//     no way to tell a crash apart from a network fault.
+//   - Nothing was logged by us, so the failure left no trace in the server log
+//     that an operator would find.
+//
+// Recovering here supplies both: a real 500 response, and a log entry with the
+// panic value and its stack.
+//
+// A related but separate hazard is a lock that is never released. ServeHTTP
+// takes ServerShutdownLock on entry and drops it right after routing, so a
+// panic between those two points would strand the mutex and every later request
+// would block on it forever -- the server would still be "running" but unable
+// to answer anything. That window is narrow (it covers FindRoute, not the
+// handler, because the lock is released before the handler is called), and the
+// fix for it is not this recover() but the deferred Unlock in ServeHTTP: Go runs
+// deferred calls even while a panic unwinds, so the mutex comes back either way.
+// See TestFindRoutePanicDoesNotLeakShutdownLock_NILPTR1.
+//
+// Set ego.server.panic.recovery to false to disable this and let panics
+// propagate unmodified, which is usually what you want while debugging. The
+// deferred Unlock protection stays in force regardless of that setting.
+func reportRequestPanic(w http.ResponseWriter, r *http.Request, sessionID int, panicValue any) {
+	// Honor the configuration switch. Re-panicking here keeps the panic moving
+	// up the stack exactly as if we had never intervened, so a developer sees
+	// the original failure and its original stack.
+	if !util.PanicRecoveryEnabled() {
+		panic(panicValue)
+	}
+
+	// Capture the stack of the panicking goroutine. debug.Stack must be called
+	// here, during unwinding, because by the time this function returns the
+	// frames that panicked are gone.
+	stack := string(debug.Stack())
+
+	ui.Log(ui.ServerLogger, "server.panic.recovered", ui.A{
+		"session": sessionID,
+		"method":  r.Method,
+		"path":    r.URL.Path,
+		"error":   fmt.Sprintf("%v", panicValue),
+	})
+
+	// The stack trace is logged separately, and only to the internal log, to
+	// keep the single-line server log readable while still preserving the
+	// diagnostic detail somewhere.
+	ui.Log(ui.InternalLogger, "server.panic.stack", ui.A{
+		"session": sessionID,
+		"stack":   stack,
+	})
+
+	// Send a generic 500. The panic text is deliberately NOT included in the
+	// response: it routinely contains internal type and file names, which we do
+	// not want to hand to a caller who may have caused the panic on purpose.
+	//
+	// If the handler already began writing a response, WriteHeader here will be
+	// ignored by net/http (it logs "superfluous WriteHeader"); there is nothing
+	// better we can do at that point, since the status line is already sent.
+	util.ErrorResponse(w, sessionID, i18n.Text(negotiateLanguage(r), "error.server.error"), http.StatusInternalServerError)
+}
+
 // ServeHTTP satisfies the requirements of an HTTP multiplexer to
 // the Go "http" package. This accepts a request and response writer,
 // and determines which path to direct the request to.
@@ -50,8 +129,50 @@ var ServerShutdownLock sync.Mutex
 func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var session *Session
 
+	// sessionID is declared before the deferred panic handler so that the
+	// handler can report it. It is filled in below once we know whether this
+	// request counts as a session.
+	sessionID := 0
+
+	// Install the last-resort panic handler FIRST, before anything that could
+	// panic or take a lock. Deferred calls run in last-in-first-out order, so
+	// registering this first means it runs last -- after the deferred Unlock
+	// calls below have already released their locks.
+	//
+	// The recover() call has to be right here, in the deferred function itself.
+	// Go only honors recover() when it is invoked directly by the deferred
+	// function; calling it from a helper that the deferred function invokes
+	// returns nil and the panic continues unchecked. So this closure does the
+	// recovering and reportRequestPanic does the reporting.
+	//
+	// sessionID is read when this closure RUNS, not when it is declared, so the
+	// value assigned further down is the one reported.
+	defer func() {
+		if panicValue := recover(); panicValue != nil {
+			reportRequestPanic(w, r, sessionID, panicValue)
+		}
+	}()
+
 	// Make sure we aren't blocked on shutdown.
+	//
+	// NILPTR-1: the release below is a deferred Unlock rather than a plain
+	// statement, so that a panic inside FindRoute -- the only code this lock is
+	// held across -- cannot leave the mutex locked forever. Deferred calls run
+	// during panic unwinding, a plain statement does not, and a stranded
+	// ServerShutdownLock would block every subsequent request permanently.
+	//
+	// shutdownLockHeld makes the deferred release idempotent, because on the
+	// normal path we still want to drop the lock as early as possible rather than
+	// hold it for the life of the request.
+	shutdownLockHeld := true
+
 	ServerShutdownLock.Lock()
+
+	defer func() {
+		if shutdownLockHeld {
+			ServerShutdownLock.Unlock()
+		}
+	}()
 
 	// Record when this particular request began, and find the matching
 	// route for this request.
@@ -60,13 +181,14 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer route.Unlock()
 
 	// If we've gotten this far, not blocked for shutdown.
+	shutdownLockHeld = false
 	ServerShutdownLock.Unlock()
 
 	// Now that we (potentially) have a route, increment the session count
 	// if this is not a "lightweight" request type. Note that a failed route
 	// connection always counts as a session attempt and increments the
-	// sequence number.
-	sessionID := 0
+	// sequence number. sessionID was declared at the top of the function so the
+	// deferred panic handler can report it.
 	if route == nil || !route.lightweight {
 		sessionID = int(atomic.AddInt32(&SequenceNumber, 1))
 	}
@@ -214,21 +336,34 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
+		// A route with no handler function cannot be dispatched. Report it as an
+		// internal error instead of falling through to the call site below.
+		//
+		// NILPTR-2: this check used to live inside the "if ui.IsActive(ui.RestLogger)"
+		// block that follows, so it only ran when REST logging happened to be
+		// switched on. With logging off -- the normal production configuration --
+		// a nil handler reached "session.handler(session, w, r)" further down and
+		// panicked on a call through a nil function value. A safety check must
+		// never be conditional on a diagnostic setting being enabled, so it is
+		// hoisted out here where it always runs.
+		//
+		// The panic-recovery handler added for NILPTR-1 would now turn that into
+		// a 500 rather than a dropped connection, but reporting the specific
+		// problem here is much more useful than a generic recovered panic.
+		if route.handler == nil {
+			ui.Log(ui.InternalLogger, "route.handler.nil", ui.A{
+				"route": fmt.Sprintf("%#v", route)})
+
+			// The route dump is deliberately kept out of the client response; it
+			// describes server-side routing internals.
+			util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.server.error"), http.StatusInternalServerError)
+
+			return
+		}
+
 		// Log which route we're using. This is helpful for debugging service route
 		// declaration errors.
 		if ui.IsActive(ui.RestLogger) {
-			// No route handler found, log it and report the error to the caller.
-			if route.handler == nil {
-				msg := fmt.Sprintf("invalid route selected: %#v", route)
-
-				ui.Log(ui.InternalLogger, "route.handler.nil", ui.A{
-					"route": fmt.Sprintf("%#v", route)})
-
-				util.ErrorResponse(w, sessionID, msg, http.StatusInternalServerError)
-
-				return
-			}
-
 			// Get the real name of the handler function, and clean it up by removing
 			// noisy prefixes supplied by the reflection system.
 			functionName := runtime.FuncForPC(reflect.ValueOf(route.handler).Pointer()).Name()
@@ -411,8 +546,22 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the designated route handler. This is where the actual work of the request will be done.
+	//
+	// NILPTR-2: the nil-handler check above runs only for non-lightweight routes,
+	// because it lives inside the "!route.lightweight" block that does the
+	// authentication and logging work. A lightweight route with no handler would
+	// still reach this line, and calling a nil function value panics -- so the
+	// call site itself is guarded here as well. In Go a func-typed field defaults
+	// to nil, so an incompletely built Route has exactly this shape.
 	if status == http.StatusOK {
-		status = session.handler(session, w, r)
+		if session.handler == nil {
+			ui.Log(ui.InternalLogger, "route.handler.nil", ui.A{
+				"route": fmt.Sprintf("%#v", route)})
+
+			status = util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.server.error"), http.StatusInternalServerError)
+		} else {
+			status = session.handler(session, w, r)
+		}
 	}
 
 	// If it wasn't a lightweight call, log information about the request.

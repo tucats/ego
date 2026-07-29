@@ -635,9 +635,23 @@ func ChildService(filename string) error {
 	// Get the actual response body
 	var b []byte
 
+	// NILPTR-7: use the two-value ("comma ok") form of the type assertion so a
+	// missing or retyped _body field yields an empty body instead of panicking.
+	// GetAlways returns a nil interface when the field is absent, and a nil
+	// interface never satisfies a concrete type, so the one-value form
+	// "bodyValue.(*data.Array)" would panic. See the matching comment in
+	// service.go, which had the same defect in the equivalent code path.
+	//
+	// Falling through with an empty b is exactly right here: the block below
+	// already treats an empty body as "use the captured print buffer instead".
 	bodyValue := response.GetAlways("_body")
-	body := bodyValue.(*data.Array)
-	b = body.GetBytes()
+	if body, ok := bodyValue.(*data.Array); ok {
+		b = body.GetBytes()
+	} else {
+		ui.Log(ui.ServicesLogger, "services.body.invalid", ui.A{
+			"session": r.SessionID,
+			"type":    data.TypeOf(bodyValue).String()})
+	}
 
 	if len(b) > 0 {
 		child.Body = string(b)

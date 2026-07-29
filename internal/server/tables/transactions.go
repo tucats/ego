@@ -115,11 +115,18 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 
 	// If we haven't started the cleanup timer, do so now. Basically, wake up once a minute and
 	// look for expired transactions to rollback and delete.
+	//
+	// NILPTR-6: the cleanup call is wrapped in util.SafeCall because this runs on
+	// its own goroutine, where Go does not recover panics for us -- an unrecovered
+	// panic in a background goroutine terminates the entire server process, not
+	// just the goroutine. Since this task walks a map of transactions whose
+	// database handles may already have been closed, a panic here is plausible;
+	// logging it and retrying on the next minute is much better than exiting.
 	if !transactionsCleanupStarted {
 		go func() {
 			for {
 				time.Sleep(time.Second * 60) // Clean up every minute
-				cleanupExpiredTransactions()
+				util.SafeCall("cleanup expired transactions", cleanupExpiredTransactions)
 			}
 		}()
 

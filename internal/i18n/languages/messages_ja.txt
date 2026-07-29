@@ -1129,6 +1129,7 @@ server.insecure=trueの場合、サーバーはHTTPS接続を受け付けない
 server.max.body.size=リクエストボディの最大サイズ (バイト単位)
 server.max.item.limit=ページ分割されたGETリクエストで返される項目の最大数
 server.memory.log.interval=サーバーメモリ使用量ログエントリ間の期間
+server.panic.recovery=真の場合、リクエストハンドラーのパニックはログに記録されHTTP 500として返されます
 server.piddir=サーバーPIDファイルが保存されるディレクトリ
 server.read.header.timeout=すべてのHTTPリクエストヘッダーを受信するのに許容される最大時間
 server.read.timeout=ボディを含む完全なHTTPリクエストを読み取るのに許容される最大時間
@@ -1722,6 +1723,9 @@ server.service.dir=ディレクトリ {{path}} をスキャン中...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid={{file}} の無効なエンドポイント定義: {{error}}
 server.interrupt=サーバーがSIGINTシャットダウンシグナルを受信しました
+server.panic.recovered=セッション {{session}} のパニックから回復しました。{{method}} {{path}}、{{error}}
+server.panic.stack=セッション {{session}} のパニックスタックトレース、{{stack}}
+server.panic.task=バックグラウンドタスク {{task}} のパニックから回復しました、{{error}}
 server.shutdown=管理者機能によりサーバーがシャットダウンされました
 server.request={{status}} {{method}} {{path}} ({{host}} から){{user|label "; user "}}; 長さ {{length}}; コンテンツ {{type}}; 経過時間 {{elapsed}}
 server.memory=メモリ: 割り当て済み({{alloc|%8.3f}}) 合計({{total|%8.3f}}) システム({{system|%8.3f}}) GC({{cycles}})
@@ -1748,6 +1752,7 @@ server.webauthn.no.rpid=パスキーは有効ですが、ego.server.webauthn.rpi
 server.starting=サーバー (Ego {{version}}) を起動中、インスタンス {{id}}
 
 services.invalid.ignored={{name}} の無効な値を無視: {{value}}
+services.body.invalid=セッション {{session}} のレスポンス _body フィールドはバイト配列ではなく {{type}} です
 services.cache.add={{endpoint}} のコンパイルユニットをキャッシュ中
 services.cache.aged=エンドポイント {{endpoint}} がキャッシュから期限切れになりました
 services.cache.use={{endpoint}} のキャッシュされたサービスコンパイルを使用中

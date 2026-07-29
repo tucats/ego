@@ -211,6 +211,7 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.server.js.shortvarnames | If true, the JavaScript minifier also renames local variables to short generated names |
 | ego.server.max.body.size | Maximum request body size in bytes; requests larger than this are rejected with 413 (default 32 MiB) |
 | ego.server.memory.log.interval | The duration between server memory usage log entries |
+| ego.server.panic.recovery | If true (the default), a panic in a request handler is logged and returned as HTTP 500 instead of dropping the connection. Set false during development to let panics propagate |
 | ego.server.piddir | Directory where server PID files are stored |
 | ego.server.plaintext.passwords | If true, legacy {quoted} plaintext passwords are accepted and migrated to bcrypt |
 | ego.server.read.header.timeout | Maximum time allowed to receive all HTTP request headers before closing the connection (e.g. "10s") |

@@ -99,6 +99,7 @@ func InitProfileDefaults(class int) error {
 		defs.RuntimeDeepScopeSetting:       {RuntimeDefaults, defs.True},
 		defs.ConsolePromptMissingOptions:   {RuntimeDefaults, defs.True},
 		defs.ServerStartLogAgeSetting:      {ServerDefaults, "30"},
+		defs.ServerPanicRecoverySetting:    {ServerDefaults, defs.True},
 	}
 
 	dirty := false

@@ -28,6 +28,19 @@ type Database struct {
 }
 
 // Open the database that is associated with the named DSN.
+//
+// NILPTR-3: this function used to test "session != nil" before reading
+// session.User, and then dereference session.ID on the very next line and
+// session.Admin a few lines later, with no guard at all. Either the nil test was
+// unnecessary or the eight dereferences that followed it were a crash waiting to
+// happen -- the two cannot both be right.
+//
+// Rather than delete the nil test (which would silently commit to "session is
+// never nil" for a function reachable from every table endpoint), the values
+// actually needed are pulled out once, here, under a single nil check. The rest
+// of the function then uses plain local variables that are always safe to read.
+// A nil session is treated as an unauthenticated, non-admin caller, which is the
+// conservative interpretation: it can only ever deny access, never grant it.
 func Open(session *router.Session, name string, action dsns.DSNAction) (db *Database, err error) {
 	var (
 		user string
@@ -38,14 +51,22 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		return nil, errors.ErrMissingTableName
 	}
 
+	// sessionID is only used for log correlation, so zero is a fine stand-in
+	// when there is no session. isAdmin must default to false so that a missing
+	// session cannot bypass the DSN authorization check below.
+	sessionID := 0
+	isAdmin := false
+
 	if session != nil {
 		user = session.User
+		sessionID = session.ID
+		isAdmin = session.Admin
 	}
 
-	dsnName, err := dsns.DSNService.ReadDSN(session.ID, user, name, false)
+	dsnName, err := dsns.DSNService.ReadDSN(sessionID, user, name, false)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.dsn.error", ui.A{
-			"session": session.ID,
+			"session": sessionID,
 			"user":    user,
 			"name":    name,
 			"error":   err})
@@ -55,10 +76,10 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 
 	savedUser := user
 
-	if !session.Admin {
-		if !dsns.DSNService.AuthDSN(session.ID, user, name, action) {
+	if !isAdmin {
+		if !dsns.DSNService.AuthDSN(sessionID, user, name, action) {
 			ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
-				"session": session.ID,
+				"session": sessionID,
 				"user":    user,
 				"dsn":     dsnName.Name,
 				"action":  dsns.ActionString(action)})
@@ -68,7 +89,7 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.auth", ui.A{
-		"session": session.ID,
+		"session": sessionID,
 		"user":    user,
 		"dsn":     dsnName.Name,
 		"action":  dsns.ActionString(action)})
@@ -82,14 +103,14 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	conStr, err := dsns.Connection(&dsnName)
 	if err != nil {
 		ui.Log(ui.DBLogger, "db.error", ui.A{
-			"session": session.ID,
+			"session": sessionID,
 			"error":   err})
 
 		return nil, err
 	}
 
 	ui.Log(ui.DBLogger, "db.dsn.constr", ui.A{
-		"session": session.ID,
+		"session": sessionID,
 		"constr":  redactURLString(conStr)})
 
 	db = &Database{
@@ -148,7 +169,20 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 // Close is a shim to pass through to the underlying database handle.
 // This does nothing if there are active/pending transactions for this
 // handle.
+//
+// NILPTR-4: Open can return a non-nil *Database whose Handle is still nil --
+// see the ErrUnsupportedDatabase return above, and the case where FindScheme
+// fails and the sql.Open block is skipped entirely. Every current caller checks
+// the error before deferring Close, so this is not reachable today, but Close is
+// an exported method on an exported type and "defer db.Close()" placed before
+// the error check is a very easy mistake to make. In Go, calling a method on a
+// nil pointer is legal as long as the method does not dereference the receiver,
+// so checking here costs nothing and makes the method safe to call in any state.
 func (d *Database) Close() error {
+	if d == nil {
+		return nil
+	}
+
 	if d.Transaction != nil {
 		ui.Log(ui.TableLogger, "table.tx.rest.not.closed", ui.A{
 			"seq": d.TransID,
@@ -158,13 +192,24 @@ func (d *Database) Close() error {
 		return nil
 	}
 
+	// A database that never finished opening has nothing to close.
+	if d.Handle == nil {
+		return nil
+	}
+
 	return d.Handle.Close()
 }
 
 // CloseTX is a shim to pass through to the underlying database handle.
 // It will close the database, and dismiss active transactions. Brute
 // force reclamation.
+//
+// NILPTR-4: guarded the same way as Close, for the same reason.
 func (d *Database) CloseTX(session int) error {
+	if d == nil {
+		return nil
+	}
+
 	if d.Transaction != nil {
 		err := d.Transaction.Commit()
 		if err != nil {
@@ -183,6 +228,10 @@ func (d *Database) CloseTX(session int) error {
 				"id":      d.TransUUID,
 			})
 		}
+	}
+
+	if d.Handle == nil {
+		return nil
 	}
 
 	return d.Handle.Close()
