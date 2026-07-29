@@ -2,6 +2,8 @@ package tokenizer
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/internal/i18n"
 )
 
 const lineEnding = "  ;"
@@ -11,6 +13,14 @@ const lineEnding = "  ;"
 // 1-based, to match the expectation of the developer's perception of the lines of
 // code.
 func (t *Tokenizer) GetLine(line int) string {
+	if t == nil {
+		return "<" + i18n.M("source.not.available") + ">"
+	}
+
+	if t.Source == nil {
+		return "<" + i18n.M("source.not.available") + ">"
+	}
+
 	if line < 1 || line > len(t.Source) {
 		return ""
 	}

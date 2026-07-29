@@ -877,6 +877,7 @@ server.stopping=Servidor deteniéndose, estado {{status}}
 server.dsn.metadata={{count}} {{count|cardinal tabla, tablas}} devueltas del DSN {{dsn}}
 server.table.created=Tabla {{name}} creada con éxito
 server.table.deleted=Tabla {{name}} eliminada con éxito
+source.not.available=Código fuente no disponible
 subcommand.expected=Subcomando faltante del comando, se esperaba uno de:
 subcommand.expected.one=Subcomando faltante del comando, se esperaba: {{expected}}
 subcommand.list=  {{expected|list}}

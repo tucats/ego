@@ -866,6 +866,7 @@ server.stopping=サーバー停止中、状態 {{status}}
 server.dsn.metadata=DSN {{dsn}} から{{count}}個のテーブルが返されました
 server.table.created=テーブル {{name}} を正常に作成しました
 server.table.deleted=テーブル {{name}} を正常に削除しました
+source.not.available=ソースコードを利用できません
 subcommand.expected=コマンドにサブコマンドがありません。次のいずれかが必要です:
 subcommand.expected.one=コマンドにサブコマンドがありません。次が必要です: {{expected}}
 subcommand.list=  {{expected|list}}

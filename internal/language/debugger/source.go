@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/tokenizer"
 	egostrings "github.com/tucats/ego/internal/util/strings"
 )
@@ -31,6 +32,12 @@ const indent = 3
 // — invalid range specs were silently ignored.  The function now returns an
 // error so the caller can report the problem to the user.
 func showSource(tx *tokenizer.Tokenizer, tokens *tokenizer.Tokenizer, sessionContext *session) error {
+	if tx == nil || tokens == nil || tx.Source == nil {
+		sessionContext.printf("%s", i18n.M("source.not.available"))
+
+		return nil
+	}
+
 	// Default: list every line in the source.
 	start := 1
 	end := len(tx.Source)

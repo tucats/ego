@@ -884,6 +884,7 @@ server.stopping=Server stopping, status {{status}}
 server.dsn.metadata={{count}} {{count|cardinal table, tables}} returned from DSN {{dsn}}
 server.table.created=Table {{name}} created successfully
 server.table.deleted=Table {{name}} successfully deleted
+source.not.available=Source code not available
 subcommand.expected=Subcommand missing from command, expected one of:
 subcommand.expected.one=Subcommand missing from command, expected: {{expected}}
 subcommand.list=  {{expected|list}}

@@ -870,6 +870,7 @@ server.stopping=Arrêt du serveur en cours, état {{status}}
 server.dsn.metadata={{count}} {{count|cardinal table, tables}} retournée(s) depuis le DSN {{dsn}}
 server.table.created=Table {{name}} créée avec succès
 server.table.deleted=Table {{name}} supprimée avec succès
+source.not.available=Code source non disponible
 subcommand.expected=Sous-commande manquante de la commande, attendu l'un de :
 subcommand.expected.one=Sous-commande manquante de la commande, attendu : {{expected}}
 subcommand.list=  {{expected|list}}
