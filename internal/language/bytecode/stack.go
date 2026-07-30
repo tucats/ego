@@ -182,12 +182,31 @@ func dropToMarkerByteCode(c *Context, i any) error {
 // that there are this many items on the stack, which is
 // used to verify that multiple return-values on the stack
 // are present.
+//
+// INDEX-5: the marker search below starts at "stackPointer - (count - 1)",
+// which for a small count is at or above the stack pointer itself. Because
+// c.stack is only grown in chunks by push() and can be truncated back to the
+// stack pointer by callFramePop, stackPointer == len(c.stack) is a reachable
+// state, and the search then indexed one or more entries past the end of the
+// slice and panicked. The operand supplied as the count comes from the
+// instruction stream and is not trustworthy, so the starting index is now
+// clamped to the last live stack entry.
 func stackCheckByteCode(c *Context, i any) error {
 	if count, err := data.Int(i); err != nil || c.stackPointer <= count {
 		return c.runtimeError(errors.ErrReturnValueCount)
 	} else {
-		// Is there a stack marker on the stack at all?
-		for i := c.stackPointer - (count - 1); i >= 0; i-- {
+		// Is there a stack marker on the stack at all? Start the scan at the
+		// topmost live stack entry, never above it.
+		start := c.stackPointer - (count - 1)
+		if start > c.stackPointer-1 {
+			start = c.stackPointer - 1
+		}
+
+		if start >= len(c.stack) {
+			start = len(c.stack) - 1
+		}
+
+		for i := start; i >= 0; i-- {
 			v := c.stack[i]
 			if isStackMarker(v) {
 				return nil

@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/tokens"
+	"github.com/tucats/ego/internal/util"
 )
 
 // JWTCacheEntry is stored in caches.OAuthJWTCache, keyed on the raw JWT string.
@@ -252,12 +253,17 @@ func Initialize() error {
 		// swept at most 2 minutes after they expire, keeping the store
 		// small and bounding the window during which a cap-filling attack
 		// can stall legitimate new flows (OAUTH-M5).
+		//
+		// NILPTR-6: purgeExpiredStates runs on its own goroutine, where Go does
+		// not recover panics automatically -- an unrecovered panic in a background
+		// goroutine terminates the whole server process. util.SafeCall logs the
+		// panic and lets the ticker fire again on the next interval.
 		go func() {
 			ticker := time.NewTicker(statePurgeInterval)
 			defer ticker.Stop()
 
 			for range ticker.C {
-				purgeExpiredStates()
+				util.SafeCall("purge expired OAuth states", purgeExpiredStates)
 			}
 		}()
 	})

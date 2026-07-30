@@ -386,8 +386,13 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 
 			// Use the query to determine the count of matching rows. if the count is zero, no rows, so
 			// we fall back to doing this as an insert operation rather than an update.
+			//
+			// NILPTR-5: the nil test on rows is as important as the error test.
+			// A successful Query normally returns a non-nil result set, but this
+			// runs inside a request handler, so treating "no result set" as
+			// "not an update" is far better than dereferencing nil and panicking.
 			rows, err := db.Query(q)
-			if err == nil {
+			if err == nil && rows != nil {
 				if rows.Next() {
 					var count int
 

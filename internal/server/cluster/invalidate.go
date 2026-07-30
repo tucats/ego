@@ -12,6 +12,30 @@ import (
 	"github.com/tucats/ego/internal/errors"
 )
 
+// maxFlushHops bounds how many times a cache-invalidation notification may be
+// relayed between nodes before a receiver refuses to act on it.
+//
+// CLUSTER-1: this is a safety net, not the mechanism that prevents the
+// notification loop. The loop is prevented structurally, by having the inbound
+// flush handler call caches.PurgeLocal (which does not broadcast) rather than
+// caches.Purge (which does). With that in place a notification is never relayed,
+// so a well-behaved cluster only ever sends hop count 1 and this limit is never
+// reached.
+//
+// It exists because the structural fix is one call site away from being undone.
+// If a future change made the receive path broadcast again, the hop count would
+// climb and every node would start rejecting the notification after this many
+// rounds -- turning an unbounded storm into a brief, bounded, and very visible
+// burst of log warnings. For that to work, any code that forwards a notification
+// it received MUST pass the incoming hop count plus one; see SendCacheFlush.
+const maxFlushHops = 4
+
+// originHopCount is the hop count used for a notification that starts on this
+// node, as opposed to one being relayed. It is 1 rather than 0 so that a
+// hand-written or older-build request carrying no hops field (which decodes as 0)
+// is still accepted as a first-hop message.
+const originHopCount = 1
+
 // BroadcastCacheFlush notifies every active peer in the cluster that a
 // particular in-memory cache has become stale and must be purged. It is a
 // no-op when the server is running in standalone mode (ClusterName == "").
@@ -37,8 +61,9 @@ func BroadcastCacheFlush(cacheID int) {
 		return
 	}
 
+	// A purge that originates on this node starts at the first hop.
 	for _, peer := range peers {
-		if sendErr := SendCacheFlush(peer, cacheID); sendErr != nil {
+		if sendErr := SendCacheFlush(peer, cacheID, originHopCount); sendErr != nil {
 			ui.Log(ui.ServerLogger, "cluster.flush.error", ui.A{
 				"id":    peer.NodeID,
 				"host":  peer.Host,
@@ -57,10 +82,16 @@ func BroadcastCacheFlush(cacheID int) {
 // A non-nil error is returned when the HTTP request fails or the peer returns
 // a non-2xx status. The caller (BroadcastCacheFlush) logs the error and moves
 // on to the next peer.
-func SendCacheFlush(peer defs.ClusterMember, cacheID int) error {
+//
+// CLUSTER-1: hops is the hop count to place in the request. Pass
+// originHopCount for a notification that starts on this node. A caller that is
+// forwarding a notification it received must pass the incoming count plus one,
+// or the receiving side's maxFlushHops circuit breaker cannot do its job.
+func SendCacheFlush(peer defs.ClusterMember, cacheID int, hops int) error {
 	payload := defs.ClusterFlushRequest{
 		CacheID:  cacheID,
 		SenderID: NodeID,
+		Hops:     hops,
 	}
 
 	body, err := json.Marshal(payload)

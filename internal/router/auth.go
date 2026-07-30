@@ -176,6 +176,16 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 		if v, found := caches.Find(caches.TokenCache, token); found {
 			tok, isFull := v.(*tokens.Token)
 
+			// NILPTR-8: the "ok" result of a type assertion confirms the TYPE
+			// matched -- it says nothing about whether the pointer inside is
+			// non-nil. A cache entry holding a (*tokens.Token)(nil) -- what Go
+			// calls a "typed nil" -- satisfies the assertion, so isFull would be
+			// true while tok is nil, and reading tok.Expires below would panic in
+			// the authentication path of every request presenting that token.
+			// Requiring tok != nil as well makes isFull mean what the rest of this
+			// block assumes it means: "we have a usable full token".
+			isFull = isFull && tok != nil
+
 			if isFull && !tok.Expires.IsZero() && time.Now().After(tok.Expires) {
 				// Token has expired since it was cached; evict it and fall through
 				// to the full validation path below (which will also return an error).

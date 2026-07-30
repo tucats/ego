@@ -234,9 +234,26 @@ func RunServer(c *cli.Context) error {
 	// If the server is being run in debug mode, start the profiler.)
 	// Start the asynchronous routines that dump out stats on memory usage and
 	// request counts.
-	go router.LogMemoryStatistics()
-	go router.LogRequestCounts()
-	go cluster.StartHealthChecker()
+	//
+	// GORTNS-4: these three background tasks all watch a single shutdown channel
+	// so they can be stopped cleanly instead of spinning until the process dies.
+	// The channel is never written to -- closing it is the signal, which is the
+	// idiomatic Go broadcast because a receive from a closed channel returns
+	// immediately for every receiver at once.
+	//
+	// Before this, each task was a bare "for { ...; time.Sleep(interval) }" with
+	// no exit at all. That was survivable only because the server never shuts down
+	// in-process: the SIGINT handler below calls os.Exit and the operating system
+	// reclaims everything. It left two problems, though. Shutdown was abrupt (the
+	// cluster health checker could be mid-interval with a 30-second sleep), and
+	// nothing prevented a second launch of these tasks from a future in-process
+	// restart or from a test, which would silently produce two of each, logging
+	// over one another.
+	serverTasksStopped := make(chan struct{})
+
+	go router.LogMemoryStatistics(serverTasksStopped)
+	go router.LogRequestCounts(serverTasksStopped)
+	go cluster.StartHealthChecker(serverTasksStopped)
 
 	// Dump out the route table if requested.
 	ServerRouter.Dump()
@@ -255,6 +272,12 @@ func RunServer(c *cli.Context) error {
 			ui.Log(ui.ServerLogger, "server.interrupt", nil)
 
 			router.ServerShutdownLock.Lock()
+
+			// GORTNS-4: tell the background statistics and cluster-health tasks to
+			// stop before we tear anything else down, so they cannot log about, or
+			// ping peers on behalf of, a server that is on its way out. Closing the
+			// channel releases all three of them at once.
+			close(serverTasksStopped)
 
 			// Remove this node from the cluster membership table before exiting.
 			cluster.Shutdown()

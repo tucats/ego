@@ -55,6 +55,12 @@
             "query": "gc",
             "op": ">=",
             "value": "1"
+        },
+        {
+            "name": "Goroutine count present",
+            "query": "goroutines",
+            "op": ">=",
+            "value": "1"
         }
     ]
 }

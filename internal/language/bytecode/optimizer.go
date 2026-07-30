@@ -753,7 +753,23 @@ func (b *ByteCode) executeFragment(start, end int) (any, error) {
 // so that growing replacements (len(insert) > deleteSize) do not corrupt the
 // tail — the former append-chain was only safe when the replacement was no
 // larger than the deleted region (OPTIMIZER-5).
+//
+// INDEX-4: start and deleteSize describe a window that the caller computed
+// from a pattern match, and Patch trusted them completely. A window that ran
+// past the end of the emitted instructions made "b.nextAddress-tailStart"
+// negative, which panics inside make(), and the slice expressions below would
+// have panicked as well. A window that does not lie entirely within the
+// emitted instruction stream is now rejected as a no-op, since there is
+// nothing meaningful to splice.
 func (b *ByteCode) Patch(start, deleteSize int, insert []instruction) {
+	if start < 0 || deleteSize < 0 || start+deleteSize > b.nextAddress || b.nextAddress > len(b.instructions) {
+		ui.Log(ui.OptimizerLogger, "optimizer.patch.range", ui.A{
+			"start": start,
+			"size":  deleteSize})
+
+		return
+	}
+
 	// offset is positive when shrinking (more deleted than inserted),
 	// zero when same size, and negative when growing.  Branch destinations
 	// that follow the patched region are decremented by this amount.

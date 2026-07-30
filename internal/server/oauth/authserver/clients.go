@@ -135,7 +135,20 @@ func findClient(clientID string) *OAuthClient {
 
 // validateClientSecret returns true if the supplied plaintext secret matches the
 // bcrypt hash stored for the given client.
+//
+// NILPTR-8: every current caller writes "client == nil || !validateClientSecret(...)",
+// and Go's || short-circuits, so a nil client never reaches this function today.
+// The nil check below is still worth having, because of what the failure mode
+// would be if a future caller forgot that guard: without it, a nil client
+// dereferences client.ClientSecretHash and panics -- and if someone "fixed" that
+// panic by treating a nil client as the empty-hash case, the function would
+// return true and authenticate an unregistered client. Returning false makes the
+// safe answer the automatic one.
 func validateClientSecret(client *OAuthClient, secret string) bool {
+	if client == nil {
+		return false
+	}
+
 	if client.ClientSecretHash == "" {
 		// A client with no secret hash is a public client; any (or no) secret
 		// is accepted. Public clients are appropriate for client_credentials flows

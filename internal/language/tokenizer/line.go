@@ -111,13 +111,29 @@ func (t *Tokenizer) GetSource() string {
 // the valid token range. This is used to recover the human-readable text of a
 // sub-expression or statement from the token stream, for example when building
 // an error message that needs to quote the problematic source fragment.
+//
+// INDEX-1: only "end" was clamped against the length of the token stream, so a
+// "start" past the last token produced a reversed slice expression
+// (Tokens[start:end+1] with start > end+1) and panicked. Because the callers
+// are error-reporting paths, the positions they pass are frequently derived
+// from a partially-parsed statement and cannot be trusted to be in range.
+// Both ends are now clamped, and an empty range yields an empty string.
 func (t *Tokenizer) GetTokenText(start, end int) string {
+	if t == nil {
+		return ""
+	}
+
 	if start < 0 {
 		start = 0
 	}
 
 	if end < 0 || end >= len(t.Tokens) {
 		end = len(t.Tokens) - 1
+	}
+
+	// After clamping, an out-of-range or inverted range describes no tokens.
+	if start > end {
+		return ""
 	}
 
 	result := strings.Builder{}

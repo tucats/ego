@@ -50,8 +50,13 @@ func Restart(c *cli.Context) error {
 	logID := uuid.New()
 	found := false
 
+	// INDEX-13: args is the command line read back from the server status file,
+	// so a flag can appear as the very last element with no value after it.
+	// Indexing args[i+1] unconditionally panicked in that case; a trailing
+	// "--session-uuid" is now treated as "not present" so the option is
+	// appended with its value below.
 	for i, v := range args {
-		if v == "--session-uuid" {
+		if v == "--session-uuid" && i+1 < len(args) {
 			args[i+1] = logID.String()
 			found = true
 
@@ -72,8 +77,11 @@ func Restart(c *cli.Context) error {
 	if c.Boolean(defs.VerboseOption) && ui.OutputFormat == ui.TextFormat {
 		logFile := "ego-server.log"
 
+		// INDEX-13: the bound was "i+1 <= len(args)", which is off by one --
+		// it admits i+1 == len(args) and so still read one past the end when
+		// "--log-file" was the final argument. The valid index test is "<".
 		for i, v := range args {
-			if v == "--log-file" && i+1 <= len(args) {
+			if v == "--log-file" && i+1 < len(args) {
 				logFile = args[i+1]
 
 				break

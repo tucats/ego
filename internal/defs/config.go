@@ -486,6 +486,22 @@ const (
 	// that exceeds this ceiling is rejected with HTTP 400.
 	ServerMaxItemLimitSetting = ServerKeyPrefix + "max.item.limit"
 
+	// ServerPanicRecoverySetting controls whether the HTTP request dispatcher
+	// installs a last-resort panic handler around each request (see the
+	// recoverRequestPanic function in router/serve.go). Defaults to "true".
+	//
+	// When true, a panic in a route handler is caught, logged with its full
+	// stack trace, and converted into an HTTP 500 response. The server keeps
+	// running and other in-flight requests are unaffected.
+	//
+	// When false, the panic is allowed to propagate out of the handler. Go's
+	// net/http package will still catch it at the connection level (so the
+	// process survives), but no 500 response is sent and any lock the request
+	// was holding is not released. Set this to false during development when
+	// you want a panic to surface immediately and unmodified rather than being
+	// absorbed into a log entry.
+	ServerPanicRecoverySetting = ServerKeyPrefix + "panic.recovery"
+
 	// CLUSTER CONFIGURATION KEYS
 	// The prefix for all cluster-related configuration keys.
 	ClusterKeyPrefix = PrivilegedKeyPrefix + "cluster."
@@ -708,6 +724,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerIdleTimeoutSetting:          true,
 	ServerMaxBodySizeSetting:          true,
 	ServerMaxItemLimitSetting:         true,
+	ServerPanicRecoverySetting:        true,
 	ServerCompressionThresholdSetting: true,
 	RestClientCompressionSetting:      true,
 	ClusterNameSetting:                true,

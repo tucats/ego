@@ -91,6 +91,14 @@ func describe(object any) []Column {
 //
 // The object passed in must either be the resource structure itself
 // or a pointer to the struct.
+//
+// INDEX-10: the loop below walked the reflected struct's fields but used the
+// loop counter to index r.Columns, which is a separate slice built by
+// describe(). Nothing guarantees the two agree: the caller passes an arbitrary
+// object, and a struct with more fields than the handle has columns indexed
+// r.Columns past its end and panicked. The field count is now clamped to the
+// number of columns actually described, so a mismatched struct yields the
+// columns the handle knows about instead of crashing.
 func (r *ResHandle) explode(object any) []any {
 	var result []any
 
@@ -107,6 +115,14 @@ func (r *ResHandle) explode(object any) []any {
 	}
 
 	count := value.NumField()
+	if count > len(r.Columns) {
+		ui.Log(ui.ResourceLogger, "resource.explode.fields", ui.A{
+			"fields":  count,
+			"columns": len(r.Columns)})
+
+		count = len(r.Columns)
+	}
+
 	result = make([]any, count)
 
 	for i := 0; i < count; i++ {

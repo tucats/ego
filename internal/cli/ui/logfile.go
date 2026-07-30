@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tucats/ego/internal/errors"
@@ -19,6 +20,11 @@ var (
 	// LogRetainCount is the number of roll-over log versions to keep in the
 	// logging directory.
 	LogRetainCount = -1
+
+	// rollOverTaskOnce guarantees the midnight log-rollover goroutine is started
+	// at most once per process, however many times OpenLogFile is called
+	// (GORTNS-4).
+	rollOverTaskOnce sync.Once
 )
 
 // Define an io.Writer implementation that writes the buffer as a string to the log file.
@@ -54,7 +60,21 @@ func OpenLogFile(userLogFileName string, withTimeStamp bool) error {
 	if withTimeStamp {
 		PurgeLogs()
 
-		go rollOverTask()
+		// GORTNS-4: the rollover task is a "for { sleep until midnight; roll the
+		// log }" loop with no exit, so exactly one of them must ever exist. It had
+		// no guard at all: a second call to OpenLogFile with withTimeStamp set --
+		// from a test, or from any future code that reopens the log -- would have
+		// started a second identical task, and both would try to roll the same log
+		// over at midnight.
+		//
+		// sync.Once is the Go tool for "do this at most once for the life of the
+		// process, no matter how many callers ask or how many goroutines ask at the
+		// same time". Its Do method runs the function the first time and is a
+		// no-op on every later call, and it handles concurrent callers safely, so
+		// no separate mutex is needed.
+		rollOverTaskOnce.Do(func() {
+			go rollOverTask()
+		})
 	}
 
 	return nil

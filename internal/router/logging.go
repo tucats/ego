@@ -100,7 +100,18 @@ func LogResponse(w http.ResponseWriter, sessionID int) {
 // LogMemoryStatistics is a go-routine launched when a server is started. It generates a logging
 // entry every ten minutes indicating the current memory allocation, the total memory ever
 // allocated, the system memory, and the number of times the garbage-collector has run.
-func LogMemoryStatistics() {
+//
+// GORTNS-4: the stop channel lets this task be shut down cleanly. It used to be a
+// bare "for { ... time.Sleep(duration) }" with no way out, so the goroutine ran
+// until the process died and a second launch would have quietly produced two of
+// them logging over each other.
+//
+// The caller closes the channel to signal shutdown; nothing is ever sent on it.
+// Closing is the idiomatic broadcast in Go, because a receive from a closed
+// channel returns immediately for every receiver. Passing nil is legal and means
+// "never stop" -- a receive on a nil channel blocks forever, so the select below
+// simply always takes its timer case.
+func LogMemoryStatistics(stop <-chan struct{}) {
 	var (
 		lastRequestNumber int32
 		loggedError       bool
@@ -108,7 +119,9 @@ func LogMemoryStatistics() {
 
 	// Pause for a moment to allow the initialization to complete before putting out
 	// the first memory usage message.
-	time.Sleep(100 * time.Millisecond)
+	if !sleepOrStop(100*time.Millisecond, stop) {
+		return
+	}
 
 	for {
 		// Has there been a request since the last time we logged? If so, let's log
@@ -152,7 +165,37 @@ func LogMemoryStatistics() {
 			loggedError = false
 		}
 
-		time.Sleep(duration)
+		// Wait for the next interval, but wake up early and return if the server
+		// is shutting down.
+		if !sleepOrStop(duration, stop) {
+			return
+		}
+	}
+}
+
+// sleepOrStop waits for the given duration, or until the stop channel is closed,
+// whichever happens first. It reports true if the full duration elapsed (so the
+// caller should keep going) and false if the stop signal arrived (so the caller
+// should return).
+//
+// This is the standard Go alternative to time.Sleep for a cancellable loop. A
+// plain Sleep cannot be interrupted: the goroutine is parked for the whole
+// duration and cannot notice a shutdown until it wakes up on its own. A select
+// over the stop channel and a timer channel wakes on whichever is ready first.
+//
+// Passing a nil stop channel means "sleep the full duration, never cancel",
+// because a receive on a nil channel blocks forever and can never be chosen.
+func sleepOrStop(duration time.Duration, stop <-chan struct{}) bool {
+	// time.NewTimer rather than time.After so the timer can be released promptly
+	// on the stop path instead of being left to fire into a channel nobody reads.
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+
+	select {
+	case <-stop:
+		return false
+	case <-timer.C:
+		return true
 	}
 }
 

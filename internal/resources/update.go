@@ -63,6 +63,13 @@ func (r *ResHandle) Update(v any, filters ...*Filter) error {
 // UpdateOne updates the single object that matches the provided
 // object's primary key value. If the primary key is not set, or
 // the object is not found, then an error is reported.
+//
+// INDEX-11: keyIndex is an index into r.Columns, but it was also used to index
+// items, the result of explode(v). Those are different lengths whenever v is
+// not the struct this handle describes -- and explode returns nil outright for
+// a non-struct value, which made items[keyIndex] an index into a nil slice.
+// The primary key value is now read only when the exploded object actually
+// reaches that far.
 func (r *ResHandle) UpdateOne(v any) error {
 	if r == nil {
 		return errors.ErrNoResourceHandle
@@ -74,6 +81,9 @@ func (r *ResHandle) UpdateOne(v any) error {
 	}
 
 	items := r.explode(v)
+	if keyIndex >= len(items) {
+		return errors.ErrNotFound.Clone().Context(r.Columns[keyIndex].SQLName)
+	}
 
 	return r.Update(v, r.Equals(r.Columns[keyIndex].SQLName, items[keyIndex]))
 }

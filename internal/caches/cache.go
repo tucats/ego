@@ -100,6 +100,82 @@ const (
 // Setting OnPurge to nil (the default) is a no-op and incurs no overhead.
 var OnPurge func(int)
 
+// onEvict holds the optional eviction callback registered via SetOnEvict, and
+// onEvictMutex protects it.
+//
+// The mutex is needed because the callback is read by the background expiration
+// goroutines, which run concurrently with whatever goroutine registers it. In
+// production the handler is installed from an init function long before any
+// request arrives, so an unsynchronized read would happen to work -- but "happens
+// to work" is not good enough for a variable two goroutines can touch. Go's race
+// detector flags an unsynchronized global like that even when the timing works
+// out, and it is right to: the compiler is free to assume no other goroutine is
+// writing, so there is no guarantee a later write is ever observed.
+//
+// A read-write mutex is used rather than a plain one because reads vastly
+// outnumber the single write, and RLock lets concurrent evictions proceed without
+// blocking each other.
+var (
+	onEvictMutex sync.RWMutex
+	onEvict      func(id int, key any, value any)
+)
+
+// SetOnEvict registers a callback invoked once for each individual item removed
+// from a cache, whether it was removed because it expired or because Delete was
+// called on it. The callback receives the cache class, the item's key, and the
+// value that was stored. Passing nil removes any existing handler.
+//
+// GORTNS-2: this exists because some cached values own a resource that has to be
+// released, not just memory the garbage collector will reclaim. A debug session,
+// for example, is a cached value whose goroutine is parked waiting for the next
+// command; dropping the map entry leaves that goroutine blocked forever. Removing
+// the entry frees the cache slot but not the resource, so there has to be a way
+// for the owner of the value to be told.
+//
+// Two guarantees an implementation can rely on:
+//
+//   - The callback is invoked AFTER the cache's internal lock has been released.
+//     That means it may safely call back into this package (or do anything else
+//     that takes a lock) without deadlocking against the cache.
+//   - It is invoked synchronously, on whichever goroutine performed the eviction.
+//     Implementations must therefore return promptly and must not block; if real
+//     work is needed, hand it off.
+func SetOnEvict(handler func(id int, key any, value any)) {
+	onEvictMutex.Lock()
+	defer onEvictMutex.Unlock()
+
+	onEvict = handler
+}
+
+// evictHandler returns the currently registered eviction callback, or nil if
+// there is none. Callers use it instead of reading the variable directly so that
+// every read is protected by the mutex.
+func evictHandler() func(id int, key any, value any) {
+	onEvictMutex.RLock()
+	defer onEvictMutex.RUnlock()
+
+	return onEvict
+}
+
+// notifyEvictions invokes the eviction callback for a batch of removed items. It
+// exists so the call sites can gather evicted entries while holding the cache
+// lock and then deliver the notifications after releasing it, which is what makes
+// the "callback runs unlocked" guarantee above true.
+func notifyEvictions(id int, evicted map[any]any) {
+	if len(evicted) == 0 {
+		return
+	}
+
+	handler := evictHandler()
+	if handler == nil {
+		return
+	}
+
+	for key, value := range evicted {
+		handler(id, key, value)
+	}
+}
+
 // Map the cache classes to a string representation for easier logging.
 var cacheClass = map[int]string{
 	DSNCache:               "Data Source Name",
@@ -224,60 +300,105 @@ func expire(id int, cacheID int32) {
 
 	for {
 		time.Sleep(delay)
-		cacheLock.Lock()
 
-		if cache, found := cacheList[id]; found {
-			count := 0
-
-			for key, item := range cache.Items {
-				if time.Now().After(item.Expires) {
-					if count == 0 {
-						ui.Log(ui.CacheLogger, "cache.scan.start", ui.A{
-							"name": class(id),
-							"time": time.Now().Format(timeFormat),
-							"id":   cache.ID})
-					}
-
-					count++
-
-					delete(cache.Items, key)
-
-					shortToken := fmt.Sprintf("%v", key)
-					if id != SchemaCache && len(shortToken) > 9 {
-						shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
-					}
-
-					ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
-						"name":    class(id),
-						"id":      cache.ID,
-						"expired": item.Expires.Format(timeFormat),
-						"key":     shortToken})
-				}
-			}
-
-			if count > 0 {
-				ui.Log(ui.CacheLogger, "cache.scan.delete.count", ui.A{
-					"name":  class(id),
-					"id":    cacheList[id].ID,
-					"count": count})
-			}
-		} else {
-			// Cache doesn't exist any more, so stop the expiration scan goroutine.
-			ui.Log(ui.CacheLogger, "cache.scan.not.found", ui.A{
-				"name": class(id),
-				"id":   id})
-
-			// Clear the flag indicating an expiration thread is running, so it can
-			// be restarted if the cache goes active again.
-			expirationThreadRunning[id] = false
-
-			cacheLock.Unlock()
-
+		if !sweepExpired(id) {
 			return
 		}
+	}
+}
+
+// sweepExpired removes every expired item from one cache and reports each removal
+// to the eviction callback. It returns true if the cache still exists (so the caller should
+// keep scanning) and false if the cache is gone, in which case it has already
+// cleared the "expiration thread running" flag so a future cache can start a
+// fresh scan.
+//
+// This is a separate function from expire, rather than the body of its loop, for
+// two reasons: it keeps the lock handling in one readable place, and it lets the
+// tests drive a single sweep deterministically instead of waiting out a real
+// scan interval.
+func sweepExpired(id int) bool {
+	// GORTNS-2: expired items are collected here and reported to the eviction callback only
+	// after the cache lock is released, so an eviction callback can safely take
+	// locks of its own (including this package's) without deadlocking against us.
+	// That is why "evicted" is declared before the lock is taken -- it has to
+	// outlive the locked section.
+	var evicted map[any]any
+
+	// Read once, outside the lock, whether anyone is listening. Capturing the
+	// values of evicted items costs nothing to skip when nobody is.
+	watchingEvictions := evictHandler() != nil
+
+	cacheLock.Lock()
+
+	cache, found := cacheList[id]
+	if !found {
+		// Cache doesn't exist any more, so stop the expiration scan goroutine.
+		ui.Log(ui.CacheLogger, "cache.scan.not.found", ui.A{
+			"name": class(id),
+			"id":   id})
+
+		// Clear the flag indicating an expiration thread is running, so it can
+		// be restarted if the cache goes active again.
+		expirationThreadRunning[id] = false
 
 		cacheLock.Unlock()
+
+		return false
 	}
+
+	count := 0
+
+	for key, item := range cache.Items {
+		if time.Now().After(item.Expires) {
+			if count == 0 {
+				ui.Log(ui.CacheLogger, "cache.scan.start", ui.A{
+					"name": class(id),
+					"time": time.Now().Format(timeFormat),
+					"id":   cache.ID})
+			}
+
+			count++
+
+			// Remember the value before dropping it, but only when somebody is
+			// actually listening for evictions.
+			if watchingEvictions {
+				if evicted == nil {
+					evicted = map[any]any{}
+				}
+
+				evicted[key] = item.Data
+			}
+
+			delete(cache.Items, key)
+
+			shortToken := fmt.Sprintf("%v", key)
+			if id != SchemaCache && len(shortToken) > 9 {
+				shortToken = egostrings.TruncateMiddle(shortToken, cache.MaxWidth)
+			}
+
+			ui.Log(ui.CacheLogger, "cache.scan.delete", ui.A{
+				"name":    class(id),
+				"id":      cache.ID,
+				"expired": item.Expires.Format(timeFormat),
+				"key":     shortToken})
+		}
+	}
+
+	if count > 0 {
+		ui.Log(ui.CacheLogger, "cache.scan.delete.count", ui.A{
+			"name":  class(id),
+			"id":    cacheList[id].ID,
+			"count": count})
+	}
+
+	cacheLock.Unlock()
+
+	// Now that the lock is released, tell the owner about each evicted item so it
+	// can release whatever the value was holding on to.
+	notifyEvictions(id, evicted)
+
+	return true
 }
 
 // Active enables or disables caching. If caching was active and is now turned off, the in-memory

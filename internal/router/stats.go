@@ -62,11 +62,18 @@ func CountRequest(kind ServiceClass) {
 // heartbeat, or service. If there have been no request in the last 60 seconds, no log record is
 // generated. Once the log is evaluated and printed if needed, the routine sleeps for another 60
 // seconds and repeats the operation.
-func LogRequestCounts() {
+//
+// GORTNS-4: takes a stop channel so the task can be shut down cleanly rather than
+// spinning until the process exits. See the sleepOrStop helper in logging.go for
+// why a select beats time.Sleep in a cancellable loop. Passing nil means "never
+// stop".
+func LogRequestCounts(stop <-chan struct{}) {
 	duration := logRequestCounterDuration
 
 	for {
-		time.Sleep(logRequestCounterDuration * time.Second)
+		if !sleepOrStop(logRequestCounterDuration*time.Second, stop) {
+			return
+		}
 
 		// For each class, get the current counter value and
 		// reset the counter to zero.

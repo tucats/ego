@@ -35,21 +35,43 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 	varMap := data.NewMap(data.StringType, data.StringType)
 	funcMap := data.NewMap(data.StringType, data.StringType)
 
+	// Each item is "<digit><kind> <text>" as built by makePackageItemList, and
+	// the sub-parses below split <text> further. INDEX-17: every one of those
+	// splits was indexed without checking that it actually produced the
+	// expected number of fields, even though <text> is built partly from
+	// data.Format() output for an arbitrary package value. A single malformed
+	// item would panic in the middle of a package-introspection call; it is now
+	// skipped instead.
 	for _, item := range items {
 		parts := strings.SplitN(item, " ", 2)
+		if len(parts) < 2 || parts[0] == "" {
+			continue
+		}
+
 		kind := parts[0][1:]
 		text := parts[1]
 
 		switch kind {
 		case "var":
 			nameParts := strings.SplitN(text, " ", 2)
+			if len(nameParts) < 2 {
+				continue
+			}
+
 			if _, err := varMap.Set(nameParts[0], nameParts[1]); err != nil {
 				return data.NewList(nil, err), err
 			}
 
 		case "const":
 			nameParts := strings.SplitN(text, " ", 2)
+			if len(nameParts) < 2 {
+				continue
+			}
+
 			valueParts := strings.SplitN(nameParts[1], "=", 2)
+			if len(valueParts) < 2 {
+				continue
+			}
 
 			if _, err := constMap.Set(nameParts[0], strings.TrimSpace(valueParts[1])); err != nil {
 				return data.NewList(nil, err), err
@@ -57,6 +79,10 @@ func getPackage(s *symbols.SymbolTable, args data.List) (any, error) {
 
 		case "type":
 			nameParts := strings.SplitN(text, " ", 2)
+			if len(nameParts) < 2 {
+				continue
+			}
+
 			if _, err := typeMap.Set(nameParts[0], nameParts[1]); err != nil {
 				return data.NewList(nil, err), err
 			}
@@ -133,6 +159,16 @@ func makePackageItemList(pkg *data.Package) []string {
 			item = "1type " + key + " " + item
 
 		default:
+			// Guard against nil values — reflect.TypeOf(nil) returns nil and
+			// calling .String() on it panics. This is the PACKAGES-2 fix, which
+			// was applied to the near-identical makePackageItemList in
+			// bytecode/package.go but not to this copy.
+			if v == nil {
+				item = "3var " + key + " = nil"
+
+				break
+			}
+
 			r := reflect.TypeOf(v).String()
 			if strings.Contains(r, "bytecode.ByteCode") {
 				// Compiled Ego functions are stored as bytecode, not data.Function.
@@ -174,15 +210,21 @@ func makePackageItemList(pkg *data.Package) []string {
 		value, _ := s.Get(name)
 		text := data.Format(value)
 
-		r := reflect.TypeOf(value).String()
-		if strings.Contains(r, "bytecode.ByteCode") {
-			item = "4func " + text
-		} else if strings.HasPrefix(text, "^") {
-			item = "2const " + name + " = " + text[1:]
-		} else if r == "*data.Type" {
-			item = "1type " + name + " " + text
+		// Guard against nil values in the symbol table (PACKAGES-2 fix, not
+		// previously applied to this copy of the function).
+		if value == nil {
+			item = "3var " + name + " = nil"
 		} else {
-			item = "3var " + name + " = " + text
+			r := reflect.TypeOf(value).String()
+			if strings.Contains(r, "bytecode.ByteCode") {
+				item = "4func " + text
+			} else if strings.HasPrefix(text, "^") {
+				item = "2const " + name + " = " + text[1:]
+			} else if r == "*data.Type" {
+				item = "1type " + name + " " + text
+			} else {
+				item = "3var " + name + " = " + text
+			}
 		}
 
 		items = append(items, item)

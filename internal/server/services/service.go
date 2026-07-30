@@ -358,9 +358,32 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// Get the actual response body
 	var b []byte
 
+	// NILPTR-7: this used an unchecked type assertion -- "bodyValue.(*data.Array)"
+	// -- which panics if the value is anything other than a *data.Array.
+	//
+	// For anyone new to Go: the two-value form used here ("v, ok := x.(T)") sets
+	// ok to false instead of panicking when the type does not match, and it also
+	// covers the nil case, because a nil interface never satisfies a concrete
+	// type. The one-value form panics on either.
+	//
+	// Both are reachable. GetAlways returns nil for a field that is not present,
+	// and _body lives in an Ego struct that the service's own Ego code holds a
+	// reference to; in the default "dynamic" type-enforcement mode Ego lets a
+	// value change type, so a service could leave something other than a byte
+	// array there. A panic in that situation would abort the request.
+	//
+	// Note that every other field read in this function already uses a safe
+	// accessor: the header block above uses checked assertions, and _status and
+	// _size go through data.Int, which tolerates any type. This was the one
+	// field that did not, so it is brought in line with the rest.
 	bodyValue := response.GetAlways("_body")
-	body := bodyValue.(*data.Array)
-	b = body.GetBytes()
+	if body, ok := bodyValue.(*data.Array); ok {
+		b = body.GetBytes()
+	} else {
+		ui.Log(ui.ServicesLogger, "services.body.invalid", ui.A{
+			"session": session.ID,
+			"type":    data.TypeOf(bodyValue).String()})
+	}
 
 	// Write the response body to the ResponseWriter.
 	if len(b) > 0 {

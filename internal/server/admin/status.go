@@ -31,6 +31,7 @@ func GetResourcesHandler(session *router.Session, w http.ResponseWriter, r *http
 		Stack:              int(m.StackInuse),
 		Objects:            int(m.HeapObjects),
 		GCCount:            int(m.NumGC),
+		GoRoutines:         runtime.NumGoroutine(),
 		ServiceCount:       len(services.ServiceCache),
 		ServiceCountLimit:  services.MaxCachedEntries,
 		Items:              []defs.CachedItem{},

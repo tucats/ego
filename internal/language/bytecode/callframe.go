@@ -292,13 +292,38 @@ func immutableValue(v any) bool {
 	return false
 }
 
+// frameAt returns the *CallFrame saved at stack[framePointer-1], or nil if
+// that position does not hold one.
+//
+// Frame-pointer convention: after callFramePush / callFramePushWithTable the
+// *CallFrame is stored at stack[framePointer-1], not stack[framePointer], so
+// every caller must subtract one (CALL-6 fix).
+//
+// INDEX-6: the three callers below each indexed the stack directly, guarded
+// only by "framePointer > 0". That is not sufficient. The frame walks in
+// FormatFrames and GetFrame chase framePointer through callFrame.fp, a value
+// saved when the frame was pushed, and callFramePop truncates c.stack back to
+// the stack pointer -- so a saved fp can name a position that no longer exists
+// in the slice, panicking on a stack trace rather than reporting one. Because
+// these are diagnostic paths (used while formatting an error or servicing a
+// debugger command), an unusable frame pointer yields nil and the caller stops
+// walking rather than failing.
+func (c *Context) frameAt(framePointer int) *CallFrame {
+	if framePointer < 1 || framePointer > len(c.stack) {
+		return nil
+	}
+
+	callFrame, ok := c.stack[framePointer-1].(*CallFrame)
+	if !ok {
+		return nil
+	}
+
+	return callFrame
+}
+
 // SetBreakOnReturn marks the current call frame so the debugger will halt
 // execution when the active function returns.  It is called by the debugger
 // "step out" (finish) command.
-//
-// Frame-pointer convention: after callFramePush / callFramePushWithTable the
-// *CallFrame is stored at stack[framePointer-1], not stack[framePointer].
-// Both accesses below must use framePointer-1 (CALL-6 fix).
 func (c *Context) SetBreakOnReturn() {
 	// If there is nothing to break from because there aren't call frames
 	// above us, this is a no-op.
@@ -306,8 +331,7 @@ func (c *Context) SetBreakOnReturn() {
 		return
 	}
 
-	callFrameValue := c.stack[c.framePointer-1]
-	if callFrame, ok := callFrameValue.(*CallFrame); ok {
+	if callFrame := c.frameAt(c.framePointer); callFrame != nil {
 		if ui.IsActive(ui.SymbolLogger) {
 			ui.Log(ui.SymbolLogger, "symbols.breakreturn", ui.A{
 				"thread": c.threadID})
@@ -342,9 +366,7 @@ func (c *Context) FormatFrames(maxDepth int) string {
 		formatLocation(c.GetModuleName(), c.line), tableName)
 
 	for (maxDepth < 0 || depth < maxDepth) && framePointer > 0 {
-		callFrameValue := c.stack[framePointer-1]
-
-		if callFrame, ok := callFrameValue.(*CallFrame); ok {
+		if callFrame := c.frameAt(framePointer); callFrame != nil {
 			tableName := ""
 
 			if callFrame.symbols != nil {
@@ -387,9 +409,7 @@ func (c *Context) GetFrame(maxDepth int) (module string, line int, tableName str
 	}
 
 	for framePointer > 0 {
-		callFrameValue := c.stack[framePointer-1]
-
-		if callFrame, ok := callFrameValue.(*CallFrame); ok {
+		if callFrame := c.frameAt(framePointer); callFrame != nil {
 			depth++
 			if depth > maxDepth {
 				break

@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/util"
 )
 
 const (
@@ -37,12 +38,17 @@ var (
 
 // startRateLimitScan starts the single background goroutine that prunes stale
 // entries. It is safe to call multiple times; only one goroutine is ever started.
+// NILPTR-6: the prune call is wrapped in util.SafeCall because this runs on its
+// own goroutine. Go only recovers panics automatically inside an HTTP handler's
+// goroutine, so an unrecovered panic here would terminate the whole server
+// process rather than just this task. SafeCall logs the panic and lets the loop
+// continue with the next scan.
 func startRateLimitScan() {
 	scanOnce.Do(func() {
 		go func() {
 			for {
 				time.Sleep(rateLimitScanInterval)
-				pruneLoginAttempts()
+				util.SafeCall("prune login attempts", pruneLoginAttempts)
 			}
 		}()
 	})

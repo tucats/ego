@@ -30,7 +30,16 @@ const maxConsecutiveFailures = 3
 //
 // The function returns immediately if ClusterName is empty (standalone mode),
 // so the caller can always launch it as a goroutine without a conditional.
-func StartHealthChecker() {
+//
+// GORTNS-4: the stop channel lets the health checker be shut down cleanly. The
+// caller closes it to signal shutdown; nothing is ever sent on it, because in Go
+// closing a channel is the idiomatic way to broadcast to a receiver. Passing nil
+// means "never stop", since a receive on a nil channel blocks forever.
+//
+// Using a select rather than time.Sleep matters more here than in the other
+// background tasks, because the ping interval defaults to 30 seconds: a plain
+// Sleep would keep the process alive for up to half a minute after shutdown began.
+func StartHealthChecker(stop <-chan struct{}) {
 	if ClusterName == "" || systemDB == nil {
 		return
 	}
@@ -41,7 +50,20 @@ func StartHealthChecker() {
 	interval := pingInterval()
 
 	for {
-		time.Sleep(interval)
+		// Wait out the interval, but wake up immediately if we are shutting down.
+		// time.NewTimer is used instead of time.After so the timer is released on
+		// the stop path rather than left to fire into a channel nobody reads.
+		timer := time.NewTimer(interval)
+
+		select {
+		case <-stop:
+			timer.Stop()
+			ui.Log(ui.ServerLogger, "cluster.health.stopped", nil)
+
+			return
+
+		case <-timer.C:
+		}
 
 		peers, err := ListActiveMembers(systemDB, ClusterName)
 		if err != nil {
