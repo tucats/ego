@@ -49,39 +49,83 @@ func (c *Context) RunFromAddress(addr int) error {
 			"thread": c.threadID})
 	}
 
-	// Set a SIGINT trap to stop execution if needed.
+	// Set a SIGINT trap so a user pressing Ctrl-C stops execution.
+	//
+	// GORTNS-1: this used to leak one goroutine on every single call, and the
+	// reason is a subtle property of os/signal that is worth spelling out.
+	//
+	// The watcher goroutine below blocks on "<-intChan" waiting for a signal.
+	// The cleanup used to be nothing but "signal.Stop(intChan)". Stop does what
+	// its documentation says -- it stops the signal package from *delivering*
+	// any more signals to that channel -- but it does NOT close the channel.
+	// A receive on an open channel that nobody will ever send to blocks forever,
+	// so the watcher never returned. Because it captures c, each abandoned
+	// goroutine also kept an entire *Context alive (symbol table, stack,
+	// bytecode), making this a memory leak as well as a goroutine leak.
+	//
+	// This function is called once per bytecode execution, which made the leak
+	// grow without bound in the worst places:
+	//
+	//   - once per HTTP service request in the server;
+	//   - once per comparison inside sort.Slice with an Ego comparator, so a
+	//     single sort of 300 elements leaked roughly 2500 goroutines;
+	//   - once per value formatted by fmt when the value has an Ego String()
+	//     method.
+	//
+	// The fix is the standard Go "done channel" shutdown pattern. We create a
+	// second channel used purely as a broadcast signal, and the watcher waits on
+	// BOTH channels with a select. Whichever arrives first wins:
+	//
+	//   - a real signal arrives on intChan  -> handle the interrupt, then return;
+	//   - this function finishes and closes done -> the watcher returns.
+	//
+	// Closing a channel is what makes this work: a receive from a closed channel
+	// returns immediately rather than blocking, and it does so for every
+	// receiver, so close() is the idiomatic way to broadcast "stop" to a
+	// goroutine. Nothing is ever sent on done; its closure is the whole message.
 	intChan := make(chan os.Signal, 1)
 	signal.Notify(intChan, os.Interrupt)
 
+	done := make(chan struct{})
+
 	go func(c *Context) {
-		sig := <-intChan
+		select {
+		case sig := <-intChan:
+			// Should only ever be os.Interrupt, but just in case...
+			switch sig {
+			case os.Interrupt:
+				if !c.interrupted.Load() && c.running.Load() {
+					ui.Say(" ")
+					ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
+				}
 
-		// Should only ever be os.Interrupt, but just in case...
-		switch sig {
-		case os.Interrupt:
-			if !c.interrupted.Load() && c.running.Load() {
-				ui.Say(" ")
-				ui.Say("msg.interrupted", ui.A{"thread": c.threadID})
+				if !c.debugging {
+					c.running.Store(false)
+				}
+
+				c.interrupted.Store(true)
+
+			default:
+				if ui.IsActive(ui.InternalLogger) {
+					ui.Log(ui.InternalLogger, "signal", ui.A{
+						"thread": c.threadID,
+						"signal": sig.String()})
+				}
 			}
 
-			if !c.debugging {
-				c.running.Store(false)
-			}
-
-			c.interrupted.Store(true)
-
-		default:
-			if ui.IsActive(ui.InternalLogger) {
-				ui.Log(ui.InternalLogger, "signal", ui.A{
-					"thread": c.threadID,
-					"signal": sig.String()})
-			}
+		case <-done:
+			// RunFromAddress has finished, so this watcher is no longer needed.
+			// Returning here is what lets the goroutine be reclaimed.
 		}
 	}(c)
 
-	// And, when done with this context, remove the SIGINT trap thread.
+	// And, when done with this context, remove the SIGINT trap and shut the
+	// watcher goroutine down. The order matters: Stop first, so no further
+	// signals can be delivered to a channel nobody is listening on any more,
+	// then close(done) to release the watcher.
 	defer func() {
 		signal.Stop(intChan)
+		close(done)
 	}()
 
 	// Loop over the bytecodes and run.

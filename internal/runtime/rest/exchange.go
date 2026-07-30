@@ -6,7 +6,6 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
@@ -27,7 +26,6 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	var (
 		restResponse *resty.Response
 		err          error
-		stillWaiting atomic.Bool
 	)
 
 	// Is there a configuration override for the insecure setting we should check before doing a call?
@@ -100,22 +98,56 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 	// routine whose job will be to put a helpful message to the log that we're trying
 	// if the request takes too long. We only do this when running as a command client,
 	// not when running as an environment with user code.
-	stillWaiting.Store(true)
+	//
+	// GORTNS-3: this used a boolean flag polled inside time.Sleep, which has two
+	// problems worth understanding.
+	//
+	// First, a sleeping goroutine cannot notice anything. Once the request
+	// finished and the flag was cleared, this goroutine still had to wait out the
+	// remainder of its three-second sleep before looking at the flag again and
+	// returning. So it outlived the function that started it by up to three
+	// seconds every time.
+	//
+	// Second, and more visible to the user, checking a flag and then printing is
+	// two separate steps. If the request completed in between them, the goroutine
+	// printed a "still waiting" message about a request that had already come
+	// back.
+	//
+	// Both go away by waiting on a channel instead of sleeping on a timer.
+	// select with a time.After case is the Go idiom for "sleep, but wake up early
+	// if something happens": whichever case is ready first wins, so closing done
+	// interrupts the wait immediately rather than being noticed later. The
+	// goroutine now stops the moment the request finishes, and cannot print after
+	// that point because the done case returns instead of looping.
+	//
+	// Note that "done" is closed rather than written to. Closing a channel makes
+	// every receive on it return immediately, which is how one signal reliably
+	// reaches a receiver without having to know whether it is currently listening.
+	done := make(chan struct{})
+
+	defer close(done)
 
 	if v, found := symbols.RootSymbolTable.Get(defs.UserCodeRunningVariable); found && !data.BoolOrFalse(v) {
 		go func() {
-			time.Sleep(1 * time.Second)
+			// Stay quiet for the first second; most requests finish well inside
+			// it and do not deserve a progress message at all.
+			select {
+			case <-done:
+				return
+			case <-time.After(1 * time.Second):
+			}
 
-			for stillWaiting.Load() {
+			for {
 				ui.Say(i18n.M("rest.waiting", map[string]any{"URL": url}))
-				time.Sleep(3 * time.Second)
+
+				select {
+				case <-done:
+					return
+				case <-time.After(3 * time.Second):
+				}
 			}
 		}()
 	}
-
-	defer func() {
-		stillWaiting.Store(false)
-	}()
 
 	// Execute the request. This could wait for a while...
 	restResponse, err = r.Execute(method, url)

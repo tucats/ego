@@ -22,16 +22,36 @@ import (
 // Returns:
 //
 //	true if the item was found and deleted.
+//
+// GORTNS-2: if an eviction callback is registered via SetOnEvict, it is invoked
+// for the removed item after the cache lock has been released, so the owner can
+// release any resource it was holding. Note the structure below: the lock is
+// released explicitly rather than with "defer", because a deferred unlock would
+// run after the return statement and therefore after the callback, which would
+// break the "callback runs unlocked" guarantee SetOnEvict documents.
 func Delete(id int, key any) bool {
 	if !active {
 		return false
 	}
 
+	var (
+		deleted bool
+		evicted map[any]any
+	)
+
+	// Read once, outside the lock, whether anyone is listening for evictions.
+	watchingEvictions := evictHandler() != nil
+
 	cacheLock.Lock()
-	defer cacheLock.Unlock()
 
 	if cache, found := cacheList[id]; found {
-		if _, found := cache.Items[key]; found {
+		if item, found := cache.Items[key]; found {
+			// Capture the value before removing it, but only when somebody is
+			// listening for evictions.
+			if watchingEvictions {
+				evicted = map[any]any{key: item.Data}
+			}
+
 			delete(cache.Items, key)
 
 			shortToken := fmt.Sprintf("%v", key)
@@ -44,9 +64,13 @@ func Delete(id int, key any) bool {
 				"id":   cache.ID,
 				"key":  shortToken})
 
-			return true
+			deleted = true
 		}
 	}
 
-	return false
+	cacheLock.Unlock()
+
+	notifyEvictions(id, evicted)
+
+	return deleted
 }

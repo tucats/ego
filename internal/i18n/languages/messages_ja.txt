@@ -1215,6 +1215,7 @@ cluster.flush=ピア {{peer}} の要求によりキャッシュ {{cache}} をフ
 cluster.flush.error=ピア {{id}} ({{host}}:{{port}}) へのキャッシュ {{cache}} のフラッシュ送信エラー: {{error}}
 cluster.flush.sent={{cache}} のキャッシュフラッシュをピア {{id}} に送信しました
 cluster.health.list.error=ヘルスチェック中のクラスターメンバーの一覧表示エラー: {{error}}
+cluster.health.stopped=サーバーのシャットダウン中にクラスターヘルスチェッカーが停止しました
 cluster.health.self.update.error=クラスターテーブルでの自身のlast_seen更新エラー: {{error}}
 cluster.init.failed=クラスターの初期化に失敗しました: {{err}}
 cluster.join=ノード {{id}} がクラスター "{{name}}" に {{host}}:{{port}} で参加しました
@@ -1723,6 +1724,7 @@ server.service.dir=ディレクトリ {{path}} をスキャン中...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid={{file}} の無効なエンドポイント定義: {{error}}
 server.interrupt=サーバーがSIGINTシャットダウンシグナルを受信しました
+server.debug.session.closed=ユーザー {{user}} の放棄されたデバッグセッション {{session}} を閉じました
 server.panic.recovered=セッション {{session}} のパニックから回復しました。{{method}} {{path}}、{{error}}
 server.panic.stack=セッション {{session}} のパニックスタックトレース、{{stack}}
 server.panic.task=バックグラウンドタスク {{task}} のパニックから回復しました、{{error}}

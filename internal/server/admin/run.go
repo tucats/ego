@@ -127,6 +127,55 @@ func init() {
 
 	// Debug sessions expire after 15 minutes of inactivity.
 	caches.SetExpiration(caches.DebugSessionCache, "15m")
+
+	// GORTNS-2: an entry in the debug session cache is not just data -- it owns a
+	// live goroutine. debugger.Resume starts that goroutine on the first call and
+	// leaves it parked on a channel, waiting for the next command from the REST
+	// client. Nothing wakes it up on its own.
+	//
+	// Before this hook existed, an abandoned session (client disconnected, or
+	// simply stopped sending commands) expired out of the cache after 15 minutes
+	// and the map entry was dropped -- but the goroutine stayed blocked forever,
+	// still holding its bytecode, symbol table, and captured program output. That
+	// leaked a goroutine per abandoned session. Worse, expiry frees the
+	// maxDebugSessions slot, so an admin could keep starting new sessions
+	// indefinitely and accumulate orphaned goroutines without ever hitting the cap.
+	//
+	// debugger.Close was written for exactly this teardown but had no caller.
+	// Registering it as the cache eviction handler closes the loop: whenever a
+	// debug session leaves the cache -- expired, or explicitly deleted when it
+	// finishes -- the goroutine behind it is told to exit.
+	caches.SetOnEvict(releaseEvictedCacheItem)
+}
+
+// releaseEvictedCacheItem is the caches eviction handler. It runs whenever any
+// cache drops an item, so it must first check that the item is one it cares
+// about before doing anything.
+//
+// It is called with no cache lock held (see caches.SetOnEvict) and must
+// return promptly. debugger.Close satisfies that: it does a non-blocking channel
+// send and returns immediately, and it is safe to call on a session that has
+// already finished, in which case it does nothing.
+func releaseEvictedCacheItem(id int, key any, value any) {
+	if id != caches.DebugSessionCache {
+		return
+	}
+
+	// The two-value form of the type assertion is important here. This handler
+	// receives every eviction from every cache, so a value of an unexpected type
+	// is a normal condition to tolerate rather than a reason to panic. It also
+	// covers the nil case, since a nil interface never satisfies a concrete type.
+	entry, ok := value.(*debugSession)
+	if !ok || entry == nil || entry.ctx == nil {
+		return
+	}
+
+	ui.Log(ui.ServerLogger, "server.debug.session.closed", ui.A{
+		"session": fmt.Sprintf("%v", key),
+		"user":    entry.owner,
+	})
+
+	debugger.Close(entry.ctx)
 }
 
 // RunCodeHandler is the HTTP handler for POST /admin/run.
