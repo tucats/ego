@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -219,12 +220,22 @@ func PurgeLogs() int {
 		return count
 	}
 
-	// Derive the per-instance prefix from the base log filename stem so that
-	// purging is scoped to this specific server instance (cluster name + port).
-	// For example, base "ego-server_foo_8501.log" → prefix "ego-server_foo_8501_".
+	// Derive the per-instance name pattern from the base log filename stem so
+	// that purging is scoped to this specific server instance (cluster name +
+	// port). A plain prefix match is not enough here: a standalone server's
+	// stem (e.g. "ego-server_") is itself a string prefix of a cluster
+	// member's qualified stem (e.g. "ego-server_gang_8501_"), which would
+	// cause the standalone instance to scoop up and archive/delete another
+	// instance's log files. Anchoring the match to the exact rollover
+	// timestamp format that timeStampLogFileName() appends ensures only this
+	// instance's own rolled-over files are matched.
+	// For example, base "ego-server_foo_8501.log" → pattern
+	// "ego-server_foo_8501_" + timestamp + ".log".
 	logStem := strings.TrimSuffix(filepath.Base(baseLogFileName), ".log") + "_"
+	logNamePattern := regexp.MustCompile("^" + regexp.QuoteMeta(logStem) + `\d{4}-\d{2}-\d{2}-\d{6}\.log$`)
+
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), logStem) && !file.IsDir() {
+		if logNamePattern.MatchString(file.Name()) && !file.IsDir() {
 			names = append(names, file.Name())
 		}
 	}
