@@ -43,7 +43,7 @@ func StartHealthChecker() {
 	for {
 		time.Sleep(interval)
 
-		peers, err := ListActiveMembers(systemDB)
+		peers, err := ListActiveMembers(systemDB, ClusterName)
 		if err != nil {
 			ui.Log(ui.ServerLogger, "cluster.health.list.error", ui.A{
 				"error": err.Error(),

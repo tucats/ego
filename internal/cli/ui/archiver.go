@@ -2,12 +2,25 @@ package ui
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 )
 
 var archiveLogFileName string
+
+// Tuning parameters for the cross-process archive lock. A cluster's nodes can
+// share a single archive file and directory, and all nodes typically roll
+// their logs over at the same wall-clock boundary, so writes to the shared
+// archive must be serialized across processes, not just goroutines.
+const (
+	archiveLockRetryInterval = 50 * time.Millisecond
+	archiveLockMaxWait       = 10 * time.Second
+	archiveLockStaleAfter    = 30 * time.Second
+)
 
 // SetArchive is used to set the archive string value. This can be done from the App
 // object during initialization using a configuration item, or by the command line
@@ -23,8 +36,16 @@ func ArchiveLogFileName() string {
 }
 
 // Given a log file name, add it to the archive log file. If the archive log file
-// does not exist, it is created.
+// does not exist, it is created. Access to the archive is serialized across
+// processes with a lock file, since multiple nodes of a cluster can share the
+// same archive file and directory.
 func addToLogArchive(fileName string) error {
+	unlock, err := acquireArchiveLock(archiveLogFileName)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	newArchiveName := archiveLogFileName + ".new"
 
 	zipReader, err := zip.OpenReader(archiveLogFileName)
@@ -79,6 +100,48 @@ func addToLogArchive(fileName string) error {
 	_ = targetFile.Close()
 
 	return os.Rename(newArchiveName, archiveLogFileName)
+}
+
+// acquireArchiveLock obtains an exclusive, cross-process lock on the given
+// archive file using an atomically-created lock file (relies on O_EXCL, so it
+// works the same way on every platform this project supports). It returns a
+// function that releases the lock; the caller must invoke it (typically via
+// defer) once done with the archive.
+//
+// A lock file older than archiveLockStaleAfter is assumed to be left over from
+// a process that died while holding it, and is removed so progress can
+// continue.
+func acquireArchiveLock(archiveName string) (func(), error) {
+	lockName := archiveName + ".lock"
+	deadline := time.Now().Add(archiveLockMaxWait)
+
+	for {
+		lockFile, err := os.OpenFile(lockName, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if err == nil {
+			_, _ = lockFile.WriteString(strconv.Itoa(os.Getpid()))
+			lockFile.Close()
+
+			return func() { _ = os.Remove(lockName) }, nil
+		}
+
+		if !os.IsExist(err) {
+			return nil, err
+		}
+
+		if info, statErr := os.Stat(lockName); statErr == nil {
+			if time.Since(info.ModTime()) > archiveLockStaleAfter {
+				_ = os.Remove(lockName)
+
+				continue
+			}
+		}
+
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("timed out waiting for archive lock %s", lockName)
+		}
+
+		time.Sleep(archiveLockRetryInterval)
+	}
 }
 
 func copyExistingArchive(zipReader *zip.ReadCloser, targetZipWriter *zip.Writer) error {

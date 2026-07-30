@@ -43,7 +43,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 	createTestTable(t, db)
 
 	// ListMembers on an empty table must return an empty slice, not an error.
-	members, err := ListMembers(db)
+	members, err := ListMembers(db, ClusterName)
 	if err != nil {
 		t.Fatalf("ListMembers (empty): %v", err)
 	}
@@ -63,7 +63,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 		t.Fatalf("upsertMember (insert): %v", err)
 	}
 
-	members, err = ListMembers(db)
+	members, err = ListMembers(db, "test-cluster")
 	if err != nil {
 		t.Fatalf("ListMembers after insert: %v", err)
 	}
@@ -81,7 +81,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 		t.Fatalf("upsertMember (update/conflict): %v", err)
 	}
 
-	members, err = ListMembers(db)
+	members, err = ListMembers(db, "test-cluster")
 	if err != nil {
 		t.Fatalf("ListMembers after upsert update: %v", err)
 	}
@@ -100,7 +100,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 		t.Fatalf("RemoveMember: %v", err)
 	}
 
-	members, err = ListMembers(db)
+	members, err = ListMembers(db, "test-cluster")
 	if err != nil {
 		t.Fatalf("ListMembers after RemoveMember: %v", err)
 	}

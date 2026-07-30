@@ -13,14 +13,32 @@ import (
 //
 // An empty slice (not an error) is returned when no rows exist, which happens
 // the first time a cluster is started.
-func ListMembers(db *sql.DB) ([]defs.ClusterMember, error) {
-	rows, err := db.Query(
-		`SELECT name, node_id, host, port, scheme, joined_at, last_seen, state
-		   FROM cluster
-		  WHERE name = $1
-		  ORDER BY joined_at`,
-		ClusterName,
+func ListMembers(db *sql.DB, name string) ([]defs.ClusterMember, error) {
+	var (
+		err  error
+		rows *sql.Rows
 	)
+
+	if name == "" {
+		name = ClusterName
+	}
+
+	if name != "" {
+		rows, err = db.Query(
+			`SELECT name, node_id, host, port, scheme, joined_at, last_seen, state
+				FROM cluster
+				WHERE name = $1
+		  		ORDER BY joined_at`,
+			name,
+		)
+	} else {
+		rows, err = db.Query(
+			`SELECT name, node_id, host, port, scheme, joined_at, last_seen, state
+				FROM cluster
+		  		ORDER BY joined_at`,
+		)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +66,8 @@ func ListMembers(db *sql.DB) ([]defs.ClusterMember, error) {
 // ListActiveMembers returns only the "active" members of the cluster, excluding
 // this node itself. This is the list the health checker and cache-invalidation
 // broadcaster use to determine which peers to contact.
-func ListActiveMembers(db *sql.DB) ([]defs.ClusterMember, error) {
-	all, err := ListMembers(db)
+func ListActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error) {
+	all, err := ListMembers(db, name)
 	if err != nil {
 		return nil, err
 	}

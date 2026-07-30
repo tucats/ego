@@ -28,7 +28,7 @@ func BroadcastCacheFlush(cacheID int) {
 		return
 	}
 
-	peers, err := ListActiveMembers(systemDB)
+	peers, err := ListActiveMembers(systemDB, ClusterName)
 	if err != nil {
 		ui.Log(ui.ServerLogger, "cluster.broadcast.error", ui.A{
 			"error": err.Error(),

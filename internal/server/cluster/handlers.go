@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/util"
 )
@@ -25,11 +26,17 @@ import (
 //	r.New("/services/cluster", cluster.ClusterStatusHandler, http.MethodGet).
 //	    Authentication(true, true)
 func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	if systemDB == nil {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.not.running"), http.StatusNotFound)
+	sysDb, err := openSystemDB(nil)
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
-	members, err := ListMembers(systemDB)
+	name := ""
+	if n, found := session.URLParts[name]; found {
+		name = data.String(n)
+	}
+
+	members, err := ListMembers(sysDb, name)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}

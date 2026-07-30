@@ -15,9 +15,9 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/util/fork"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/runtime/rest"
+	"github.com/tucats/ego/internal/util/fork"
 )
 
 // ClusterShow is the CLI handler for showing the current cluster membership state.
@@ -34,8 +34,16 @@ import (
 //	Verb:        ego cluster server show
 func ClusterShow(c *cli.Context) error {
 	response := defs.ClusterStatusResponse{}
+	urlPath := defs.ServicesClusterPath
 
-	if err := rest.Exchange(defs.ServicesClusterPath, http.MethodGet, nil, &response, defs.AdminAgent); err != nil {
+	// If a parameter was given, it's the name of the cluster to display. Otherwise,
+	// the endpoint will report on all clusters.
+
+	if parms := c.FindGlobal().Parameters; len(parms) == 1 {
+		urlPath = urlPath + "/" + parms[0]
+	}
+
+	if err := rest.Exchange(urlPath, http.MethodGet, nil, &response, defs.AdminAgent); err != nil {
 		return err
 	}
 

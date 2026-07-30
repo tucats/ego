@@ -17,15 +17,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/cli/app"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/caches"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/runtime/profile"
 	"github.com/tucats/ego/internal/runtime/rest"
@@ -35,7 +36,6 @@ import (
 	"github.com/tucats/ego/internal/server/oauth/authserver"
 	"github.com/tucats/ego/internal/server/oauth/rshandlers"
 	"github.com/tucats/ego/internal/server/services"
-	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -138,10 +138,11 @@ func RunServer(c *cli.Context) error {
 		if fn, ok := c.String("log-file"); ok {
 			fn = qualifyServerLogFileName(fn, clusterName, effectivePort, defaultPort)
 
-			// Re-qualify the archive filename with the same cluster/port identifiers
-			// so that each server instance archives to a distinct ZIP file.
+			// Re-qualify the archive filename with the cluster identifier only (no
+			// port), so that every node in the cluster archives its rolled-over logs
+			// into the same cluster-wide ZIP file instead of one archive per node.
 			if archive := ui.ArchiveLogFileName(); archive != "" {
-				ui.SetArchive(qualifyServerLogFileName(archive, clusterName, effectivePort, defaultPort))
+				ui.SetArchive(qualifyArchiveFileName(archive, clusterName))
 			}
 
 			if err := ui.OpenLogFile(fn, true); err != nil {
@@ -700,7 +701,7 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	// Cluster control endpoints. These use the cluster HMAC token for auth,
 	// not standard admin credentials, so they do not set Authentication(true, ...).
-	r.New(defs.ServicesClusterPath, cluster.ClusterStatusHandler, http.MethodGet).
+	r.New(defs.ServicesClusterPath+"/{{name}}", cluster.ClusterStatusHandler, http.MethodGet).
 		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.JSONMediaType)
@@ -1176,4 +1177,23 @@ func qualifyServerLogFileName(fn, clusterName string, port, defaultPort int) str
 	}
 
 	return fn
+}
+
+// qualifyArchiveFileName inserts a cluster-name qualifier (but never a port)
+// into a base archive filename before the file extension, so that every node
+// in a cluster shares the same archive file regardless of which port it is
+// listening on.
+//
+// Rules:
+//   - Cluster mode (clusterName != ""): appends "_<clusterName>"
+//   - Standalone: returns fn unchanged
+func qualifyArchiveFileName(fn, clusterName string) string {
+	if clusterName == "" {
+		return fn
+	}
+
+	ext := filepath.Ext(fn)
+	stem := strings.TrimSuffix(fn, ext)
+
+	return stem + "_" + clusterName + ext
 }
