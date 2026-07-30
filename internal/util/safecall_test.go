@@ -10,6 +10,8 @@ import (
 	"github.com/tucats/ego/internal/defs"
 )
 
+const testValue = "value"
+
 // withRecoverySetting sets ego.server.panic.recovery for the duration of a test
 // and restores the previous state afterwards, including the case where the key
 // was not present at all -- which is a distinct state from "present but empty"
@@ -70,7 +72,7 @@ func TestSafeCallRecoversPanic_NILPTR6(t *testing.T) {
 	if completed := SafeCall("nil map write", func() {
 		var broken map[string]string
 
-		broken["key"] = "value"
+		broken["key"] = testValue
 	}); completed {
 		t.Error("SafeCall reported completed = true for a task that panicked")
 	}
@@ -110,7 +112,7 @@ func TestSafeCallLoopSurvivesPanic_NILPTR6(t *testing.T) {
 			if iterations%2 == 1 {
 				var broken map[string]string
 
-				broken["key"] = "value"
+				broken["key"] = testValue
 			}
 		})
 	}
@@ -133,7 +135,7 @@ func TestSafeCallPropagatesWhenDisabled_NILPTR6(t *testing.T) {
 		SafeCall("nil map write", func() {
 			var broken map[string]string
 
-			broken["key"] = "value"
+			broken["key"] = testValue
 		})
 
 		return nil

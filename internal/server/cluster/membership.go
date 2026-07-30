@@ -11,6 +11,12 @@ import (
 	"github.com/tucats/ego/internal/runtime/rest"
 )
 
+const (
+	ActiveState   = "active"
+	RemovedState  = "removed"
+	InactiveState = "inactive"
+)
+
 // ListMembers returns all rows from the cluster table for the current cluster
 // name. Both "active" and "removed" members are returned so that callers can
 // distinguish recently departed nodes from ones that were never in this cluster.
@@ -80,7 +86,7 @@ func ListAllActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error)
 
 	for _, m := range all {
 		// Let's verify the node is actually up (assuming it's not ourselves)
-		if m.NodeID != NodeID && m.State == "active" {
+		if m.NodeID != NodeID && m.State == ActiveState {
 			urlPath := m.Scheme + "://" + m.Host + ":" + strconv.Itoa(m.Port) + "/services/up"
 			resp := defs.RemoteStatusResponse{}
 
@@ -98,7 +104,7 @@ func ListAllActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error)
 
 			if evict {
 				result, err := db.Exec(`UPDATE cluster SET state=$1 WHERE node_id = $2`,
-					"inactive", m.NodeID)
+					InactiveState, m.NodeID)
 				if err != nil {
 					return nil, err
 				}
@@ -107,11 +113,11 @@ func ListAllActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error)
 					return nil, errors.ErrInternalRuntime.Chain(errors.Message("unable to delete " + m.NodeID))
 				}
 
-				m.State = "inactive"
+				m.State = InactiveState
 			}
 		}
 
-		if m.State == "active" {
+		if m.State == ActiveState {
 			active = append(active, m)
 		}
 	}
@@ -131,7 +137,7 @@ func ListActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error) {
 	var active []defs.ClusterMember
 
 	for _, m := range all {
-		if m.State == "active" && m.NodeID != NodeID {
+		if m.State == ActiveState && m.NodeID != NodeID {
 			active = append(active, m)
 		}
 	}

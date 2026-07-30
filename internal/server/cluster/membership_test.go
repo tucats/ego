@@ -56,7 +56,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 	m1 := defs.ClusterMember{
 		Name: "test-cluster", NodeID: "node-aaa",
 		Host: "host1", Port: 4040, Scheme: "https",
-		JoinedAt: now, LastSeen: now, State: "active",
+		JoinedAt: now, LastSeen: now, State: ActiveState,
 	}
 
 	if err := upsertMember(db, m1); err != nil {
@@ -105,7 +105,7 @@ func testMembershipOps(t *testing.T, db *sql.DB) {
 		t.Fatalf("ListMembers after RemoveMember: %v", err)
 	}
 
-	if len(members) != 1 || members[0].State != "removed" {
+	if len(members) != 1 || members[0].State != RemovedState {
 		t.Fatalf("after RemoveMember: expected state 'removed', got %v", members)
 	}
 }
