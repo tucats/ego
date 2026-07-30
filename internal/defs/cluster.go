@@ -60,6 +60,20 @@ type ClusterFlushRequest struct {
 	// SenderID is the NodeID of the server that detected the change and is
 	// requesting the flush. Used for logging only.
 	SenderID string `json:"sender_id"`
+
+	// Hops counts how many times this notification has been relayed between
+	// nodes. The node where the purge originates sends 1; a node that forwards a
+	// notification it received would send one more than it was given.
+	//
+	// CLUSTER-1: this is a circuit breaker, not the primary loop fix. A receiving
+	// node drops any flush whose hop count exceeds the cluster package's limit, so
+	// even if a future change reintroduced forwarding, a storm would die out after
+	// a bounded number of rounds instead of running forever.
+	//
+	// The field is omitempty so that a node running an older build, which does not
+	// send it, decodes as 0 and is treated as a first-hop message rather than
+	// being rejected.
+	Hops int `json:"hops,omitempty"`
 }
 
 // ClusterCacheNames maps integer cache class constants to human-readable names

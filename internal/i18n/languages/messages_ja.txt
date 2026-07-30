@@ -1214,6 +1214,7 @@ cluster.evict=ノード {{id}} がクラスター "{{name}}" から退避され�
 cluster.evict.error=クラスターノード {{id}} の退避エラー: {{error}}
 cluster.flush=ピア {{peer}} の要求によりキャッシュ {{cache}} をフラッシュ中
 cluster.flush.error=ピア {{id}} ({{host}}:{{port}}) へのキャッシュ {{cache}} のフラッシュ送信エラー: {{error}}
+cluster.flush.hops=ピア {{peer}} からのキャッシュ {{cache}} のフラッシュを破棄します。ホップ数 {{hops}} が上限 {{limit}} を超えています
 cluster.flush.sent={{cache}} のキャッシュフラッシュをピア {{id}} に送信しました
 cluster.health.list.error=ヘルスチェック中のクラスターメンバーの一覧表示エラー: {{error}}
 cluster.health.stopped=サーバーのシャットダウン中にクラスターヘルスチェッカーが停止しました

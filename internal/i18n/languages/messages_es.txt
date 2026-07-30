@@ -1230,6 +1230,7 @@ cluster.evict=Node {{id}} evicted from cluster "{{name}}": no response after {{t
 cluster.evict.error=Error evicting cluster node {{id}}: {{error}}
 cluster.flush=Flushing cache {{cache}} at request of peer {{peer}}
 cluster.flush.error=Error sending cache flush to peer {{id}} ({{host}}:{{port}}) for cache {{cache}}: {{error}}
+cluster.flush.hops=Descartando vaciado de caché {{cache}} del par {{peer}}, saltos {{hops}} excede el límite {{limit}}
 cluster.flush.sent=Cache flush for {{cache}} sent to peer {{id}}
 cluster.health.list.error=Error listing cluster members during health check: {{error}}
 cluster.health.stopped=El verificador de salud del clúster se detuvo durante el apagado del servidor

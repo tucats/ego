@@ -80,7 +80,41 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	}
 
 	cacheID := req.CacheID
-	caches.Purge(cacheID)
+
+	// CLUSTER-1: reject a notification that has been relayed too many times.
+	//
+	// This should never fire. With the PurgeLocal call below, a received
+	// notification is never re-broadcast, so hop counts do not grow and every
+	// legitimate request arrives with a count of 1. The check is a circuit breaker
+	// against a future change that reintroduces forwarding: rather than letting a
+	// storm run unbounded, the cluster would go quiet after maxFlushHops rounds
+	// and leave a clear trail of warnings in the log explaining why.
+	//
+	// A request from an older build carries no hops field, which decodes as 0 and
+	// so passes this check as a first-hop message.
+	if req.Hops > maxFlushHops {
+		ui.Log(ui.ServerLogger, "cluster.flush.hops", ui.A{
+			"session": session.ID,
+			"cache":   cacheName(cacheID),
+			"peer":    req.SenderID,
+			"hops":    req.Hops,
+			"limit":   maxFlushHops,
+		})
+
+		// Answer 200 rather than an error status. The sender cannot do anything
+		// useful with a failure here, and returning an error would only add a
+		// second stream of log noise on its side while a loop is being contained.
+		return writeFlushResponse(session, w, cacheID)
+	}
+
+	// PurgeLocal, NOT Purge. This is the single line that breaks the notification
+	// loop described in CLUSTER-1: Purge fires the OnPurge hook, which broadcasts
+	// the invalidation to every peer, so calling it here would make this node
+	// answer every notification it receives with a notification of its own. Two
+	// nodes did that to each other indefinitely. PurgeLocal discards the cache
+	// without notifying anyone, which is exactly right for a purge that arrived
+	// from somewhere else -- the originating node has already told the other peers.
+	caches.PurgeLocal(cacheID)
 
 	ui.Log(ui.ServerLogger, "cluster.flush", ui.A{
 		"session": session.ID,
@@ -88,6 +122,14 @@ func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		"peer":    req.SenderID,
 	})
 
+	return writeFlushResponse(session, w, cacheID)
+}
+
+// writeFlushResponse sends the JSON reply for a cache-flush request. It is a
+// separate function because FlushCacheHandler has two exits that both need to
+// answer 200 with the same body: the normal one after the cache is purged, and
+// the CLUSTER-1 hop-limit path that deliberately does no work.
+func writeFlushResponse(session *router.Session, w http.ResponseWriter, cacheID int) int {
 	response := struct {
 		defs.ServerInfo `json:"server"`
 		Status          int    `json:"status"`
