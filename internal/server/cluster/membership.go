@@ -2,9 +2,13 @@ package cluster
 
 import (
 	"database/sql"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/runtime/rest"
 )
 
 // ListMembers returns all rows from the cluster table for the current cluster
@@ -61,6 +65,58 @@ func ListMembers(db *sql.DB, name string) ([]defs.ClusterMember, error) {
 	}
 
 	return members, rows.Err()
+}
+
+// ListActiveMembers returns only the "active" members of the cluster, INCLUDING
+// this node itself. This is the list used to report cluster membership via the
+// endpoint /services/cluster/{{name}}.
+func ListAllActiveMembers(db *sql.DB, name string) ([]defs.ClusterMember, error) {
+	all, err := ListMembers(db, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var active []defs.ClusterMember
+
+	for _, m := range all {
+		// Let's verify the node is actually up (assuming it's not ourselves)
+		if m.NodeID != NodeID && m.State == "active" {
+			urlPath := m.Scheme + "://" + m.Host + ":" + strconv.Itoa(m.Port) + "/services/up"
+			resp := defs.RemoteStatusResponse{}
+
+			err := rest.Exchange(urlPath, http.MethodGet, nil, &resp, "ego cluster")
+
+			evict := false
+			if err != nil {
+				evict = true
+			}
+
+			// If this is stale data from a previous cluster incarnation, also not valid.
+			if m.NodeID != resp.ID {
+				evict = true
+			}
+
+			if evict {
+				result, err := db.Exec(`UPDATE cluster SET state=$1 WHERE node_id = $2`,
+					"inactive", m.NodeID)
+				if err != nil {
+					return nil, err
+				}
+
+				if count, _ := result.RowsAffected(); count != 1 {
+					return nil, errors.ErrInternalRuntime.Chain(errors.Message("unable to delete " + m.NodeID))
+				}
+
+				m.State = "inactive"
+			}
+		}
+
+		if m.State == "active" {
+			active = append(active, m)
+		}
+	}
+
+	return active, nil
 }
 
 // ListActiveMembers returns only the "active" members of the cluster, excluding

@@ -113,9 +113,9 @@ func (c *Context) RunFromAddress(addr int) error {
 				}
 			}
 
+		// RunFromAddress has finished, so this watcher is no longer needed.
+		// Returning here is what lets the goroutine be reclaimed.
 		case <-done:
-			// RunFromAddress has finished, so this watcher is no longer needed.
-			// Returning here is what lets the goroutine be reclaimed.
 		}
 	}(c)
 

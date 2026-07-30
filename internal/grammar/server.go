@@ -14,15 +14,10 @@ import (
 var ClusterStartGrammar = []cli.Option{
 	{
 		LongName:    "ports",
+		Aliases:     []string{"port"},
 		ShortName:   "p",
-		OptionType:  cli.StringListType,
+		OptionType:  cli.RangeType,
 		Description: "cluster.start.ports",
-	},
-	{
-		LongName:    "cluster",
-		ShortName:   "C",
-		Description: "opt.server.cluster",
-		OptionType:  cli.StringType,
 	},
 	{
 		LongName:    "not-secure",
@@ -123,12 +118,15 @@ var ClusterNodeGrammar = []cli.Option{
 // (traditional) or "ego cluster server" (verb-object). Sub-verbs: start, show, stop, remove.
 var ClusterSubVerbGrammar = []cli.Option{
 	{
-		LongName:    "start",
-		Description: "ego.cluster.start",
-		OptionType:  cli.Subcommand,
-		Action:      commands.ClusterStart,
-		Unsupported: []string{"windows"},
-		Value:       ClusterStartGrammar,
+		LongName:      "start",
+		Description:   "ego.cluster.start",
+		OptionType:    cli.Subcommand,
+		Action:        commands.ClusterStart,
+		ParmDesc:      "parm.cluster.name",
+		ExpectedParms: 1,
+		Prompts:       []string{"prompt.cluster.name"},
+		Unsupported:   []string{"windows"},
+		Value:         ClusterStartGrammar,
 	},
 	{
 		LongName:    "show",
@@ -165,12 +163,16 @@ var ClusterSubVerbGrammar = []cli.Option{
 // The "start" sub-entry handles the shorthand "ego cluster start" directly.
 var ClusterVerbGrammar = []cli.Option{
 	{
-		LongName:    "start",
-		Description: "ego.cluster.start",
-		Action:      commands.ClusterStart,
-		OptionType:  cli.Subcommand,
-		Unsupported: []string{"windows"},
-		Value:       ClusterStartGrammar,
+		LongName:      "start",
+		Description:   "ego.cluster.start",
+		Action:        commands.ClusterStart,
+		ParmDesc:      "parm.cluster.name",
+		ExpectedParms: defs.VariableParameterCount,
+		MinParams:     1,
+		Prompts:       []string{"prompt.cluster.name"},
+		OptionType:    cli.Subcommand,
+		Unsupported:   []string{"windows"},
+		Value:         ClusterStartGrammar,
 	},
 	{
 		LongName:    "server",
@@ -192,12 +194,15 @@ var StartVerbGrammar = []cli.Option{
 		Value:       ServerRunGrammar,
 	},
 	{
-		LongName:    "cluster",
-		Description: "ego.cluster.start",
-		Action:      commands.ClusterStart,
-		OptionType:  cli.Subcommand,
-		Unsupported: []string{"windows"},
-		Value:       ClusterStartGrammar,
+		LongName:      "cluster",
+		Description:   "ego.cluster.start",
+		Action:        commands.ClusterStart,
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "parm.cluster.name",
+		ExpectedParms: 1,
+		Prompts:       []string{"prompt.cluster.name"},
+		Unsupported:   []string{"windows"},
+		Value:         ClusterStartGrammar,
 	},
 }
 

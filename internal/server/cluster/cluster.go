@@ -28,12 +28,12 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/lib/pq"
+	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/defs"
-	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
 )
 
@@ -170,7 +170,15 @@ func Shutdown() {
 // WAL mode and a busy-timeout are applied immediately after opening so that
 // the cluster table operations can coexist with the auth and DSN writers.
 func openSystemDB(c *cli.Context) (*sql.DB, error) {
-	connStr, found := c.String("users")
+	var (
+		connStr string
+		found   bool
+	)
+
+	if c != nil {
+		connStr, found = c.String("users")
+	}
+	
 	if !found || connStr == "" {
 		connStr = settings.Get(defs.LogonUserdataSetting)
 	}

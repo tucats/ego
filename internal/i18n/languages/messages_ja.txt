@@ -692,6 +692,7 @@ cache.stat.user.items=ユーザーキャッシュ項目
 Class=クラス
 cluster.host=ホスト
 cluster.joined=参加日時
+cluster.name=クラスター
 cluster.node.id=ノードID
 cluster.port=ポート
 cluster.seen=最終確認
@@ -783,6 +784,7 @@ Version=バージョン
 version=バージョン
 
 prompt.cache.size=キャッシュサイズは?
+prompt.cluster.name=クラスター名は?
 prompt.dsn=データソース名は?
 prompt.database.name=データベース名は?
 prompt.database.type=データベースタイプは?
@@ -843,6 +845,7 @@ server.cache.one.service=キャッシュにサービス項目が1個あります
 server.cache.services=キャッシュにサービス項目が{{count}}個あります。最大キャッシュサイズは{{limit}}項目です。
 server.cache.updated=サーバーキャッシュサイズを更新しました
 server.cluster=クラスター {{name}}、ノード {{id}} が提供
+server.clusters=すべてのクラスター、ノード {{id}} が提供
 server.cluster.no.members=クラスターメンバーが見つかりません
 server.cluster.no.active=アクティブなクラスターノードが見つかりません
 server.cluster.removed=クラスターノード {{id}} を削除しました
@@ -1170,6 +1173,7 @@ server.insecure.redirect=trueの場合、HTTPエンドポイントから対応�
 [parm]
 address.port=<address>:<port>
 config.key.value=<key>=<value>
+cluster.name=cluster-name
 file=<file-name>
 file.or.path=<file or path>
 key=<key>

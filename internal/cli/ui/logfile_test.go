@@ -68,6 +68,7 @@ func TestPurgeLogsIgnoresOtherInstances(t *testing.T) {
 			t.Fatalf("Failed to create test file %s: %v", name, err)
 		}
 	}
+	
 	PurgeLogs()
 
 	// The cluster member's log files must be completely untouched.

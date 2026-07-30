@@ -707,6 +707,7 @@ cache.stat.user.items=User Cached Items
 Class=Class
 cluster.host=Host
 cluster.joined=Joined At
+cluster.name=Cluster
 cluster.node.id=Node ID
 cluster.port=Port
 cluster.seen=Last Seen
@@ -798,6 +799,7 @@ Version=Version
 version=version
 
 prompt.cache.size=Cache size?
+prompt.cluster.name=Cluster name?
 prompt.dsn=Data source name?
 prompt.database.name=Database name?
 prompt.database.type=Database type?
@@ -861,6 +863,7 @@ server.cache.one.service=There is 1 service item in cache. The maximum cache siz
 server.cache.services=There are {{count}} service {{count|cardinal item,items}} in cache. The maximum cache size is {{limit}} items.
 server.cache.updated=Server cache size updated
 server.cluster=Cluster {{name}}, served by node {{id}}
+server.clusters=All clusters, served by node {{id}}
 server.cluster.no.members=No cluster members found
 server.cluster.no.active=No active cluster nodes found
 server.cluster.removed=Cluster node {{id}} removed
@@ -1199,6 +1202,7 @@ server.insecure.redirect=If true, set up a redirector from HTTP endpoints to cor
 [parm]
 address.port=<address>:<port>
 config.key.value=<key>=<value>
+cluster.name=cluster-name
 file=<file-name>
 file.or.path=<file or path>
 key=<key>

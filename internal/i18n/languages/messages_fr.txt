@@ -695,6 +695,7 @@ cache.stat.user.items=Éléments en cache utilisateur
 Class=Classe
 cluster.host=Host
 cluster.joined=Joined At
+cluster.name=Cluster
 cluster.node.id=Node ID
 cluster.port=Port
 cluster.seen=Last Seen
@@ -786,6 +787,7 @@ Version=Version
 version=version
 
 prompt.cache.size=Taille du cache ?
+prompt.cluster.name=Nom du cluster ?
 prompt.dsn=Nom de source de données ?
 prompt.database.name=Nom de la base de données ?
 prompt.database.type=Type de base de données ?
@@ -847,6 +849,7 @@ server.cache.one.service=Il y a 1 élément de service en cache. La taille maxim
 server.cache.services=Il y a {{count}} {{count|cardinal élément, éléments}} de service en cache. La taille maximale du cache est de {{limit}} éléments.
 server.cache.updated=Taille du cache du serveur mise à jour
 server.cluster=Cluster {{name}}, served by node {{id}}
+server.clusters=Tous les clusters, servis par le nœud {{id}}
 server.cluster.no.members=No cluster members found
 server.cluster.no.active=No active cluster nodes found
 server.cluster.removed=Cluster node {{id}} removed
@@ -1177,6 +1180,7 @@ server.oauth.permission.map=Paires scope=permission séparées par virgules asso
 [parm]
 address.port=<adresse>:<port>
 config.key.value=<clé>=<valeur>
+cluster.name=nom-cluster
 file=<nom-de-fichier>
 file.or.path=<fichier ou chemin>
 key=<clé>

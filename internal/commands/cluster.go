@@ -35,12 +35,14 @@ import (
 func ClusterShow(c *cli.Context) error {
 	response := defs.ClusterStatusResponse{}
 	urlPath := defs.ServicesClusterPath
+	cluster := ""
 
 	// If a parameter was given, it's the name of the cluster to display. Otherwise,
 	// the endpoint will report on all clusters.
 
 	if parms := c.FindGlobal().Parameters; len(parms) == 1 {
-		urlPath = urlPath + "/" + parms[0]
+		cluster = parms[0]
+		urlPath = urlPath + "/" + cluster
 	}
 
 	if err := rest.Exchange(urlPath, http.MethodGet, nil, &response, defs.AdminAgent); err != nil {
@@ -51,10 +53,16 @@ func ClusterShow(c *cli.Context) error {
 		return c.Output(response)
 	}
 
-	fmt.Printf("%s\n", i18n.M("server.cluster", map[string]any{
-		"name": response.ClusterName,
-		"id":   response.ServerInfo.ID,
-	}))
+	if cluster == "" {
+		fmt.Printf("%s\n", i18n.M("server.clusters", map[string]any{
+			"id": response.ServerInfo.ID,
+		}))
+	} else {
+		fmt.Printf("%s\n", i18n.M("server.cluster", map[string]any{
+			"name": cluster,
+			"id":   response.ServerInfo.ID,
+		}))
+	}
 
 	if len(response.Members) == 0 {
 		fmt.Printf("  %s\n\n", i18n.M("server.cluster.no.members"))
@@ -62,26 +70,52 @@ func ClusterShow(c *cli.Context) error {
 		return nil
 	}
 
-	t, _ := tables.New([]string{
-		i18n.L("cluster.node.id"),
-		i18n.L("cluster.host"),
-		i18n.L("cluster.port"),
-		i18n.L("cluster.state"),
-		i18n.L("cluster.joined"),
-		i18n.L("cluster.seen"),
-	})
+	var t *tables.Table
+
+	if cluster == "" {
+		t, _ = tables.New([]string{
+			i18n.L("cluster.name"),
+			i18n.L("cluster.node.id"),
+			i18n.L("cluster.host"),
+			i18n.L("cluster.port"),
+			i18n.L("cluster.state"),
+			i18n.L("cluster.joined"),
+			i18n.L("cluster.seen"),
+		})
+	} else {
+		t, _ = tables.New([]string{
+			i18n.L("cluster.node.id"),
+			i18n.L("cluster.host"),
+			i18n.L("cluster.port"),
+			i18n.L("cluster.state"),
+			i18n.L("cluster.joined"),
+			i18n.L("cluster.seen"),
+		})
+	}
 
 	_ = t.SetAlignment(2, tables.AlignmentRight)
 
 	for _, m := range response.Members {
-		_ = t.AddRowItems(
-			m.NodeID,
-			m.Host,
-			m.Port,
-			m.State,
-			m.JoinedAt,
-			m.LastSeen,
-		)
+		if cluster == "" {
+			_ = t.AddRowItems(
+				m.Name,
+				m.NodeID,
+				m.Host,
+				m.Port,
+				m.State,
+				m.JoinedAt,
+				m.LastSeen,
+			)
+		} else {
+			_ = t.AddRowItems(
+				m.NodeID,
+				m.Host,
+				m.Port,
+				m.State,
+				m.JoinedAt,
+				m.LastSeen,
+			)
+		}
 	}
 
 	_ = t.SetIndent(2)
@@ -223,10 +257,16 @@ func ClusterRemoveNode(c *cli.Context) error {
 func ClusterStart(c *cli.Context) error {
 	clusterName, ok := c.String("cluster")
 	if !ok || clusterName == "" {
-		return errors.ErrRequiredNotFound.Clone().Context("--cluster")
+		if parms := c.FindGlobal().Parameters; len(parms) == 1 {
+			clusterName = parms[0]
+		}
+
+		if clusterName == "" {
+			return errors.ErrRequiredNotFound.Clone().Context("--cluster")
+		}
 	}
 
-	portList, ok := c.StringList("ports")
+	portList, ok := c.RangeList("ports")
 	if !ok || len(portList) == 0 {
 		return errors.ErrRequiredNotFound.Clone().Context("--ports")
 	}

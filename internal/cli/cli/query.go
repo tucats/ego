@@ -235,3 +235,49 @@ func (c *Context) StringList(name string) ([]string, bool) {
 
 	return make([]string, 0), false
 }
+
+// RangeList returns the array of ints that are the values of
+// the named item. If the item is not found, an empty array is returned.
+// The second value in the result indicates of the option was explicitly
+// specified in the command line.
+func (c *Context) RangeList(name string) ([]string, bool) {
+	for _, entry := range c.Grammar {
+		if entry.OptionType == Subcommand && entry.Found {
+			subContext := entry.Value.(Context)
+
+			return subContext.RangeList(name)
+		}
+
+		if entry.OptionType == RangeType && name == entry.LongName {
+			if entry.Found {
+				list, ok := entry.Value.(string)
+				if !ok {
+					ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
+						"name": name,
+						"type": "string list",
+					})
+
+					return make([]string, 0), false
+				}
+
+				elements := strings.Split(list, ",")
+				result := []string{}
+
+				for _, element := range elements {
+					result = append(result, strings.TrimSpace(element))
+				}
+
+				return result, true
+			} else {
+				return make([]string, 0), false
+			}
+		}
+	}
+
+	ui.Log(ui.CLILogger, "cli.name.not.found", ui.A{
+		"name": name,
+		"type": "string list",
+	})
+
+	return make([]string, 0), false
+}

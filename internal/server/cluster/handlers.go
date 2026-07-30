@@ -36,7 +36,7 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 		name = data.String(n)
 	}
 
-	members, err := ListMembers(sysDb, name)
+	members, err := ListAllActiveMembers(sysDb, name)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
