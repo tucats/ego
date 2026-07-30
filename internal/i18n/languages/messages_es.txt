@@ -743,6 +743,7 @@ memory.System=Memoria asignada desde el sistema
 memory.Stack=Espacio de pila actual
 memory.Objects=Número de objetos en el montón
 memory.GC=Ciclos de recolección de basura
+memory.GoRoutines=Número de goroutines activas
 Name=Nombre
 Native=Nativo
 none=<ninguno>

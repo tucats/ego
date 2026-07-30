@@ -748,6 +748,7 @@ memory.System=Memory allocated from system
 memory.Stack=Current stack space
 memory.Objects=Number of objects in heap
 memory.GC=Garbage collection cycles
+memory.GoRoutines=Number of active goroutines
 Name=Name
 Native=Native
 none=<none>

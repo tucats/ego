@@ -136,6 +136,18 @@ type MemoryResponse struct {
 	// The number of times Garbage Collection has run
 	GCCount int `json:"gc"`
 
+	// GoRoutines is the number of goroutines currently running in the server
+	// process, as reported by runtime.NumGoroutine().
+	//
+	// A goroutine is Go's lightweight unit of concurrent execution. This count
+	// includes goroutines the Go runtime and standard library create for their
+	// own purposes (one per in-flight HTTP connection, for example) as well as
+	// those Ego starts itself, and that is intentional: the useful signal is the
+	// process-wide total and whether it grows without bound over time. A steadily
+	// climbing count with no corresponding increase in load is the signature of a
+	// goroutine leak.
+	GoRoutines int `json:"goroutines"`
+
 	// Copy of the HTTP status value
 	Status int `json:"status"`
 
@@ -218,6 +230,11 @@ type StatusResponse struct {
 
 	// The number of times Garbage Collection has run
 	GCCount int `json:"gc"`
+
+	// GoRoutines is the number of goroutines currently running in the server
+	// process, as reported by runtime.NumGoroutine(). See the identical field on
+	// MemoryResponse for what the number includes and why.
+	GoRoutines int `json:"goroutines"`
 
 	// ServiceCount is the number of services in the cache.
 	ServiceCount int `json:"serviceCount"`

@@ -57,6 +57,13 @@ func ServerMemory(c *cli.Context) error {
 		_ = t.AddRowItems(i18n.L("memory.Objects"), memoryStatus.Objects)
 		_ = t.AddRowItems(i18n.L("memory.GC"), memoryStatus.GCCount)
 
+		// The goroutine count is a plain count, not a byte measurement, so it is
+		// added directly rather than through formatScale. Passing it through the
+		// scaling helper would divide it by 1048576 whenever --megabytes was
+		// given and report "0.00 MB" goroutines, which is why the Objects and GC
+		// counts above are handled the same way.
+		_ = t.AddRowItems(i18n.L("memory.GoRoutines"), memoryStatus.GoRoutines)
+
 		_ = t.SetIndent(2)
 		t.SetPagination(0, 0)
 

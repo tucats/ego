@@ -139,6 +139,7 @@ server configuration functions.
 * [Access HTML assets (images, etc.) used in HTML pages](#assets)
 * [Read server configuration values](#config)
 * [Query server memory usage](#memory)
+* [Query memory usage and cache inventory together](#resources)
 * [Run Ego code from the dashboard](#run)
 * [View the request validation dictionary](#validation)
 * [Manage the token revocation list](#tokens)
@@ -578,7 +579,73 @@ Returns the current memory usage statistics for the server process. Requires
 admin privileges and the `server.admin` permission.
 
 The response is a JSON object describing current allocated memory, total
-allocated, system memory, and garbage collection count.
+allocated, system memory, garbage collection count, and the number of active
+goroutines.
+
+The `goroutines` field is the process-wide count reported by Go's
+`runtime.NumGoroutine()`. It includes goroutines created by the Go runtime and
+standard library (one per in-flight HTTP connection, for example) as well as
+those the server starts itself. A count that climbs steadily without a matching
+increase in load indicates a goroutine leak.
+
+The response fields are:
+
+| Field | Description |
+| :---- | :---------- |
+| total | Cumulative bytes allocated since the server started; never decreases |
+| current | Bytes in heap spans currently in use, the closest measure of live heap size |
+| system | Total bytes obtained from the operating system across all arenas |
+| stack | Bytes currently used by goroutine stacks |
+| objects | Number of live heap objects, a proxy for garbage-collection pressure |
+| gc | Number of completed garbage-collection cycles |
+| goroutines | Number of goroutines currently running in the process |
+
+&nbsp;
+&nbsp;
+
+### Resources <a name="resources"></a>
+
+#### GET /admin/resources
+
+Returns the server's memory usage and cache inventory in a single call. Requires
+admin privileges and the `server.admin` permission.
+
+This endpoint exists to reduce round trips for the dashboard status page: the
+response is the union of what `GET /admin/memory` and `GET /admin/caches` return,
+so a caller that needs both can make one request instead of two. The response
+media type is `resources+json`.
+
+The memory fields are identical to those documented for
+[`GET /admin/memory`](#memory) above, including `goroutines`. In addition, the
+response reports the size of each server cache:
+
+| Field | Description |
+| :---- | :---------- |
+| serviceCount | Number of compiled Ego services currently cached |
+| serviceSize | Maximum number of services the cache will hold |
+| assetCount | Number of items in the static asset cache |
+| assetSize | Total size in bytes of the asset cache |
+| authorizationCount | Number of entries in the authorization cache |
+| userItemsCount | Number of entries in the authentication cache |
+| dsnCount | Number of entries in the data-source-name cache |
+| schemaCount | Number of entries in the table schema cache |
+| tokenCount | Number of entries in the decrypted token cache |
+| blacklistCount | Number of entries in the token blacklist cache |
+| debugCount | Number of active `/admin/run` debug sessions |
+| runCount | Number of persistent `/admin/run` symbol tables |
+| items | Array of individual cached service and asset entries |
+
+Each element of `items` describes one cached service or asset:
+
+| Field | Description |
+| :---- | :---------- |
+| name | The endpoint or asset URL |
+| last | Timestamp when the item was most recently used |
+| count | Number of times the item has been used |
+| size | Size of the cached item in bytes |
+| class | Whether the entry is a service or an asset |
+
+The array is sorted by name.
 
 &nbsp;
 &nbsp;
@@ -1388,6 +1455,7 @@ The following table lists every endpoint supported by the _Ego_ server.
 | GET | /admin/config | Returns all current server configuration key/value pairs. |
 | POST | /admin/config | Returns the current values for a specified set of configuration keys. |
 | GET | /admin/memory | Returns current process memory usage statistics. |
+| GET | /admin/resources | Returns memory usage and the cache inventory in a single call. |
 | POST | /admin/run | Compiles and executes a snippet of Ego code submitted from the dashboard. |
 | GET | /admin/validation/ | Returns the request validation dictionary, optionally filtered by method, path, or entry. |
 | GET | /admin/caches | Returns the current service and asset cache status and item inventory. |

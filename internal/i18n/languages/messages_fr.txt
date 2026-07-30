@@ -736,6 +736,7 @@ memory.System=Mémoire allouée depuis le système
 memory.Stack=Espace de pile actuel
 memory.Objects=Nombre d'objets dans le tas
 memory.GC=Cycles de collecte des ordures
+memory.GoRoutines=Nombre de goroutines actives
 Name=Nom
 Native=Natif
 none=<aucun>

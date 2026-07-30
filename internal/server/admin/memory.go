@@ -42,6 +42,10 @@ func GetMemoryHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	//   HeapObjects — number of live heap objects (a proxy for GC pressure)
 	//   NumGC       — total number of completed garbage-collection cycles
 	//
+	// The goroutine count does not come from MemStats. runtime.NumGoroutine() is
+	// a separate call, and unlike ReadMemStats it is cheap -- it just reads a
+	// counter the scheduler already maintains, with no stop-the-world pause.
+	//
 	// int() casts the uint64 values from MemStats to int because the
 	// defs.MemoryResponse fields are typed as int.  Memory sizes this large
 	// would overflow int32 on a 32-bit platform, but Ego servers only run on
@@ -54,6 +58,7 @@ func GetMemoryHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		Stack:      int(m.StackInuse),
 		Objects:    int(m.HeapObjects),
 		GCCount:    int(m.NumGC),
+		GoRoutines: runtime.NumGoroutine(),
 		Status:     http.StatusOK,
 	}
 

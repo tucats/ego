@@ -733,6 +733,7 @@ memory.System=システムから割り当てられたメモリ
 memory.Stack=現在のスタック領域
 memory.Objects=ヒープ内のオブジェクト数
 memory.GC=ガベージコレクションサイクル
+memory.GoRoutines=アクティブなゴルーチン数
 Name=名前
 Native=ネイティブ
 none=<なし>
