@@ -34,4 +34,3 @@ HELLO
 
 **Workaround:**  
 Import the package under its canonical name and use it without aliasing.
-
