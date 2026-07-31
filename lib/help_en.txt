@@ -1341,26 +1341,26 @@ for arrays.
 For base types, the following are available:
 
 
-+--------------+------------------+-----------------------------------------------------+
-| Function     | Example          | Description                                         |
-+--------------+------------------+-----------------------------------------------------+
-| bool()       | bool(55)         | Convert to boolean; zero is false, non-zero is true |
-| byte()       | byte(65)         | Convert to an 8-bit integer                         |
-| int16()      | int16(25434)     | Convert to a 16-bit integer                         |
-| int32()      | int32(4096)      | Convert to a 32-bit integer                         |
-| int()        | int(78.3)        | Convert to an integer, in this case 78              |
-| int64()      | int64(2^20)      | Convert to a 64-bit integer                         |
-| uint8()      | uint8(240)       | Convert to an unsigned 8-bit integer                |
-| uint16()     | uint16(40000)    | Convert to an unsigned 16-bit integer               |
-| uint32()     | uint32(2503)     | Convert to an unsigned 32-bit integer               |
-| uint()       | uint(240)        | Convert to an unsigned default-sized integer        |
-| uint64()     | uint64(12071957) | Convert to an unsigned 64-bit integer               |
-| float32()    | float32(33)      | Convert to a 32-bit floating value                  |
-| float64()    | float64(33)      | Convert to a 64-bit floating value                  |
-| complex64()  | complex64(3)     | Convert a real number to complex, e.g. 3+0i         |
-| complex128() | complex128(3)    | Convert a real number to complex, e.g. 3+0i         |
-| string()     | string(true)     | Convert the argument to a string value              |
-+--------------+------------------+-----------------------------------------------------+
++--------------+------------------+----------------------------------------------+
+| Function     | Example          | Description                                  |
++--------------+------------------+----------------------------------------------+
+| bool()       | bool(55)         | Convert to boolean; zero/non-zero            |
+| byte()       | byte(65)         | Convert to an 8-bit integer                  |
+| int16()      | int16(25434)     | Convert to a 16-bit integer                  |
+| int32()      | int32(4096)      | Convert to a 32-bit integer                  |
+| int()        | int(78.3)        | Convert to an integer, in this case 78       |
+| int64()      | int64(2^20)      | Convert to a 64-bit integer                  |
+| uint8()      | uint8(240)       | Convert to an unsigned 8-bit integer         |
+| uint16()     | uint16(40000)    | Convert to an unsigned 16-bit integer        |
+| uint32()     | uint32(2503)     | Convert to an unsigned 32-bit integer        |
+| uint()       | uint(240)        | Convert to an unsigned default-sized integer |
+| uint64()     | uint64(12071957) | Convert to an unsigned 64-bit integer        |
+| float32()    | float32(33)      | Convert to a 32-bit floating value           |
+| float64()    | float64(33)      | Convert to a 64-bit floating value           |
+| complex64()  | complex64(3)     | Convert a real number to complex, e.g. 3+0i  |
+| complex128() | complex128(3)    | Convert a real number to complex, e.g. 3+0i  |
+| string()     | string(true)     | Convert the argument to a string value       |
++--------------+------------------+----------------------------------------------+
 
 
 A special note about string(); it has a feature where if the value
@@ -1377,16 +1377,16 @@ code point to its Unicode character.
 You can also perform conversions on arrays, to a limited degree.
 This is done with the functions:
 
-+-------------+----------------------------+-------------------------------------------------------------------------------+
-| Function    | Example                    | Description                                                                   |
-+-------------+----------------------------+-------------------------------------------------------------------------------+
-| []bool()    | []bool([1, 5, 0])          | Convert the array to a []bool array                                           |
-| []int()     | []int([1, 5.5, 0])         | Convert to []int. If the parameter is a string, each rune becomes an element. |
-| []any()     | []any([true, 5, "string"]) | Convert to []any, with no static element type                                 |
-| []float64() | []float64([1, 5, 0])       | Convert the array to a []float64 array                                        |
-| []float32() | []float32([1, 5, 0])       | Convert the array to a []float32 array                                        |
-| []string()  | []string([1, 5, 0])        | Convert the array to a []string array                                         |
-+-------------+----------------------------+-------------------------------------------------------------------------------+
++-------------+----------------------------+------------------------------------------------+
+| Function    | Example                    | Description                                    |
++-------------+----------------------------+------------------------------------------------+
+| []bool()    | []bool([1, 5, 0])          | Convert the array to a []bool array            |
+| []int()     | []int([1, 5.5, 0])         | Convert to []int.                              |
+| []any()     | []any([true, 5, "string"]) | Convert to []any, with no static element type  |
+| []float64() | []float64([1, 5, 0])       | Convert the array to a []float64 array         |
+| []float32() | []float32([1, 5, 0])       | Convert the array to a []float32 array         |
+| []string()  | []string([1, 5, 0])        | Convert the array to a []string array          |
++-------------+----------------------------+------------------------------------------------+
 
 
 In all cases, the result is a typed array of the given cast type.
@@ -3375,20 +3375,20 @@ the handle which closes the file so it completes all operations and then
 the handle cannot be used again until another io.Open() operation. The 
 file handle functions are:
 
-+----------------+---------------------------------------------------------------+
-| Function       | Description                                                   |
-+----------------+---------------------------------------------------------------+
-| Close()        | Close the file, after which the file object can no longer be  |
-|                | used.                                                         |
-+----------------+---------------------------------------------------------------+
-| ReadString()   | Read a line of text from the file and return it as a string   |
-+----------------+---------------------------------------------------------------+
-| WriteString()  | Write a string to the output file and add a newline           |
-+----------------+---------------------------------------------------------------+
-| Write()        | Write an arbitrary value to the output file                   |
-+----------------+---------------------------------------------------------------+
-| WriteAt()      | Write an arbitrary value at specific position in the file     |
-+----------------+---------------------------------------------------------------+
++----------------+-------------------------------------------------------------+
+| Function       | Description                                                 |
++----------------+-------------------------------------------------------------+
+| Close()        | Close the file, after which the file object can no longer   |
+|                | be used.                                                    |
++----------------+-------------------------------------------------------------+
+| ReadString()   | Read a line of text from the file and return it as a string |
++----------------+-------------------------------------------------------------+
+| WriteString()  | Write a string to the output file and add a newline         |
++----------------+-------------------------------------------------------------+
+| Write()        | Write an arbitrary value to the output file                 |
++----------------+-------------------------------------------------------------+
+| WriteAt()      | Write an arbitrary value at specific position in the file   |
++----------------+-------------------------------------------------------------+
 
 .topic packages.io.readdir
 
@@ -3407,17 +3407,17 @@ the directory is empty.
 Each io.Entry structure has the following members:
 
 +-------------+-----------+----------------------------------------------+
-| Field       | Type      | Description                                   |
+| Field       | Type      | Description                                  |
 +-------------+-----------+----------------------------------------------+
-| Name        | string    | The name of the file (not the full path)      |
+| Name        | string    | The name of the file (not the full path)     |
 +-------------+-----------+----------------------------------------------+
-| IsDirectory | bool      | true if the entry is a subdirectory           |
+| IsDirectory | bool      | true if the entry is a subdirectory          |
 +-------------+-----------+----------------------------------------------+
-| Mode        | string    | Unix-style mode string for permissions        |
+| Mode        | string    | Unix-style mode string for permissions       |
 +-------------+-----------+----------------------------------------------+
-| Size        | int       | The size of the file contents in bytes        |
+| Size        | int       | The size of the file contents in bytes       |
 +-------------+-----------+----------------------------------------------+
-| Modified    | time.Time | Last modification time                        |
+| Modified    | time.Time | Last modification time                       |
 +-------------+-----------+----------------------------------------------+
 
 .topic packages.io.prompt
@@ -3551,21 +3551,24 @@ common Ego numeric data types (usually int and float64 values). Most
 functions mirror the Go standard math package directly. It defines
 these numeric constants:
 
-+------------------------------------------------------+---------------------------------------------------+
-| Constant                                             | Description                                       |
-+------------------------------------------------------+---------------------------------------------------+
-| math.E                                               | Base of natural logarithms (2.718...)             |
-| math.Pi                                              | Ratio of a circle's circumference to its diameter |
-| math.Phi                                             | The golden ratio                                  |
-| math.Sqrt2 / math.SqrtE / math.SqrtPi / math.SqrtPhi | Square roots of 2, E, Pi, and Phi                 |
-| math.Ln2 / math.Ln10                                 | Natural logarithm of 2 and of 10                  |
-| math.Log2E / math.Log10E                             | Base-2 and base-10 logarithm of E                 |
-| math.MaxInt / math.MinInt                            | Largest/smallest int value (64-bit)               |
-| math.MaxInt8/16/32/64, MinInt8/16/32/64              | Largest/smallest signed integer of each width     |
-| math.MaxUint32 / math.MaxUint64                      | Largest unsigned integer of each width            |
-| math.MaxFloat32 / math.MaxFloat64                    | Largest finite floating point value of each width |
-| math.SmallestNonzeroFloat32/64                       | Smallest positive nonzero floating point value    |
-+------------------------------------------------------+---------------------------------------------------+
++----------------------------------------------------+----------------------------------------+
+| Constant                                | Description                                       |
++-----------------------------------------+---------------------------------------------------+
+| math.E                                  | Base of natural logarithms (2.718...)             |
+| math.Pi                                 | Ratio of a circle's circumference to its diameter |
+| math.Phi                                | The golden ratio                                  |
+| math.Sqrt2                              | Square roots of 2, E, Pi, and Phi                 |
+| math.SqrtE                              | Square roots of 2, E, Pi, and Phi                 |
+| math.SqrtPi                             | Square roots of 2, E, Pi, and Phi                 |
+| math.SqrtPhi                            | Square roots of 2, E, Pi, and Phi                 |
+| math.Ln2 / math.Ln10                    | Natural logarithm of 2 and of 10                  |
+| math.Log2E / math.Log10E                | Base-2 and base-10 logarithm of E                 |
+| math.MaxInt / math.MinInt               | Largest/smallest int value (64-bit)               |
+| math.MaxInt8/16/32/64, MinInt8/16/32/64 | Largest/smallest signed integer of each width     |
+| math.MaxUint32 / math.MaxUint64         | Largest unsigned integer of each width            |
+| math.MaxFloat32 / math.MaxFloat64       | Largest finite floating point value of each width |
+| math.SmallestNonzeroFloat32/64          | Smallest positive nonzero floating point value    |
++-----------------------------------------+---------------------------------------------------+
 
 .topic packages.math.functions
 
@@ -3847,28 +3850,28 @@ value:
 
 Additional file and directory functions in the os package:
 
-+------------------------------+---------------------------------------------+
-| Function                     | Description                                  |
-+------------------------------+---------------------------------------------+
-| os.Open/Create/CreateTemp()  | Open, create, or create a temp os.File for   |
-|                               | streaming reads/writes                       |
-+------------------------------+---------------------------------------------+
-| os.Mkdir(path, mode)         | Create a single directory                    |
-+------------------------------+---------------------------------------------+
-| os.MkdirAll(path, mode)      | Create a directory and any missing parents   |
-+------------------------------+---------------------------------------------+
-| os.TempDir()                 | The default directory for temporary files    |
-+------------------------------+---------------------------------------------+
-| os.Chmod(file, mode)         | Change a file's permissions                  |
-+------------------------------+---------------------------------------------+
-| os.Chown(path, uid, gid)     | Change a file's owner and group              |
-+------------------------------+---------------------------------------------+
-| os.Stat(name)                | Return an os.FileInfo describing name        |
-+------------------------------+---------------------------------------------+
-| os.Hostname()                | The name of the host running Ego             |
-+------------------------------+---------------------------------------------+
-| os.Executable()               | Path to the currently running executable    |
-+------------------------------+---------------------------------------------+
++------------------------------+--------------------------------------------+
+| Function                     | Description                                |
++------------------------------+--------------------------------------------+
+| os.Open/Create/CreateTemp()  | Open, create, or create a temp os.File for |
+|                               | streaming reads/writes                    |
++------------------------------+--------------------------------------------+
+| os.Mkdir(path, mode)         | Create a single directory                  |
++------------------------------+--------------------------------------------+
+| os.MkdirAll(path, mode)      | Create a directory and any missing parents |
++------------------------------+--------------------------------------------+
+| os.TempDir()                 | The default directory for temporary files  |
++------------------------------+--------------------------------------------+
+| os.Chmod(file, mode)         | Change a file's permissions                |
++------------------------------+--------------------------------------------+
+| os.Chown(path, uid, gid)     | Change a file's owner and group            |
++------------------------------+--------------------------------------------+
+| os.Stat(name)                | Return an os.FileInfo describing name      |
++------------------------------+--------------------------------------------+
+| os.Hostname()                | The name of the host running Ego           |
++------------------------------+--------------------------------------------+
+| os.Executable()               | Path to the currently running executable  |
++------------------------------+--------------------------------------------+
 
 .topic packages.profile
 
@@ -4003,23 +4006,23 @@ created. For example, if the value of rest.New() was stored in the
 variable r, the following fluent setter methods would become
 available, each returning the client itself so calls can be chained:
 
-+-----------------+---------------------------------------------------------------+
-| Method          | Description                                                   |
-+-----------------+---------------------------------------------------------------+
-| r.Base(url)     | Specify a "base URL" that is put in front of the url used in  |
-|                 | Get(), Post(), etc                                            |
-+-----------------+---------------------------------------------------------------+
-| r.Media("type") | Specify the media/content type of the exchange                |
-+-----------------+---------------------------------------------------------------+
-| r.Verify(b)     | Enable or disable TLS server certificate validation           |
-+-----------------+---------------------------------------------------------------+
-| r.Auth(u,p)     | Establish BasicAuth with the given username and password      |
-+-----------------+---------------------------------------------------------------+
-| r.Token(t)      | Establish Bearer token auth with the given token value        |
-+-----------------+---------------------------------------------------------------+
-| r.UseToken(b)   | Attach (true) or remove (false) the current ego logon token   |
-|                 | as this client's bearer token. Refused when sandboxed.        |
-+-----------------+---------------------------------------------------------------+
++-----------------+-------------------------------------------------------------+
+| Method          | Description                                                 |
++-----------------+-------------------------------------------------------------+
+| r.Base(url)     | Specify a "base URL" that is put in front of the url used   |
+|                 | in Get(), Post(), etc                                       |
++-----------------+-------------------------------------------------------------+
+| r.Media("type") | Specify the media/content type of the exchange              |
++-----------------+-------------------------------------------------------------+
+| r.Verify(b)     | Enable or disable TLS server certificate validation         |
++-----------------+-------------------------------------------------------------+
+| r.Auth(u,p)     | Establish BasicAuth with the given username and password    |
++-----------------+-------------------------------------------------------------+
+| r.Token(t)      | Establish Bearer token auth with the given token value      |
++-----------------+-------------------------------------------------------------+
+| r.UseToken(b)   | Attach (true) or remove (false) the current ego logon token |
+|                 | as this client's bearer token. Refused when sandboxed.      |
++-----------------+-------------------------------------------------------------+
 
 The methods that actually perform a request return (value, error),
 where the error reflects only a transport-level failure -- an
@@ -4027,19 +4030,19 @@ HTTP-level error status like 404 is not an error as far as these
 methods are concerned, and is available afterward as r.Status:
 
 +-----------------------+----------------------------------------------+
-| Method                 | Description                                   |
+| Method                 | Description                                 |
 +-----------------------+----------------------------------------------+
-| r.Get(url)             | Sends a GET request                           |
+| r.Get(url)             | Sends a GET request                         |
 +-----------------------+----------------------------------------------+
-| r.Post(url [, body])   | Sends a POST request                          |
+| r.Post(url [, body])   | Sends a POST request                        |
 +-----------------------+----------------------------------------------+
-| r.Put(url [, body])    | Sends a PUT request                           |
+| r.Put(url [, body])    | Sends a PUT request                         |
 +-----------------------+----------------------------------------------+
-| r.Patch(url [, body])  | Sends a PATCH request                         |
+| r.Patch(url [, body])  | Sends a PATCH request                       |
 +-----------------------+----------------------------------------------+
-| r.Delete(url [, body]) | Sends a DELETE request                        |
+| r.Delete(url [, body]) | Sends a DELETE request                      |
 +-----------------------+----------------------------------------------+
-| r.Close()              | Closes idle connections held by the client    |
+| r.Close()              | Closes idle connections held by the client  |
 +-----------------------+----------------------------------------------+
 
 Additionally, the read-only fields r.Status, r.Headers, r.Cookies,
@@ -4205,30 +4208,30 @@ In addition to Ints, Float32s, Float64s, Strings, and Slice, the sort
 package also provides:
 
 +---------------------------------------------+-----------------------------------------+
-| Function                                     | Description                              |
+| Function                                    | Description                             |
 +---------------------------------------------+-----------------------------------------+
-| sort.Int32s(a) / sort.Int64s(a)              | Sort a []int32 or []int64 array          |
+| sort.Int32s(a) / sort.Int64s(a)             | Sort a []int32 or []int64 array         |
 +---------------------------------------------+-----------------------------------------+
-| sort.Bytes(a)                                | Sort a []byte array                      |
+| sort.Bytes(a)                               | Sort a []byte array                     |
 +---------------------------------------------+-----------------------------------------+
-| sort.Sort(a) / sort.Stable(a)                | Sort any single supported scalar array,  |
-|                                               | determining the element type             |
-|                                               | automatically; Stable preserves the      |
-|                                               | order of equal elements                  |
+| sort.Sort(a) / sort.Stable(a)               | Sort any single supported scalar array, |
+|                                             | determining the element type            |
+|                                             | automatically; Stable preserves the     |
+|                                             | order of equal elements                 |
 +---------------------------------------------+-----------------------------------------+
-| sort.SliceStable(a, less)                    | Like Slice(), but preserves the order    |
-|                                               | of elements that compare equal           |
+| sort.SliceStable(a, less)                   | Like Slice(), but preserves the order   |
+|                                             | of elements that compare equal          |
 +---------------------------------------------+-----------------------------------------+
-| sort.Search(n, f)                            | Binary search over [0, n) using a        |
-|                                               | monotone predicate f(i int) bool         |
+| sort.Search(n, f)                           | Binary search over [0, n) using a       |
+|                                             | monotone predicate f(i int) bool        |
 +---------------------------------------------+-----------------------------------------+
-| sort.SearchInts/Float64s/Strings(a, x)       | Binary search an already-sorted array    |
-|                                               | for x, returning its insertion index     |
+| sort.SearchInts/Float64s/Strings(a, x)      | Binary search an already-sorted array   |
+|                                             | for x, returning its insertion index    |
 +---------------------------------------------+-----------------------------------------+
-| sort.IsSorted(a)                             | Reports whether a is already sorted      |
+| sort.IsSorted(a)                            | Reports whether a is already sorted     |
 +---------------------------------------------+-----------------------------------------+
-| sort.IntsAreSorted/Float64sAreSorted/        | Type-specific forms of IsSorted()        |
-| StringsAreSorted(a)                          |                                           |
+| sort.IntsAreSorted/Float64sAreSorted/       | Type-specific forms of IsSorted()       |
+| StringsAreSorted(a)                         |                                         |
 +---------------------------------------------+-----------------------------------------+
 
 sort.Slice() sorts an array of any type, including structs, using a
@@ -4279,17 +4282,17 @@ regardless of directory.
 The sql.Database handle returned by sql.Open() has these fields:
 
 +-------------+--------+--------------------------------------------------+
-| Field       | Type   | Description                                       |
+| Field       | Type   | Description                                      |
 +-------------+--------+--------------------------------------------------+
-| StructMode  | bool   | Set via AsStruct(). When true, Query() and        |
-|             |        | QueryResult() rows are structs keyed by column    |
-|             |        | name instead of arrays.                           |
+| StructMode  | bool   | Set via AsStruct(). When true, Query() and       |
+|             |        | QueryResult() rows are structs keyed by column   |
+|             |        | name instead of arrays.                          |
 +-------------+--------+--------------------------------------------------+
-| Rowcount    | int    | Rows affected or returned by the most recent      |
-|             |        | call. Reset to -1 by Close().                     |
+| Rowcount    | int    | Rows affected or returned by the most recent     |
+|             |        | call. Reset to -1 by Close().                    |
 +-------------+--------+--------------------------------------------------+
-| Constr      | string | The (password-redacted) connection string used    |
-|             |        | to open this database.                            |
+| Constr      | string | The (password-redacted) connection string used   |
+|             |        | to open this database.                           |
 +-------------+--------+--------------------------------------------------+
 
 and these methods:
@@ -4298,23 +4301,23 @@ and these methods:
 | Method                        | Description                               |
 +-------------------------------+-------------------------------------------+
 | Begin()                       | Start a transaction. Only one transaction |
-|                                | may be active per connection at a time.   |
+|                               | may be active per connection at a time.   |
 +-------------------------------+-------------------------------------------+
 | Commit()                      | Commit the active transaction             |
 +-------------------------------+-------------------------------------------+
 | Rollback()                    | Discard the active transaction            |
 +-------------------------------+-------------------------------------------+
 | Execute(q [, args...])        | Run a non-SELECT statement with optional  |
-|                                | arguments. The result is the number of    |
-|                                | rows affected.                            |
+|                               | arguments. The result is the number of    |
+|                               | rows affected.                            |
 +-------------------------------+-------------------------------------------+
 | Query(q [, args...])          | Run a SELECT and return a sql.Rows cursor |
 +-------------------------------+-------------------------------------------+
 | QueryResult(q [, args...])    | Run a SELECT and eagerly fetch the entire |
-|                                | result set.                               |
+|                               | result set.                               |
 +-------------------------------+-------------------------------------------+
 | AsStruct(flag)                | Set StructMode. Returns the Database so   |
-|                                | calls can be chained.                     |
+|                               | calls can be chained.                     |
 +-------------------------------+-------------------------------------------+
 | Close()                       | Close the connection and free resources.  |
 +-------------------------------+-------------------------------------------+
@@ -4329,14 +4332,14 @@ The sql.Rows cursor returned by Database.Query() steps through a
 result set one row at a time, without loading it all into memory.
 
 +-----------+---------------------------------------------------------------+
-| Method    | Description                                                    |
+| Method    | Description                                                   |
 +-----------+---------------------------------------------------------------+
 | Next()    | Advance to the next row. Returns false once the result set is |
 |           | exhausted. Must be called before each Scan().                 |
 +-----------+---------------------------------------------------------------+
 | Scan()    | Read the current row; see below for its two calling forms.    |
 +-----------+---------------------------------------------------------------+
-| Headings()| Column names, in SELECT-list order.                            |
+| Headings()| Column names, in SELECT-list order.                           |
 +-----------+---------------------------------------------------------------+
 | Close()   | Release the cursor's resources. Always close a cursor when    |
 |           | done with it, even if every row was consumed.                 |
@@ -4879,20 +4882,23 @@ the state values stored, as opposed to information about a specific state.
 
 Additional strings functions not covered above:
 
-+-------------------------------------------------------+----------------------------------------------------------------+
-| Function                                              | Description                                                    |
-+-------------------------------------------------------+----------------------------------------------------------------+
-| strings.HasPrefix(s, prefix) / HasSuffix(s, suffix)   | Reports whether s begins or ends with the given substring      |
-| strings.Count(s, sub)                                 | Counts non-overlapping instances of sub in s                   |
-| strings.Repeat(s, count)                              | Returns s repeated count times                                 |
-| strings.Replace(s, old, new, n)                       | Replaces the first n instances of old with new (n<0 means all) |
-| strings.ReplaceAll(s, old, new)                       | Replaces every instance of old with new                        |
-| strings.Cut(s, sep)                                   | Splits s at the first instance of sep                          |
-| strings.Trim(s, cutset)                               | Removes leading/trailing characters found in cutset            |
-| strings.TrimLeft(s, cutset) / TrimRight(s, cutset)    | Removes cutset characters from only one end                    |
-| strings.TrimPrefix(s, prefix) / TrimSuffix(s, suffix) | Removes prefix/suffix if present                               |
-| strings.TrimSpace(s)                                  | Removes leading and trailing whitespace                        |
-+-------------------------------------------------------+----------------------------------------------------------------+
++------------------------------------+-------------------------------------------------------+
+| Function                           | Description                                           |
++------------------------------------+-------------------------------------------------------+
+| strings.HasPrefix(s, prefix)       | Reports whether s begins with the given substring     |
+| strings.HasSuffix(s, suffix)       | Reports whether s ends with the given substring       |
+| strings.Count(s, sub)              | Counts non-overlapping instances of sub in s          |
+| strings.Repeat(s, count)           | Returns s repeated count times                        |
+| strings.Replace(s, old, new, n)    | Replaces the first n instances of old with new        |
+| strings.ReplaceAll(s, old, new)    | Replaces every instance of old with new               |
+| strings.Cut(s, sep)                | Splits s at the first instance of sep                 |
+| strings.Trim(s, cutset)            | Removes leading/trailing characters found in cutset   |
+| strings.TrimLeft(s, cutset)        | Removes cutset characters from left end               |
+| strings.TrimRight(s, cutset)       | Removes cutset characters from right end              |
+| strings.TrimPrefix(s, prefix)      | Removes prefix if present                             |
+| strings.TrimSuffix(s, suffix).     | Removes suffix if present                             |
+| strings.TrimSpace(s)               | Removes leading and trailing whitespace               |
++------------------------------------+-------------------------------------------------------+
 
 .topic packages.sync
 
@@ -5138,25 +5144,25 @@ detail than reflect.Type() alone. Not every field is populated for
 every kind of value.
 
 +-------------+---------------------+-------------------------------------+
-| Field       | Type                | Description                          |
+| Field       | Type                | Description                         |
 +-------------+---------------------+-------------------------------------+
-| Type        | string              | The Ego type name of the value       |
+| Type        | string              | The Ego type name of the value      |
 +-------------+---------------------+-------------------------------------+
-| BaseType    | string              | The underlying type                  |
+| BaseType    | string              | The underlying type                 |
 +-------------+---------------------+-------------------------------------+
-| Name        | string              | Name, for named functions/types      |
+| Name        | string              | Name, for named functions/types     |
 +-------------+---------------------+-------------------------------------+
-| Package     | string              | Package the type belongs to, if any  |
+| Package     | string              | Package the type belongs to, if any |
 +-------------+---------------------+-------------------------------------+
-| IsType      | bool                | true if value was itself a type      |
+| IsType      | bool                | true if value was itself a type     |
 +-------------+---------------------+-------------------------------------+
-| Native      | bool                | true if a native Go type or function |
+| Native      | bool                | true if a native Go type/function   |
 +-------------+---------------------+-------------------------------------+
-| Members     | []string            | Field/key/exported member names      |
+| Members     | []string            | Field/key/exported member names     |
 +-------------+---------------------+-------------------------------------+
-| Declaration | reflect.Function    | Name, parameters, return types       |
+| Declaration | reflect.Function    | Name, parameters, return types      |
 +-------------+---------------------+-------------------------------------+
-| Size        | int                 | Byte size, or element/member count   |
+| Size        | int                 | Byte size, or element/member count  |
 +-------------+---------------------+-------------------------------------+
 
     e := { name: "Dave", age: 33 }
@@ -5391,17 +5397,17 @@ collection cycles have completed so far.
 The Mode() function reports the mode the current program is running under.
 The list of values are:
 
-+-------------+-----------------------------------------------------------------------+
-| Mode        | Description                                                           |
-+-------------+-----------------------------------------------------------------------+
-| interactive | The ego program was run with no program name, accepting console input |
-+-------------+-----------------------------------------------------------------------+
-| server      | The program is running under control of an rest server as a service   |
-+-------------+-----------------------------------------------------------------------+
-| test        | The program is running using the ego test integration test command    |
-+-------------+-----------------------------------------------------------------------+
-| run         | The program is running using ego run with an input file or pipe       |
-+-------------+-----------------------------------------------------------------------+
++-------------+------------------------------------------------------------------+
+| Mode        | Description                                                      |
++-------------+------------------------------------------------------------------+
+| interactive | The ego program was run by accepting console input               |
++-------------+------------------------------------------------------------------+
+| server      | The program is running as a rest service                         |
++-------------+------------------------------------------------------------------+
+| test        | The program is running as an test integration command            |
++-------------+------------------------------------------------------------------+
+| run         | The program is running using ego run with an input file or pipe  |
++-------------+------------------------------------------------------------------+
 
 
 .topic packages.util.symbols
@@ -5588,21 +5594,21 @@ declarations, etc.) rather than just a statement block. Additional
 keywords can be placed after block to control the compilation:
 
 +---------------+--------------+-----------------------------------------+
-| Keyword       | Values       | Description                              |
+| Keyword       | Values       | Description                             |
 +---------------+--------------+-----------------------------------------+
-| disasm        |              | Print a bytecode disassembly once the    |
-|               |              | block compiles successfully              |
+| disasm        |              | Print a bytecode disassembly once the   |
+|               |              | block compiles successfully             |
 +---------------+--------------+-----------------------------------------+
-| eof           | "marker"     | Use a text marker instead of { } braces  |
-|               |              | to delimit the code to compile           |
+| eof           | "marker"     | Use a text marker instead of { } braces |
+|               |              | to delimit the code to compile          |
 +---------------+--------------+-----------------------------------------+
-| optimize      | 0, 1, or 2   | Optimization level for this compilation  |
+| optimize      | 0, 1, or 2   | Optimization level for this compilation |
 +---------------+--------------+-----------------------------------------+
-| unknown       | true/false   | If true, unknown symbol references       |
-|               |              | generate a compile error                 |
+| unknown       | true/false   | If true, unknown symbol references      |
+|               |              | generate a compile error                |
 +---------------+--------------+-----------------------------------------+
-| unused        | true/false   | If true, unused variables generate a     |
-|               |              | compile error                            |
+| unused        | true/false   | If true, unused variables generate a    |
+|               |              | compile error                           |
 +---------------+--------------+-----------------------------------------+
 
 This directive is used mostly in writing unit tests for the compiler
