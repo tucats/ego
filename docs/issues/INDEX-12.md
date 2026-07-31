@@ -29,7 +29,7 @@ caller's argument list. Nothing checks that there are that many arguments, so
 arguments. A format containing a literal `%%` also inflates the count, since
 `strings.Count` reports it as two.
 
-**2. `URLBuilder` loops forever on an unterminated `{{`:**
+**2. `URLBuilder` loops forever on an unterminated open marker:**
 
 ```go
 for strings.Contains(format, "{{") {
@@ -39,12 +39,12 @@ for strings.Contains(format, "{{") {
 }
 ```
 
-With no `}}` in the string, `end` is -1, so `format[end+2:]` is `format[1:]` —
-which still contains the `{{` that the loop condition tests. Each pass appends
+With no `close marker` in the string, `end` is -1, so `format[end+2:]` is `format[1:]` —
+which still contains the `open marker` that the loop condition tests. Each pass appends
 another `%v` and re-splices the same text, growing the string without bound
 until the process exhausts memory. `strings.Index` also searches the whole
-string for `}}` rather than the portion after `start`, so a `}}` appearing
-*before* the `{{` produces a garbled rewrite.
+string for `close marker` rather than the portion after `start`, so a `close marker` appearing
+*before* the `open marker` produces a garbled rewrite.
 
 ## INDEX-12: Fix
 
