@@ -530,12 +530,12 @@ result in a computed value).
 .topic language.data.types
 
 The Ego language supports a number of base types which express a
-single value of some type (string, integer, boolean, etc.). These 
-base types can be members of complex types consisting of arrays 
-(ordered lists), maps (dynamic types key/value pairs) and structs 
-(field-name/value pairs). Additionally, the user can create types 
-based on the base or complex types, such as a type describing a 
-structure that records information about an employee; this type can 
+single value of some type (string, integer, boolean, etc.). These
+base types can be members of complex types consisting of arrays
+(ordered lists), maps (dynamic types key/value pairs) and structs
+(field-name/value pairs). Additionally, the user can create types
+based on the base or complex types, such as a type describing a
+structure that records information about an employee; this type can
 be used to create instances of the structure, etc.
 
 .topic language.data.basetypes
