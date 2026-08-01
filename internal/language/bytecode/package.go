@@ -8,13 +8,13 @@ import (
 
 	"github.com/tucats/ego/internal/cli/tables"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/packages"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // This file implements bytecode instructions and helper functions that
@@ -159,7 +159,7 @@ func importByteCode(c *Context, i any) error {
 	return nil
 }
 
-// dumpPackagesByteCode is the instruction handler for the DumpPackages opcode.
+// DumpPackagesByteCode is the instruction handler for the DumpPackages opcode.
 //
 // It prints a formatted table of all known packages (or a specific subset)
 // to the context's output writer.  Each row describes one item exported by a
@@ -176,7 +176,10 @@ func importByteCode(c *Context, i any) error {
 //
 // This opcode is emitted by the `ego dump` REPL command; it is not part of
 // normal program execution.
-func dumpPackagesByteCode(c *Context, i any) error {
+//
+// Note, this handler is exported because it can be called directly from
+// the debugger.
+func DumpPackagesByteCode(c *Context, i any) error {
 	var (
 		err         error
 		packageList []string
@@ -211,7 +214,7 @@ func dumpPackagesByteCode(c *Context, i any) error {
 	}
 
 	// Use a Table object to format the output neatly.
-	t, err := tables.New([]string{i18n.L("Package"), i18n.L("Attributes"), i18n.L("Kind"), i18n.L("Item")})
+	t, err := tables.New([]string{i18n.L("Package"), i18n.L("Kind"), i18n.L("Item")})
 	if err != nil {
 		return c.runtimeError(err)
 	}
@@ -225,17 +228,6 @@ func dumpPackagesByteCode(c *Context, i any) error {
 			pkg = packages.GetByName(path)
 		}
 
-		attributeList := make([]string, 0, 3)
-
-		if pkg.Builtins {
-			attributeList = append(attributeList, "Builtins")
-		}
-
-		if pkg.Source {
-			attributeList = append(attributeList, "Source")
-		}
-
-		attributes := strings.Join(attributeList, ", ")
 		items := makePackageItemList(pkg)
 
 		// Now that the list is sorted by types, add the items to the table, stripping
@@ -265,11 +257,10 @@ func dumpPackagesByteCode(c *Context, i any) error {
 				kind = lastKind
 			}
 
-			t.AddRow([]string{path, attributes, kind, fields[1]})
+			t.AddRow([]string{path /* attributes,*/, kind, fields[1]})
 
 			if ui.OutputFormat == ui.TextFormat {
 				path = ""
-				attributes = ""
 				kind = ""
 			}
 		}

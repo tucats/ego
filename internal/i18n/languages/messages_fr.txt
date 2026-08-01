@@ -667,6 +667,7 @@ set=Affecter une valeur à une variable
 show.breaks=Afficher la liste des points d'arrêt
 show.calls=Afficher la pile d'appels jusqu'à la profondeur donnée
 show.line=Afficher la ligne de programme actuelle
+show.package=Afficher les constantes, types et fonctions exportés du paquet
 show.scope=Afficher la portée d'appel imbriquée
 show.source=Afficher le code source du module actuel
 show.symbols=Afficher la table de symboles actuelle

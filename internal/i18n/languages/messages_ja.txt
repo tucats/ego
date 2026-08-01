@@ -667,6 +667,7 @@ set=変数に値を設定
 show.breaks=ブレークポイントのリストを表示
 show.calls=指定した深さまでの呼び出しスタックを表示
 show.line=現在のプログラム行を表示
+show.package=パッケージのエクスポートされた定数、型、関数を表示
 show.scope=ネストされた呼び出しスコープを表示
 show.source=現在のモジュールのソースを表示
 show.symbols=現在のシンボルテーブルを表示

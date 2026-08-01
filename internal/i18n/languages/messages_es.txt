@@ -673,6 +673,7 @@ set=Establecer una variable a un valor
 show.breaks=Mostrar lista de puntos de interrupción
 show.calls=Mostrar la pila de llamadas hasta la profundidad dada
 show.line=Mostrar la línea de programa actual
+show.package=Mostrar las constantes, tipos y funciones exportados del paquete
 show.scope=Mostrar el ámbito de llamada anidado
 show.source=Mostrar el código fuente del módulo actual
 show.symbols=Mostrar la tabla de símbolos actual

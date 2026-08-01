@@ -260,19 +260,19 @@ var TimePackage = data.NewPackageFromMap("time", map[string]any{
 					Type: data.IntType,
 				},
 				{
-					Name: "minute",
+					Name: "min",
 					Type: data.IntType,
 				},
 				{
-					Name: "second",
+					Name: "sec",
 					Type: data.IntType,
 				},
 				{
-					Name: "nanosecond",
+					Name: "nanosec",
 					Type: data.IntType,
 				},
 				{
-					Name: "location",
+					Name: "loc",
 					Type: data.PointerType(TimeLocationType),
 				},
 			},

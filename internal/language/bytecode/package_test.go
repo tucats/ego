@@ -42,10 +42,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/packages"
 )
 
 // helper: register a temporary package in the global cache and return a
@@ -649,7 +649,7 @@ func Test_dumpPackagesByteCode_UnknownPackage(t *testing.T) {
 
 	tc.ctx.output = &buf
 
-	err := dumpPackagesByteCode(tc.ctx, "no.such.package.dump")
+	err := DumpPackagesByteCode(tc.ctx, "no.such.package.dump")
 
 	tc.assertError(err, errors.ErrInvalidPackageName)
 
@@ -669,7 +669,7 @@ func Test_dumpPackagesByteCode_KnownPackage(t *testing.T) {
 
 	tc.ctx.output = &buf
 
-	err := dumpPackagesByteCode(tc.ctx, "testpkg.dump.known")
+	err := DumpPackagesByteCode(tc.ctx, "testpkg.dump.known")
 
 	tc.assertNoError(err)
 }
@@ -683,7 +683,7 @@ func Test_dumpPackagesByteCode_InvalidOperandType(t *testing.T) {
 
 	tc.ctx.output = &buf
 
-	err := dumpPackagesByteCode(tc.ctx, struct{}{})
+	err := DumpPackagesByteCode(tc.ctx, struct{}{})
 
 	tc.assertError(err, errors.ErrInvalidOperand)
 }

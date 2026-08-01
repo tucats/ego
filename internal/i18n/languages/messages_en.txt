@@ -678,6 +678,7 @@ set=Set a variable to a value
 show.breaks=Display list of breakpoints
 show.calls=Display the call stack to the given depth
 show.line=Display the current program line
+show.package=Display exported package constants, types, and functions
 show.scope=Display nested call scope
 show.source=Display source of current module
 show.symbols=Display the current symbol table

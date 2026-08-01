@@ -2,13 +2,15 @@ package debugger
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // showCommand dispatches the "show <subcommand>" family of debugger commands.
@@ -36,6 +38,35 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 	)
 
 	switch t.Spelling() {
+	case "package":
+		// Perform the work of the "@package" command in the debugger.
+		tokens.Advance(2)
+
+		names := make([]string, 0, 1)
+
+		for {
+			if tokens.EndOfStatement() {
+				break
+			}
+
+			t := tokens.Next()
+			if t.IsIdentifier() {
+				names = append(names, t.Spelling())
+			} else {
+				return errors.ErrUnexpectedTextAfterCommand.Context(tokens.Peek(1))
+			}
+
+			if tokens.IsNext(tokenizer.CommaToken) {
+				continue
+			}
+
+			break
+		}
+
+		name := strings.Join(names, ",")
+
+		showPackage(c, sessionContext, name)
+
 	case "breaks", "breakpoints":
 		// List every active breakpoint.
 		showBreaks(sessionContext)
@@ -129,4 +160,41 @@ func showCommand(s *symbols.SymbolTable, tokens *tokenizer.Tokenizer, line int, 
 	}
 
 	return err
+}
+
+// Implementation of the "show package" debugger command. This calls the bytecode
+// DumpPackage opcode to print the package information to the sessionContext
+// output stream.  The name argument is a comma-separated list of package names
+// to show; if name is empty, all packages are shown.
+func showPackage(c *bytecode.Context, sessionContext *session, name string) error {
+	var err error
+
+	// We have to set up a call to the DumpPackage bytecode handler using the
+	// current context and symbol table, and using the name as the operand
+	// to the DumpPackage opcode.  The DumpPackage opcode will then print the
+	// package information to the sessionContext output stream.
+
+	if name == "" {
+		err = bytecode.DumpPackagesByteCode(c, nil)
+	} else {
+		names := strings.Split(name, ",")
+		for idx, n := range names {
+			names[idx] = strings.TrimSpace(n)
+		}
+
+		sort.Strings(names)
+
+		err = bytecode.DumpPackagesByteCode(c, names)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	text := c.GetOutput()
+	text = strings.TrimSuffix(text, "\n") // remove trailing newline
+
+	sessionContext.println(text)
+
+	return nil
 }

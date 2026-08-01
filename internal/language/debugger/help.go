@@ -34,6 +34,7 @@ var helpText = [][]string{
 	{"show calls [<count>]", i18n.T("help.show.calls")},
 	{"show symbols", i18n.T("help.show.symbols")},
 	{"show line", i18n.T("help.show.line")},
+	{"show package <name> [<name> ...]", i18n.T("help.show.package")},
 	{"show scope", i18n.T("help.show.scope")},
 	{"show source [start [:end]]", i18n.T("help.show.source")},
 	{"step [into]", i18n.T("help.step")},
@@ -52,6 +53,7 @@ var helpText = [][]string{
 func showHelp(sessionContext *session) error {
 	// Create a two-column table with localised column headings.
 	table, err := tables.New([]string{i18n.L("Command"), i18n.L("Description")})
+	table.SetPagination(0, 0)
 
 	// Add one row per help entry.  table.AddRow returns an error only if the
 	// number of columns does not match; since helpText is a compile-time

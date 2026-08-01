@@ -350,7 +350,7 @@ func initializeDispatch() {
 		dispatchTable[Drop] = dropByteCode
 		dispatchTable[DropToMarker] = dropToMarkerByteCode
 		dispatchTable[Dup] = dupByteCode
-		dispatchTable[DumpPackages] = dumpPackagesByteCode
+		dispatchTable[DumpPackages] = DumpPackagesByteCode
 		dispatchTable[DumpSymbols] = dumpSymbolsByteCode
 		dispatchTable[EndCapture] = endCaptureByteCode
 		dispatchTable[EntryPoint] = entryPointByteCode
