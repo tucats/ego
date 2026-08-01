@@ -151,6 +151,19 @@ func TestMinify_OptionalChainingPropertyNotRenamed(t *testing.T) {
 	assert.Contains(t, got, "?.value")
 }
 
+// The spread/rest operator "..." was not recognized as a single token, so it
+// fell apart into three separate "." tokens. The trailing "." then made the
+// rename-skip check mistake the identifier after it (e.g. "resolved" in
+// "[...resolved]") for a property read and leave it unrenamed — while the
+// variable's own declaration *was* renamed, since that's an unambiguous
+// local. The mismatch produces a ReferenceError at runtime: the renamed
+// declaration no longer has any binding under the original name.
+func TestMinify_SpreadOperatorRenamesConsistently(t *testing.T) {
+	src := `function f(){const resolved = new Set(); resolved.add(1); return [...resolved][0];}`
+	got := minifyString(t, src)
+	assert.NotContains(t, got, "resolved")
+}
+
 func TestMinify_EmptyInput(t *testing.T) {
 	assert.Equal(t, "", string(Minify([]byte(""), true)))
 }

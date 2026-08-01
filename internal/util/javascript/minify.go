@@ -309,7 +309,7 @@ func tokenize(src []byte) []jsToken {
 		if i+2 < n {
 			three := string(src[i : i+3])
 			switch three {
-			case "===", "!==", ">>>", "**=", ">>=", "<<=", "&&=", "||=", "??=":
+			case "===", "!==", ">>>", "**=", ">>=", "<<=", "&&=", "||=", "??=", "...":
 				out = append(out, jsToken{tkPunct, three})
 				i += 3
 
