@@ -270,6 +270,7 @@ func tokenize(src []byte) []jsToken {
 					c == 'x' || c == 'X' ||
 					c == 'b' || c == 'B' ||
 					c == 'o' || c == 'O' ||
+					c == 'n' || // BigInt literal suffix, e.g. 0n, 123n, 0x1Fn
 					(c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') {
 					j++
 

@@ -3414,6 +3414,21 @@ body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
 }
 .sql-wiz-insert-null-btn.sql-wiz-insert-null-active:hover { background: #357abd; }
 
+/* Locked "_row_id_" row — value is generated client-side and cannot be
+   edited or nulled; a lock icon takes the Null button's place. */
+.sql-wiz-insert-row-locked .sql-wiz-insert-input {
+    background: #f4f4f4;
+    color: #777;
+    cursor: not-allowed;
+}
+.sql-wiz-insert-locked {
+    flex-shrink: 0;
+    width: 1.9rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #999;
+}
+
 /* CREATE TABLE wizard — table name row */
 .sql-wiz-create-name-row {
     display: flex;
@@ -3494,6 +3509,24 @@ body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
     border-bottom: 1px solid #f0f0f0;
 }
 .sql-wiz-create-col-row:last-child { border-bottom: none; }
+
+/* Locked row for the internal "_row_id_" column — required when the DSN has
+   its rowIds attribute set. Inputs are disabled rather than removed so
+   buildSqlPreview() can still read their values. */
+.sql-wiz-create-col-row-locked .sql-wiz-create-col-name,
+.sql-wiz-create-col-row-locked .sql-wiz-create-col-type {
+    background: #f0f0f0;
+    color: #777;
+    cursor: not-allowed;
+}
+.sql-wiz-create-col-row-locked .sql-wiz-create-cb-label { color: #999; cursor: not-allowed; }
+.sql-wiz-create-col-locked {
+    flex-shrink: 0;
+    width: 1.8rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #999;
+}
 
 .sql-wiz-create-col-name {
     flex: 2;
@@ -3753,6 +3786,11 @@ body.dark .sql-wiz-insert-null-btn.sql-wiz-insert-null-active {
     border-color: #357abd;
     color: #fff;
 }
+body.dark .sql-wiz-insert-row-locked .sql-wiz-insert-input {
+    background: #1a1a38;
+    color: #666;
+}
+body.dark .sql-wiz-insert-locked { color: #666; }
 
 /* CREATE TABLE wizard dark mode */
 body.dark .sql-wiz-create-name-input {
@@ -3781,6 +3819,13 @@ body.dark .sql-wiz-create-col-type {
 }
 body.dark .sql-wiz-create-col-type:focus { border-color: #4a90e2; }
 body.dark .sql-wiz-create-cb-label { color: #aaa; }
+body.dark .sql-wiz-create-col-row-locked .sql-wiz-create-col-name,
+body.dark .sql-wiz-create-col-row-locked .sql-wiz-create-col-type {
+    background: #1a1a38;
+    color: #666;
+}
+body.dark .sql-wiz-create-col-row-locked .sql-wiz-create-cb-label { color: #666; }
+body.dark .sql-wiz-create-col-locked { color: #666; }
 body.dark .sql-wiz-alter-op-btn {
     background: #222244;
     color: #cdd6f4;

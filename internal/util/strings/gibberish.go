@@ -50,7 +50,7 @@ func Gibberish(u uuid.UUID) string {
 		hi = hi<<8 + uint64(u[i])
 	}
 
-	for i := 9; i < 16; i++ {
+	for i := 8; i < 16; i++ {
 		low = low<<8 + uint64(u[i])
 	}
 

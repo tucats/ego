@@ -123,6 +123,20 @@ func TestMinify_RegexLiteralPreserved(t *testing.T) {
 	assert.Contains(t, got, "/hello world/gi")
 }
 
+// A BigInt literal's trailing "n" must stay attached to its digits. If the
+// tokenizer treats it as a separate identifier, needsSep() inserts a space
+// between the number and the "n" (both are identifier-continuation
+// characters), producing "0 n" — a syntax error, since a number literal
+// can't be directly followed by a bare identifier.
+func TestMinify_BigIntLiteralSuffixNotSeparated(t *testing.T) {
+	src := `let hi = 0n; hi = (hi << 8n) + 1n;`
+	got := minifyString(t, src)
+	assert.NotContains(t, got, "0 n")
+	assert.Contains(t, got, "0n")
+	assert.Contains(t, got, "8n")
+	assert.Contains(t, got, "1n")
+}
+
 func TestMinify_EmptyInput(t *testing.T) {
 	assert.Equal(t, "", string(Minify([]byte(""), true)))
 }
