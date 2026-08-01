@@ -1,5 +1,7 @@
 # INDEX-12 — `urlString.Path` slices its argument list using a count taken from the format string
 
+{% raw %}
+
 **Affected functions:** `(*urlString).Path`, `URLBuilder`
 **File:** `runtime/rest/builder.go`
 **Risk:** Low — latent; every current call site passes a balanced format and
@@ -49,7 +51,7 @@ string for `}}` rather than the portion after `start`, so a `}}` appearing
 ## INDEX-12: Fix
 
 `Path` copies only as many arguments as are actually available, leaving any
-surplus verbs to be rendered by `fmt` as `MISSING`` — the normal Go
+surplus verbs to be rendered by `fmt` as `%!v(MISSING)` — the normal Go
 behavior for a short argument list:
 
 ```go
@@ -62,7 +64,7 @@ subs := make([]any, available)
 copy(subs, parts[:available])
 ```
 
-`URLBuilder` now only after the opening `{{` will search for the closing `}}` , and
+`URLBuilder` searches for the closing `}}` only after the opening `{{`, and
 stops rewriting when there is no match:
 
 ```go
@@ -73,3 +75,5 @@ if end < 0 {
 
 end += start
 ```
+
+{% endraw %}
