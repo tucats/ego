@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 const (
@@ -17,6 +17,7 @@ const (
 	// the symbol "name". Both delimiters must be present for a substitution to occur.
 	symbolPrefix = "{{"
 	symbolSuffix = "}}"
+	emptyString  = "<empty>"
 )
 
 // applySymbolsToTask expands all {{name}} references in every string field of
@@ -142,12 +143,37 @@ func applySymbolsToItem(sessionID int, input any, symbols *symbolTable, label st
 		if value, ok := symbols.symbols[key]; ok {
 			oldInput := input
 			input = value
-			ui.Log(ui.TableLogger, "table.symbol", ui.A{
-				"session": sessionID,
-				"label":   label,
-				"value":   input,
-				"name":    oldInput,
-			})
+
+			if ui.IsActive(ui.TableLogger) {
+				// Make the logged entry value more readable by updating a valueText version of it if it's too long or empty.
+				valueText := data.Format(input)
+				if valueText == `""` {
+					valueText = emptyString
+				}
+
+				if len(valueText) > 50 {
+					valueText = valueText[:47] + "..."
+				}
+
+				// Make the old string value more readable by updating a valueText version of it if it's too long or empty.
+				nameText := data.Format(oldInput)
+				if len(strings.TrimSpace(nameText)) == 0 {
+					nameText = emptyString
+				}
+
+				if len(nameText) > 50 {
+					nameText = nameText[:47] + "..."
+				}
+
+				if valueText != nameText {
+					ui.Log(ui.TableLogger, "table.symbol", ui.A{
+						"session": sessionID,
+						"label":   label,
+						"value":   valueText,
+						"name":    nameText,
+					})
+				}
+			}
 		} else {
 			return "", errors.ErrNoSuchTXSymbol.Context(key)
 		}
@@ -180,12 +206,34 @@ func applySymbolsToString(sessionID int, input string, syms *symbolTable, label 
 		oldInput := input
 		input = strings.ReplaceAll(input, search, replace)
 
-		ui.Log(ui.TableLogger, "table.symbol", ui.A{
-			"session": sessionID,
-			"label":   label,
-			"value":   input,
-			"name":    oldInput,
-		})
+		// Make the logged entry value more readable by updating a valueText version of it if it's too long or empty.
+		valueText := data.Format(input)
+		if valueText == `""` {
+			valueText = emptyString
+		}
+
+		if len(valueText) > 50 {
+			valueText = valueText[:47] + "..."
+		}
+
+		// Make the old string value more readable by updating a valueText version of it if it's too long or empty.
+		nameText := data.Format(oldInput)
+		if nameText == `""` {
+			nameText = emptyString
+		}
+
+		if len(nameText) > 50 {
+			nameText = nameText[:47] + "..."
+		}
+
+		if valueText != nameText {
+			ui.Log(ui.TableLogger, "table.symbol", ui.A{
+				"session": sessionID,
+				"label":   label,
+				"value":   valueText,
+				"name":    nameText,
+			})
+		}
 	}
 
 	// After substitution, scan for any remaining {{ }} pairs. Their presence

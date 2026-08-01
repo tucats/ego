@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
-	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/language/expressions"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/expressions"
+	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
-	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -138,13 +138,13 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 			if ui.IsActive(ui.TableLogger) {
 				if util.InList(strings.ToLower(task.Opcode), symbolsOpcode, sqlOpcode, rowsOpcode) {
 					ui.WriteLog(ui.TableLogger, "table.op", ui.A{
-						"session": session.ID,
-						"op":      strings.ToUpper(task.Opcode)})
+						"session":   session.ID,
+						"operation": strings.ToUpper(task.Opcode)})
 				} else {
 					ui.WriteLog(ui.TableLogger, "table.op.table", ui.A{
-						"session": session.ID,
-						"op":      strings.ToUpper(task.Opcode),
-						"table":   tableName})
+						"session":   session.ID,
+						"operation": strings.ToUpper(task.Opcode),
+						"table":     tableName})
 				}
 			}
 

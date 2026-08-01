@@ -7,11 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/util"
@@ -145,6 +145,7 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 
 	msg := i18n.T("log.sql.begin", ui.A{
 		"id":       t.id,
+		"seq":      t.db.TransID,
 		"database": db.Name,
 	})
 
