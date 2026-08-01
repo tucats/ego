@@ -617,8 +617,15 @@ func renameLocals(tokens []jsToken) []jsToken {
 		prevIdx := prevNonWS(result, len(result))
 		nextIdx := nextNonWS(tokens, i)
 
-		// Skip identifiers on the right side of a '.' (property read, e.g. obj.foo).
-		if prevIdx >= 0 && result[prevIdx].kind == tkPunct && result[prevIdx].value == "." {
+		// Skip identifiers on the right side of a '.' or '?.' (property read,
+		// e.g. obj.foo or obj?.foo). '?.' is tokenized as a single two-character
+		// punctuation token (see the multi-character operator list in tokenize()),
+		// so it must be checked alongside the plain '.' case — otherwise a
+		// property name following optional chaining is mistaken for a bare
+		// identifier and renamed if it happens to match an unrelated local
+		// variable name elsewhere in the file.
+		if prevIdx >= 0 && result[prevIdx].kind == tkPunct &&
+			(result[prevIdx].value == "." || result[prevIdx].value == "?.") {
 			result = append(result, t)
 
 			continue

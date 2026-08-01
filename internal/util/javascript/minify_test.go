@@ -137,6 +137,20 @@ func TestMinify_BigIntLiteralSuffixNotSeparated(t *testing.T) {
 	assert.Contains(t, got, "1n")
 }
 
+// "?." (optional chaining) is tokenized as a single two-character punctuation
+// token, distinct from a plain ".". The property-read exclusion in
+// renameLocals() must recognize both — otherwise a property name following
+// "?." that happens to match some unrelated local variable name declared
+// elsewhere in the file gets renamed too, silently corrupting the property
+// access into one that always reads undefined. Here "value" is both a real
+// local declared with let and a property read via optional chaining;
+// only the local declaration may be renamed.
+func TestMinify_OptionalChainingPropertyNotRenamed(t *testing.T) {
+	src := `function f(tok){ let value = 1; return tok?.value === value; }`
+	got := minifyString(t, src)
+	assert.Contains(t, got, "?.value")
+}
+
 func TestMinify_EmptyInput(t *testing.T) {
 	assert.Equal(t, "", string(Minify([]byte(""), true)))
 }
