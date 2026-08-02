@@ -8,8 +8,10 @@ FROM golang:bookworm AS builder
 # build source instead of a fresh clone from GitHub.
 ARG USE_LOCAL=false
 
+# zsh is required to run tools/test.sh and the scripts it calls, used by
+# tools/test_container.sh to run the test suite inside this builder stage.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git \
+ && apt-get install -y --no-install-recommends git zsh \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -27,6 +29,12 @@ RUN if [ "${USE_LOCAL}" != "true" ]; then \
     fi
 
 RUN go mod download
+
+# tools/apitest is a separate Go module (its own go.mod/go.sum) used by
+# tools/apitest.sh to run the REST API test suite. Downloading its
+# dependencies here, as part of the image build, means tools/test_container.sh
+# can run the full test suite later without needing network access.
+RUN cd tools/apitest && go mod download
 
 # Build using the project build script so the version and build-time strings
 # are injected via linker flags.

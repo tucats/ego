@@ -14,3 +14,11 @@ ego-container/
 # Any locally compiled ego binary at the repo root.
 ego
 ego.exe
+
+# Local database/log files created by running ego or its test suite directly
+# on the host — not needed in the image and only bloat the build context.
+/*.db
+/*.db-shm
+/*.db-wal
+/ego-server_*.log
+/ego-server-log.zip

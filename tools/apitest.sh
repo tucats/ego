@@ -23,9 +23,15 @@
 # compiled by apitest first, and run alphabetically. That's why the login tests
 # all start with directory 1-login/.
 #
+# If the APITEST_ARGS environment variable is set, its contents are split on
+# whitespace and appended after the caller's own arguments. This gives callers
+# that can't easily change this script's argument list (e.g.
+# tools/test_container_entrypoint.sh, invoked via the fixed call in test.sh) a
+# way to inject extra apitest flags such as "-x HOST=localhost".
+#
 
 
-TESTS="" 
+TESTS=""
 
 if [[ $# -eq 0 ]]; then
   TESTS=tests/
@@ -33,7 +39,7 @@ fi
 
 pushd $(ego path)/tools/apitest/
 go mod tidy
-go run . $TESTS "$@"
+go run . $TESTS "$@" ${=APITEST_ARGS}
 STATUS=$?
 popd
 
