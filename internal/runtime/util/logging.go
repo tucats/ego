@@ -37,11 +37,26 @@ func setLogger(symbols *symbols.SymbolTable, args data.List) (any, error) {
 	return data.NewList(oldSetting, nil), nil
 }
 
-// getLogContents implements the util.Log(n[, session]) function, which returns the
-// last n lines from the log file as an Ego string array.
+// getLogContents implements the util.Log(n[, session[, class[, message]]])
+// function, which returns the last n lines from the log file as an Ego string
+// array.
 //
-// The optional second argument, session, restricts results to lines from a specific
-// log session ID. Pass 0 (or omit the argument) to return lines from all sessions.
+// All the filtering arguments are optional, and each one narrows the result
+// further:
+//
+//	session  restricts results to one log session ID; 0 means every session.
+//	class    is a comma-separated list of logger classes ("REST,AUTH");
+//	         an empty string means every class.
+//	message  is a glob pattern matched against the message identifier
+//	         ("rest.*"); an empty string means every message.
+//
+// The class and message filters read fields that exist only in a JSON-format
+// log file. Asking for them while the server writes a text-format log is an
+// error rather than a silently unfiltered result.
+//
+// Note that the filter is applied before the count: asking for 50 lines of
+// class REST yields 50 REST lines if that many exist anywhere in the log, not
+// whichever REST lines happen to fall in the last 50 lines of the file.
 //
 // When the log buffer is empty or logging is not configured to retain lines,
 // an empty array is returned rather than nil.
@@ -53,10 +68,10 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 		return data.NewList(nil, err), err
 	}
 
-	filter := 0
+	filter := ui.LogFilter{}
 
 	if args.Len() > 1 {
-		filter, err = data.Int(args.Get(1))
+		filter.Session, err = data.Int(args.Get(1))
 		if err != nil {
 			err = errors.New(err).In("Log")
 
@@ -64,11 +79,27 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
-	lines, err := ui.Tail(count, filter)
-	if err != nil {
-		err = errors.New(err).Context("Log()")
+	if args.Len() > 2 {
+		filter.Classes = ui.SplitClassList(data.String(args.Get(2)))
+	}
 
-		return data.NewList(nil, err), err
+	if args.Len() > 3 {
+		filter.Message = strings.TrimSpace(data.String(args.Get(3)))
+	}
+
+	lines, err := ui.TailFiltered(count, filter)
+	if err != nil {
+		// Context() replaces whatever context the error already carried, so only
+		// add the "Log()" call site when there is nothing better there. A
+		// rejected filter arrives naming the offending class or pattern, and
+		// that is far more use to the caller than being told which function
+		// they already know they called.
+		wrapped := errors.New(err)
+		if wrapped.GetContext() == "" {
+			wrapped = wrapped.Context("Log()")
+		}
+
+		return data.NewList(nil, wrapped), wrapped
 	}
 
 	if lines == nil {

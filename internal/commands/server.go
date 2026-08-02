@@ -668,7 +668,9 @@ func defineNativeAdminHandlers(r *router.Router) {
 			Class(router.AdminRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.LogLinesJSONMediaType, defs.TextMediaType, defs.LogLinesTextMediaType).
 			Parameter("session", "int").
-			Parameter("tail", "int")
+			Parameter("tail", "int").
+			Parameter("class", util.ListParameterType).
+			Parameter("msg", util.StringParameterType)
 	}
 
 	if _, status := r.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {

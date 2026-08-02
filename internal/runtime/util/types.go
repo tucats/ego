@@ -32,8 +32,16 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 					Name: "session",
 					Type: data.IntType,
 				},
+				{
+					Name: "class",
+					Type: data.StringType,
+				},
+				{
+					Name: "message",
+					Type: data.StringType,
+				},
 			},
-			ArgCount: data.Range{1, 2},
+			ArgCount: data.Range{1, 4},
 			Returns:  []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 		},
 		Value: getLogContents,

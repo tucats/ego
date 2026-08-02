@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/tucats/ego/internal/builtins"
@@ -174,11 +175,13 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 // is found in the Ego services library.
 func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		err    error
-		filter int
-		count  int
-		status = http.StatusOK
-		lines  = []string{}
+		err     error
+		filter  int
+		count   int
+		classes string
+		message string
+		status  = http.StatusOK
+		lines   = []string{}
 	)
 
 	ui.Log(ui.RouteLogger, "route.native.log", ui.A{
@@ -213,6 +216,22 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		}
 	}
 
+	// Optional "class" filter: a comma-separated list of logger class names,
+	// such as "REST,AUTH". Names are not case sensitive. Validation of the
+	// individual names happens inside util.Log, which reports an unknown name
+	// as an error rather than quietly matching nothing.
+	if v, found := session.Parameters["class"]; found && len(v) > 0 {
+		classes = strings.Join(v, ",")
+	}
+
+	// Optional "msg" filter: a glob pattern matched against the message
+	// identifier, such as "rest.*". This matches the identifier recorded in the
+	// log file, not the localized text the client eventually sees, so the same
+	// pattern selects the same lines whatever language was requested.
+	if v, found := session.Parameters["msg"]; found && len(v) > 0 {
+		message = strings.TrimSpace(v[0])
+	}
+
 	// If no count was given, assume we want the last 50 lines.
 	if count <= 0 {
 		count = 50
@@ -220,7 +239,7 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 
 	// This service requires using the util.Log runtime function. Create a symbol
 	// table and initialize the util package in that symbol table. Then call the
-	// function, passing it the number of lines and the session filter values.
+	// function, passing it the number of lines and the filter values.
 	// If the function returns an error, formulate an error response to the caller.
 	v, err := builtins.CallBuiltin(
 		symbols.NewRootSymbolTable("log service").
@@ -228,15 +247,26 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 			SetAlways(defs.SessionVariable, session.ID),
 		"util.Log",
 		count,
-		filter)
+		filter,
+		classes,
+		message)
 
 	if err != nil {
+		// A rejected filter is the caller's mistake, not the server's: an unknown
+		// logger class, a malformed pattern, or a structured filter asked of a
+		// text-format log. Those get a 400 so the client can correct and retry,
+		// while anything else (an unreadable log file, say) stays a 500.
+		status := http.StatusInternalServerError
+		if isFilterError(err) {
+			status = http.StatusBadRequest
+		}
+
 		ui.Log(ui.RestLogger, "rest.error", ui.A{
 			"session": session.ID,
-			"status":  http.StatusInternalServerError,
+			"status":  status,
 			"error":   err})
 
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
 	}
 
 	// The response should be an array of strings. Because util.Log follows the (value,error)
@@ -316,6 +346,27 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	}
 
 	return status
+}
+
+// isFilterError reports whether an error from the log retrieval call was caused
+// by the filter the caller supplied, as opposed to something going wrong on the
+// server. The former is a 400 -- the request itself was bad and no amount of
+// retrying it unchanged will help -- while the latter stays a 500.
+//
+// Comparison is by the underlying error rather than by string, so wrapping the
+// error with call context on the way up does not defeat the check.
+func isFilterError(err error) bool {
+	for _, filterError := range []error{
+		errors.ErrInvalidLoggerName,
+		errors.ErrInvalidLogPattern,
+		errors.ErrLogFilterNeedsJSON,
+	} {
+		if errors.Equals(err, filterError) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // writeLogPayload sends a completed log response body to the client, compressing it
