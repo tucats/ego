@@ -339,6 +339,8 @@
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard">&#x1F528; Build</button>
         <span style="display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="formatSqlEditor()" title="Reformat the SQL in the editor">&#x2261; Format</button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL">&#x25B6; Submit</button>
         <span style="margin-left:auto;display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="openSqlFile()" title="Open a SQL file into the editor">&#x1F4C2; Open</button>
@@ -416,8 +418,10 @@
 <div id="code" class="tab-content">
     <!-- Dark-themed code editor panel, mirroring the standalone webapp -->
     <div id="code-ui">
-        <!-- Toolbar: split Run/Debug/Trace button and spinner. Format/Console
-             live in the main Settings sheet (hamburger menu). "Trace" is an
+        <!-- Toolbar: split Run/Debug/Trace button, a Format button, and the
+             spinner. The Format *setting* (reformat automatically before every
+             run) lives in the main Settings sheet alongside Console; the button
+             here reformats on demand regardless of that setting. "Trace" is an
              execution mode alongside Run and Debug (a normal run with trace
              logging enabled); like the others it stays selected as the button's
              mode until changed, and is not persisted across a page reload. -->
@@ -431,6 +435,7 @@
                     <button class="code-run-item" data-mode="trace">&#128099; Trace</button>
                 </div>
             </div>
+            <button id="code-format-btn" title="Reformat the editor source">&#x2261; Format</button>
             <span id="code-spinner"></span>
         </div>
 
@@ -588,7 +593,7 @@
             </label>
             <div class="settings-label-group">
                 <span class="settings-label">Format</span>
-                <span class="settings-hint">Reformat the editor source with the server's parser before each Run/Debug. Remembered across sessions.</span>
+                <span class="settings-hint">Reformat code before each Run/Debug, and SQL before each Submit. Remembered across sessions.</span>
             </div>
         </div>
         <div class="settings-row">

@@ -1977,6 +1977,23 @@ body.dark #code-ui {
 #code-run-arrow:hover    { background: var(--ca2h); }
 #code-run-arrow:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Format button — a secondary action, so it is outlined rather than filled
+   like the Run pill next to it. */
+#code-format-btn {
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    color: var(--ct2);
+    border: 1px solid var(--cbrd);
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+#code-format-btn:hover    { background: var(--cb); border-color: var(--cbrdh); color: var(--ct); }
+#code-format-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* Dropdown panel for Run / Debug choices */
 #code-run-dropdown {
     display: none;
