@@ -408,6 +408,11 @@
             <button class="icon-pill-btn" onclick="logScrollToStart()" title="Go to beginning of log" aria-label="Go to beginning of log">&#x2191;</button>
             <button class="icon-pill-btn" onclick="logScrollToEnd()" title="Go to end of log" aria-label="Go to end of log">&#x2193;</button>
         </div>
+        <!-- Filter: restricts which lines the SERVER sends, unlike the search
+             box below which looks through lines already fetched.  The funnel
+             gets a dot when any filter is active, so it is visible at a glance
+             that the log on screen is not the whole log. -->
+        <button id="log-filter-btn" class="toolbar-icon-btn" onclick="showLogFilter()" title="Filter log" aria-label="Filter log">&#x2A0D;<span id="log-filter-dot" class="filter-dot"></span></button>
         <div class="log-search-group">
             <!-- The clear button lives inside the text box rather than beside
                  it: the wrapper is the positioning context, and CSS parks the
@@ -532,6 +537,42 @@
     </div>
 </div>
 
+<!-- Log filter sheet — slides in from the right when the funnel is clicked.
+     These controls change what the SERVER sends: the dashboard re-requests the
+     log with the filters as query parameters, and the server does the work.
+     Filtering has to happen there because the server holds the log in a
+     structured form (one JSON object per line, with a session number, a
+     logging class, and a message identifier) and flattens it into readable
+     text only on the way out.  By the time a line reaches the browser those
+     fields have been merged into one localized sentence. -->
+<div id="log-filter-overlay" onclick="overlayBackdropClick(event)">
+    <div id="log-filter-sheet">
+        <h2>Log Filter</h2>
+        <p id="log-filter-error"></p>
+
+        <label for="log-filter-tail">Lines to fetch</label>
+        <input type="number" id="log-filter-tail" min="1" step="1" autocomplete="off">
+        <span class="field-hint">How many matching lines to retrieve, counting back from the most recent.</span>
+
+        <label for="log-filter-session">Session number</label>
+        <input type="number" id="log-filter-session" min="1" step="1" autocomplete="off" placeholder="Any session">
+
+        <label for="log-filter-msg">Message identifier</label>
+        <input type="text" id="log-filter-msg" autocomplete="off" spellcheck="false" placeholder="Any message">
+        <span class="field-hint">Wildcard pattern, e.g. <code>log.server.*</code>. Use <code>*</code> for any text and <code>?</code> for one character.</span>
+
+        <label>Logging class</label>
+        <span class="field-hint">Leave all unchecked to include every class.</span>
+        <div id="log-filter-classes"></div>
+
+        <div class="sheet-buttons">
+            <button id="log-filter-clear-btn" onclick="clearLogFilter()">Clear filters</button>
+            <button id="log-filter-cancel-btn" onclick="hideLogFilter()">Cancel</button>
+            <button id="log-filter-apply-btn" onclick="applyLogFilter()">Apply</button>
+        </div>
+    </div>
+</div>
+
 <!-- Logger config sheet — slides in from the right when Configure is clicked -->
 <div id="logger-config-overlay" onclick="overlayBackdropClick(event)">
     <div id="logger-config-sheet">
@@ -541,8 +582,9 @@
         <span id="logger-file" class="logger-file-path"></span>
         <label for="logger-keep">Keep previous logs</label>
         <input type="number" id="logger-keep" min="0" step="1" autocomplete="off">
-        <label for="logger-tail">Lines to fetch</label>
-        <input type="number" id="logger-tail" min="1" step="1" autocomplete="off">
+        <!-- "Lines to fetch" used to live here. It moved to the Log Filter
+             sheet: it is a property of the request the dashboard makes, like
+             the other filters, not a property of how the server logs. -->
         <div id="logger-toggles"></div>
         <div class="sheet-buttons">
             <button id="logger-cancel-btn" onclick="hideLoggerConfig()">Cancel</button>

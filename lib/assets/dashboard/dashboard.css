@@ -551,6 +551,28 @@ body {
    and only the joins between buttons get a line. */
 .icon-pill-btn + .icon-pill-btn { border-left: 1px solid #e0e0e0; }
 
+/* An icon button that carries a state dot needs to be a positioning context so
+   the dot can be placed against its corner. */
+.toolbar-icon-btn { position: relative; }
+
+/* The dot marking an icon button whose feature is currently active -- on the
+   log funnel, that a filter is hiding some of the log. Hidden until the
+   .visible class is added. The white ring separates it from whatever it
+   overlaps, so it stays legible against the glyph beneath. */
+.filter-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    display: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f5a623;
+    box-shadow: 0 0 0 1.5px #fff;
+}
+
+.filter-dot.visible { display: block; }
+
 /* Inline label sitting beside a <select> in the toolbar */
 .toolbar-label {
     font-size: 0.85rem;
@@ -1693,7 +1715,8 @@ body.dark .user-id { color: #666; }
 }
 
 #logger-keep,
-#logger-tail {
+#log-filter-tail,
+#log-filter-session {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -1703,10 +1726,94 @@ body.dark .user-id { color: #666; }
 }
 
 #logger-keep:focus,
-#logger-tail:focus {
+#log-filter-tail:focus,
+#log-filter-session:focus,
+#log-filter-msg:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
+
+/* ==========================================================================
+   Log filter sheet — same slide-in panel as the logger config sheet
+   ========================================================================== */
+
+#log-filter-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#log-filter-sheet {
+    background: #fff;
+    width: 380px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    overflow-y: auto;
+}
+
+#log-filter-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+#log-filter-sheet label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.5rem;
+}
+
+#log-filter-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+/* The message pattern is a wildcard expression, so it reads better in the same
+   monospace face the log itself uses. */
+#log-filter-msg {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+/* The class checkboxes. Two columns, because the list runs to two dozen or so
+   entries and a single column would push the buttons off the bottom of the
+   sheet on a short window. */
+#log-filter-classes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.1rem 0.5rem;
+    margin-top: 0.3rem;
+}
+
+.filter-class-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.78rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.filter-class-row input { cursor: pointer; }
+
+/* Clear sits apart from Cancel/Apply: it acts on the filter rather than on the
+   sheet, so pushing the other two to the right keeps the two kinds of action
+   from being confused with each other. */
+#log-filter-clear-btn { margin-right: auto; }
 
 /* Section header above the toggle list */
 #logger-toggles {
@@ -2915,6 +3022,7 @@ body.dark #dsn-perm-add-sheet,
 body.dark #table-detail-sheet,
 body.dark #dsn-detail-sheet,
 body.dark #logger-config-sheet,
+body.dark #log-filter-sheet,
 body.dark #config-sheet,
 body.dark #settings-sheet {
     background: #16213e;
@@ -2932,7 +3040,8 @@ body.dark #edit-user-sheet label,
 body.dark #new-dsn-sheet label,
 body.dark #dsn-perm-edit-sheet label,
 body.dark #dsn-perm-add-sheet label,
-body.dark #logger-config-sheet label { color: #cdd6f4; }
+body.dark #logger-config-sheet label,
+body.dark #log-filter-sheet label { color: #cdd6f4; }
 
 body.dark .checkbox-label { color: #cdd6f4; }
 
@@ -2944,7 +3053,9 @@ body.dark #new-dsn-sheet input[type="text"],
 body.dark #dsn-perm-edit-sheet input[type="text"],
 body.dark #dsn-perm-add-sheet input[type="text"],
 body.dark #logger-keep,
-body.dark #logger-tail {
+body.dark #log-filter-tail,
+body.dark #log-filter-session,
+body.dark #log-filter-msg {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
@@ -3020,6 +3131,8 @@ body.dark .logger-file-path {
 }
 body.dark .logger-toggle-row  { border-bottom-color: #2a3a5a; }
 body.dark .logger-toggle-label { color: #cdd6f4; }
+body.dark .filter-class-row    { color: #cdd6f4; }
+body.dark .filter-dot          { box-shadow: 0 0 0 1.5px #16213e; }
 
 /* Configuration sheet */
 body.dark #config-sheet h2 { color: #cdd6f4; }
