@@ -482,6 +482,75 @@ body {
 .toolbar-btn:hover    { background: #e8e8e8; }
 .toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* --------------------------------------------------------------------------
+   Icon-only toolbar controls
+
+   Two shapes that share one look: a lone square button (.toolbar-icon-btn) and
+   a group of buttons fused into a single bordered capsule (.icon-pill). Both
+   are pinned to the same height so they line up with each other and with the
+   text buttons and inputs alongside them in a toolbar row.
+
+   These carry no visible text, so every one of them needs a title (hover tip)
+   and an aria-label (screen readers) in the markup.
+   -------------------------------------------------------------------------- */
+.toolbar-icon-btn,
+.icon-pill {
+    height: 1.85rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.toolbar-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.85rem;   /* keeps a single glyph from looking cramped */
+    padding: 0 0.45rem;
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.toolbar-icon-btn:hover {
+    background: #e8f1fb;
+    color: #4a90e2;
+}
+
+/* The capsule. overflow:hidden clips the square corners of the child buttons
+   to the capsule's own rounded outline, so the group reads as one control. */
+.icon-pill {
+    display: inline-flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+/* Buttons inside a capsule are flat and borderless — the capsule supplies the
+   only visible outline. */
+.icon-pill-btn {
+    padding: 0 0.5rem;
+    background: transparent;
+    border: none;
+    color: #4a90e2;
+    font-size: 1.05rem;
+    line-height: 1;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.icon-pill-btn:hover:not(:disabled) { background: #e8f1fb; }
+
+.icon-pill-btn:disabled {
+    color: #bbb;
+    cursor: default;
+}
+
+/* Hairline between neighbouring buttons. The "+" selector matches an element
+   directly preceded by another, so the first button in a capsule is skipped
+   and only the joins between buttons get a line. */
+.icon-pill-btn + .icon-pill-btn { border-left: 1px solid #e0e0e0; }
+
 /* Inline label sitting beside a <select> in the toolbar */
 .toolbar-label {
     font-size: 0.85rem;
@@ -520,8 +589,19 @@ body {
     margin-left: 1rem;  /* visual separation from the Refresh / Go-to-end buttons */
 }
 
+/* Wrapper that lets the clear button sit inside the text box. position:
+   relative makes this element the reference point for the absolutely
+   positioned button below, so "right: 0" means the right edge of the input
+   rather than the right edge of the page. */
+.search-input-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
 #log-search-input {
     padding: 0.3rem 0.6rem;
+    padding-right: 1.6rem;  /* room for the clear button parked on top */
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 0.85rem;
@@ -529,18 +609,60 @@ body {
     width: 180px;
 }
 
+/* The "x" inside the search box. Hidden by default; logSyncSearchClear()
+   adds .visible whenever the field has text in it. */
+.search-clear-btn {
+    position: absolute;
+    right: 0.15rem;
+    display: none;
+    padding: 0 0.3rem;
+    background: transparent;
+    border: none;
+    color: #999;
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.search-clear-btn.visible { display: block; }
+
+.search-clear-btn:hover { color: #c0392b; }
+
 #log-search-input:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
-/* Small status label showing "3 / 17 matches" */
-#log-search-status {
+/* Match stepper — "< 3 / 18 >". The capsule and its arrows come from the
+   shared .icon-pill / .icon-pill-btn rules above; all this adds is the count
+   in the middle and the fact that the whole thing is hidden until a search has
+   actually run.
+
+   This rule must stay AFTER .icon-pill in the file: both are single-class
+   selectors, so they carry equal specificity and the later one wins the
+   display property. .search-nav.visible has two classes and so outranks both. */
+.search-nav { display: none; }
+
+.search-nav.visible { display: inline-flex; }
+
+/* The count in the middle: "3 / 18". min-width keeps the pill from resizing
+   (and the arrows from shifting under the pointer) as the number changes. */
+.search-nav-count {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    border-left: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
     font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;  /* digits share one width */
     color: #666;
     white-space: nowrap;
-    min-width: 6rem;
+    min-width: 4.5rem;
+    justify-content: center;
 }
+
+/* No-match state — the whole pill dims and the count reads "0 / 0". */
+.search-nav.empty .search-nav-count { color: #c0392b; }
 
 /* Make the memory tab a flex column so the toolbar stays fixed and the
    caches/assets list scrolls independently. */
@@ -2727,6 +2849,20 @@ body.dark .toolbar-btn {
     border-color: #2a3a5a;
 }
 body.dark .toolbar-btn:hover { background: #2a3a5a; }
+
+/* Icon-only toolbar controls */
+body.dark .toolbar-icon-btn,
+body.dark .icon-pill {
+    background: #222244;
+    border-color: #2a3a5a;
+}
+body.dark .toolbar-icon-btn        { color: #cdd6f4; }
+body.dark .toolbar-icon-btn:hover  { background: #2a3a5a; color: #7aa7dd; }
+body.dark .icon-pill-btn                       { color: #7aa7dd; }
+body.dark .icon-pill-btn:hover:not(:disabled)  { background: #2a3a5a; }
+body.dark .icon-pill-btn:disabled              { color: #555; }
+body.dark .icon-pill-btn + .icon-pill-btn      { border-left-color: #2a3a5a; }
+
 body.dark .tab-toolbar select {
     background: #222244;
     color: #cdd6f4;
@@ -2745,7 +2881,14 @@ body.dark #log-search-input {
     color: #cdd6f4;
     border-color: #2a3a5a;
 }
-body.dark #log-search-status { color: #aaa; }
+body.dark .search-clear-btn        { color: #777; }
+body.dark .search-clear-btn:hover  { color: #e06c75; }
+body.dark .search-nav-count {
+    color: #aaa;
+    border-left-color: #2a3a5a;
+    border-right-color: #2a3a5a;
+}
+body.dark .search-nav.empty .search-nav-count { color: #e06c75; }
 body.dark #log-content mark  { background: #806600; color: #fff; }
 body.dark #log-content mark.log-match-current { background: #b07800; outline-color: #ffd000; }
 

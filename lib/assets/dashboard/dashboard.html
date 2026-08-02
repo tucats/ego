@@ -400,15 +400,34 @@
 
 <div id="log" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="loadLog()" title="Refresh log">&#x21BA; Refresh</button>
-        <button class="toolbar-add-btn" onclick="logScrollToEnd()" title="Go to end of log">&#x23EC; Go to End</button>
+        <button class="toolbar-icon-btn" onclick="loadLog()" title="Refresh log" aria-label="Refresh log">&#x21BA;</button>
+        <!-- Scroll navigation: jump to the top or the bottom of the log. These
+             move the view only -- they are unrelated to the search below, and
+             so are always present whether or not a search is running. -->
+        <div class="icon-pill">
+            <button class="icon-pill-btn" onclick="logScrollToStart()" title="Go to beginning of log" aria-label="Go to beginning of log">&#x2191;</button>
+            <button class="icon-pill-btn" onclick="logScrollToEnd()" title="Go to end of log" aria-label="Go to end of log">&#x2193;</button>
+        </div>
         <div class="log-search-group">
-            <input type="text" id="log-search-input" placeholder="Search&hellip;" autocomplete="off" spellcheck="false">
+            <!-- The clear button lives inside the text box rather than beside
+                 it: the wrapper is the positioning context, and CSS parks the
+                 button over the right-hand end of the input.  It stays hidden
+                 until there is something to clear -- logSyncSearchClear() in
+                 dashboard-ui.js shows and hides it as the field changes. -->
+            <div class="search-input-wrap">
+                <input type="text" id="log-search-input" placeholder="Search&hellip;" autocomplete="off" spellcheck="false">
+                <button id="log-search-clear" class="search-clear-btn" onclick="logSearchClear()" title="Clear search" aria-label="Clear search" tabindex="-1">&#x2715;</button>
+            </div>
             <button class="toolbar-add-btn" onclick="logSearch()" title="Find">Find</button>
-            <button class="toolbar-add-btn" onclick="logSearchPrev()" title="Previous match">&#x2191; Prev</button>
-            <button class="toolbar-add-btn" onclick="logSearchNext()" title="Next match">&#x2193; Next</button>
-            <button class="toolbar-danger-btn" onclick="logSearchClear()" title="Clear search">&#x2715; Clear</button>
-            <span id="log-search-status"></span>
+            <!-- Match stepper: one bordered pill holding "previous", the
+                 "3 / 18" position readout, and "next".  It is hidden until a
+                 search has actually run; logSetSearchStatus() in
+                 dashboard-ui.js shows it and keeps its contents current. -->
+            <div id="log-search-nav" class="icon-pill search-nav">
+                <button class="icon-pill-btn" onclick="logSearchPrev()" title="Previous match" aria-label="Previous match">&#x2039;</button>
+                <span id="log-search-status" class="search-nav-count"></span>
+                <button class="icon-pill-btn" onclick="logSearchNext()" title="Next match" aria-label="Next match">&#x203A;</button>
+            </div>
         </div>
         <button class="toolbar-add-btn" onclick="showLoggerConfig()" title="Configure loggers" style="margin-left:auto;">&#x2699; Configure&hellip;</button>
     </div>
