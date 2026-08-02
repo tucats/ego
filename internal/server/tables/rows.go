@@ -886,11 +886,33 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 	return count, http.StatusOK
 }
 
+// hasAnyName reports whether a repeated, comma-separated query parameter
+// actually names anything, as opposed to being present but empty (?columns=).
+//
+// An empty column list must mean "no column filter", not "exclude every
+// column". Without this check the loop below would mark every column excluded
+// and then find no names to un-exclude, so the caller would get rows with no
+// columns in them. The "list" parameter type used to reject an empty value
+// outright, which hid this; it now accepts one so that a UI can leave a cleared
+// filter in the query string, which makes the distinction this function draws
+// load-bearing.
+func hasAnyName(values []string) bool {
+	for _, value := range values {
+		for _, part := range strings.Split(parsing.StripQuotes(value), ",") {
+			if strings.TrimSpace(part) != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func getExcludeList(r *http.Request, db *database.Database, tableName string, w http.ResponseWriter) (map[string]bool, int) {
 	excludeList := map[string]bool{}
 
 	p := r.URL.Query()
-	if v, found := p[defs.ColumnParameterName]; found {
+	if v, found := p[defs.ColumnParameterName]; found && hasAnyName(v) {
 		// There is a column list, so build a list of all the columns, and then
 		// remove the ones from the column parameter. This builds a list of columns
 		// that are excluded.

@@ -93,12 +93,19 @@ func ValidateParameters(u *url.URL, validation map[string]string) error {
 	return err
 }
 
-// validateListParameter checks that a "list" parameter has at least one
-// non-empty value. Lists are typically comma-separated strings passed as
-// a single query parameter value; the caller is responsible for splitting
-// the value — this function only confirms that something was supplied.
+// validateListParameter checks a "list" parameter. Lists are comma-separated
+// strings passed either as a single query parameter value or as the parameter
+// repeated; the caller is responsible for splitting the value — this function
+// only checks the shape of what was supplied.
+//
+// An empty value (?columns=) is accepted and means the caller is not filtering
+// on this parameter, the same reading the "bool" and "duration" types already
+// give an empty value. This matters for a UI that builds a query string from a
+// set of fields: clearing a filter should not have to mean removing the
+// parameter from the URL entirely, and an empty list has an obvious meaning —
+// no entries — where an empty integer would not.
 func validateListParameter(values []string, name string) error {
-	if len(values) == 0 || values[0] == "" {
+	if len(values) == 0 {
 		return errors.ErrWrongParameterValueCount.Context(name)
 	}
 

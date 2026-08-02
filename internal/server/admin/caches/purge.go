@@ -17,10 +17,32 @@ import (
 // The optional "class" query parameter may be repeated to target one or more
 // specific caches (e.g. ?class=tokens&class=dsns). Omitting it purges every
 // cache at once.
+// namedClasses returns the cache class names actually supplied, discarding
+// values that name nothing. A parameter that is present but empty is treated
+// exactly like one that was never supplied.
+func namedClasses(values []string) []string {
+	classes := make([]string, 0, len(values))
+
+	for _, value := range values {
+		for _, class := range strings.Split(value, ",") {
+			if class = strings.TrimSpace(class); class != "" {
+				classes = append(classes, class)
+			}
+		}
+	}
+
+	return classes
+}
+
 func PurgeCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// session.Parameters["class"] is a []string of all values provided for the
-	// "class" query parameter. len() == 0 means the parameter was not supplied.
-	if len(session.Parameters["class"]) == 0 {
+	// "class" query parameter. An empty result means the parameter was either
+	// not supplied at all, or supplied with no value (?class=) -- the "list"
+	// parameter type accepts the latter, and an empty list means the same thing
+	// as an absent one: no class filter, so purge everything.
+	classes := namedClasses(session.Parameters["class"])
+
+	if len(classes) == 0 {
 		// No class filter — purge everything.  Free up the various caches
 		// used to support authentication and DSN handling.
 		caches.PurgeAll()
@@ -34,7 +56,7 @@ func PurgeCacheHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		// One or more class names were supplied. Loop over them and purge each
 		// named cache. strings.ToLower makes the comparison case-insensitive so
 		// "Tokens", "TOKENS", and "tokens" all match.
-		for _, class := range session.Parameters["class"] {
+		for _, class := range classes {
 			switch strings.ToLower(class) {
 			case "authorizations", "authorization", "permission", "permissions":
 				caches.Purge(caches.AuthCache)

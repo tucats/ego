@@ -221,6 +221,20 @@ func RequestForUser(user string, u *url.URL) string {
 	return user
 }
 
+// nonEmptyNames drops values that name nothing, so a parameter that is present
+// but empty is treated the same as one that was never supplied at all.
+func nonEmptyNames(values []string) []string {
+	result := make([]string, 0, len(values))
+
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			result = append(result, value)
+		}
+	}
+
+	return result
+}
+
 func SortList(u *url.URL) string {
 	var result strings.Builder
 
@@ -233,6 +247,14 @@ func SortList(u *url.URL) string {
 
 	for k, v := range values {
 		if KeywordMatch(k, "sort", "order", "sort-by", "order-by") {
+			// A sort parameter that is present but empty (?sort=) means the
+			// caller is not sorting. Without this the loop below would emit a
+			// bare "ORDER BY" with no column after it, which is not valid SQL.
+			// The "list" parameter type used to reject an empty value before it
+			// ever reached here; it now accepts one so that a UI can leave a
+			// cleared filter in the query string.
+			v = nonEmptyNames(v)
+
 			for i, name := range v {
 				if strings.HasPrefix(name, "~") {
 					name = strings.TrimPrefix(name, "~")

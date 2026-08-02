@@ -239,8 +239,11 @@ server reload the item(s) from the disk store.
 
 You must have admin privileges to execute this REST call.
 
-Supports the `?class=` parameter to limit the flush to a specific class of cached
-items (e.g. `?class=asset` or `?class=service`).
+Supports the `?class=` parameter to limit the flush to specific classes of cached
+items (e.g. `?class=asset` or `?class=service`). More than one class may be named
+as a comma-separated list (`?class=asset,service`) or by repeating the parameter.
+A parameter that is present but empty (`?class=`) means the same thing as
+omitting it: every cache is flushed.
 
 &nbsp;
 &nbsp;
@@ -387,6 +390,65 @@ Supports the following URL parameters:
 | :-------- | :---------- |
 | tail | Return only the last `n` lines of the log. A value of zero returns all lines. |
 | session | Return only log lines from the given session number. |
+| class | Return only log lines from the named logging class(es). |
+| msg | Return only log lines whose message identifier matches a wildcard pattern. |
+
+All the filters may be combined; a log line is returned only when it satisfies
+every filter that was specified. A parameter that is present but empty
+(`?class=`) means the same thing as omitting it: no filtering on that field.
+
+##### Filtering by logging class
+
+The `class` parameter names one or more of the server's logging classes, using
+the same names reported by `GET /admin/loggers/` (`SERVER`, `REST`, `AUTH`,
+`SQL`, and so on). Names are not case-sensitive. Multiple classes may be given
+either as a comma-separated list or by repeating the parameter, so these are
+equivalent:
+
+```text
+GET /services/admin/log?class=REST,AUTH
+GET /services/admin/log?class=REST&class=AUTH
+```
+
+A class name that is not a defined logger is rejected with HTTP 400 rather than
+silently matching nothing.
+
+##### Filtering by message identifier
+
+The `msg` parameter is a wildcard pattern matched against the `msg` field of the
+log entry — the message _identifier_ such as `log.server.request`, not the
+human-readable text that identifier expands into. Two wildcards are supported:
+
+| Pattern | Meaning |
+| :------ | :------ |
+| `*` | Matches any sequence of characters |
+| `?` | Matches any single character |
+
+Matching is not case-sensitive. For example, `?msg=log.server.*` returns every
+server message, and `?msg=*.request` returns request messages regardless of
+which subsystem produced them.
+
+Matching against the identifier rather than the displayed text is deliberate.
+The text is localized and has the message's arguments substituted into it, so a
+pattern written against the text would select different lines depending on the
+language the client asked for. The identifier is stable across languages. A
+malformed pattern is rejected with HTTP 400.
+
+##### Filters and the log file format
+
+The `class` and `msg` filters read fields that exist only when the server writes
+its log in JSON format, which is the default. If the server has been configured
+to write a text-format log (`ego.console.log` set to `text`), a request using
+either filter is rejected with HTTP 400 rather than returning results that do
+not match what was asked for. The `session` and `tail` parameters work with
+either format.
+
+##### Filtering happens before the line count
+
+The filters are applied to the whole log file first, and `tail` then selects the
+last `n` lines of what remained. Requesting `?class=REST&tail=50` therefore
+returns 50 REST lines if the log contains that many anywhere, rather than
+whichever REST lines happen to fall within the last 50 lines of the file.
 
 Example response with `?tail=3`:
 
@@ -1157,6 +1219,11 @@ Supported URL parameters:
 You can prefix a column name in the `sort` parameter with `~` to sort in
 descending order.
 
+The `columns` and `sort` parameters accept a comma-separated list, or may be
+repeated. A parameter that is present but empty (`?columns=` or `?sort=`) means
+the same thing as omitting it entirely: all columns are returned, and no sort
+order is applied.
+
 **Filter expressions** consist of an operator followed by one or two operands
 in parentheses. Operands can themselves be filter expressions, allowing
 arbitrarily complex expressions.
@@ -1450,7 +1517,7 @@ The following table lists every endpoint supported by the _Ego_ server.
 | POST | /services/admin/logon | Authenticate with username and password; returns a bearer token. |
 | GET | /services/admin/authenticate | Returns identity and expiration information for the current bearer token. |
 | POST | /services/admin/down/ | Initiates a graceful server shutdown. |
-| GET | /services/admin/log | Returns lines from the server log file, optionally filtered by session or tail count. |
+| GET | /services/admin/log | Returns lines from the server log file, optionally filtered by session, logging class, message identifier, or tail count. |
 | GET | /admin/heartbeat | Lightweight liveness check; returns 200 if the server is running. |
 | GET | /admin/config | Returns all current server configuration key/value pairs. |
 | POST | /admin/config | Returns the current values for a specified set of configuration keys. |
