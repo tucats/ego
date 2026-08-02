@@ -376,16 +376,69 @@ func nameGen() func() string {
 }
 
 // collectLocals scans tokens for declarations made with var/let/const and for
-// function parameter lists.  It returns a set of identifier names that are
-// candidates for renaming.
-func collectLocals(tokens []jsToken) map[string]bool {
+// function parameter lists.  It returns two sets of identifier names:
+//
+//	locals    — names that are safe to rename: declarations made inside a
+//	            braced block, plus function parameters, which are local to
+//	            their function wherever that function was declared.
+//	fileScope — names bound at file scope: var/let/const, function and class
+//	            declarations that appear outside any braced block.
+//
+// Nothing in fileScope may be renamed, for two independent reasons:
+//
+//  1. A file-scope name is reachable from outside the file the minifier can
+//     see — from an inline onclick/onchange attribute in the HTML, or from
+//     another <script> sharing the same global scope. Renaming one silently
+//     breaks a caller that was never in the minifier's hands.
+//  2. Each asset is minified independently (see the assets handler), so two
+//     files renaming on their own counters would not agree on the result.
+//
+// Function declaration names were already left out of the rename for reason 1,
+// but that protection held only while no *other* declaration shared the name:
+// the rename map is keyed by name alone, so a parameter called "showSettings"
+// anywhere in the file would drag a top-level showSettings() into the rename
+// along with it. Returning the file-scope set explicitly, and subtracting it
+// in renameLocals, closes that hole.
+func collectLocals(tokens []jsToken) (map[string]bool, map[string]bool) {
 	locals := map[string]bool{}
+	fileScope := map[string]bool{}
 	n := len(tokens)
+	depth := 0
 
 	for i := 0; i < n; i++ {
 		t := tokens[i]
+
+		// Track braced-block nesting: a declaration is at file scope exactly
+		// when no '{' encloses it. Only braces are counted — parentheses and
+		// brackets do not introduce a scope that matters here.
+		//
+		// This depends on the loop never stepping over a brace, which is why
+		// the two places below that skip a region hand back an index one short
+		// of where they stopped: the loop's own i++ then lands exactly on the
+		// token they stopped at, rather than one past it.
+		if t.kind == tkPunct {
+			switch t.value {
+			case "{":
+				depth++
+
+			case "}":
+				if depth > 0 {
+					depth--
+				}
+			}
+
+			continue
+		}
+
 		if t.kind != tkIdentifier {
 			continue
+		}
+
+		// Declarations outside every brace are off-limits; anything deeper is
+		// a genuine local and may be renamed.
+		target := locals
+		if depth == 0 {
+			target = fileScope
 		}
 
 		switch t.value {
@@ -402,25 +455,28 @@ func collectLocals(tokens []jsToken) map[string]bool {
 
 				cur := tokens[i]
 				if cur.kind == tkIdentifier && !reserved[cur.value] {
-					locals[cur.value] = true
+					target[cur.value] = true
 					i++
 				} else if cur.kind == tkPunct && (cur.value == "{" || cur.value == "[") {
-					// Simple destructuring: collect identifiers until matching close
-					depth := 1
+					// Simple destructuring: collect identifiers until matching
+					// close. `nest` is this pattern's own bracket counter and
+					// is deliberately not the enclosing `depth`: the pattern is
+					// balanced, so it leaves the block nesting unchanged.
+					nest := 1
 					i++
 
-					for i < n && depth > 0 {
+					for i < n && nest > 0 {
 						if tokens[i].kind == tkPunct {
 							switch tokens[i].value {
 							case "{", "[":
-								depth++
+								nest++
 							case "}", "]":
-								depth--
+								nest--
 							}
 						}
 
-						if tokens[i].kind == tkIdentifier && depth > 0 && !reserved[tokens[i].value] {
-							locals[tokens[i].value] = true
+						if tokens[i].kind == tkIdentifier && nest > 0 && !reserved[tokens[i].value] {
+							target[tokens[i].value] = true
 						}
 
 						i++
@@ -447,32 +503,50 @@ func collectLocals(tokens []jsToken) map[string]bool {
 				i++ // consume ','
 			}
 
-		case "function":
-			// function [name] ( params )
-			// The function's own name is NOT collected for renaming: named
-			// function declarations are visible globally and may be called
-			// from HTML onclick/onchange attributes that the minifier never
-			// sees. Only the parameter names (truly local) are renamed.
+			// Step back one so the loop's i++ lands on the token the
+			// declaration stopped at rather than one past it. That token may
+			// be the '}' closing the enclosing block, and skipping it would
+			// leave `depth` permanently too deep.
+			i--
+
+		case "function", "class":
+			// function [name] ( params )   /   class [name] { … }
+			//
+			// The declared name is never a rename candidate: it is either at
+			// file scope, where it is recorded as off-limits below, or nested,
+			// where it is still reachable by name from anywhere in its
+			// enclosing scope. Only the parameter names are truly local.
 			i++
 
 			i = skipWhitespace(tokens, i)
 			if i >= n {
 				break
 			}
-			// Skip the optional function name without adding it to locals.
+
+			// Record the optional declared name. Recording it is what stops a
+			// same-named local elsewhere in the file from dragging it into the
+			// rename map; see the note on this function.
 			if tokens[i].kind == tkIdentifier && !reserved[tokens[i].value] {
+				if depth == 0 {
+					fileScope[tokens[i].value] = true
+				}
+
 				i++
 				i = skipWhitespace(tokens, i)
 			}
-			// collect parameter list
+
+			// collect parameter list ("class" has none, so this is skipped for it)
 			if i < n && tokens[i].kind == tkPunct && tokens[i].value == "(" {
 				i++
-				i = collectParams(tokens, i, locals)
+				// Same step-back as above: collectParams returns the index
+				// after the ')', and the token there is very often the '{'
+				// that opens the body.
+				i = collectParams(tokens, i, locals) - 1
 			}
 		}
 	}
 
-	return locals
+	return locals, fileScope
 }
 
 // skipWhitespace advances i past any whitespace tokens and returns the new index.
@@ -549,7 +623,17 @@ func collectParams(tokens []jsToken, i int, locals map[string]bool) int {
 // shorter names, leaving property accesses (identifiers preceded by '.') and
 // all string/template contents unchanged.
 func renameLocals(tokens []jsToken) []jsToken {
-	locals := collectLocals(tokens)
+	locals, fileScope := collectLocals(tokens)
+
+	// Anything bound at file scope is removed outright, even when the same
+	// name is also declared as a local somewhere: the rename map is keyed by
+	// name, so renaming it for the local's sake would rename the file-scope
+	// binding too. Losing a rename costs a few bytes; renaming a name another
+	// file or an inline HTML handler refers to breaks the page.
+	for name := range fileScope {
+		delete(locals, name)
+	}
+
 	if len(locals) == 0 {
 		return tokens
 	}
