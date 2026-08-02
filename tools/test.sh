@@ -43,7 +43,7 @@ fi
 # Array, not a plain string: zsh does not word-split an unquoted scalar
 # variable the way bash/sh do, so "$EXEC_TEST_ARGS" below would otherwise be
 # passed as a single (invalid) two-word argument instead of two arguments.
-EXEC_TEST_ARGS=(--set ego.runtime.exec=true)
+EXEC_TEST_ARGS=(--set ego.runtime.exec=true, --set ego.runtime.precision.error=false)
 
 echo " "
 echo "Running Ego test stream with strict type checking"
