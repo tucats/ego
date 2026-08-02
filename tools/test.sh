@@ -40,6 +40,10 @@ fi
 # that has separately persisted ego.runtime.exec=true from prior local use.
 # --set is process-scoped (it does not write to the on-disk profile), so this
 # enables it for these test runs only, without changing the actual default.
+#
+# Also added in clearing runtime precision error checks, as these will also
+# break the unit tests on machines where the user has overridden the value.
+#
 # Array, not a plain string: zsh does not word-split an unquoted scalar
 # variable the way bash/sh do, so "$EXEC_TEST_ARGS" below would otherwise be
 # passed as a single (invalid) two-word argument instead of two arguments.
