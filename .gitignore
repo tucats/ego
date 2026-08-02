@@ -31,3 +31,7 @@ __debug_bin
 # Files generated from container testing
 ego-container
 ego-container/
+
+# Node modules for the dashboard startup check (tools/dashboard).
+# Installed on demand with "cd tools/dashboard && npm install".
+node_modules/

@@ -22,3 +22,8 @@ ego.exe
 /*.db-wal
 /ego-server_*.log
 /ego-server-log.zip
+
+# Host-installed Node modules. The image installs its own copy from
+# package-lock.json in the builder stage, so sending these would only bloat
+# the build context (and could carry host-platform binaries).
+node_modules/

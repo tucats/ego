@@ -10,8 +10,13 @@ ARG USE_LOCAL=false
 
 # zsh is required to run tools/test.sh and the scripts it calls, used by
 # tools/test_container.sh to run the test suite inside this builder stage.
+#
+# nodejs and npm are for tools/dashboard_check.sh, which loads the admin
+# dashboard in a headless DOM to confirm it starts up. They are installed only
+# in this builder stage; the runtime stage below stays free of them, so the
+# shipped image gains no extra packages or CVE surface from a test-only tool.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git zsh \
+ && apt-get install -y --no-install-recommends git zsh nodejs npm \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -35,6 +40,14 @@ RUN go mod download
 # dependencies here, as part of the image build, means tools/test_container.sh
 # can run the full test suite later without needing network access.
 RUN cd tools/apitest && go mod download
+
+# tools/dashboard holds the headless-DOM dashboard check and its single
+# devDependency, jsdom. Installing it here, as part of the image build, means
+# tools/test_container.sh can run the check later without network access --
+# the same reason the apitest module's dependencies are fetched above.
+# "npm ci" installs exactly what package-lock.json pins, so the container tests
+# against the same jsdom version as the host.
+RUN cd tools/dashboard && npm ci --no-audit --no-fund
 
 # Build using the project build script so the version and build-time strings
 # are injected via linker flags.

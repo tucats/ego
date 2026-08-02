@@ -375,7 +375,7 @@ func (m *Router) New(endpoint string, fn HandlerFunc, method string) *Route {
 	}
 
 	method = strings.ToUpper(method)
-	if !util.InList(method, "GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
+	if !util.InList(method, "GET", "HEAD", "POST", "DELETE", "UPDATE", "PUT", "PATCH", AnyMethod) {
 		ui.Panic(errors.New(errors.ErrInvalidRouteMethod).Context(method))
 	}
 

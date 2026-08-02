@@ -235,6 +235,22 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		status = http.StatusPartialContent
 	}
 
+	// A HEAD request asks for exactly the headers a GET would produce, and no
+	// body (RFC 9110 §9.3.2). Everything above has already run, so the caller
+	// sees the same content type, validators and range support it would get
+	// from a GET -- which is the whole point of asking.
+	//
+	// Content-Length is set explicitly here because nothing will be written for
+	// the server to infer it from. It reports the length of the body a GET
+	// would have returned, which is what makes HEAD useful for checking an
+	// asset's size without transferring it.
+	if r.Method == http.MethodHead {
+		w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+		w.WriteHeader(status)
+
+		return status
+	}
+
 	// Write the status of the request and the actual asset to the response and we're done.
 	w.WriteHeader(status)
 	_, _ = w.Write(data)

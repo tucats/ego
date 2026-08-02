@@ -92,6 +92,13 @@ func defineStaticRoutes() *router.Router {
 	r.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodGet).
 		Class(router.AssetRequestCounter)
 
+	// Same handler for HEAD: it produces the identical headers and suppresses
+	// the body itself. Without this route an asset HEAD returned 404, which is
+	// misleading to anything that probes for existence or inspects headers
+	// before fetching -- including "curl -I" and any cache-validation check.
+	r.New(defs.AssetsPath+"{{item...}}", assets.AssetsHandler, http.MethodHead).
+		Class(router.AssetRequestCounter)
+
 	// Create a new user
 	r.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
 		Authentication(true, true).

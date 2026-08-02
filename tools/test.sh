@@ -86,6 +86,29 @@ if [ $? != 0 ]; then
    exit 1
 fi
 
+# Check that the admin dashboard actually starts up in a browser.
+#
+# The dashboard's JavaScript is split across several files that share one
+# global scope, so a file whose top-level code references something declared
+# in a later file throws during page load and silently kills the rest of that
+# file. Every file is valid JavaScript on its own, so nothing above this point
+# can detect it -- loading the page is the only way. See
+# tools/dashboard/check.js.
+#
+# The check needs Node and jsdom. jsdom is not committed -- it is ~16MB of
+# third-party JavaScript -- so the first run installs it into
+# tools/dashboard/node_modules, which .gitignore excludes. If Node is missing,
+# or the install cannot be done offline, the check reports that it was skipped
+# and exits 0, so this never becomes a barrier for contributors without a
+# JavaScript toolchain.
+echo " "
+
+$(ego path)/tools/dashboard_check.sh
+if [ $? != 0 ]; then
+   echo "Dashboard startup check failed"
+   exit 1
+fi
+
 # Use the 'apitest' tool to run the REST API test suite
 # stored in tools/apitests
 #

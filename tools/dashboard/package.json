@@ -1,0 +1,12 @@
+{
+  "name": "ego-dashboard-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless-DOM startup check for the Ego admin dashboard. Not shipped with Ego and not used at runtime -- this exists only so tools/dashboard_check.sh can load the dashboard the way a browser would and confirm it starts. See check.js for what it does and does not verify.",
+  "scripts": {
+    "check": "node check.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}

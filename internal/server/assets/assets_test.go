@@ -14,6 +14,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -971,5 +972,123 @@ func TestAssetsHandler_RangeIgnoresIfNoneMatch(t *testing.T) {
 
 	if status := AssetsHandler(makeSession(), w, req); status != http.StatusPartialContent {
 		t.Errorf("a range request must still serve its range, got %d", status)
+	}
+}
+
+// =========================================================================
+// HEAD request tests
+// =========================================================================
+//
+// A HEAD request must produce exactly the headers a GET would, and no body
+// (RFC 9110 §9.3.2). Before HEAD was routed, an asset HEAD returned 404,
+// which misleads anything that probes for existence or inspects headers
+// before fetching -- "curl -I", cache-validation checks, link checkers.
+
+// headRequest builds a HEAD request for path.
+func headRequest(t *testing.T, path string) *http.Request {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodHead, path, nil)
+	req.URL.Path = path
+
+	return req
+}
+
+func TestAssetsHandler_Head_ReturnsHeadersWithoutBody(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	w := httptest.NewRecorder()
+
+	status := AssetsHandler(makeSession(), w, headRequest(t, "/style.css"))
+	if status != http.StatusOK {
+		t.Fatalf("want 200, got %d", status)
+	}
+
+	if body := w.Body.String(); body != "" {
+		t.Errorf("HEAD must carry no body, got %q", body)
+	}
+
+	// Content-Length still reports what a GET would have returned; that is what
+	// makes HEAD useful for checking size without transferring the asset.
+	want := strconv.Itoa(len("body { color: red; }"))
+	if got := w.Header().Get("Content-Length"); got != want {
+		t.Errorf("Content-Length: want %q, got %q", want, got)
+	}
+}
+
+func TestAssetsHandler_Head_HeadersMatchGet(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	get := httptest.NewRecorder()
+	AssetsHandler(makeSession(), get, assetRequest(t, "/style.css", ""))
+
+	head := httptest.NewRecorder()
+	AssetsHandler(makeSession(), head, headRequest(t, "/style.css"))
+
+	// The headers a caller relies on to decide whether to fetch at all must
+	// agree, or HEAD is worse than useless: it would report something the
+	// subsequent GET does not deliver.
+	for _, name := range []string{"Content-Type", "ETag", "Cache-Control", "Accept-Ranges"} {
+		if g, h := get.Header().Get(name), head.Header().Get(name); g != h {
+			t.Errorf("%s differs: GET %q, HEAD %q", name, g, h)
+		}
+	}
+}
+
+func TestAssetsHandler_Head_MissingAsset_Returns404(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	w := httptest.NewRecorder()
+
+	if status := AssetsHandler(makeSession(), w, headRequest(t, "/nonexistent.css")); status != http.StatusNotFound {
+		t.Errorf("want 404, got %d", status)
+	}
+}
+
+func TestAssetsHandler_Head_MatchingETag_Returns304(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	first := httptest.NewRecorder()
+	AssetsHandler(makeSession(), first, headRequest(t, "/style.css"))
+
+	req := headRequest(t, "/style.css")
+	req.Header.Set("If-None-Match", first.Header().Get("ETag"))
+
+	w := httptest.NewRecorder()
+
+	if status := AssetsHandler(makeSession(), w, req); status != http.StatusNotModified {
+		t.Errorf("want 304, got %d", status)
+	}
+}
+
+func TestAssetsHandler_Head_Range_Returns206WithoutBody(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	req := headRequest(t, "/style.css")
+	req.Header.Set("Range", "bytes=0-3")
+
+	w := httptest.NewRecorder()
+
+	if status := AssetsHandler(makeSession(), w, req); status != http.StatusPartialContent {
+		t.Errorf("want 206, got %d", status)
+	}
+
+	if body := w.Body.String(); body != "" {
+		t.Errorf("HEAD must carry no body even for a range, got %q", body)
 	}
 }
