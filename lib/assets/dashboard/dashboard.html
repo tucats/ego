@@ -442,10 +442,14 @@
         <!-- Main area: editor pane | divider | output pane -->
         <div id="code-main">
             <div id="code-left-pane">
+                <!-- The buttons are kept adjacent to one another so the CSS
+                     that groups them at the right-hand end of the bar applies;
+                     the hidden file input sits after them for that reason. -->
                 <div class="code-pane-label">Editor
                     <button id="code-open-file-btn" title="Open .ego file">&#x1F4C2; Open</button>
-                    <input type="file" id="code-file-input" accept=".ego" style="display:none">
+                    <button id="code-save-file-btn" title="Save the editor contents to a .ego file">&#x1F4BE; Save</button>
                     <button id="code-clear-editor-btn" title="Clear editor">&#x2715;</button>
+                    <input type="file" id="code-file-input" accept=".ego" style="display:none">
                 </div>
                 <div id="code-editor-wrap">
                     <div id="code-line-numbers"></div>

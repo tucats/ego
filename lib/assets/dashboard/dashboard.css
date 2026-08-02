@@ -2073,9 +2073,8 @@ body.dark #code-ui {
     flex-shrink: 0;
 }
 
-/* ✕ clear buttons inside label bars */
+/* Open / Save / ✕ buttons inside label bars */
 .code-pane-label button {
-    margin-left: auto;
     background: none;
     border: none;
     color: var(--ct2);
@@ -2084,6 +2083,18 @@ body.dark #code-ui {
     line-height: 1;
     padding: 0 0.2rem;
 }
+
+/* Only the FIRST button gets the automatic left margin. In a flex row an auto
+   margin absorbs the free space, so one of them pushes itself and everything
+   after it to the right-hand end as a single group. Putting margin-left:auto
+   on every button instead splits that free space evenly between them and
+   spreads them out across the bar, which is why this is scoped. */
+.code-pane-label button:first-of-type { margin-left: auto; }
+
+/* Breathing room between buttons in the group. The + combinator matches a
+   button immediately preceded by another button, so the first one in the row
+   is skipped and only the gaps between them are spaced. */
+.code-pane-label button + button { margin-left: 0.5rem; }
 
 .code-pane-label button:hover { color: var(--ct); }
 
