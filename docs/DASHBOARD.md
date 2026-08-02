@@ -805,30 +805,74 @@ messages are written to the log.
 **Viewing the log:**
 
 * The log viewer shows the most recent lines from the server log file (default: 500 lines).
-* Use the scrollbar to move through earlier entries.
+* Use the scrollbar, or the ↑ and ↓ buttons, to move through the entries.
+
+**Toolbar buttons:**
+
+The toolbar uses icons rather than words. Hover over any button to see what it does.
+
+| Button | Action |
+| :--- | :--- |
+| ↺ | Reloads the log from the server |
+| ↑ | Scrolls to the beginning of the log |
+| ↓ | Scrolls to the end of the log |
+| Funnel | Opens the Log Filter sheet. A dot on the funnel means a filter is in force |
+| Magnifier | Searches the lines currently displayed |
+| ‹ _n_ / _m_ › | Steps between search matches, showing the position of the current one |
+| Gear | Opens the Logger Configuration sheet |
+
+**Searching versus filtering:**
+
+These are two different things, and the difference matters:
+
+* **Searching** looks through the lines already displayed, highlighting matches. It never
+  contacts the server.
+* **Filtering** changes which lines the server sends in the first place. Filtering must
+  happen on the server because the log is structured there — each line records a session
+  number, a logging class, and a message identifier separately — and those fields are
+  combined into a single readable sentence before the line is sent.
 
 **Searching the log:**
 
 1. Type a search term in the search box.
-2. Click **Find** (or press Enter) to highlight the first match.
-3. Use **Next** and **Prev** to move between matches.
-4. The status area shows the current match position (e.g. `Match 5 of 23`).
-5. Click **✕** next to the search box to clear the search.
+2. Click the magnifier (or press Enter) to highlight all matches and jump to the first.
+3. Use ‹ and › to step between matches. The count between them shows your position,
+   for example `3 / 18`.
+4. Click **✕** inside the search box, or press Escape, to clear the search.
 
-**Toolbar buttons:**
+**Log Filter sheet:**
 
-| Button | Action |
-| :--- | :--- |
-| Refresh | Reloads the log from the server |
-| Go to End | Scrolls the log viewer to the most recent entries |
-| Configure… | Opens the Logger Configuration sheet |
+Opened with the funnel. Changing any of these causes the log to be re-requested from the
+server. The settings are remembered between visits.
+
+* **Limit results** — the most lines to return, counting back from the newest. The limit is
+  applied _after_ the filters below, so asking for 50 lines of class `REST` returns 50 `REST`
+  lines if the log holds that many, rather than however many happen to fall within the last
+  50 lines of the file. The limit applies even when no filter is set.
+* **Session number** — returns only messages logged while the server handled one particular
+  endpoint request. Every request is assigned a session number, which appears in the log line
+  as `[7]`. Leave the field empty to include every session.
+* **Message identifier** — a wildcard pattern matched against the message's internal
+  identifier, such as `log.server.request`. Use `*` for any run of characters and `?` for a
+  single character; matching ignores case. The pattern is matched against the identifier
+  rather than the text you see on screen, so it selects the same lines whatever language the
+  dashboard is displaying.
+* **Logging class** — restricts results to the checked categories. Leaving every box
+  unchecked includes them all. Categories that are currently switched off are still listed,
+  because the log file may already contain lines written while they were on.
+* **Clear filters** — removes every filter. This deliberately leaves **Limit results**
+  alone, since that governs how much is fetched rather than what qualifies.
+
+If the server rejects a filter — an unknown logging class, a malformed pattern, or a class
+or message filter on a server that writes its log as plain text rather than JSON — the
+reason is shown in place of the log content.
 
 **Logger Configuration sheet:**
 
+Opened with the gear.
+
 * **Log file path** — the path of the current server log file (read-only).
 * **Keep previous logs** — the number of rotated log files to retain when the log is purged.
-* **Lines to fetch** — how many trailing lines to load each time the log tab is refreshed.
-  This preference is saved in a browser cookie.
 * **Logger toggles** — a toggle switch for each available logging category. Enabling a
   logger causes the server to start writing that category of messages immediately; disabling
   it stops them. Changes take effect as soon as you click **Save**.

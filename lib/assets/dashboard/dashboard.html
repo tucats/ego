@@ -571,12 +571,13 @@
         <h2>Log Filter</h2>
         <p id="log-filter-error"></p>
 
-        <label for="log-filter-tail">Lines to fetch</label>
+        <label for="log-filter-tail">Limit results</label>
         <input type="number" id="log-filter-tail" min="1" step="1" autocomplete="off">
-        <span class="field-hint">How many matching lines to retrieve, counting back from the most recent.</span>
+        <span class="field-hint">The most lines to return, counting back from the newest. Lines are counted after the filters below are applied, and this limit still applies when no filter is set.</span>
 
         <label for="log-filter-session">Session number</label>
         <input type="number" id="log-filter-session" min="1" step="1" autocomplete="off" placeholder="Any session">
+        <span class="field-hint">Returns only messages logged while the server handled one particular endpoint request. Leave empty to include every session.</span>
 
         <label for="log-filter-msg">Message identifier</label>
         <input type="text" id="log-filter-msg" autocomplete="off" spellcheck="false" placeholder="Any message">
@@ -603,9 +604,10 @@
         <span id="logger-file" class="logger-file-path"></span>
         <label for="logger-keep">Keep previous logs</label>
         <input type="number" id="logger-keep" min="0" step="1" autocomplete="off">
-        <!-- "Lines to fetch" used to live here. It moved to the Log Filter
-             sheet: it is a property of the request the dashboard makes, like
-             the other filters, not a property of how the server logs. -->
+        <!-- The result limit used to live here as "Lines to fetch". It moved to
+             the Log Filter sheet: it is a property of the request the dashboard
+             makes, like the other filters, not a property of how the server
+             logs. -->
         <div id="logger-toggles"></div>
         <div class="sheet-buttons">
             <button id="logger-cancel-btn" onclick="hideLoggerConfig()">Cancel</button>
