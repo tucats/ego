@@ -25,16 +25,6 @@ set -o pipefail
 # inside the container.
 export PATH="${PWD}:${PATH}"
 
-# tests/time/parse.ego's "ParseAny flexible format detection" test parses a
-# bare zone abbreviation ("... 10:35am EST") with no numeric offset. The
-# underlying dateparse library resolves that abbreviation using the
-# process's local timezone; on a developer machine already set to US
-# Eastern this silently resolves to the correct -0500 offset, but a
-# container defaults to UTC, where the same abbreviation resolves to +0000
-# and the test's expected value no longer matches. Setting TZ here matches
-# the assumption the test already makes on a typical contributor machine.
-export TZ=America/New_York
-
 # Point the server at /build/lib (the real source tree copied in by the
 # Dockerfile's "COPY . ." step), not the /ego tree the builder stage unpacks
 # from the binary's embedded copy of lib/. The embed step
@@ -48,20 +38,6 @@ EGO_LIB_PATH=/build
 # temp directory (rather than a path under /build) keeps this run's state
 # out of the source tree entirely, and it's discarded with the container.
 WORK_DIR=$(mktemp -d)
-
-# Some tests resolve behavior via *persisted* settings rather than sensible
-# built-in defaults, so they only pass on a machine that already has an
-# ~/.ego profile configured from prior local "ego" use. A fresh container
-# has no such profile, so bootstrap one here. "ego config set" persists to
-# disk (unlike the process-scoped --set flag), matching what an
-# already-set-up developer machine has in place:
-#   - ego.runtime.path: TestCompiler_ReadDirectory (internal/language/
-#     compiler/package_test.go) resolves lib/packages/<name> under this
-#     setting rather than the executable's own location.
-#   - ego.runtime.exec: tests/exec/exec.ego's exec.Command tests are
-#     unconditionally blocked ("no privilege for operation") without it.
-./ego config set ego.runtime.path="${PWD}" >/dev/null
-./ego config set ego.runtime.exec=true >/dev/null
 
 SET_ARGS=()
 for kv in "$@"; do

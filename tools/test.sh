@@ -10,6 +10,16 @@
 # "echo" prints a line of text to the terminal.
 # "echo ' '" prints a blank line, used here as visual spacing between sections.
 
+# tests/time/parse.ego's "ParseAny flexible format detection" test parses a
+# bare zone abbreviation ("... 10:35am EST") with no numeric offset. Per Go's
+# time.Parse rules (which dateparse.ParseAny follows), a bare abbreviation is
+# only resolved to a real offset if it matches the process's local timezone;
+# otherwise it silently gets a +0000 offset. This pins the local timezone so
+# the test's expected value is reproducible regardless of the host/container
+# it runs on. See docs/issues/TIME-1.md for the underlying issue this papers
+# over -- ParseAny's result depends on the caller's TZ, not just its input.
+export TZ=America/New_York
+
 echo " "
 echo "Running native Go unit tests"
 
@@ -24,12 +34,23 @@ if [ $? != 0 ]; then
    exit 1
 fi
 
+# ego.runtime.exec defaults to false (subprocess exec is opt-in, by deliberate
+# security design -- see docs/issues/CODE-H1.md). tests/exec/exec.ego expects
+# exec.Command to work out of the box, which otherwise only holds on a machine
+# that has separately persisted ego.runtime.exec=true from prior local use.
+# --set is process-scoped (it does not write to the on-disk profile), so this
+# enables it for these test runs only, without changing the actual default.
+# Array, not a plain string: zsh does not word-split an unquoted scalar
+# variable the way bash/sh do, so "$EXEC_TEST_ARGS" below would otherwise be
+# passed as a single (invalid) two-word argument instead of two arguments.
+EXEC_TEST_ARGS=(--set ego.runtime.exec=true)
+
 echo " "
 echo "Running Ego test stream with strict type checking"
 
 # Run the Ego test suite with strict typing. In strict mode, all variables must
 # be explicitly declared with a specific type, and type mismatches are errors.
-./ego -q test --typing=strict
+./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=strict
 if [ $? != 0 ]; then
    echo "Ego test failure with strict typing"
    exit 1
@@ -42,7 +63,7 @@ echo "Running Ego test stream with relaxed type checking"
 # Run the Ego test suite with relaxed typing. In relaxed mode, some implicit
 # type conversions are allowed, making the language behave more like a scripting
 # language while still enforcing basic type rules.
-./ego -q test --typing=relaxed
+./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=relaxed
 if [ $? != 0 ]; then
    echo "Ego test failure with relaxed typing"
    exit 1
@@ -55,7 +76,7 @@ echo "Running Ego test stream with dynamic type checking"
 # Run the Ego test suite with dynamic (no) type checking. In dynamic mode,
 # variables can hold any type and all type coercions are automatic, similar
 # to how JavaScript or Python work.
-./ego -q test --typing=dynamic
+./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=dynamic
 if [ $? != 0 ]; then
    echo "Ego test failure with dynamic typing"
    exit 1

@@ -3536,7 +3536,7 @@ environment, a working directory, and stdin values for the command, execute the
 command, and then access the stdout (and, for `Output()`, stderr) values.
 
 Subprocess execution is a privileged operation. It is gated by the
-`ego.runtime.exec` configuration setting (default `true`), and is unconditionally
+`ego.runtime.exec` configuration setting (default `false`), and is unconditionally
 disabled for sandboxed contexts (for example, code run through the server's admin
 "run" dashboard endpoint on behalf of a non-admin user), regardless of that
 setting. If execution is not permitted, every function and method in this package
