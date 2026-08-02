@@ -367,23 +367,42 @@ const followsTheBrace = 2;`
 }
 
 // TestMinify_DashboardInlineHandlersSurvive guards the concrete case that
-// motivated file-scope protection. dashboard.html calls dashboard.js functions
-// from inline onclick/onchange attributes; the minifier only ever sees the .js
-// file, so a rename there breaks the button with no error until someone clicks
-// it. Reading the real pair keeps this honest as both files change.
+// motivated file-scope protection. dashboard.html calls dashboard JavaScript
+// functions from inline onclick/onchange attributes; the minifier only ever
+// sees the .js files, so a rename there breaks the button with no error until
+// someone clicks it.
+//
+// The dashboard's script is split across several files, each minified on its
+// own exactly as the assets handler does it, and a handler may be defined in
+// any of them. Reading the real files keeps this honest as they change.
 func TestMinify_DashboardInlineHandlersSurvive(t *testing.T) {
-	js, err := os.ReadFile(filepath.Join("..", "..", "..", "lib", "assets", "dashboard", "dashboard.js"))
-	if err != nil {
-		t.Skip("dashboard.js not readable from this location:", err)
+	dir := filepath.Join("..", "..", "..", "lib", "assets", "dashboard")
+
+	sources, err := filepath.Glob(filepath.Join(dir, "dashboard-*.js"))
+	if err != nil || len(sources) == 0 {
+		t.Skip("dashboard JavaScript not readable from this location:", err)
 	}
 
-	html, err := os.ReadFile(filepath.Join("..", "..", "..", "lib", "assets", "dashboard", "dashboard.html"))
+	html, err := os.ReadFile(filepath.Join(dir, "dashboard.html"))
 	if err != nil {
 		t.Skip("dashboard.html not readable from this location:", err)
 	}
 
-	minified := string(Minify(js, true))
+	// Minify each file separately — the point is that a handler defined in one
+	// file must survive that file being minified with no knowledge of the rest.
+	var minified strings.Builder
 
+	for _, source := range sources {
+		js, err := os.ReadFile(source)
+		if err != nil {
+			t.Fatalf("reading %s: %v", source, err)
+		}
+
+		minified.WriteString(string(Minify(js, true)))
+		minified.WriteString("\n")
+	}
+
+	all := minified.String()
 	handler := regexp.MustCompile(`on(?:click|change)="([A-Za-z_$][A-Za-z0-9_$]*)\(`)
 
 	seen := map[string]bool{}
@@ -396,11 +415,12 @@ func TestMinify_DashboardInlineHandlersSurvive(t *testing.T) {
 		seen[name] = true
 
 		declared := regexp.MustCompile(`function\s+` + regexp.QuoteMeta(name) + `\b`)
-		assert.True(t, declared.MatchString(minified),
-			"handler %q named in dashboard.html does not survive minification of dashboard.js", name)
+		assert.True(t, declared.MatchString(all),
+			"handler %q named in dashboard.html does not survive minification", name)
 	}
 
-	// Guard the guard: if the regex ever stops matching the HTML, this test
-	// would pass vacuously.
+	// Guard the guard: if either the glob or the regex ever stops matching,
+	// this test would pass vacuously.
+	assert.Greater(t, len(sources), 1, "expected several dashboard script files; glob may be stale")
 	assert.Greater(t, len(seen), 20, "expected to find many inline handlers; regex may be stale")
 }

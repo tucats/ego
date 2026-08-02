@@ -618,7 +618,20 @@
 </div>
 
 <!-- The /assets path is not a true file system path, but served by Ego -->
-<script src="/assets/dashboard/dashboard.js"></script>
+<!-- The dashboard's JavaScript, in load order. These are plain scripts, not
+     modules: they share a single global scope, and the browser evaluates them
+     in the order listed here. That order is load-bearing -- dashboard-core.js
+     defines what the rest build on, and dashboard-startup.js runs the entry
+     point and must come last. See the header comment in any of them for the
+     full rationale. -->
+<script src="/assets/dashboard/dashboard-core.js"></script>
+<script src="/assets/dashboard/dashboard-admin.js"></script>
+<script src="/assets/dashboard/dashboard-data.js"></script>
+<script src="/assets/dashboard/dashboard-sql.js"></script>
+<script src="/assets/dashboard/dashboard-sqlwizard.js"></script>
+<script src="/assets/dashboard/dashboard-ui.js"></script>
+<script src="/assets/dashboard/dashboard-code.js"></script>
+<script src="/assets/dashboard/dashboard-startup.js"></script>
 
 </body>
 </html>

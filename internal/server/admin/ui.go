@@ -17,9 +17,9 @@ import (
 //
 //  1. The <html lang="…"> attribute — tells browsers and screen readers which
 //     language the page is written in.
-//  2. The <meta name="ego-lang" content="…"> tag — read by dashboard.js at
+//  2. The <meta name="ego-lang" content="…"> tag — read by dashboard-core.js at
 //     startup so that every subsequent API call includes the matching
-//     Accept-Language header (see the apiFetch function in dashboard.js).
+//     Accept-Language header (see the apiFetch function in dashboard-core.js).
 const langPlaceholder = "__EGO_LANG__"
 
 // UIHandler launches the dashboard UI. It loads dashboard.html from the local
@@ -29,11 +29,11 @@ const langPlaceholder = "__EGO_LANG__"
 // Language handling deliberately avoids assuming any server-side default:
 //
 //   - If the caller supplies ?lang=fr (or any other supported code), that code
-//     is injected into the page and dashboard.js will send it as the
+//     is injected into the page and dashboard-core.js will send it as the
 //     Accept-Language header on every subsequent API call.
 //
 //   - If ?lang= is absent, empty, or names a language Ego has no translations
-//     for, the placeholder is replaced with an empty string.  dashboard.js then
+//     for, the placeholder is replaced with an empty string.  dashboard-core.js then
 //     omits the Accept-Language header entirely, allowing the browser to send
 //     its own native Accept-Language value — which reflects the user's actual
 //     OS/browser language settings — on every API request.
@@ -77,7 +77,7 @@ func UIHandler(session *router.Session, w http.ResponseWriter, r *http.Request) 
 //
 // Only the ?lang= query parameter is consulted.  We deliberately do NOT fall back
 // to session.Language (which comes from the request's Accept-Language header) or
-// to i18n.DefaultLanguage(), because an empty return value tells dashboard.js to
+// to i18n.DefaultLanguage(), because an empty return value tells dashboard-core.js to
 // leave the Accept-Language header unset — letting the browser send its own native
 // value on every API call rather than having the server impose a default.
 func resolveDashboardLanguage(r *http.Request) string {
@@ -85,7 +85,7 @@ func resolveDashboardLanguage(r *http.Request) string {
 	if paramLang == "" {
 		paramLang = r.URL.Query().Get("language")
 		if paramLang == "" {
-			// No preference expressed — return empty so dashboard.js lets the
+			// No preference expressed — return empty so dashboard-core.js lets the
 			// browser's built-in language negotiation take over.
 			return ""
 		}
