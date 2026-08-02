@@ -1214,6 +1214,7 @@ asset.load.local.error=Erreur de chargement de ressource locale lors de la lectu
 asset.loaded=[{{session}}] Ressource chargée depuis le cache : {{path}}, {{size}} {{size|cardinal octet, octets}}
 asset.minify=[{{session}}] Ressource web minifiée ; chemin {{path}} ; {{original}} -> {{size}} {{size|cardinal octet, octets}} (économisé {{saved}} {{saved|cardinal octet, octets}}, {{pct}}%)
 asset.not.found=Ressource introuvable dans le cache : {{path}}
+asset.not.modified=[{{session}}] Ressource inchangée par rapport à la copie du client ; renvoi de non modifiée : {{path}}
 asset.purged=Ressource purgée ; chemin {{path}} ; taille {{size}} ; taille du cache maintenant {{newsize}}
 asset.read=Ressource lue {{size}} {{size|cardinal octet, octets}} depuis le fichier {{path}}
 asset.read.local=Ressource locale lue {{size}} {{size|cardinal octet, octets}} depuis le fichier {{path}}

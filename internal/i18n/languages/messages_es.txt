@@ -1220,6 +1220,7 @@ asset.load.local.error=Error de carga de recurso local al leer desde {{path}}, {
 asset.loaded=[{{session}}] Recurso cargado desde caché: {{path}}, {{size}} {{size|cardinal byte, bytes}}
 asset.minify=[{{session}}] Recurso web minimizado; ruta {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (ahorrado {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 asset.not.found=Recurso no encontrado en caché: {{path}}
+asset.not.modified=[{{session}}] Recurso sin cambios respecto a la copia del cliente; devolviendo no modificado: {{path}}
 asset.purged=Recurso purgado; ruta {{path}}; tamaño {{size}}; tamaño de caché ahora {{newsize}}
 asset.read=Recurso leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}
 asset.read.local=Recurso local leído {{size}} {{size|cardinal byte, bytes}} desde el archivo {{path}}

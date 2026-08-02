@@ -1245,6 +1245,7 @@ asset.load.local.error=Local asset load error reading from {{path}}, {{error}}
 asset.loaded=[{{session}}] Asset loaded from cache: {{path}}, {{size}} {{size|cardinal byte, bytes}}
 asset.minify=[{{session}}] Web asset minified; path {{path}}; {{original}} -> {{size}} {{size|cardinal byte, bytes}} (saved {{saved}} {{saved|cardinal byte, bytes}}, {{pct}}%)
 asset.not.found=Asset not found in cache: {{path}}
+asset.not.modified=[{{session}}] Asset unchanged from client copy; returning not-modified: {{path}}
 asset.purged=Asset purged; path {{path}}; size {{size}}; cache size now {{newsize}}
 asset.read=Asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}
 asset.read.local=Local asset read {{size}} {{size|cardinal byte, bytes}} from file {{path}}

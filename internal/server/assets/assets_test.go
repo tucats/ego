@@ -798,3 +798,178 @@ func TestAssetsHandler_LibPathAssets(t *testing.T) {
 		t.Errorf("expected CSS content in response; got: %q", body)
 	}
 }
+
+// =========================================================================
+// Cache-validation tests
+// =========================================================================
+//
+// Assets used to be served with no Cache-Control, ETag or Last-Modified at
+// all. With no freshness information and no way to revalidate, a browser
+// falls back to heuristic caching and may reuse a stored copy for an interval
+// of its own choosing without ever asking the server — so a client can keep
+// running an old asset indefinitely after a server update. That is especially
+// damaging for the dashboard, whose JavaScript is split across several files:
+// the browser can serve some from cache and fetch others fresh, producing a
+// combination that was never tested together.
+
+func TestAssetsHandler_SendsValidationHeaders(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	w := httptest.NewRecorder()
+
+	status := AssetsHandler(makeSession(), w, assetRequest(t, "/style.css", ""))
+	if status != http.StatusOK {
+		t.Fatalf("want 200, got %d", status)
+	}
+
+	if got := w.Header().Get("Cache-Control"); got != "no-cache" {
+		t.Errorf(`Cache-Control: want "no-cache", got %q`, got)
+	}
+
+	// "no-cache" means "store, but revalidate before reuse", which is only
+	// useful if the response also carries a validator to revalidate against.
+	if got := w.Header().Get("ETag"); got == "" {
+		t.Error("ETag: want a validator, got none")
+	}
+}
+
+func TestAssetsHandler_ETagVariesWithContent(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	tag := func(path string) string {
+		t.Helper()
+
+		w := httptest.NewRecorder()
+		AssetsHandler(makeSession(), w, assetRequest(t, path, ""))
+
+		return w.Header().Get("ETag")
+	}
+
+	css, text := tag("/style.css"), tag("/data.json")
+	if css == "" || text == "" {
+		t.Fatalf("missing ETag: css=%q text=%q", css, text)
+	}
+
+	// A validator that did not depend on the bytes would defeat the whole
+	// mechanism: every asset would appear unchanged forever.
+	if css == text {
+		t.Errorf("different assets produced the same ETag %q", css)
+	}
+}
+
+func TestAssetsHandler_MatchingETag_Returns304WithNoBody(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	first := httptest.NewRecorder()
+	AssetsHandler(makeSession(), first, assetRequest(t, "/style.css", ""))
+
+	etag := first.Header().Get("ETag")
+	if etag == "" {
+		t.Fatal("no ETag on first response")
+	}
+
+	req := assetRequest(t, "/style.css", "")
+	req.Header.Set("If-None-Match", etag)
+
+	w := httptest.NewRecorder()
+
+	status := AssetsHandler(makeSession(), w, req)
+	if status != http.StatusNotModified {
+		t.Errorf("want 304, got %d", status)
+	}
+
+	if body := w.Body.String(); body != "" {
+		t.Errorf("304 must carry no body, got %q", body)
+	}
+}
+
+func TestAssetsHandler_StaleETag_ReturnsFullBody(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	req := assetRequest(t, "/style.css", "")
+	req.Header.Set("If-None-Match", `"not-the-current-tag"`)
+
+	w := httptest.NewRecorder()
+
+	status := AssetsHandler(makeSession(), w, req)
+	if status != http.StatusOK {
+		t.Errorf("want 200, got %d", status)
+	}
+
+	if !strings.Contains(w.Body.String(), "red") {
+		t.Error("stale validator must produce the full asset body")
+	}
+}
+
+func TestAssetsHandler_ETagListWithMatch_Returns304(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	first := httptest.NewRecorder()
+	AssetsHandler(makeSession(), first, assetRequest(t, "/style.css", ""))
+
+	// RFC 9110 §13.1.2 allows a comma-separated list; a match on any entry
+	// means the client already holds the current representation.
+	req := assetRequest(t, "/style.css", "")
+	req.Header.Set("If-None-Match", `"stale-one", `+first.Header().Get("ETag"))
+
+	w := httptest.NewRecorder()
+
+	if status := AssetsHandler(makeSession(), w, req); status != http.StatusNotModified {
+		t.Errorf("want 304 for a list containing the current tag, got %d", status)
+	}
+}
+
+func TestAssetsHandler_RangeResponseCarriesNoETag(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	w := httptest.NewRecorder()
+
+	status := AssetsHandler(makeSession(), w, assetRequest(t, "/style.css", "bytes=0-3"))
+	if status != http.StatusPartialContent {
+		t.Fatalf("want 206, got %d", status)
+	}
+
+	// The tag would describe only the returned slice. A client must never be
+	// handed a validator for a partial body that it could later reuse as if it
+	// identified the whole asset.
+	if got := w.Header().Get("ETag"); got != "" {
+		t.Errorf("range response must not carry an ETag, got %q", got)
+	}
+}
+
+func TestAssetsHandler_RangeIgnoresIfNoneMatch(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+	FlushAssetCache()
+
+	full := httptest.NewRecorder()
+	AssetsHandler(makeSession(), full, assetRequest(t, "/style.css", ""))
+
+	req := assetRequest(t, "/style.css", "bytes=0-3")
+	req.Header.Set("If-None-Match", full.Header().Get("ETag"))
+
+	w := httptest.NewRecorder()
+
+	if status := AssetsHandler(makeSession(), w, req); status != http.StatusPartialContent {
+		t.Errorf("a range request must still serve its range, got %d", status)
+	}
+}

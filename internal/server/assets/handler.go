@@ -5,6 +5,7 @@
 package assets
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,9 +21,9 @@ import (
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/util/javascript"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/javascript"
 )
 
 const (
@@ -168,6 +169,54 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	// Always advertise range support so browsers know they can request partial content.
 	w.Header()["Accept-Ranges"] = []string{"bytes"}
+
+	// Cache validation.
+	//
+	// Without any of these headers a browser has no freshness information and
+	// no way to revalidate, so it falls back to heuristic caching: it may reuse
+	// a stored copy for an interval of its own choosing without ever asking the
+	// server. That is how a client ends up running an old asset after a server
+	// update, and it is especially damaging for the dashboard, whose JavaScript
+	// is split across several files -- the browser can serve some of them from
+	// cache and fetch others fresh, producing a mixture that was never tested
+	// together and fails in ways no single file can explain.
+	//
+	// "no-cache" does not mean "do not store"; it means "store, but revalidate
+	// before reuse". Paired with an ETag, an unchanged asset costs a conditional
+	// request answered by an empty 304, and a changed one is picked up at once.
+	//
+	// The tag is computed over the bytes actually being returned, after any
+	// markdown rendering and minification, so it changes whenever the response
+	// changes for any reason. Range responses are excluded: the tag would
+	// describe only the slice, and a client must not treat a partial body as a
+	// validator for the whole asset.
+	if hasRange == "" {
+		etag := fmt.Sprintf(`"%x"`, sha256.Sum256(data))
+
+		// Set() rather than direct map assignment, unlike the headers above.
+		// Go canonicalizes header keys as "Etag", so writing the map under the
+		// conventional spelling "ETag" produces an entry that Header().Get and
+		// anything else using canonical lookup cannot see. It still goes out on
+		// the wire correctly — HTTP header names are case-insensitive — which is
+		// what makes the mistake easy to miss.
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Cache-Control", "no-cache")
+
+		// If the client already holds this exact version, say so and send no
+		// body. Any of the tags in If-None-Match may match (RFC 9110 §13.1.2).
+		if match := r.Header.Get("If-None-Match"); match != "" {
+			for _, tag := range strings.Split(match, ",") {
+				if strings.TrimSpace(tag) == etag {
+					ui.Log(ui.AssetLogger, "asset.not.modified", ui.A{
+						"session": session.ID,
+						"path":    path})
+					w.WriteHeader(http.StatusNotModified)
+
+					return http.StatusNotModified
+				}
+			}
+		}
+	}
 
 	// Apply range slicing if requested. HTTP Range end byte is inclusive (bytes=0-1 → 2 bytes),
 	// so slice as data[start:end+1]. Clamp end to actual file size for open-ended ranges.

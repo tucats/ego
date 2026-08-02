@@ -1214,6 +1214,7 @@ asset.load.local.error={{path}} からのローカルアセット読み込みエ
 asset.loaded=[{{session}}] キャッシュからアセットを読み込みました: {{path}}、{{size}}バイト
 asset.minify=[{{session}}] Webアセットを縮小しました。パス {{path}}、{{original}} -> {{size}}バイト ({{saved}}バイト節約、{{pct}}%)
 asset.not.found=キャッシュにアセットが見つかりません: {{path}}
+asset.not.modified=[{{session}}] クライアントのコピーからアセットは変更されていません。未変更を返します: {{path}}
 asset.purged=アセットを削除しました。パス {{path}}、サイズ {{size}}、現在のキャッシュサイズ {{newsize}}
 asset.read=ファイル {{path}} から{{size}}バイトのアセットを読み取りました
 asset.read.local=ファイル {{path}} から{{size}}バイトのローカルアセットを読み取りました
