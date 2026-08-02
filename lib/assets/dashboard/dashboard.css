@@ -518,6 +518,17 @@ body {
     color: #4a90e2;
 }
 
+/* An icon drawn as inline SVG rather than set as a character, for symbols whose
+   Unicode form is an emoji and would otherwise render in colour. Sizing in "em"
+   ties it to the button's font-size, so it matches the character-based icons
+   beside it and changes with them. The SVG paints itself with currentColor, so
+   the button's normal, hover, and dark-mode colours apply to it untouched. */
+.icon-glyph {
+    display: block;
+    width: 1em;
+    height: 1em;
+}
+
 /* The capsule. overflow:hidden clips the square corners of the child buttons
    to the capsule's own rounded outline, so the group reads as one control. */
 .icon-pill {
@@ -1723,6 +1734,16 @@ body.dark .user-id { color: #666; }
     font-size: 0.95rem;
     outline: none;
     width: 80px;
+}
+
+/* The session box is wider than the other number fields because it is the only
+   one with a placeholder to show. A number input also gives up ~20px at its
+   right edge to the spinner arrows, so "Any session" needs noticeably more room
+   than the character count alone suggests. Both filter fields are widened
+   together so the two stay aligned in the sheet. */
+#log-filter-tail,
+#log-filter-session {
+    width: 150px;
 }
 
 #logger-keep:focus,

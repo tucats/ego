@@ -412,7 +412,14 @@
              box below which looks through lines already fetched.  The funnel
              gets a dot when any filter is active, so it is visible at a glance
              that the log on screen is not the whole log. -->
-        <button id="log-filter-btn" class="toolbar-icon-btn" onclick="showLogFilter()" title="Filter log" aria-label="Filter log">&#x2A0D;<span id="log-filter-dot" class="filter-dot"></span></button>
+        <button id="log-filter-btn" class="toolbar-icon-btn" onclick="showLogFilter()" title="Filter log" aria-label="Filter log">
+            <!-- Drawn as SVG for the same reason as the magnifier: Unicode has
+                 no funnel that renders reliably as a monochrome glyph. -->
+            <svg class="icon-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <path d="M2 3.5 L14 3.5 L9.25 9 L9.25 14 L6.75 12.5 L6.75 9 Z" fill="currentColor"></path>
+            </svg>
+            <span id="log-filter-dot" class="filter-dot"></span>
+        </button>
         <div class="log-search-group">
             <!-- The clear button lives inside the text box rather than beside
                  it: the wrapper is the positioning context, and CSS parks the
@@ -423,7 +430,18 @@
                 <input type="text" id="log-search-input" placeholder="Search&hellip;" autocomplete="off" spellcheck="false">
                 <button id="log-search-clear" class="search-clear-btn" onclick="logSearchClear()" title="Clear search" aria-label="Clear search" tabindex="-1">&#x2715;</button>
             </div>
-            <button class="toolbar-add-btn" onclick="logSearch()" title="Find">Find</button>
+            <!-- The magnifier is drawn as inline SVG rather than set as a
+                 character. The Unicode magnifying glass is an emoji, which most
+                 browsers render in colour, and a colour icon would stand out
+                 against the monochrome glyphs either side of it. An SVG also
+                 takes its colour from the surrounding text, so it follows the
+                 button's hover and dark-mode colours with no extra rules. -->
+            <button class="toolbar-icon-btn" onclick="logSearch()" title="Find" aria-label="Find">
+                <svg class="icon-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                    <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <line x1="10.5" y1="10.5" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                </svg>
+            </button>
             <!-- Match stepper: one bordered pill holding "previous", the
                  "3 / 18" position readout, and "next".  It is hidden until a
                  search has actually run; logSetSearchStatus() in
@@ -434,7 +452,10 @@
                 <button class="icon-pill-btn" onclick="logSearchNext()" title="Next match" aria-label="Next match">&#x203A;</button>
             </div>
         </div>
-        <button class="toolbar-add-btn" onclick="showLoggerConfig()" title="Configure loggers" style="margin-left:auto;">&#x2699; Configure&hellip;</button>
+        <!-- margin-left:auto consumes all the leftover space in the toolbar's
+             flex row, which pushes this last button hard against the right
+             edge and leaves the rest grouped on the left. -->
+        <button class="toolbar-icon-btn" onclick="showLoggerConfig()" title="Configure loggers" aria-label="Configure loggers" style="margin-left:auto;">&#x2699;</button>
     </div>
     <div id="log-content"></div>
 </div>
