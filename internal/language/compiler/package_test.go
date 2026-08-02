@@ -46,7 +46,7 @@ func TestCompiler_ReadDirectory(t *testing.T) {
 	// file's own location instead, and set it explicitly: SetDefault writes
 	// to the transient override layer that settings.Get() checks first, so
 	// it wins regardless of what -- if anything -- Load() found.
-	_, thisFile, _, _ := runtime.Caller(0)
+	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
 	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..", "..")
 	settings.SetDefault(defs.EgoPathSetting, repoRoot)
 

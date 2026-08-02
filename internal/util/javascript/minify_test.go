@@ -406,6 +406,7 @@ func TestMinify_DashboardInlineHandlersSurvive(t *testing.T) {
 	handler := regexp.MustCompile(`on(?:click|change)="([A-Za-z_$][A-Za-z0-9_$]*)\(`)
 
 	seen := map[string]bool{}
+
 	for _, match := range handler.FindAllStringSubmatch(string(html), -1) {
 		name := match[1]
 		if seen[name] {
