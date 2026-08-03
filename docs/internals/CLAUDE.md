@@ -956,6 +956,65 @@ PERFORMANCE.md Findings 12-14's `callFramePop` work) rather than anything specif
 
 ---
 
+## Global Reference Cache & Const Folding (`internal/language/bytecode/globalcache.go`, Finding 17)
+
+Fixes PERFORMANCE.md Finding 17 (a package-level `const`/`var` referenced from deep recursion cost
+O(depth) per reference, not O(1)) — added August 2026. Design and full safety argument are in
+`docs/internals/GLOBALS.md` (written and reviewed as its own design doc before any code, mirroring
+`docs/SLOTS.md`'s process for Finding 7); this section is the short version.
+
+**Two independent tiers, not one mechanism.** Tier 1 (compile-time): a same-compilation-unit
+`const` reference folds straight to a literal `Push` (`compiler/constant.go`'s
+`foldConstantValue`, wired into `emitLoadName`), eliminating the lookup entirely — gated by
+`ego.compiler.constfold`. Tier 2 (runtime): a per-instruction cache on each compiled `*ByteCode`
+remembers which persistent "global singleton" table (main's own top-level table, or an imported
+package's own table — created exactly once, never recreated) a `var`/non-foldable-const/type-
+assertion reference resolved to, so a cache hit calls `Get`/`Set`/`GetAddress` directly on that
+table instead of walking `FindNextScope` — gated by `ego.runtime.globalcache`. They're kept
+separate because a compile-time fold and a runtime cache have different safety arguments; don't
+try to merge them.
+
+**The safety argument hinges on a new field, not the existing `IsShared()`.** A table is only ever
+cached once `SymbolTable.IsGlobalSingleton()` is true — a dedicated field, set at exactly the two
+places a persistent singleton table is created (`commands/run.go`, `compiler/import.go`), not a
+reuse of `IsShared()`. `IsShared()` is the wrong signal here: `EGO_SERIALIZE_SYMBOLTABLES` forces
+_every_ table, including ordinary transient per-call frames, to report `shared == true`, which
+would make an ordinary local scope look like a safe-to-cache singleton. If you're tempted to reuse
+`IsShared()` for a similar "is this safe to remember" decision elsewhere, check whether that debug
+setting's blast radius applies to your case first.
+
+**This is deliberately not Finding 14 Phase 4's declined idea.** Phase 4 wanted to cache the
+_next-scope pointer itself_ across calls and was rejected because that value is genuinely
+path-dependent (differs across calls crossing different package-proxy boundaries or capturing
+different closures). This cache only ever remembers an answer _after_ confirming it landed on a
+table whose identity is invariant to every possible calling path — if a reference's resolution
+ever depends on context, it resolves to a non-singleton table and the cache is simply never
+populated for that instruction, so it keeps paying the full walk. Don't generalize this cache to
+remember anything path-dependent; that was already tried and rejected for a reason.
+
+---
+
+## Goroutine Launch Synchronization (`internal/language/bytecode/goroutine.go`, BUG-94)
+
+**Any shared-state setup for a `go` statement's target must complete before the goroutine is
+launched, not as the first thing the new goroutine does.** `goByteCode` (runs in the launching
+thread) starts the new goroutine with a bare `go GoRoutine(...)` and does not wait for anything
+inside `GoRoutine` before returning to execute the launching thread's own next statement. Go gives
+no ordering guarantee between "a spawned goroutine starts running" and "its launcher continues
+past the `go` statement." BUG-94 was exactly this: a closure's captured scope used to be marked
+`SymbolTable.Shared(true)` as the first thing `GoRoutine` did (inside the new goroutine) — but the
+launching thread could reach a later statement that also touched that same captured scope (e.g. a
+channel receive that auto-creates a variable there) before the new goroutine got around to marking
+it shared, an unguarded concurrent map access despite both sides individually checking the shared
+flag correctly. Fixed by moving the marking into `goByteCode`, synchronous with the launching
+thread, strictly before `go GoRoutine(...)` runs. If you add anything else to the goroutine-launch
+path that establishes synchronization state (locks, shared flags, capacity reservations), put it
+in `goByteCode` before the fork point, not in `GoRoutine` after it — the race this bug describes is
+easy to reintroduce by "helpfully" moving setup code into the function that looks like the natural
+place for it (`GoRoutine`) instead of the one that's actually synchronization-safe (`goByteCode`).
+
+---
+
 ## Caches Package (`internal/caches/`)
 
 In-memory key/value store with per-class expiration, used for server admin session state. Key types: `caches.SymbolTableCache` (default 1 h), `caches.DebugSessionCache` (default 15 m). API:
