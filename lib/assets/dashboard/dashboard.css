@@ -164,6 +164,15 @@ body {
     gap: 0.75rem;
 }
 
+/* Modifier for a settings-row whose control needs more horizontal room than
+   the sheet comfortably gives a side-by-side layout (e.g. two illustrated
+   cards) -- stacks the control above the label/hint instead. */
+.settings-row-stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
 .settings-label-group {
     display: flex;
     flex-direction: column;
@@ -464,8 +473,12 @@ body {
    are pinned to the same height so they line up with each other and with the
    text buttons and inputs alongside them in a toolbar row.
 
-   These carry no visible text, so every one of them needs a title (hover tip)
-   and an aria-label (screen readers) in the markup.
+   Historically these carried no visible text (title/aria-label only), but
+   they now also support an icon+label rendering -- see the "Toolbar button
+   style setting" block below, which is what actually shows or hides the
+   label. Every one of them still needs a title (hover tip) and an
+   aria-label (screen readers) in the markup regardless of which style is
+   active.
    -------------------------------------------------------------------------- */
 .toolbar-icon-btn,
 .icon-pill {
@@ -479,8 +492,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.35rem;
     min-width: 1.85rem;   /* keeps a single glyph from looking cramped */
-    padding: 0 0.45rem;
+    padding: 0 0.6rem;
     color: #555;
     font-size: 0.95rem;
     line-height: 1;
@@ -512,15 +526,18 @@ body {
 }
 
 /* Buttons inside a capsule are flat and borderless — the capsule supplies the
-   only visible outline. */
+   only visible outline. Font size/weight moved onto .btn-icon below, since
+   the label beside it (added for the icon+text style) needs its own,
+   smaller size rather than inheriting the icon's bold 1.05rem. */
 .icon-pill-btn {
-    padding: 0 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0 0.6rem;
     background: transparent;
     border: none;
     color: #4a90e2;
-    font-size: 1.05rem;
     line-height: 1;
-    font-weight: 700;
     cursor: pointer;
 }
 
@@ -557,6 +574,68 @@ body {
 }
 
 .filter-dot.visible { display: block; }
+
+/* ==========================================================================
+   Toolbar button style setting (Icon + Text / Icons only)
+
+   Icon+Text is the CSS default: every icon+label button below already shows
+   both, and .toolbar-icon-btn/.icon-pill-btn above have been sized to fit a
+   label comfortably rather than just a lone glyph. body.toolbar-icons-only,
+   toggled by applyToolbarStyle() in dashboard-core.js, is the override that
+   collapses everything down to icon-only -- this must stay AFTER the base
+   rules above so it wins on equal specificity (same convention as the
+   .search-nav override earlier in this file).
+
+   The mechanism is purely markup-driven: a button only has a label to hide
+   if its HTML contains a <span class="btn-label">. Buttons that must never
+   change style (the log search prev/next pill, the code-run-arrow dropdown
+   toggle, code editor pane-label-bar buttons) simply never got that span, so
+   there is nothing here for them to react to -- no exclusion rules needed.
+
+   Neither .btn-icon nor .btn-label sets its own color, so both inherit
+   whatever color the parent button already resolves to (including under
+   body.dark), and no dark-mode counterparts are needed for this block.
+   ========================================================================== */
+.toolbar-icon-btn .btn-icon { font-size: 0.95rem; }
+.icon-pill-btn .btn-icon    { font-size: 1.05rem; font-weight: 700; }
+.btn-label                  { font-size: 0.82rem; font-weight: 600; }
+
+body.toolbar-icons-only .btn-label {
+    display: none;
+}
+
+/* Buttons that are icon+text by default collapse to a compact, roughly
+   square icon-only button -- the same box model .toolbar-icon-btn always
+   used. */
+body.toolbar-icons-only .toolbar-add-btn,
+body.toolbar-icons-only .toolbar-danger-btn,
+body.toolbar-icons-only .toolbar-btn,
+body.toolbar-icons-only #code-run-btn,
+body.toolbar-icons-only .code-run-item,
+body.toolbar-icons-only #code-format-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.85rem;
+    padding: 0.22rem 0.5rem;
+}
+
+body.toolbar-icons-only .code-run-item {
+    text-align: center;
+}
+
+/* The dropdown no longer needs room for "Debug"/"Trace" text. */
+body.toolbar-icons-only #code-run-dropdown {
+    min-width: 3rem;
+}
+
+/* Buttons that are icon-only by default shrink back from the roomier
+   icon+text padding/gap set above. */
+body.toolbar-icons-only .toolbar-icon-btn,
+body.toolbar-icons-only .icon-pill-btn {
+    gap: 0;
+    padding: 0 0.45rem;
+}
 
 /* Inline label sitting beside a <select> in the toolbar */
 .toolbar-label {
@@ -1909,6 +1988,51 @@ body.dark .user-id { color: #666; }
     color: #fff;
 }
 
+/* Style picker — like .settings-segmented, but each option is a card
+   illustrating its choice with a real, live-styled button (see the
+   "Toolbar buttons" row) rather than just a text label. */
+.settings-style-picker {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.settings-style-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.5rem;
+    background: #fafafa;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.settings-style-option:hover { background: #f0f4fa; }
+
+.settings-style-option.active {
+    border-color: #1C6EA4;
+    background: #eaf3fb;
+    box-shadow: 0 0 0 1px #1C6EA4 inset;
+}
+
+/* The preview is purely decorative (aria-hidden) -- clicks go to the parent
+   button, not the illustration itself. */
+.settings-style-preview {
+    pointer-events: none;
+}
+
+.settings-style-preview-label { font-size: 0.82rem; font-weight: 600; }
+
+.settings-style-option-caption {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.settings-style-option.active .settings-style-option-caption { color: #1C6EA4; }
+
 #logger-cancel-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
@@ -3247,6 +3371,15 @@ body.dark .settings-segmented     { border-color: #2a3a5a; }
 body.dark .settings-segmented-btn { background: #16213e; color: #cdd6f4; border-right-color: #2a3a5a; }
 body.dark .settings-segmented-btn:hover { background: #2a3a5a; }
 body.dark .settings-segmented-btn.active { background: #1C5080; color: #fff; }
+body.dark .settings-style-option { background: #16213e; border-color: #2a3a5a; }
+body.dark .settings-style-option:hover { background: #2a3a5a; }
+body.dark .settings-style-option.active {
+    border-color: #7eb8f7;
+    background: #1a3a5a;
+    box-shadow: 0 0 0 1px #7eb8f7 inset;
+}
+body.dark .settings-style-option-caption { color: #cdd6f4; }
+body.dark .settings-style-option.active .settings-style-option-caption { color: #7eb8f7; }
 
 
 /* SQL tab */
