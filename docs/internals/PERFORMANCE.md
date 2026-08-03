@@ -2838,7 +2838,93 @@ scope on every single call. Worth re-profiling with `ego run --profiling` (not j
 after any fix, since it was this profiler, not the Go-level one, that made the cost legible at
 statement granularity in the first place.
 
-**Status:** Open — intentionally deferred; tracked here for the next pass.
+**Status:** Fixed (August 2026) — see Resolution below.
+
+### Resolution (August 2026) — Finding 17
+
+Implemented as planned in [docs/internals/GLOBALS.md](GLOBALS.md), as a two-tier fix, following
+the same design-doc-before-code process `docs/SLOTS.md` used for Finding 7.
+
+**Tier 1 — compile-time const folding.** `compileConst`'s existing purity check (it has always
+rejected any constant expression referencing a non-constant name) already proves every
+successfully-compiled `const` is side-effect-free and fully evaluable at compile time. A new
+`c.constantValues map[string]any` retains that value (evaluating the constant's own compiled
+bytecode as a self-contained fragment, mirroring the peephole optimizer's existing
+`executeFragment`), and `emitLoadName` — the compiler's single choke point for identifier reads,
+already used by Finding 7's slot system — now folds a same-compilation-unit constant reference
+directly into a literal `Push`, eliminating the runtime lookup entirely rather than merely making
+it O(1). A new `c.nonConstLocalNames` set, populated at every existing name-based local/parameter
+declaration site, disables folding for any name a local declaration touches anywhere in the
+compilation unit — coarse, but never unsafe, since Ego's declare-before-use scoping guarantees a
+shadowing declaration is always compiled (and thus recorded) before any reference it could affect.
+Gated by the new `ego.compiler.constfold` setting (default on, since — unlike Finding 7's
+slot system — this changes no observable behavior).
+
+**Tier 2 — runtime global-reference cache.** For everything Tier 1 can't fold at compile time
+(`var`, cross-file/cross-package `const`, and the one type-assertion `x.(T)` path that still
+resolves a name at runtime), a new cache on each compiled `*ByteCode` remembers, per instruction
+offset, which of the program's persistent "global singleton" tables (the main program's own
+top-level table, or an imported package's own table — both created exactly once and never
+recreated or reparented) a `Load`/`Store`/`AddressOf`/`DeRef`/type-assertion instruction resolved a
+name to. A cache hit calls `Get`/`Set`/`GetAddress` directly on that remembered table, skipping the
+`FindNextScope` walk through intervening call frames entirely. This is safe specifically because a
+table is only ever cached after being confirmed as one of these persistent singletons — unlike
+Finding 14 Phase 4's declined idea of caching the path-dependent *next-scope pointer itself* (which
+legitimately differs across calls crossing different package-proxy boundaries or closures), this
+cache only ever remembers an answer that is provably invariant to every possible calling context; a
+reference whose resolution genuinely depends on context (e.g. a closure capturing an enclosing
+function's own local) simply never populates the cache and keeps paying the unchanged, correct
+walk. Storage lives on `*ByteCode`, indexed by instruction offset, via a bare `unsafe.Pointer` field
+accessed only through `sync/atomic`'s free functions — the same pattern the statement profiler
+(`internal/language/bytecode/profile.go`) already established for the same reason (`go vet`'s
+copylocks check flags both `sync.Mutex` and `atomic.Pointer[T]` as unsafe to duplicate in a struct
+copied by value elsewhere). Gated by the new `ego.runtime.globalcache` setting (default on),
+independent of Tier 1's flag.
+
+**Files modified:** `internal/language/compiler/compiler.go`, `constant.go`, `slots.go`,
+`lvalue.go`, `var.go`, `function.go` (Tier 1); `internal/language/symbols/tables.go`, `root.go`,
+`get.go` (the new `globalSingleton` field/accessors and `FindTable` method, shared by both tiers'
+groundwork); `internal/language/bytecode/bytecode.go`, `globalcache.go` (new), `load.go`,
+`store.go`, `types.go` (Tier 2); `internal/commands/run.go`, `internal/language/compiler/import.go`
+(wiring the two places a persistent singleton table is created); `internal/defs/config.go` (the two
+new settings). See `docs/internals/GLOBALS.md` for the full design and safety argument.
+
+**Re-profiling results, with `ego run --profiling`** (the same per-statement profiler that found
+this bug in the first place, not `--pprof` — re-confirming that this specific finding is legible
+at statement granularity, not just in a Go-level call-graph profile):
+
+| Workload | Before | After | Change |
+| - | - | - | - |
+| `examples/mandelbrot2.ego`, `mandelIterate:40` (`MaxIter` const, the original repro) | 5.69s / 675,279 hits | 119ms | **~48×** — now *cheaper* than its locals-only sibling line (`mandelIterate:35`, 248ms) |
+| `deep_check.ego` (isolated 800-deep-recursion repro, `const`) | 8.86s / 1,602,000 hits | 267ms | **~33×** — converges to parity with the non-recursive `shallow_check.ego` baseline (282ms) |
+| `deep_check.ego`-style repro using `var` instead of `const` (Tier 2 only, Tier 1 disabled) | 8.86s | ~330ms | **~27×** |
+
+Const folding alone (Tier 1) fully resolves the finding's own original repro, since `MaxIter` is a
+simple untyped `const` with no `var` component; Tier 2 delivers the equivalent fix for `var` and
+the cases Tier 1 structurally cannot reach.
+
+**Correctness verification:** `go build ./...`, `go vet ./...` clean. `go test ./...`, including
+`go test -race ./...`, clean. The full `ego test tests/` suite (1,706 cases, up from 1,697 before
+this work) passes, including new regression tests added for this fix
+(`tests/flow/constfold.ego`, `tests/flow/globalcache.ego`): same-compilation-unit
+const-referencing-const chains, `iota`-based typed consts, the shadowing hazard (a parameter or
+local sharing a package const's name, confirming the *local* value wins and unrelated references
+elsewhere in the file are unaffected), deep-recursion read/write of a package `var`, `&x`/`*p` on a
+package `var`, a user-defined-type assertion from deep recursion, and two concurrency stress tests
+(closures created in a loop and 50 concurrent goroutines, all referencing the same package `var`
+through the cache) — all passing both with and without `EGO_SERIALIZE_SYMBOLTABLES=true`.
+
+`go test -race` surfaced exactly one data race, in `argCheckByteCode`/`storeChanByteCode`'s
+interaction with goroutine argument passing — confirmed, via a byte-for-byte-identical stack trace,
+to also exist on `master` before this work began. Not a regression from this fix; left as a
+separate, pre-existing issue outside this finding's scope.
+
+While verifying the type-assertion path (Tier 2's smallest, secondary target), also found — and
+confirmed pre-existing on `master`, unrelated to this fix — that re-passing an `any`-typed value
+through a second `any`-typed parameter across a recursive call loses its ability to be asserted
+back to its original concrete type (`x.(T)` incorrectly returns `ok=false` on the second hop even
+though `x`'s underlying value never changed). Left unfixed, out of scope for this finding; worth
+its own investigation separately.
 
 ---
 
@@ -2862,21 +2948,21 @@ statement granularity in the first place.
 | 14 | `FindNextScope` and `callFramePop`'s clone-check both walk the full ancestor chain per operation | **-66.9% wall clock** on the recursive Mandelbrot workload (17.27s → 5.71s) from Phases 1-3 | High (Phases 1-3 done; Phase 4 still High) | Medium-High for Phase 4 (needs design work) | Architectural — same category as Finding 7, specific to deep recursion | **Phases 1-3 fixed** (July 2026) — see Resolution above; Phase 4 declined, not implemented |
 | 15 | Static contiguous row partitioning creates severe load imbalance in `examples/mandelbrot3.ego` | Busiest goroutine did 255× the idlest's work, 2.6× the average, on a 14-way split | Low | Low | Sample-program bug (partitioning strategy), not an interpreter defect | **Fixed** (July 2026) — see Resolution above |
 | 16 | Goroutine count scales *negatively* past ~2 concurrent workers (allocator/scheduler contention) | 14-worker run took ~3× as long as a 2-worker run of the identical, evenly-divided work | High | High (touches core allocation path; needs dedicated investigation) | Systemic — goroutine-scale extension of Finding 5 | Open — GC/preemption tuning ruled out; no low-risk fix identified this pass |
-| 17 | Package-level `const`/global reference from deep recursion is O(depth), not O(1) | **~22× per-hit cost** at 800-level recursion vs. the same reference at shallow depth | Medium-High | Medium-High (extends Finding 7's slot architecture, or needs a caching strategy) | Extends Finding 7 — same root cause (name-based resolution), a case its fix does not cover | Open — deliberately deferred to a dedicated follow-up task |
+| 17 | Package-level `const`/global reference from deep recursion is O(depth), not O(1) | **~22-48× per-hit cost** at 800-level recursion; **-66% to -97%** wall clock across the repros re-profiled | Medium-High | Medium-High (extends Finding 7's slot architecture, plus a new runtime cache) | Extends Finding 7 — same root cause (name-based resolution), a case its fix does not cover | **Fixed** (August 2026) — see Resolution above |
 
 **Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → ~~13
-(partial)~~ → ~~14 (Phases 1-3)~~ → ~~11 (the `:=` case)~~ → ~~15~~ → **10** → **16** → **14
-(Phase 4, only if warranted)**, in that order, re-profiling after each change using the same
+(partial)~~ → ~~14 (Phases 1-3)~~ → ~~11 (the `:=` case)~~ → ~~15~~ → ~~17~~ → **10** → **16** →
+**14 (Phase 4, only if warranted)**, in that order, re-profiling after each change using the same
 `--pprof` workloads described in Section 1 (and, from this point on, also the Mandelbrot
 workloads in Sections 10, 14, and 18) to confirm the expected compounding effect on Finding 5
-before deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, 9, 12, and 15 are
+before deciding whether Finding 7 is ever worth pursuing. Findings 1-4, 8, 9, 12, 15, and 17 are
 fully done; Finding 11 is done for its `:=` case, with the `IsConstant`-walk and `var` pieces
 of the original recommendation still open; Finding 13 is done on its read side only, by design;
 Finding 14 is done for Phases 1-3, with Phase 4 explicitly declined (see its Resolution
 section); Finding 16 was investigated but not fixed — see its own Recommendation section for
-why; Finding 17 was found (via the new per-statement profiler, not `--pprof`) and deliberately
-deferred rather than fixed in the same pass — tracked for a dedicated future task. Re-profiling
-after each (see their Resolution sections) confirms each
+why; Finding 17 was found (via the new per-statement profiler, not `--pprof`) and initially
+deferred, then implemented as its own dedicated follow-up task (`docs/internals/GLOBALS.md`) —
+see its Resolution section. Re-profiling after each (see their Resolution sections) confirms each
 predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no longer appears in
 the profile on this path at all; `ui.Log` argument construction is now uniformly guarded across
 248 inspected call sites; `pushScopeByteCode`/`NewChildSymbolTable` no longer appear at all in a

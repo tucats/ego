@@ -94,3 +94,32 @@
 
     @assert counter == 50
 }
+
+@test "globalcache: user-defined type assertion from a deeply recursive function"
+{
+    // A user-defined (non-builtin) type name in a type assertion falls
+    // through to a symbol-table lookup (unwrapByteCode, types.go) -- the one
+    // type-assertion path Tier 2 also covers (Phase 3).
+    type box struct {
+        v int
+    }
+
+    func classify(x any) string {
+        if _, ok := x.(box); ok {
+            return "box"
+        }
+
+        return "other"
+    }
+
+    func recur(n int) string {
+        if n >= 50 {
+            return classify(box{v: n})
+        }
+
+        return recur(n + 1)
+    }
+
+    @assert recur(0) == "box"
+    @assert classify(42) == "other"
+}

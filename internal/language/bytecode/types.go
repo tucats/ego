@@ -167,7 +167,32 @@ func unwrapByteCode(c *Context, i any) error {
 		}
 
 		if newType == nil {
-			if td, found := c.symbols.Get(targetType); found {
+			// PERFORMANCE.md Finding 17 (see docs/internals/GLOBALS.md): the
+			// same cache-hit/miss shape as loadByteCode (load.go) -- a named
+			// type alias resolved by name here is otherwise the one type-
+			// assertion path that still pays the O(depth) symbol-table walk.
+			var (
+				td    any
+				found bool
+			)
+
+			if GlobalCacheEnabled {
+				if table := c.bc.cachedGlobalTable(c.programCounter - 1); table != nil {
+					td, found = table.Get(targetType)
+				}
+			}
+
+			if !found {
+				td, found = c.symbols.Get(targetType)
+
+				if found && GlobalCacheEnabled {
+					if table, ok := c.symbols.FindTable(targetType); ok && table.IsGlobalSingleton() {
+						c.bc.cacheGlobalTable(c.programCounter-1, table)
+					}
+				}
+			}
+
+			if found {
 				if tdx, ok := td.(*data.Type); ok {
 					newType = tdx
 				}

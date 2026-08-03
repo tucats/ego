@@ -1,10 +1,8 @@
 # Package-Level Const/Var/Type Access — Implementation Plan
 
-**Status:** Phases 0-2 (groundwork, const folding, runtime global-reference cache) are landed and
-verified. Phase 3 (type-assertion fallback + `PERFORMANCE.md` Resolution writeup) is not yet
-started. This document is the design and risk record for fixing `docs/internals/PERFORMANCE.md`
-Finding 17, written and reviewed before any code changes, following the same process
-`docs/internals/SLOTS.md` used for Finding 7.
+**Status:** All phases (0-3) are landed and verified. `docs/internals/PERFORMANCE.md` Finding 17
+now has its Resolution section written; this document is kept as the detailed design and risk
+record behind that fix, following the same process `docs/internals/SLOTS.md` used for Finding 7.
 
 **Phase 1 results.** Re-profiling Finding 17's own repros with `ego run --profiling` after the
 const-folding fix landed: `examples/mandelbrot2.ego`'s `mandelIterate:40` (the `MaxIter` const
@@ -28,6 +26,16 @@ goroutines, and 50 concurrent goroutines writing through a shared function) both
 byte-for-byte-identical stack trace to also exist on `master` (in `argCheckByteCode`/
 `storeChanByteCode`'s interaction with goroutine argument passing) — a pre-existing, unrelated bug,
 not a regression introduced by this cache; left out of scope for this branch.
+
+**Phase 3 results.** Wired the same cache into `unwrapByteCode`'s type-assertion fallback
+(`types.go`) — a small, mechanical extension reusing everything Phase 2 built, confirmed via direct
+instrumentation to populate on the first miss and hit on all subsequent executions of the same
+instruction. Added a regression test asserting a user-defined type from inside a deeply recursive
+function. While verifying this path, found (and confirmed pre-existing on `master`, unrelated to
+this fix) a separate bug: re-passing an `any`-typed value through a second `any`-typed parameter
+across a recursive call loses its ability to be asserted back to its concrete type. Left unfixed,
+out of scope for this finding. Finding 17's "Resolution" section is now written in
+`docs/internals/PERFORMANCE.md`, following Finding 7's/Finding 14's own template.
 
 **Origin:** `docs/internals/PERFORMANCE.md`,
 [Finding 17](PERFORMANCE.md#21-finding-17--a-package-level-constglobal-referenced-from-deep-recursion-costs-odepth-per-reference-not-o1)
