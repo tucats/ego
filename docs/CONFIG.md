@@ -233,3 +233,302 @@ items with that prefix. However, you can create additional configuration values 
 (such as "app." or whatever makes sense for your usage of _Ego_). These configuration values are stored
 and managed identically to the _Ego_ configurations values. You can access these values from within
 an _Ego_ program using the profile.Get() and profile.Set() functions.
+
+## Configuration Option Reference
+
+The table above lists every configuration key alongside the short string shown by `ego config`
+(sourced from the localization catalog). This section goes a level deeper: for each option it
+explains, based on the current source code, what actually changes at runtime when the value is
+set, what the effective default is if the key is never set at all, and — for the handful of keys
+that gate internal performance work — when it's worth changing the value while tracking down a
+bug rather than just tuning performance.
+
+A few keys in the table above use names that no longer match any setting in the code (for
+example the table lists `ego.server.cache.size`, but the actual keys are
+`ego.server.cache.maxsize` and `ego.server.service.cache.size`, which are two different caches —
+see [Server settings](#server-settings) below). Where this section and the table disagree, this
+section reflects the current code and is authoritative. Settings added since the table was last
+updated (the OAuth2, cluster, and several server/runtime keys) only appear here.
+
+Unless otherwise noted, a boolean setting that has never been set at all (no profile entry, no
+`--set`, no environment variable) reads as `false`. A number of settings override that rule
+explicitly in code — those are called out below.
+
+### Compiler optimization and performance settings
+
+These four settings control the compiler and runtime optimizations that were added to reduce
+the cost of name-based symbol lookup (see `docs/internals/SLOTS.md` and
+`docs/internals/GLOBALS.md`, the design docs behind PERFORMANCE.md Findings 7 and 17). They are
+independent kill-switches layered on top of each other, not a single on/off toggle, so it's worth
+understanding how they interact before changing any of them while chasing a bug.
+
+| Setting | Type | Effective default | Controls |
+| ------- | ---- | ------------------ | -------- |
+| `ego.compiler.optimize` | integer level | **0 (disabled)** — see note below | Whether the bytecode peephole optimizer runs at all, and how aggressively |
+| `ego.compiler.registers` | bool | `false`, unless `optimize` is > 2 | Whether eligible local variables compile to integer register slots instead of name-based symbol table lookups |
+| `ego.compiler.constfold` | bool | `true` | Whether a package-level `const` reference folds to a literal at compile time instead of a runtime `Load` |
+| `ego.runtime.globalcache` | bool | `true` | Whether a resolved reference to a package-level global (a `var`, or a `const` too complex to fold) is cached on the bytecode so repeat executions skip the scope walk |
+
+**`ego.compiler.optimize`** is read as an integer, not a boolean, via `settings.GetInt`
+(`internal/language/bytecode/bytecode.go`, `ByteCode.Seal()`):
+
+- `0` — the optimizer never runs.
+- `1` — the optimizer runs only when the bytecode looks like it would benefit (large enough, or
+  contains a loop — see `Seal()`'s size/loop heuristic).
+- `2` (or higher) — the optimizer always runs, regardless of size.
+- Any value greater than `2` also causes `ego run`/`ego test` to force `ego.compiler.registers`
+  to `true` for that invocation (`configureOptimizer` in `internal/commands/run.go`), on the
+  theory that if you've asked for maximum optimization you also want register-slot locals.
+
+The one thing worth knowing before you go looking for "why isn't the optimizer doing anything":
+the shipped `lib/defaults.json` sets `"ego.compiler.optimize": true` — a JSON *boolean*. Because
+this setting is consumed with `GetInt`, and `true` doesn't parse as a number, that value is read
+back as `0`. In other words, out of the box (a freshly created profile, no explicit `--set` or
+`--optimize`), the peephole optimizer is effectively **off** for both `ego run` and `ego test`,
+despite the defaults file's apparent intent to enable it. `ego test` additionally forces the
+level to `0` explicitly at the start of every test run regardless of the profile
+(`internal/commands/test.go`), since individual test cases are short, rarely loop, and run once —
+not the workload the optimizer helps. Use `--optimize=<n>` on the command line, or
+`--set ego.compiler.optimize=<n>`, to get a non-zero level; `ego run --optimize` (no value) is
+equivalent to `1`.
+
+**`ego.compiler.registers`** (docs/internals/SLOTS.md) governs whether a function's parameters
+and `:=`/`var` block locals — for functions proven not to contain a capturing closure, `go`, or
+`defer` — are assigned to integer register slots at compile time, bypassing the symbol table's
+name-based map lookup at runtime. It defaults to `false` when absent, and is independent of the
+peephole optimizer level (so `ego test`, which always disables the optimizer, can still exercise
+registers if explicitly turned on). This is purely a performance path with no observable semantic
+difference — introspection (`show symbols`, `print`, error formatting) sees slotted locals by
+name exactly as before. If you suspect a bug in how local variables are being read, written,
+addressed (`&x`), or captured, and the symptom only appears (or only disappears) depending on this
+setting, that's a strong signal the bug is in the register-slot path specifically
+(`internal/language/compiler/slots.go`, `internal/language/bytecode/slots.go`) rather than the
+name-based path shared by everything else.
+
+**`ego.compiler.constfold`** (docs/internals/GLOBALS.md, PERFORMANCE.md Finding 17, "Tier 1")
+governs whether a reference to a package-level `const` in the same compilation unit is folded
+directly into a literal `Push` instruction at compile time, instead of emitting a runtime `Load`.
+Unlike registers, this defaults to `true` when the key is absent, because the compiler's purity
+check (in `compileConst`) already guarantees a foldable value has no side effects, and the
+folding logic refuses to fold any name a local declaration has shadowed — so, unlike registers,
+turning it off should never change a program's behavior, only its speed. If a program that
+references a package `const` from deep recursion is unexpectedly slow, or conversely a value you
+expected to be a compile-time constant doesn't behave like one (e.g. in a disassembly listing),
+try `--set ego.compiler.constfold=false` to compare against the unoptimized name-based `Load`
+path and confirm whether folding is implicated.
+
+**`ego.runtime.globalcache`** (docs/internals/GLOBALS.md, Finding 17 "Tier 2") is the runtime
+counterpart to `constfold`, and covers the cases `constfold` doesn't: a package-level `var`, or a
+`const` too complex to fold at compile time. When a `Load`/`Store`/`AddressOf`/`Deref`
+instruction resolves such a name to its owning global symbol table (the program's own top-level
+table, or an imported package's table), the resolved table is cached on the compiled `*ByteCode`
+instruction itself, so a later execution of the *same instruction* — including from deep
+recursion — skips the O(depth) walk through intervening call frames. It defaults to `true`, and
+is a pure kill-switch: setting it `false` restores the always-correct, unoptimized name-based
+walk on every access. If you're debugging something that smells like a stale or incorrectly
+shared reference to a package `var` — particularly anything involving goroutines, closures, or
+`InPackage` package-proxy boundaries, which is exactly the territory this cache's safety argument
+had to be careful about — reproducing with `--set ego.runtime.globalcache=false` is the fastest
+way to confirm or rule out the cache as the cause. `ego run` resets this to `true` at the start
+of every invocation before applying the profile/CLI override, so unlike `optimize`, there's no
+`defaults.json` parsing surprise here.
+
+**Practical debugging workflow:** because all four settings default independently (three of the
+four to "on" in some form), a puzzling perf regression or a subtle correctness bug in
+variable/const/global handling is usually fastest to isolate by turning them off one at a time —
+`--set ego.compiler.registers=false`, then `constfold=false`, then `globalcache=false` — and
+re-running against a baseline of all three off (equivalent to Ego's behavior before any of this
+optimization work landed) to bisect which layer is responsible.
+
+### Logon and authentication settings
+
+| Setting | Settable via `--set` | Description |
+| ------- | :---: | ----------- |
+| `ego.application.server` | no | Base URL of the server providing application services (typically the same as the logon server; set this only when application services are hosted separately from logon). Managed programmatically, not by the user directly. |
+| `ego.logon.server` | yes | Base URL of the server used to authenticate `ego logon`. |
+| `ego.logon.token` | no | The token produced by the last successful `ego logon`, used by default for admin commands and REST calls. Written by the logon flow, not user-editable, and excluded from `profile.Get()` in Ego programs (see `RestrictedSettings`). |
+| `ego.logon.token.expiration` | no | Expiration timestamp recorded from the last logon, used to give a clearer "token expired" message instead of a bare "not authorized". |
+| `ego.logon.refresh.token` | no | OAuth2 refresh token obtained during an `ego logon --oauth`, used to silently renew an expired access token on the next logon without prompting. |
+| `ego.logon.oauth.server` | yes | Explicit OAuth2/OIDC issuer URL for CLI logins; overrides the auto-detected `ego.server.oauth.as.issuer`/`ego.server.oauth.provider` order. |
+| `ego.logon.oauth.client.id` | yes | OAuth2 `client_id` the CLI presents when starting an Authorization Code flow. Defaults to `ego-cli`, the public client Ego's own Authorization Server pre-registers. |
+| `ego.logon.oauth.scopes` | yes | Space-separated OAuth2 scopes requested during `ego logon --oauth`. `openid` is always included. Default: `"openid profile"`. |
+
+### Logging settings
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.log.timestamp` | Go-style timestamp format string used to prefix log messages. Default (set on first profile init): `"2006-01-02 15:04:05"`. |
+| `ego.log.archive` | Name of a `.zip` file that rolled-over log files are copied into. If unset, rolled-off logs are simply deleted. |
+| `ego.log.retain` | Number of old log files to keep before purging in server mode. Default: `3`. |
+
+### Runtime settings
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.runtime.path` | Filesystem location used to find `services`, `lib`, and `tests` directories (`EGO_PATH`). |
+| `ego.runtime.path.lib` | Overrides just the `lib` directory location (e.g. to point at `/usr/local/lib`). Defaults to `<runtime.path>/lib`. |
+| `ego.runtime.suppress.library.init` | If `true`, skip automatically creating the `lib/` directory tree on startup. |
+| `ego.runtime.exec` | If `true`, allows `util.Exec()` to run an arbitrary native shell command from Ego code. Defaults to `false`; this is a real privilege-escalation surface, so only enable it for trusted scripts. |
+| `ego.runtime.insecure.client` | If `true`, the REST client accepts servers with missing/invalid TLS certificates. For dev/test use only. |
+| `ego.runtime.precision.error` | If `true`, a numeric cast that loses precision (e.g. converting an out-of-range value into a `byte`) is a runtime error instead of silently truncating. |
+| `ego.runtime.symbol.allocation` | Initial/growth allocation size for symbol table storage. Default: `32`. Larger values reduce reallocation overhead for programs with very large symbol tables at the cost of some wasted memory for small ones; rarely worth changing. |
+| `ego.runtime.unchecked.errors` | If `true`, calling a function that returns `(value, error)` without assigning the error is itself a runtime error. |
+| `ego.runtime.panics` | If `true`, Ego's `panic()` builtin triggers an actual Go-level panic (crashing the process) instead of being handled as an Ego runtime error. |
+| `ego.runtime.deep.scope` | If `true`, all symbol tables currently in scope are visible to a running statement, rather than being bounded by function call barriers. Mostly relevant to test/debug tooling that needs to see across scope boundaries. |
+| `ego.runtime.stack.trace` | If `true`, the `@trace` directive/tracing output prints the full call stack instead of a single-line summary. |
+| `ego.runtime.float.div.zero.error` | If `true`, dividing a float by zero is a runtime error. Default `false` matches Go's own behavior of producing `+Inf`/`-Inf`/`NaN`. |
+| `ego.runtime.sandbox.path` | If set, every file path an Ego program touches (e.g. via `ReadFile()`) must be under this path, or is silently prefixed with it. Primarily used to confine server-mode file I/O. |
+
+**REST client settings** (`ego.runtime.rest.*`), which affect Ego programs making outbound REST
+calls and the `ego` CLI's own calls to a server:
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.runtime.rest.errors` | If `true` (the default), a non-success `ErrorResponse` payload from a REST call is surfaced as an Ego runtime error rather than just being returned as data. |
+| `ego.runtime.rest.timeout` | Duration string (e.g. `"10s"`) bounding how long a REST client call waits. Default: `10s`. |
+| `ego.runtime.rest.server.cert` | Path to a server certificate to trust for REST calls. Set to `"system"` to use the OS trust store instead of loading a specific file. |
+| `ego.runtime.rest.compression` | If `true` (the default), REST client calls advertise gzip support via `Accept-Encoding`, so a willing server can send a compressed body. Response bodies are transparently decompressed either way — this setting only changes what goes over the wire, useful to turn off when capturing raw traffic with a packet analyzer. |
+
+### Compiler settings (non-optimizer)
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.compiler.disasm.packages` | If `true`, imported packages are included when a disassembly listing is produced (normally only the main program is shown). |
+| `ego.compiler.normalized` | If `true`, symbol names are folded to a common case, making them effectively case-insensitive. Default `false` (case-sensitive, matching Go). |
+| `ego.compiler.extensions` | If `true` (the default), language extensions beyond standard Go-like syntax are available — `print`, `call`, `try`/`catch`, etc. |
+| `ego.compiler.import` | If `true` (the default), an interactive session automatically imports the common built-in packages instead of requiring explicit `import` statements. |
+| `ego.compiler.full.stack` | If `true`, tracing output during compilation lists the full stack contents rather than an abbreviated form. |
+| `ego.compiler.types` | One of `"strict"`, `"relaxed"`, or `"dynamic"` (the default), controlling Ego's static/dynamic type enforcement mode. |
+| `ego.compiler.type.shadowing` | If `true` (the default, matching Go), a local variable may shadow a built-in type name (`int := 5`). Set `false` to make that a compile-time error — useful in teaching contexts where an accidental shadow is a common, confusing mistake. |
+| `ego.compiler.unused.var.error` | If `true` (the default), a variable that is declared/assigned but never read is a compile error. |
+| `ego.compiler.unknown.var.error` | If `true`, the compiler reports an unknown-symbol error at compile time itself instead of waiting for the runtime symbol table manager to report it. Marked in code as "somewhat experimental". |
+| `ego.compiler.var.usage.logging` | If `true`, compiler logging includes detailed variable usage/scope tracking messages (`COMPILER` log class). Diagnostic use only. |
+
+### Console settings
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.console.prompt.missing.options` | If `true` (the default), the console prompts interactively for required command options that weren't supplied, instead of just failing. |
+| `ego.console.auto.help` | If `true`, an incomplete CLI command automatically shows help text; if `false` (the default), it shows a terser list of expected terms instead. |
+| `ego.console.history` | Path to the readline history file. Defaults to a location under the profile directory. |
+| `ego.console.no.copyright` | If `true`, suppresses the copyright banner in interactive mode. Not settable via `--set`. |
+| `ego.console.readline` | If `true` (the default), the interactive console uses the Unix-style readline library for line editing/history. |
+| `ego.console.interactive` | Internal-only flag indicating the console is running as a REPL (enables function redefinition without an "already exists" error). Not intended to be set directly. |
+| `ego.console.output` | Default output format for commands that support multiple formats: `"text"` (the default), `"json"`, or `"indented"`. |
+| `ego.console.log` | Default log message format: `"text"`, `"json"`, or `"indented"`. |
+
+### Table settings
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.table.autoparse.dsn` | If `true`, a table command line naming `foo.bar` is parsed as DSN `foo`, table `bar`, instead of a literal table name. |
+| `ego.table.default.dsn` | Default data source name assumed by table commands when none is given explicitly. |
+
+### Server settings
+
+Core server behavior (`ego.server.*`):
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.report.fqdn` | If `true`, REST responses report the server's fully-qualified domain name instead of the short hostname. |
+| `ego.server.default.credential` | `user:password` used as the root account when no user database has been initialized yet. |
+| `ego.server.superuser` | `user:password` always granted superuser/root privileges regardless of the normal authorization data — an override, not the initial-setup credential above. |
+| `ego.server.userdata` | File path or database URL where the credentials/user database is stored. |
+| `ego.server.userdata.key` | Encryption key for the userdata file. If absent, the file is stored as plain, readable JSON — fine for development, not for production. |
+| `ego.server.default.log.file` | Base name for the server log file (default `"ego-server.log"`); a datestamp is appended automatically. |
+| `ego.server.memory.log.interval` | Duration between server memory-usage log entries. Defaults to every three minutes; an interval with no activity logs nothing, so setting this too long risks losing data during quiet periods. |
+| `ego.server.cache.maxsize` | Maximum entries in each of the server's internal low-level caches (tokens, schemas, DSN permissions, etc. — distinct from the service-program cache below). Default `1000`; `0` disables that caching entirely. Lower it if a high-traffic server is spending too much memory on cache entries. |
+| `ego.server.service.cache.size` | Maximum number of compiled service programs kept cached in memory. Default `20`. |
+| `ego.server.authority` | Host that performs authentication on this server's behalf, when this server delegates auth to another Ego server rather than handling it itself. |
+| `ego.server.auth.cache.scan` | Seconds between scans that expire cached authentication data pulled from a remote authority. Default: every `180`s. |
+| `ego.server.auth.maxattempts` | Consecutive failed login attempts before an account is temporarily locked. Default `5`; `0` disables lockout entirely. |
+| `ego.server.auth.lockout` | Duration string (e.g. `"15m"`) an account stays locked after exceeding `auth.maxattempts`. Default `"15m"`. |
+| `ego.server.log.response` | If `true`, the server's own log content is included as the response payload when REST logging replies to a `/log` request. Debug-only; leave off otherwise. |
+| `ego.server.compression.threshold` | Smallest response body size, in bytes, the server will gzip (only when the client also advertises gzip support). Default `4096`; `0` disables response compression entirely. |
+| `ego.server.piddir` | Directory where server PID files are written for process management. |
+| `ego.server.insecure` | If `true`, the server does not require HTTPS/TLS. |
+| `ego.server.insecure.redirect` | If `true`, an HTTPS server also starts a plain HTTP listener on port 80 that redirects to HTTPS — useful when running HTTPS on 443 but still wanting to catch requests that arrive on 80. |
+| `ego.server.default.port` | Port the server listens on when not given explicitly on the command line or via env var. |
+| `ego.server.token.key` | Randomly generated key used to encrypt/sign auth tokens; created automatically on first run if absent. Not meant to be hand-edited. |
+| `ego.server.token.expiration` | Duration string for how long a native Ego auth token remains valid. Default `"24h"`. |
+| `ego.server.default.logging` | Comma-separated logger classes enabled by default when starting a server without an explicit `--log`. |
+| `ego.server.start.log.age` | Days of server-start history to retain in the system database before old entries are purged on startup. Default `30`. |
+| `ego.server.plaintext.passwords` | If `true`, legacy `{quoted}` plaintext passwords in the auth store are accepted and migrated to bcrypt on next successful login. If `false` (the default), such entries are rejected and logged as an error instead. |
+| `ego.server.js.minify` | If `true`, JavaScript assets served from `/assets` are minified before being cached. |
+| `ego.server.js.shortvarnames` | If `true` **and** `js.minify` is also `true`, the minifier additionally renames local variables/parameters to short generated names. No effect on its own. |
+| `ego.server.webauthn.rpid` | Relying Party ID (a registrable domain suffix of the dashboard's origin) used for WebAuthn/passkey ceremonies. Passkey endpoints return `501 Not Implemented` while this is empty. |
+| `ego.server.allow.passkeys` | If `true`, the server exposes passkey/WebAuthn functionality and the dashboard shows the passkey UI; if `false`, `/config` reports `passkeys:false` and the UI hides it. |
+| `ego.server.dashboard.inactivity` | Duration string controlling how long the web dashboard waits for user activity before auto-signing out. Sent to the dashboard at logon so it doesn't rely on its own hard-coded default. Default `"15m"`. |
+| `ego.server.read.header.timeout` | Max time to receive all HTTP request headers before the connection is closed — the main defense against Slowloris-style connection exhaustion. Default `"10s"`. |
+| `ego.server.read.timeout` | Max time to read a complete request (headers + body). Default `"30s"`. |
+| `ego.server.write.timeout` | Max time to send a complete response. Default `"120s"` — set generously for endpoints that return large payloads, like log retrieval. |
+| `ego.server.idle.timeout` | Max time a keep-alive connection may sit idle before being closed. Default `"120s"`. |
+| `ego.server.max.body.size` | Max accepted request body size in bytes; larger requests are rejected with `413` before the handler runs. Default 32 MiB. |
+| `ego.server.max.item.limit` | Max items a single paged `GET` (via the `limit` query parameter) may request. Default `1000`; a caller-supplied `limit` above this is rejected with `400`. |
+| `ego.server.panic.recovery` | If `true` (the default), a panic inside a request handler is caught, logged with its stack trace, and converted to an HTTP `500` — the server keeps running. Set `false` during development to let a panic propagate unmodified (Go's `net/http` still catches it at the connection level, but no `500` is sent and any lock the handler held is not released), when you specifically want to see the panic surface immediately. |
+
+Child-service execution (`ego.server.child.services.*`) — running `/service` requests in a
+separate OS process instead of an in-process goroutine, generally for stronger isolation:
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.child.services` | If `true`, service requests run in a child process rather than in-process. |
+| `ego.server.child.services.dir` | Where request/response payload files for child processes are written. Defaults to the system temp directory. |
+| `ego.server.child.services.limit` | Maximum number of child service processes running simultaneously. |
+| `ego.server.child.services.retain` | If `true`, keep a child process's response payload files after the request completes, for debugging. Normally deleted. |
+| `ego.server.child.services.timeout` | Duration string for how long to wait for an available child process slot before giving up with an error. |
+
+Database/table server enforcement (`ego.server.database.*`):
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.database.empty.filter.error` | If `true` (the default), a destructive table operation (delete/update) issued with no filter is rejected as an error, rather than silently applying to every row. |
+| `ego.server.database.empty.rowset.error` | If `true` (the default), an operation that would return/affect an empty row set is treated as an error. |
+| `ego.server.database.partial.insert.error` | If `true` (the default), a table `insert` must specify every column; a partial insert is rejected. |
+
+### Cluster settings
+
+Standalone by default — these only matter when `--cluster` is used to join this server to a
+named cluster of Ego server instances.
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.cluster.name` | Name of the cluster this node belongs to. Empty (the default) means standalone mode; no cluster logic runs. |
+| `ego.cluster.ping.interval` | How often the health-check goroutine pings each peer. Default `"30s"`. |
+| `ego.cluster.ping.timeout` | Max time to wait for one peer health-check ping to complete. Default `"5s"`. |
+
+### OAuth2 Authorization Server settings
+
+These activate only when `ego.server.oauth.as.enabled` is `true`, and let an Ego server act as
+its own OIDC-compliant Authorization Server — intended for development/testing; production
+deployments should typically point at a dedicated IdP (Okta, Entra ID, Keycloak) via the Resource
+Server settings below instead.
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.oauth.as.enabled` | If `true`, this server registers the standard OIDC endpoints and acts as its own Authorization Server. |
+| `ego.server.oauth.as.key.file` | Path to the PEM file holding the EC private key used to sign issued JWTs. Generated automatically (P-256, chmod 0600) on first use if missing. Default: `{EGO_PATH}/lib/oauth/oauth-signing.pem`. |
+| `ego.server.oauth.as.clients` | Path to a JSON file listing the OAuth2 clients permitted to request tokens (client_id, secret, redirect URIs, grant types, scopes — see `docs/internals/OAUTH.md`). Default: `{EGO_PATH}/lib/oauth/oauth-clients.json`. |
+| `ego.server.oauth.as.issuer` | This server's own base URL, reported as the JWT `iss` claim and used to build OIDC discovery URLs. Must exactly match the publicly reachable server URL. |
+| `ego.server.oauth.as.token.expiration` | Lifetime of issued access tokens. Default `"1h"`. |
+| `ego.server.oauth.as.refresh.expiration` | Lifetime of issued refresh tokens. Default `"24h"`. |
+| `ego.server.oauth.as.code.expiration` | Lifetime of issued authorization codes. Default `"5m"` (the OAuth2 spec recommends codes stay short-lived). |
+
+### OAuth2 Resource Server settings
+
+These activate when `ego.server.oauth.provider` is non-empty, and configure how this server
+validates JWT Bearer tokens issued by an *external* identity provider.
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.oauth.provider` | Base URL of the external OIDC provider; Ego appends `/.well-known/openid-configuration` to it for discovery. Setting this activates the Resource Server role. |
+| `ego.server.oauth.client.id` | Client ID Ego was registered with at the provider. |
+| `ego.server.oauth.client.secret` | Client secret from the provider. Treat as a password — don't commit it; `EGO_OAUTH_CLIENT_SECRET` takes precedence if set. |
+| `ego.server.oauth.scopes` | Space-separated scopes requested during Authorization Code flow. Must include `openid`. |
+| `ego.server.oauth.redirect.uri` | Callback URL the provider redirects to after login; must exactly match what's registered with the provider. |
+| `ego.server.oauth.user.claim` | JWT claim used as the Ego username. Default `"sub"`; common alternatives are `"email"`, `"preferred_username"`. |
+| `ego.server.oauth.permission.claim` | JWT claim carrying roles/groups/scopes used to derive Ego permissions. Default `"scope"`. |
+| `ego.server.oauth.audience` | Expected JWT `aud` claim; tokens with a different audience are rejected. Empty skips audience validation (not recommended for production). |
+| `ego.server.oauth.mode` | `"resource-server"` (JWT Bearer only), `"proxy"` (redirect through OAuth2, issue a native Ego token), or `"hybrid"` (both, default when `oauth.provider` is set). |
+| `ego.server.oauth.jwks.cache.ttl` | How long the provider's JWKS signing keys are cached before re-fetching. Default `"1h"`. Shorter picks up key rotation faster; longer reduces round-trips. |
+| `ego.server.oauth.permission.map` | Comma-separated `scope=permission` pairs mapping provider scopes to Ego permission names. Empty uses a built-in default table. |
