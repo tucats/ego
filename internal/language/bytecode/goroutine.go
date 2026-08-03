@@ -110,8 +110,8 @@ func goByteCode(c *Context, i any) error {
 //   points to the parent's local scope — the scope that contains the outer
 //   variables the closure wants to read or write.
 //
-//   Before the goroutine is even started (in goByteCode, not here -- see
-//   BUG-94), the entire captured scope chain is marked shared.  The
+//   Before the goroutine is even started (in goByteCode, not here --
+//   see BUG-94), the entire captured scope chain is marked shared.  The
 //   "shared" flag causes every subsequent Get / Set call on those tables to
 //   acquire a read or write lock, respectively.  Without this, the parent
 //   thread and the goroutine would both access the same symbol tables
@@ -140,7 +140,7 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	parentCtx.shared.Store(false)
 	parentCtx.mux.Unlock()
 
-	// BUG-94: the closure captured-scope-sharing step that used to live here
+	// Fix BUG-94: the closure captured-scope-sharing step that used to live here
 	// has moved to goByteCode (goByteCode.go... this file, above), and now
 	// runs synchronously in the launching goroutine before this goroutine is
 	// even started. Doing it here was racy: nothing prevented the launching

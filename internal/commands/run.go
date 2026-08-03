@@ -79,7 +79,7 @@ func RunAction(c *cli.Context) error {
 		bytecode.SuppressConsoleReport(true)
 	}
 
-	if c.Boolean("profiling") || hasProfileFile {
+	if c.Boolean("profile") || hasProfileFile {
 		err = bytecode.ProfileAction(bytecode.StartAction)
 		if err != nil {
 			return err

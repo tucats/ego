@@ -366,7 +366,9 @@ func (c *Compiler) Clone(name string) *Compiler {
 	for k, v := range c.nonConstLocalNames {
 		clone.nonConstLocalNames[k] = v
 	}
+	
 	clone.returnVariables = append(clone.returnVariables, c.returnVariables...)
+
 	clone.scopes = append([]scope(nil), c.scopes...)
 	clone.coercions = append(clone.coercions, c.coercions...)
 	clone.importStack = append([]importElement{}, c.importStack...)

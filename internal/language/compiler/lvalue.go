@@ -346,9 +346,11 @@ func (c *Compiler) assignmentTarget() (*bytecode.ByteCode, error) {
 				// later iteration reusing the loop's single shared scope, not a
 				// genuine duplicate declaration.
 				bc.Emit(bytecode.SymbolOptCreate, name)
+
 				c.nonConstLocalNames[name.Spelling()] = true
 			} else {
 				bc.Emit(bytecode.SymbolCreate, name)
+				
 				c.nonConstLocalNames[name.Spelling()] = true
 			}
 

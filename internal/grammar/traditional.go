@@ -1355,12 +1355,14 @@ var RunGrammar = []cli.Option{
 		Private:    true,
 	},
 	{
-		LongName:    "profiling",
+		LongName:    "profile",
+		Aliases:     []string{"profiling", "prof"},
 		Description: "run.profile",
 		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:    "profile-file",
+		Aliases:     []string{"profile-output", "prof-file"},
 		Description: "run.profile.file",
 		OptionType:  cli.StringType,
 	},

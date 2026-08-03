@@ -70,7 +70,7 @@ func SuppressConsoleReport(suppress bool) {
 // time that function records a hit), not once per statement, so it is not a
 // hot-path cost.
 var (
-	profiledCode      []*ByteCode
+	profiledCode       []*ByteCode
 	profileRegistryMux sync.Mutex
 )
 
@@ -447,7 +447,7 @@ func writeProfileJSON(f *os.File, entries []profileEntry) error {
 		})
 	}
 
-	b, err := json.MarshalIndent(records, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	b, err := json.Marshal(records)
 	if err != nil {
 		return errors.New(err)
 	}

@@ -563,7 +563,7 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 
 	fi, err := os.ReadDir(dirname)
 	if err != nil {
-		// BUG-93: a multi-file package directory that isn't under the
+		// Fix BUG-93: a multi-file package directory that isn't under the
 		// lib/packages root had no fallback at all, unlike the single-file
 		// case just below in readPackageFile, which already falls back to
 		// resolving name relative to the working directory (or as given, if

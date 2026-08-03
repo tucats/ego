@@ -12,10 +12,10 @@ import (
 	"github.com/tucats/ego/internal/cli/tables"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/util"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 const maxKeyValuePrintWidth = 60
@@ -291,6 +291,10 @@ func DescribeAction(c *cli.Context) error {
 			} else {
 				value = fmt.Sprintf("%v", value[:maxKeyValuePrintWidth]) + "..."
 			}
+		}
+
+		if len(value) > 15 {
+			value = fmt.Sprintf("%s...", value[:12])
 		}
 
 		_ = t.AddRowItems(key, value, desc)
