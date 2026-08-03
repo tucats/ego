@@ -145,7 +145,7 @@ This is useful for quick one-off benchmarking/profiling snippets or scratch expe
 | `internal/errors/` | Error types and handling |
 | `internal/defs/` | Shared constants and definitions |
 | `internal/i18n/` | Internationalization / string lookup (`internal/i18n/languages/` holds `messages_en.txt` etc.) |
-| `internal/util/` | Miscellaneous utilities: `util/fork` (subprocess spawn), `util/formats`, `util/javascript` (JS/CSS minifier for dashboard assets), `util/profiling`, `util/validate` |
+| `internal/util/` | Miscellaneous utilities: `util/fork` (subprocess spawn), `util/formats`, `util/javascript` (JS/CSS minifier for dashboard assets), `util/validate` |
 | `tests/` | Ego-language unit tests |
 | `tools/` | Build, test, and utility scripts |
 | `docs/` | User-facing documentation |
@@ -889,6 +889,51 @@ Unnamed parameter lists (`func(int, int) int`, Go's type-only form) are detected
 ## Style
 
 - Use **American English** spellings in all comments and documentation (e.g., "color" not "colour", "recognize" not "recognise", "behavior" not "behaviour").
+
+---
+
+## Built-in Statement Profiler (`internal/language/bytecode/profile.go`)
+
+Triggered by `ego run --profiling` or the `@profile start/stop/report` compiler directive
+(`profileByteCode`, `flow.go`). Reports per-statement hit count _and_ elapsed time — added
+August 2026; see `docs/internals/PERFORMANCE.md` Finding 17 for a real bug this immediately
+surfaced (package-level `const`/global access from deep recursion is O(depth)).
+
+**Storage lives on `*ByteCode`, not in a central map.** Each compiled function's profiling data
+is indexed by instruction offset (`Context.programCounter`, captured as `programCounter-1` inside
+`atLineByteCode` since the run loop already advanced it past the current instruction before
+dispatch) — a direct slice index, no string key, no hashing, no per-hit lock.
+
+**Why the storage field is a bare `unsafe.Pointer`, not a `sync.Mutex` or `atomic.Pointer[T]`:**
+`ByteCode` values are copied by value in several existing places — `Clone()`, `NeedsCoerce`'s
+value receiver (`coerce.go`), `restoreByteCode`'s struct assignment (`compiler/function.go`) — and
+`go vet`'s copylocks check flags _both_ a directly-embedded `sync.Mutex` and a generic
+`atomic.Pointer[T]` as unsafe to duplicate that way (the latter carries the same no-copy marker as
+the former internally). A bare `unsafe.Pointer`, accessed only through `sync/atomic`'s free
+functions (`LoadPointer`/`CompareAndSwapPointer`/`StorePointer`), carries no such marker and is
+copy-safe by construction — if you're tempted to "clean this up" to a nicer-looking
+`atomic.Pointer[profileStorage]`, don't; it will fail vet the same way this one originally did.
+
+**Timing uses one `time.Now()` per `AtLine` hit, not a start/stop pair per statement.** Each hit's
+timestamp simultaneously closes out the _previous_ statement's timer (`Context.profileSlot`/
+`profileStart`) and starts the new one — halving clock-read overhead versus wrapping each
+statement individually. This telescopes correctly through nested calls for free, since `Context`
+is reused across the whole call stack within one goroutine (frames are pushed/popped on it, not
+allocated fresh — see "Single-context execution" above), so there's no need to save/restore a
+timer stack across calls.
+
+**Two flush points cover what the delta chain can't close on its own:** `callFramePop` (function
+return) and the top-level `Run()` caller (`internal/commands/run.go`, program exit) both call
+`Context.FlushProfileTimer()` to credit whatever statement was still "open" when execution left a
+frame or the whole program halted — otherwise that pending time would either be silently dropped
+(nothing else ever closes it) or bleed into an unrelated statement that happens to run next.
+
+**Known limitation, not yet root-caused:** cascading multi-level unwinds (a deep recursive chain
+finally hitting its base case and returning through many stacked frames with no intervening
+`AtLine` in between) don't currently distribute return-processing cost evenly across the frames
+being unwound — the exact mechanism is still being investigated. It reliably reproduces (see
+PERFORMANCE.md Finding 17's evidence) but has not yet been isolated from the const-lookup finding
+that was found alongside it.
 
 ---
 
