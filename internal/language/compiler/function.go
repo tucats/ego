@@ -271,6 +271,11 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 			// conversion never runs, so thisName is converted explicitly here.
 			b.Emit(bytecode.GetThis, []any{receiverName, byValue})
 
+			// PERFORMANCE.md Finding 17: this receiver name is name-based,
+			// disqualifying it from const-folding in case it shadows a
+			// package-level const of the same name (see emitLoadName, slots.go).
+			c.nonConstLocalNames[receiverName] = true
+
 			// If it was by value, make a copy of that so the function can't
 			// modify the actual value.
 			if byValue {
@@ -359,7 +364,12 @@ func (c *Compiler) generateFunctionBytecode(functionName, thisName tokenizer.Tok
 		// a "defer" (required for a deferred recover to read named returns) is
 		// disqualified by the eligibility predicate, so unwindPanic only ever
 		// reads name-based named returns.
-		c.allocateParamSRegister(rv.Name)
+		if _, ok := c.allocateParamSRegister(rv.Name); !ok {
+			// PERFORMANCE.md Finding 17: this named return is name-based,
+			// disqualifying it from const-folding in case it shadows a
+			// package-level const of the same name (see emitLoadName, slots.go).
+			c.nonConstLocalNames[rv.Name] = true
+		}
 
 		if err := c.ReferenceSymbol(rv.Name); err != nil {
 			return nil, nil, err
@@ -693,6 +703,10 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 			b.Emit(bytecode.StoreRegister, register)
 		} else {
 			b.Emit(bytecode.StoreAlways, parameter.name)
+			// PERFORMANCE.md Finding 17: name-based, disqualifying this name
+			// from const-folding in case it shadows a package-level const of
+			// the same name (see emitLoadName, slots.go).
+			c.nonConstLocalNames[parameter.name] = true
 		}
 
 		c.DefineSymbol(parameter.name)
@@ -722,6 +736,11 @@ func (c *Compiler) compileFunctionParameters(parameter parameter, b *bytecode.By
 			}
 
 			b.Emit(bytecode.Arg, operands)
+
+			// PERFORMANCE.md Finding 17: name-based, disqualifying this name
+			// from const-folding in case it shadows a package-level const of
+			// the same name (see emitLoadName, slots.go).
+			c.nonConstLocalNames[parameter.name] = true
 		}
 
 		c.DefineSymbol(parameter.name)

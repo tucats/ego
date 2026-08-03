@@ -1,8 +1,20 @@
 # Package-Level Const/Var/Type Access — Implementation Plan
 
-**Status:** planned, not yet implemented. This document is the design and risk record for fixing
-`docs/internals/PERFORMANCE.md` Finding 17, written and reviewed before any code changes, following
-the same process `docs/internals/SLOTS.md` used for Finding 7.
+**Status:** Phase 0 (groundwork) and Phase 1 (const folding) are landed and verified. Phases 2
+(runtime global-reference cache for `var`/non-foldable-const) and 3 (type-assertion fallback +
+`PERFORMANCE.md` Resolution writeup) are not yet started. This document is the design and risk
+record for fixing `docs/internals/PERFORMANCE.md` Finding 17, written and reviewed before any code
+changes, following the same process `docs/internals/SLOTS.md` used for Finding 7.
+
+**Phase 1 results.** Re-profiling Finding 17's own repros with `ego run --profiling` after the
+const-folding fix landed: `examples/mandelbrot2.ego`'s `mandelIterate:40` (the `MaxIter` const
+comparison that originally motivated this document) dropped from 5.69s to 119ms (~48x) across
+675,279 hits — now *cheaper* than its locals-only sibling line (`mandelIterate:35`, 248ms). The
+isolated `deep_check.ego` repro (800-deep recursion) dropped from 8.86s to 267ms (~33x), converging
+to parity with the non-recursive `shallow_check.ego` baseline (282ms) for the same total number of
+comparisons. Const folding alone fully resolves this specific finding's own repro case, since
+`MaxIter` is a simple untyped int const with no `var` component; Phase 2 remains valuable for the
+more general `var`/non-foldable-const case the original request also asked about.
 
 **Origin:** `docs/internals/PERFORMANCE.md`,
 [Finding 17](PERFORMANCE.md#21-finding-17--a-package-level-constglobal-referenced-from-deep-recursion-costs-odepth-per-reference-not-o1)
@@ -549,6 +561,13 @@ Full regression bar for any interpreter-level change: `go build ./...`, `go vet 
    frame's; this looks like a strictly more accurate log line, not a behavior change, but worth a
    quick visual check during implementation).
 
-6. **Default-on vs. opt-in for the new settings at initial merge.** Recommend following
-   `ego.compiler.registers`'s own precedent (shipped enabled by default) once each phase's own
-   testing bar is green — a project risk-tolerance call, not a technical one.
+6. **Default-on vs. opt-in for the new settings at initial merge.** Correction found during
+   Phase 1 implementation: `ego.compiler.registers` actually defaults to **off** (`registers :=
+   false` in `New()`), only enabled when the optimizer level is set above 2 or via explicit
+   config — not "shipped enabled by default" as this question originally assumed. `constfold`
+   (Tier 1) instead follows `typeShadowing`'s pattern (default **on**, `constFold := true` unless
+   explicitly overridden), since — unlike registers — it changes no observable semantics: every
+   const that compiles successfully is already provably pure (Section 3.7), and the shadowing
+   guard (Section 5.3) closes the one correctness risk. Tier 2 (the runtime cache, not yet
+   implemented) still needs its own explicit decision when it's built — a project risk-tolerance
+   call, not a technical one, but with less precedent to lean on than this question first assumed.

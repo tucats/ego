@@ -93,6 +93,7 @@ type flagSet struct {
 	typeShadowing         bool // True if a variable may shadow a built-in type name (BUG-75)
 	registers             bool // True if function-local variables may be resolved to compile-time slots (docs/SLOTS.md)
 	suppressRegisterDecl  bool // True while parsing a for-loop range index/value target, which must stay name-based (docs/SLOTS.md)
+	constFold             bool // True if a same-compilation-unit package-level const reference may be folded to a literal Push (PERFORMANCE.md Finding 17, docs/internals/GLOBALS.md)
 
 	// pendingReceiverCall is set to true immediately after emitting a SetThis
 	// instruction for an upcoming "X.Y(...)" call, and is read and reset back
@@ -125,31 +126,33 @@ type returnVariable struct {
 
 // Compiler is a structure defining what we know about the compilation.
 type Compiler struct {
-	activePackageName string                   // name of current active package, or "" if main package
-	sourceFile        string                   // Name of the source file being compiled
-	id                string                   // Identifier of module being compiled
-	b                 *bytecode.ByteCode       // Bytecode generated for this compilation
-	t                 *tokenizer.Tokenizer     // Tokenizer for input source for this compilation
-	s                 *symbols.SymbolTable     // Active compile-time symbol table.
-	rootTable         *symbols.SymbolTable     // Pointer to system root symbol table.
-	loops             *loop                    // Stack of nested loop definitions
-	pendingLabel      string                   // Label from "label: for" to be applied to the next loop
-	parent            *Compiler                // Parent compiler for nested functions
-	coercions         []*bytecode.ByteCode     // List of return type coercions from function declaration
-	constants         []string                 // List of constant values names compiled.
-	deferQueue        []deferStatement         // List of defer statements in order declared
-	returnVariables   []returnVariable         // List of named return variables in function signature
-	packages          map[string]*data.Package // List of active packages for this compilation
-	importStack       []importElement          // Stack of import elements
-	packageMutex      sync.Mutex               // Mutex for serializing access to shared package management
-	types             map[string]*data.Type    // Types defined by the user in this compilation unit
-	symbolErrors      map[string]*errors.Error // List of symbol table errors (unused var, etc).
-	optionalUsage     map[string]bool          // List of symbols that do not hae to be referenced even if defined
-	started           time.Time                // Time compilation was started
-	scopes            []scope                  // Nested symbol table scopes for this compilation
-	functionDepth     int                      // Current nested function declaration depth
-	blockDepth        int                      // Current nested statement block  depth
-	optimizationLevel int                      // The optimization level (0=none, 1=low, 2=high)
+	activePackageName  string                   // name of current active package, or "" if main package
+	sourceFile         string                   // Name of the source file being compiled
+	id                 string                   // Identifier of module being compiled
+	b                  *bytecode.ByteCode       // Bytecode generated for this compilation
+	t                  *tokenizer.Tokenizer     // Tokenizer for input source for this compilation
+	s                  *symbols.SymbolTable     // Active compile-time symbol table.
+	rootTable          *symbols.SymbolTable     // Pointer to system root symbol table.
+	loops              *loop                    // Stack of nested loop definitions
+	pendingLabel       string                   // Label from "label: for" to be applied to the next loop
+	parent             *Compiler                // Parent compiler for nested functions
+	coercions          []*bytecode.ByteCode     // List of return type coercions from function declaration
+	constants          []string                 // List of constant values names compiled.
+	constantValues     map[string]any           // PERFORMANCE.md Finding 17: literal value of each name in constants, if it was successfully folded (see constant.go's foldConstantValue).
+	nonConstLocalNames map[string]bool          // PERFORMANCE.md Finding 17: names bound by a name-based (non-register) local/parameter declaration anywhere in this compilation unit; disqualifies that name from const-folding (see emitLoadName).
+	deferQueue         []deferStatement         // List of defer statements in order declared
+	returnVariables    []returnVariable         // List of named return variables in function signature
+	packages           map[string]*data.Package // List of active packages for this compilation
+	importStack        []importElement          // Stack of import elements
+	packageMutex       sync.Mutex               // Mutex for serializing access to shared package management
+	types              map[string]*data.Type    // Types defined by the user in this compilation unit
+	symbolErrors       map[string]*errors.Error // List of symbol table errors (unused var, etc).
+	optionalUsage      map[string]bool          // List of symbols that do not hae to be referenced even if defined
+	started            time.Time                // Time compilation was started
+	scopes             []scope                  // Nested symbol table scopes for this compilation
+	functionDepth      int                      // Current nested function declaration depth
+	blockDepth         int                      // Current nested statement block  depth
+	optimizationLevel  int                      // The optimization level (0=none, 1=low, 2=high)
 
 	// scopeDepth counts how many runtime PushScope instructions are
 	// currently open at this exact point in the bytecode stream being
@@ -270,22 +273,37 @@ func New(name string) *Compiler {
 		registers = settings.GetBool(defs.RegistersSetting)
 	}
 
+	// Is same-compilation-unit const-folding enabled (PERFORMANCE.md Finding 17,
+	// docs/internals/GLOBALS.md)? Defaults to true, exactly like typeShadowing
+	// above: unlike registers, this optimization changes no observable
+	// semantics (compileConst's own purity check already guarantees every
+	// foldable value is side-effect-free, and emitLoadName's shadowing guard
+	// prevents folding a name any local declaration has touched), so it ships
+	// on by default rather than gated behind optimizer level the way registers
+	// is.
+	constFold := true
+	if v := settings.Get(defs.ConstFoldSetting); v != "" {
+		constFold = settings.GetBool(defs.ConstFoldSetting)
+	}
+
 	// Create a new instance of the compiler.
 	return &Compiler{
-		b:                 bytecode.New(name),
-		t:                 nil,
-		s:                 symbols.NewRootSymbolTable(name),
-		id:                uuid.NewString(),
-		constants:         make([]string, 0),
-		deferQueue:        make([]deferStatement, 0),
-		types:             map[string]*data.Type{},
-		packageMutex:      sync.Mutex{},
-		packages:          map[string]*data.Package{},
-		importStack:       make([]importElement, 0),
-		symbolErrors:      map[string]*errors.Error{},
-		started:           time.Now(),
-		optimizationLevel: settings.GetInt(defs.OptimizerSetting),
-		iota:              -1, // Not inside a const(...) block yet; see the field comment.
+		b:                  bytecode.New(name),
+		t:                  nil,
+		s:                  symbols.NewRootSymbolTable(name),
+		id:                 uuid.NewString(),
+		constants:          make([]string, 0),
+		constantValues:     map[string]any{},
+		nonConstLocalNames: map[string]bool{},
+		deferQueue:         make([]deferStatement, 0),
+		types:              map[string]*data.Type{},
+		packageMutex:       sync.Mutex{},
+		packages:           map[string]*data.Package{},
+		importStack:        make([]importElement, 0),
+		symbolErrors:       map[string]*errors.Error{},
+		started:            time.Now(),
+		optimizationLevel:  settings.GetInt(defs.OptimizerSetting),
+		iota:               -1, // Not inside a const(...) block yet; see the field comment.
 		flags: flagSet{
 			normalizedIdentifiers: false,
 			extensionsEnabled:     extensions,
@@ -293,6 +311,7 @@ func New(name string) *Compiler {
 			unusedVars:            unusedVarsErr,
 			typeShadowing:         typeShadowing,
 			registers:             registers,
+			constFold:             constFold,
 		},
 	}
 }
@@ -332,6 +351,21 @@ func (c *Compiler) Clone(name string) *Compiler {
 	// Make a new copy of the slices.
 	clone.constants = append([]string(nil), c.constants...)
 	clone.deferQueue = append([]deferStatement(nil), c.deferQueue...)
+
+	// PERFORMANCE.md Finding 17: propagate the const-folding bookkeeping the
+	// same way constants itself is propagated above -- these two maps track
+	// the same "which names are known constants, and which are excluded by a
+	// same-named local declared somewhere in this unit" state that a clone
+	// compiling a sub-expression or nested block must see and contribute to.
+	clone.constantValues = map[string]any{}
+	for k, v := range c.constantValues {
+		clone.constantValues[k] = v
+	}
+
+	clone.nonConstLocalNames = map[string]bool{}
+	for k, v := range c.nonConstLocalNames {
+		clone.nonConstLocalNames[k] = v
+	}
 	clone.returnVariables = append(clone.returnVariables, c.returnVariables...)
 	clone.scopes = append([]scope(nil), c.scopes...)
 	clone.coercions = append(clone.coercions, c.coercions...)
@@ -419,6 +453,8 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 		c.parent.blockDepth = c.blockDepth
 
 		c.parent.constants = c.constants
+		c.parent.constantValues = c.constantValues
+		c.parent.nonConstLocalNames = c.nonConstLocalNames
 		c.parent.deferQueue = c.deferQueue
 		c.parent.returnVariables = c.returnVariables
 		c.parent.scopes = c.scopes

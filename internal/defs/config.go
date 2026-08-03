@@ -213,6 +213,14 @@ const (
 	// function fall back to the name-based access path, unchanged.
 	RegistersSetting = CompilerKeyPrefix + "registers"
 
+	// Should the compiler fold a same-compilation-unit package-level const
+	// reference directly into a literal Push at compile time, instead of a
+	// runtime Load? Defaults to true. See docs/internals/GLOBALS.md
+	// (PERFORMANCE.md Finding 17). This is a kill-switch: setting it false
+	// makes every const reference fall back to the name-based Load path,
+	// unchanged.
+	ConstFoldSetting = CompilerKeyPrefix + "constfold"
+
 	// Should a variable that is declared but never used be an error?
 	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
 
@@ -672,6 +680,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	StaticTypesSetting:                true,
 	TypeShadowingSetting:              true,
 	RegistersSetting:                  true,
+	ConstFoldSetting:                  true,
 	ApplicationServerSetting:          false,
 	LogonServerSetting:                true,
 	LogonTokenSetting:                 false,
