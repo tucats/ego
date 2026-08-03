@@ -5995,6 +5995,58 @@ On an Apple Silicon Mac, this prints:
 darwin arm64
 ```
 
+#### runtime.OS_KERNEL_VERSION / runtime.OS_PLATFORM / runtime.OS_PLATFORM_VERSION / runtime.OS_CPUCORES / runtime.OS_MEMORY
+
+```go
+runtime.OS_KERNEL_VERSION   string
+runtime.OS_PLATFORM         string
+runtime.OS_PLATFORM_VERSION string
+runtime.OS_CPUCORES         int
+runtime.OS_MEMORY           int
+```
+
+These constants describe the host machine Ego is running on, as opposed to `GOOS`/`GOARCH`
+above, which describe what the `ego` executable was built for. They are captured once, at
+startup, since none of them can change while the process is running:
+
+| Constant | Description |
+| :--------------------- | :---------------------------------------------------------------- |
+| `OS_KERNEL_VERSION` | The host operating system's kernel version string. |
+| `OS_PLATFORM` | The host operating system's distribution or product name (for example, `"darwin"`, `"ubuntu"`). |
+| `OS_PLATFORM_VERSION` | The host operating system's release or product version (for example, `"15.6.1"`, `"22.04"`). |
+| `OS_CPUCORES` | The number of logical CPUs available to the process -- the same value `runtime.NumCPU()` returns. |
+| `OS_MEMORY` | The total physical memory installed on the host machine, in bytes. |
+
+Go's standard library has no portable API for any of these beyond CPU count, so Ego gets
+them the same way the server's `GET /admin/serverinfo` endpoint does. If the underlying OS
+query fails for a given group of values (for example, in a sandboxed environment that
+blocks it), that group's constants are simply left at their zero value (an empty string or
+`0`) rather than causing an error.
+
+```go
+import "runtime"
+
+func main() {
+    fmt.Println(runtime.OS_PLATFORM, runtime.OS_PLATFORM_VERSION)
+    fmt.Println(runtime.OS_CPUCORES, "cores,", runtime.OS_MEMORY, "bytes of memory")
+}
+```
+
+#### runtime.MemoryAvailable()
+
+```go
+func runtime.MemoryAvailable() int
+```
+
+Returns the number of bytes of physical memory currently available for new allocations on
+the host machine. Unlike `OS_MEMORY` above (the host's fixed total), this is a function
+rather than a constant because it changes continuously as other processes on the host
+allocate and free memory -- each call queries the current value fresh.
+
+```go
+fmt.Println("available:", runtime.MemoryAvailable(), "of", runtime.OS_MEMORY, "bytes")
+```
+
 #### runtime.Version()
 
 ```go

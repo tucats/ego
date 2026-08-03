@@ -17,6 +17,23 @@ var RuntimePackage = data.NewPackageFromMap("runtime", map[string]any{
 	"Frame":  FrameType,
 	"GOOS":   data.Constant(goRuntime.GOOS),
 	"GOARCH": data.Constant(goRuntime.GOARCH),
+
+	// OS_* constants report facts about the host machine, captured once at
+	// startup (see osInfo/captureHostInfo in host.go); MemoryAvailable()
+	// below is their dynamic counterpart.
+	"OS_KERNEL_VERSION":   data.Constant(osInfo.KernelVersion),
+	"OS_PLATFORM":         data.Constant(osInfo.Platform),
+	"OS_PLATFORM_VERSION": data.Constant(osInfo.PlatformVersion),
+	"OS_CPUCORES":         data.Constant(osInfo.CPUCores),
+	"OS_MEMORY":           data.Constant(osInfo.Memory),
+
+	"MemoryAvailable": data.Function{
+		Declaration: &data.Declaration{
+			Name:    "MemoryAvailable",
+			Returns: []*data.Type{data.IntType},
+		},
+		Value: memoryAvailable,
+	},
 	"Buildtime": data.Function{
 		Declaration: &data.Declaration{
 			Name:    "Buildtime",
