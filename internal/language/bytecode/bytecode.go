@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"log"
+	"unsafe"
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -97,6 +98,27 @@ type ByteCode struct {
 	// these names the runtime cannot distinguish named from unnamed returns or
 	// know which symbol-table entries to read.
 	returnVarNames []string
+
+	// profile points at this ByteCode's profiling storage (*profileStorage,
+	// defined in profile.go), read and written exclusively through
+	// atomic.LoadPointer/CompareAndSwapPointer/StorePointer rather than a
+	// higher-level sync.Mutex or generic atomic.Pointer[T]. That specific,
+	// lower-level form matters here: ByteCode values are copied by value in
+	// several existing places (Clone() just below, NeedsCoerce's value
+	// receiver in coerce.go, restoreByteCode's struct assignment in
+	// compiler/function.go), and go vet's copylocks check flags both
+	// sync.Mutex and atomic.Pointer[T] as unsafe to duplicate that way (the
+	// latter carries the same internal no-copy marker as the former) --
+	// unsafe.Pointer carries no such marker, so copying a ByteCode remains
+	// unproblematic. A clone simply starts out pointing at whatever storage
+	// the original had at copy time (shared, if profiling had already
+	// touched it), or at nil if it had not; when the same function literal is
+	// cloned multiple times for a closure created inside a loop (see
+	// pushByteCode, stack.go), any clones that end up with independent
+	// storage instead of sharing one have their rows merged back together at
+	// report time by module:line (see profileEntry / PrintProfileReport),
+	// so that fragmentation is invisible in the report either way.
+	profile unsafe.Pointer
 }
 
 // String formats a bytecode as a function declaration string.

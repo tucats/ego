@@ -30,7 +30,8 @@ they appear in the call graph.
 - [18. New workload — `examples/mandelbrot3.ego` (goroutine-parallel Mandelbrot)](#18-new-workload--examplesmandelbrot3ego-goroutine-parallel-mandelbrot)
 - [19. Finding 15 — static contiguous row partitioning creates severe load imbalance](#19-finding-15--static-contiguous-row-partitioning-creates-severe-load-imbalance)
 - [20. Finding 16 — goroutine count scales negatively past ~2 concurrent workers (allocator/scheduler contention)](#20-finding-16--goroutine-count-scales-negatively-past-2-concurrent-workers-allocatorscheduler-contention)
-- [21. Summary table](#21-summary-table)
+- [21. Finding 17 — a package-level `const`/global referenced from deep recursion costs O(depth) per reference, not O(1)](#21-finding-17--a-package-level-constglobal-referenced-from-deep-recursion-costs-odepth-per-reference-not-o1)
+- [22. Summary table](#22-summary-table)
 
 ---
 
@@ -2772,7 +2773,76 @@ no way to expose.
 
 ---
 
-## 21. Summary table
+## 21. Finding 17 — a package-level `const`/global referenced from deep recursion costs O(depth) per reference, not O(1)
+
+**Impact:** in a 0→800-level recursive call chain, a single comparison against a package-level
+`const` took **~22× longer per hit** than a structurally identical comparison using only
+function-local values, and dominated the wall-clock cost of the whole function.
+
+Unlike every other finding in this document, this one was not found with `--pprof` — it was
+found using the new per-statement elapsed-time profiler (`ego run --profiling`, see
+`internal/language/bytecode/profile.go`) on its first real test against `examples/mandelbrot2.ego`.
+That is itself the interesting secondary result: `--pprof` profiles the interpreter's own Go call
+graph and answers "which Go function is slow," while this profiler answers "which line of *Ego
+source* is slow," and this finding is a case where the two questions have different, complementary
+answers — nothing above in this document, all derived from Go-level profiles, isolated *which
+statement* was responsible the way this one immediately did.
+
+### Evidence - Finding 17
+
+`examples/mandelbrot2.ego`'s recursive `mandelIterate` showed two structurally similar `if`-checks
+with almost identical hit counts but very different total elapsed time:
+
+```text
+mandelIterate:35    677658 hits   252ms     (if zr*zr+zi*zi > 4.0 { return })  -- locals only
+mandelIterate:40    675279 hits   5.61s     (if iter >= MaxIter { return })    -- MaxIter is a const
+```
+
+Isolated with a minimal repro that holds the total number of comparisons fixed and varies only
+call depth (`GOGC=off` in both, to rule out GC pauses):
+
+```text
+shallow_check.ego (checkOnce(n), called 1,600,000 times, depth ~1):
+    checkOnce:8   1,600,000 hits   382.8ms    (≈0.24µs/hit)   -- if n >= MaxN
+
+deep_check.ego (recur(n), same 1,600,000 total checks, recursing 0→800 each of 2,000 chains):
+    recur:8       1,602,000 hits   8.62s      (≈5.38µs/hit)   -- if n >= MaxN, identical const
+```
+
+Same constant, same comparison, same total number of evaluations — only the call depth at which
+each evaluation happens differs. The cost scales with depth, not with anything about the operation
+itself.
+
+### Root cause - Finding 17
+
+This is not a new defect; it is [Finding 7](#8-finding-7-architectural-high-effort-high-ceiling--name-based-symbol-resolution)'s
+already-documented name-based symbol resolution, applying to a case its since-implemented fix does
+not cover. Finding 7's Resolution (`docs/SLOTS.md`) resolves a function's **local** variables —
+parameters and `:=` locals — to fixed integer slot indices at compile time, turning their access
+into an O(1) array index. A package-level `const` (or any other package-scope identifier) is not a
+local, so it is not slot-eligible: reading it still goes through the original name-based
+`symbols.Get()`, which probes the current scope's `map[string]*SymbolAttribute` and, on a miss,
+recurses to the parent scope — repeating once per nested call frame between the reference and the
+package-level scope where the constant actually lives. At recursion depth *d*, that is *d* hops;
+summed over a full 0→800 chain the total work is quadratic in max depth, not linear, which is why
+the effect is dramatic here specifically and was easy to miss in shallower workloads.
+
+### Recommendation - Finding 17
+
+Deferred to a dedicated follow-up task (per project decision when this was found) rather than
+folded into the profiler work that surfaced it. The shape of a fix likely follows Finding 7's own
+architecture: extend slot-style, compile-time-resolved access to package-level `const`/`var`
+references, or at minimum cache a resolved reference (e.g., on the `*ByteCode` or at the call site)
+so a deeply-recursive function does not re-walk the same, unchanging chain to the same package
+scope on every single call. Worth re-profiling with `ego run --profiling` (not just `--pprof`)
+after any fix, since it was this profiler, not the Go-level one, that made the cost legible at
+statement granularity in the first place.
+
+**Status:** Open — intentionally deferred; tracked here for the next pass.
+
+---
+
+## 22. Summary table
 
 | # | Finding | Impact (measured) | Effort | Risk | Type | Status |
 | - | - | - | - | - | - | - |
@@ -2792,6 +2862,7 @@ no way to expose.
 | 14 | `FindNextScope` and `callFramePop`'s clone-check both walk the full ancestor chain per operation | **-66.9% wall clock** on the recursive Mandelbrot workload (17.27s → 5.71s) from Phases 1-3 | High (Phases 1-3 done; Phase 4 still High) | Medium-High for Phase 4 (needs design work) | Architectural — same category as Finding 7, specific to deep recursion | **Phases 1-3 fixed** (July 2026) — see Resolution above; Phase 4 declined, not implemented |
 | 15 | Static contiguous row partitioning creates severe load imbalance in `examples/mandelbrot3.ego` | Busiest goroutine did 255× the idlest's work, 2.6× the average, on a 14-way split | Low | Low | Sample-program bug (partitioning strategy), not an interpreter defect | **Fixed** (July 2026) — see Resolution above |
 | 16 | Goroutine count scales *negatively* past ~2 concurrent workers (allocator/scheduler contention) | 14-worker run took ~3× as long as a 2-worker run of the identical, evenly-divided work | High | High (touches core allocation path; needs dedicated investigation) | Systemic — goroutine-scale extension of Finding 5 | Open — GC/preemption tuning ruled out; no low-risk fix identified this pass |
+| 17 | Package-level `const`/global reference from deep recursion is O(depth), not O(1) | **~22× per-hit cost** at 800-level recursion vs. the same reference at shallow depth | Medium-High | Medium-High (extends Finding 7's slot architecture, or needs a caching strategy) | Extends Finding 7 — same root cause (name-based resolution), a case its fix does not cover | Open — deliberately deferred to a dedicated follow-up task |
 
 **Suggested order of work:** ~~1~~ → ~~2~~ → ~~3~~ → ~~4~~ → ~~8~~ → ~~9~~ → ~~12~~ → ~~13
 (partial)~~ → ~~14 (Phases 1-3)~~ → ~~11 (the `:=` case)~~ → ~~15~~ → **10** → **16** → **14
@@ -2803,7 +2874,9 @@ fully done; Finding 11 is done for its `:=` case, with the `IsConstant`-walk and
 of the original recommendation still open; Finding 13 is done on its read side only, by design;
 Finding 14 is done for Phases 1-3, with Phase 4 explicitly declined (see its Resolution
 section); Finding 16 was investigated but not fixed — see its own Recommendation section for
-why. Re-profiling after each (see their Resolution sections) confirms each
+why; Finding 17 was found (via the new per-statement profiler, not `--pprof`) and deliberately
+deferred rather than fixed in the same pass — tracked for a dedicated future task. Re-profiling
+after each (see their Resolution sections) confirms each
 predicted direct cost was eliminated (`uuid.New` gone entirely; `IsType` no longer appears in
 the profile on this path at all; `ui.Log` argument construction is now uniformly guarded across
 248 inspected call sites; `pushScopeByteCode`/`NewChildSymbolTable` no longer appear at all in a

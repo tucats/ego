@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -12,7 +13,6 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
-	"github.com/tucats/ego/internal/util/profiling"
 )
 
 /*
@@ -53,11 +53,11 @@ func profileByteCode(c *Context, i any) error {
 	if s, ok := i.(string); ok {
 		switch strings.ToLower(s) {
 		case "enable", "start", "on":
-			op = profiling.StartAction
+			op = StartAction
 		case "disable", "stop", "off":
-			op = profiling.StopAction
+			op = StopAction
 		case "report", "print", "dump":
-			op = profiling.ReportAction
+			op = ReportAction
 		default:
 			// .Context(s) appends the unexpected value to the error message
 			// so the programmer knows what string was rejected.
@@ -73,7 +73,7 @@ func profileByteCode(c *Context, i any) error {
 		}
 	}
 
-	return profiling.Profile(op)
+	return ProfileAction(op)
 }
 
 /******************************************\
@@ -261,9 +261,41 @@ func atLineByteCode(c *Context, i any) error {
 	c.symbols.SetAlways(defs.LineVariable, c.line)
 	c.symbols.SetAlways(defs.ModuleVariable, c.bc.name)
 
-	// Record this line visit in the profiler. When profiling is disabled this
-	// call compiles away to almost nothing.
-	profiling.Count(c.bc.name, c.line)
+	// Record this statement's profiling data. When profiling is disabled,
+	// profilingActive.Load() is a single atomic read and nothing else here
+	// runs -- as cheap as the old implementation's disabled path. When
+	// enabled: the elapsed time since the previous AtLine hit is credited to
+	// whichever statement was previously executing (c.profileSlot -- nil the
+	// very first hit, or immediately after a flush), then this statement's
+	// own hit count is recorded and its own timer started. See profile.go for
+	// the underlying storage, and callFramePop (callframe.go) plus the
+	// top-level Run() caller (internal/commands/run.go) for where a timer
+	// still pending at function return or program exit gets flushed instead
+	// of silently bleeding into whatever runs next.
+	if profilingActive.Load() {
+		now := time.Now()
+
+		if c.profileSlot != nil {
+			c.profileSlot.nanos.Add(int64(now.Sub(c.profileStart)))
+			c.profileSlot = nil
+		}
+
+		// Same filter the old Count() applied: skip synthetic/invalid lines
+		// and bytecode generated during import processing. ensureProfileSlot
+		// also returns nil if programCounter-1 is out of range for c.bc (see
+		// its own comment) -- that should only happen when atLineByteCode is
+		// invoked outside the normal run loop, but profiling must never be
+		// the reason real execution panics, so this is checked rather than
+		// assumed.
+		if c.line > 0 && c.bc.name != "" && !strings.HasPrefix(c.bc.name, "import ") {
+			if slot := c.bc.ensureProfileSlot(c.programCounter-1, c.line); slot != nil {
+				slot.count.Add(1)
+				c.profileSlot = slot
+			}
+		}
+
+		c.profileStart = now
+	}
 
 	// In debugger mode, returning this special error pauses execution and
 	// signals the interactive debugger to prompt for the next command.

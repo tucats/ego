@@ -28,7 +28,6 @@ import (
 	"github.com/tucats/ego/internal/runtime/io"
 	egoOS "github.com/tucats/ego/internal/runtime/os"
 	"github.com/tucats/ego/internal/runtime/profile"
-	"github.com/tucats/ego/internal/util/profiling"
 )
 
 var (
@@ -67,9 +66,21 @@ func RunAction(c *cli.Context) error {
 	// Tell the compiler subsystem if we are debugging this code.
 	compiler.DebugMode = debug
 
-	// If we are doing profiling, start the native profiler.
-	if c.Boolean("profiling") {
-		err = profiling.Profile(profiling.StartAction)
+	// If we are doing profiling, start the native profiler. --profile-file
+	// implies profiling should run even without --profiling also being
+	// given -- specifying a destination file but never collecting any data
+	// into it would otherwise silently produce nothing.
+	profileFile, hasProfileFile := c.String("profile-file")
+
+	if hasProfileFile {
+		// The file is the only destination the user asked for; don't also
+		// dump the same data to the console at end-of-run or from any
+		// in-script "@profile report"/"dump" call.
+		bytecode.SuppressConsoleReport(true)
+	}
+
+	if c.Boolean("profiling") || hasProfileFile {
+		err = bytecode.ProfileAction(bytecode.StartAction)
 		if err != nil {
 			return err
 		}
@@ -190,6 +201,18 @@ func RunAction(c *cli.Context) error {
 	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
 
 	exitValue, err := runREPL(interactive, extensions, text, debug, wasCommandLine, mainName, isProject, symbolTable, fullScope, c, prompt)
+
+	// Write the collected profiling data to --profile-file, if given, now
+	// that the program (run via whichever of runREPL/runLoop/runCompiledCode
+	// it took to get here) has finished. This does not clear the data (see
+	// WriteProfileReportFile's own comment), so main.go's unconditional
+	// end-of-run call to bytecode.PrintProfileReport still prints the same
+	// session's data to the console afterward.
+	if hasProfileFile {
+		if fileErr := bytecode.WriteProfileReportFile(profileFile); fileErr != nil {
+			return fileErr
+		}
+	}
 
 	if exitValue > 0 {
 		return errors.ErrTerminatedWithErrors
@@ -681,6 +704,13 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 	} else {
 		err = ctx.Run()
 	}
+
+	// Credit whatever statement was executing when the program stopped with
+	// its elapsed time so far. Without this, the very last statement the
+	// whole program executes (one that doesn't return into a caller, so
+	// callFramePop's own flush never fires for it) would simply have its
+	// pending time discarded. A no-op when profiling isn't active.
+	ctx.FlushProfileTimer()
 
 	// If the program ended with the "stop" error, it means the bytecode stream ended
 	// normally, so we don't want to report an error.

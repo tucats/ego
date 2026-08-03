@@ -444,12 +444,15 @@ func (c *Compiler) profileDirective() error {
 		return c.compileError(errors.ErrInvalidProfileAction)
 	}
 
+	// Read the verb by its spelling rather than requiring an identifier
+	// token: "print" (a valid report alias below) is a reserved keyword
+	// token in Ego (the print statement), not an identifier, so requiring
+	// IsIdentifier() here would reject it before the InList check below
+	// ever runs. optimizerDirective uses this same Spelling()-only pattern
+	// for the same reason.
 	verb := c.t.Next()
-	if !verb.IsIdentifier() {
-		return c.compileError(errors.ErrInvalidIdentifier).Context(verb)
-	}
-
 	command := strings.ToLower(verb.Spelling())
+
 	if !util.InList(command, "start", "enable", "on", "stop", "disable", "off", "report", "dump", "print") {
 		return c.compileError(errors.ErrInvalidProfileAction, verb).Context(verb)
 	}

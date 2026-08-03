@@ -123,6 +123,12 @@ func (c *Context) callFramePushWithTable(table *symbols.SymbolTable, bc *ByteCod
 // callFramePop retrieves the call frame information from the stack, and updates
 // the current bytecode context to reflect the previously-stored state.
 func (c *Context) callFramePop() error {
+	// Credit the returning function's last executed statement with its
+	// elapsed time before c.bc/c.programCounter get overwritten below with
+	// the caller's state -- otherwise that pending time would bleed into
+	// whichever statement the caller executes next. See FlushProfileTimer.
+	c.FlushProfileTimer()
+
 	// First, is there stuff on the stack we want to preserve?
 	topOfStackSlice := []any{}
 

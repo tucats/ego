@@ -86,6 +86,7 @@ language and tool set patterned off of the _Go_ programming language.
    1. [@global](#at-global)
    1. [@localization](#at-localization)
    1. [@optimizer](#at-optimizer)
+   1. [@profile](#at-profile)
    1. [@template](#at-template)
    1. [@type](#at-type)
 
@@ -9140,6 +9141,56 @@ have code that is called frequently. For shorter programs that run once, the opt
 incur significant overhead. with little-to-no-benefit.
 
 By default, the optimizer is always disabled when running the `ego test` command.
+
+### @profile <a name="at-profile"></a>
+
+You can control Ego's built-in statement profiler from within a program using the `@profile`
+directive. This must be followed by one of these command verbs:
+
+| Verb | Aliases | Effect |
+| :--- | :--- | :--- |
+| `start` | `enable`, `on` | Begin recording elapsed time and hit count for each executed statement |
+| `stop` | `disable`, `off` | Stop recording; previously collected data is retained |
+| `report` | `dump`, `print` | Print a table of collected data to the console and reset it |
+
+```go
+func main() {
+   @profile on
+   // ... code to be measured ...
+   @profile off
+   @profile report
+}
+```
+
+While active, the profiler tracks how many times each source statement executes and how much
+elapsed time was spent on it, attributed by adding up the time between successive statement
+executions. This has minimal overhead when not enabled; while enabled, the added cost is small
+per statement but is not zero, so avoid leaving profiling on for production workloads.
+
+The profiler can also be controlled from the command line without modifying the source at
+all, using the `ego run` command's `--profiling` and `--profile-file` options:
+
+```bash
+ego run --profiling myprogram.ego
+```
+
+This runs the entire program with profiling active, and prints the report to the console when
+the program finishes, equivalent to wrapping the whole program in `@profile on` / `@profile
+report`.
+
+```bash
+ego run --profile-file report.json myprogram.ego
+ego run --profile-file report.csv  myprogram.ego
+ego run --profile-file report.txt  myprogram.ego
+```
+
+`--profile-file` writes the collected data to the named file instead of printing it to the
+console, and also implies `--profiling`. This suppresses console output entirely for the run,
+including any in-script `@profile report`/`dump` call, since the file is the only destination
+requested. The format is chosen by the file's extension: `.json` writes an array of JSON
+objects (one per source line, with `module`, `line`, `count`, `nanos`, and `elapsed` fields),
+`.csv` writes a header row followed by one row per source line, and any other extension writes
+the same plain-text table format normally used for the console report.
 
 ### @template <a name="at-template"></a>
 

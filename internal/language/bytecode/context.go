@@ -242,6 +242,17 @@ type Context struct {
 	// tracing.
 	lastLine int
 
+	// profileSlot points at the profile storage (see profile.go) for the
+	// statement currently "open" -- the one whose AtLine instruction most
+	// recently ran, whose elapsed time has not yet been credited. It is nil
+	// when profiling is inactive or when there is nothing pending (right
+	// after a flush). profileStart is when that statement's timer began.
+	// Both are only ever touched while profiling is active, and under the
+	// same c.shared/c.mux guard atLineByteCode already takes to protect
+	// c.line/c.source, since they are updated at the same points.
+	profileSlot  *profileSlot
+	profileStart time.Time
+
 	// The nested scope depth of the current symbol table. A depth of zero means no
 	// symbol tables have been pushed on the symbol table stack.
 	blockDepth int

@@ -145,7 +145,7 @@ This is useful for quick one-off benchmarking/profiling snippets or scratch expe
 | `internal/errors/` | Error types and handling |
 | `internal/defs/` | Shared constants and definitions |
 | `internal/i18n/` | Internationalization / string lookup (`internal/i18n/languages/` holds `messages_en.txt` etc.) |
-| `internal/util/` | Miscellaneous utilities: `util/fork` (subprocess spawn), `util/formats`, `util/javascript` (JS/CSS minifier for dashboard assets), `util/profiling`, `util/validate` |
+| `internal/util/` | Miscellaneous utilities: `util/fork` (subprocess spawn), `util/formats`, `util/javascript` (JS/CSS minifier for dashboard assets), `util/validate` |
 | `tests/` | Ego-language unit tests |
 | `tools/` | Build, test, and utility scripts |
 | `docs/` | User-facing documentation |
@@ -889,6 +889,70 @@ Unnamed parameter lists (`func(int, int) int`, Go's type-only form) are detected
 ## Style
 
 - Use **American English** spellings in all comments and documentation (e.g., "color" not "colour", "recognize" not "recognise", "behavior" not "behaviour").
+
+---
+
+## Built-in Statement Profiler (`internal/language/bytecode/profile.go`)
+
+Triggered by `ego run --profiling`/`--profile-file <path>` or the `@profile start/stop/report`
+compiler directive (`profileByteCode`, `flow.go`). Reports per-statement hit count _and_ elapsed
+time — added August 2026; see `docs/internals/PERFORMANCE.md` Finding 17 for a real bug this
+immediately surfaced (package-level `const`/global access from deep recursion is O(depth)).
+
+`--profile-file` writes to `.json`/`.csv`/plain-text (by extension, `WriteProfileReportFile`) and
+also sets `SuppressConsoleReport(true)`, so the same session's data isn't also printed to the
+console at end-of-run or by any in-script `@profile report`/`dump` call — the file is meant to be
+the only destination in that mode.
+
+The `@profile` directive's verb parser (`profileDirective`, `compiler/directives.go`) reads the
+verb by `Spelling()` alone rather than requiring `IsIdentifier()`: `print` (a valid alias for
+`report`) is a reserved keyword token (the `print` statement), not an identifier, so an
+identifier check would reject it before the alias list is even consulted. `optimizerDirective`
+uses the same Spelling()-only pattern for the same reason — if you add a new directive with a
+short list of verb aliases, check whether any alias collides with a reserved word before assuming
+`IsIdentifier()` is safe to require.
+
+**Storage lives on `*ByteCode`, not in a central map.** Each compiled function's profiling data
+is indexed by instruction offset (`Context.programCounter`, captured as `programCounter-1` inside
+`atLineByteCode` since the run loop already advanced it past the current instruction before
+dispatch) — a direct slice index, no string key, no hashing, no per-hit lock.
+
+**Why the storage field is a bare `unsafe.Pointer`, not a `sync.Mutex` or `atomic.Pointer[T]`:**
+`ByteCode` values are copied by value in several existing places — `Clone()`, `NeedsCoerce`'s
+value receiver (`coerce.go`), `restoreByteCode`'s struct assignment (`compiler/function.go`) — and
+`go vet`'s copylocks check flags _both_ a directly-embedded `sync.Mutex` and a generic
+`atomic.Pointer[T]` as unsafe to duplicate that way (the latter carries the same no-copy marker as
+the former internally). A bare `unsafe.Pointer`, accessed only through `sync/atomic`'s free
+functions (`LoadPointer`/`CompareAndSwapPointer`/`StorePointer`), carries no such marker and is
+copy-safe by construction — if you're tempted to "clean this up" to a nicer-looking
+`atomic.Pointer[profileStorage]`, don't; it will fail vet the same way this one originally did.
+
+**Timing uses one `time.Now()` per `AtLine` hit, not a start/stop pair per statement.** Each hit's
+timestamp simultaneously closes out the _previous_ statement's timer (`Context.profileSlot`/
+`profileStart`) and starts the new one — halving clock-read overhead versus wrapping each
+statement individually. This telescopes correctly through nested calls for free, since `Context`
+is reused across the whole call stack within one goroutine (frames are pushed/popped on it, not
+allocated fresh — see "Single-context execution" above), so there's no need to save/restore a
+timer stack across calls.
+
+**Two flush points cover what the delta chain can't close on its own:** `callFramePop` (function
+return) and the top-level `Run()` caller (`internal/commands/run.go`, program exit) both call
+`Context.FlushProfileTimer()` to credit whatever statement was still "open" when execution left a
+frame or the whole program halted — otherwise that pending time would either be silently dropped
+(nothing else ever closes it) or bleed into an unrelated statement that happens to run next.
+
+**A cascading-unwind attribution bug was suspected but ruled out.** The working theory going into
+this feature's first real test was that a deep recursive chain finally hitting its base case and
+returning through many stacked frames with no intervening `AtLine` in between might not distribute
+return-processing cost evenly across the unwound frames. Isolated directly (a `return <local>`
+always executed at depth 1 vs. the identical statement shape always executed at depth 800, no
+recursion cost or const lookup in either): the depth-800 case was only ~1.6-1.7x more expensive
+per hit, reproducible at both 2,000 and 20,000 samples — nowhere near the 17-22x seen in Finding
+17. The entire dramatic anomaly that prompted the suspicion is fully explained by Finding 17's
+O(depth) const/global symbol lookup; there is no separate, distinctly-broken attribution mechanism
+in the profiler itself. The residual ~1.6x is small enough to plausibly be ordinary
+depth-proportional interpreter cost elsewhere (e.g. a not-fully-eliminated residual of
+PERFORMANCE.md Findings 12-14's `callFramePop` work) rather than anything specific to profiling.
 
 ---
 

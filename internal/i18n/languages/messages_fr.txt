@@ -990,6 +990,7 @@ run.entry.point=Nom de la fonction de point d'entrée (par défaut main)
 run.log=Diriger la sortie du journal vers ce fichier plutôt que vers stdout
 run.optimize=Activer l'optimiseur de bytecode
 run.profile=Activer le profilage du code source Ego
+run.profile.file=Écrire les données de profilage dans ce fichier (.json, .csv ou texte) ; active aussi le profilage
 run.project=La source est un répertoire plutôt qu'un fichier
 run.sandbox=Activer le mode sandbox (restreint fichiers, exécution et jetons)
 run.static=Spécifier le typage des valeurs pendant l'exécution du programme
