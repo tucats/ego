@@ -1031,7 +1031,6 @@ var ServerGrammar = []cli.Option{
 		OptionType:    cli.Subcommand,
 		Value:         LoggingGrammar,
 		ExpectedParms: cli.Variable,
-		ParmDesc:      "parm.address.port",
 		Action:        commands.Logging,
 	},
 	{

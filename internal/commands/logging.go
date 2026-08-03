@@ -18,10 +18,10 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/runtime/rest"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/jaxon"
 )
 
@@ -49,12 +49,12 @@ const (
 //	Traditional: ego server logging [options]
 //	Verb:        ego show server log [entries]
 //	             ego set logging [options]
+//
+// Note, removing  ability to use an alternate server, and instead
+// allowing the parameters to be used as logging items to enable
+// or disable. This is a change in behavior from previous versions, but
+// it is more consistent with the other logging commands.
 func Logging(c *cli.Context) error {
-	// Validate server address and port supplied on the command line.
-	if err := validateServerAddressAndPort(c); err != nil {
-		return err
-	}
-
 	loggers := defs.LoggingItem{Loggers: map[string]bool{}}
 	response := defs.LoggingResponse{}
 
@@ -66,7 +66,15 @@ func Logging(c *cli.Context) error {
 
 	showStatus := c.Boolean("status")
 
-	if c.WasFound("enable") || c.WasFound("disable") {
+	if strings.TrimSpace(c.Parent.Command) == "set" {
+		showStatus = true
+	}
+
+	// IF there are any parameters, it means these are logger names to
+	// enable or disable. Can also be explicitly set with --enable and
+	// --disable options. If any of those are present, we will update the server's
+	// logging configuration and then show the status.
+	if c.WasFound("enable") || c.WasFound("disable") || c.FindGlobal().ParameterCount() > 0 {
 		var err error
 
 		showStatus, err = setLoggers(c, loggers, response, showStatus)
@@ -180,6 +188,45 @@ func LoggingStatus(c *cli.Context) error {
 }
 
 func setLoggers(c *cli.Context, loggers defs.LoggingItem, response defs.LoggingResponse, showStatus bool) (bool, error) {
+	// Scan the parmaeters first for logger names
+	parameters := c.FindGlobal().Parameters
+
+	// Some of the items may themselves be list items if the user put commas
+	// in the command line. So scan over the loggerNames string array, and
+	// break up any comma-separated items into individual logger names, and
+	// be sure to strip out any whitespace or empty items.
+	loggerNames := []string{}
+
+	for _, parameter := range parameters {
+		for _, loggerName := range strings.Split(parameter, ",") {
+			loggerName = strings.TrimSpace(loggerName)
+			if loggerName != "" {
+				loggerNames = append(loggerNames, loggerName)
+			}
+		}
+	}
+
+	for _, loggerName := range loggerNames {
+		loggerName = strings.ToUpper(loggerName)
+
+		enabledState := true
+		if strings.HasPrefix(loggerName, "-") {
+			enabledState = false
+			loggerName = loggerName[1:]
+		} else if strings.HasPrefix(loggerName, "+") {
+			enabledState = true
+			loggerName = loggerName[1:]
+		}
+
+		logger := ui.LoggerByName(loggerName)
+		if logger < 0 {
+			return false, errors.ErrInvalidLoggerName.Context(strings.ToUpper(loggerName))
+		}
+
+		loggers.Loggers[loggerName] = enabledState
+	}
+
+	// Now process explicit --enable and --disable items.
 	if c.WasFound("enable") {
 		loggerNames, _ := c.StringList("enable")
 

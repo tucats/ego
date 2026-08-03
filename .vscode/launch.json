@@ -237,7 +237,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "start", "cluster", "--name=gang", "--ports=8081-8083"]
+            "args": [ "set", "logging"]
         },
         {
             "name": "Detached ego server",
