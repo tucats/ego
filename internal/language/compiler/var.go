@@ -65,6 +65,14 @@ func (c *Compiler) compileVar() error {
 			}
 
 			c.DefineSymbol(name)
+
+			// PERFORMANCE.md Finding 17: var declarations are always
+			// name-based today (compileVar never attempts register
+			// allocation), so every declared name here disqualifies itself
+			// from const-folding for the rest of this compilation unit, in
+			// case it shadows a package-level const of the same name (see
+			// emitLoadName, slots.go).
+			c.nonConstLocalNames[name] = true
 		}
 
 		// We'll need to use this token string over and over for each name

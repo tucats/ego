@@ -1,9 +1,11 @@
 package compiler
 
 import (
+	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
-	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/util"
 )
@@ -194,6 +196,17 @@ func (c *Compiler) compileConst() error {
 		// emit the Constant bytecode which stores the value.
 		c.constants = append(c.constants, nameSpelling)
 
+		// PERFORMANCE.md Finding 17: also try to fold this constant's value at
+		// compile time, so later references can be replaced with a literal
+		// Push instead of a runtime Load (see emitLoadName, slots.go). The
+		// purity check above guarantees vx contains only literals, arithmetic,
+		// and loads of already-validated constants, so this should always
+		// succeed; if it doesn't (defensively), the constant simply stays
+		// name-based, exactly as it compiled before this optimization existed.
+		if value, ok := c.foldConstantValue(vx, lastType); ok {
+			c.constantValues[nameSpelling] = value
+		}
+
 		c.b.Append(vx)
 
 		// If this spec has (or inherits) an explicit type, convert the value to
@@ -223,4 +236,71 @@ func (c *Compiler) compileConst() error {
 	}
 
 	return nil
+}
+
+// foldConstantValue attempts to evaluate a compiled constant's own bytecode
+// (vx) to a concrete Go value at compile time, so later references to this
+// constant can be replaced with a literal Push instead of a runtime Load
+// (see PERFORMANCE.md Finding 17 and emitLoadName in slots.go). t is the
+// constant's explicit/inherited type, if any (see lastType in compileConst)
+// -- when non-nil, the same "Push type; Swap; Call 1" conversion sequence
+// compileConst emits at the declaration site is appended here too, so a
+// typed/iota-based enum constant folds to its converted value, not the raw
+// untyped literal.
+//
+// This mirrors the peephole optimizer's own executeFragment
+// (internal/language/bytecode/optimizer.go), which evaluates a self-contained
+// bytecode fragment in an isolated context to fold adjacent literal/
+// arithmetic sequences -- kept as a small, separate helper here rather than
+// exported and shared, to avoid an unrelated cross-package refactor of
+// optimizer.go as a side effect of this feature (see docs/internals/GLOBALS.md,
+// Open Question 2).
+//
+// Returns (value, true) on success. Any failure (should not happen, given
+// compileConst's own purity check just above this call, which guarantees vx
+// contains only literals, arithmetic, and loads of already-validated
+// constants) simply returns (nil, false) -- the caller leaves the constant
+// name-based, exactly as it compiled before this optimization existed.
+func (c *Compiler) foldConstantValue(vx *bytecode.ByteCode, t *data.Type) (any, bool) {
+	fragment := bytecode.New("const fold")
+
+	for _, i := range vx.Opcodes() {
+		fragment.Emit(i.Operation, i.Operand)
+	}
+
+	if t != nil {
+		fragment.Emit(bytecode.Push, t)
+		fragment.Emit(bytecode.Swap)
+		fragment.Emit(bytecode.Call, 1)
+	}
+
+	fragment.Emit(bytecode.Stop)
+
+	// Seed a scratch table with every constant folded so far in this
+	// compilation unit (as readonly, via SetConstant, exactly like the real
+	// declaration site does), so a Load of an earlier same-block constant
+	// resolves correctly inside the fragment. Force strict type enforcement,
+	// matching executeFragment's own choice, so typed conversions in the
+	// fragment behave the same as they would at real program run time.
+	scratch := symbols.NewSymbolTable("const fold")
+	scratch.SetAlways(defs.TypeCheckingVariable, defs.StrictTypeEnforcement)
+
+	for name, value := range c.constantValues {
+		if err := scratch.SetConstant(name, value); err != nil {
+			return nil, false
+		}
+	}
+
+	ctx := bytecode.NewContext(scratch, fragment)
+
+	if err := ctx.Run(); err != nil && !errors.Equal(err, errors.ErrStop) {
+		return nil, false
+	}
+
+	value, err := ctx.Pop()
+	if err != nil {
+		return nil, false
+	}
+
+	return value, true
 }

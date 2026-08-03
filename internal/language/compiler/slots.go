@@ -240,12 +240,31 @@ func (c *Compiler) peekFunctionBodyPos() int {
 // otherwise. This is the single choke point every identifier-read site routes
 // through, so a non-slotted name (parameter, global, "$"-temporary)
 // transparently keeps its existing behavior.
+//
+// PERFORMANCE.md Finding 17: when name is not a register (checked first,
+// since a shadowing register-eligible local must always win) and it was
+// successfully const-folded (c.constantValues) and never touched by any
+// name-based local/parameter declaration anywhere in this compilation unit
+// (c.nonConstLocalNames -- see lvalue.go, var.go, function.go), the constant's
+// literal value is pushed directly instead of emitting a runtime Load. This
+// is gated by c.flags.constFold so the optimization can be disabled
+// independently of the register system (see docs/internals/GLOBALS.md).
 func (c *Compiler) emitLoadName(b *bytecode.ByteCode, name string) {
 	if idx, ok := c.resolveRegister(name); ok {
 		b.Emit(bytecode.LoadRegister, idx)
-	} else {
-		b.Emit(bytecode.Load, name)
+
+		return
 	}
+
+	if c.flags.constFold && !c.nonConstLocalNames[name] {
+		if value, ok := c.constantValues[name]; ok {
+			b.Emit(bytecode.Push, value)
+
+			return
+		}
+	}
+
+	b.Emit(bytecode.Load, name)
 }
 
 // emitAddressOfName emits an address-of for name into buffer b, choosing

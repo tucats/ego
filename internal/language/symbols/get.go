@@ -269,6 +269,49 @@ func (s *SymbolTable) GetAddress(name string) (any, bool) {
 	return v, found
 }
 
+// FindTable walks the same scope chain Get()/Set()/GetAddress() use to find
+// which table currently owns name, without extracting or mutating any value.
+// Used by the Finding 17 Tier 2 runtime cache (see docs/internals/GLOBALS.md,
+// internal/language/bytecode/globalcache.go): on a cache miss, the opcode
+// handler calls this once, after the ordinary Get/Set/GetAddress call, to
+// learn which table the name resolved to, so a future execution of the same
+// instruction can be cached to skip straight to it if that table is a global
+// singleton. This intentionally duplicates Get()'s walk rather than changing
+// Get() itself to also return a table -- Get()/Set()/GetAddress() are
+// unmodified, so this addition carries zero risk to their existing,
+// well-tested behavior.
+func (s *SymbolTable) FindTable(name string) (*SymbolTable, bool) {
+	if s == nil {
+		return nil, false
+	}
+
+	if s.shared.Load() {
+		symbolTable := s.RLock()
+		defer symbolTable.RUnlock()
+	}
+
+	if _, found := s.symbols[name]; found {
+		return s, true
+	}
+
+	// docs/SLOTS.md introspection: a slotted local is not in the symbols map,
+	// but is still "found here" for FindTable's purposes -- mirrors Get()'s
+	// own localNames check.
+	if s.localNames != nil {
+		if _, ok := s.slotIndexByName(name); ok {
+			return s, true
+		}
+	}
+
+	if !s.IsRoot() {
+		if next := s.FindNextScope(); next != nil {
+			return next.FindTable(name)
+		}
+	}
+
+	return nil, false
+}
+
 // IsConstant determines if a name is a constant or readonly value.
 func (s *SymbolTable) IsConstant(name string) bool {
 	if s == nil {

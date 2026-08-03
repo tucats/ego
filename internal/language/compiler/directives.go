@@ -861,6 +861,12 @@ func (c *Compiler) compileBlockDirective() error {
 		// paths in isolation without saving and restoring the profile setting.
 		// See docs/SLOTS.md.
 		slotsFlag = "slots"
+
+		// constFoldFlag lets a test force the sub-compiler's c.flags.constFold
+		// on or off directly, independent of the ego.compiler.constfold profile
+		// setting, mirroring slotsFlag above. See docs/internals/GLOBALS.md
+		// (PERFORMANCE.md Finding 17).
+		constFoldFlag = "constfold"
 	)
 
 	var (
@@ -893,6 +899,13 @@ func (c *Compiler) compileBlockDirective() error {
 		// c.flags.registers (see below), mirroring typeShadowing/typeShadowingSet.
 		slots    = false
 		slotsSet = false
+
+		// constFold/constFoldSet hold the value and presence of an explicit
+		// "constfold=" flag on this directive, applied directly to the
+		// sub-compiler's own c.flags.constFold (see below), mirroring
+		// slots/slotsSet.
+		constFold    = false
+		constFoldSet = false
 
 		// eofMarker holds the value of an "eof=" option, e.g.
 		// @compile eof="$EOF". It stays empty ("") unless that option is
@@ -1011,6 +1024,27 @@ func (c *Compiler) compileBlockDirective() error {
 			}
 
 			slotsSet = true
+
+		case constFoldFlag:
+			c.t.Advance(1)
+
+			if !c.t.IsNext(tokenizer.AssignToken) {
+				return c.compileError(errors.ErrUnexpectedToken).Context(c.t.Peek(1))
+			}
+
+			flag := c.t.Next().Spelling()
+			switch strings.ToLower(flag) {
+			case trueFlag, onFlag, "1":
+				constFold = true
+
+			case falseFlag, offFlag, "0":
+				constFold = false
+
+			default:
+				return c.compileError(errors.ErrInvalidBooleanValue).Context(flag)
+			}
+
+			constFoldSet = true
 
 		case optimizeFlag, optFlag:
 			c.t.Advance(1)
@@ -1152,6 +1186,14 @@ func (c *Compiler) compileBlockDirective() error {
 	// blockMode) when the directive explicitly asked with "slots=true|false".
 	if slotsSet {
 		subCompiler.flags.registers = slots
+	}
+
+	// Same treatment as slots above: only override the sub-compiler's
+	// c.flags.constFold (already correctly seeded by New() or inherited in
+	// blockMode) when the directive explicitly asked with
+	// "constfold=true|false".
+	if constFoldSet {
+		subCompiler.flags.constFold = constFold
 	}
 
 	// Collect up all the tokens that make up the code to compile. These

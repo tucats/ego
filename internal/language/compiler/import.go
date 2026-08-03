@@ -393,6 +393,8 @@ func compileImportSource(packageName string, filePath string, c *Compiler, text 
 	// The import will have generated code that must be run to actually register
 	// package contents.
 	importSymbols := symbols.NewChildSymbolTable(tokenizer.ImportToken.Spelling()+" "+fileName.Spelling(), c.rootTable)
+	importSymbols.SetGlobalSingleton()
+
 	ctx := bytecode.NewContext(importSymbols, importCompiler.b)
 
 	if err = ctx.Run(); err != nil && !errors.Equals(err, errors.ErrStop) {

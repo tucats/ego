@@ -218,10 +218,34 @@ func storeByteCode(c *Context, i any) error {
 	// ensured the variable exists and holds symbols.UndefinedValue, so
 	// this is always the first (and only) write to the variable.
 	if strings.HasPrefix(name, defs.ReadonlyVariablePrefix) {
-		return c.set(name, data.Constant(value))
+		value = data.Constant(value)
 	}
 
-	return c.set(name, value)
+	// PERFORMANCE.md Finding 17 (see docs/internals/GLOBALS.md): if a
+	// previous execution of this exact instruction resolved name to one of
+	// the program's persistent "global singleton" tables, call Set directly
+	// on that remembered table -- identical semantics to c.set(name, value),
+	// just skipping the O(depth) walk. Whatever Set returns here (nil or an
+	// error, e.g. a readonly violation) is the real, correct answer -- the
+	// cached table is provably the same one c.set would eventually reach, so
+	// there is nothing to fall back to on an error.
+	if GlobalCacheEnabled {
+		if table := c.bc.cachedGlobalTable(c.programCounter - 1); table != nil {
+			return table.Set(name, value)
+		}
+	}
+
+	if err := c.set(name, value); err != nil {
+		return err
+	}
+
+	if GlobalCacheEnabled {
+		if table, ok := c.symbols.FindTable(name); ok && table.IsGlobalSingleton() {
+			c.bc.cacheGlobalTable(c.programCounter-1, table)
+		}
+	}
+
+	return nil
 }
 
 // storeChanByteCode implements the StoreChan opcode, which moves a value

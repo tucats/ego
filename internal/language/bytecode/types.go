@@ -167,7 +167,32 @@ func unwrapByteCode(c *Context, i any) error {
 		}
 
 		if newType == nil {
-			if td, found := c.symbols.Get(targetType); found {
+			// PERFORMANCE.md Finding 17 (see docs/internals/GLOBALS.md): the
+			// same cache-hit/miss shape as loadByteCode (load.go) -- a named
+			// type alias resolved by name here is otherwise the one type-
+			// assertion path that still pays the O(depth) symbol-table walk.
+			var (
+				td    any
+				found bool
+			)
+
+			if GlobalCacheEnabled {
+				if table := c.bc.cachedGlobalTable(c.programCounter - 1); table != nil {
+					td, found = table.Get(targetType)
+				}
+			}
+
+			if !found {
+				td, found = c.symbols.Get(targetType)
+
+				if found && GlobalCacheEnabled {
+					if table, ok := c.symbols.FindTable(targetType); ok && table.IsGlobalSingleton() {
+						c.bc.cacheGlobalTable(c.programCounter-1, table)
+					}
+				}
+			}
+
+			if found {
 				if tdx, ok := td.(*data.Type); ok {
 					newType = tdx
 				}
@@ -649,9 +674,25 @@ func relaxedConformanceCheck(c *Context, i any, v any) (any, error) {
 func addressOfByteCode(c *Context, i any) error {
 	name := data.String(i)
 
+	// PERFORMANCE.md Finding 17 (see docs/internals/GLOBALS.md): same
+	// cache-hit/miss shape as loadByteCode (load.go).
+	if GlobalCacheEnabled {
+		if table := c.bc.cachedGlobalTable(c.programCounter - 1); table != nil {
+			if addr, ok := table.GetAddress(name); ok {
+				return c.push(addr)
+			}
+		}
+	}
+
 	addr, ok := c.symbols.GetAddress(name)
 	if !ok {
 		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
+	}
+
+	if GlobalCacheEnabled {
+		if table, ok := c.symbols.FindTable(name); ok && table.IsGlobalSingleton() {
+			c.bc.cacheGlobalTable(c.programCounter-1, table)
+		}
 	}
 
 	return c.push(addr)
@@ -692,9 +733,31 @@ func deRefByteCode(c *Context, i any) error {
 	// Step 1: resolve the symbol to its storage address.
 	// GetAddress returns a *any pointing to the symbol's value slot in the
 	// symbol table's internal storage.
-	addr, ok := c.symbols.GetAddress(name)
+	//
+	// PERFORMANCE.md Finding 17 (see docs/internals/GLOBALS.md): same
+	// cache-hit/miss shape as loadByteCode (load.go).
+	var (
+		addr any
+		ok   bool
+	)
+
+	if GlobalCacheEnabled {
+		if table := c.bc.cachedGlobalTable(c.programCounter - 1); table != nil {
+			addr, ok = table.GetAddress(name)
+		}
+	}
+
 	if !ok {
-		return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
+		addr, ok = c.symbols.GetAddress(name)
+		if !ok {
+			return c.runtimeError(errors.ErrUnknownIdentifier).Context(name)
+		}
+
+		if GlobalCacheEnabled {
+			if table, found := c.symbols.FindTable(name); found && table.IsGlobalSingleton() {
+				c.bc.cacheGlobalTable(c.programCounter-1, table)
+			}
+		}
 	}
 
 	if data.IsNil(addr) {

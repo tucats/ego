@@ -1,0 +1,79 @@
+// Regression tests for compile-time const-folding of package-level constant
+// references (PERFORMANCE.md Finding 17, docs/internals/GLOBALS.md). A
+// same-compilation-unit reference to a package-level const is compiled
+// straight to a literal Push instead of a runtime Load, unless some local
+// declaration elsewhere in the file shares the const's name (the shadowing
+// hazard) -- these tests are correctness checks, not performance checks
+// (see examples/mandelbrot2.ego and ego run --profiling for the performance
+// evidence); folded and unfolded references must produce identical results.
+
+@test "constfold: a deeply recursive function still sees the correct constant"
+{
+    // Mirrors the shape of the original Finding 17 repro (deep recursion
+    // referencing a package-level const on every call).
+    const limit = 50
+
+    func recur(n int) int {
+        if n >= limit {
+            return n
+        }
+
+        return recur(n + 1)
+    }
+
+    @assert recur(0) == 50
+}
+
+@test "constfold: a function parameter of the same name as a const shadows it"
+{
+    const scale = 2
+
+    func withParam(scale int) int {
+        return scale * 10
+    }
+
+    func withoutParam() int {
+        return scale
+    }
+
+    @assert withParam(9) == 90
+    @assert withoutParam() == 2
+}
+
+@test "constfold: same-block const-referencing-const chain folds correctly"
+{
+    const (
+        base  = 10
+        twice = base * 2
+        plus1 = twice + 1
+    )
+
+    @assert base == 10
+    @assert twice == 20
+    @assert plus1 == 21
+}
+
+@test "constfold: iota-based const used from a recursive function"
+{
+    const (
+        first = iota
+        second
+        third
+    )
+
+    func pick(n int) int {
+        if n == 0 {
+            return first
+        }
+
+        if n == 1 {
+            return second
+        }
+
+        return third
+    }
+
+    @assert pick(0) == 0
+    @assert pick(1) == 1
+    @assert pick(2) == 2
+}

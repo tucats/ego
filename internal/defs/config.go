@@ -134,6 +134,17 @@ const (
 	// only true when running in test mode.
 	RuntimeDeepScopeSetting = RuntimeKeyPrefix + "deep.scope"
 
+	// Should a Load/Store/AddressOf/DeRef instruction that resolves a name to
+	// one of the program's persistent "global singleton" tables (main's own
+	// top-level table, or an imported package's own table) cache that table
+	// on the compiled *ByteCode, so a later execution of the same instruction
+	// can skip the O(depth) walk through intervening call frames? Defaults to
+	// true. See docs/internals/GLOBALS.md (PERFORMANCE.md Finding 17). This
+	// is a kill-switch, independent of ego.compiler.constfold: setting it
+	// false makes every such reference fall back to the unchanged, always-
+	// correct name-based walk.
+	GlobalCacheSetting = RuntimeKeyPrefix + "globalcache"
+
 	// If true, the TRACE operation will print the full stack instead of
 	// a shorter single-line version.
 	FullStackTraceSetting = RuntimeKeyPrefix + "stack.trace"
@@ -212,6 +223,14 @@ const (
 	// docs/SLOTS.md. This is a kill-switch: setting it false makes every
 	// function fall back to the name-based access path, unchanged.
 	RegistersSetting = CompilerKeyPrefix + "registers"
+
+	// Should the compiler fold a same-compilation-unit package-level const
+	// reference directly into a literal Push at compile time, instead of a
+	// runtime Load? Defaults to true. See docs/internals/GLOBALS.md
+	// (PERFORMANCE.md Finding 17). This is a kill-switch: setting it false
+	// makes every const reference fall back to the name-based Load path,
+	// unchanged.
+	ConstFoldSetting = CompilerKeyPrefix + "constfold"
 
 	// Should a variable that is declared but never used be an error?
 	UnusedVarsSetting = CompilerKeyPrefix + "unused.var.error"
@@ -672,6 +691,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	StaticTypesSetting:                true,
 	TypeShadowingSetting:              true,
 	RegistersSetting:                  true,
+	ConstFoldSetting:                  true,
 	ApplicationServerSetting:          false,
 	LogonServerSetting:                true,
 	LogonTokenSetting:                 false,
@@ -713,6 +733,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	DefaultDataSourceSetting:          true,
 	RestClientServerCert:              true,
 	RuntimeDeepScopeSetting:           true,
+	GlobalCacheSetting:                true,
 	TableAutoParseDSNSetting:          true,
 	PrecisionErrorSetting:             true,
 	UnusedVarsSetting:                 true,
