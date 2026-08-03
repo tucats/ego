@@ -563,7 +563,24 @@ func (c *Compiler) directoryContents(name string) (string, error) {
 
 	fi, err := os.ReadDir(dirname)
 	if err != nil {
-		return "", errors.New(err)
+		// BUG-93: a multi-file package directory that isn't under the
+		// lib/packages root had no fallback at all, unlike the single-file
+		// case just below in readPackageFile, which already falls back to
+		// resolving name relative to the working directory (or as given, if
+		// absolute) when it isn't found under lib/packages either. Without
+		// this, a package organized as a directory of files could never be
+		// found anywhere except lib/packages, while the exact same package
+		// written as a single file could -- an inconsistency with no Go
+		// analog, since Go treats "a package" as always a directory (of one
+		// or more files), never distinguishing the two cases.
+		var fallbackErr error
+
+		fi, fallbackErr = os.ReadDir(name)
+		if fallbackErr != nil {
+			return "", errors.New(err)
+		}
+
+		dirname = name
 	}
 
 	if ui.IsActive(ui.PackageLogger) {

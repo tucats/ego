@@ -1,0 +1,3 @@
+package dirpkg
+
+var Base int = 10

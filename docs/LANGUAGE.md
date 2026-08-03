@@ -3046,47 +3046,102 @@ _Ego_; this is covered later.
 
 ### import <a name="import"></a>
 
-Use the `import` statement to include other files in the compilation
-of this program. The `import` statement cannot appear within any other
-block or function definition. Logically, the statement stops the
-current compilation, compiles the named object (adding any function
-and constant definitions to the named package) and then resuming the
+Use the `import` statement to include another package in the compilation of
+this program. The `import` statement cannot appear within any other block or
+function definition (except in test mode). Logically, the statement stops
+the current compilation, compiles the named package (adding its function,
+constant, and type definitions to that package), and then resumes the
 in-progress compilation.
 
+Ego's `import` syntax matches Go's: the package is always named with a
+**quoted string**, never a bare, unquoted identifier —
+
 ```go
-import factor
-import "factor"
+import "strings"
 import "factor.ego"
 ```
 
-All three of these have the same effect. The first assumes a file named
-"factor.ego" is found in the current directory. The second and third
-examples assume the quoted string contains a file path. If the suffix
-".ego" is not included it is assumed.
+Both forms above have the same effect: the second is equivalent to the
+first with the (optional) `.ego` extension spelled out explicitly. Unlike
+Go, Ego does not use a module system (there is no `go.mod` equivalent), so
+import paths are resolved by the rules described below rather than against
+a declared module path.
 
-You can optionally specify an alias for the import package by putting
-an identifier before the package name or path as a string. For example,
+You can optionally specify an alias for the imported package by putting an
+identifier before the quoted path, exactly as in Go:
 
 ```go
 import str "strings"
 ```
 
-In this example, the "strings" package is imported to the current program,
-but will be referenced using the name `str` in the code. This allows you to
-import multiple packages that would have the same name and use the alias
-to define them unambiguously.
+Here, the `strings` package is imported, but is referenced in this file as
+`str` rather than `strings`. This lets you import two packages that would
+otherwise share the same name, and disambiguate between them.
 
-If the import name cannot be found in the current directory, then the
-compiler uses the environment variables EGO_PATH to form a directory
-path, and adds the "lib" directory to that path to locate the import.
-So the above statement could resolve to `/Users/cole/ego/lib/factor.ego`
-if the EGO_PATH was set to "~/ego".
+Multiple imports can also be grouped in a single, parenthesized statement,
+again matching Go's syntax:
 
-Finally, the `import` statement can read an entire directory of source
-files that all contribute to the same package. If the target of the
-import is a directory in the $EGO_PATH/lib location, then all the
-source files within that directory area read and processed as part
-of one package.
+```go
+import (
+    "fmt"
+    str "strings"
+)
+```
+
+#### How an import path is resolved
+
+Given the quoted path in an `import` statement, Ego looks for the package's
+source in the following order. The first match wins; native (built-in)
+packages are effectively checked first, since they never need any of the
+steps below.
+
+1. **Native package name remapping.** A small fixed table remaps a handful
+   of Go-standard-library-style paths to their Ego package equivalents, so
+   that code written against a name a Go programmer would expect to type
+   still works — for example, `import "os/exec"` is treated as `import
+   "exec"`, and `import "encode/json"` as `import "json"`. This remapping
+   only applies to the specific names in that table; it is not a general
+   mechanism for locating Go standard library packages.
+2. **The `lib/packages` root.** The (possibly remapped) path is looked up
+   under Ego's own package library directory — by default
+   `$EGO_PATH/lib/packages`, or the directory named by the
+   `ego.runtime.path.lib` setting if that is set. This is the closest Ego
+   equivalent to Go's `GOROOT/src` for the standard library, or a module's
+   own root directory for an import path that is a prefix of the current
+   module's path: a single-segment path (`import "strings"`) is looked up
+   as `lib/packages/strings`, and a multi-segment path (`import
+   "sub/pkg"`) is looked up as `lib/packages/sub/pkg` — the whole path is
+   joined onto the `lib/packages` root, not just its last segment.
+3. **The current working directory.** If the package is not found under
+   `lib/packages`, the same path is tried again, this time resolved against
+   the process's current working directory (or used as-is, if it is
+   already an absolute path). This is how, for example, one Ego source
+   file can import a sibling package by a path relative to wherever `ego`
+   was invoked from — there is no equivalent of Go's module-root discovery
+   (walking up from the working directory to find `go.mod`), so the
+   working directory itself is the practical anchor. A path beginning with
+   `./` or `../` has no special meaning of its own here: it is ordinary
+   filesystem path syntax, cleaned and resolved exactly like any other
+   relative path against the working directory in this step — it does
+   **not** mean "relative to the directory containing the file that wrote
+   this `import` statement," which Ego does not support (nor does Go: a
+   literal relative import path is rejected outright by the Go compiler).
+
+Whichever of the last two steps finds the package, it can be either:
+
+- **A single file** — `import "foo"` finds `foo.ego`, or
+- **A directory of one or more files** — `import "foo"` finds every `.ego`
+  file directly inside a directory named `foo`, all compiled together as
+  one package (subdirectories are not read recursively).
+
+Both forms are resolved by exactly the same rules above — Ego does not
+distinguish between a package written as a single file and the same
+package written as a directory of files, matching Go's own model, where a
+package is always a directory (of one or more files) and there is no
+separate "single file" resolution rule (see `docs/issues/BUG-93.md`).
+
+If none of the steps above find the package, `import` reports a compile
+error naming the last path it tried.
 
 The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages

@@ -1,0 +1,18 @@
+// Regression test for BUG-93: a package organized as a directory of
+// multiple files (as opposed to a single "name.ego" file) must be
+// resolvable relative to the current working directory the same way a
+// single-file package already is, when the package isn't found under the
+// lib/packages root either.
+@test "packages: directory-style (multi-file) package resolves the same way a single-file package does"
+
+import "tests/packages/dirpkg"
+
+func dirpkgtest() int {
+    @assert dirpkg.Base == 10
+    @assert dirpkg.Double(5) == 10
+    @assert dirpkg.BaseDoubled() == 20
+
+    return 0
+}
+
+dirpkgtest()
