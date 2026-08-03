@@ -31,7 +31,9 @@ export PATH="${PWD}:${PATH}"
 # (internal/cli/app/library.go) deliberately omits https-server.crt/.key from
 # that embedded copy so a private key is never baked into the compiled
 # binary -- but that also means /ego/lib has no TLS cert/key to serve with.
-# /build/lib has them (assuming tools/keygen.sh has been run locally).
+# /build/lib has them: either the workspace's own pair (from tools/keygen.sh)
+# or, when the tree came from a clone and so had none, the throwaway
+# self-signed pair the Dockerfile's builder stage generates for test builds.
 EGO_LIB_PATH=/build
 
 # A scratch directory for the SQLite database and server log. Using a fresh
