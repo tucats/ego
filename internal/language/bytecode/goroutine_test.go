@@ -19,6 +19,7 @@ import (
 
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/symbols"
 )
 
 // Test_GoRoutine_UnrecoveredPanic_StopsParentContext is the GoRoutine-level
@@ -113,4 +114,50 @@ func Test_GoRoutine_NormalCompletion_DoesNotStopParentContext(t *testing.T) {
 	if parent.ctx.goErr != nil {
 		t.Errorf("a normally-completed goroutine must not set parent.goErr, got %v", parent.ctx.goErr)
 	}
+}
+
+// Test_GoByteCode_MarksCapturedScopeSharedBeforeLaunching is the BUG-94
+// regression test. goByteCode (the "go" statement) must mark a closure's
+// captured scope as shared SYNCHRONOUSLY, before it starts the new
+// goroutine -- not as the first thing the new goroutine itself does. The
+// old code did the marking inside GoRoutine, after the "go" statement had
+// already forked execution: nothing prevented the launching goroutine from
+// continuing on to its own next statement, and touching the very same
+// captured scope itself (e.g. a channel receive that auto-creates a
+// variable there), before the new goroutine got around to marking that
+// scope shared -- an unguarded concurrent map access despite both sides
+// individually checking the shared flag correctly (confirmed with
+// go test -race and a real ego test tests/flow/go_func_literal.ego repro).
+//
+// This test calls goByteCode directly (the real entry point for a "go"
+// statement, unlike the other tests in this file which call GoRoutine
+// directly) and checks that the captured scope is already marked shared
+// the instant goByteCode returns -- which must be true regardless of
+// whether the actual spawned goroutine has had a chance to run yet.
+func Test_GoByteCode_MarksCapturedScopeSharedBeforeLaunching(t *testing.T) {
+	parent := newTestContext(t)
+	parent.ctx.EnableConsoleOutput(false)
+	parent.ctx.running.Store(true)
+
+	captured := symbols.NewChildSymbolTable("captured", symbols.NewRootSymbolTable("root"))
+
+	if captured.IsShared() {
+		t.Fatal("test setup error: captured scope must not start out shared")
+	}
+
+	fx := New("closure-goroutine").Literal(true).CaptureScope(captured)
+
+	parent.withStack(fx)
+
+	if err := goByteCode(parent.ctx, 0); err != nil {
+		t.Fatalf("goByteCode() unexpected error: %v", err)
+	}
+
+	if !captured.IsShared() {
+		t.Error("BUG-94 regression: captured scope was not marked shared synchronously by goByteCode, before the goroutine was launched")
+	}
+
+	// Let the spawned goroutine actually finish before the test returns, so
+	// it doesn't outlive the test and race against a later test's own state.
+	goRoutineCompletion.Wait()
 }

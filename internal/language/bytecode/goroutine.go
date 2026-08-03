@@ -51,6 +51,32 @@ func goByteCode(c *Context, i any) error {
 	if fx, err := c.Pop(); err != nil {
 		return err
 	} else {
+		// If the function being launched is a closure (anonymous function
+		// literal), mark its captured scope chain as shared right now,
+		// synchronously, in this (the launching) goroutine -- BEFORE the new
+		// goroutine is started below, not after (see BUG-94).
+		//
+		// This used to happen inside GoRoutine itself, after the "go"
+		// statement had already forked execution. That was racy: Go gives
+		// no ordering guarantee between a newly spawned goroutine actually
+		// running its own setup and the launching goroutine continuing on
+		// to its own next statement. A statement immediately following the
+		// "go" statement that also touches the captured scope (e.g. a
+		// channel receive that auto-creates a variable there) could run,
+		// unsynchronized, before the new goroutine got around to marking
+		// that scope shared -- an unguarded concurrent map access despite
+		// both sides individually checking the shared flag correctly.
+		// Performing this step here instead closes that window entirely:
+		// there is no concurrency yet at this point, so no locking is
+		// needed for the marking itself, and both this goroutine's
+		// continuation and the new goroutine's eventual access are
+		// guaranteed to see the scope already marked shared.
+		if bc, ok := fx.(*ByteCode); ok && bc.IsLiteral() {
+			if captured := bc.GetCapturedScope(); captured != nil {
+				captured.Shared(true)
+			}
+		}
+
 		// Launch the function call as a separate thread.
 		if ui.IsActive(ui.GoRoutineLogger) {
 			ui.Log(ui.GoRoutineLogger, "go.launch", ui.A{
@@ -84,11 +110,18 @@ func goByteCode(c *Context, i any) error {
 //   points to the parent's local scope — the scope that contains the outer
 //   variables the closure wants to read or write.
 //
-//   Before the goroutine runs we mark the entire captured scope chain as
-//   shared.  The "shared" flag causes every subsequent Get / Set call on
-//   those tables to acquire a read or write lock, respectively.  Without
-//   this, the parent thread and the goroutine would both access the same
-//   symbol tables without any synchronisation, constituting a data race.
+//   Before the goroutine is even started (in goByteCode, not here -- see
+//   BUG-94), the entire captured scope chain is marked shared.  The
+//   "shared" flag causes every subsequent Get / Set call on those tables to
+//   acquire a read or write lock, respectively.  Without this, the parent
+//   thread and the goroutine would both access the same symbol tables
+//   without any synchronisation, constituting a data race.  Marking it
+//   synchronously in the launching goroutine, before the "go" statement
+//   forks execution, closes a race the previous "mark it here, first thing
+//   GoRoutine does" approach still had: nothing prevented the launching
+//   goroutine from continuing on to its own next statement -- and touching
+//   the same captured scope itself -- before this goroutine got around to
+//   marking it shared.
 //
 //   functionSymbols is still a non-boundary child of the first shared ancestor
 //   so the goroutine's call bootstrap code can resolve global names (packages,
@@ -107,21 +140,13 @@ func GoRoutine(fx any, parentCtx *Context, args data.List) {
 	parentCtx.shared.Store(false)
 	parentCtx.mux.Unlock()
 
-	// If the function being launched is a closure (anonymous function literal),
-	// mark its captured scope chain as shared so that concurrent reads and writes
-	// by the goroutine and the parent thread are properly serialized.
-	//
-	// This must happen before ctx.Run() below and before messageMutex.Unlock()
-	// so it completes before the parent thread can resume and modify the tables.
-	if bc, ok := fx.(*ByteCode); ok && bc.IsLiteral() {
-		if captured := bc.GetCapturedScope(); captured != nil {
-			// Shared(true) marks this table and all its ancestors as shared.
-			// That propagation is important: the closure walks the entire
-			// ancestor chain when resolving symbol names, so every table in
-			// that chain must be protected.
-			captured.Shared(true)
-		}
-	}
+	// BUG-94: the closure captured-scope-sharing step that used to live here
+	// has moved to goByteCode (goByteCode.go... this file, above), and now
+	// runs synchronously in the launching goroutine before this goroutine is
+	// even started. Doing it here was racy: nothing prevented the launching
+	// goroutine from continuing on to its own next statement -- and touching
+	// the same captured scope itself -- before this goroutine got around to
+	// marking it shared.
 
 	// Create a new stream whose job is to invoke the function by name. We mark this
 	// as a literal function so that calls to it will not generate scope barriers
