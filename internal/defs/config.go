@@ -310,6 +310,16 @@ const (
 	// making it too frequent will generate logs of logging.
 	MemoryLogIntervalSetting = ServerKeyPrefix + "memory.log.interval"
 
+	// Maximum number of items that can be stored in the high-speed internal
+	// caches. This is different that the service or asset caches, and handles
+	// low-level items like tokens, schemas, dsn permissions, etc. that the
+	// server manages in-memory when possible. This is an integer value that
+	// indicates the maximum number of items that can be stored in any individual
+	// cache. Set this value to a lower number if high-load is consumming too
+	// much cache memory. Set to zero to disable caching entirely. The default
+	// is 1000 entries per cache.
+	ServerMaxCacheSizeSetting = ServerKeyPrefix + "cache.maxsize"
+
 	// The host that provides authentication services on our behalf. If not
 	// specified, the current server is also the authentication service.
 	ServerAuthoritySetting = ServerKeyPrefix + "authority"
@@ -402,7 +412,7 @@ const (
 
 	// Maximum cache size for server cache. The default is zero, no caching
 	// performed.
-	MaxCacheSizeSetting = ServerKeyPrefix + "cache.size"
+	MaxServiceCacheSizeSetting = ServerKeyPrefix + "service.cache.size"
 
 	// Maximum number of consecutive failed login attempts before an account is
 	// temporarily locked. The default when not set is 5. Set to 0 to disable
@@ -685,7 +695,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	PidDirectorySetting:               true,
 	RestClientTimeoutSetting:          true,
 	InsecureServerSetting:             true,
-	MaxCacheSizeSetting:               true,
+	MaxServiceCacheSizeSetting:        true,
 	RestClientErrorSetting:            true,
 	LogRetainCountSetting:             true,
 	RuntimePanicsSetting:              true,
@@ -753,6 +763,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	OAuthPermissionMapSetting:   true,
 	ServerDefaultPortSetting:    true,
 	ServerInsecureRedirect:      true,
+	ServerMaxCacheSizeSetting:   true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

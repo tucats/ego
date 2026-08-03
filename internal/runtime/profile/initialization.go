@@ -27,6 +27,15 @@ type configInitializer struct {
 	value string
 }
 
+// InitProfileDefaults initializes the profile with default values
+// for various settings. The class parameter specifies which class
+// of defaults to initialize: ServerDefaults, RuntimeDefaults, or
+// AllDefaults. If a specific class is specified, only the settings
+// in that class will be initialized. If AllDefaults is specified,
+// all settings will be initialized.
+//
+// Use this to define required default values where the "not present"
+// value would not be the desired default value.
 func InitProfileDefaults(class int) error {
 	var (
 		err         error
@@ -100,6 +109,8 @@ func InitProfileDefaults(class int) error {
 		defs.ConsolePromptMissingOptions:   {RuntimeDefaults, defs.True},
 		defs.ServerStartLogAgeSetting:      {ServerDefaults, "30"},
 		defs.ServerPanicRecoverySetting:    {ServerDefaults, defs.True},
+		defs.ServerMaxCacheSizeSetting:     {ServerDefaults, "1000"},
+		defs.MaxServiceCacheSizeSetting:    {ServerDefaults, "20"},
 	}
 
 	dirty := false

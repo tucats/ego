@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/resources"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 type databaseService struct {
@@ -113,6 +113,9 @@ func (pg *databaseService) ReadDSN(session int, user, name string, doNotLog bool
 
 			return dataSourceName, err
 		}
+
+		// Wasn't in the cache, so add it now.
+		caches.Add(caches.DSNCache, name, item)
 	}
 
 	// Convert the item from the cache to a DSN struct. If the item in the cache is not

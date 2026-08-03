@@ -18,9 +18,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/util/strings"
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // Item represents a value stored in the cache along with its expiration time.
@@ -33,9 +35,14 @@ type Item struct {
 // The MaxWidth specifies the maximum size of the key value string that will be reported
 // in the log (to prevent excessive log output). The default is 40 characters, except
 // tokens which are limited to the first and last four characters.
+// The MaxSize is the maximum number of items that can be stored in the cache. If the cache
+// is full, the oldest item is removed to make room for the new item. The default is 1,000
+// items but this default can be overridden by the ego.server.cache.maxsize setting.
 type Cache struct {
 	ID         int32
 	MaxWidth   int
+	MaxSize    int
+	HasLogged  bool
 	Expiration time.Duration
 	Items      map[any]Item
 }
@@ -91,6 +98,12 @@ const (
 	// Using this cache avoids repeating JWKS signature verification on every request.
 	OAuthJWTCache
 )
+
+// By default, this is the maximum number of items that can be stored in a cache. If the
+// cache is full, no new items are added to the cache. The default is 1,000 items but
+// this default can be overridden by the ego.server.cache.maxsize setting with a
+// positive integer value. A value of zero means use the default value here.
+var MaxCacheSize = 1000
 
 // OnPurge is an optional callback that is invoked by Purge after a cache has
 // been discarded. It receives the same cache class integer that was passed to
@@ -246,11 +259,20 @@ func newCache(id int) Cache {
 
 	expiration, _ := time.ParseDuration(expireTime)
 
+	// Get the default expiration time for caches from the settings database.
+	// If there is no value (or it is not a valid positive integer) then use
+	// the default of 1,000 items. This is a global setting that applies to all
+	// caches.
+	if size := settings.GetInt(defs.ServerMaxCacheSizeSetting); size > 0 {
+		MaxCacheSize = size
+	}
+
 	cacheList[id] = Cache{
 		ID:         cacheID,
 		Items:      map[any]Item{},
 		Expiration: expiration,
 		MaxWidth:   maxWidth,
+		MaxSize:    MaxCacheSize,
 	}
 
 	ui.Log(ui.CacheLogger, "cache.created", ui.A{

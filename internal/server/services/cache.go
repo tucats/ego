@@ -7,12 +7,12 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
-	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/router"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // Define a cache element. This keeps a copy of the compiler instance
@@ -43,12 +43,12 @@ func setupServiceCache() {
 	serviceCacheMutex.Lock()
 
 	if MaxCachedEntries < 0 {
-		txt := settings.Get(defs.MaxCacheSizeSetting)
+		txt := settings.Get(defs.MaxServiceCacheSizeSetting)
 
 		n, err := egostrings.Atoi(txt)
 		if err != nil {
 			ui.Log(ui.ServicesLogger, "services.invalid.ignored", ui.A{
-				"name":  defs.MaxCacheSizeSetting,
+				"name":  defs.MaxServiceCacheSizeSetting,
 				"value": txt})
 		} else {
 			MaxCachedEntries = n

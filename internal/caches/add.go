@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // Add adds a value to a cache. The cache is identified using by an integer value,
@@ -30,6 +30,33 @@ func Add(id int, key any, value any) {
 		cache = newCache(id)
 	} else {
 		delete(cache.Items, key)
+	}
+
+	// Not replaceable, so check to see if the cache is too darn full already.
+	// If so, we reject this item and hope that cache sweeping helps later
+	// with aging out old items. We don't do a sweep now because under a uniform
+	// cache access load, the cache benefit is completely lost in the cost of
+	// constant ejection churn.
+	if cacheSize := len(cache.Items); cacheSize >= cache.MaxSize {
+		// If we haven't logged this message yet, do so now.
+		if !cache.HasLogged {
+			cache.HasLogged = true
+			if ui.IsActive(ui.CacheLogger) {
+				ui.Log(ui.CacheLogger, "cache.full", ui.A{
+					"name":  class(id),
+					"id":    cache.ID,
+					"count": len(cache.Items)})
+			}
+		}
+		// Can't add to the cache, so no further work here.
+		return
+	} else {
+		// If we have logged a full cache, and the cache size is now below 95% of the
+		// maximum size, then reset the logged flag so that we can log again if it 
+		// fills up again.
+		if cache.HasLogged && (float64(cacheSize) < float64(cache.MaxSize)*0.95) {
+			cache.HasLogged = false
+		}
 	}
 
 	delay := cache.Expiration
