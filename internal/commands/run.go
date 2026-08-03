@@ -28,7 +28,6 @@ import (
 	"github.com/tucats/ego/internal/runtime/io"
 	egoOS "github.com/tucats/ego/internal/runtime/os"
 	"github.com/tucats/ego/internal/runtime/profile"
-	"github.com/tucats/ego/internal/util/profiling"
 )
 
 var (
@@ -69,7 +68,7 @@ func RunAction(c *cli.Context) error {
 
 	// If we are doing profiling, start the native profiler.
 	if c.Boolean("profiling") {
-		err = profiling.Profile(profiling.StartAction)
+		err = bytecode.ProfileAction(bytecode.StartAction)
 		if err != nil {
 			return err
 		}
@@ -681,6 +680,13 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 	} else {
 		err = ctx.Run()
 	}
+
+	// Credit whatever statement was executing when the program stopped with
+	// its elapsed time so far. Without this, the very last statement the
+	// whole program executes (one that doesn't return into a caller, so
+	// callFramePop's own flush never fires for it) would simply have its
+	// pending time discarded. A no-op when profiling isn't active.
+	ctx.FlushProfileTimer()
 
 	// If the program ended with the "stop" error, it means the bytecode stream ended
 	// normally, so we don't want to report an error.

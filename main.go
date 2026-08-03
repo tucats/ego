@@ -17,7 +17,6 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/grammar"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/util/profiling"
 	EgoRuntime "github.com/tucats/ego/internal/runtime/runtime"
 	"github.com/tucats/ego/internal/language/symbols"
 )
@@ -92,7 +91,7 @@ func main() {
 	// Dump any accumulated profile data. This does nothing if profiling is
 	// not active. There is no error recovery possible, so ignore the return
 	// code.
-	_ = profiling.PrintProfileReport()
+	_ = bytecode.PrintProfileReport()
 
 	// If we executed bytecode instructions, report the instruction count
 	// and maximum stack size used to the tracing log. This information is

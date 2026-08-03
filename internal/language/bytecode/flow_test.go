@@ -40,7 +40,6 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/util/profiling"
 	"github.com/tucats/ego/internal/language/tokenizer"
 )
 
@@ -48,7 +47,7 @@ import (
 // Section 1 — profileByteCode
 //
 // profileByteCode validates the operand, maps recognized strings to profiling
-// action constants, and delegates to profiling.Profile.
+// action constants, and delegates to ProfileAction.
 //
 // Operand dispatch:
 //   nil                     → ErrInvalidInstruction (checked before Profile)
@@ -72,7 +71,7 @@ func Test_profileByteCode_NilOperand(t *testing.T) {
 }
 
 // Test_profileByteCode_StringEnable verifies that "enable" is accepted and
-// dispatched to profiling.Profile(StartAction).  Profile(StartAction) always
+// dispatched to ProfileAction(StartAction).  Profile(StartAction) always
 // returns nil, so this should succeed.
 func Test_profileByteCode_StringEnable(t *testing.T) {
 	tc := newTestContext(t)
@@ -125,22 +124,22 @@ func Test_profileByteCode_UnknownString(t *testing.T) {
 	tc.assertError(profileByteCode(tc.ctx, "bogus_verb"), errors.ErrInvalidProfileAction)
 }
 
-// Test_profileByteCode_IntegerStart verifies that profiling.StartAction (= 0)
-// supplied as a raw integer is passed directly to profiling.Profile.
+// Test_profileByteCode_IntegerStart verifies that StartAction (= 0)
+// supplied as a raw integer is passed directly to ProfileAction.
 //
 // Integer operands bypass the string-dispatch switch and call
 // `data.Int(i)` to obtain the action code.
 func Test_profileByteCode_IntegerStart(t *testing.T) {
 	tc := newTestContext(t)
 
-	tc.assertNoError(profileByteCode(tc.ctx, profiling.StartAction))
+	tc.assertNoError(profileByteCode(tc.ctx, StartAction))
 }
 
-// Test_profileByteCode_IntegerStop verifies profiling.StopAction as an integer.
+// Test_profileByteCode_IntegerStop verifies StopAction as an integer.
 func Test_profileByteCode_IntegerStop(t *testing.T) {
 	tc := newTestContext(t)
 
-	tc.assertNoError(profileByteCode(tc.ctx, profiling.StopAction))
+	tc.assertNoError(profileByteCode(tc.ctx, StopAction))
 }
 
 // Test_profileByteCode_StringCaseInsensitive verifies that profileByteCode
