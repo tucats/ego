@@ -4,9 +4,23 @@
 # bash is already present in Debian images; only git needs to be added.
 FROM golang:bookworm AS builder
 
-# USE_LOCAL=true (set by launch.sh -local) uses the local project tree as the
-# build source instead of a fresh clone from GitHub.
+# USE_LOCAL=true (set by launch.sh -local and by test_container.sh in its
+# default mode) uses the local project tree as the build source instead of a
+# fresh clone from GitHub.
 ARG USE_LOCAL=false
+
+# CLONE_STAMP busts Docker's layer cache for the clone step below. The cache
+# key for a RUN is its expanded command text, so an unchanged Dockerfile would
+# happily reuse a clone made days ago -- silently testing stale upstream code.
+# tools/test_container.sh --remote passes the current timestamp so the clone is
+# really performed every time; ordinary builds leave it at its default.
+ARG CLONE_STAMP=0
+
+# GENERATE_TEST_CERT=true (set by test_container.sh) makes the builder stage
+# create a throwaway self-signed TLS cert/key when the source tree has none,
+# so the in-container test server can start over HTTPS. See the RUN step that
+# uses it below for why a fresh clone never has them.
+ARG GENERATE_TEST_CERT=false
 
 # zsh is required to run tools/test.sh and the scripts it calls, used by
 # tools/test_container.sh to run the test suite inside this builder stage.
@@ -29,8 +43,30 @@ COPY . .
 # Default: discard the local copy and replace it with a fresh clone so the
 # image is always built from the canonical upstream source.
 RUN if [ "${USE_LOCAL}" != "true" ]; then \
+        echo "fresh clone (stamp ${CLONE_STAMP})" && \
         git clone https://github.com/tucats/ego.git /tmp/ego-clone && \
         rm -rf /build && mv /tmp/ego-clone /build; \
+    fi
+
+# The TLS cert and key the server serves with are generated locally by
+# tools/keygen.sh and deliberately never committed, so a tree that came from
+# the clone above has neither. Without them the test server in
+# tools/test_container_entrypoint.sh cannot start over HTTPS. Make a
+# throwaway self-signed pair for it here.
+#
+# This runs only for test builds (GENERATE_TEST_CERT=true) and only when the
+# tree has no cert of its own, so a real workspace cert copied in by "COPY . ."
+# is always preferred and a production image build generates nothing at all.
+# The pair also stays in this builder stage: the runtime stage below copies
+# lib/ from the binary's embedded archive, which omits cert and key by design.
+RUN if [ "${GENERATE_TEST_CERT}" = "true" ] && \
+       { [ ! -f lib/https-server.crt ] || [ ! -f lib/https-server.key ]; }; then \
+        echo "No TLS certificate in lib/; generating a self-signed test certificate ..." && \
+        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+            -subj "/CN=localhost/O=Ego test container" \
+            -addext "subjectAltName=DNS:localhost,DNS:localhost.local,IP:127.0.0.1" \
+            -keyout lib/https-server.key \
+            -out lib/https-server.crt; \
     fi
 
 RUN go mod download
