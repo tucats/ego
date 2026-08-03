@@ -996,6 +996,7 @@ run.entry.point=Nombre de la función de entrada (por defecto es main)
 run.log=Enviar la salida del registro a este archivo en lugar de stdout
 run.optimize=Habilitar el optimizador de bytecode
 run.profile=Habilitar el análisis de rendimiento del código fuente Ego
+run.profile.file=Escribir datos de rendimiento en este archivo (.json, .csv o texto); también lo habilita
 run.project=La fuente es un directorio en lugar de un archivo
 run.sandbox=Habilitar el modo sandbox (restringe el acceso a archivos, ejecución y tokens) durante la ejecución
 run.static=Especificar la tipificación de valores durante la ejecución del programa

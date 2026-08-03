@@ -894,10 +894,23 @@ Unnamed parameter lists (`func(int, int) int`, Go's type-only form) are detected
 
 ## Built-in Statement Profiler (`internal/language/bytecode/profile.go`)
 
-Triggered by `ego run --profiling` or the `@profile start/stop/report` compiler directive
-(`profileByteCode`, `flow.go`). Reports per-statement hit count _and_ elapsed time — added
-August 2026; see `docs/internals/PERFORMANCE.md` Finding 17 for a real bug this immediately
-surfaced (package-level `const`/global access from deep recursion is O(depth)).
+Triggered by `ego run --profiling`/`--profile-file <path>` or the `@profile start/stop/report`
+compiler directive (`profileByteCode`, `flow.go`). Reports per-statement hit count _and_ elapsed
+time — added August 2026; see `docs/internals/PERFORMANCE.md` Finding 17 for a real bug this
+immediately surfaced (package-level `const`/global access from deep recursion is O(depth)).
+
+`--profile-file` writes to `.json`/`.csv`/plain-text (by extension, `WriteProfileReportFile`) and
+also sets `SuppressConsoleReport(true)`, so the same session's data isn't also printed to the
+console at end-of-run or by any in-script `@profile report`/`dump` call — the file is meant to be
+the only destination in that mode.
+
+The `@profile` directive's verb parser (`profileDirective`, `compiler/directives.go`) reads the
+verb by `Spelling()` alone rather than requiring `IsIdentifier()`: `print` (a valid alias for
+`report`) is a reserved keyword token (the `print` statement), not an identifier, so an
+identifier check would reject it before the alias list is even consulted. `optimizerDirective`
+uses the same Spelling()-only pattern for the same reason — if you add a new directive with a
+short list of verb aliases, check whether any alias collides with a reserved word before assuming
+`IsIdentifier()` is safe to require.
 
 **Storage lives on `*ByteCode`, not in a central map.** Each compiled function's profiling data
 is indexed by instruction offset (`Context.programCounter`, captured as `programCounter-1` inside
@@ -928,12 +941,18 @@ return) and the top-level `Run()` caller (`internal/commands/run.go`, program ex
 frame or the whole program halted — otherwise that pending time would either be silently dropped
 (nothing else ever closes it) or bleed into an unrelated statement that happens to run next.
 
-**Known limitation, not yet root-caused:** cascading multi-level unwinds (a deep recursive chain
-finally hitting its base case and returning through many stacked frames with no intervening
-`AtLine` in between) don't currently distribute return-processing cost evenly across the frames
-being unwound — the exact mechanism is still being investigated. It reliably reproduces (see
-PERFORMANCE.md Finding 17's evidence) but has not yet been isolated from the const-lookup finding
-that was found alongside it.
+**A cascading-unwind attribution bug was suspected but ruled out.** The working theory going into
+this feature's first real test was that a deep recursive chain finally hitting its base case and
+returning through many stacked frames with no intervening `AtLine` in between might not distribute
+return-processing cost evenly across the unwound frames. Isolated directly (a `return <local>`
+always executed at depth 1 vs. the identical statement shape always executed at depth 800, no
+recursion cost or const lookup in either): the depth-800 case was only ~1.6-1.7x more expensive
+per hit, reproducible at both 2,000 and 20,000 samples — nowhere near the 17-22x seen in Finding
+17. The entire dramatic anomaly that prompted the suspicion is fully explained by Finding 17's
+O(depth) const/global symbol lookup; there is no separate, distinctly-broken attribution mechanism
+in the profiler itself. The residual ~1.6x is small enough to plausibly be ordinary
+depth-proportional interpreter cost elsewhere (e.g. a not-fully-eliminated residual of
+PERFORMANCE.md Findings 12-14's `callFramePop` work) rather than anything specific to profiling.
 
 ---
 

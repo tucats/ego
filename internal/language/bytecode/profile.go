@@ -17,8 +17,14 @@ package bytecode
 // for the elapsed-time bookkeeping this enables.
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -41,6 +47,20 @@ const (
 // profiling is off. An atomic.Bool load is a single instruction and requires
 // no lock, unlike the mutex-guarded bool the old implementation used.
 var profilingActive atomic.Bool
+
+// suppressConsoleReport is set by "ego run --profile-file" (see
+// internal/commands/run.go) so that neither the end-of-run report nor any
+// in-script "@profile report"/"dump" call also prints the same data to the
+// console -- the file is the only destination the user asked for in that
+// mode. It has no effect on WriteProfileReportFile itself, only on
+// PrintProfileReport's console output.
+var suppressConsoleReport atomic.Bool
+
+// SuppressConsoleReport controls whether PrintProfileReport writes its table
+// to the console. Data collection and resetting are unaffected.
+func SuppressConsoleReport(suppress bool) {
+	suppressConsoleReport.Store(suppress)
+}
 
 // profiledCode is the registry of every *ByteCode object that has recorded at
 // least one profiling hit during the current session -- the only thing
@@ -222,21 +242,25 @@ type profileEntry struct {
 	nanos  int64
 }
 
-// PrintProfileReport prints a formatted report of the performance data
-// collected during profiling: every location visited, how many times, and
-// the total elapsed time attributed to it.
-func PrintProfileReport() error {
+// collectProfileEntries gathers and merges (by module:line) every recorded
+// profiling entry across all registered ByteCode objects, sorted by
+// (module, line). It has no side effects -- it does not reset anything --
+// so a single profiling session's data can be sent to more than one
+// destination (the console report and/or a --profile-file) before
+// PrintProfileReport eventually clears it.
+//
+// Keyed by "module:line" while merging to combine rows that land on the
+// same source location but different *ByteCode objects -- the same function
+// literal cloned once per push (pushByteCode, stack.go) for a closure
+// created inside a loop gets its own independent profileStorage per clone
+// (see ByteCode.profile's comment in bytecode.go), so without this merge
+// the report would show one fragmented row per clone instead of one
+// combined row for the location they all share.
+func collectProfileEntries() []profileEntry {
 	profileRegistryMux.Lock()
 	code := append([]*ByteCode(nil), profiledCode...)
 	profileRegistryMux.Unlock()
 
-	// Keyed by "module:line" to merge rows that land on the same source
-	// location but different *ByteCode objects -- the same function literal
-	// cloned once per push (pushByteCode, stack.go) for a closure created
-	// inside a loop gets its own independent profileStorage per clone (see
-	// ByteCode.profile's comment in bytecode.go), so without this merge the
-	// report would show one fragmented row per clone instead of one combined
-	// row for the location they all share.
 	merged := map[string]*profileEntry{}
 
 	for _, bc := range code {
@@ -270,10 +294,6 @@ func PrintProfileReport() error {
 		}
 	}
 
-	if len(merged) == 0 {
-		return nil
-	}
-
 	entries := make([]profileEntry, 0, len(merged))
 	for _, entry := range merged {
 		entries = append(entries, *entry)
@@ -291,17 +311,25 @@ func PrintProfileReport() error {
 		return entries[i].line < entries[j].line
 	})
 
+	return entries
+}
+
+// buildProfileTable renders entries into the same tables.Table used by both
+// PrintProfileReport (printed straight to the console) and
+// WriteProfileReportFile's plain-text format (rendered to a string and
+// written to a file) -- one shared column layout for both destinations.
+func buildProfileTable(entries []profileEntry) (*tables.Table, error) {
 	t, err := tables.New([]string{i18n.L("Location"), i18n.L("Count"), i18n.L("Elapsed")})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := t.SetAlignment(1, tables.AlignmentRight); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := t.SetAlignment(2, tables.AlignmentRight); err != nil {
-		return err
+		return nil, err
 	}
 
 	// No pagination for this report.
@@ -312,16 +340,173 @@ func PrintProfileReport() error {
 		elapsed := time.Duration(entry.nanos).String()
 
 		if err := t.AddRowItems(location, entry.count, elapsed); err != nil {
+			return nil, err
+		}
+	}
+
+	return t, nil
+}
+
+// PrintProfileReport prints a formatted report of the performance data
+// collected during profiling: every location visited, how many times, and
+// the total elapsed time attributed to it. This is the last consumer of a
+// profiling session's data in the normal flow (see internal/commands/run.go
+// and main.go): it is what actually clears the data afterward.
+// WriteProfileReportFile, called earlier in that flow when --profile-file
+// was given, deliberately leaves the data alone so this can still run after
+// it and see the same session's data.
+//
+// If SuppressConsoleReport(true) is in effect (set by "ego run
+// --profile-file"), the table is not printed, but the data is still
+// collected and cleared exactly as if it had been -- --profile-file's file
+// is meant to be the only destination in that mode.
+func PrintProfileReport() error {
+	entries := collectProfileEntries()
+	if len(entries) == 0 {
+		return nil
+	}
+
+	if !suppressConsoleReport.Load() {
+		t, err := buildProfileTable(entries)
+		if err != nil {
+			return err
+		}
+
+		if err := t.Print(ui.TextFormat); err != nil {
 			return err
 		}
 	}
 
-	if err := t.Print(ui.TextFormat); err != nil {
+	// Empty out the performance data for the next report.
+	resetProfileData()
+
+	return nil
+}
+
+// ProfileRecord is one row of exported profiling data, used for the
+// --profile-file JSON and CSV output formats. Deliberately a separate,
+// smaller, exported type from the internal profileEntry: this is a public
+// file-format contract an external consumer might parse, not an accidental
+// export of internal bookkeeping.
+type ProfileRecord struct {
+	Module  string `json:"module"`
+	Line    int32  `json:"line"`
+	Count   uint32 `json:"count"`
+	Nanos   int64  `json:"nanos"`
+	Elapsed string `json:"elapsed"`
+}
+
+// WriteProfileReportFile writes the current profiling session's data to
+// path, in a format chosen from its extension: ".json" writes a JSON array
+// of ProfileRecord objects, ".csv" writes a header row plus one row per
+// entry, and anything else writes the same plain-text table
+// PrintProfileReport prints to the console. Does nothing (no file is
+// created) if no profiling data has been recorded yet -- matching
+// PrintProfileReport's own "nothing to report" behavior.
+//
+// This does not reset the collected data. In the normal flow
+// (internal/commands/run.go calls this once the program finishes, then
+// main.go's unconditional end-of-run call to PrintProfileReport still fires
+// afterward) that reset is deliberately left to whichever of the two runs
+// last, so a --profile-file run still also gets the usual console report.
+func WriteProfileReportFile(path string) error {
+	entries := collectProfileEntries()
+	if len(entries) == 0 {
+		return nil
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	defer f.Close()
+
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".json":
+		return writeProfileJSON(f, entries)
+	case ".csv":
+		return writeProfileCSV(f, entries)
+	default:
+		return writeProfileText(f, entries)
+	}
+}
+
+// writeProfileJSON writes entries to f as a JSON array of ProfileRecord
+// objects.
+func writeProfileJSON(f *os.File, entries []profileEntry) error {
+	records := make([]ProfileRecord, 0, len(entries))
+
+	for _, entry := range entries {
+		records = append(records, ProfileRecord{
+			Module:  entry.module,
+			Line:    entry.line,
+			Count:   entry.count,
+			Nanos:   entry.nanos,
+			Elapsed: time.Duration(entry.nanos).String(),
+		})
+	}
+
+	b, err := json.MarshalIndent(records, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	if _, err := f.Write(b); err != nil {
+		return errors.New(err)
+	}
+
+	return nil
+}
+
+// writeProfileCSV writes entries to f as CSV: a header row followed by one
+// row per entry, in the same column order as ProfileRecord's JSON fields.
+func writeProfileCSV(f *os.File, entries []profileEntry) error {
+	w := csv.NewWriter(f)
+
+	if err := w.Write([]string{"module", "line", "count", "nanos", "elapsed"}); err != nil {
+		return errors.New(err)
+	}
+
+	for _, entry := range entries {
+		row := []string{
+			entry.module,
+			strconv.Itoa(int(entry.line)),
+			strconv.FormatUint(uint64(entry.count), 10),
+			strconv.FormatInt(entry.nanos, 10),
+			time.Duration(entry.nanos).String(),
+		}
+
+		if err := w.Write(row); err != nil {
+			return errors.New(err)
+		}
+	}
+
+	w.Flush()
+
+	if err := w.Error(); err != nil {
+		return errors.New(err)
+	}
+
+	return nil
+}
+
+// writeProfileText writes entries to f as the same plain-text table
+// PrintProfileReport prints to the console.
+func writeProfileText(f *os.File, entries []profileEntry) error {
+	t, err := buildProfileTable(entries)
+	if err != nil {
 		return err
 	}
 
-	// Empty out the performance data for the next report.
-	resetProfileData()
+	text, err := t.String(ui.TextFormat)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.WriteString(text); err != nil {
+		return errors.New(err)
+	}
 
 	return nil
 }
