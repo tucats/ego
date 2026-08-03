@@ -119,6 +119,27 @@ type ByteCode struct {
 	// report time by module:line (see profileEntry / PrintProfileReport),
 	// so that fragmentation is invisible in the report either way.
 	profile unsafe.Pointer
+
+	// globalRefs points at this ByteCode's Finding 17 Tier 2 cache
+	// (*globalRefStorage, defined in globalcache.go): one *symbols.SymbolTable
+	// pointer per instruction offset, remembering which table a Load/Store/
+	// AddressOf/DeRef instruction resolved a name to, the first time it found
+	// that name in one of the program's persistent, process-lifetime "global
+	// singleton" tables (main's own top-level table, or an imported package's
+	// own table -- see symbols.SymbolTable.IsGlobalSingleton). A cache hit
+	// lets the opcode handler call Get/Set/GetAddress directly on the
+	// remembered table, skipping the O(depth) walk through intervening call
+	// frames that FindNextScope would otherwise repeat on every call. Same
+	// bare-unsafe.Pointer rationale as profile above (ByteCode is copied by
+	// value in Clone()/NeedsCoerce/restoreByteCode, and go vet's copylocks
+	// check flags both sync.Mutex and atomic.Pointer[T] as unsafe there).
+	// See docs/internals/GLOBALS.md Section 6 for the full safety argument:
+	// in short, a table is only ever cached here when it is provably
+	// invariant to which call path reached this instruction, so sharing this
+	// same cache across every clone of a function literal (e.g. one created
+	// per iteration of a loop) via Clone()'s plain struct copy is correct by
+	// construction, not merely tolerated.
+	globalRefs unsafe.Pointer
 }
 
 // String formats a bytecode as a function declaration string.

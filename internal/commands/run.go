@@ -111,6 +111,15 @@ func RunAction(c *cli.Context) error {
 		symbols.SerializeTableAccess = false
 	}
 
+	// Set the Finding 17 Tier 2 global-reference cache default (see
+	// docs/internals/GLOBALS.md). Defaults to true; only an explicit "false"
+	// value should disable it, mirroring ego.compiler.constfold's own
+	// unset-vs-explicit-false handling (compiler.go's New()).
+	bytecode.GlobalCacheEnabled = true
+	if v := settings.Get(defs.GlobalCacheSetting); v != "" {
+		bytecode.GlobalCacheEnabled = settings.GetBool(defs.GlobalCacheSetting)
+	}
+
 	// Initialize the runtime library directory if needed.
 	if err := app.LibraryInit(); err != nil {
 		return err

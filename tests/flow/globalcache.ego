@@ -1,0 +1,96 @@
+// Regression tests for the Finding 17 Tier 2 runtime cache (a package-level
+// var/non-foldable-const reference resolved to its owning table is cached on
+// the compiled *ByteCode, keyed by instruction offset, so a later execution
+// of the same instruction skips the O(depth) walk through intervening call
+// frames -- see docs/internals/GLOBALS.md Section 6). These are correctness
+// checks, not performance checks (see examples/mandelbrot2.ego and
+// ego run --profiling for the performance evidence).
+
+@test "globalcache: a deeply recursive function reads and writes a package var"
+{
+    var total = 0
+
+    func recur(n int) int {
+        total = total + n
+
+        if n >= 50 {
+            return total
+        }
+
+        return recur(n + 1)
+    }
+
+    @assert recur(0) == 1275 // sum of 0..50
+    @assert total == 1275
+}
+
+@test "globalcache: address-of and dereference of a package var from a function"
+{
+    var counter = 0
+
+    func increment() {
+        p := &counter
+        *p = *p + 1
+    }
+
+    increment()
+    increment()
+    increment()
+
+    @assert counter == 3
+}
+
+@test "globalcache: closures created in a loop concurrently reference the same package var, one goroutine per closure"
+{
+    var shared = 100
+
+    done := make(chan, 10)
+
+    // Each closure captures a distinct loop-local copy of i (Ego's for-loop
+    // semantics), but all of them read the SAME package-level var -- this is
+    // exactly the "same ByteCode identity, multiple independent runtime
+    // instances" scenario the cache's safety argument must hold under.
+    for i := 0; i < 10; i++ {
+        go func(n int) {
+            done <- shared + n
+        }(i)
+    }
+
+    total := 0
+
+    for i := 0; i < 10; i++ {
+        total = total + <-done
+    }
+
+    // Sum of (shared + n) for n in 0..9 == 10*shared + sum(0..9) == 1000 + 45
+    @assert total == 1045
+}
+
+@test "globalcache: many goroutines concurrently write to a package var through the same function"
+{
+    var counter = 0
+
+    lock := make(chan, 1)
+    lock <- 1 // one token; acts as a mutex
+
+    func bump() {
+        _ = <-lock
+        counter = counter + 1
+        lock <- 1
+    }
+
+    done := make(chan, 50)
+
+    for i := 0; i < 50; i++ {
+        go func() {
+            bump()
+            done <- 1
+        }()
+    }
+
+    for i := 0; i < 50; i++ {
+        _ = <-done
+    }
+
+    @assert counter == 50
+}

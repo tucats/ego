@@ -1,10 +1,10 @@
 # Package-Level Const/Var/Type Access — Implementation Plan
 
-**Status:** Phase 0 (groundwork) and Phase 1 (const folding) are landed and verified. Phases 2
-(runtime global-reference cache for `var`/non-foldable-const) and 3 (type-assertion fallback +
-`PERFORMANCE.md` Resolution writeup) are not yet started. This document is the design and risk
-record for fixing `docs/internals/PERFORMANCE.md` Finding 17, written and reviewed before any code
-changes, following the same process `docs/internals/SLOTS.md` used for Finding 7.
+**Status:** Phases 0-2 (groundwork, const folding, runtime global-reference cache) are landed and
+verified. Phase 3 (type-assertion fallback + `PERFORMANCE.md` Resolution writeup) is not yet
+started. This document is the design and risk record for fixing `docs/internals/PERFORMANCE.md`
+Finding 17, written and reviewed before any code changes, following the same process
+`docs/internals/SLOTS.md` used for Finding 7.
 
 **Phase 1 results.** Re-profiling Finding 17's own repros with `ego run --profiling` after the
 const-folding fix landed: `examples/mandelbrot2.ego`'s `mandelIterate:40` (the `MaxIter` const
@@ -13,8 +13,21 @@ comparison that originally motivated this document) dropped from 5.69s to 119ms 
 isolated `deep_check.ego` repro (800-deep recursion) dropped from 8.86s to 267ms (~33x), converging
 to parity with the non-recursive `shallow_check.ego` baseline (282ms) for the same total number of
 comparisons. Const folding alone fully resolves this specific finding's own repro case, since
-`MaxIter` is a simple untyped int const with no `var` component; Phase 2 remains valuable for the
-more general `var`/non-foldable-const case the original request also asked about.
+`MaxIter` is a simple untyped int const with no `var` component; Phase 2 covers the more general
+`var`/non-foldable-const case the original request also asked about.
+
+**Phase 2 results.** A `var`-based analog of `deep_check.ego` (same 800-deep recursion, reading and
+writing a package-level `var` on every call instead of comparing against a `const`) dropped from
+8.86s to ~330ms (~27x) with the cache enabled (`ego --set ego.runtime.globalcache=false` reproduces
+the original O(depth²) cost for direct comparison). Verified: the full `go test ./...` suite
+including `-race`; the 1,705-case `ego test tests/` suite (including new regression tests for
+deep-recursion read/write, `&x`/`*p` address-of-and-dereference of a package var, and two
+concurrency stress tests — closures created in a loop each referencing the same package `var` via
+goroutines, and 50 concurrent goroutines writing through a shared function) both with and without
+`EGO_SERIALIZE_SYMBOLTABLES=true`. The `-race` run surfaced exactly one data race, confirmed via a
+byte-for-byte-identical stack trace to also exist on `master` (in `argCheckByteCode`/
+`storeChanByteCode`'s interaction with goroutine argument passing) — a pre-existing, unrelated bug,
+not a regression introduced by this cache; left out of scope for this branch.
 
 **Origin:** `docs/internals/PERFORMANCE.md`,
 [Finding 17](PERFORMANCE.md#21-finding-17--a-package-level-constglobal-referenced-from-deep-recursion-costs-odepth-per-reference-not-o1)
