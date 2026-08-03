@@ -80,11 +80,11 @@
 
 <div id="memory" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data">&#x21BA; Refresh</button>
+        <button class="toolbar-add-btn" onclick="loadMemory()" title="Refresh memory and cache data"><span class="btn-icon">&#x21BA;</span> <span class="btn-label">Refresh</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
+        <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items"><span class="btn-icon">&#x1F5D1;</span> <span class="btn-label">Flush Caches</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-btn" onclick="showConfigSheet()" title="View server information and configuration settings">&#x2139; Server Info</button>
+        <button class="toolbar-btn" onclick="showConfigSheet()" title="View server information and configuration settings"><span class="btn-icon">&#x2139;</span> <span class="btn-label">Server Info</span></button>
     </div>
     <div id="memory-scroll">
         <div id="memory-content"></div>
@@ -128,7 +128,7 @@
 
 <div id="users" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="showNewUserSheet()" title="Create new user">&#43; New User</button>
+        <button class="toolbar-add-btn" onclick="showNewUserSheet()" title="Create new user"><span class="btn-icon">&#43;</span> <span class="btn-label">New User</span></button>
     </div>
     <div id="user-content"></div>
 </div>
@@ -178,7 +178,7 @@
 
 <div id="dsns" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN">&#43; New DSN</button>
+        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN"><span class="btn-icon">&#43;</span> <span class="btn-label">New DSN</span></button>
     </div>
     <div id="dsns-content"></div>
 </div>
@@ -280,7 +280,7 @@
     <div class="tab-toolbar">
         <label for="tables-dsn-picker" class="toolbar-label">DSN</label>
         <select id="tables-dsn-picker" onchange="loadTables()"></select>
-        <button class="toolbar-add-btn" onclick="loadTables()" title="Refresh table list">&#x21BA; Refresh</button>
+        <button class="toolbar-add-btn" onclick="loadTables()" title="Refresh table list"><span class="btn-icon">&#x21BA;</span> <span class="btn-label">Refresh</span></button>
     </div>
     <div id="tables-content"></div>
 </div>
@@ -291,11 +291,11 @@
         <select id="data-dsn-picker" onchange="loadDataTables()"></select>
         <label for="data-table-picker" class="toolbar-label">Table</label>
         <select id="data-table-picker" onchange="loadDataMeta()"></select>
-        <button class="toolbar-add-btn" onclick="loadDataRows()" title="Refresh row data">&#x21BA; Refresh</button>
+        <button class="toolbar-add-btn" onclick="loadDataRows()" title="Refresh row data"><span class="btn-icon">&#x21BA;</span> <span class="btn-label">Refresh</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="showDataColumns()" title="Choose visible columns">&#x2630; Columns&hellip;</button>
+        <button class="toolbar-add-btn" onclick="showDataColumns()" title="Choose visible columns"><span class="btn-icon">&#x2630;</span> <span class="btn-label">Columns&hellip;</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="openDataAsSql()" title="Open this table in the SQL tab">&#x1F5C4; SQL&hellip;</button>
+        <button class="toolbar-add-btn" onclick="openDataAsSql()" title="Open this table in the SQL tab"><span class="btn-icon">&#x1F5C4;</span> <span class="btn-label">SQL&hellip;</span></button>
     </div>
     <div id="data-content"></div>
 </div>
@@ -331,17 +331,17 @@
     <div class="tab-toolbar">
         <label for="sql-dsn-picker" class="toolbar-label">DSN</label>
         <select id="sql-dsn-picker"></select>
-        <button class="toolbar-add-btn" onclick="clearSql()" title="Clear the SQL input">&#x2715; Clear</button>
+        <button class="toolbar-add-btn" onclick="clearSql()" title="Clear the SQL input"><span class="btn-icon">&#x2715;</span> <span class="btn-label">Clear</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard">&#x1F528; Build</button>
+        <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard"><span class="btn-icon">&#x1F528;</span> <span class="btn-label">Build</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="formatSqlEditor()" title="Reformat the SQL in the editor">&#x2261; Format</button>
+        <button class="toolbar-add-btn" onclick="formatSqlEditor()" title="Reformat the SQL in the editor"><span class="btn-icon">&#x2261;</span> <span class="btn-label">Format</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL">&#x25B6; Submit</button>
+        <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL"><span class="btn-icon">&#x25B6;</span> <span class="btn-label">Submit</span></button>
         <span style="margin-left:auto;display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="openSqlFile()" title="Open a SQL file into the editor">&#x1F4C2; Open</button>
+        <button class="toolbar-add-btn" onclick="openSqlFile()" title="Open a SQL file into the editor"><span class="btn-icon">&#x1F4C2;</span> <span class="btn-label">Open</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="saveSqlFile()" title="Save the SQL editor contents to a file">&#x1F4BE; Save</button>
+        <button class="toolbar-add-btn" onclick="saveSqlFile()" title="Save the SQL editor contents to a file"><span class="btn-icon">&#x1F4BE;</span> <span class="btn-label">Save</span></button>
         <input type="file" id="sql-file-input" accept=".sql,.txt,text/plain" style="display:none">
     </div>
     <div id="sql-pane-container">
@@ -396,13 +396,13 @@
 
 <div id="log" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-icon-btn" onclick="loadLog()" title="Refresh log" aria-label="Refresh log">&#x21BA;</button>
+        <button class="toolbar-icon-btn" onclick="loadLog()" title="Refresh log" aria-label="Refresh log"><span class="btn-icon">&#x21BA;</span><span class="btn-label">Refresh</span></button>
         <!-- Scroll navigation: jump to the top or the bottom of the log. These
              move the view only -- they are unrelated to the search below, and
              so are always present whether or not a search is running. -->
         <div class="icon-pill">
-            <button class="icon-pill-btn" onclick="logScrollToStart()" title="Go to beginning of log" aria-label="Go to beginning of log">&#x2191;</button>
-            <button class="icon-pill-btn" onclick="logScrollToEnd()" title="Go to end of log" aria-label="Go to end of log">&#x2193;</button>
+            <button class="icon-pill-btn" onclick="logScrollToStart()" title="Go to beginning of log" aria-label="Go to beginning of log"><span class="btn-icon">&#x2191;</span><span class="btn-label">Top</span></button>
+            <button class="icon-pill-btn" onclick="logScrollToEnd()" title="Go to end of log" aria-label="Go to end of log"><span class="btn-icon">&#x2193;</span><span class="btn-label">Bottom</span></button>
         </div>
         <!-- Filter: restricts which lines the SERVER sends, unlike the search
              box below which looks through lines already fetched.  The funnel
@@ -414,6 +414,7 @@
             <svg class="icon-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                 <path d="M2 3.5 L14 3.5 L9.25 9 L9.25 14 L6.75 12.5 L6.75 9 Z" fill="currentColor"></path>
             </svg>
+            <span class="btn-label">Filter</span>
             <span id="log-filter-dot" class="filter-dot"></span>
         </button>
         <div class="log-search-group">
@@ -437,11 +438,15 @@
                     <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
                     <line x1="10.5" y1="10.5" x2="14.2" y2="14.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
                 </svg>
+                <span class="btn-label">Search</span>
             </button>
             <!-- Match stepper: one bordered pill holding "previous", the
                  "3 / 18" position readout, and "next".  It is hidden until a
                  search has actually run; logSetSearchStatus() in
-                 dashboard-ui.js shows it and keeps its contents current. -->
+                 dashboard-ui.js shows it and keeps its contents current.
+                 This pill always stays icon-only regardless of the Toolbar
+                 Buttons setting -- do NOT add .btn-label spans to the
+                 buttons below, unlike the Top/Bottom pill above. -->
             <div id="log-search-nav" class="icon-pill search-nav">
                 <button class="icon-pill-btn" onclick="logSearchPrev()" title="Previous match" aria-label="Previous match">&#x2039;</button>
                 <span id="log-search-status" class="search-nav-count"></span>
@@ -451,7 +456,7 @@
         <!-- margin-left:auto consumes all the leftover space in the toolbar's
              flex row, which pushes this last button hard against the right
              edge and leaves the rest grouped on the left. -->
-        <button class="toolbar-icon-btn" onclick="showLoggerConfig()" title="Configure loggers" aria-label="Configure loggers" style="margin-left:auto;">&#x2699;</button>
+        <button class="toolbar-icon-btn" onclick="showLoggerConfig()" title="Configure loggers" aria-label="Configure loggers" style="margin-left:auto;"><span class="btn-icon">&#x2699;</span><span class="btn-label">Configure</span></button>
     </div>
     <div id="log-content"></div>
 </div>
@@ -468,15 +473,15 @@
              mode until changed, and is not persisted across a page reload. -->
         <div id="code-toolbar">
             <div id="code-run-wrap">
-                <button id="code-run-btn">&#9654; Run</button>
+                <button id="code-run-btn"><span class="btn-icon">&#9654;</span> <span class="btn-label">Run</span></button>
                 <button id="code-run-arrow" title="Run options">&#9660;</button>
                 <div id="code-run-dropdown">
-                    <button class="code-run-item" data-mode="run">&#9654; Run</button>
-                    <button class="code-run-item" data-mode="debug">&#128030; Debug</button>
-                    <button class="code-run-item" data-mode="trace">&#128099; Trace</button>
+                    <button class="code-run-item" data-mode="run"><span class="btn-icon">&#9654;</span> <span class="btn-label">Run</span></button>
+                    <button class="code-run-item" data-mode="debug"><span class="btn-icon">&#128030;</span> <span class="btn-label">Debug</span></button>
+                    <button class="code-run-item" data-mode="trace"><span class="btn-icon">&#128099;</span> <span class="btn-label">Trace</span></button>
                 </div>
             </div>
-            <button id="code-format-btn" title="Reformat the editor source">&#x2261; Format</button>
+            <button id="code-format-btn" title="Reformat the editor source"><span class="btn-icon">&#x2261;</span> <span class="btn-label">Format</span></button>
             <span id="code-spinner"></span>
         </div>
 
@@ -645,6 +650,33 @@
             <div class="settings-label-group">
                 <span class="settings-label">Dark mode</span>
                 <span class="settings-hint">Use a dark color scheme for all tabs, or "Auto" to match your browser/OS setting. The Code tab always uses its own dark theme regardless of this setting.</span>
+            </div>
+        </div>
+
+        <div class="settings-row settings-row-stacked">
+            <div class="settings-style-picker" id="setting-toolbar-style" role="radiogroup" aria-label="Toolbar buttons">
+                <!-- Each option's preview is a real, live-styled toolbar button
+                     (not a mockup image), so it always looks exactly like what
+                     picking it will produce. Its icon/label spans deliberately
+                     use settings-style-preview-* classes rather than
+                     btn-icon/btn-label, so the global toolbar-icons-only rule
+                     (see dashboard.css) never hides the Icon + Text card's own
+                     label -- both previews must stay visible regardless of
+                     which style is currently active. -->
+                <button type="button" class="settings-style-option" data-value="text">
+                    <span class="toolbar-add-btn settings-style-preview" aria-hidden="true">
+                        <span class="settings-style-preview-icon">&#x21BA;</span> <span class="settings-style-preview-label">Refresh</span>
+                    </span>
+                    <span class="settings-style-option-caption">Icon + Text</span>
+                </button>
+                <button type="button" class="settings-style-option" data-value="icons">
+                    <span class="toolbar-icon-btn settings-style-preview" aria-hidden="true">&#x21BA;</span>
+                    <span class="settings-style-option-caption">Icons only</span>
+                </button>
+            </div>
+            <div class="settings-label-group">
+                <span class="settings-label">Toolbar buttons</span>
+                <span class="settings-hint">Show an icon with a text label, or just the icon, on every tab's toolbar buttons -- including the Log tab, which shows icons only today. Icon + Text is the default.</span>
             </div>
         </div>
 
