@@ -52,11 +52,6 @@
 
 <header id="dashboard-header">
     <img src="/assets/dashboard/logo.png" alt="Ego logo" id="header-logo">
-    <div id="server-info">
-        <span id="server-name">&#8203;</span><span id="server-version">&#8203;</span>
-        <span id="server-id">&#8203;</span>
-        <span id="server-since">&#8203;</span>
-    </div>
     <!-- Hamburger menu — pushed to the far right of the header -->
     <div id="hamburger-menu">
         <button id="hamburger-btn" onclick="toggleHamburgerMenu()" title="Menu" aria-haspopup="true" aria-expanded="false">
@@ -73,14 +68,14 @@
 </header>
 
 <div class="tab-container">
-    <div class="memory" onclick="openTab('memory')">&nbsp; Status &nbsp; </div>
-    <div class="users" onclick="openTab('users')">&nbsp; Users &nbsp; </div>
-    <div class="dsns" onclick="openTab('dsns')">&nbsp; DSNs &nbsp;</div>
-    <div class="tables" onclick="openTab('tables')">&nbsp; Tables &nbsp;</div>
-    <div class="data" onclick="openTab('data')">&nbsp; Data &nbsp;</div>
-    <div class="sql" onclick="openTab('sql')">&nbsp; SQL &nbsp;</div>
-    <div class="code" onclick="openTab('code')">&nbsp; Code &nbsp;</div>
-    <div class="log" onclick="openTab('log')">&nbsp; Log &nbsp;</div>
+    <div class="memory" onclick="openTab('memory')">Status</div>
+    <div class="users" onclick="openTab('users')">Users</div>
+    <div class="dsns" onclick="openTab('dsns')">DSNs</div>
+    <div class="tables" onclick="openTab('tables')">Tables</div>
+    <div class="data" onclick="openTab('data')">Data</div>
+    <div class="sql" onclick="openTab('sql')">SQL</div>
+    <div class="code" onclick="openTab('code')">Code</div>
+    <div class="log" onclick="openTab('log')">Log</div>
 </div>
 
 <div id="memory" class="tab-content">
@@ -89,7 +84,7 @@
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-danger-btn" onclick="flushCaches()" title="Delete all cached items">&#x1F5D1; Flush Caches</button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-btn" onclick="showConfigSheet()" title="View server configuration settings">&#x2699; Configuration&hellip;</button>
+        <button class="toolbar-btn" onclick="showConfigSheet()" title="View server information and configuration settings">&#x2139; Server Info</button>
     </div>
     <div id="memory-scroll">
         <div id="memory-content"></div>
@@ -101,8 +96,9 @@
 <!-- Configuration sheet — slides in from the right when Configuration button is clicked -->
 <div id="config-overlay" onclick="overlayBackdropClick(event)">
     <div id="config-sheet">
-        <h2>Server Configuration</h2>
+        <h2>Server Info</h2>
         <p id="config-error"></p>
+        <div id="config-server-info"></div>
         <div id="config-content"></div>
         <div class="sheet-buttons">
             <button id="config-close-btn" onclick="hideConfigSheet()">Close</button>
@@ -182,7 +178,7 @@
 
 <div id="dsns" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN">&#43; New&hellip;</button>
+        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN">&#43; New DSN</button>
     </div>
     <div id="dsns-content"></div>
 </div>
@@ -512,6 +508,7 @@
             <div id="code-right-pane">
                 <div class="code-pane-label">Output
                     <span id="code-elapsed"></span>
+                    <button id="code-save-output-btn" title="Save the output contents to a .txt file">&#x1F4BE; Save</button>
                     <button id="code-clear-output-btn" title="Clear output">&#x2715;</button>
                 </div>
                 <div id="code-output-pane" class="idle">Press Run to execute your program.</div>

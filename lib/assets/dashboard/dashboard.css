@@ -8,7 +8,8 @@ body {
 }
 
 /* ==========================================================================
-   Dashboard header — logo + server info
+   Dashboard header — logo + hamburger menu. Server details (name, version,
+   UUID, uptime) live in the Status tab's Server section instead.
    ========================================================================== */
 #dashboard-header {
     display: flex;
@@ -195,37 +196,6 @@ body {
     margin: 0.25rem 0 -0.25rem;
 }
 
-#server-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    line-height: 1.4;
-}
-
-#server-name {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #1C6EA4;
-}
-
-#server-version {
-    font-size: 0.82rem;
-    font-weight: 400;
-    color: #555;
-    margin-left: 0.4em;
-}
-
-#server-id {
-    font-size: 0.78rem;
-    color: #888;
-    font-family: monospace;
-}
-
-#server-since {
-    font-size: 0.82rem;
-    color: #555;
-}
-
 /* ==========================================================================
    Tab bar
    A horizontal strip of tab buttons sitting just below the header. The bar
@@ -243,9 +213,13 @@ body {
     margin-top: 0;
 }
 
-/* Every tab button shares this base style */
+/* Every tab button shares this base style. A fixed width plus centered text
+   keeps every tab the same size regardless of label length. */
 .tab-container > div {
-    padding: 0.55rem 1.4rem;
+    box-sizing: border-box;
+    width: 4.75rem;
+    padding: 0.3rem 0;
+    text-align: center;
     font-size: 0.88rem;
     font-weight: 600;
     color: #555;
@@ -441,12 +415,12 @@ body {
 }
 
 .toolbar-add-btn {
-    padding: 0.35rem 0.9rem;
+    padding: 0.22rem 0.7rem;
     background: #4a90e2;
     color: #fff;
     border: none;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
 }
@@ -454,12 +428,12 @@ body {
 .toolbar-add-btn:hover { background: #357abd; }
 
 .toolbar-danger-btn {
-    padding: 0.35rem 0.9rem;
+    padding: 0.22rem 0.7rem;
     background: transparent;
     color: #c0392b;
     border: 1px solid #c0392b;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
 }
@@ -469,12 +443,12 @@ body {
 
 /* Neutral toolbar button — for actions that are neither additive nor destructive */
 .toolbar-btn {
-    padding: 0.35rem 0.9rem;
+    padding: 0.22rem 0.7rem;
     background: transparent;
     color: #555;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
 }
@@ -1983,12 +1957,12 @@ body.dark .user-id { color: #666; }
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.3rem;
     overflow-y: auto;
 }
 
 #config-sheet h2 {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.25rem;
     font-size: 1.2rem;
 }
 
@@ -1996,6 +1970,38 @@ body.dark .user-id { color: #666; }
     color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.1em;
+}
+
+/* Collapse the reserved error line's space entirely when there's no error
+   to show, rather than leaving a blank ~1.1em gap under the title. */
+#config-error:empty {
+    min-height: 0;
+}
+
+/* Host/version/UUID/uptime block above the Setting/Value table. */
+#config-server-info table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #dde3ec;
+}
+
+#config-server-info td {
+    padding: 0.2rem 0;
+}
+
+#config-server-info td:first-child {
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+    padding-right: 0.75rem;
+    width: 1%;
+}
+
+#config-server-info td:last-child {
+    word-break: break-all;
 }
 
 #config-content table {
@@ -2197,12 +2203,12 @@ body.dark #code-ui {
 }
 
 #code-run-btn {
-    padding: 0.4rem 1.1rem;
+    padding: 0.22rem 0.85rem;
     background: var(--ca);
     color: #fff;
     border: none;
     border-radius: 6px 0 0 6px; /* left half of the pill */
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s, opacity 0.15s;
@@ -2213,13 +2219,13 @@ body.dark #code-ui {
 
 /* Narrow ▾ arrow that opens the mode dropdown */
 #code-run-arrow {
-    padding: 0.4rem 0.5rem;
+    padding: 0.22rem 0.4rem;
     background: var(--ca2);
     color: #fff;
     border: none;
     border-left: 1px solid var(--ca3);
     border-radius: 0 6px 6px 0; /* right half of the pill */
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     cursor: pointer;
     transition: background 0.15s, opacity 0.15s;
 }
@@ -2230,12 +2236,12 @@ body.dark #code-ui {
 /* Format button — a secondary action, so it is outlined rather than filled
    like the Run pill next to it. */
 #code-format-btn {
-    padding: 0.4rem 0.9rem;
+    padding: 0.22rem 0.7rem;
     background: transparent;
     color: var(--ct2);
     border: 1px solid var(--cbrd);
     border-radius: 6px;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s, color 0.15s, opacity 0.15s;
@@ -2906,11 +2912,6 @@ body.dark #dashboard-header {
     border-bottom-color: #4a90e2;
 }
 
-body.dark #server-name    { color: #7eb8f7; }
-body.dark #server-version { color: #aaa; }
-body.dark #server-id      { color: #666; }
-body.dark #server-since   { color: #aaa; }
-
 /* Hamburger button */
 body.dark #hamburger-btn span { background: #7eb8f7; }
 body.dark #hamburger-btn:hover span { background: #aad0ff; }
@@ -3157,6 +3158,9 @@ body.dark .filter-dot          { box-shadow: 0 0 0 1.5px #16213e; }
 
 /* Configuration sheet */
 body.dark #config-sheet h2 { color: #cdd6f4; }
+body.dark #config-server-info table { border-bottom-color: #2a3a5a; }
+body.dark #config-server-info td { color: #cdd6f4; }
+body.dark #config-server-info td:first-child { color: #7eb8f7; }
 body.dark #config-content table th { background: #1C5080; }
 body.dark #config-content table td {
     border-bottom-color: #2a3a5a;
