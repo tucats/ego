@@ -139,6 +139,21 @@ type SymbolTable struct {
 	// is nill. This is used to create artificial symbol scope isolation with packages.
 	isRoot bool
 
+	// Flag indicating this table is one of the program's small, fixed set of
+	// persistent, process-lifetime package/global tables (the main program's
+	// own top-level table, or an imported package's own table) -- set exactly
+	// once, synchronously, before the table is ever reachable from concurrent
+	// code (see SetGlobalSingleton). Unlike shared (which SerializeTableAccess
+	// can force true on any table, including ordinary transient per-call
+	// frames -- see NewSymbolTable/NewChildSymbolTable), this field is never
+	// set except at the two call sites that create one of these persistent
+	// tables, so it reliably answers "will this table's (name -> slot)
+	// bindings ever change identity or be recreated," which is what a
+	// caller-side cache of a resolved global reference needs to know before
+	// it is safe to remember an answer across calls (see
+	// docs/internals/GLOBALS.md).
+	globalSingleton bool
+
 	// Is this symbol table potentially shared by multiple go routines? If so, the symbol table manager
 	// will use mutexes to serialize access to the symbol table. For tables that are not shared, the
 	// flag is set to false. In these cases, the symbol table is NOT managed in a thread-safe manner.

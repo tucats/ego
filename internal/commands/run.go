@@ -755,6 +755,7 @@ func initializeSymbols(c *cli.Context, mainName string, programArgs []any, typeE
 	}
 
 	symbolTable := symbols.NewSymbolTable(name).Shared(true)
+	symbolTable.SetGlobalSingleton()
 
 	args := data.NewArrayFromInterfaces(data.StringType, programArgs...)
 	symbolTable.SetAlways(defs.CLIArgumentListVariable, args)

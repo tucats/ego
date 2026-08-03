@@ -92,3 +92,24 @@ func (s *SymbolTable) IsRoot() bool {
 
 	return s.parent == nil
 }
+
+// SetGlobalSingleton marks this table as one of the program's persistent,
+// process-lifetime package/global tables. It must only be called on a table
+// that will never be recreated or reparented for the life of the process --
+// today, that means exactly two call sites: the main program's own top-level
+// symbol table (internal/commands/run.go) and an imported package's own
+// symbol table (internal/language/compiler/import.go), each called once,
+// synchronously, before the table is reachable from any other goroutine. See
+// docs/internals/GLOBALS.md for why this is a dedicated field rather than a
+// reuse of IsShared()/IsRoot().
+func (s *SymbolTable) SetGlobalSingleton() {
+	s.globalSingleton = true
+}
+
+// IsGlobalSingleton reports whether this table was marked via
+// SetGlobalSingleton -- i.e., whether a (name, slot) resolved against this
+// table is safe for a caller to cache and reuse indefinitely, since the
+// table itself is never recreated or reparented.
+func (s *SymbolTable) IsGlobalSingleton() bool {
+	return s.globalSingleton
+}

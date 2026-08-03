@@ -174,3 +174,17 @@ func TestSymbolTable_Size(t *testing.T) {
 		t.Errorf("Size() returned %d, expected %d", actualSize, expectedSize)
 	}
 }
+
+func TestSymbolTable_GlobalSingleton(t *testing.T) {
+	table := NewSymbolTable("test")
+
+	if table.IsGlobalSingleton() {
+		t.Errorf("IsGlobalSingleton() = true before SetGlobalSingleton(), want false")
+	}
+
+	table.SetGlobalSingleton()
+
+	if !table.IsGlobalSingleton() {
+		t.Errorf("IsGlobalSingleton() = false after SetGlobalSingleton(), want true")
+	}
+}
