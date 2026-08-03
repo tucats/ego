@@ -1839,6 +1839,7 @@ table.symbol=Application de la valeur {{label}} {{value}} à {{name}}
 table.tx=Exécution d'instructions SQL dans une transaction
 table.tx.affected={{operations}} opération(s) effectuée(s) dans les transactions, {{affected}} ligne(s) mise(s) à jour
 table.tx.count=La demande de transaction comporte {{count}} {{count|cardinal opération, opérations}}
+table.tx.deprecated=*** {{from}} {{method}} {{path}} est obsolète et échouera dans les futures versions
 table.tx.done={{operations}} opération(s) effectuée(s) dans la transaction, {{affected}} ligne(s) modifiée(s) et/ou lue(s), retour de {{rows}} {{rows|cardinal ligne, lignes}}
 table.tx.payload=Charge utile de la tâche de transaction {{id}} :\n{{body}}
 table.tx.rest.begin=Début de la transaction REST {{seq}}, {{id}}, expire le {{expires}}

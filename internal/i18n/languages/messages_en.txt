@@ -1870,6 +1870,7 @@ table.symbol=Apply {{label}} value {{value}} to {{name}}
 table.tx=Executing SQL statements in a transaction
 table.tx.affected=Completed {{operations}} {{operations|cardinal operation, operations}}, updated {{affected}} {{affected|cardinal row, rows}}
 table.tx.count=Transaction request has {{count}} {{count|cardinal operation, operations}}
+table.tx.deprecated=*** {{from}} {{method}} {{path}} is deprecated and will fail in future releases
 table.tx.done=Completed {{operations}} in transaction, modified and/or read {{affected}} rows, returning {{rows}} {{rows|cardinal row, rows}}
 table.tx.payload=Transaction task {{id}} payload:\n{{body}}
 table.tx.rest.begin=Begin REST transaction {{seq}}, {{id}}, expires {{expires}}

@@ -1,7 +1,7 @@
 {
     "description": "DELETE rows matching a condition then SELECT remaining rows via @sql endpoint",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

@@ -1,7 +1,7 @@
 {
     "description": "verify that a SQL error on a dropped table returns 500 with an error message",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

@@ -1,7 +1,7 @@
 {
     "description": "clean up @sql test table by dropping index and table",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

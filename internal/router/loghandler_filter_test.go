@@ -47,6 +47,7 @@ func callLogHandlerWithParameters(t *testing.T, parameters map[string][]string) 
 	t.Helper()
 
 	query := []string{}
+	
 	for name, values := range parameters {
 		for _, value := range values {
 			query = append(query, name+"="+value)

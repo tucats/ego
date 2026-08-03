@@ -1845,6 +1845,7 @@ table.symbol=Aplicar valor {{label}} {{value}} a {{name}}
 table.tx=Ejecutando sentencias SQL en una transacción
 table.tx.affected=Completadas {{operations}} en transacciones, actualizadas {{affected}} filas
 table.tx.count=La solicitud de transacción tiene {{count}} {{count|cardinal operación, operaciones}}
+table.tx.deprecated=*** {{from}} {{method}} {{path}} está obsoleto y fallará en futuras versiones
 table.tx.done=Completadas {{operations}} en la transacción, modificadas y/o leídas {{affected}} filas, devolviendo {{rows}} {{rows|cardinal fila, filas}}
 table.tx.payload=Carga útil de la tarea de transacción {{id}}:\n{{body}}
 table.tx.rest.begin=Iniciar transacción REST {{seq}}, {{id}}, expira {{expires}}

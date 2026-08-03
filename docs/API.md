@@ -982,7 +982,7 @@ must have `table.update` permission for the table.
 &nbsp;
 &nbsp;
 
-#### PUT /dsns/_dsn_/tables/@sql <a name="sql"></a>
+#### POST /dsns/_dsn_/tables/@sql <a name="sql"></a>
 
 Executes an arbitrary SQL statement. The current user must have admin privileges.
 The SQL text to execute must be passed as a JSON-encoded string in the body of
@@ -1008,6 +1008,11 @@ payload as an array of strings:
 All statements in the array are executed as a single transaction. If any
 statement fails, none take effect. If a `SELECT` is included it must be the
 last statement in the array.
+
+**Compatabiity Note**: Prior to Ego 1.10, this was formerly a PUT operation, but was changed
+to a POST to meet REST expectations for lack of idempotency; using this
+endpoint can make arbitrary changes to the data and therefore should not
+be consider a PUT operation.
 
 &nbsp;
 &nbsp;

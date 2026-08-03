@@ -1,7 +1,7 @@
 {
     "description": "create table via @sql endpoint using CREATE TABLE and CREATE INDEX",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

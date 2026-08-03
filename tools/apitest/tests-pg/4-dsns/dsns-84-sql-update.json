@@ -1,7 +1,7 @@
 {
     "description": "UPDATE a row then SELECT to verify the change via @sql endpoint",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

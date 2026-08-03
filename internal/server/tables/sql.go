@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
-	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/util"
@@ -34,6 +34,17 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 		sessionID  = session.ID
 		cacheFlush bool
 	)
+
+	// This API call changed from a PUT to a POST on 2024-06-05. The old PUT is still
+	// supported for backward compatibility, but it is deprecated and will be removed
+	// in a future release. Put out a warning log message to that effect.
+	if r.Method == http.MethodPut {
+		ui.Log(ui.ServerLogger, "table.tx.deprecated", ui.A{
+			"session": sessionID,
+			"method":  r.Method,
+			"from":    r.Header.Get("User-Agent"),
+			"path":    r.URL.Path})
+	}
 
 	ui.Log(ui.TableLogger, "table.tx", ui.A{
 		"session": sessionID})

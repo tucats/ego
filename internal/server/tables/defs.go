@@ -50,8 +50,6 @@ const (
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
 
-	sqlPseudoTable = "@sql"
-
 	syntaxErrorPrefix = "SYNTAX-ERROR:"
 )
 

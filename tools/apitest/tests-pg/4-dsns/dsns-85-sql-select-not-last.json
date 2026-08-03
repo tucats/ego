@@ -1,7 +1,7 @@
 {
     "description": "verify that a SELECT statement that is not the last statement in a transaction is rejected with 400",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

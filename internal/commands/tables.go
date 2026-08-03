@@ -13,13 +13,13 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/tables"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/runtime/io"
 	"github.com/tucats/ego/internal/runtime/rest"
-	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -1167,7 +1167,11 @@ func TableSQL(c *cli.Context) error {
 
 	rows := defs.DBRowSet{}
 
-	err = rest.Exchange(path.String(), http.MethodPut, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
+	// Updated to use MethodPost Aug 2026 since the endpoint changed to prefer POST
+	// over Put for SQL execution, which is not idempotent and may have side effects.
+	// The server will flag PUT requests for SQL execution as deprecated and will
+	// eventually stop supporting them.
+	err = rest.Exchange(path.String(), http.MethodPost, sqlPayload, &rows, defs.TableAgent, defs.RowSetMediaType)
 	if err != nil {
 		return err
 	}
@@ -1189,7 +1193,6 @@ func TableSQL(c *cli.Context) error {
 	resp.Status = rows.Status
 	resp.Message = rows.Message
 	resp.ServerInfo = rows.ServerInfo
-
 
 	if resp.Status > http.StatusOK {
 		if ui.OutputFormat != ui.TextFormat {

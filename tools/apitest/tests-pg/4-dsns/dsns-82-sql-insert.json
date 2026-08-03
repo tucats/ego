@@ -1,7 +1,7 @@
 {
     "description": "insert four rows via @sql endpoint using multiple INSERT statements",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

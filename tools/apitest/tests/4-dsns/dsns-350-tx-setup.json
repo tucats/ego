@@ -1,7 +1,7 @@
 {
     "description": "create transaction-test table and insert 3 rows via @sql as a single operation",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

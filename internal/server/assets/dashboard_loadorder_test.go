@@ -1,7 +1,7 @@
 // This test guards an invariant of the dashboard's browser assets that nothing
 // else can check. It lives in this package because this is the package that
-// serves those assets, and because lib/ is archived wholesale into unzip.go by
-// go:generate — a test file placed there would ship inside the asset bundle.
+// serves those assets, and because lib/ is archived wholesale into unzip.go
+// by go:generate — a test file placed there would ship inside the asset bundle.
 //
 // The dashboard's JavaScript is split across several files, loaded in the order
 // dashboard.html lists them. They are plain scripts sharing one global scope,
@@ -62,7 +62,7 @@ func TestDashboardScriptLoadOrder(t *testing.T) {
 		t.Skip("dashboard.html not readable from this location:", err)
 	}
 
-	var order []string
+	order := make([]string, 0, 10)
 	for _, match := range scriptTagRE.FindAllStringSubmatch(string(html), -1) {
 		order = append(order, match[1])
 	}

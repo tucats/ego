@@ -1,7 +1,7 @@
 {
     "description": "drop the transaction-test table index and table to clean up",
     "request": {
-        "method": "PUT",
+        "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
         "headers": {
             "Content-Type": ["application/json"],

@@ -1839,6 +1839,7 @@ table.symbol={{label}} 値 {{value}} を {{name}} に適用
 table.tx=トランザクション内でSQL文を実行中
 table.tx.affected=トランザクション内で {{operations}} を完了、{{affected}} 行を更新
 table.tx.count=トランザクションリクエストには{{count}}個の操作があります
+table.tx.deprecated=*** {{from}} {{method}} {{path}} は非推奨であり、今後のリリースでは失敗します
 table.tx.done=トランザクション内で {{operations}} を完了、{{affected}} 行を変更または読み取り、{{rows}}行を返します
 table.tx.payload=トランザクションタスク {{id}} のペイロード:\n{{body}}
 table.tx.rest.begin=REST トランザクション {{seq}}、{{id}} を開始、有効期限 {{expires}}

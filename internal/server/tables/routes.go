@@ -155,8 +155,17 @@ func AddStaticRoutes(r *router.Router) {
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
-	// Execute arbitrary SQL using the "@sql" pseudo-table-name.
-	r.New(defs.TablesPath+sqlPseudoTable, SQLTransaction, http.MethodPut).
+	// Execute arbitrary SQL using the "@sql" pseudo-table-name. Note that
+	// this was previous a PUT operation which is incorrect since it is not
+	// idempotent. It is now a POST operation as of 2024-06-05. The old PUT
+	// operation is still supported for backward compatibility.
+	r.New(defs.TablesPath+defs.SQLPseudoTable, SQLTransaction, http.MethodPost).
+		Authentication(true, true).
+		Class(router.TableRequestCounter)
+
+	// This is the deprecated old interface, which will be retired in
+	// Ego 1.11.
+	r.New(defs.TablesPath+defs.SQLPseudoTable, SQLTransaction, http.MethodPut).
 		Authentication(true, true).
 		Class(router.TableRequestCounter)
 
