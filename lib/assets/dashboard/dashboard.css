@@ -164,15 +164,6 @@ body {
     gap: 0.75rem;
 }
 
-/* Modifier for a settings-row whose control needs more horizontal room than
-   the sheet comfortably gives a side-by-side layout (e.g. two illustrated
-   cards) -- stacks the control above the label/hint instead. */
-.settings-row-stacked {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-}
-
 .settings-label-group {
     display: flex;
     flex-direction: column;
@@ -1988,51 +1979,6 @@ body.dark .user-id { color: #666; }
     color: #fff;
 }
 
-/* Style picker — like .settings-segmented, but each option is a card
-   illustrating its choice with a real, live-styled button (see the
-   "Toolbar buttons" row) rather than just a text label. */
-.settings-style-picker {
-    display: flex;
-    gap: 0.6rem;
-}
-
-.settings-style-option {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 0.5rem;
-    background: #fafafa;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.settings-style-option:hover { background: #f0f4fa; }
-
-.settings-style-option.active {
-    border-color: #1C6EA4;
-    background: #eaf3fb;
-    box-shadow: 0 0 0 1px #1C6EA4 inset;
-}
-
-/* The preview is purely decorative (aria-hidden) -- clicks go to the parent
-   button, not the illustration itself. */
-.settings-style-preview {
-    pointer-events: none;
-}
-
-.settings-style-preview-label { font-size: 0.82rem; font-weight: 600; }
-
-.settings-style-option-caption {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #555;
-}
-
-.settings-style-option.active .settings-style-option-caption { color: #1C6EA4; }
-
 #logger-cancel-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
@@ -3371,15 +3317,6 @@ body.dark .settings-segmented     { border-color: #2a3a5a; }
 body.dark .settings-segmented-btn { background: #16213e; color: #cdd6f4; border-right-color: #2a3a5a; }
 body.dark .settings-segmented-btn:hover { background: #2a3a5a; }
 body.dark .settings-segmented-btn.active { background: #1C5080; color: #fff; }
-body.dark .settings-style-option { background: #16213e; border-color: #2a3a5a; }
-body.dark .settings-style-option:hover { background: #2a3a5a; }
-body.dark .settings-style-option.active {
-    border-color: #7eb8f7;
-    background: #1a3a5a;
-    box-shadow: 0 0 0 1px #7eb8f7 inset;
-}
-body.dark .settings-style-option-caption { color: #cdd6f4; }
-body.dark .settings-style-option.active .settings-style-option-caption { color: #7eb8f7; }
 
 
 /* SQL tab */

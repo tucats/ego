@@ -653,30 +653,14 @@
             </div>
         </div>
 
-        <div class="settings-row settings-row-stacked">
-            <div class="settings-style-picker" id="setting-toolbar-style" role="radiogroup" aria-label="Toolbar buttons">
-                <!-- Each option's preview is a real, live-styled toolbar button
-                     (not a mockup image), so it always looks exactly like what
-                     picking it will produce. Its icon/label spans deliberately
-                     use settings-style-preview-* classes rather than
-                     btn-icon/btn-label, so the global toolbar-icons-only rule
-                     (see dashboard.css) never hides the Icon + Text card's own
-                     label -- both previews must stay visible regardless of
-                     which style is currently active. -->
-                <button type="button" class="settings-style-option" data-value="text">
-                    <span class="toolbar-add-btn settings-style-preview" aria-hidden="true">
-                        <span class="settings-style-preview-icon">&#x21BA;</span> <span class="settings-style-preview-label">Refresh</span>
-                    </span>
-                    <span class="settings-style-option-caption">Icon + Text</span>
-                </button>
-                <button type="button" class="settings-style-option" data-value="icons">
-                    <span class="toolbar-icon-btn settings-style-preview" aria-hidden="true">&#x21BA;</span>
-                    <span class="settings-style-option-caption">Icons only</span>
-                </button>
-            </div>
+        <div class="settings-row">
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-toolbar-style">
+                <span class="toggle-slider"></span>
+            </label>
             <div class="settings-label-group">
-                <span class="settings-label">Toolbar buttons</span>
-                <span class="settings-hint">Show an icon with a text label, or just the icon, on every tab's toolbar buttons -- including the Log tab, which shows icons only today. Icon + Text is the default.</span>
+                <span class="settings-label">Use Text Buttons</span>
+                <span class="settings-hint">When selected, buttons display the text name of the function instead of only an icon.</span>
             </div>
         </div>
 
