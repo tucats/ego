@@ -156,6 +156,7 @@ admin.format.too.large=コードペイロードが大きすぎます
 admin.run.session.invalid=無効なセッションID
 admin.run.too.large=コードペイロードが大きすぎます
 admin.server.stopped=サーバーが停止しました
+admin.serverinfo.error={{item}}のホスト情報の取得エラー: {{error}}
 admin.session.invalid=無効なセッションID値: {{value}}
 admin.tail.invalid=無効なtail整数値: {{value}}
 ambiguous.permission=権限名が予約名と競合しているか、綴りが間違っています

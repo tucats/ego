@@ -32,6 +32,7 @@ const (
 	AdminASTPath        = AdminPath + "ast"
 	AdminTokenPath      = AdminPath + "tokens/"
 	AdminResourcesPath  = AdminPath + "resources"
+	AdminServerInfoPath = AdminPath + "serverinfo"
 	AdminTokenIDPath    = AdminTokenPath + "{{id}}"
 	AdminValidationPath = AdminPath + "validation/"
 
@@ -180,6 +181,7 @@ const (
 	CacheMediaType                = EgoMediaType + "cache+json"
 	MemoryMediaType               = EgoMediaType + "memory+json"
 	ResourcesMediaType            = EgoMediaType + "resources+json"
+	ServerInfoMediaType           = EgoMediaType + "serverinfo+json"
 	LogonMediaType                = EgoMediaType + "logon+json"
 	ConfigListMediaType           = EgoMediaType + "config.list+json"
 	ConfigMediaType               = EgoMediaType + "config+json"

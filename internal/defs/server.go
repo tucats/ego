@@ -375,3 +375,47 @@ type BlacklistedTokensResponse struct {
 	Limit      int                `json:"limit"`
 	Items      []BlacklistedToken `json:"items"`
 }
+
+// ServerInfoResponse describes the response object returned from the
+// /admin/serverinfo endpoint: a snapshot of the host machine the server is
+// running on, as opposed to StatusResponse/MemoryResponse, which describe
+// the Go process itself.
+type ServerInfoResponse struct {
+	// The description of the server and request.
+	ServerInfo `json:"server"`
+
+	// The number of logical CPUs available to the server process, as
+	// reported by runtime.NumCPU().
+	CPUCores int `json:"cpuCores"`
+
+	// The hardware architecture the server binary was built for (e.g.
+	// "amd64", "arm64"), as reported by runtime.GOARCH.
+	Architecture string `json:"architecture"`
+
+	// The short OS family name (e.g. "linux", "darwin", "windows"), as
+	// reported by runtime.GOOS.
+	OS string `json:"os"`
+
+	// The OS distribution or product name (e.g. "ubuntu", "darwin"),
+	// as reported by the host operating system.
+	Platform string `json:"platform"`
+
+	// The OS release/product version (e.g. "22.04", "15.6.1"), as reported
+	// by the host operating system.
+	PlatformVersion string `json:"platformVersion"`
+
+	// The kernel version string, as reported by the host operating system.
+	KernelVersion string `json:"kernelVersion"`
+
+	// Total physical memory installed on the host, in bytes.
+	TotalMemory uint64 `json:"totalMemory"`
+
+	// Physical memory currently available to new allocations, in bytes.
+	AvailableMemory uint64 `json:"availableMemory"`
+
+	// Copy of the HTTP status value.
+	Status int `json:"status,omitempty"`
+
+	// Any error message text.
+	Message string `json:"msg,omitempty"`
+}

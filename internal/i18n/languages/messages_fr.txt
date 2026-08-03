@@ -156,6 +156,7 @@ admin.format.too.large=la charge utile du code est trop volumineuse
 admin.run.session.invalid=identifiant de session invalide
 admin.run.too.large=la charge utile du code est trop volumineuse
 admin.server.stopped=Serveur arrêté
+admin.serverinfo.error=Erreur lors de la récupération des informations {{item}} de l'hôte : {{error}}
 admin.session.invalid=Valeur d'identifiant de session invalide : {{value}}
 admin.tail.invalid=Valeur entière de « tail » invalide : {{value}}
 ambiguous.permission=Le nom de permission est en conflit avec un nom réservé, ou a été mal orthographié

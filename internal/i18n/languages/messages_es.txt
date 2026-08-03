@@ -162,6 +162,7 @@ admin.format.too.large=la carga útil de código es demasiado grande
 admin.run.session.invalid=id de sesión no válido
 admin.run.too.large=la carga útil de código es demasiado grande
 admin.server.stopped=Servidor detenido
+admin.serverinfo.error=Error al obtener la información {{item}} del host: {{error}}
 admin.session.invalid=Valor de id de sesión no válido: {{value}}
 admin.tail.invalid=Valor entero de "tail" no válido: {{value}}
 ambiguous.permission=El nombre de permiso entra en conflicto con un nombre reservado, o fue mal escrito

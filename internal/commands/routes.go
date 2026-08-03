@@ -208,6 +208,12 @@ func defineStaticRoutes() *router.Router {
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
+	// Get information about the host machine (CPU, memory, OS, architecture)
+	r.New(defs.AdminServerInfoPath, admin.GetServerInfoHandler, http.MethodGet).
+		Authentication(true, true).
+		Class(router.AdminRequestCounter).
+		Permissions(defs.ServerAdminPermission)
+
 	ui.Log(ui.ServerLogger, "server.endpoints.dsn", nil)
 
 	// List all DSNS
