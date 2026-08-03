@@ -395,3 +395,46 @@
     @assert m == nil
     @assert ok2 == false
 }
+
+@test "types: forwarding an any parameter into a second any parameter does not break type assertions (BUG-92 regression)"
+{
+    // An "any"-typed value passed straight through into another function's
+    // "any" parameter must still assert back to its original concrete type.
+    // Before the fix, the second function's own parameter binding re-wrapped
+    // an already-wrapped interface value, and the assertion silently failed.
+    type marker struct {
+        v int
+    }
+
+    func inner(x any) bool {
+        _, ok := x.(marker)
+        return ok
+    }
+
+    func outer(x any) bool {
+        return inner(x)
+    }
+
+    m := marker{v: 1}
+    @assert inner(m) == true
+    @assert outer(m) == true
+}
+
+@test "types: any-through-any survives several levels of recursion (BUG-92 regression)"
+{
+    type marker struct {
+        v int
+    }
+
+    func recur(x any, depth int) bool {
+        _, ok := x.(marker)
+        if !ok || depth >= 5 {
+            return ok
+        }
+
+        return recur(x, depth+1)
+    }
+
+    m := marker{v: 1}
+    @assert recur(m, 0) == true
+}

@@ -18,7 +18,20 @@ type Interface struct {
 //
 // If value is nil, BaseType is left nil rather than calling TypeOf(nil),
 // because a nil interface has no meaningful type.
+//
+// Idempotent: if value is already an Interface, it is returned unchanged
+// rather than wrapped a second time. Without this check, passing an
+// already-any-typed value into another any-typed parameter (e.g. a function
+// with an "any" parameter calling a second function with its own "any"
+// parameter, passing the first parameter straight through) would double-wrap
+// it -- UnWrap only strips one layer, so the value handed to the second
+// function's body would still be an Interface, not the original concrete
+// value, breaking any later type assertion against it (BUG-92).
 func Wrap(value any) any {
+	if already, ok := value.(Interface); ok {
+		return already
+	}
+
 	result := Interface{
 		Value: value,
 	}
