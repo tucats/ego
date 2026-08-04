@@ -134,6 +134,65 @@ func readStdinForTest(t *testing.T, input string) string {
 	return text
 }
 
+// TestRemoveShebang checks that the interpreter line of an executable script
+// is emptied rather than deleted.
+//
+// Deleting it moved every remaining line of the file up by one, so the same
+// program with and without a "#!" line reported its errors at two different
+// line numbers, neither of which was the one the user would count in their
+// editor. See docs/issues/REPL-1.md.
+func TestRemoveShebang(t *testing.T) {
+	tests := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "the interpreter line is blanked, not removed",
+			text: "#!/usr/bin/env ego run\npackage main\n",
+			want: "\npackage main\n",
+		},
+		{
+			name: "source with no interpreter line is untouched",
+			text: "package main\nfunc main() {}\n",
+			want: "package main\nfunc main() {}\n",
+		},
+		{
+			// "#" on its own is a comment, not an interpreter line.
+			name: "a comment that is not an interpreter line is untouched",
+			text: "# not a shebang\npackage main\n",
+			want: "# not a shebang\npackage main\n",
+		},
+		{
+			name: "a file that is nothing but an interpreter line",
+			text: "#!/usr/bin/env ego run",
+			want: "",
+		},
+		{
+			name: "empty text",
+			text: "",
+			want: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := removeShebang(test.text)
+			if got != test.want {
+				t.Errorf("removeShebang(%q) = %q, want %q", test.text, got, test.want)
+			}
+
+			// The point of blanking rather than deleting: whatever else
+			// changes, the number of lines must not.
+			if strings.Count(got, "\n") != strings.Count(test.text, "\n") {
+				t.Errorf("the line count changed from %d to %d, so every "+
+					"reported line number below here would shift",
+					strings.Count(test.text, "\n"), strings.Count(got, "\n"))
+			}
+		})
+	}
+}
+
 // TestLoadFile covers reading a single source file, including the convenience
 // of supplying the ".ego" extension when the name given does not exist.
 func TestLoadFile(t *testing.T) {

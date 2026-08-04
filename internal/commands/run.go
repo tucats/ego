@@ -87,9 +87,10 @@ type runSession struct {
 	symbolTable *symbols.SymbolTable
 
 	// lineNumber tracks which line of the session is being compiled, so that
-	// diagnostics can refer to it. See docs/issues/REPL-1.md: this does not
-	// presently produce correct numbers, which is recorded there rather than
-	// changed here.
+	// diagnostics can name the line the user typed rather than counting from
+	// the start of whichever fragment is being compiled. It counts every line
+	// the user enters, including the continuation lines of an unfinished block
+	// or string. See docs/issues/REPL-1.md.
 	lineNumber int
 }
 
@@ -675,6 +676,30 @@ func loadProject(projectPath string, entryPoint string) (string, bool, string, e
 	return text, true, mainName, nil
 }
 
+// removeShebang blanks out the "#!" interpreter line that makes a script
+// directly executable, so the compiler does not have to make sense of it.
+//
+// The line is emptied rather than removed. Deleting it would move every
+// remaining line of the file up by one, so a program with a shebang reported
+// its errors one line earlier than the identical program without one, and
+// neither matched what the user counted in their editor. Leaving an empty line
+// behind costs nothing and keeps every later line where it belongs. See
+// docs/issues/REPL-1.md.
+func removeShebang(text string) string {
+	if !strings.HasPrefix(text, "#!") {
+		return text
+	}
+
+	// A file consisting only of a shebang line, with no line ending at all,
+	// still has to lose the "#!" text; there is simply no rest of the file.
+	i := strings.Index(text, "\n")
+	if i < 0 {
+		return ""
+	}
+
+	return text[i:]
+}
+
 // loadFile reads a single Ego source file.
 //
 // If the name as given does not exist, the standard ".ego" extension is added
@@ -707,15 +732,7 @@ func loadFile(fileName string, entryPoint string) (string, bool, string, error) 
 
 	text := string(content)
 
-	// Strip the "#!" interpreter line from an executable script. See
-	// docs/issues/REPL-1.md: doing this by deleting the line shifts every
-	// reported line number by one, which is recorded there rather than changed
-	// here, because line numbering is being looked at as a whole.
-	if strings.HasPrefix(text, "#!") {
-		if i := strings.Index(text, "\n"); i > 0 {
-			text = text[i+1:]
-		}
-	}
+	text = removeShebang(text)
 
 	// The entry point directive is what actually causes the program's main
 	// function to be called once everything has been compiled.
@@ -847,9 +864,13 @@ func (s *runSession) handleHelpCommand() bool {
 // statement.
 func (s *runSession) tokenizeCompleteStatement() *tokenizer.Tokenizer {
 	// Tell the compiler which line of the session this text came from, so that
-	// diagnostics can refer to it. See docs/issues/REPL-1.md -- the numbers
-	// this produces are not currently right, and are being looked at
-	// separately.
+	// diagnostics can name the line the user typed rather than counting from
+	// the start of this one fragment.
+	//
+	// The directive goes on a line of its own, so the statement itself always
+	// starts on physical line 2 of what the compiler sees; the compiler's
+	// lineDirective subtracts that two again. The counter then moves on by the
+	// number of lines this fragment occupies, ready for the next statement.
 	if s.interactive && !s.debug {
 		s.text = fmt.Sprintf("@line %d;\n%s", s.lineNumber, s.text)
 
@@ -860,9 +881,11 @@ func (s *runSession) tokenizeCompleteStatement() *tokenizer.Tokenizer {
 	t := tokenizer.New(s.text, true)
 
 	// A raw string or a block that the user has not finished typing means the
-	// statement is incomplete; both of these prompt for the rest of it.
+	// statement is incomplete; both of these prompt for the rest of it. Each
+	// hands back the text it gathered and the line number it reached, so that
+	// the continuation lines are counted rather than skipped over.
 	t, s.text, s.lineNumber = inputUntilQuotesBalance(s.wasCommandLine, t, s.text, s.lineNumber)
-	t = inputUntilBlocksBalance(s.interactive, t, s.text, s.lineNumber)
+	t, s.text, s.lineNumber = inputUntilBlocksBalance(s.interactive, t, s.text, s.lineNumber)
 
 	// "exit" must not be run under the debugger, which would stop on it and
 	// wait for a command, leaving no way to leave. The second test catches the
@@ -934,6 +957,23 @@ func (s *runSession) compileAndRun(t *tokenizer.Tokenizer) (int, bool, error) {
 		fmt.Println(s.symbolTable.Format(false))
 	}
 
+	// Who reports a runtime error depends on who is going to see it next.
+	//
+	// The interactive console has nobody to hand it to: the run loop goes
+	// straight back round for the next statement, and the error would simply
+	// be overwritten. So the console prints it here and reports success, the
+	// same as it already does for a compilation error just above.
+	//
+	// Everything else -- a named file, a project, a piped program -- hands the
+	// error back so that main.go prints it once on the way out. The old code
+	// printed it *and* handed it back, so a runtime error in a script was
+	// reported to the user twice, word for word. See docs/issues/REPL-1.md.
+	if err != nil && !s.wasCommandLine {
+		os.Stderr.Write([]byte(fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())))
+
+		return exitValue, false, nil
+	}
+
 	return exitValue, false, err
 }
 
@@ -985,9 +1025,17 @@ func consolePrompt(programName string) string {
 	return programName + "> "
 }
 
-// For a given error, determine if the error state contains a request to exit, in which case the shell exit
-// status code is extracted. Also determines if the compiled code requested the end of the run loop, in which
-// case the second parameter is returned as true which breaks out of the REPL run loop.
+// getExitStatusFromError works out what the error a program finished with
+// means for the run: the exit status it implies, and whether the run loop
+// should stop altogether.
+//
+// A request to exit is not a failure -- it is how an Ego program ends itself
+// deliberately -- so it stops the loop with a status of zero. Anything else is
+// a failure worth a non-zero status.
+//
+// This used to write the error to stderr as well. Reporting is now left to the
+// caller, which is the only place that knows whether the error is also being
+// handed back to someone else who will report it. See docs/issues/REPL-1.md.
 func getExitStatusFromError(err error) (int, bool) {
 	exitValue := 0
 
@@ -999,9 +1047,6 @@ func getExitStatusFromError(err error) (int, bool) {
 			}
 
 			exitValue = 2
-			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
-
-			os.Stderr.Write([]byte(msg))
 		}
 	}
 
@@ -1010,7 +1055,14 @@ func getExitStatusFromError(err error) (int, bool) {
 
 // inputUntilBlocksBalance reads from the text file and tokenizes it. If the number of opening and closing blocks, braces, or
 // brackets is not balanced, it prompts the user for more input until the blocks are balanced.
-func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text string, lineNumber int) *tokenizer.Tokenizer {
+//
+// Like inputUntilQuotesBalance, this returns the text it accumulated and the
+// line number it reached, not just the tokenizer. It used to return only the
+// tokenizer, keeping the extra lines to itself; the caller's line counter
+// therefore stayed where the block started, and the statement typed after a
+// three-line block was reported as being two lines earlier than it was. See
+// docs/issues/REPL-1.md.
+func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text string, lineNumber int) (*tokenizer.Tokenizer, string, int) {
 	for interactive && len(t.Tokens) > 0 {
 		var (
 			count        int
@@ -1055,7 +1107,7 @@ func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text stri
 		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
 
-	return t
+	return t, text, lineNumber
 }
 
 // Run the compiled code from the most recent compilation in a new context, with debugging support as needed.

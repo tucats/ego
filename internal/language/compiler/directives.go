@@ -403,8 +403,23 @@ func (c *Compiler) lineDirective() error {
 	c.b.ClearLineNumbers()
 	c.b.Emit(bytecode.AtLine, line)
 
-	// If @line 1, no offset. Additionally, take off one for the @line directive itself.
-	c.lineNumberOffset = line - 2
+	// Work out the offset that turns a physical line number -- how far down the
+	// text the compiler is actually reading -- into the number to report.
+	//
+	// The directive claims that the line *after* it is line N. So if the
+	// directive itself sits on physical line D, physical line D+1 has to be
+	// reported as N, which means adding N-(D+1) to every physical line number
+	// from here on.
+	//
+	// This used to be a flat "N-2", which is the same thing only when D is 1.
+	// That held for a single file, where the directive is the first thing in
+	// the text, but not for a project: "ego run --project" joins every source
+	// file in a directory into one piece of text with an "@line 1" ahead of
+	// each, so the second and later files got an offset computed as if they
+	// started at the top of the text, and reported line numbers that ran on
+	// from the end of the previous file. See docs/issues/REPL-1.md.
+	directiveLine, _ := lineNumberToken.Location()
+	c.lineNumberOffset = line - (directiveLine + 1)
 
 	return nil
 }

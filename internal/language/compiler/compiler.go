@@ -343,6 +343,15 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.started = c.started
 	clone.optimizationLevel = c.optimizationLevel
 
+	// The "@line" directive records how far the physical line numbers in the
+	// text differ from the ones the user should be told about. A clone compiles
+	// part of the same text -- an expression, or the body of a block -- so it
+	// has to report the same numbers. Without this, any error raised by a clone
+	// (which is most of them, since every expression is compiled by one) came
+	// out with an offset of zero, ignoring the directive entirely. That is what
+	// made every statement typed at the console report itself as line 1.
+	clone.lineNumberOffset = c.lineNumberOffset
+
 	// Propagate the current "iota" counter so that an expression clone created by
 	// Expression() (used to compile a const ConstSpec's right-hand side) still
 	// recognizes a bare "iota" reference while inside a const(...) block.
@@ -464,6 +473,12 @@ func (c *Compiler) Close() (*bytecode.ByteCode, error) {
 		c.parent.types = c.types
 		c.parent.packages = c.packages
 		c.parent.symbolErrors = c.symbolErrors
+
+		// Hand back any change an "@line" directive made while the clone was
+		// running. The two compilers share one tokenizer, so the parent picks
+		// up exactly where the clone stopped reading; the offset that turns
+		// those physical line numbers into reported ones has to travel with it.
+		c.parent.lineNumberOffset = c.lineNumberOffset
 	}
 
 	result := c.b.Seal()
