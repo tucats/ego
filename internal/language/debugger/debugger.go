@@ -4,13 +4,13 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
-	"github.com/tucats/ego/internal/language/compiler"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/runtime/io"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/compiler"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	"github.com/tucats/ego/internal/runtime/io"
 )
 
 // stepTo and breakAt are i18n message strings looked up once at package
@@ -193,6 +193,22 @@ func getLine(sessionContext *session) string {
 // readConsole reads a line of text from the user's terminal using the readline
 // library (which provides history and line editing).  It is called only in
 // interactive mode; API mode uses channel I/O instead.
+//
+// When there is no more input -- the user pressed Ctrl-D, or Ctrl-C at the
+// prompt -- this answers with the debugger's own "exit" command. That ends the
+// debugging session, which is what the user was asking for, and it does so
+// without every caller of readLine having to learn about end-of-input.
+//
+// Without this, the caller that reads continuation lines for an unbalanced
+// command would loop forever: end of input used to look exactly like a blank
+// line, so the brace count never changed and the prompt never stopped. Note
+// that session.go already uses this same "deliver an exit command" technique
+// to stop a debugger that is blocked waiting for input.
 func readConsole(prompt string) string {
-	return io.ReadConsoleText(prompt)
+	text, err := io.ReadConsoleText(prompt)
+	if err != nil {
+		return "exit\n"
+	}
+
+	return text
 }

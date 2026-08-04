@@ -1137,7 +1137,15 @@ func TableSQL(c *cli.Context) error {
 		ui.Say("msg.enter.blank.line")
 
 		for {
-			line := strings.TrimSpace(io.ReadConsoleText("sql> "))
+			// A blank line ends the statement, and so does the end of the
+			// input: pressing Ctrl-D here means the user is finished, not that
+			// they want to be asked again.
+			text, err := io.ReadConsoleText("sql> ")
+			if err != nil {
+				break
+			}
+
+			line := strings.TrimSpace(text)
 			if len(line) == 0 {
 				break
 			}

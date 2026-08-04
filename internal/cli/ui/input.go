@@ -3,6 +3,7 @@ package ui
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -13,28 +14,52 @@ import (
 // Prompt prints a prompt string, and gets input from the console.
 // The line endings are removed and the remainder of the input is
 // returned as a string.
+//
+// This form cannot tell the difference between the user pressing Enter on an
+// empty line and the input ending: both come back as an empty string. Callers
+// that loop until the user is finished should use PromptLine instead, which
+// says which of the two happened.
 func Prompt(p string) string {
+	text, _ := PromptLine(p)
+
+	return text
+}
+
+// PromptLine is Prompt, except that it also reports why the read stopped.
+//
+// The returned error is io.EOF when there is no more input to be had -- the
+// user pressed Ctrl-D, or input was redirected from a file that ran out. That
+// distinction matters to anything that reads in a loop: without it, the end of
+// the input looks exactly like a blank line, and the loop asks again, forever.
+func PromptLine(p string) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 
 	if !IsConsolePipe() {
 		fmt.Printf("%s", p)
 	}
 
-	// If not a terminal, no input is possible
-	if !readline.IsTerminal(0) {
-		return ""
+	// If not a terminal, no input is possible. Report that as end-of-input,
+	// because it is: no amount of asking again will produce anything.
+	if !readline.IsTerminal(0) || !readline.IsTerminal(int(os.Stdin.Fd())) {
+		return "", io.EOF
 	}
 
-	if !readline.IsTerminal(int(os.Stdin.Fd())) {
-		return ""
-	}
+	buffer, err := reader.ReadString('\n')
 
-	// Remove any extra line endings (CRLF or LF)
-	buffer, _ := reader.ReadString('\n')
+	// Remove any extra line endings (CRLF or LF).
 	buffer = strings.Replace(buffer, "\r\n", "", -1)
 	buffer = strings.Replace(buffer, "\n", "", -1)
 
-	return buffer
+	// ReadString reports io.EOF both when the input ends with nothing after
+	// the last line ending, and when it ends in the middle of an unterminated
+	// final line. Only the first is really "there is nothing here"; if some
+	// text did come back, hand it to the caller now and let the *next* call
+	// report the end.
+	if err != nil && buffer != "" {
+		err = nil
+	}
+
+	return buffer, err
 }
 
 // PromptPassword prompts the user with a string prompt, and then

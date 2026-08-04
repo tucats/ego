@@ -1,13 +1,17 @@
 package commands
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"strconv"
 	"strings"
+
+	// This file imports Ego's own "io" and "errors" packages, so Go's standard
+	// packages of the same names are given distinct names here.
+	goErrors "errors"
+	goIO "io"
 
 	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/cli/app"
@@ -34,6 +38,53 @@ var (
 	sourceType = "file "
 )
 
+// stdinSourceName is the name reported for a program that was piped in rather
+// than read from a file, so that diagnostics have something to call it.
+const stdinSourceName = "<stdin>"
+
+// runSession gathers everything the interactive console and the one-shot
+// program runner need to know about a single "ego run".
+//
+// These values used to be passed from function to function as a long list of
+// parameters -- runLoop alone took thirteen of them, and runREPL took eleven
+// of the same ones purely to hand them on. That made the call sites hard to
+// read, and it hid real defects: several parameters were assigned before they
+// were ever read, so what looked like an input was really a local variable,
+// and one branch that tested such a parameter could never run at all.
+//
+// Collecting them in one place means each value is written once, where it is
+// decided, and read wherever it is needed.
+type runSession struct {
+	// How the program reached us, and how it should be run.
+	text        string // the program source, or the statement being typed
+	mainName    string // what to call the source in diagnostics
+	prompt      string // the interactive prompt string
+	interactive bool   // input comes from a person at a console
+	isProject   bool   // source was a directory of files, not one file
+	extensions  bool   // Ego language extensions, such as "help", are enabled
+
+	// wasCommandLine is true when the whole program was supplied at once --
+	// named on the command line, or piped in -- rather than typed a statement
+	// at a time. It is what decides whether the run loop goes round again.
+	wasCommandLine bool
+
+	// Options that affect execution.
+	debug       bool  // run under the debugger
+	fullScope   bool  // make all enclosing scopes visible
+	dumpSymbols bool  // print the symbol table after each statement
+	sandbox     *bool // force sandbox mode on or off; nil means neither
+
+	// The pieces that do the work.
+	comp        *compiler.Compiler
+	symbolTable *symbols.SymbolTable
+
+	// lineNumber tracks which line of the session is being compiled, so that
+	// diagnostics can refer to it. See docs/issues/REPL-1.md: this does not
+	// presently produce correct numbers, which is recorded there rather than
+	// changed here.
+	lineNumber int
+}
+
 // RunAction is the command handler for the ego CLI. It reads program text from
 // either a file, directory, or stdin, and compiles and executes it. If the program
 // was being read from the console, then the program will be executed in a REPL
@@ -49,59 +100,161 @@ var (
 //	Traditional: ego run [<file>...] (also the default when no subcommand is given)
 //	Verb:        ego run [<file>...] (also the default when no subcommand is given)
 func RunAction(c *cli.Context) error {
-	var (
-		err            error
-		programArgs    = make([]any, 0)
-		prompt         = strings.TrimSuffix(c.MainProgram, ".exe") + "> "
-		wasCommandLine = true
-		fullScope      = false
-		interactive    = false
-		debug          = c.Boolean("debug")
-		text           string
-		mainName       string
-		isProject      bool
-		extensions     = settings.GetBool(defs.ExtensionsEnabledSetting)
-	)
+	var err error
+
+	// The session collects everything the run needs to know. It starts out
+	// describing a program named on the command line, which is the common
+	// case; reading from the console adjusts it below.
+	session := &runSession{
+		prompt:         consolePrompt(c.MainProgram),
+		wasCommandLine: true,
+		debug:          c.Boolean("debug"),
+		extensions:     settings.GetBool(defs.ExtensionsEnabledSetting),
+	}
 
 	// Tell the compiler subsystem if we are debugging this code.
-	compiler.DebugMode = debug
+	compiler.DebugMode = session.debug
 
-	// If we are doing profiling, start the native profiler. --profile-file
-	// implies profiling should run even without --profiling also being
-	// given -- specifying a destination file but never collecting any data
+	// Start whichever kinds of profiling were asked for. The returned function
+	// finishes them off, and "defer" makes sure it runs however this function
+	// returns -- including the error returns below, which is what the old code
+	// got wrong by calling os.Exit from inside the source loader.
+	stopProfiling, err := startProfiling(c)
+	if err != nil {
+		return err
+	}
+
+	defer stopProfiling()
+
+	// Everything that has to be in place before any Ego code can be compiled:
+	// the runtime library, logging, and configuration defaults.
+	if err := prepareRuntime(c); err != nil {
+		return err
+	}
+
+	staticTypes := configureExecutionOptions(c, session)
+
+	// Get the default entry point from the command line, if specified.
+	// If not, use the default value of "main".
+	entryPoint, _ := c.String("entry-point")
+	if entryPoint == "" {
+		entryPoint = defs.Main
+	}
+
+	// How many parameters were found on the command line?
+	argc := c.ParameterCount()
+	ui.Log(ui.CLILogger, "cli.parm.count", ui.A{
+		"count": argc})
+
+	// Load the program: from the file or directory named on the command line
+	// if there was one, and from the console or a pipe if there was not.
+	if argc > 0 {
+		if session.text, session.isProject, session.mainName, err = loadSource(c, entryPoint); err != nil {
+			return err
+		}
+	}
+
+	// Initialize the DSN manager in case the program needs it.
+	if err := dsns.Initialize(c); err != nil {
+		return errors.New(err)
+	}
+
+	programArgs := programArguments(c, argc)
+
+	if argc == 0 {
+		if err = session.readSourceFromConsole(c); err != nil {
+			return err
+		}
+	}
+
+	// Set up the symbol table.
+	session.symbolTable = initializeSymbols(c, session.mainName, programArgs, staticTypes, session.interactive)
+	session.symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
+	session.symbolTable.Root().SetAlways(defs.ExtensionsVariable, session.extensions)
+	session.symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
+
+	exitValue, err := session.run(c)
+
+	// A non-zero exit value means the program reported failure. If there is
+	// also a specific error, that is the more useful of the two, so it is kept
+	// rather than replaced; the previous version of this code always discarded
+	// it in favor of the generic "terminated with errors".
+	if exitValue > 0 && err == nil {
+		err = errors.ErrTerminatedWithErrors
+	}
+
+	return err
+}
+
+// startProfiling turns on whichever kinds of profiling the command line asked
+// for, and returns the function that finishes them off.
+//
+// There are two independent kinds. Ego's own profiler measures how long each
+// Ego statement takes. Go's pprof profiler samples the interpreter itself, and
+// is a hidden option meant for working on Ego rather than on Ego programs.
+//
+// Returning a single cleanup function, rather than leaving the caller to
+// remember several, is what makes it safe for any later step to fail: one
+// deferred call finishes whatever was started.
+func startProfiling(c *cli.Context) (func(), error) {
+	stopFuncs := []func(){}
+
+	stopAll := func() {
+		for _, stop := range stopFuncs {
+			stop()
+		}
+	}
+
+	// --profile-file implies profiling should run even without --profile also
+	// being given: naming a destination file but never collecting any data
 	// into it would otherwise silently produce nothing.
 	profileFile, hasProfileFile := c.String("profile-file")
 
 	if hasProfileFile {
-		// The file is the only destination the user asked for; don't also
-		// dump the same data to the console at end-of-run or from any
-		// in-script "@profile report"/"dump" call.
+		// The file is the only destination the user asked for; don't also dump
+		// the same data to the console at end-of-run or from any in-script
+		// "@profile report"/"dump" call.
 		bytecode.SuppressConsoleReport(true)
 	}
 
 	if c.Boolean("profile") || hasProfileFile {
-		err = bytecode.ProfileAction(bytecode.StartAction)
-		if err != nil {
-			return err
+		if err := bytecode.ProfileAction(bytecode.StartAction); err != nil {
+			return stopAll, err
 		}
 	}
 
-	// Do we enable pprof profiling for development work? This is a hidden option not used
-	// by an end-user.
+	if hasProfileFile {
+		// Writing the report does not clear the collected data (see
+		// WriteProfileReportFile's own comment), so main.go's end-of-run call
+		// to PrintProfileReport still prints the same session's data.
+		stopFuncs = append(stopFuncs, func() {
+			if err := bytecode.WriteProfileReportFile(profileFile); err != nil {
+				ui.Log(ui.AppLogger, "app.console.error", ui.A{
+					"error": err})
+			}
+		})
+	}
+
+	// This is a hidden option, not used by an end user.
 	if filename, found := c.String("pprof"); found {
 		f, err := os.Create(filename)
 		if err != nil {
-			return err
+			return stopAll, errors.New(err)
 		}
 
-		err = pprof.StartCPUProfile(f)
-		if err != nil {
-			return err
+		if err := pprof.StartCPUProfile(f); err != nil {
+			return stopAll, errors.New(err)
 		}
 
-		defer pprof.StopCPUProfile()
+		stopFuncs = append(stopFuncs, pprof.StopCPUProfile)
 	}
 
+	return stopAll, nil
+}
+
+// prepareRuntime puts in place everything that has to exist before any Ego
+// code can be compiled or run.
+func prepareRuntime(c *cli.Context) error {
 	// Set up the symbol table serialization default. By default this is false
 	// for executing program statements from the console or from source. This can
 	// be overridden by the EGO_SERIALIZE_SYMBOLTABLES environment variable.
@@ -133,17 +286,12 @@ func RunAction(c *cli.Context) error {
 	}
 
 	// Initialize the profile default values if not already set.
-	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
-		return err
-	}
+	return profile.InitProfileDefaults(profile.RuntimeDefaults)
+}
 
-	// Get the default entry point from the command line, if specified.
-	// If not, use the default value of "main".
-	entryPoint, _ := c.String("entry-point")
-	if entryPoint == "" {
-		entryPoint = defs.Main
-	}
-
+// configureExecutionOptions applies the command line options that change how
+// code is compiled and run, and returns the type enforcement level chosen.
+func configureExecutionOptions(c *cli.Context, session *runSession) int {
 	// Get the allocation factor for symbols from the configuration. If it
 	// was specified on the command line, override it.
 	configureSymbolAllocations(c)
@@ -151,12 +299,11 @@ func RunAction(c *cli.Context) error {
 	// If the user specified that full symbol scopes are to be used, override
 	// the default value of false.
 	if c.WasFound(defs.FullSymbolScopeOption) {
-		fullScope = c.Boolean(defs.FullSymbolScopeOption)
+		session.fullScope = c.Boolean(defs.FullSymbolScopeOption)
 	}
 
 	// If the user specified the "disassemble" option, turn on the disassembler.
-	disassemble := c.Boolean(defs.DisassembleOption)
-	if disassemble {
+	if c.Boolean(defs.DisassembleOption) {
 		ui.Active(ui.ByteCodeLogger, true)
 	}
 
@@ -167,134 +314,144 @@ func RunAction(c *cli.Context) error {
 	// Override the default value of the case normalization setting if the user
 	// specified it on the command line. We require the value to be one of the
 	// permitted types of "strict", "relaxed", or "dynamic".
-	staticTypes := configureTypeCompliance(c)
-
-	// How many parameters were found on the command line?
-	argc := c.ParameterCount()
-	ui.Log(ui.CLILogger, "cli.parm.count", ui.A{
-		"count": argc})
-
-	// Load the initial source text from the specified file, directory, or stdin.
-	if argc > 0 {
-		text, isProject, mainName, err = loadSource(c, entryPoint)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Initialize the DSN manager in case the program needs it.
-	if err := dsns.Initialize(c); err != nil {
-		return errors.New(err)
-	}
-
-	// Remaining command line arguments are stored
-	if argc > 1 {
-		programArgs = make([]any, argc-1)
-
-		for n := 1; n < argc; n = n + 1 {
-			programArgs[n-1] = c.Parameter(n)
-		}
-
-		ui.Log(ui.CLILogger, "cli.parm.saving", ui.A{
-			"parms": programArgs})
-	} else if argc == 0 {
-		// There were no loose arguments on the command line, so no source was given
-		// yet.
-		wasCommandLine, interactive, text, mainName = readSourceFromConsoleOrPipe(wasCommandLine, c, interactive, text, prompt, mainName)
-	}
-
-	// Set up the symbol table.
-	symbolTable := initializeSymbols(c, mainName, programArgs, staticTypes, interactive)
-	symbolTable.Root().SetAlways(defs.MainVariable, defs.Main)
-	symbolTable.Root().SetAlways(defs.ExtensionsVariable, extensions)
-	symbolTable.Root().SetAlways(defs.UserCodeRunningVariable, true)
-
-	exitValue, err := runREPL(interactive, extensions, text, debug, wasCommandLine, mainName, isProject, symbolTable, fullScope, c, prompt)
-
-	// Write the collected profiling data to --profile-file, if given, now
-	// that the program (run via whichever of runREPL/runLoop/runCompiledCode
-	// it took to get here) has finished. This does not clear the data (see
-	// WriteProfileReportFile's own comment), so main.go's unconditional
-	// end-of-run call to bytecode.PrintProfileReport still prints the same
-	// session's data to the console afterward.
-	if hasProfileFile {
-		if fileErr := bytecode.WriteProfileReportFile(profileFile); fileErr != nil {
-			return fileErr
-		}
-	}
-
-	if exitValue > 0 {
-		return errors.ErrTerminatedWithErrors
-	}
-
-	return err
+	return configureTypeCompliance(c)
 }
 
-// When in REPL mode, read the next source statement(s) from the default input. This can be the
-// console, or stdin if it's a pipe. The source is returned, along with flags indicating whether
-// the input implies the session should be consider interactive.
-func readSourceFromConsoleOrPipe(wasCommandLine bool, c *cli.Context, interactive bool, text string, prompt string, mainName string) (bool, bool, string, string) {
-	wasCommandLine = false
+// programArguments collects the command line parameters that follow the
+// program name, which the running Ego program sees as its own arguments.
+func programArguments(c *cli.Context, argc int) []any {
+	if argc < 2 {
+		return make([]any, 0)
+	}
+
+	programArgs := make([]any, argc-1)
+	for n := 1; n < argc; n++ {
+		programArgs[n-1] = c.Parameter(n)
+	}
+
+	ui.Log(ui.CLILogger, "cli.parm.saving", ui.A{
+		"parms": programArgs})
+
+	return programArgs
+}
+
+// readSourceFromConsole works out where an "ego run" with no file named on the
+// command line should get its program from, and records the answer in the
+// session.
+//
+// There are two possibilities. If the console is a terminal, the user is going
+// to type statements, and the session is interactive. If it is a pipe, the
+// whole program is already waiting to be read, and it is run in one piece just
+// as a named file would be.
+//
+// This used to take six parameters and return four values, but four of the six
+// were written before they were ever read: they were really local variables
+// wearing a parameter's clothes. Writing the results into the session says
+// plainly that this function decides these values rather than adjusts them.
+func (s *runSession) readSourceFromConsole(c *cli.Context) error {
+	s.wasCommandLine = false
 
 	ui.Log(ui.CLILogger, "cli.no.source", nil)
 
-	// If the input is not from a pipe, then we are interactive. If it is from a
-	// pipe then the pipe is drained from the input source text.
-	if !ui.IsConsolePipe() {
-		var banner string
-
-		ui.Log(ui.CLILogger, "cli.not.pipe", nil)
-
-		// Because we're going to prompt for input, see if we are supposed to put out the
-		// extended banner with version and copyright information.
-		if settings.Get(defs.NoCopyrightSetting) != defs.True {
-			banner = c.AppName + " " + c.Version + " " + c.Copyright
-		}
-
-		fmt.Printf("%s\n", banner)
-
-		// If this is the first time through this loop, interactive is still
-		// false, but we know we're going to use user input. So this first
-		// time through, make the text just be an empty string. This will
-		// force the run loop to compile the empty string, which will process
-		// all the auto-imports. In this way, the use of --log TRACE on the
-		// command line will handle all the import processing BEFORE the
-		// first prompt, so the tracing after the prompt is just for the
-		// statement(s) typed in at the prompt.
-		//
-		// If we already know we're interactive, this isn't the first time
-		// through the loop, and we just prompt the user for statements.
-		if !interactive {
-			text = ""
-		} else {
-			text = io.ReadConsoleText(prompt)
-		}
-
-		interactive = true
-
-		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-	} else {
-		ui.Log(ui.CLILogger, "cli.pipe", nil)
-
-		wasCommandLine = true // It is a pipe, so no prompting for more!
-		interactive = true
-		text = ""
-		mainName = "<stdin>"
-
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			text = text + scanner.Text() + "\n"
-		}
-
-		if e := scanner.Err(); e != nil {
-			fmt.Printf("Error reading from input: %v\n", e)
-		}
-
-		ui.Log(ui.CLILogger, "cli.source", ui.A{
-			"text": text})
+	if ui.IsConsolePipe() {
+		return s.readPipedSource()
 	}
 
-	return wasCommandLine, interactive, text, mainName
+	ui.Log(ui.CLILogger, "cli.not.pipe", nil)
+
+	// Print the version and copyright banner ahead of the first prompt, unless
+	// the user has asked for it to be suppressed.
+	if settings.Get(defs.NoCopyrightSetting) != defs.True {
+		fmt.Println(c.AppName + " " + c.Version + " " + c.Copyright)
+	}
+
+	// Start with empty text rather than prompting for a statement here. The run
+	// loop compiles that empty string first, which is what processes all the
+	// automatic imports. Doing it before the first prompt means "--log TRACE"
+	// shows the import work on its own, and everything traced after the prompt
+	// belongs to what the user typed. The run loop does the prompting from
+	// then on.
+	//
+	// This used to be a two-way test on "interactive", whose other branch
+	// prompted for input immediately. That branch could never run: this is
+	// called exactly once, from a point where interactive is always still
+	// false, and its comment describing "this isn't the first time through the
+	// loop" referred to a loop that does not exist.
+	s.text = ""
+	s.interactive = true
+
+	settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
+
+	return nil
+}
+
+// readPipedSource reads a whole program from a pipe on the standard input.
+func (s *runSession) readPipedSource() error {
+	ui.Log(ui.CLILogger, "cli.pipe", nil)
+
+	// It arrives all at once, so there is nothing to prompt for -- the run loop
+	// compiles it and stops, exactly as it does for a named file.
+	s.wasCommandLine = true
+	s.interactive = true
+	s.mainName = stdinSourceName
+
+	text, err := readAllStdin()
+	if err != nil {
+		return errors.New(err)
+	}
+
+	s.text = text
+
+	ui.Log(ui.CLILogger, "cli.source", ui.A{
+		"text": s.text})
+
+	return nil
+}
+
+// readAllStdin reads everything available on the standard input and returns it
+// as one string, with line endings normalized.
+//
+// This deliberately does not use bufio.Scanner, which is the obvious tool for
+// reading input line by line and was what this code used to do. Scanner
+// refuses to return a line longer than 64KB, reporting "token too long". The
+// old code printed that message and then carried on with the text it had
+// managed to read, so a script containing one very long line -- a large
+// embedded string or a generated file, say -- was silently cut in half and the
+// first half was executed, with a successful exit status. Reading the whole
+// stream in one call has no such limit, and the error is returned rather than
+// printed and ignored.
+//
+// Normalizing line endings preserves a property the scanner provided for free:
+// bufio.ScanLines strips a carriage return from the end of each line, so a
+// script written on Windows and piped in worked. io.ReadAll does no such
+// thing, so the conversion is done here instead.
+func readAllStdin() (string, error) {
+	b, err := goIO.ReadAll(os.Stdin)
+	if err != nil {
+		return "", err
+	}
+
+	text := normalizeLineEndings(string(b))
+
+	// Guarantee the text ends with a line ending. The compiler treats the
+	// input as a sequence of complete lines, and input that ends without a
+	// final newline -- which is easy to produce with "printf" or an editor
+	// that does not add one -- would otherwise present its last line
+	// differently from every other line.
+	if text != "" && !strings.HasSuffix(text, "\n") {
+		text += "\n"
+	}
+
+	return text, nil
+}
+
+// normalizeLineEndings rewrites Windows and classic Mac line endings as the
+// line feeds the rest of the code expects. See splitLines in help.go, which
+// exists for the same reason and explains the three conventions.
+func normalizeLineEndings(text string) string {
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+
+	return strings.ReplaceAll(text, "\r", "\n")
 }
 
 // Get the command lin options for the --type setting. If not present, the default value
@@ -356,260 +513,402 @@ func configureSymbolAllocations(c *cli.Context) {
 	}
 }
 
+// loadSource reads the program text named on the command line. It returns the
+// text, whether it came from a project directory, and a name to call the
+// source in diagnostics.
 func loadSource(c *cli.Context, entryPoint string) (string, bool, string, error) {
-	var (
-		mainName  string
-		isProject bool
-		text      string
-	)
+	// A parameter of "." used to mean "read the program from standard input".
+	// That never actually worked -- the source was read but nothing was ever
+	// run, because unlike the named-file case no entry point was appended --
+	// and it collides with what "." means to --project, and with what
+	// "go run ." means to a Go programmer. It is now a deprecated spelling of
+	// "--project .", which is what it was always meant to do.
+	if !c.WasFound("project") && c.Parameter(0) == "." {
+		ui.Say("msg.run.dot.deprecated")
+
+		return loadProject(".", entryPoint)
+	}
 
 	if c.WasFound("project") {
-		projectPath := c.Parameter(0)
+		return loadProject(c.Parameter(0), entryPoint)
+	}
 
-		ui.Log(ui.CLILogger, "cli.project", ui.A{
-			"path": projectPath})
+	fileName := c.Parameter(0)
 
-		files, err := os.ReadDir(projectPath)
+	ui.Log(ui.CLILogger, "cli.source.file", ui.A{
+		"path": fileName})
+
+	return loadFile(fileName, entryPoint)
+}
+
+// loadProject reads every Ego source file in a directory and joins them into a
+// single unit of text to compile.
+//
+// The "@file" and "@line" directives inserted ahead of each file tell the
+// compiler where that piece of the joined text originally came from, so a
+// diagnostic can name the file it belongs to.
+func loadProject(projectPath string, entryPoint string) (string, bool, string, error) {
+	var text string
+
+	ui.Log(ui.CLILogger, "cli.project", ui.A{
+		"path": projectPath})
+
+	files, err := os.ReadDir(projectPath)
+	if err != nil {
+		// This used to print a message and call os.Exit(2). Exiting here skips
+		// every deferred cleanup RunAction registered -- most visibly
+		// "defer pprof.StopCPUProfile()", so "ego run --pprof out --project
+		// baddir" left a zero-byte, unreadable profile behind. Returning the
+		// error lets the normal exit path run.
+		return "", false, "", errors.New(err).Context(projectPath)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		sourceFile := filepath.Join(projectPath, file.Name())
+		if filepath.Ext(sourceFile) != defs.EgoFilenameExtension {
+			continue
+		}
+
+		b, err := os.ReadFile(sourceFile)
 		if err != nil {
-			fmt.Printf("Unable to read project file, %v\n", err)
-			os.Exit(2)
+			return "", false, "", errors.New(err).Context(sourceFile)
 		}
 
-		for _, file := range files {
-			if file.IsDir() {
-				continue
+		ui.Log(ui.CompilerLogger, "cli.project.file", ui.A{
+			"path": file.Name()})
+
+		text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
+		text = text + "@line 1\n" + string(b)
+	}
+
+	if text == "" {
+		// As above: an error rather than os.Exit(2), so that cleanup runs.
+		return "", false, "", errors.ErrNoSourceFiles.Context(projectPath)
+	}
+
+	// Name the source after the directory it came from, with a trailing
+	// separator so it reads as a directory rather than a file.
+	mainName, _ := filepath.Abs(projectPath)
+	mainName = filepath.Base(mainName) + string(filepath.Separator)
+
+	sourceType = "project "
+	text = text + "\n@entrypoint " + entryPoint
+
+	return text, true, mainName, nil
+}
+
+// loadFile reads a single Ego source file.
+//
+// If the name as given does not exist, the standard ".ego" extension is added
+// and the read is tried again, so that "ego run hello" finds "hello.ego".
+func loadFile(fileName string, entryPoint string) (string, bool, string, error) {
+	content, err := os.ReadFile(fileName)
+	if err != nil {
+		withExtension := fileName + defs.EgoFilenameExtension
+
+		// Note which error is reported when neither name works. The error from
+		// the *original* name is the useful one, because that is the name the
+		// user actually typed; reporting that "hello.ego" does not exist when
+		// they asked for "hello" is more confusing than helpful. But if the
+		// file with the extension does exist and simply could not be read --
+		// a permissions problem, say -- that error is the real explanation and
+		// is reported instead. The previous version of this code always
+		// reported the first error, so an unreadable "hello.ego" was described
+		// as "hello does not exist".
+		alternate, altErr := os.ReadFile(withExtension)
+		if altErr != nil {
+			if !os.IsNotExist(altErr) {
+				return "", false, "", errors.New(altErr).Context(withExtension)
 			}
 
-			sourceFile := filepath.Join(projectPath, file.Name())
-			if filepath.Ext(sourceFile) == defs.EgoFilenameExtension {
-				b, err := os.ReadFile(sourceFile)
-				if err == nil {
-					ui.Log(ui.CompilerLogger, "cli.project.file", ui.A{
-						"path": file.Name()})
-
-					text = text + "\n@file " + strconv.Quote(filepath.Base(file.Name())) + "\n"
-					text = text + "@line 1\n" + string(b)
-				} else {
-					return "", false, "", errors.New(err).Context(sourceFile)
-				}
-			}
+			return "", false, "", errors.New(err).Context(fileName)
 		}
 
-		if text == "" {
-			fmt.Println("No source files found in project directory")
-			os.Exit(2)
-		}
+		content = alternate
+	}
 
-		mainName, _ = filepath.Abs(projectPath)
-		mainName = filepath.Base(mainName) + string(filepath.Separator)
-		sourceType = "project "
-		text = text + "\n@entrypoint " + entryPoint
-		isProject = true
-	} else {
-		fileName := c.Parameter(0)
+	text := string(content)
 
-		ui.Log(ui.CLILogger, "cli.source.file", ui.A{
-			"path": fileName})
-
-		if fileName == "." {
-			text = ""
-			mainName = "console"
-
-			scanner := bufio.NewScanner(os.Stdin)
-			for scanner.Scan() {
-				text = text + scanner.Text() + "\n"
-			}
-
-			if e := scanner.Err(); e != nil {
-				return "", false, "", errors.New(e)
-			}
-		} else {
-			if content, e1 := os.ReadFile(fileName); e1 != nil {
-				if content, e2 := os.ReadFile(fileName + defs.EgoFilenameExtension); e2 != nil {
-					return "", false, "", errors.New(e1).Context(fileName)
-				} else {
-					text = string(content)
-				}
-			} else {
-				text = string(content)
-			}
-
-			if strings.HasPrefix(text, "#!") {
-				if i := strings.Index(text, "\n"); i > 0 {
-					text = text[i+1:]
-				}
-			}
-
-			mainName = fileName
-			text = text + "\n@entrypoint " + entryPoint
+	// Strip the "#!" interpreter line from an executable script. See
+	// docs/issues/REPL-1.md: doing this by deleting the line shifts every
+	// reported line number by one, which is recorded there rather than changed
+	// here, because line numbering is being looked at as a whole.
+	if strings.HasPrefix(text, "#!") {
+		if i := strings.Index(text, "\n"); i > 0 {
+			text = text[i+1:]
 		}
 	}
 
-	return text, isProject, mainName, nil
+	// The entry point directive is what actually causes the program's main
+	// function to be called once everything has been compiled.
+	text = text + "\n@entrypoint " + entryPoint
+
+	return text, false, fileName, nil
 }
 
-// runREPL creates a compiler and enters a run loop to process input text until an error, an exit status, or the text is exhausted.
-func runREPL(interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, c *cli.Context, prompt string) (int, error) {
-	comp := compiler.New("run").
+// run creates a compiler for this session and executes the program, either
+// once or, in interactive mode, a statement at a time until the user is done.
+//
+// It returns the shell exit status the run produced.
+func (s *runSession) run(c *cli.Context) (int, error) {
+	s.comp = compiler.New("run").
 		SetNormalization(settings.GetBool(defs.CaseNormalizedSetting)).
-		SetExitEnabled(!wasCommandLine && interactive).
-		SetDebuggerActive(debug).
+		SetExitEnabled(!s.wasCommandLine && s.interactive).
+		SetDebuggerActive(s.debug).
 		SetRoot(&symbols.RootSymbolTable).
-		SetInteractive(interactive)
+		SetInteractive(s.interactive)
 
-	autoImport := configureAutoImport(c)
-
-	// Add the runtime packages and the builtins functions
-	if autoImport {
+	// Make the standard packages available. Importing them all costs startup
+	// time, so a user who does not want that gets only the handful that the
+	// runtime itself depends on, plus a hook to add the rest on demand.
+	if configureAutoImport(c) {
 		ui.Log(ui.InfoLogger, "runtime.autoimport.all", nil)
 
-		_ = comp.AutoImport(true, symbolTable)
+		_ = s.comp.AutoImport(true, s.symbolTable)
 	} else {
 		ui.Log(ui.InfoLogger, "runtime.autoimport.min", nil)
-		symbolTable.SetAlways("os", egoOS.OsPackage)
-		symbolTable.SetAlways("profile", profile.ProfilePackage)
+
+		s.symbolTable.SetAlways("os", egoOS.OsPackage)
+		s.symbolTable.SetAlways("profile", profile.ProfilePackage)
 		symbols.RootSymbolTable.SetAlways("__AddPackages", runtime.AddPackage)
 	}
 
-	if settings.GetBool(defs.AutoImportSetting) {
-	} else {
-	}
-
-	dumpSymbols := c.Boolean("symbols")
+	s.dumpSymbols = c.Boolean("symbols")
 
 	// --sandbox=true|false lets a caller (typically automated testing) force
 	// sandbox mode on or off for this run, the same restricted mode a
 	// server-hosted dashboard "run" session executes untrusted code under
 	// (see bytecode.Context.Sandboxed). Nil means the flag was not given, and
 	// a plain "ego run" is not sandboxed by default.
-	var sandbox *bool
-
 	if c.WasFound("sandbox") {
 		flag := c.Boolean("sandbox")
-		sandbox = &flag
+		s.sandbox = &flag
 	}
 
-	exitValue, err := runLoop(dumpSymbols, interactive, extensions, text, debug, wasCommandLine, mainName, comp, isProject, symbolTable, fullScope, prompt, sandbox)
+	exitValue, err := s.runLoop()
 	if err == nil {
-		_, err = comp.Close()
+		_, err = s.comp.Close()
 	}
 
 	return exitValue, err
 }
 
-// runLoop reads input text from the console or input source and repeatedly compiles and executes it, until the input source is exhausted, or an error occurs.
-func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, debug bool, wasCommandLine bool, mainName string, comp *compiler.Compiler, isProject bool, symbolTable *symbols.SymbolTable, fullScope bool, prompt string, sandbox *bool) (int, error) {
+// runLoop compiles and executes the session's text, and in interactive mode
+// goes back for the next statement until the user finishes.
+//
+// Each pass round the loop does four things: deal with anything that is a
+// console command rather than Ego source, gather a complete statement, compile
+// and run it, and read the next one. Each of those is a function of its own
+// below, which is what keeps this loop readable.
+func (s *runSession) runLoop() (int, error) {
 	var (
-		b          *bytecode.ByteCode
-		err        error
-		exitValue  int
-		endRunLoop bool
+		exitValue int
+		err       error
 	)
 
-	lineNumber := 1
+	s.lineNumber = 1
 
-	// If this is interactive mode and we have no text yet, start by prompting for some.
-	if !wasCommandLine && interactive && strings.TrimSuffix(strings.TrimSpace(text), "\n") == "" {
-		text = io.ReadConsoleText(prompt)
+	// In interactive mode with nothing to run yet, ask for the first statement.
+	if !s.wasCommandLine && s.interactive && strings.TrimSpace(s.text) == "" {
+		if err := s.readNextStatement(); err != nil {
+			return endInteractiveSession(err)
+		}
 	}
 
 	for {
-		// If we are processing interactive console commands, and help is enabled, and this is a
-		// "help" command, handle that specially.
-		//
-		// Only the one line the command occupies is consumed; anything that
-		// followed it is put back into text and goes on to be compiled as
-		// normal. That matters when the input is a pipe rather than a
-		// console, because in that case the whole script has already been
-		// read into text in one piece. See helpCommand in help.go.
-		if keys, rest, found := helpCommand(text); found && interactive && extensions {
-			help(keys)
-
-			text = rest
-
+		// "help" is a console command rather than Ego source, so it never
+		// reaches the compiler.
+		if s.handleHelpCommand() {
 			continue
 		}
 
-		// If we're interactive and not in debug mode, help out
-		// by updating the line number in REPL mode.
-		if interactive && !debug {
-			text = fmt.Sprintf("@line %d;\n%s", lineNumber, text)
+		t := s.tokenizeCompleteStatement()
 
-			sourceLineCount := strings.Count(text, "\n") - 1
-			lineNumber += sourceLineCount
+		var done bool
+
+		exitValue, done, err = s.compileAndRun(t)
+		if done {
+			return exitValue, err
 		}
 
-		// Tokenize the input
-		t := tokenizer.New(text, true)
-
-		// If not in command-line mode, see if there is an incomplete quote
-		// in the last token, which means we want to prompt for more and
-		// re-tokenize
-		t, text, lineNumber = inputUntilQuotesBalance(wasCommandLine, t, text, lineNumber)
-
-		// Also, make sure we have a balanced count for {}, (), and [] if we're in interactive
-		// mode. If we're unbalanced, this will continue to prompt for more text until the
-		// input is balanced, and returns an revised tokenizer. This handles cases where a
-		// function definition starts with "{" and ends the line, etc.
-		t = inputUntilBlocksBalance(interactive, t, text, lineNumber)
-
-		// If this is the exit command, turn off the debugger to prevent an endless loop
-		if t != nil && len(t.Tokens) > 0 && t.Tokens[0].Spelling() == tokenizer.ExitToken.Spelling() {
-			debug = false
+		// A program supplied all at once runs exactly once.
+		if s.wasCommandLine {
+			return exitValue, err
 		}
 
-		// Longer check for when @line has been injected
-		if t != nil && len(t.Tokens) > 4 && t.Tokens[0].Spelling() == "@" && t.Tokens[1].Spelling() == "line" && t.Tokens[3].Spelling() == ";" && t.Tokens[4].Spelling() == "exit" {
-			debug = false
+		if readErr := s.readNextStatement(); readErr != nil {
+			return endInteractiveSession(readErr)
 		}
-
-		// Compile the token stream we have accumulated, using the entrypoint name provided by
-		// the user (or defaulting to "main").
-		label := "console"
-		if mainName != "" {
-			label = "main '" + mainName + "'"
-		}
-
-		comp.Fragment(true)
-
-		b, err = comp.Compile(label, t)
-		if !errors.Nil(err) {
-			exitValue = 1
-			msg := fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())
-
-			os.Stderr.Write([]byte(msg))
-		} else {
-			// If this is a project, and there is no main package, we can't run it. Bail out.
-			if isProject && !comp.MainSeen() {
-				return 0, errors.ErrNoMainPackage
-			}
-
-			// Let's run the code we've compiled. If nothing was compiled, no work to do.
-			if b != nil {
-				err = runCompiledCode(b, t, symbolTable, debug, fullScope, sandbox)
-
-				exitValue, endRunLoop = getExitStatusFromError(err)
-				if endRunLoop {
-					break
-				}
-			}
-
-			if dumpSymbols {
-				fmt.Println(symbolTable.Format(false))
-			}
-		}
-
-		// If this came as a program via the command line, do not do REPL loop.
-		if wasCommandLine {
-			break
-		}
-
-		text = io.ReadConsoleText(prompt)
 
 		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
+}
 
-	return exitValue, err
+// handleHelpCommand deals with the input if it is a "help" command, and
+// reports whether it did.
+//
+// Only the one line the command occupies is consumed; anything that followed
+// it stays in the session text and goes on to be compiled as normal. That
+// matters when the input is a pipe, because the whole script was read in one
+// piece. See helpCommand in help.go.
+func (s *runSession) handleHelpCommand() bool {
+	keys, rest, found := helpCommand(s.text)
+	if !found || !s.interactive || !s.extensions {
+		return false
+	}
+
+	help(keys)
+
+	s.text = rest
+
+	return true
+}
+
+// tokenizeCompleteStatement turns the session's text into a token stream,
+// prompting for more input if what has been typed so far is not yet a complete
+// statement.
+func (s *runSession) tokenizeCompleteStatement() *tokenizer.Tokenizer {
+	// Tell the compiler which line of the session this text came from, so that
+	// diagnostics can refer to it. See docs/issues/REPL-1.md -- the numbers
+	// this produces are not currently right, and are being looked at
+	// separately.
+	if s.interactive && !s.debug {
+		s.text = fmt.Sprintf("@line %d;\n%s", s.lineNumber, s.text)
+
+		sourceLineCount := strings.Count(s.text, "\n") - 1
+		s.lineNumber += sourceLineCount
+	}
+
+	t := tokenizer.New(s.text, true)
+
+	// A raw string or a block that the user has not finished typing means the
+	// statement is incomplete; both of these prompt for the rest of it.
+	t, s.text, s.lineNumber = inputUntilQuotesBalance(s.wasCommandLine, t, s.text, s.lineNumber)
+	t = inputUntilBlocksBalance(s.interactive, t, s.text, s.lineNumber)
+
+	// "exit" must not be run under the debugger, which would stop on it and
+	// wait for a command, leaving no way to leave. The second test catches the
+	// same word after the "@line" directive above has been prepended.
+	if s.isExitStatement(t) {
+		s.debug = false
+	}
+
+	return t
+}
+
+// isExitStatement reports whether the token stream is the console's "exit"
+// command, with or without the "@line" directive prepended to it.
+func (s *runSession) isExitStatement(t *tokenizer.Tokenizer) bool {
+	if t == nil || len(t.Tokens) == 0 {
+		return false
+	}
+
+	if t.Tokens[0].Spelling() == tokenizer.ExitToken.Spelling() {
+		return true
+	}
+
+	return len(t.Tokens) > 4 &&
+		t.Tokens[0].Spelling() == "@" &&
+		t.Tokens[1].Spelling() == "line" &&
+		t.Tokens[3].Spelling() == ";" &&
+		t.Tokens[4].Spelling() == "exit"
+}
+
+// compileAndRun compiles one statement or program and executes it.
+//
+// The middle return value is true when the run loop should stop altogether,
+// either because the program asked to exit or because it cannot be run at all.
+func (s *runSession) compileAndRun(t *tokenizer.Tokenizer) (int, bool, error) {
+	label := "console"
+	if s.mainName != "" {
+		label = "main '" + s.mainName + "'"
+	}
+
+	s.comp.Fragment(true)
+
+	b, err := s.comp.Compile(label, t)
+	if !errors.Nil(err) {
+		// A compilation error is reported and, in interactive mode, the user
+		// simply gets another prompt to try again.
+		os.Stderr.Write([]byte(fmt.Sprintf("%s: %s\n", i18n.L("Error"), err.Error())))
+
+		return 1, false, nil
+	}
+
+	// A project has to have a main package; there is nothing to call otherwise.
+	if s.isProject && !s.comp.MainSeen() {
+		return 0, true, errors.ErrNoMainPackage
+	}
+
+	// An empty statement compiles to nothing, and there is nothing to run.
+	if b == nil {
+		return 0, false, nil
+	}
+
+	err = runCompiledCode(b, t, s.symbolTable, s.debug, s.fullScope, s.sandbox)
+
+	exitValue, endRunLoop := getExitStatusFromError(err)
+	if endRunLoop {
+		return exitValue, true, nil
+	}
+
+	if s.dumpSymbols {
+		fmt.Println(s.symbolTable.Format(false))
+	}
+
+	return exitValue, false, err
+}
+
+// readNextStatement prompts for the next line of input and stores it in the
+// session. The error it returns means the user has finished, not that
+// something went wrong.
+func (s *runSession) readNextStatement() error {
+	text, err := io.ReadConsoleText(s.prompt)
+	if err != nil {
+		return err
+	}
+
+	s.text = text
+
+	return nil
+}
+
+// endInteractiveSession decides how the interactive console should finish when
+// the user stops supplying input, and returns the exit status and error the
+// run loop should hand back.
+//
+// Both ways of stopping -- Ctrl-D, and Ctrl-C at the prompt -- end the session,
+// which is what typing "exit" does too, so neither is a failure. A newline is
+// printed first because the keystroke left the cursor sitting after the prompt,
+// and without it the shell's next prompt would be appended to Ego's.
+func endInteractiveSession(readErr error) (int, error) {
+	fmt.Println()
+
+	if goErrors.Is(readErr, io.ErrInterrupted) {
+		ui.Log(ui.CLILogger, "cli.console.interrupt", nil)
+	} else {
+		ui.Log(ui.CLILogger, "cli.console.eof", nil)
+	}
+
+	return 0, nil
+}
+
+// consolePrompt builds the interactive prompt string from the program's own
+// name, so that a renamed executable prompts with the name the user invoked.
+//
+// The extension is trimmed without regard to case because Windows reports
+// program names in whatever case the file system recorded, and a prompt of
+// "EGO.EXE> " helps nobody.
+func consolePrompt(programName string) string {
+	if len(programName) >= 4 && strings.EqualFold(programName[len(programName)-4:], ".exe") {
+		programName = programName[:len(programName)-4]
+	}
+
+	return programName + "> "
 }
 
 // For a given error, determine if the error state contains a request to exit, in which case the shell exit
@@ -662,17 +961,24 @@ func inputUntilBlocksBalance(interactive bool, t *tokenizer.Tokenizer, text stri
 			}
 		}
 
-		if continuation {
-			text = text + io.ReadConsoleText("...> ")
-			t = tokenizer.New(text, true)
-			lineNumber++
-
-			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-
-			continue
-		} else {
+		if !continuation {
 			break
 		}
+
+		// Ask for the next line of the block. If the input ends instead --
+		// Ctrl-D, or Ctrl-C -- stop asking. Previously the end of the input
+		// came back as an empty line, so the brace count never changed and
+		// this loop prompted forever with no way out but to kill the process.
+		more, readErr := io.ReadConsoleText("...> ")
+		if readErr != nil {
+			break
+		}
+
+		text = text + more
+		t = tokenizer.New(text, true)
+		lineNumber++
+
+		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
 
 	return t
@@ -739,17 +1045,27 @@ func runCompiledCode(b *bytecode.ByteCode, t *tokenizer.Tokenizer, symbolTable *
 func inputUntilQuotesBalance(wasCommandLine bool, t *tokenizer.Tokenizer, text string, lineNumber int) (*tokenizer.Tokenizer, string, int) {
 	for !wasCommandLine && len(t.Tokens) > 0 {
 		lastToken := t.Tokens[len(t.Tokens)-1]
-		if lastToken.Spelling()[0:1] == "`" && lastToken.Spelling()[len(lastToken.Spelling())-1:] != "`" {
-			text = text + io.ReadConsoleText("...> ")
-			t = tokenizer.New(text, true)
-			lineNumber++
+		spelling := lastToken.Spelling()
 
-			settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
-
-			continue
+		// A raw string that opened with a backtick but has not closed with one
+		// is still being typed. The length check guards the slicing below
+		// against a token with no text at all.
+		if len(spelling) < 1 || spelling[0:1] != "`" || spelling[len(spelling)-1:] == "`" {
+			break
 		}
 
-		break
+		// As in inputUntilBlocksBalance, the end of the input has to stop the
+		// loop; otherwise an unterminated string would prompt forever.
+		more, readErr := io.ReadConsoleText("...> ")
+		if readErr != nil {
+			break
+		}
+
+		text = text + more
+		t = tokenizer.New(text, true)
+		lineNumber++
+
+		settings.SetDefault(defs.AllowFunctionRedefinitionSetting, "true")
 	}
 
 	return t, text, lineNumber

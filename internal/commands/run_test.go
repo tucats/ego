@@ -37,11 +37,24 @@ func Test_readSourceFromConsoleOrPipe_PreservesNewlines(t *testing.T) {
 	w.Close()
 
 	c := &cli.Context{}
+	session := &runSession{}
 
-	_, _, text, _ := readSourceFromConsoleOrPipe(false, c, false, "", "", "") //nolint:dogsled
+	if err := session.readSourceFromConsole(c); err != nil {
+		t.Fatalf("readSourceFromConsole() returned an error: %v", err)
+	}
 
 	const want = "// hello\nfmt.Println(\"hi\")\n"
-	if text != want {
-		t.Errorf("readSourceFromConsoleOrPipe() text = %q, want %q", text, want)
+	if session.text != want {
+		t.Errorf("readSourceFromConsole() text = %q, want %q", session.text, want)
+	}
+
+	// Reading from a pipe means the whole program arrived at once, so the run
+	// loop must not go back for more.
+	if !session.wasCommandLine {
+		t.Error("piped input should be treated as a program supplied all at once")
+	}
+
+	if session.mainName != stdinSourceName {
+		t.Errorf("source name = %q, want %q", session.mainName, stdinSourceName)
 	}
 }
