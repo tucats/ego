@@ -1341,6 +1341,7 @@ cli.console.eof=La entrada de consola terminó, saliendo de la sesión interacti
 cli.console.interrupt=Entrada de consola interrumpida, saliendo de la sesión interactiva
 cli.default.action.args=Pasando argumentos restantes a la acción predeterminada: {{args}}
 cli.default.verb=Usando verbo predeterminado {{verb}}
+cli.entrypoint=La fuente canalizada llamará al punto de entrada {{name}}
 cli.env.resolve=resolviendo env {{name}} = "{{value}}"
 cli.handler=Invocando manejador {{name}} para el valor {{value}}
 cli.invoke=Invocando acción del comando

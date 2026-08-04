@@ -1366,6 +1366,7 @@ cli.console.eof=Console input ended, exiting interactive session
 cli.console.interrupt=Console input interrupted, exiting interactive session
 cli.default.action.args=Passing remaining arguments to default action: {{args}}
 cli.default.verb=Using default verb {{verb}}
+cli.entrypoint=Piped source will call entry point {{name}}
 cli.env.resolve=resolving env {{name}} = "{{value}}"
 cli.handler=Invoking {{name}} handler for value {{value}}
 cli.invoke=Invoking command action

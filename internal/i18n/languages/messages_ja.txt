@@ -1335,6 +1335,7 @@ cli.console.eof=コンソール入力が終了したため、対話セッショ�
 cli.console.interrupt=コンソール入力が中断されたため、対話セッションを終了します
 cli.default.action.args=残りの引数をデフォルトアクションに渡します: {{args}}
 cli.default.verb=デフォルト動詞 {{verb}} を使用中
+cli.entrypoint=パイプされたソースはエントリポイント {{name}} を呼び出します
 cli.env.resolve=env {{name}} = "{{value}}" を解決中
 cli.handler=値 {{value}} の {{name}} ハンドラーを呼び出し中
 cli.invoke=コマンドアクションを呼び出し中

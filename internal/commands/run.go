@@ -63,6 +63,14 @@ type runSession struct {
 	isProject   bool   // source was a directory of files, not one file
 	extensions  bool   // Ego language extensions, such as "help", are enabled
 
+	// entryPoint is the function to call once everything has compiled, and
+	// entryPointGiven records whether the user named it themselves with
+	// --entry-point rather than it being the default of "main". See
+	// readPipedSource, where the difference decides whether a piped program
+	// is run or merely compiled.
+	entryPoint      string
+	entryPointGiven bool
+
 	// wasCommandLine is true when the whole program was supplied at once --
 	// named on the command line, or piped in -- rather than typed a statement
 	// at a time. It is what decides whether the run loop goes round again.
@@ -136,10 +144,14 @@ func RunAction(c *cli.Context) error {
 
 	// Get the default entry point from the command line, if specified.
 	// If not, use the default value of "main".
-	entryPoint, _ := c.String("entry-point")
+	entryPoint, entryPointGiven := c.String("entry-point")
 	if entryPoint == "" {
 		entryPoint = defs.Main
+		entryPointGiven = false
 	}
+
+	session.entryPoint = entryPoint
+	session.entryPointGiven = entryPointGiven
 
 	// How many parameters were found on the command line?
 	argc := c.ParameterCount()
@@ -400,12 +412,74 @@ func (s *runSession) readPipedSource() error {
 		return errors.New(err)
 	}
 
-	s.text = text
+	s.text = s.entryPointForPipedSource(text)
 
 	ui.Log(ui.CLILogger, "cli.source", ui.A{
 		"text": s.text})
 
 	return nil
+}
+
+// entryPointForPipedSource appends the directive that calls a piped program's
+// entry point, when the program looks like one.
+//
+// This is the difference between the two things a pipe can carry. A few loose
+// statements -- "echo 'fmt.Println(1+2)' | ego run" -- are meant to be
+// executed as they stand, exactly as if they had been typed at the console,
+// and there is nothing to call. A complete program, on the other hand,
+// declares its work inside a function and would otherwise be compiled and then
+// simply discarded, producing no output and a successful exit status, which is
+// a thoroughly confusing thing for a program to do.
+//
+// The two are told apart by looking for the entry point function in the source.
+// That is done with the tokenizer rather than by searching the text, so that
+// the words "func main(" appearing inside a comment or a string are not
+// mistaken for a declaration.
+//
+// When the user names an entry point themselves with --entry-point, the
+// directive is emitted whether or not the function was found. They have said
+// plainly that they want it called, so if it is missing they are better served
+// by an error saying so than by silence.
+//
+// Note that this applies only to piped input. Statements typed at the console
+// are executed one at a time as they are entered; there is no point at which
+// the program is complete and something should be called.
+func (s *runSession) entryPointForPipedSource(text string) string {
+	if !s.entryPointGiven && !declaresFunction(text, s.entryPoint) {
+		return text
+	}
+
+	ui.Log(ui.CLILogger, "cli.entrypoint", ui.A{
+		"name": s.entryPoint})
+
+	return text + "\n@entrypoint " + s.entryPoint
+}
+
+// declaresFunction reports whether the source declares a function with the
+// given name, by looking for the three tokens "func", the name, and an opening
+// parenthesis, one after another.
+//
+// Using the tokenizer is what makes this trustworthy. It discards comments
+// entirely and returns a whole string literal as a single token, so neither
+//
+//	// func main() is not written yet
+//	message := "call func main() to start"
+//
+// is mistaken for a declaration. Nor is a function whose name merely begins
+// with the same letters, such as "mainLoop", because the name is compared as a
+// complete token rather than as a prefix of the text.
+func declaresFunction(text string, name string) bool {
+	t := tokenizer.New(text, true)
+
+	for i := 0; i+2 < len(t.Tokens); i++ {
+		if t.Tokens[i].Spelling() == "func" &&
+			t.Tokens[i+1].Spelling() == name &&
+			t.Tokens[i+2].Spelling() == "(" {
+			return true
+		}
+	}
+
+	return false
 }
 
 // readAllStdin reads everything available on the standard input and returns it

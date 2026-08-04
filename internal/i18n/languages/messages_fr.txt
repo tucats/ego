@@ -1335,6 +1335,7 @@ cli.console.eof=Fin de l'entrée de la console, fin de la session interactive
 cli.console.interrupt=Entrée de la console interrompue, fin de la session interactive
 cli.default.action.args=Transmission des arguments restants à l'action par défaut : {{args}}
 cli.default.verb=Utilisation du verbe par défaut {{verb}}
+cli.entrypoint=La source redirigée appellera le point d'entrée {{name}}
 cli.env.resolve=résolution env {{name}} = «{{value}}»
 cli.handler=Invocation du gestionnaire {{name}} pour la valeur {{value}}
 cli.invoke=Invocation de l'action de commande

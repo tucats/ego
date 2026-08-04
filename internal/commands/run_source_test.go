@@ -272,3 +272,119 @@ func TestLoadProject(t *testing.T) {
 		}
 	})
 }
+
+// TestDeclaresFunction checks how a piped program is recognized as a complete
+// program rather than a few loose statements.
+//
+// The cases that matter are the ones where the words look right but declare
+// nothing. Searching the text for "func main(" would accept all of them;
+// scanning tokens does not, because the tokenizer discards comments entirely
+// and returns a whole string literal as a single token.
+func TestDeclaresFunction(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		lookup string
+		want   bool
+	}{
+		{"a plain declaration", "func main() {}\n", "main", true},
+		{"a declaration after a package statement", "package main\n\nfunc main() {\n    fmt.Println(\"hi\")\n}\n", "main", true},
+		{"a declaration with parameters", "func main(argc int) {}\n", "main", true},
+		{"a different name is found when asked for", "func other() {}\n", "other", true},
+		{"loose statements declare nothing", "fmt.Println(1 + 2)\n", "main", false},
+		{"a mention in a line comment is not a declaration", "// func main() is not written yet\nfmt.Println(1)\n", "main", false},
+		{"a mention in a block comment is not a declaration", "/* func main() {} */\nfmt.Println(1)\n", "main", false},
+		{"a mention inside a string is not a declaration", "message := \"call func main() to start\"\n", "main", false},
+		{"a name that merely starts the same way is not a match", "func mainLoop() {}\n", "main", false},
+		{"a function declared under another name", "func other() {}\n", "main", false},
+		{"empty source", "", "main", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := declaresFunction(test.source, test.lookup); got != test.want {
+				t.Errorf("declaresFunction(%q, %q) = %v, want %v",
+					test.source, test.lookup, got, test.want)
+			}
+		})
+	}
+}
+
+// TestEntryPointForPipedSource checks the decision about whether a piped
+// program should have its entry point called.
+//
+// A complete program piped in used to be compiled and then discarded, which
+// produced no output and a successful exit status. Loose statements, by
+// contrast, are meant to run as they stand, so nothing should be called for
+// them.
+func TestEntryPointForPipedSource(t *testing.T) {
+	const program = "package main\nfunc main() {\n    fmt.Println(\"hi\")\n}\n"
+
+	const statements = "fmt.Println(1 + 2)\n"
+
+	tests := []struct {
+		name       string
+		source     string
+		entryPoint string
+		given      bool
+		wantCall   string // the directive expected at the end, or "" for none
+	}{
+		{
+			name:       "a complete program is called without being asked",
+			source:     program,
+			entryPoint: "main",
+			wantCall:   "\n@entrypoint main",
+		},
+		{
+			name:       "loose statements are left to run as they are",
+			source:     statements,
+			entryPoint: "main",
+			wantCall:   "",
+		},
+		{
+			name:       "naming the entry point explicitly also calls it",
+			source:     program,
+			entryPoint: "main",
+			given:      true,
+			wantCall:   "\n@entrypoint main",
+		},
+		{
+			// The user said plainly that they want this called, so the
+			// directive is emitted and a missing function becomes an error
+			// they can see rather than silence.
+			name:       "an explicitly named entry point is called even if absent",
+			source:     statements,
+			entryPoint: "main",
+			given:      true,
+			wantCall:   "\n@entrypoint main",
+		},
+		{
+			name:       "a custom entry point is detected on its own name",
+			source:     "func other() {}\n",
+			entryPoint: "other",
+			wantCall:   "\n@entrypoint other",
+		},
+		{
+			// Only the named entry point counts: a program with a main, but a
+			// request for something else, has not been asked for main.
+			name:       "a main function does not satisfy a request for another name",
+			source:     program,
+			entryPoint: "other",
+			wantCall:   "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			session := &runSession{
+				entryPoint:      test.entryPoint,
+				entryPointGiven: test.given,
+			}
+
+			if got := session.entryPointForPipedSource(test.source); got != test.source+test.wantCall {
+				t.Errorf("entryPointForPipedSource() = %q, want %q",
+					got, test.source+test.wantCall)
+			}
+		})
+	}
+}
