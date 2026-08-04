@@ -1787,6 +1787,7 @@ sql.rollback=トランザクション {{seq}}、{{id}} をロールバック
 sql.rows={{count}}行が影響を受けました
 stats.gc.count=ガベージコレクションサイクル:      {{count|%12d}}
 stats.gc.cpu=ガベージコレクションのCPU割合:     {{cpu|%8.7f}}
+stats.go.routines=実行中のGoルーチン:        {{count|%12d}}
 stats.instructions=実行されたバイトコード命令: {{count|%12d}}
 stats.max.stack=最大ランタイムスタックサイズ:         {{size|%12d}}
 stats.memory.heap=現在ヒープ上のメモリ        {{size|%12d}}
