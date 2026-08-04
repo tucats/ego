@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -107,7 +108,12 @@ func Logon(c *cli.Context) error {
 	// Get the username. If not supplied by the user, prompt until provided.
 	user, _ := c.String(defs.UsernameOption)
 	for strings.TrimSpace(user) == "" {
-		user = ui.Prompt("Username: ")
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt")+ " ")
+		if err == io.EOF {
+			return nil
+		}
 	}
 
 	user = strings.TrimSpace(user)
@@ -126,7 +132,14 @@ func Logon(c *cli.Context) error {
 	}
 
 	for pass == "" {
-		pass = ui.PromptPassword(i18n.L("password.prompt"))
+		var err error
+
+		pass, err = ui.PromptLinePassword(i18n.L("password.prompt"))
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
 	}
 
 	// Lets not log this until we're successfully prompted for missing input

@@ -10,15 +10,15 @@ import (
 	"github.com/tucats/ego/internal/cli/app"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/commands"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/grammar"
 	"github.com/tucats/ego/internal/i18n"
-	EgoRuntime "github.com/tucats/ego/internal/runtime/runtime"
+	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
+	EgoRuntime "github.com/tucats/ego/internal/runtime/runtime"
 )
 
 // BuildVersion is the incremental build version. This is normally
@@ -173,6 +173,7 @@ func dumpStats(start time.Time) {
 		ui.Log(ui.StatsLogger, "stats.objects.heap", ui.A{"size": m.Mallocs - m.Frees})
 		ui.Log(ui.StatsLogger, "stats.total.heap", ui.A{"size": m.TotalAlloc})
 		ui.Log(ui.StatsLogger, "stats.system.heap", ui.A{"size": m.Sys})
+		ui.Log(ui.StatsLogger, "stats.go.routines", ui.A{"count": runtime.NumGoroutine()})
 		ui.Log(ui.StatsLogger, "stats.gc.count", ui.A{"count": m.NumGC})
 		ui.Log(ui.StatsLogger, "stats.gc.cpu", ui.A{"cpu": m.GCCPUFraction})
 	}

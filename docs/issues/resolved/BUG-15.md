@@ -44,4 +44,3 @@ f = append(f, 3)         // succeeds: int→float64 coercion (relaxed/dynamic)
   behavior); added `Test_Append_DynamicModeRejectsIncompatibleType` (BUG-15 fix test)
 - `tests/types/append_type_check.ego` — new Ego-level tests covering: compatible
   appends, string→int rejection, coercible types, interface arrays, multi-element
-

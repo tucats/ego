@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
@@ -40,7 +41,14 @@ func AddUser(c *cli.Context) error {
 	}
 
 	for user == "" {
-		user = ui.Prompt(i18n.L("username.prompt"))
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt") + " ")
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.New(err)
+		}
 	}
 
 	// If the user didn't specify a password on the command line, prompt for
@@ -48,7 +56,14 @@ func AddUser(c *cli.Context) error {
 	// line option.
 	if !passSpecified {
 		for pass == "" {
-			pass = ui.PromptPassword(i18n.L("password.prompt"))
+			var err error
+
+			pass, err = ui.PromptLinePassword(i18n.L("password.prompt"))
+			if err == io.EOF {
+				return nil
+			} else if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -98,7 +113,14 @@ func UpdateUser(c *cli.Context) error {
 	}
 
 	for user == "" {
-		user = ui.Prompt(i18n.L("username.prompt"))
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt") + " ")
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.New(err)
+		}
 	}
 
 	payload := defs.User{
@@ -153,7 +175,14 @@ func RevokeUser(c *cli.Context) error {
 	}
 
 	for user == "" {
-		user = ui.Prompt(i18n.L("username.prompt"))
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt") + " ")
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.New(err)
+		}
 	}
 
 	payload := defs.User{
@@ -194,7 +223,14 @@ func ShowUser(c *cli.Context) error {
 	}
 
 	for user == "" {
-		user = ui.Prompt(i18n.L("username.prompt"))
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt") + " ")
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.New(err)
+		}
 	}
 
 	resp := defs.UserResponse{}
@@ -229,7 +265,14 @@ func DeleteUser(c *cli.Context) error {
 	}
 
 	for user == "" {
-		user = ui.Prompt("Username: ")
+		var err error
+
+		user, err = ui.PromptLine(i18n.L("username.prompt") + " ")
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.New(err)
+		}
 	}
 
 	resp := defs.UserResponse{}

@@ -62,19 +62,31 @@ func PromptLine(p string) (string, error) {
 	return buffer, err
 }
 
+// PromptLinePassword prompts the user with a string prompt, and then
+// allows the user to enter confidential information such as a password
+// without it being echoed on the terminal. The value entered is returned
+// as a string. It differs from PromptPassword in that it will return
+// an io.EOF err if the user pressed control-D or otherwise ends the
+// input.
+func PromptLinePassword(p string) (string, error) {
+	if !IsConsolePipe() {
+		fmt.Print(p)
+	}
+
+	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
+	password := string(bytePassword)
+
+	fmt.Println() // it's necessary to add a new line after user's input
+
+	return password, err
+}
+
 // PromptPassword prompts the user with a string prompt, and then
 // allows the user to enter confidential information such as a password
 // without it being echoed on the terminal. The value entered is returned
 // as a string.
 func PromptPassword(p string) string {
-	if !IsConsolePipe() {
-		fmt.Print(p)
-	}
-
-	bytePassword, _ := term.ReadPassword(int(os.Stdin.Fd()))
-	password := string(bytePassword)
-
-	fmt.Println() // it's necessary to add a new line after user's input
+	password, _ := PromptLinePassword(p)
 
 	return password
 }

@@ -251,13 +251,16 @@ func compileFile(filename, language string, messages map[string]map[string]strin
 			continue
 		}
 
-		// Split the line into the key and the message.
+		// Split the line into the key and the message. Spaces are preserrved in the
+		// message part, but keys are trimmed of loose spaces. This makes it easier
+		// to work on column alignments in the message files by aligning the "="
+		// while working.
 		i := strings.Index(line, "=")
 		if i < 0 {
 			panic(fmt.Sprintf("%s:%d: Malformed line\n", filename, lineNumber))
 		}
 
-		key := line[:i]
+		key := strings.TrimSpace(line[:i])
 		message := line[i+1:]
 
 		if prefix != "" {
