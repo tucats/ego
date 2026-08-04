@@ -551,9 +551,12 @@ func configureOptimizer(c *cli.Context) {
 	}
 
 	// If the optimier level is at least 3, also explicitly enable local variable
-	// "register" tracking.
+	// "register" tracking, global constant folding, and runtime global variable
+	// lookup caching.
 	if settings.GetInt(defs.OptimizerSetting) > 2 {
 		settings.SetDefault(defs.RegistersSetting, "true")
+		settings.SetDefault(defs.ConstFoldSetting, "true")
+		settings.SetDefault(defs.GlobalCacheSetting, "true")
 	}
 }
 

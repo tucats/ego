@@ -264,33 +264,20 @@ understanding how they interact before changing any of them while chasing a bug.
 
 | Setting | Type | Effective default | Controls |
 | ------- | ---- | ------------------ | -------- |
-| `ego.compiler.optimize` | integer level | **0 (disabled)** — see note below | Whether the bytecode peephole optimizer runs at all, and how aggressively |
-| `ego.compiler.registers` | bool | `false`, unless `optimize` is > 2 | Whether eligible local variables compile to integer register slots instead of name-based symbol table lookups |
+| `ego.compiler.optimize` | integer | 3 | Whether the bytecode peephole optimizer runs at all, and how aggressively |
+| `ego.compiler.registers` | bool | `false`, unless opt level > 2 | Whether eligible local variables compile to integer register slots instead of name-based symbol table lookups |
 | `ego.compiler.constfold` | bool | `true` | Whether a package-level `const` reference folds to a literal at compile time instead of a runtime `Load` |
 | `ego.runtime.globalcache` | bool | `true` | Whether a resolved reference to a package-level global (a `var`, or a `const` too complex to fold) is cached on the bytecode so repeat executions skip the scope walk |
 
-**`ego.compiler.optimize`** is read as an integer, not a boolean, via `settings.GetInt`
-(`internal/language/bytecode/bytecode.go`, `ByteCode.Seal()`):
+**Optimizer Levels (expressed as integer):**
 
-- `0` — the optimizer never runs.
-- `1` — the optimizer runs only when the bytecode looks like it would benefit (large enough, or
-  contains a loop — see `Seal()`'s size/loop heuristic).
-- `2` (or higher) — the optimizer always runs, regardless of size.
-- Any value greater than `2` also causes `ego run`/`ego test` to force `ego.compiler.registers`
-  to `true` for that invocation (`configureOptimizer` in `internal/commands/run.go`), on the
-  theory that if you've asked for maximum optimization you also want register-slot locals.
-
-The one thing worth knowing before you go looking for "why isn't the optimizer doing anything":
-the shipped `lib/defaults.json` sets `"ego.compiler.optimize": true` — a JSON *boolean*. Because
-this setting is consumed with `GetInt`, and `true` doesn't parse as a number, that value is read
-back as `0`. In other words, out of the box (a freshly created profile, no explicit `--set` or
-`--optimize`), the peephole optimizer is effectively **off** for both `ego run` and `ego test`,
-despite the defaults file's apparent intent to enable it. `ego test` additionally forces the
-level to `0` explicitly at the start of every test run regardless of the profile
-(`internal/commands/test.go`), since individual test cases are short, rarely loop, and run once —
-not the workload the optimizer helps. Use `--optimize=<n>` on the command line, or
-`--set ego.compiler.optimize=<n>`, to get a non-zero level; `ego run --optimize` (no value) is
-equivalent to `1`.
+* `0` — the optimizer never runs.
+* `1` — the optimizer runs only when the bytecode looks like it would benefit (large enough, or
+  contains a loop.
+* `2` (or higher) — the optimizer always runs, regardless of size.
+* Any value greater than `2` also causes `ego run`/`ego test` to force `ego.compiler.registers`,
+  `ego.compiler.constfold`, and `ego.runtime.globalcache` to `true`. The assumption is that for
+  this level of optimization, you'd want maximum compiler and runtime performance.
 
 **`ego.compiler.registers`** (docs/internals/SLOTS.md) governs whether a function's parameters
 and `:=`/`var` block locals — for functions proven not to contain a capturing closure, `go`, or
@@ -322,8 +309,8 @@ counterpart to `constfold`, and covers the cases `constfold` doesn't: a package-
 `const` too complex to fold at compile time. When a `Load`/`Store`/`AddressOf`/`Deref`
 instruction resolves such a name to its owning global symbol table (the program's own top-level
 table, or an imported package's table), the resolved table is cached on the compiled `*ByteCode`
-instruction itself, so a later execution of the *same instruction* — including from deep
-recursion — skips the O(depth) walk through intervening call frames. It defaults to `true`, and
+instruction itself, so a later execution of the _same instruction_ - including from deep
+recursion - skips the O(depth) walk through intervening call frames. It defaults to `true`, and
 is a pure kill-switch: setting it `false` restores the always-correct, unoptimized name-based
 walk on every access. If you're debugging something that smells like a stale or incorrectly
 shared reference to a package `var` — particularly anything involving goroutines, closures, or
@@ -517,7 +504,7 @@ Server settings below instead.
 ### OAuth2 Resource Server settings
 
 These activate when `ego.server.oauth.provider` is non-empty, and configure how this server
-validates JWT Bearer tokens issued by an *external* identity provider.
+validates JWT Bearer tokens issued by an _external_ identity provider.
 
 | Setting | Description |
 | ------- | ----------- |
