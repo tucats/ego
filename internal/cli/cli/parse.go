@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -170,11 +172,20 @@ func verifyRequiredOptionsPresent(c *Context) error {
 				}
 
 				// Prompt the user. If they don't enter something bail out. We let the user try to enter
-				// the value three times before giving up.
+				// the value three times before giving up. If the user enters a ctrl-D or otherwise
+				// ends the input stream, we just bail out entirely at this point.
 				count := 3
 				for count > 0 && value == "" {
+					var err error
+
 					count--
-					value = ui.Prompt(p + " ")
+
+					value, err = ui.PromptLine(p + " ")
+					if err == io.EOF {
+						os.Exit(0)
+					} else if err != nil {
+						return err
+					}
 				}
 
 				if value == "" {
@@ -403,14 +414,25 @@ func invokeAction(c *Context) error {
 			"count": g.ParameterCount()})
 	}
 
-	// Prompt for any missing parameters if a prompt has been provided.
+	// Prompt for any missing parameters if a prompt has been provided. The prompt for the
+	// missing parameters continues until the prompt is supplied, or the user abort. IF the
+	// user aborts input with ctrl-D or similar, then we just end the whole parse and give
+	// up.
 	if len(g.Prompts) > 0 {
 		for i := 0; i < g.MinParams; i++ {
 			if i >= len(g.Parameters) && i <= len(g.Prompts) && g.Prompts[i] != "" {
 				value := ""
 				for value == "" {
+					var err error
+
 					text := i18n.L(g.Prompts[i])
-					value = ui.Prompt(text + " ")
+
+					value, err = ui.PromptLine(text + " ")
+					if err == io.EOF {
+						os.Exit(0)
+					} else if err != nil {
+						return errors.New(err)
+					}
 
 					g.Parameters = append(g.Parameters, value)
 				}

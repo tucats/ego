@@ -38,7 +38,7 @@ var CreateVerbGrammar = []cli.Option{
 		ParmDesc:      "username",
 		ExpectedParms: -1,
 		MinParams:     1,
-		Prompts:       []string{"prompt.user"},
+		Prompts:       []string{"prompt.user.name"},
 		Action:        commands.AddUser,
 		Value:         ServerUserGrammar,
 	},

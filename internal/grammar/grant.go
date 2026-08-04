@@ -37,7 +37,7 @@ var GrantVerbGrammar = []cli.Option{
 		ParmDesc:      "username",
 		ExpectedParms: -1,
 		MinParams:     1,
-		Prompts:       []string{i18n.L("prompt.user")},
+		Prompts:       []string{i18n.L("prompt.user.name")},
 		Action:        commands.UpdateUser,
 		Value: []cli.Option{
 			{
