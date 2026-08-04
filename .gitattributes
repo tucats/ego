@@ -1,0 +1,45 @@
+# Line ending policy.
+#
+# Git can be told to rewrite the line endings of text files when they are
+# checked out, so that they match whatever the local operating system prefers.
+# On Windows that means turning every "\n" into "\r\n", and the Git for Windows
+# installer turns this on by default (it sets core.autocrlf=true). Without the
+# rules in this file, whether a given file has carriage returns in it depends
+# on which machine last checked it out.
+#
+# For most of this repository that would be harmless. For the lib directory it
+# is not, for two reasons:
+#
+#   - Those files are packed verbatim into an archive that is embedded inside
+#     the ego executable (see internal/cli/app/library.go), and unpacked
+#     verbatim onto the user's disk. Carriage returns introduced at checkout
+#     time on a build machine are therefore shipped to every user of that
+#     build. The help text is matched line by line against exact strings, so
+#     the result was that the "help" command in the interactive console could
+#     not find any topic at all.
+#
+#   - The archive is meant to be reproducible: building it twice from the same
+#     source must produce identical bytes. If the working copy differs between
+#     a Windows checkout and a Unix one, so does the archive.
+#
+# "text eol=lf" tells Git to store these files with line feeds, as it always
+# has, and to also write line feeds into the working tree on every platform.
+
+lib/**  text eol=lf
+
+# The dashboard's images are not text, and must never have anything rewritten
+# inside them. This rule comes after the one above because when two patterns
+# match the same file, the last one wins.
+
+lib/**/*.png  binary
+
+# The message catalogs are read by the tools/lang generator and compiled into
+# the executable, so they get the same treatment for the same reasons.
+
+internal/i18n/languages/*.txt  text eol=lf
+
+# Go source is not affected by any of this -- the compiler accepts either
+# convention -- but keeping it consistent means "git diff" never reports that
+# every line of a file changed just because it was edited on another platform.
+
+*.go    text eol=lf

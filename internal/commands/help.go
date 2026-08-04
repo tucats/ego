@@ -28,6 +28,62 @@ const (
 	helpFileSuffix = ".txt"
 )
 
+// helpCommand examines the pending interactive input and reports whether the
+// next line of it is a "help" command. When it is, the topic words on that
+// line are returned along with everything that came after the line, which the
+// caller must go on to process as ordinary Ego source.
+//
+// Returning the remainder separately is the whole point of this function.
+// Input does not always arrive one line at a time. When Ego's input is a pipe
+// rather than a console -- "ego run < script.ego", or a script piped in from
+// another command -- the entire input is read into a single string before the
+// run loop starts (see readSourceFromConsoleOrPipe). The help command used to
+// be recognized by testing that whole string for a "help " prefix and then
+// treating all of it as one command line, which had two consequences:
+//
+//   - The topic name swallowed the rest of the script. "help legal" followed
+//     by more statements asked for a topic named "legal\nfmt.Println(...)",
+//     which of course does not exist, so the user was told the topic could not
+//     be found.
+//
+//   - Everything after the help command was then discarded without being run
+//     or reported, because the caller replaced the whole input with an empty
+//     string.
+//
+// Splitting at the first line ending fixes both. Note that the caller loops,
+// so a script that opens with several help commands in a row has each of them
+// handled in turn.
+func helpCommand(text string) ([]string, string, bool) {
+	var line, rest string
+
+	// Split off the first line. strings.Cut looks for the separator and
+	// reports whether it was there at all; when it was not, the input is a
+	// single line with nothing following it.
+	if before, after, found := strings.Cut(text, "\n"); found {
+		line, rest = before, after
+	} else {
+		line, rest = text, ""
+	}
+
+	// A Windows line ending leaves a carriage return behind once the line
+	// feed has been removed, and TrimSpace also disposes of any stray blanks
+	// around the command itself.
+	command := strings.ToLower(strings.TrimSpace(line))
+
+	// The line has to be the word "help" on its own, or the word "help"
+	// followed by the topic being asked about. Testing for "help" followed by
+	// a space matters: without it, an Ego statement that merely begins with
+	// those four letters, such as a call to a function named "helper", would
+	// be mistaken for a request for documentation.
+	if command != helpKey && !strings.HasPrefix(command, helpKey+" ") {
+		return nil, "", false
+	}
+
+	// strings.Fields splits on any run of whitespace and discards empty
+	// pieces, so "help  command   options" yields exactly three words.
+	return strings.Fields(command), rest, true
+}
+
 // help displays help text for a given help command line. The first token is usually
 // the keyword "help", though if present this is skipped over. The remaining strings
 // are trimmed and converted to lower-case, and make into a single composite key that
@@ -36,7 +92,11 @@ func help(userKeys []string) {
 	keys := make([]string, 0)
 
 	for n, key := range userKeys {
-		key = strings.TrimSuffix(key, "\n")
+		// Strip the line ending from the last key on the line. TrimRight
+		// removes any mixture of the two characters a line ending can be
+		// made of, so this works whether the console handed back "topics\n"
+		// or "topics\r\n".
+		key = strings.TrimRight(key, "\r\n")
 
 		// Skip over the leading "help" token if found.
 		if n == 0 && key == helpKey {
@@ -83,7 +143,7 @@ func printHelp(keys []string) {
 		return
 	}
 
-	lines := strings.Split(string(b), "\n")
+	lines := splitLines(string(b))
 	topic := strings.TrimSpace(strings.Join(keys, "."))
 
 	ui.Log(ui.AppLogger, "app.help", ui.A{
@@ -92,14 +152,49 @@ func printHelp(keys []string) {
 	ui.Log(ui.AppLogger, "app.help.key", ui.A{
 		"key": topic})
 
-	// Trim any trailing spaces from each line in the array
+	// Trim any trailing spaces from each line in the array. The help text is
+	// matched against exactly, so a stray space at the end of a ".topic" line
+	// in the file would stop that topic from ever being found.
 	for i := 0; i < len(lines); i++ {
-		for strings.HasSuffix(lines[i], " ") {
-			lines[i] = strings.TrimSuffix(lines[i], " ")
-		}
+		lines[i] = strings.TrimRight(lines[i], " ")
 	}
 
 	printTopicFromLines(topic, lines)
+}
+
+// splitLines breaks the text of a help file into individual lines, accepting
+// any of the three line ending conventions that text files use.
+//
+// This matters because the help files are matched against exactly. A topic is
+// located by testing whether a line is equal to ".topic introduction", so if
+// the line the file actually contains is ".topic introduction" followed by a
+// carriage return, no topic is ever found and every help request reports
+// "Help topic not found".
+//
+// That is not a hypothetical. Git can be configured to convert text files to
+// the local convention when they are checked out, and on Windows the
+// installer's default setting does exactly that. A developer building Ego on
+// Windows would get a lib directory whose help files end every line with a
+// carriage return and a line feed, that archive would be packed into the
+// executable, and help would then be broken for every user of that build.
+// The repository's .gitattributes file now prevents the conversion, but this
+// function makes the reader tolerant of it either way -- including for anyone
+// who already has a converted copy installed.
+//
+// The three conventions are:
+//
+//	"\r\n"  Windows, and the internet's text protocols
+//	"\n"    Unix, Linux, and macOS
+//	"\r"    classic Mac OS, before Mac OS X
+//
+// Converting the first two forms into the third's separator and then doing a
+// single split handles all three without needing to know which one was used,
+// and without caring if a single file happens to mix them.
+func splitLines(text string) []string {
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\r", "\n")
+
+	return strings.Split(text, "\n")
 }
 
 func printTopicFromLines(topic string, lines []string) {

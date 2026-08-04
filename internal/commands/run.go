@@ -516,12 +516,16 @@ func runLoop(dumpSymbols bool, interactive bool, extensions bool, text string, d
 	for {
 		// If we are processing interactive console commands, and help is enabled, and this is a
 		// "help" command, handle that specially.
-		if interactive && extensions && (strings.HasPrefix(text, "help\n") || strings.HasPrefix(text, "help ")) {
-			keys := strings.Split(strings.ToLower(text), " ")
-
+		//
+		// Only the one line the command occupies is consumed; anything that
+		// followed it is put back into text and goes on to be compiled as
+		// normal. That matters when the input is a pipe rather than a
+		// console, because in that case the whole script has already been
+		// read into text in one piece. See helpCommand in help.go.
+		if keys, rest, found := helpCommand(text); found && interactive && extensions {
 			help(keys)
 
-			text = ""
+			text = rest
 
 			continue
 		}
