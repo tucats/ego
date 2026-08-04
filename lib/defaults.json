@@ -9,11 +9,15 @@
     "ego.compiler.extensions": true,
     "ego.compiler.import": true,
     "ego.compiler.normalized": false,
-    "ego.compiler.optimize": true,
+    "ego.compiler.optimize": 3,
+    "ego.compiler.constfold": true,
+    "ego.compiler.registers": true,
+    "ego.compiler.type.shadowing": true,
     "ego.compiler.types": "dynamic",
     "ego.compiler.unknown.var.error": true,
     "ego.compiler.unused.var.error": true,
     "ego.console.output": "text",
     "ego.console.readline": true,
-    "ego.runtime.precision.error": true
+    "ego.runtime.precision.error": true,
+    "ego.runtime.float.div.zero.error": false
 }
