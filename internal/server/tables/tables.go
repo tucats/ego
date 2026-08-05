@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
-	"github.com/tucats/ego/internal/language/data"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/strings"
@@ -441,11 +442,19 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
 		}
 
-		q, err := parsing.QueryParameters(tableDeleteQuery, map[string]string{
+		// Note the deliberate use of a separate name here rather than ":=" on
+		// "err". A ":=" would declare a *second* err scoped to this block, and
+		// the "_, err = db.Exec(q)" below would then assign to that inner copy.
+		// The outer err would still be nil when execution falls out of this
+		// block, and the error-reporting code at the end of the function --
+		// which calls err.Error() -- would dereference nil and panic. Dropping
+		// a table that does not exist did exactly that, and the server's panic
+		// recovery turned it into a generic 500 (REST-1).
+		q, queryErr := parsing.QueryParameters(tableDeleteQuery, map[string]string{
 			"table": tableName,
 		})
-		if err != nil {
-			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.table.delete.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		if queryErr != nil {
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.table.delete.query", ui.A{"err": queryErr.Error()}), http.StatusInternalServerError)
 		}
 
 		// When dropping a table via a DSN, the correct DROP TABLE syntax depends on
@@ -526,10 +535,9 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 		"session": sessionID,
 		"error":   detail})
 
-	status := http.StatusBadRequest
-	if strings.Contains(detail, "does not exist") {
-		status = http.StatusNotFound
-	}
+	// Dropping a table that does not exist is a 404. This used to match only
+	// PostgreSQL's wording, so SQLite answered 400 for the same case (REST-1).
+	status := dberrors.PayloadStatus(err)
 
 	return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.table.delete.error"), status)
 }

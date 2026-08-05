@@ -1,5 +1,5 @@
 {
-    "description": "a bare timezone abbreviation no zone table can resolve is rejected rather than stored with a guessed offset (TIME-2)",
+    "description": "a bare timezone abbreviation no zone table can resolve is rejected with 400 rather than stored with a guessed offset (TIME-2, status per REST-1)",
     "request": {
         "method": "PUT",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events/rows",
@@ -17,7 +17,7 @@
         ]
     },
     "response": {
-        "status": 409,
+        "status": 400,
         "headers": {
             "Content-Type": ["error+json"]
         }

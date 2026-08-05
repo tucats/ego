@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 )
 
@@ -137,10 +138,10 @@ func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolT
 				"status":  status})
 		}
 	} else {
-		status = http.StatusBadRequest
-		if strings.Contains(strings.ToLower(err.Error()), "does not exist") {
-			status = http.StatusNotFound
-		}
+		// A select against a missing table is a 404. Ego built this query, so
+		// an unrecognized execution failure is a server-side 500 rather than a
+		// complaint about the request (REST-1).
+		status = dberrors.ExecStatus(err)
 	}
 
 	if err != nil {

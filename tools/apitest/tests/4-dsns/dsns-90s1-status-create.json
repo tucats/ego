@@ -1,0 +1,66 @@
+{
+    "description": "REST-1 status codes: create a table with a unique column and a NOT NULL column to exercise each failure class",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": [
+            {
+                "name": "id",
+                "type": "int",
+                "size": 0,
+                "nullable": {
+                    "specified": true,
+                    "value": false
+                },
+                "unique": {
+                    "specified": true,
+                    "value": true
+                }
+            },
+            {
+                "name": "n",
+                "type": "int",
+                "size": 0,
+                "nullable": {
+                    "specified": true,
+                    "value": false
+                },
+                "unique": {
+                    "specified": false,
+                    "value": false
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": [
+                "rowcount+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

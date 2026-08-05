@@ -7,16 +7,17 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // ReadTable handler reads the metadata for a given table, and returns it as an array
@@ -97,12 +98,11 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// Something failed, and it's stored in the 'err' variable. Trim off any leading "pq: " prefix
 	// put there for database errors from the Postgresql driver.
 	msg := i18n.Text(session.Language, "error.table.metadata.error", ui.A{"err": strings.TrimPrefix(err.Error(), "pq: ")})
-	status := http.StatusBadRequest
-
-	// If the error is due to a non-existing table, return a 404 status code.
-	if strings.Contains(err.Error(), "does not exist") {
-		status = http.StatusNotFound
-	}
+	// A reference to a table that does not exist is a 404. This used to look
+	// for PostgreSQL's "does not exist" wording only, so the same missing table
+	// answered 400 against SQLite (REST-1). Reading metadata is driven entirely
+	// by the request, so anything unrecognized stays a 400.
+	status := dberrors.PayloadStatus(err)
 
 	// If after all this we didn't get an error but we also never got a database connection,
 	// it means there was an unexpected nil pointer error. Report this to the caller as a

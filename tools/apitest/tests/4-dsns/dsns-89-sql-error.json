@@ -1,5 +1,5 @@
 {
-    "description": "verify that a SQL error on a dropped table returns 500 with an error message",
+    "description": "verify that SQL against a dropped table returns 404 -- the table is gone, which is a not-found condition rather than a server fault (REST-1)",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
@@ -14,7 +14,7 @@
         ]
     },
     "response": {
-        "status": 500,
+        "status": 404,
         "headers": {
             "Content-Type": ["error+json"]
         }

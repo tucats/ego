@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -98,14 +99,13 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		_ = db.Rollback()
 
-		status := http.StatusInternalServerError
-		if strings.Contains(err.Error(), "does not exist") || strings.Contains(err.Error(), "not found") {
-			status = http.StatusNotFound
-		}
-
-		if strings.Contains(err.Error(), "constraint") {
-			status = http.StatusConflict
-		}
+		// This used to look for PostgreSQL's "does not exist" wording, so a
+		// missing table answered 404 against PostgreSQL but fell through to 500
+		// against SQLite, which says "no such table" -- the exact mirror of the
+		// bug in rowsAbstract.go. It also treated any error mentioning
+		// "constraint" as a 409, which swept up NOT NULL and CHECK violations
+		// that are really the client sending a bad value (REST-1).
+		status := dberrors.ExecStatus(err)
 
 		return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.execute.error", ui.A{"err": filterErrorMessage(err.Error())}), status)
 	} else {
@@ -144,7 +144,10 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 
 		if len(tokens) > 0 && tokens[0] == "select" {
 			if err := readRowDataTx(db, statement, startTime, w); err != nil {
-				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.Text(db.Session.Language, "error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), http.StatusInternalServerError)
+				// Unlike the query paths Ego builds itself, the statement here
+				// came from the client, so a missing table is a 404 rather
+				// than a server fault (REST-1).
+				return nil, false, util.ErrorResponse(w, db.Session.ID, i18n.Text(db.Session.Language, "error.sql.query.read", ui.A{"err": filterErrorMessage(err.Error())}), dberrors.ExecStatus(err))
 			}
 		} else {
 			rows, err = db.Exec(statement)

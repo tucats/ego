@@ -9,16 +9,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
@@ -141,7 +142,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 			} else {
 				_ = db.Rollback()
 
-				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 			}
 		}
 
@@ -223,11 +224,10 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 			"session": session.ID,
 			"error":   err.Error()})
 
-		if strings.Contains(err.Error(), "no such table") {
-			status = http.StatusNotFound
-		} else {
-			status = http.StatusBadRequest
-		}
+		// This used to look for SQLite's "no such table" wording, so the same
+		// missing table answered 404 against SQLite and 400 against PostgreSQL,
+		// which words it "relation ... does not exist" (REST-1).
+		status = dberrors.ExecStatus(err)
 	}
 
 	return status
@@ -248,11 +248,9 @@ func readAbstractRowData(db *database.Database, q string, session *router.Sessio
 	}
 
 	if err != nil {
-		status := http.StatusInternalServerError
-		// If this is a table-not-found error, change the status code to 404
-		if strings.Contains(err.Error(), "no such table") {
-			status = http.StatusNotFound
-		}
+		// A table-not-found error becomes 404; anything the classifier does not
+		// recognize stays a server-side 500, since Ego built this query itself.
+		status := dberrors.ExecStatus(err)
 
 		util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.query.error", ui.A{"err": err.Error()}), status)
 
@@ -420,7 +418,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 			} else {
 				_ = db.Rollback()
 
-				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 			}
 		}
 

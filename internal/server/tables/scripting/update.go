@@ -8,10 +8,11 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // doUpdate handles the "update" opcode. It builds and executes an UPDATE
@@ -192,12 +193,10 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 			updateErr = errors.ErrTableRowsNoChanges
 		}
 	} else {
+		// See the note in insert.go: "constraint" as a substring is broader
+		// than the uniqueness conflicts 409 is meant for (REST-1).
+		status = dberrors.ExecStatus(updateErr)
 		updateErr = errors.New(updateErr)
-		status = http.StatusBadRequest
-
-		if strings.Contains(updateErr.Error(), "constraint") {
-			status = http.StatusConflict
-		}
 	}
 
 	return int(count), status, updateErr

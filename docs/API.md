@@ -802,6 +802,48 @@ an admin-only raw SQL execution endpoint.
 &nbsp;
 &nbsp;
 
+### Status Codes <a name="tableStatus"></a>
+
+Every table operation reports failure with the same set of status codes,
+whatever endpoint it came from and whichever database is behind the DSN. The
+code tells a client what kind of problem it is, and therefore whether retrying
+the same request could ever succeed:
+
+| Code | Meaning | Typical cause |
+| :--- | :------ | :------------ |
+| 200 | Success | |
+| 204 | No content | An insert payload containing no rows |
+| 400 | The request is malformed, or contains a value the database will not accept | A value that cannot be converted to its column's type; an unknown column name; a `NOT NULL` or `CHECK` constraint violation |
+| 401 | Not authenticated | Missing, expired, or invalid token |
+| 403 | Authenticated, but not permitted | No `read`/`write`/`delete`/`admin` permission for this table |
+| 404 | The named table or row does not exist | Reading, dropping, or querying a table that is not there; a filter that matches no row when the endpoint is configured to treat that as an error |
+| 409 | The request is well-formed but conflicts with data already stored | A duplicate value in a `unique` column; a foreign key violation |
+| 500 | A fault the client cannot correct by changing the request | The database is unreachable, or returned an error Ego does not recognize |
+
+The distinction between 400 and 409 is worth stating precisely, because it is
+the one clients most often need: **400 means the request was wrong, 409 means the
+request was right but the stored data disagrees with it.** Sending `"abc"` for an
+integer column is 400 — no amount of retrying helps. Inserting a row whose key
+already exists is 409 — the identical request would have succeeded a moment
+earlier, and may succeed later.
+
+A `NOT NULL` or `CHECK` violation is a 400 rather than a 409 even though the
+database is what noticed it, because the payload is at fault and no change to the
+stored data would make it acceptable.
+
+These codes are derived from the error the database itself reports, using
+PostgreSQL's SQLSTATE codes and SQLite's result codes, so the same condition
+produces the same status on either provider. A failure Ego cannot classify keeps
+the generic code for where it happened: 400 if the request had not yet reached
+the database, 500 if it had.
+
+Note that naming a DSN that does not exist is currently reported as 400 rather
+than 404. The table above describes the table operations themselves; DSN
+resolution happens before them and has not yet been brought into line.
+
+&nbsp;
+&nbsp;
+
 ### Managing Data Source Names
 
 All DSN management endpoints require admin privileges and the `dsn.admin`
@@ -842,6 +884,9 @@ Lists the current permissions for the named DSN.
 &nbsp;
 
 ### Table Operations <a name="tablesAPI"></a>
+
+The status codes these operations return are documented in
+[Status Codes](#tableStatus) above.
 
 This section covers APIs to:
 

@@ -9,12 +9,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 // doInsert handles the "insert" opcode. It inserts a single new row into
@@ -26,9 +27,9 @@ import (
 //     not use a WHERE clause or a separate column-selector list.
 //  3. Column metadata fetch (getColumnInfo) so that:
 //     a. If defs.TableServerPartialInsertError is set, every table column must
-//        have a corresponding entry in task.Data; missing columns are rejected.
+//     have a corresponding entry in task.Data; missing columns are rejected.
 //     b. Date/time column values are wrapped in single quotes so they are
-//        passed to the database as string literals rather than bare identifiers.
+//     passed to the database as string literals rather than bare identifiers.
 //  4. Row-ID assignment: if the database uses row IDs (db.HasRowID), a new
 //     UUID is generated and inserted into task.Data under defs.RowIDName,
 //     overwriting any value the caller may have supplied.
@@ -107,12 +108,11 @@ func doInsert(sessionID int, user string, db *database.Database, task defs.TXOpe
 
 	_, e := db.Exec(q, values...)
 	if e != nil {
-		status := http.StatusBadRequest
-		if strings.Contains(e.Error(), "constraint") {
-			status = http.StatusConflict
-		}
-
-		return status, e
+		// Matching "constraint" anywhere in the message swept up NOT NULL and
+		// CHECK violations, which are the client sending a bad value (400), as
+		// well as the uniqueness conflicts 409 is for. The driver distinguishes
+		// them by code (REST-1).
+		return dberrors.ExecStatus(e), e
 	}
 
 	return http.StatusOK, nil

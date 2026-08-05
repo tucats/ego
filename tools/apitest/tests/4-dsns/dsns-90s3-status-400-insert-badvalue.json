@@ -1,0 +1,48 @@
+{
+    "description": "REST-1 status codes: a value that cannot be coerced to the column type is 400 on insert. This used to be 409, disagreeing with the update path below for the identical error",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck/rows",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "id": 2,
+            "n": "not-a-number"
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "message names the bad value",
+            "query": "msg",
+            "op": "contains",
+            "value": "not-a-number"
+        }
+    ]
+}

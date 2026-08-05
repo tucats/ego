@@ -14,16 +14,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	data "github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	data "github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 const insertErrorPrefix = "insert error: "
@@ -266,16 +267,19 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return status
 		}
 
-		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), http.StatusBadRequest)
+		// This is the transaction commit failing, after the rows themselves were
+		// accepted, so the client's payload is not implicated.
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
 	if err != nil {
-		status := http.StatusBadRequest
-		if strings.Contains(err.Error(), "no privilege") {
-			status = http.StatusForbidden
-		}
-
-		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), status)
+		// This used to decide between 403 and 400 with
+		// strings.Contains(err.Error(), "no privilege"). Error() renders using
+		// the process-wide language, and only the English catalog entry
+		// contains that phrase, so on a server running in any other language a
+		// permission denial was reported as a malformed request. Classify
+		// compares the error's identity instead (REST-1).
+		return util.ErrorResponse(w, session.ID, insertErrorPrefix+errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	return http.StatusOK
@@ -420,15 +424,22 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 			q, values, err = parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
 		}
 
+		// Building the query is where the payload's values are coerced to their
+		// column types, so an unrecognized failure here is the client's. This
+		// used to be an unconditional 409, which meant the identical bad value
+		// reported 409 on this path and 400 on the update path (REST-1).
 		if err != nil {
-			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
+		// Executing it is where the database gets its say: a uniqueness
+		// conflict is 409, a value it rejects is 400, a missing table is 404,
+		// and anything else is the server's problem rather than the client's.
 		_, err = db.Exec(q, values...)
 		if err == nil {
 			count++
 		} else {
-			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 		}
 	}
 
@@ -520,7 +531,9 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 
 		columns, err = getColumnInfo(db, tableName, true)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			// The table name came from the URL, so a missing table is the
+			// client's reference being wrong -- 404, not 400 (REST-1).
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
 		selectedColumns := parsing.ColumnsFromURL(r.URL)
@@ -607,7 +620,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		"session": session.ID,
 		"error":   err.Error()})
 
-	return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+	return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 }
 
 func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *router.Session, w http.ResponseWriter) error {
@@ -869,7 +882,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 
 			_ = db.Rollback()
 
-			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
 		counts, err := db.Exec(q, values...)
@@ -879,7 +892,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 		} else {
 			_ = db.Rollback()
 
-			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusConflict)
+			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 		}
 	}
 
