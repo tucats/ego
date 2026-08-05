@@ -34,3 +34,7 @@ HELLO
 
 **Workaround:**  
 Import the package under its canonical name and use it without aliasing.
+
+**Resolution**
+This was resolved. The import parser correctly records the package
+alias now.
