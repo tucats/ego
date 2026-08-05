@@ -13,8 +13,8 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
-	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/strings"
@@ -141,7 +141,8 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		err = errors.ErrGeneric
 	}
 
-	return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
+	// A DSN named in the URL that does not exist is a 404 (REST-2).
+	return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 }
 
 func getColumnPayload(r *http.Request, w http.ResponseWriter, session *router.Session) ([]defs.DBColumn, int) {

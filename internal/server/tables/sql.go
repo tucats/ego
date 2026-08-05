@@ -16,8 +16,8 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
-	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -78,7 +78,8 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// We always do this under control of a transaction, so set that up now.
 	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err != nil {
-		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		// A DSN that does not exist is a 404, not a server fault (REST-2).
+		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	} else {
 		defer db.Close()
 	}

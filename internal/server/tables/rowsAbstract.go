@@ -15,8 +15,8 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
-	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/strings"
@@ -179,7 +179,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	}
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.insert.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.insert.error", ui.A{"err": err.Error()}), dberrors.PayloadStatus(err))
 	}
 
 	return http.StatusOK

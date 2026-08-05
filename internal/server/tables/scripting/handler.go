@@ -16,6 +16,7 @@ import (
 	"github.com/tucats/ego/internal/language/expressions"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
@@ -361,7 +362,23 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 				"session": session.ID,
 				"body":    string(b)})
 		}
+
+		return http.StatusOK
 	}
 
-	return http.StatusOK
+	// The database could not be opened -- the DSN does not exist, or this user
+	// holds no permission on it. Every path above this point is inside the
+	// "opened successfully" branch, so without this the function fell through to
+	// a bare "return http.StatusOK" having written nothing at all: the client
+	// received 200 with an empty body and no way to tell a transaction that
+	// never ran from one that committed (REST-2).
+	//
+	// db can also be nil with a nil error, which is why this does not simply
+	// test err; that combination is not expected, but reporting it as a server
+	// fault is far better than reporting success.
+	if err == nil {
+		err = errors.ErrNoDatabase
+	}
+
+	return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 }

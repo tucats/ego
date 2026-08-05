@@ -1,5 +1,5 @@
 {
-    "description": "GET a nonexistent DSN with Accept-Language: fr. The server should negotiate French and return the error message translated from the French catalog (error.dsn.not.found), proving Accept-Language support actually changes the rendered text rather than always returning English.",
+    "description": "GET a nonexistent DSN with Accept-Language: fr. The server should negotiate French and return the error message translated from the French catalog (error.dsn.not.found), proving Accept-Language support actually changes the rendered text rather than always returning English. The status is 404 per REST-2; this test is about the message text, not the code.",
     "request": {
         "method": "GET",
         "endpoint": "/dsns/no-such-dsn-xyz-{{DSNUUID}}/",
@@ -11,7 +11,7 @@
         }
     },
     "response": {
-        "status": 400,
+        "status": 404,
         "headers": {
             "Content-Type": ["error+json"]
         }

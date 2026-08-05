@@ -203,6 +203,8 @@ func TestClassify_EgoErrors(t *testing.T) {
 		{"permission", egoerrors.ErrNoPrivilegeForOperation, Permission},
 		{"ambiguous timezone", egoerrors.ErrAmbiguousTimeZone, InvalidValue},
 		{"invalid column name", egoerrors.ErrInvalidColumnName, InvalidValue},
+		{"missing DSN", egoerrors.ErrNoSuchDSN, NotFound},
+		{"missing transaction", egoerrors.ErrTransactionNotFound, NotFound},
 		{"unrelated Ego error", egoerrors.ErrInvalidInteger, Unclassified},
 	}
 
@@ -281,5 +283,51 @@ func TestStatusMapping(t *testing.T) {
 				t.Errorf("PayloadStatus() = %d, want %d", got, testCase.want)
 			}
 		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// The DSN layer (REST-2)
+// ---------------------------------------------------------------------------
+
+func TestClassify_MissingDSNIsNotFound(t *testing.T) {
+	// A DSN named in a URL path that does not exist is as much a not-found
+	// condition as a missing table. Before REST-2 this reached the handlers
+	// unclassified and was reported as 400 by most of them, 500 by three, and
+	// 200 by the @transaction endpoint.
+	err := egoerrors.ErrNoSuchDSN.Context("nosuchdsn")
+
+	if got := Classify(err); got != NotFound {
+		t.Errorf("Classify() = %v, want NotFound", got)
+	}
+
+	if got := PayloadStatus(err); got != http.StatusNotFound {
+		t.Errorf("PayloadStatus() = %d, want %d", got, http.StatusNotFound)
+	}
+}
+
+func TestClassify_DSNPermissionOutranksNotFound(t *testing.T) {
+	// database.Open returns ErrNoPrivilegeForOperation for a DSN that exists but
+	// this user may not use, and ErrNoSuchDSN when it is not there at all. The
+	// two must stay distinguishable: a caller denied access should be told so
+	// (403) rather than told the DSN does not exist (404).
+	denied := egoerrors.ErrNoPrivilegeForOperation.Context("somedsn")
+
+	if got := Classify(denied); got != Permission {
+		t.Errorf("Classify(denied) = %v, want Permission", got)
+	}
+
+	if got := PayloadStatus(denied); got != http.StatusForbidden {
+		t.Errorf("PayloadStatus(denied) = %d, want %d", got, http.StatusForbidden)
+	}
+}
+
+func TestClassify_MissingTransactionIsNotFound(t *testing.T) {
+	// An unknown or expired transaction id names something that is not there,
+	// so it takes the same class as a missing table or DSN.
+	err := egoerrors.ErrTransactionNotFound.Context("bogus-id")
+
+	if got := PayloadStatus(err); got != http.StatusNotFound {
+		t.Errorf("PayloadStatus() = %d, want %d", got, http.StatusNotFound)
 	}
 }

@@ -816,7 +816,7 @@ the same request could ever succeed:
 | 400 | The request is malformed, or contains a value the database will not accept | A value that cannot be converted to its column's type; an unknown column name; a `NOT NULL` or `CHECK` constraint violation |
 | 401 | Not authenticated | Missing, expired, or invalid token |
 | 403 | Authenticated, but not permitted | No `read`/`write`/`delete`/`admin` permission for this table |
-| 404 | The named table or row does not exist | Reading, dropping, or querying a table that is not there; a filter that matches no row when the endpoint is configured to treat that as an error |
+| 404 | The named thing does not exist | A DSN, table, row, or transaction id that is not there |
 | 409 | The request is well-formed but conflicts with data already stored | A duplicate value in a `unique` column; a foreign key violation |
 | 500 | A fault the client cannot correct by changing the request | The database is unreachable, or returned an error Ego does not recognize |
 
@@ -837,9 +837,16 @@ produces the same status on either provider. A failure Ego cannot classify keeps
 the generic code for where it happened: 400 if the request had not yet reached
 the database, 500 if it had.
 
-Note that naming a DSN that does not exist is currently reported as 400 rather
-than 404. The table above describes the table operations themselves; DSN
-resolution happens before them and has not yet been brought into line.
+This applies to the DSN in the URL path as well as to the table. Naming a DSN
+that does not exist gives 404 from every endpoint, including the DSN management
+routes (`GET`/`DELETE /dsns/{name}`). A DSN that *does* exist but that the caller
+holds no permission on gives 403 rather than 404, so the two cases stay
+distinguishable — Ego does not hide a DSN's existence from an authenticated user
+who simply lacks access to it.
+
+A DSN named in a request *body* rather than a URL path — the item list accepted
+by the DSN permissions endpoint, for example — is validated as request content,
+so an unknown name there is a 400.
 
 &nbsp;
 &nbsp;

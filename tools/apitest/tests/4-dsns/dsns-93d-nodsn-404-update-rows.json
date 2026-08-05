@@ -1,0 +1,41 @@
+{
+    "description": "REST-2: updating through a DSN that does not exist is 404, not 500",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/nosuchdsn-{{DSNUUID}}/tables/t/rows",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "id": 1
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

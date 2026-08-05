@@ -10,11 +10,12 @@ import (
 
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	egodsns "github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -149,7 +150,10 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	dataSourceName, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+		// This answered 400 while DeleteDSNHandler below answered 404 for the
+		// identical error, so adjacent routes on the same path disagreed about
+		// what a missing DSN means (REST-2).
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	// Craft a response object to send back.
@@ -186,12 +190,10 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	dataSourceName, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
-		status = http.StatusBadRequest
-		if errors.Equal(err, errors.ErrNoSuchDSN) {
-			status = http.StatusNotFound
-		}
-
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+		// This route already answered 404 via its own inline check. It now uses
+		// the shared classifier so there is one place that decides, and so it
+		// cannot drift away from GetDSNHandler again (REST-2).
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	if err := egodsns.DSNService.DeleteDSN(session.ID, session.User, name); err != nil {

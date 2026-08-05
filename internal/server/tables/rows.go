@@ -20,8 +20,8 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	data "github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
-	"github.com/tucats/ego/internal/server/tables/dberrors"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 	"github.com/tucats/ego/internal/util/strings"
@@ -129,11 +129,13 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return response.Status
 		}
 
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
+	// Reached when the DSN could not be opened: it does not exist, or this user
+	// has no permission on it. Both were reported as 500 (REST-2).
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	return http.StatusOK
@@ -170,7 +172,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+errors.Localize(err, session.Language), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, "Unable to read table metadata, "+errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
 		buf := new(strings.Builder)
@@ -843,7 +845,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			"count":   count,
 			"status":  status})
 	} else {
-		return util.ErrorResponse(w, session.ID, "Error updating table, "+errors.Localize(err, session.Language), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, "Error updating table, "+errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	return http.StatusOK

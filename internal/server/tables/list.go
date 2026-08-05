@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
@@ -54,7 +55,7 @@ func ListTablesHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		msg = i18n.Text(session.Language, "error.db.nil.pointer")
 	}
 
-	return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+	return util.ErrorResponse(w, session.ID, msg, dberrors.PayloadStatus(err))
 }
 
 // listTables generates the response payload for the list of tables.

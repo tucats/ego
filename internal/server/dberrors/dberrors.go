@@ -117,6 +117,17 @@ func Classify(err error) Class {
 		return InvalidValue
 	}
 
+	// Things named in the request that are not there. A DSN and a transaction
+	// id are as much "not found" as a missing table is, and reporting them any
+	// other way leaves a client unable to tell a typo in a URL from a fault on
+	// the server (REST-2). Note that a DSN which exists but is not permitted to
+	// this user arrives here as ErrNoPrivilegeForOperation, handled above, so
+	// the two cases stay distinguishable.
+	if egoerrors.Equals(err, egoerrors.ErrNoSuchDSN) ||
+		egoerrors.Equals(err, egoerrors.ErrTransactionNotFound) {
+		return NotFound
+	}
+
 	// errors.As walks the chain of wrapped errors looking for one of the given
 	// type. Ego's *errors.Error implements Unwrap, so a driver error keeps its
 	// type even after Ego has wrapped it with additional context.
