@@ -107,7 +107,8 @@ func TestParse_ErrorIsReportedBothWays(t *testing.T) {
 	// return value of ParseAny() finds it.
 	withTimeZoneSetting(t, "America/New_York")
 
-	result, err := Parse(nil, data.NewList("Decembre 7, 1959"))
+	// Let's try this in French...
+	result, err := Parse(nil, data.NewList("Decembre 7, 1959")) //nolint:misspell
 	if err == nil {
 		t.Fatal("expected an error for unparseable input, got nil")
 	}

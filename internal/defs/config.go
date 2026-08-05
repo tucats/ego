@@ -161,7 +161,7 @@ const (
 	// ("America/New_York", "Asia/Tokyo"), the word "UTC", or the word "local"
 	// meaning "whatever timezone this host is configured for". If the setting
 	// is missing entirely, "local" is assumed. See docs/CONFIG.md for a
-	// discussion of why abbreviations are ambiguous. (TIME-1)
+	// discussion of why abbreviations are ambiguous.
 	RuntimeTimeZoneSetting = RuntimeKeyPrefix + "timezone"
 
 	// REST CONFIGURATION KEYS
@@ -797,6 +797,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerDefaultPortSetting:    true,
 	ServerInsecureRedirect:      true,
 	ServerMaxCacheSizeSetting:   true,
+	AuthMaxAttemptsSetting:      true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

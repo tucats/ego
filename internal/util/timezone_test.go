@@ -323,11 +323,11 @@ func TestParseTimestamp_InvalidSettingReported(t *testing.T) {
 }
 
 func TestParseTimestamp_UnrecognizedInput(t *testing.T) {
-	// "Decembre" is not an English month name, so there is no layout to
-	// deduce and the underlying parse fails.
+	// Let's try the French word for "December" to see how it handles it, since
+	// there is no layout to deduce and the underlying parse fails.
 	withTimeZoneSetting(t, "America/New_York")
 
-	if _, err := ParseTimestamp("Decembre 7, 1959"); err == nil {
+	if _, err := ParseTimestamp("Decembre 7, 1959"); err == nil { //nolint:misspell
 		t.Error("expected an error for unparseable input, got nil")
 	}
 }
