@@ -153,6 +153,17 @@ const (
 	// error. By default (false), it follows Go behavior of a +/-Inf value.
 	RuntimeDivZeroError = RuntimeKeyPrefix + "float.div.zero.error"
 
+	// The reference timezone used to give meaning to a bare timezone
+	// abbreviation (such as "EST" or "CST") found in a string being parsed by
+	// time.ParseAny(). An abbreviation on its own carries no numeric UTC
+	// offset, so it can only be resolved by looking it up in the zone table of
+	// some specific location. The value is either an IANA timezone name
+	// ("America/New_York", "Asia/Tokyo"), the word "UTC", or the word "local"
+	// meaning "whatever timezone this host is configured for". If the setting
+	// is missing entirely, "local" is assumed. See docs/CONFIG.md for a
+	// discussion of why abbreviations are ambiguous. (TIME-1)
+	RuntimeTimeZoneSetting = RuntimeKeyPrefix + "timezone"
+
 	// REST CONFIGURATION KEYS
 	// The prefix for all REST  configuration keys.
 	RestKeyPrefix = RuntimeKeyPrefix + "rest."
@@ -762,6 +773,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	ClusterPingIntervalSetting:        true,
 	ClusterPingTimeoutSetting:         true,
 	RuntimeDivZeroError:               true,
+	RuntimeTimeZoneSetting:            true,
 	// OAuth2 Authorization Server settings — all user-settable.
 	OAuthASEnabledSetting:           true,
 	OAuthASKeyFileSetting:           true,

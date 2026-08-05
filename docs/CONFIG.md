@@ -191,6 +191,7 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.runtime.sandbox.path | Root path for sandboxed I/O |
 | ego.runtime.stack.trace | If true, show partial stack contents during trace |
 | ego.runtime.symbol.allocation | Default allocation size of symbol table extensions |
+| ego.runtime.timezone | Reference zone ("local", "UTC", or an IANA name) used to resolve bare zone abbreviations |
 | ego.runtime.unchecked.errors | If true, unchecked errors are returned as runtime errors |
 | ego.server.allow.passkeys | If true, the server will allow FaceID/TouchID passkeys |
 | ego.server.cache.size | Number of service programs to cache in memory |
@@ -365,6 +366,7 @@ optimization work landed) to bisect which layer is responsible.
 | `ego.runtime.stack.trace` | If `true`, the `@trace` directive/tracing output prints the full call stack instead of a single-line summary. |
 | `ego.runtime.float.div.zero.error` | If `true`, dividing a float by zero is a runtime error. Default `false` matches Go's own behavior of producing `+Inf`/`-Inf`/`NaN`. |
 | `ego.runtime.sandbox.path` | If set, every file path an Ego program touches (e.g. via `ReadFile()`) must be under this path, or is silently prefixed with it. Primarily used to confine server-mode file I/O. |
+| `ego.runtime.timezone` | Reference timezone used to give meaning to a bare zone abbreviation (`"EST"`, `"CST"`) in a string passed to `time.ParseAny()`. An IANA name such as `America/New_York`, or `UTC`, or `local` (the default) meaning "whatever this host is configured for". See [Timezones and `time.ParseAny()`](#timezones-and-timeparseany) below — the default is a guess, and a deployment that cares should set this explicitly. |
 
 **REST client settings** (`ego.runtime.rest.*`), which affect Ego programs making outbound REST
 calls and the `ego` CLI's own calls to a server:
@@ -375,6 +377,68 @@ calls and the `ego` CLI's own calls to a server:
 | `ego.runtime.rest.timeout` | Duration string (e.g. `"10s"`) bounding how long a REST client call waits. Default: `10s`. |
 | `ego.runtime.rest.server.cert` | Path to a server certificate to trust for REST calls. Set to `"system"` to use the OS trust store instead of loading a specific file. |
 | `ego.runtime.rest.compression` | If `true` (the default), REST client calls advertise gzip support via `Accept-Encoding`, so a willing server can send a compressed body. Response bodies are transparently decompressed either way — this setting only changes what goes over the wire, useful to turn off when capturing raw traffic with a packet analyzer. |
+
+#### Timezones and `time.ParseAny()`
+
+`ego.runtime.timezone` exists because a timezone _abbreviation_ is not enough information to
+locate a moment in time, and `time.ParseAny()` accepts strings that contain one.
+
+Three kinds of timestamp reach `time.ParseAny()`, and only the third is ambiguous:
+
+| Input | Result | Why |
+| ----- | ------ | --- |
+| `"Dec 7, 1959"` | `1959-12-07 00:00:00 +0000 UTC` | Names no zone at all. Read as UTC, matching Go's own `time.Parse()`. |
+| `"2024-01-15T10:00:00-08:00"` | `2024-01-15 10:00:00 -0800` | States its offset numerically. There is exactly one instant it can mean. |
+| `"December 7, 1959 10:35am EST"` | depends on `ego.runtime.timezone` | `"EST"` is three letters with no offset attached. |
+
+**`ego.runtime.timezone` only affects the third row.** A string with no zone information is
+still read as UTC, and a numeric offset always wins, so setting this cannot shift the meaning
+of a timestamp that was already unambiguous — including a Unix epoch value like `"1500000000"`,
+which is an absolute instant by definition.
+
+**Why abbreviations are genuinely ambiguous.** There is no global registry of them, and they
+collide. `"CST"` is US Central Standard Time (−06:00), China Standard Time (+08:00), and Cuba
+Standard Time (−05:00). `"IST"` is Indian, Irish, and Israel Standard Time. Go can only turn
+an abbreviation into an offset by looking it up in the zone table of some _particular_
+location, so something has to choose that location — there is no correct answer derivable from
+the input string alone. That is what this setting names:
+
+```bash
+ego config set ego.runtime.timezone=America/Chicago   # "CST" means -06:00
+ego config set ego.runtime.timezone=Asia/Shanghai     # "CST" means +08:00
+```
+
+The value is an IANA timezone name (`America/New_York`, `Europe/Paris`, `Asia/Tokyo`), the
+word `UTC`, or the word `local`. Ego embeds a copy of the IANA timezone database, so a named
+zone loads even on a slim container image that ships no timezone data of its own.
+
+**What `local` means, and why it is only a guess.** `local` is the value a new configuration
+starts with, and it means "resolve abbreviations against whatever timezone this host is
+configured for". Ego takes that from the `TZ` environment variable if one is set, otherwise
+from the host's `/etc/localtime`, and otherwise falls back to UTC. That last fallback is the
+catch: a container or minimal server install usually has neither, so its local zone is UTC —
+where no regional abbreviation resolves at all, and `"EST"` silently comes out as `+0000`.
+This is backwards from what a user would want, since the environment least likely to know what
+`"EST"` means is also the most common deployment target.
+
+Nothing better is available to guess with. Go exposes no other locale information, and a
+language or country locale would not settle the question anyway — the United States spans six
+timezones. **If your programs parse timestamps containing abbreviations, set
+`ego.runtime.timezone` explicitly rather than relying on `local`.** That is the only way to get
+the same answer on a developer laptop and in production. A test or a single run can pin it
+without touching the saved configuration:
+
+```bash
+ego --set ego.runtime.timezone=America/New_York run report.ego
+```
+
+**When the abbreviation isn't one the reference zone uses** — parsing `"JST"` against
+`America/New_York`, for instance — the name is kept and the offset is zero. This is not
+reported as an error, because it is what `time.ParseAny()` has always returned for an
+abbreviation it could not resolve, and making it an error would break existing programs that
+tolerate the zero offset. A caller that needs certainty should arrange for a numeric offset in
+the input instead. Setting `ego.runtime.timezone` to a name Go cannot load _is_ reported as an
+error, but only on a call that actually needed a reference zone.
 
 ### Compiler settings (non-optimizer)
 

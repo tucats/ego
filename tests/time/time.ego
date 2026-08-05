@@ -37,7 +37,12 @@
     @assert e == nil
     @assert t.String() == "1959-12-07 10:35:00 +0000 UTC"
 
-    // Date with time zone
+    // Date with time zone. "EST" is only an abbreviation -- it states no
+    // numeric offset -- so ego.runtime.timezone names the location whose zone
+    // table gives it meaning. Pinning it keeps this assertion true on any
+    // host, whatever timezone the machine itself uses (TIME-1).
+    profile.Set("ego.runtime.timezone", "America/New_York")
+
     t, e = time.ParseAny("December 7, 1959 10:35am EST")
     @assert e == nil
     @assert t.String() == "1959-12-07 10:35:00 -0500 EST"

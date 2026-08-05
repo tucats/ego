@@ -10,15 +10,15 @@
 # "echo" prints a line of text to the terminal.
 # "echo ' '" prints a blank line, used here as visual spacing between sections.
 
-# tests/time/parse.ego's "ParseAny flexible format detection" test parses a
-# bare zone abbreviation ("... 10:35am EST") with no numeric offset. Per Go's
-# time.Parse rules (which dateparse.ParseAny follows), a bare abbreviation is
-# only resolved to a real offset if it matches the process's local timezone;
-# otherwise it silently gets a +0000 offset. This pins the local timezone so
-# the test's expected value is reproducible regardless of the host/container
-# it runs on. See docs/issues/TIME-1.md for the underlying issue this papers
-# over -- ParseAny's result depends on the caller's TZ, not just its input.
-export TZ=America/New_York
+# Note: this script used to "export TZ=America/New_York" before running the
+# tests. That was a workaround for TIME-1 -- time.ParseAny() resolved a bare
+# zone abbreviation ("... 10:35am EST") against the host's own timezone, so
+# tests/time/parse.ego's expected offset only held on a US-Eastern machine.
+# ParseAny() now resolves abbreviations against the ego.runtime.timezone
+# setting instead, and the tests that care set it themselves, so the suite is
+# reproducible without pinning the host's timezone. Leaving TZ alone also
+# means the suite runs in whatever zone the developer or container actually
+# uses, which is what would catch a regression of this kind.
 
 echo " "
 echo "Running native Go unit tests"

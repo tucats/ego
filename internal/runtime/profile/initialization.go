@@ -111,6 +111,7 @@ func InitProfileDefaults(class int) error {
 		defs.ServerPanicRecoverySetting:    {ServerDefaults, defs.True},
 		defs.ServerMaxCacheSizeSetting:     {ServerDefaults, "1000"},
 		defs.MaxServiceCacheSizeSetting:    {ServerDefaults, "20"},
+		defs.RuntimeTimeZoneSetting:        {RuntimeDefaults, defs.LocalTimeZone},
 	}
 
 	dirty := false

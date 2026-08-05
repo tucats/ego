@@ -84,6 +84,17 @@ const (
 	Dynamic = "dynamic"
 	Main    = "main"
 
+	// LocalTimeZone is the spelling of the RuntimeTimeZoneSetting value that
+	// means "use whatever timezone this host is configured for" rather than a
+	// specific named zone. It is also the value assumed when the setting is
+	// missing altogether.
+	LocalTimeZone = "local"
+
+	// UTCTimeZone is the spelling of the RuntimeTimeZoneSetting value that
+	// means Coordinated Universal Time -- an offset of exactly zero, with no
+	// daylight-saving transitions, on every host.
+	UTCTimeZone = "UTC"
+
 	// InitFunctionName is the name of the optional package-level function that,
 	// if present, is invoked automatically the first time a package is imported
 	// (mirroring Go's package init() semantics).

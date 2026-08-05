@@ -34,6 +34,13 @@
 
 @test "time: ParseAny flexible format detection"
 {
+    // A bare zone abbreviation like "EST" carries no numeric offset, so it can
+    // only be resolved by looking it up in some particular location's zone
+    // table. ego.runtime.timezone names that location. Pin it here so the
+    // assertion below holds on any machine or container, whatever timezone the
+    // host itself is configured for (TIME-1).
+    profile.Set("ego.runtime.timezone", "America/New_York")
+
     // ParseAny deduces the layout — no format string required.
     // These test cases are also drawn from tests/packages/time.ego.
 
@@ -56,6 +63,89 @@
     t2, e2 := time.ParseAny("2024-01-15")
     @assert e2 == nil
     @assert t2.Hour() == 0
+}
+
+@test "time: ParseAny zone abbreviations use ego.runtime.timezone (TIME-1)"
+{
+    // The same input string, parsed against two different reference zones,
+    // must produce two different -- and in each case predictable -- offsets.
+    // Before this setting existed, the answer depended on the host's own
+    // timezone instead, so it silently changed between a developer machine
+    // and a UTC server.
+
+    // "CST" is the classic ambiguous abbreviation: US Central Standard Time in
+    // Chicago, China Standard Time in Shanghai. Neither reading is more
+    // correct than the other, which is exactly why the reference zone has to
+    // be stated rather than guessed.
+    profile.Set("ego.runtime.timezone", "America/Chicago")
+
+    t, e := time.ParseAny("December 7, 1959 10:35am CST")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 -0600 CST"
+
+    profile.Set("ego.runtime.timezone", "Asia/Shanghai")
+
+    t, e = time.ParseAny("December 7, 1959 10:35am CST")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 +0800 CST"
+
+    // Daylight-saving abbreviations resolve against the same location, at the
+    // offset that abbreviation stands for -- not the one in effect today.
+    profile.Set("ego.runtime.timezone", "America/New_York")
+
+    t, e = time.ParseAny("July 7, 2024 10:35am EDT")
+    @assert e == nil
+    @assert t.String() == "2024-07-07 10:35:00 -0400 EDT"
+
+    // An abbreviation the reference zone does not use at all cannot be
+    // resolved. That is reported as a zero offset rather than an error, which
+    // is what this function has always done for an unrecognized abbreviation.
+    t, e = time.ParseAny("December 7, 1959 10:35am JST")
+    @assert e == nil
+    @assert t.String() == "1959-12-07 10:35:00 +0000 JST"
+}
+
+@test "time: ParseAny timestamps without a zone ignore ego.runtime.timezone"
+{
+    // The setting only gives meaning to an abbreviation. A string that names
+    // no zone at all is still read as UTC, and one that states its offset
+    // numerically already means exactly one instant, so neither may shift when
+    // the reference zone changes.
+    for _, zone := range []string{"UTC", "America/New_York", "Asia/Tokyo"} {
+        profile.Set("ego.runtime.timezone", zone)
+
+        t, e := time.ParseAny("Dec 7, 1959")
+        @assert e == nil
+        @assert t.String() == "1959-12-07 00:00:00 +0000 UTC"
+
+        t, e = time.ParseAny("2024-01-15T10:00:00Z")
+        @assert e == nil
+        @assert t.String() == "2024-01-15 10:00:00 +0000 UTC"
+
+        t, e = time.ParseAny("2024-01-15T10:00:00-08:00")
+        @assert e == nil
+        @assert t.String() == "2024-01-15 10:00:00 -0800 -0800"
+    }
+}
+
+@test "time: ParseAny reports an unloadable ego.runtime.timezone"
+{
+    // A reference zone Go cannot load is a configuration mistake, and it is
+    // reported rather than quietly falling back to some other zone. It only
+    // matters for input that actually needs a reference zone, though...
+    profile.Set("ego.runtime.timezone", "Not/AZone")
+
+    _, e := time.ParseAny("December 7, 1959 10:35am EST")
+    @assert e != nil
+    @assert strings.Contains(e.Error(), "invalid timezone name")
+
+    // ...so a timestamp that needs no reference zone still parses normally.
+    t, e2 := time.ParseAny("Dec 7, 1959")
+    @assert e2 == nil
+    @assert t.String() == "1959-12-07 00:00:00 +0000 UTC"
+
+    // Leave the setting somewhere sane for any test that runs after this one.
+    profile.Set("ego.runtime.timezone", "local")
 }
 
 @test "time: ParseAny error on unrecognized input"
