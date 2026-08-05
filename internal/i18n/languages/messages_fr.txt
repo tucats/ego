@@ -160,6 +160,7 @@ admin.serverinfo.error=Erreur lors de la récupération des informations {{item}
 admin.session.invalid=Valeur d'identifiant de session invalide : {{value}}
 admin.tail.invalid=Valeur entière de « tail » invalide : {{value}}
 ambiguous.permission=Le nom de permission est en conflit avec un nom réservé, ou a été mal orthographié
+ambiguous.timezone=abréviation de fuseau horaire ambiguë; utilisez un décalage numérique tel que -05:00
 arg.count=nombre incorrect d'arguments de fonction
 arg.list=erreur interne : liste d'arguments de fonction locale invalide
 arg.type=type d'argument de fonction incorrect

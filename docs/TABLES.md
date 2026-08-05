@@ -177,10 +177,14 @@ data type for that column. The valid types that you can specify for a table are:
 | :------- | :----------- |
 | string | Varying length character string |
 | int | Integer value |
+| int16 | Integer value expressed in 16-bits instead of 64 |
 | int32 | Integer value expressed in 32-bits instead of 64 |
 | float32 | Real floating point value |
 | float64 | Double precision floating point value |
 | bool | Boolean value (can only be `true` or `false`) |
+| timestamp | Date and time of day. See [Timestamp values](#timestamp-values) |
+| date | Calendar date. See [Timestamp values](#timestamp-values) |
+| time | Time of day. See [Timestamp values](#timestamp-values) |
 
 Additionally, you can specify supported attributes of
 the column separated by commas after the type name.
@@ -209,6 +213,56 @@ If the `--dsn`
 option is not given, then the Ego server attempts to get the dsn from a two-part
 table name, such as "foo.bar" where "foo" is the data source name, and "bar" is
 the table name.
+&nbsp;
+
+### Timestamp values
+
+**Supply timestamps in RFC 3339 format.** That is the documented contract for
+`timestamp`, `date`, and `time` columns, whether the value arrives from the
+`table insert`/`table update` commands or from a REST client's JSON payload:
+
+```text
+2024-06-15T12:00:00Z          a moment, stated in UTC
+2024-06-15T12:00:00-05:00     the same kind of statement, five hours behind UTC
+2024-06-15                    a date, read as midnight UTC
+```
+
+The defining property is that the value either states its offset from UTC
+numerically or states none at all. Values are normalized to UTC before being
+stored, and read back in the same format, so a timestamp written this way makes
+the same round trip on every machine.
+
+Other formats are still accepted — a value is parsed by format detection, not
+by a fixed layout, so `June 15, 2024 12:00pm` and a Unix epoch value like
+`1718452800` both work. What is _not_ accepted is a value whose timezone is
+given only as a bare abbreviation that cannot be resolved:
+
+```sh
+    ego table insert bog.events title="launch" when="December 7, 1959 10:35am EST"
+```
+
+An abbreviation like `EST` carries no numeric offset, and the abbreviations are
+not unique across the world — `CST` is US Central Standard Time, China Standard
+Time, and Cuba Standard Time. Ego resolves such an abbreviation by looking it up
+in the zone table of the location named by the `ego.runtime.timezone`
+configuration setting (see [CONFIG.md](CONFIG.md)). If that location does not
+use the abbreviation, the value is rejected:
+
+```text
+ambiguous timezone abbreviation; use a numeric offset such as -05:00: when
+```
+
+The request fails and no row is written. This is deliberate: a stored timestamp
+is normalized to a UTC instant, so guessing the wrong offset would not produce a
+visibly odd value — it would produce a plausible one, several hours from what
+was meant, that reads back cleanly forever afterwards. Rejecting the value
+leaves the caller able to correct it; accepting a guess does not.
+
+Note that the reference zone is a property of the _server_ that stores the row,
+not of the client that sent it. Two servers configured for different timezones
+will resolve the same abbreviation differently. Stating the offset numerically
+avoids the question entirely, which is why RFC 3339 is the recommendation.
+
 &nbsp;
 
 ### table list

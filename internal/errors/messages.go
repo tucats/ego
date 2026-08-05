@@ -14,6 +14,7 @@ var ErrExit = Message("_exit")
 // Return values reflecting runtime error conditions.
 var ErrAlignment = Message("invalid.alignment.spec")
 var ErrAmbiguousPermission = Message("ambiguous.permission")
+var ErrAmbiguousTimeZone = Message("ambiguous.timezone")
 var ErrArgumentCount = Message("arg.count")
 var ErrArgumentType = Message("arg.type")
 var ErrArgumentTypeCheck = Message("argcheck.array")

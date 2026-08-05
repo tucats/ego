@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/tables"
@@ -16,10 +15,10 @@ import (
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/tokenizer"
 	"github.com/tucats/ego/internal/runtime/io"
 	"github.com/tucats/ego/internal/runtime/rest"
+	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -546,88 +545,23 @@ func TableInsert(c *cli.Context) error {
 	return err
 }
 
-// For a given column name and value, and the metadata for the columns, ensure that the
-// value is of the correct type based on the column. If the value cannot be converted,
-// return an error.
+// coerceToColumnType converts a command-line value to the Go type its column
+// declares, before the value goes into the JSON payload of a table insert or
+// update request.
+//
+// This used to be a near-duplicate of parsing.CoerceToColumnType, and the two
+// had drifted apart: this copy handled "int16" the server's did not, and among
+// the time types it handled only "date" and "datetime" -- so "timestamp",
+// "timestamptz", "time", and the "with time zone" spellings fell through
+// unconverted and were sent as bare strings. It also parsed timestamps with
+// dateparse.ParseAny, which resolves a bare zone abbreviation against whatever
+// timezone the *CLI host* is configured for, independently of the server doing
+// the same thing against its own (TIME-2).
+//
+// It is now a thin wrapper over the one canonical implementation, kept only so
+// the call sites in this file stay readable.
 func coerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error) {
-	var (
-		err   error
-		found bool
-	)
-
-	// Based on the column type, convert the value as needed.
-	for _, column := range columns {
-		if column.Name == key {
-			// If the value is a nil value and the column is nullable, return nil.
-			nullable := column.Nullable.Specified && column.Nullable.Value
-			if v == nil && nullable {
-				return nil, nil
-			}
-
-			switch strings.ToLower(column.Type) {
-			case "char", "string", "nullstring":
-				v = data.String(v)
-
-			case "float", "double", "float64", "nullfloat64":
-				v, err = data.Float64(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "float32", "single", "nullfloat32":
-				v, err = data.Float32(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "bool", "boolean", "nullbool":
-				v, err = data.Bool(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "int", "integer", "nullint":
-				v, err = data.Int(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "int16", "nullint16":
-				v, err = data.Int16(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "int32", "nullint32":
-				v, err = data.Int32(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "int64", "nullint64":
-				v, err = data.Int64(v)
-				if err != nil {
-					return nil, err
-				}
-
-			case "date", "datetime":
-				v, err = dateparse.ParseAny(data.String(v))
-				if err != nil {
-					return nil, errors.New(err)
-				}
-			}
-
-			found = true
-
-			break
-		}
-	}
-
-	if !found && key != defs.RowIDName {
-		return nil, errors.ErrInvalidColumnName.Context(key)
-	}
-
-	return v, nil
+	return parsing.CoerceToColumnType(key, v, columns)
 }
 
 // TableCreate creates a new table with the column definitions given as parameters

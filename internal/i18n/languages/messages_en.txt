@@ -168,6 +168,7 @@ admin.serverinfo.error=Error retrieving {{item}} host information: {{error}}
 admin.session.invalid=Invalid session id value: {{value}}
 admin.tail.invalid=Invalid tail integer value: {{value}}
 ambiguous.permission=permission name conflicts with reserved name, or was misspelled
+ambiguous.timezone=ambiguous timezone abbreviation; use a numeric offset such as -05:00
 arg.count=incorrect function argument count
 arg.list=internal error: invalid local function argument list
 arg.type=incorrect function argument type

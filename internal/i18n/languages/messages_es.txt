@@ -166,6 +166,7 @@ admin.serverinfo.error=Error al obtener la información {{item}} del host: {{err
 admin.session.invalid=Valor de id de sesión no válido: {{value}}
 admin.tail.invalid=Valor entero de "tail" no válido: {{value}}
 ambiguous.permission=El nombre de permiso entra en conflicto con un nombre reservado, o fue mal escrito
+ambiguous.timezone=abreviatura de zona horaria ambigua; use un desplazamiento numérico como -05:00
 arg.count=conteo incorrecto de argumentos de función
 arg.list=error interno: lista de argumentos de función local no válida
 arg.type=tipo de argumento de función incorrecto

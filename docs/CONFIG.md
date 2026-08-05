@@ -440,6 +440,19 @@ tolerate the zero offset. A caller that needs certainty should arrange for a num
 the input instead. Setting `ego.runtime.timezone` to a name Go cannot load _is_ reported as an
 error, but only on a call that actually needed a reference zone.
 
+**Database table columns are stricter.** The same setting decides what an abbreviation means
+for a `timestamp`, `date`, or `time` column, but there an abbreviation the reference zone
+cannot resolve is _rejected_ rather than given a zero offset — the insert or update fails and
+no row is written. The tradeoff comes out differently because the value is being stored: a
+wrong offset in a running program is transient, while a wrong offset written to a column is
+normalized to a UTC instant, becomes the record, reads back cleanly forever after, and cannot
+be repaired without knowing how the server was configured at the moment of the write. RFC 3339
+is the documented format for these columns and states its offset numerically, so it is
+unaffected either way. See [TABLES.md](TABLES.md) under "Timestamp values".
+
+Note that for table columns the reference zone is the one configured on the _server_ storing
+the row, not on the client that sent it.
+
 ### Compiler settings (non-optimizer)
 
 | Setting | Description |

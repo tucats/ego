@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
@@ -256,6 +255,13 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 // For most scalar types the conversion is straightforward (string, int, float64, bool).
 // For date/time types the logic is slightly more involved; see the inline comments.
 //
+// This is the single canonical implementation, used by the server's REST insert and
+// update handlers, by the server's row *read* path, and by the "ego table insert" and
+// "ego table update" CLI commands.  The CLI used to carry a near-duplicate of it that
+// had drifted -- it handled "int16" the server did not, and handled only "date" and
+// "datetime" among the time types -- so a value could be converted one way by the
+// client and another way by the server (TIME-2).
+//
 // Returns the (possibly converted) value and any conversion error.  Returns
 // errors.ErrInvalidColumnName if key is not found in the columns list (the row ID
 // pseudo-column is exempt from this check).
@@ -268,6 +274,14 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	// Walk the column list looking for a column whose name matches key.
 	for _, column := range columns {
 		if column.Name == key {
+			// An explicit null in a column that permits one needs no conversion at
+			// all; it is bound as SQL NULL.  This must be checked before the switch,
+			// because the time cases below turn a nil into a zero time.Time, which
+			// would store an actual timestamp of January 1, year 1 instead of NULL.
+			if v == nil && column.Nullable.Specified && column.Nullable.Value {
+				return nil, nil
+			}
+
 			// Lower-case the column type so the comparisons below are case-insensitive.
 			// The type names in DBColumn.Type are normalized in getColumnInfo(), but we
 			// guard here too so this function stays safe to call with un-normalized metadata.
@@ -300,6 +314,12 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 					return nil, err
 				}
 
+			case "int16", "nullint16":
+				v, err = data.Int16(v)
+				if err != nil {
+					return nil, err
+				}
+
 			case "int32", "nullint32":
 				v, err = data.Int32(v)
 				if err != nil {
@@ -320,14 +340,25 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 			//  1. nil   — produce a zero time.Time{} so the caller sees a typed zero value
 			//             rather than an untyped nil.  Note: FormInsertQuery / FormUpdateQuery
 			//             guard against nil before calling here, so this branch is mainly a
-			//             safety net for other call sites.
+			//             safety net for other call sites.  A nil in a *nullable* column
+			//             was already returned as NULL above and never reaches this point.
 			//  2. time.Time — the value is already the correct Go type (e.g. returned
 			//             directly by the PostgreSQL driver on a SELECT).  Pass it through
 			//             unchanged.
-			//  3. anything else — treat it as a string and parse it with dateparse.ParseAny,
-			//             which accepts RFC 3339, RFC 822, common US/ISO date formats, etc.
-			//             This is the path taken when a JSON string such as
-			//             "2006-01-02T15:04:05Z" arrives from a REST client.
+			//  3. anything else — treat it as a string and parse it.
+			//
+			// The parse is deliberately the *strict* one.  A value reaching here is on
+			// its way into (or out of) a database column, and bindTimeValue below folds
+			// it to a UTC instant before storing, discarding the original text.  So an
+			// abbreviation resolved against the wrong zone is not a transient mistake:
+			// it becomes the stored record, reads back cleanly forever after, and cannot
+			// be repaired without knowing what timezone the server process happened to be
+			// configured with at the moment of the write.  Rejecting the input is
+			// recoverable for the caller; accepting it silently is not (TIME-2).
+			//
+			// RFC 3339 ("2006-01-02T15:04:05Z07:00") is the documented contract for
+			// clients -- see docs/TABLES.md -- and always states its offset numerically,
+			// so it is unaffected by any of this.
 			case "timestamp", "timestamptz", "timestamp with time zone",
 				"time", "time with time zone",
 				"date", "datetime":
@@ -339,11 +370,9 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 					// columns as native Go time.Time values.  Nothing to do here.
 					break
 				} else {
-					// Parse a string representation.  dateparse.ParseAny handles a wide
-					// variety of formats so callers are not locked into RFC 3339.
-					v, err = dateparse.ParseAny(data.String(v))
+					v, err = util.StrictParseTimestamp(data.String(v))
 					if err != nil {
-						return nil, errors.New(err)
+						return nil, errors.New(err).Context(key)
 					}
 				}
 			}
