@@ -70,9 +70,9 @@ for _, p := range points {
 ```
 
 Structs, methods, interfaces, closures, goroutines, channels, error handling with
-`try`/`catch`, and most of the Go standard library idioms you already know are supported.
+safe `panic`/`resolve()`, and most of the Go standard library idioms you already know are supported.
 Ego also adds a few conveniences on top of Go syntax — like the `print` statement shown
-below — for use when you don't need strict Go compatibility.
+below, or `try`/`catch` ahd `throw` — for use when you don't need strict Go compatibility.
 
 ```sh
 $ echo 'print 3+5' | ego
