@@ -42,13 +42,12 @@ and Japanese.
 ### 1.9 Runtime Features
 
 * Lots of Go-standard runtime functions that were missing from packages
-  were added or made more Go-compliant. This includes base64, cmplx, 
+  were added or made more Go-compliant. This includes base64, cmplx,
   filepath, fmt, io, json, math, os, sort, strconv, strings, time, and
   uuid packges.
 * New `runtime` package support for Ego state, cpu configuration for
   thread support, and Ego stack reporting.
 * Adopted native SQLite3 implementation, `cgo` no longer used.
-
 
 ### 1.9 Command Line Features
 
@@ -60,7 +59,6 @@ and Japanese.
   subsets or individual values. The Ego source formatter will also validate
   syntax and variable usage without having to compile and run the program.
 * New `ego rest` command simplifies scripting endpoint calls to Ego server.
-
 
 ### 1.9 Server Features
 
@@ -103,7 +101,6 @@ in this release. Some highlights include:
   `switch`, `defer`, and function closures.
 * Numerous race conditions eliminated, allowing proper parallelization
   of `go` routines and Ego REST handlers.
-
 
 ## Ego 1.8 "Mushy Peas"
 

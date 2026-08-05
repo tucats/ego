@@ -1159,9 +1159,7 @@ value. But all four **do** agree on one thing in `strict` mode: a
 source) is given some of the same leeway Go itself gives an untyped constant
 — it may adapt to a narrower type — but, matching Go's own static rejection
 of a lossy untyped-constant conversion, **only when doing so loses no
-information**. This is consistent across all four boundaries as of the
-BUG-68 fix; see [Key differences from Go](#go-differences) for the one-line
-summary.
+information**.
 
 ##### Assigning to a variable
 
@@ -1186,8 +1184,8 @@ they differ:
 
 ##### Passing a function argument, and returning a value from a function
 
-These two boundaries follow the same rules as each other, and — as of the
-BUG-68 fix — the same lossless-constant rule as assignment and expressions:
+These two boundaries follow the same rules as each other, and the same
+lossless-constant rule as assignment and expressions:
 
 | Mode | A non-constant argument/return value of a different type than the parameter/declared return type | A constant literal argument/return value of a different type |
 | :--- | :--- | :--- |
@@ -3138,7 +3136,7 @@ Both forms are resolved by exactly the same rules above — Ego does not
 distinguish between a package written as a single file and the same
 package written as a directory of files, matching Go's own model, where a
 package is always a directory (of one or more files) and there is no
-separate "single file" resolution rule (see `docs/issues/BUG-93.md`).
+separate "single file" resolution rule.
 
 If none of the steps above find the package, `import` reports a compile
 error naming the last path it tried.

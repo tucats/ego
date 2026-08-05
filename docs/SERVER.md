@@ -674,7 +674,7 @@ Ego's default authentication model stores usernames, hashed passwords, and permi
 
 #### Tokens: JWT vs. Ego's native format
 
-Ego's native tokens are symmetrically-encrypted opaque strings that only the issuing server can read. OAuth2 uses a different format called a **JWT** (JSON Web Token, RFC 7519): a Base64-encoded JSON structure in three parts separated by dots. A JWT is not encrypted — it carries a *payload* (the "claims") and a *cryptographic signature* produced by the IdP's private key. Anyone with the IdP's corresponding public key can verify the signature without contacting the IdP on every request.
+Ego's native tokens are symmetrically-encrypted opaque strings that only the issuing server can read. OAuth2 uses a different format called a **JWT** (JSON Web Token, RFC 7519): a Base64-encoded JSON structure in three parts separated by dots. A JWT is not encrypted — it carries a _payload_ (the "claims") and a _cryptographic signature_ produced by the IdP's private key. Anyone with the IdP's corresponding public key can verify the signature without contacting the IdP on every request.
 
 A typical JWT payload looks like:
 
@@ -707,7 +707,7 @@ Ego's `ego logon --oauth` command uses the Authorization Code + PKCE flow. Machi
 
 #### Backward compatibility
 
-OAuth2 is an *addition* to Ego's authentication, not a replacement. In `hybrid` mode (the default when OAuth2 is enabled), Ego accepts both its native tokens and JWTs in the same `Authorization: Bearer` header. Existing clients using `ego logon` with a username and password continue to work without any changes.
+OAuth2 is an _addition_ to Ego's authentication, not a replacement. In `hybrid` mode (the default when OAuth2 is enabled), Ego accepts both its native tokens and JWTs in the same `Authorization: Bearer` header. Existing clients using `ego logon` with a username and password continue to work without any changes.
 
 #### Migration path
 
@@ -973,7 +973,7 @@ On headless systems (SSH, no GUI), the browser open silently fails; the user cop
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
-| `ego.logon.oauth.server` | *(auto-detect)* | OAuth2 issuer URL override for CLI login |
+| `ego.logon.oauth.server` | _(auto-detect)_ | OAuth2 issuer URL override for CLI login |
 | `ego.logon.oauth.client.id` | `ego-cli` | OAuth2 client_id presented by the CLI |
 | `ego.logon.oauth.scopes` | `openid profile` | Scopes requested; `openid` is always appended if missing |
 
@@ -992,9 +992,9 @@ filesystem path that both nodes access over the same host.
 
 ### When to use clustering
 
-- You run two or more Ego servers behind a load balancer and need user credentials, DSN definitions,
+* You run two or more Ego servers behind a load balancer and need user credentials, DSN definitions,
   and table-schema cache to be consistent across nodes.
-- You want graceful rolling restarts where in-flight tokens remain valid regardless of which node
+* You want graceful rolling restarts where in-flight tokens remain valid regardless of which node
   handles the next request.
 
 ### Starting a clustered node
