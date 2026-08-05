@@ -101,8 +101,8 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 
 		// This used to look for PostgreSQL's "does not exist" wording, so a
 		// missing table answered 404 against PostgreSQL but fell through to 500
-		// against SQLite, which says "no such table" -- the exact mirror of the
-		// bug in rowsAbstract.go. It also treated any error mentioning
+		// against SQLite, which says "no such table" -- the exact mirror of
+		// the bug in rowsAbstract.go. It also treated any error mentioning
 		// "constraint" as a 409, which swept up NOT NULL and CHECK violations
 		// that are really the client sending a bad value (REST-1).
 		status := dberrors.ExecStatus(err)
