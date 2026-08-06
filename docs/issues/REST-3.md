@@ -27,9 +27,10 @@ across all handlers were counted but not reviewed"). This issue is that
 audit, plus a re-check of whether REST-1/REST-2's own fixes actually reached
 every file they claimed to.
 
-**Status: OPEN — findings only. No fixes have been implemented. This
-document is for review; see "Open questions for review" at the end before
-any of this is scheduled.**
+**Status: IN PROGRESS, on branch `http-status`. Sections 1 and 2 are fixed
+and committed (`ac59959f`, `2fc83daf`); sections 3+ are still open findings
+only. This document is for review as work proceeds; see "Open questions for
+review" at the end.**
 
 ## How this was produced
 
@@ -42,7 +43,7 @@ notes) before being written up; line numbers are current as of this commit.
 
 ---
 
-## 1. Shared infrastructure (affects every handler)
+## 1. Shared infrastructure (affects every handler) — FIXED (`ac59959f`)
 
 ### 1.1 `util.ErrorResponse` records the wrong status in its own response body — LOW, but universal
 
@@ -130,7 +131,14 @@ direction: route all four cases through `util.ErrorResponse`.
 
 ---
 
-## 2. `internal/server/admin` and `internal/server/admin/users`
+## 2. `internal/server/admin` and `internal/server/admin/users` — FIXED (`2fc83daf`)
+
+Findings 2.1, 2.2, 2.4, and 2.5 below were fixed as described. 2.3 was
+re-checked during implementation and found not to be a bug: `validate.Encode`
+and `validate.EncodeDictionary` can only ever return `errors.ErrNotFound` or
+`nil` (their own `Lookup` helper never returns an error), so treating any
+non-nil error as 404 there is actually correct. Left unchanged. 2.6 remains
+an open policy question, not addressed.
 
 ### 2.1 `ASTHandler` contradicts its own doc comment and its sibling handler — MEDIUM
 
