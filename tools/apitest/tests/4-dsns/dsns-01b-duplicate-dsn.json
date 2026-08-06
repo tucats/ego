@@ -1,0 +1,32 @@
+{
+    "description": "create dsn with a name that already exists reports 409, not 400",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-{{DSNUUID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-{{DSNUUID}}-duplicate-attempt.db",
+            "rowid": true
+        }
+    },
+    "response": {
+        "status": 409,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "error text names the dsn",
+            "query": "msg",
+            "op": "contains",
+            "value": "dsn-{{DSNUUID}}"
+        }
+    ]
+}

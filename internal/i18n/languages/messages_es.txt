@@ -248,6 +248,7 @@ did.you.mean=¿quiso usar
 directive=nombre de directiva no válido
 directive.mode=directiva no válida para el modo
 div.zero=división por cero
+dsn.exists=el dsn ya existe
 dsn.limit.invalid=Parámetro de límite inválido
 dsn.not.found=no existe tal nombre de origen de datos
 dsn.start.invalid=Parámetro de inicio inválido

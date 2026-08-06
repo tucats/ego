@@ -242,6 +242,7 @@ did.you.mean=次を使用しようとしましたか
 directive=無効なディレクティブ名
 directive.mode=モードに対して無効なディレクティブ
 div.zero=ゼロ除算
+dsn.exists=dsnは既に存在します
 dsn.limit.invalid=無効なlimitパラメーター
 dsn.not.found=そのようなデータソース名はありません
 dsn.start.invalid=無効なstartパラメーター

@@ -76,8 +76,16 @@ func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *htt
 //	r.New("/services/cluster/flush/{cache-id}", cluster.FlushCacheHandler, http.MethodPost).
 //	    Authentication(false, false)
 func FlushCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	// This route has no session-based authentication at all (registered
+	// Authentication(false, false)) -- the cluster token IS the only
+	// credential this endpoint recognizes, so a missing or invalid one is
+	// "not authenticated" (401), not "authenticated but forbidden" (403).
+	// RFC 7235 §3.1: 401 covers a request that lacks valid credentials,
+	// whether none were sent or the ones sent don't check out.
 	if !ValidateClusterToken(r) {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.token.invalid"), http.StatusForbidden)
+		w.Header().Set(defs.AuthenticateHeader, `Bearer realm="cluster"`)
+
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.token.invalid"), http.StatusUnauthorized)
 	}
 
 	// Decode the cache flush request from the JSON body.
@@ -154,6 +162,32 @@ func writeFlushResponse(session *router.Session, w http.ResponseWriter, cacheID 
 	return http.StatusOK
 }
 
+// authorizeClusterOrAdmin checks the two credentials ClusterShutdownHandler
+// and ClusterRemoveHandler each accept -- a valid cluster HMAC token, or an
+// authenticated admin session -- and returns 0 if either one is present.
+//
+// A failure is 401 if the caller proved no Ego identity at all
+// (session.Authenticated is false: no valid Ego credential was presented,
+// whether or not a cluster token was attempted), and 403 if the caller *is*
+// an authenticated Ego user who simply isn't an admin. Before this, both
+// cases were folded into one check and one status, so "no credentials at
+// all" and "valid credentials, wrong role" were indistinguishable from the
+// response, and the former was misreported as 403 (RFC 7235 §3.1: 401 is
+// for a request that lacks valid credentials).
+func authorizeClusterOrAdmin(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	if ValidateClusterToken(r) || session.Admin {
+		return 0
+	}
+
+	if !session.Authenticated {
+		w.Header().Set(defs.AuthenticateHeader, `Bearer realm="cluster"`)
+
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusUnauthorized)
+	}
+
+	return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
+}
+
 // ClusterShutdownHandler handles POST /services/cluster/shutdown. A peer node
 // (or an operator using the CLI) sends this request to instruct this node to
 // leave the cluster cleanly and shut down its HTTP server.
@@ -163,15 +197,15 @@ func writeFlushResponse(session *router.Session, w http.ResponseWriter, cacheID 
 // response is sent before the shutdown completes so the caller receives a
 // confirmation.
 //
-// Authentication: cluster HMAC token only.
+// Authentication: cluster HMAC token, or an authenticated admin session.
 //
 // Route registration:
 //
 //	r.New("/services/cluster/shutdown", cluster.ClusterShutdownHandler, http.MethodPost).
 //	    Authentication(false, false)
 func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
+	if status := authorizeClusterOrAdmin(session, w, r); status != 0 {
+		return status
 	}
 
 	ui.Log(ui.ServerLogger, "cluster.shutdown", ui.A{
@@ -195,15 +229,15 @@ func ClusterShutdownHandler(session *router.Session, w http.ResponseWriter, r *h
 //
 // The node to evict is specified via the "node_id" query parameter.
 //
-// Authentication: cluster HMAC token only.
+// Authentication: cluster HMAC token, or an authenticated admin session.
 //
 // Route registration:
 //
 //	r.New("/services/cluster/remove", cluster.ClusterRemoveHandler, http.MethodPost).
 //	    Authentication(false, false)
 func ClusterRemoveHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	if !ValidateClusterToken(r) && !session.Admin {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.cluster.auth.invalid"), http.StatusForbidden)
+	if status := authorizeClusterOrAdmin(session, w, r); status != 0 {
+		return status
 	}
 
 	if systemDB == nil {

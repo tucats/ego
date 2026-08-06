@@ -250,6 +250,7 @@ did.you.mean=did you intend to use
 directive=invalid directive name
 directive.mode=directive invalid for mode
 div.zero=division by zero
+dsn.exists=dsn already exists
 dsn.limit.invalid=Invalid limit parameter
 dsn.not.found=no such data source name
 dsn.start.invalid=Invalid start parameter

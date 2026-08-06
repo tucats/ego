@@ -29,7 +29,11 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 
 	_, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
+		// Was hardcoded to 404. Routed through the shared classifier so this
+		// agrees with GetDSNHandler/DeleteDSNHandler on the identical
+		// underlying error, rather than being a fourth place that could drift
+		// away from them (REST-2 fixed the first three; this was missed).
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
 	perms, err := egodsns.DSNService.Permissions(session.ID, session.User, name)
@@ -81,7 +85,11 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// Get the map of all the DSN names.
 	names, err := egodsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+		// This endpoint takes no client-supplied payload beyond paging, so a
+		// failure here is never something a different request body would
+		// have avoided -- ExecStatus's 500 default fits, not PayloadStatus's
+		// 400.
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
 	// Build a sorted list of DSN names for stable output.
@@ -197,9 +205,13 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	if err := egodsns.DSNService.DeleteDSN(session.ID, session.User, name); err != nil {
+		// The existence check just above already confirmed the DSN is
+		// there, so a failure here is a storage fault at exec time, not a
+		// malformed request -- ExecStatus's 500 default fits, not a flat
+		// 400.
 		msg := fmt.Sprintf("unable to delete DSN, %s", err)
 
-		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, msg, dberrors.ExecStatus(err))
 	}
 
 	// Craft a response object to send back  that contains the DSN info
@@ -283,16 +295,22 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	// Does this DSN already exist?
+	// Does this DSN already exist? A duplicate name is the textbook 409
+	// case -- the request is well-formed, it just conflicts with a DSN
+	// already stored under that name -- not a 400.
 	if _, err := egodsns.DSNService.ReadDSN(session.ID, session.User, dataSourceName.Name, true); err == nil {
-		msg := fmt.Sprintf("dsn already exists: %s", dataSourceName.Name)
+		msg := errors.ErrDSNAlreadyExists.Clone().Context(dataSourceName.Name).Localize(session.Language)
 
-		return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
+		return util.ErrorResponse(w, session.ID, msg, http.StatusConflict)
 	}
 
-	// Create a new DSN from the payload given.
+	// Create a new DSN from the payload given. The existence check just
+	// above means a failure here is a storage fault at exec time; route it
+	// through the same classifier as every other exec-stage failure so an
+	// unclassified error still defaults to 500 rather than being hardcoded
+	// separately from its siblings.
 	if err := egodsns.DSNService.WriteDSN(session.ID, session.User, dataSourceName); err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
 	// Craft a response object to send back.
@@ -345,7 +363,11 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 				"session": session.ID,
 				"error":   err.Error()})
 
-			util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			// Was missing this return: execution fell through to the
+			// success path below with an empty items.Items, writing a
+			// second, misleading "200 OK, 0 items" response on top of the
+			// 400 already sent for genuinely malformed JSON.
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		} else {
 			items.Items = []defs.DSNPermissionItem{item}
 		}
@@ -366,7 +388,13 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 		if err != nil {
 			err = errors.New(err).Context(item.DSN + ", " + item.User)
 
-			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			// A missing DSN (the item.DSN == "" case, or a ReadDSN miss) is
+			// 404 via the shared classifier, same as every other DSN-not-
+			// found site in this file. errors.ErrNoSuchUser isn't something
+			// dberrors classifies -- it's a user, not a DSN or database
+			// error -- so that case still falls through to PayloadStatus's
+			// 400 default, unchanged from before.
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
 		for _, action := range item.Actions {
