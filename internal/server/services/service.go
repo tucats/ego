@@ -196,7 +196,17 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 			"session": session.ID,
 			"error":   err.Error()})
 
+		// compileAndCacheService returns the raw os.ReadFile error unmodified
+		// when the .ego file is missing, and a compiler error otherwise. A
+		// genuine syntax error is a server-side fact about the deployed
+		// service (500); a service file that has been deleted out from under
+		// an already-registered route names something that is not there
+		// (404) -- the same distinction REST-1 established for the table
+		// endpoints, never applied here before.
 		status := http.StatusInternalServerError
+		if os.IsNotExist(err) {
+			status = http.StatusNotFound
+		}
 
 		if isJSON {
 			w.Header().Set("Content-Type", "application/vnd.ego.error+json")
@@ -287,12 +297,20 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	if errors.Equals(err, errors.ErrStop) {
 		err = nil
 	} else if errors.Equals(err, errors.ErrExit) {
+		// A service script that calls os.Exit() never shuts down the server
+		// -- that is exclusively an administrative action (POST
+		// /services/admin/down, gated on session.Admin in router/serve.go),
+		// not something any request handler can trigger, no matter what the
+		// script does. This request's response reports the exit as a
+		// server-side fault (500): the script did something invalid for a
+		// service context, not something that makes "service unavailable"
+		// (503) an honest description of anything real.
 		msg := err.Error()
 		if e, ok := err.(*errors.Error); ok {
 			msg = fmt.Sprintf(", %s", e.GetContext())
 		}
 
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.service.aborted", ui.A{"msg": msg}), http.StatusServiceUnavailable)
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.service.aborted", ui.A{"msg": msg}), http.StatusInternalServerError)
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
@@ -310,6 +328,17 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	if err != nil {
+		// Deliberate policy, not an oversight: an uncaught runtime error
+		// always reports 500 here, even if the script had already called
+		// response.WriteHeader() with some other status before the
+		// statement that failed. There's no reliable way to tell "the
+		// script had already committed to reporting success and then hit
+		// an unrelated internal fault" apart from "the script's last
+		// WriteHeader call happened to be 200, the default, and it never
+		// touched it at all" -- both look identical here, and guessing
+		// wrong in the second case would misreport a genuine server fault
+		// as whatever status a script happened to leave lying around
+		// before it crashed.
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.service.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
 
@@ -418,19 +447,6 @@ func ServiceHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	// the cache, give our current set to the cached item. This is the parent of the
 	// active table (the active table has the runtime results of this particular execution).
 	updateCachedServiceSymbols(session.ID, endpoint, symbolTable.Parent())
-
-	// If the result status was indicating that the service is unavailable, let's start
-	// a shutdown to make this a true statement. We always sleep for one second to allow
-	// the response to clear back to the caller. By locking the service cache before we
-	// do this, we prevent any additional services from starting.
-	if status == http.StatusServiceUnavailable {
-		serviceCacheMutex.Lock()
-		go func() {
-			time.Sleep(1 * time.Second)
-			ui.Log(ui.ServerLogger, "server.shutdown", nil)
-			os.Exit(0)
-		}()
-	}
 
 	return status
 }

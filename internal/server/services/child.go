@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -541,24 +542,38 @@ func ChildService(filename string) error {
 			"pid":     pid,
 			"error":   err.Error()})
 
-		status = http.StatusBadRequest
-		response := ChildServiceResponse{}
-
-		if isJSON {
-			resp := defs.RestStatusResponse{
-				ServerInfo: util.MakeServerInfo(r.SessionID),
-				Status:     status,
-				Message:    err.Error(),
-			}
-
-			b, _ := json.Marshal(resp)
-			response.Body = string(b)
-		} else {
-			text := err.Error()
-			response.Body = text
+		// compileChildService wraps the os.ReadFile error via errors.New(err)
+		// when the .ego file is missing, so os.IsNotExist(err) -- which only
+		// unwraps the concrete *PathError/*LinkError/*SyscallError types via
+		// a type switch, not arbitrary Unwrap() chains -- cannot see through
+		// it the way it can in service.go's in-process equivalent, where the
+		// same os.ReadFile error is returned unwrapped. stderrors.Is (the
+		// standard library's errors.Is, aliased since this file's own
+		// "errors" import is Ego's package) walks *errors.Error's Unwrap()
+		// chain and finds it correctly. Classified the same way as the
+		// in-process path either way, for the same reason: a deleted
+		// service file is 404, a genuine compile error is 500.
+		//
+		// This used to compute a 400 status and a response body into local
+		// variables that were never written anywhere -- the function
+		// returned errors.New(err) directly below, so the parent process
+		// (callChildServices) always saw a nonzero exit and hardcoded 500
+		// regardless. Now the computed status actually reaches the caller,
+		// via the response file every other exit path in this function
+		// writes to.
+		status = http.StatusInternalServerError
+		if stderrors.Is(err, os.ErrNotExist) {
+			status = http.StatusNotFound
 		}
 
-		return errors.New(err)
+		if writeErr := writeChildResponse(r.ServerID, r.SessionID, ChildServiceResponse{
+			Status:  status,
+			Message: err.Error(),
+		}); writeErr != nil {
+			return writeErr
+		}
+
+		return nil
 	}
 
 	// Add the standard non-package function into this symbol table
@@ -594,16 +609,27 @@ func ChildService(filename string) error {
 	if errors.Equals(err, errors.ErrStop) {
 		err = nil
 	} else if errors.Equals(err, errors.ErrExit) {
+		// A service script that calls os.Exit() never shuts down anything
+		// beyond this one forked child process -- see the matching comment
+		// in service.go's in-process equivalent of this check. Reported the
+		// same way there too: 500, not whatever status the script had set
+		// (or 503, which this used to become before the shutdown logic
+		// below was removed) -- the script did something invalid for a
+		// service context, and 500 says so consistently regardless of
+		// which of the two execution modes handled the request.
 		msg := err.Error()
 		if e, ok := err.(*errors.Error); ok {
 			msg = fmt.Sprintf(", %s", e.GetContext())
 		}
 
-		if child.Status == http.StatusOK {
-			child.Status = http.StatusBadRequest
+		if writeErr := writeChildResponse(r.ServerID, r.SessionID, ChildServiceResponse{
+			Status:  http.StatusInternalServerError,
+			Message: msg,
+		}); writeErr != nil {
+			return writeErr
 		}
 
-		return childError(msg, child.Status)
+		return nil
 	}
 
 	// Runtime error? If so, delete us from the cache if present. This may let the administrator
@@ -668,38 +694,8 @@ func ChildService(filename string) error {
 		child.Body = buffer
 	}
 
-	// If the result status was indicating that the service is unavailable, let's start
-	// a shutdown to make this a true statement. We always sleep for one second to allow
-	// the response to clear back to the caller. By locking the service cache before we
-	// do this, we prevent any additional services from starting.
-	if status == http.StatusServiceUnavailable {
-		serviceCacheMutex.Lock()
-		go func() {
-			time.Sleep(1 * time.Second)
-			ui.Log(ui.ServerLogger, "server.shutdown", nil)
-			os.Exit(0)
-		}()
-	}
-
-	// At this point, the child must transmit the response payload. This is done by
-	// formatting the JSON for the response object and writing it to the temp response
-	// file, formed using the server and session id values.
-	b, err = json.MarshalIndent(child, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	if err != nil {
-		return errors.New(err)
-	}
-
-	// Form the name of the output file using the base of the input file.
-	outputName := filepath.Join(ChildTempDir, fmt.Sprintf(defs.ChildResponseFileFormat, r.ServerID, r.SessionID))
-
-	outputFile, err := os.Create(outputName)
-	if err != nil {
-		return errors.New(err)
-	}
-
-	fmt.Fprintln(outputFile, string(b))
-
-	return err
+	// At this point, the child must transmit the response payload.
+	return writeChildResponse(r.ServerID, r.SessionID, child)
 }
 
 // getRequestObject reads a request object from the given JSON input file.
@@ -772,16 +768,35 @@ func compileChildService(
 	return serviceCode, tokens, err
 }
 
-func childError(msg string, status int) *errors.Error {
-	response := ChildServiceResponse{
-		Status:  status,
-		Message: msg,
+// writeChildResponse marshals the given ChildServiceResponse and writes it to
+// the response file callChildServices (the parent process) reads back, using
+// the same filename convention every exit path in this file must agree on.
+//
+// The parent never reads the child's stdout as a response body -- only as
+// log output, via ui.WriteLogString -- so any exit path that returns without
+// calling this leaves the parent nothing to read but its own generic 500
+// from a nonzero child exit code, discarding whatever status and message
+// this function was given. That was childError's bug: it formatted the
+// response and printed it to stdout, which is exactly the place the parent
+// never looks for one.
+func writeChildResponse(serverID string, sessionID int, response ChildServiceResponse) error {
+	b, err := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	if err != nil {
+		return errors.New(err)
 	}
 
-	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	fmt.Println(string(b))
+	outputName := filepath.Join(ChildTempDir, fmt.Sprintf(defs.ChildResponseFileFormat, serverID, sessionID))
 
-	return errors.Message(msg)
+	outputFile, err := os.Create(outputName)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	defer outputFile.Close()
+
+	fmt.Fprintln(outputFile, string(b))
+
+	return nil
 }
 
 // Called to wait until the count of active child services is less than the maximum.
