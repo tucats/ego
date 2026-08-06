@@ -27,11 +27,11 @@ across all handlers were counted but not reviewed"). This issue is that
 audit, plus a re-check of whether REST-1/REST-2's own fixes actually reached
 every file they claimed to.
 
-**Status: IN PROGRESS, on branch `http-status`. Sections 1-4 are fixed and
-committed (`ac59959f`, `2fc83daf`, `34d9a25e`); sections 5-7 (oauth,
-services, tables residual gaps) are still open findings only. This document
-is for review as work proceeds; see "Open questions for review" at the
-end.**
+**Status: IN PROGRESS, on branch `http-status`. Sections 1-5 are fixed and
+committed (`ac59959f`, `2fc83daf`, `34d9a25e`, `240cb961`); sections 6-7
+(services, tables residual gaps) are still open findings only. This
+document is for review as work proceeds; see "Open questions for review" at
+the end.**
 
 ## How this was produced
 
@@ -310,7 +310,20 @@ cleaning up sometime, not part of this issue's fix set.
 
 ---
 
-## 5. `internal/server/oauth` — the OAuth2/OIDC endpoints don't speak OAuth2's error format
+## 5. `internal/server/oauth` — the OAuth2/OIDC endpoints don't speak OAuth2's error format — FIXED (`240cb961`)
+
+5.1-5.5 fixed as described, with one deliberate scope deviation confirmed
+during implementation: `authorize.go` and `userinfo.go` were **not**
+converted to the RFC 6749 §5.2 JSON shape. `authorize.go` is browser-facing
+(RFC 6749 §4.1.2.1 governs its errors via redirect or a page shown to the
+resource owner, not a JSON body); `userinfo.go` already correctly signals
+errors via the `WWW-Authenticate` header per RFC 6750 §3.1, which mandates
+no particular body shape, and 5.7 already named it the reference
+implementation. 5.6 was not addressed separately — resolved as a side
+effect of 5.1 for the files it actually named. JWT-validation failures in
+`callback.go` (mentioned alongside the `ExchangeCode` failures in 5.5's
+description) are still a flat 502 — no typed-error breakdown was available
+to classify against, left as a known gap rather than guessed at.
 
 This is the largest gap found, and different in kind from the others: it's
 not primarily about which status code is chosen, but about the response
