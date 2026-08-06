@@ -55,7 +55,7 @@ notes) before being written up; line numbers are current as of this commit.
 
 ```go
 func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
-	response := defs.RestStatusResponse{
+  response := defs.RestStatusResponse{
 		ServerInfo: MakeServerInfo(sessionID),
 		Message:    msg,
 		Status:     status,   // <-- captured BEFORE the clamp below
@@ -554,6 +554,14 @@ own intended status doesn't even survive to the client. This is flagged for
 explicit review rather than folded into the status-code fix set, since the
 right answer may be "don't let `os.exit()` do this at all" rather than
 "pick a different HTTP status."
+
+**Resolved:*** this was some dangerous legacy code from when the /admin/down
+endpoint was actually implemented as Ego code (user service) code. Thus,
+the support for os.Exit() was the mechanism by which the endpoint told the
+rest server to wind it up. However, this has long ago been replaced by a
+proper native endpoint that guards the shutdown against non-admin usage,
+etc. There is no reason for os.Exit() to do any more than terminate the
+current REST session only.
 
 ---
 
