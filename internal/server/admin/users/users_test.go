@@ -418,8 +418,12 @@ func TestCreateUserHandler_CreatesUser(t *testing.T) {
 	rr := httptest.NewRecorder()
 	status := CreateUserHandler(makeSession(nil, nil), rr, newRequest(t, http.MethodPost, "/admin/users", body))
 
-	if status != http.StatusOK {
-		t.Errorf("expected 200, got %d — body: %s", status, rr.Body.String())
+	if status != http.StatusCreated {
+		t.Errorf("expected 201, got %d — body: %s", status, rr.Body.String())
+	}
+
+	if got, want := rr.Header().Get(defs.LocationHeader), "/admin/users/carol"; got != want {
+		t.Errorf("Location = %q, want %q", got, want)
 	}
 
 	// Verify the user now exists in the store.

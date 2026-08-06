@@ -201,6 +201,7 @@ const (
 const (
 	ContentTypeHeader  = "Content-Type"
 	AuthenticateHeader = "WWW-Authenticate"
+	LocationHeader     = "Location"
 )
 
 const ServerStoppedMessage = "Server stopped"

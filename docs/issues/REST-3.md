@@ -31,8 +31,10 @@ every file they claimed to.
 seven sections are committed: `ac59959f`, `2fc83daf`, `34d9a25e`,
 `240cb961`, `130df06d`, `968b7346`. One new, separate, security-relevant
 finding was surfaced (not fixed) while implementing 7.5 -- see the note at
-the end of section 7 -- and open questions 4-5 below remain genuinely open
-policy decisions, not implementation gaps.**
+the end of section 7. Open question 4 (201/204 convention) was subsequently
+revisited and resolved as a follow-on (Option C -- see section 2.6); open
+question 5 remains a genuinely open policy decision, not an implementation
+gap.**
 
 ## How this was produced
 
@@ -221,7 +223,7 @@ convention `docs/API.md` documents from REST-1. Fix direction: check for
 existence first and answer 409 if the caller didn't intend an update (or
 document this as intentional upsert behavior, if it is).
 
-### 2.6 Project-wide: POST/DELETE essentially never return 201/204 — open question, not a per-file bug
+### 2.6 Project-wide: POST/DELETE essentially never return 201/204 — RESOLVED (Option C)
 
 Across `internal/server`, only two `StatusNoContent` sites exist, both in
 `tables/` for "no rows found" — not resource-lifecycle semantics.
@@ -231,6 +233,28 @@ different handlers" bug), but it's a deviation from what most REST
 consumers expect and is worth a deliberate decision rather than leaving it
 as an accident of history. Flagged here as a question for the review, not a
 line-item fix.
+
+**Decision (see Open question 4 below): Option C.** Exactly three
+unambiguous "create" endpoints now return `201 Created` with a `Location`
+header naming the new resource, and nothing else changed:
+
+- `POST /dsns` (`dsns/handler.go`, `CreateDSNHandler`)
+- `POST /admin/users` (`admin/users/create.go`, `CreateUserHandler`)
+- `PUT /tables/{table}` (`tables/tables.go`, `TableCreate`)
+
+All DELETE endpoints, row inserts, WebAuthn credential registration,
+permission grants, and the OAuth token endpoint (RFC 6749 §5.1 mandates 200
+there) are deliberately unchanged — DELETE responses in particular must keep
+returning 200 with the deleted record's body, since existing CLI clients in
+`internal/commands/` depend on that body to report "what I deleted." Table
+row inserts were excluded because rows have no caller-visible unique
+identifier to put in a `Location` header. Landed alongside a side-effect fix
+in `tables.go`: `createSchemaIfNeeded`'s caller returned a hardcoded 200 even
+when the helper had already written a 500 (or 400, for an unsupported
+provider) error response — found while adding the `Location` header to
+`TableCreate`'s success path, since it sits right next to the schema-create
+call. `createSchemaIfNeeded` now returns the status it actually wrote so the
+caller can propagate it instead of masking the error as success.
 
 ---
 
@@ -666,7 +690,8 @@ let callers classify them, which is the intended shape.
 | 2.3 | admin | `validation.go` funnels all encode errors into 404 | MEDIUM | Not a bug (verified) |
 | 2.4 | admin/users | Update/delete: write failure after confirmed existence reported as 404 | MEDIUM | Fixed |
 | 2.5 | admin/users | Create silently upserts, no 409 for duplicate | LOW/MEDIUM | Fixed |
-| 2.6 | admin | Project-wide: no 201/204 for create/delete | Open question | Open |
+| 2.6 | admin | Project-wide: no 201/204 for create/delete | Open question | Resolved (Option C): 201+Location on DSN/user/table create only |
+| — | tables | **New:** `createSchemaIfNeeded` caller returned 200 over an already-written 500/400 (found while adding `Location` to `TableCreate`) | LOW | Fixed |
 | 3 | dsns | Three handlers bypass `dberrors`; same DSN error gets 3 different codes in one file; "already exists" is 400 not 409 | MEDIUM | Fixed |
 | 4 | cluster | 401/403 conflated for missing vs. bad-role cluster token | MEDIUM | Fixed |
 | 5.1 | oauth | AS endpoints use Ego's generic shape, not RFC 6749 `{error, error_description}` | HIGH | Fixed |
@@ -701,8 +726,11 @@ let callers classify them, which is the intended shape.
    (POST `/services/admin/down`), never something a request handler can
    trigger. The `os.Exit(0)` call (both the in-process and child-process
    copies) was removed outright. Done in `130df06d`.
-4. **201/204 convention (2.6).** Still open. Worth deciding once,
-   project-wide, rather than per-handler as each gets touched.
+4. **201/204 convention (2.6) — RESOLVED.** Option C: 201 Created +
+   `Location` for genuine, unambiguous resource-creates only (DSN, user,
+   table), everything else — including all DELETEs, whose CLI clients
+   depend on the 200-with-body "what I deleted" contract — left unchanged.
+   See section 2.6 above for the full list and rationale.
 5. **Should `internal/server/dberrors` be reused by non-table packages**
    (`admin`, `dsns`, `cluster`, `services`), or is a second, differently
    shaped classifier warranted for errors that aren't database-shaped (e.g.

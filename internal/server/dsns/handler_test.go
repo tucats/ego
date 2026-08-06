@@ -78,8 +78,12 @@ func TestCreateDSNHandler_DuplicateName_ReturnsConflict(t *testing.T) {
 	rr := httptest.NewRecorder()
 	status := CreateDSNHandler(makeDSNSession(nil), rr, newDSNRequest(t, http.MethodPost, dsn))
 
-	if status != http.StatusOK {
-		t.Fatalf("initial create: expected 200, got %d -- body: %s", status, rr.Body.String())
+	if status != http.StatusCreated {
+		t.Fatalf("initial create: expected 201, got %d -- body: %s", status, rr.Body.String())
+	}
+
+	if got, want := rr.Header().Get(defs.LocationHeader), "/dsns/d1"; got != want {
+		t.Errorf("Location = %q, want %q", got, want)
 	}
 
 	// Same name again -- must be rejected as a conflict, not silently

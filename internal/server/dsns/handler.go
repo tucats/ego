@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -313,6 +314,13 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
+	// A successful create reports 201, not 200, with a Location header
+	// naming the new DSN's own URL -- RFC 9110 §10.2.2. This is a genuine
+	// creation (the existence check above already ruled out an overwrite),
+	// and GET on this exact path returns the DSN just created
+	// (GetDSNHandler), so there is a real resource for the header to name.
+	status = http.StatusCreated
+
 	// Craft a response object to send back.
 	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
@@ -325,12 +333,13 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		Secured:    dataSourceName.Secured,
 		Restricted: dataSourceName.Restricted,
 		Password:   defs.ElidedPassword,
-		Status:     http.StatusOK,
+		Status:     status,
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
+	w.Header().Set(defs.LocationHeader, defs.DSNPath+url.PathEscape(dataSourceName.Name))
 
-	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+	b := util.WriteJSON(w, session.Response(), status, response)
 
 	if ui.IsActive(ui.RestLogger) {
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{

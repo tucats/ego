@@ -21,9 +21,16 @@ import (
 )
 
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
-// DBColumn objects, defining the characteristics of each column in the table. If the table name
-// is the special name "@sql" the payload instead is assumed to be a JSON-encoded string containing
-// arbitrary SQL to execute. Only an admin user can use the "@sql" table name.
+// DBColumn objects, defining the characteristics of each column in the table.
+//
+// The "@sql" pseudo-table name is handled by a separate handler, SQLTransaction,
+// registered on its own static route (PUT/POST /tables/@sql) that takes
+// precedence over this one's wildcard {{table}} route -- this function never
+// sees that name and has no special-case logic for it. (This comment used to
+// say otherwise; it hasn't been true since SQLTransaction was split out.)
+// Every successful call here is therefore a genuine "create the table named
+// in the URL" operation, which is why its success response can unconditionally
+// report 201 Created with a Location header.
 func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
@@ -85,8 +92,8 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			// SQLite: all tables share one flat namespace — no schema creation needed.
 
 		case defs.PostgresProvider:
-			if !createSchemaIfNeeded(w, sessionID, db, user, tableName) {
-				return http.StatusOK
+			if ok, status := createSchemaIfNeeded(w, sessionID, db, user, tableName); !ok {
+				return status
 			}
 
 		default:
@@ -104,7 +111,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			response := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(sessionID),
 				Count:      int(rows),
-				Status:     http.StatusOK,
+				Status:     http.StatusCreated,
 			}
 
 			_ = createTablePermissions(session, user, dsnName, tableName)
@@ -114,8 +121,15 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
+			// A successful create reports 201, not 200, with a Location header
+			// naming the new table's own URL (RFC 9110 §10.2.2). This is a PUT
+			// to the exact URL that now identifies the table, so the request's
+			// own path already is that location -- GET on this same path
+			// returns the table just created (ReadTable).
+			w.Header().Set(defs.LocationHeader, r.URL.Path)
+
 			// Convert the response object to JSON, write it to the response, log it, and we're done.
-			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+			b := util.WriteJSON(w, session.Response(), http.StatusCreated, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -126,7 +140,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			ui.Log(ui.TableLogger, "table.created", ui.A{
 				"session": sessionID})
 
-			return http.StatusOK
+			return http.StatusCreated
 		}
 
 		ui.Log(ui.TableLogger, "table.query.error", ui.A{
@@ -181,15 +195,17 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, session *router.Se
 // a table.  This is only meaningful for providers that support named schemas.
 //
 // Returns true when the schema is confirmed to exist (or was created), false when the
-// operation failed.  On failure the function writes an HTTP error response to w.
+// operation failed.  On failure the function writes an HTTP error response to w and
+// returns the status code it wrote, so the caller can propagate that same status
+// instead of reporting 200 on top of an error response already sent to the client.
 //
 // To add support for a new provider: implement any required schema-creation DDL and add
 // a case in the switch below.
-func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Database, user string, tableName string) bool {
+func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Database, user string, tableName string) (bool, int) {
 	switch db.Provider {
 	case defs.SqliteProvider:
 		// SQLite has no schema concept — every table lives in the same flat namespace.
-		return true
+		return true, http.StatusOK
 
 	case defs.PostgresProvider:
 		// PostgreSQL requires the schema to be created explicitly before the first table
@@ -198,11 +214,11 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 	default:
 		// An unrecognized provider cannot proceed.  Write an error response and signal
 		// failure to the caller so it stops further processing.
-		util.ErrorResponse(w, sessionID,
+		status := util.ErrorResponse(w, sessionID,
 			errors.ErrUnsupportedDatabase.Context(db.Provider).Localize(db.Session.Language),
 			http.StatusBadRequest)
 
-		return false
+		return false, status
 	}
 
 	// Default schema is the current user. However, if the table name is a two-part name, use the first part
@@ -217,25 +233,25 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		"schema": schema,
 	})
 	if err != nil {
-		util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		status := util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.query", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
-		return false
+		return false, status
 	}
 
 	// Execute the SQL query to create the schema. If it fails, write an error response to the REST
 	// payload and return indicating we could not or did not create a schema.
 	result, err := db.Exec(q)
 	if err != nil {
-		util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.create", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		status := util.ErrorResponse(w, sessionID, i18n.Text(db.Session.Language, "error.table.schema.create", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 
-		return false
+		return false, status
 	}
 
 	// If successful, the result will be a rows affected, which should be 1 if the schema was created by
 	// this operation, or zero if it already existed. If it was created, log this information.
 	_, _ = result.RowsAffected()
 
-	return true
+	return true, http.StatusOK
 }
 
 func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]defs.DBColumn, error) {

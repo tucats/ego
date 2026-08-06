@@ -33,9 +33,10 @@
         ]
     },
     "response": {
-        "status": 200,
+        "status": 201,
         "headers": {
-            "Content-Type": ["rowcount+json"]
+            "Content-Type": ["rowcount+json"],
+            "Location": ["/dsns/dsn-{{DSNUUID}}/tables/events"]
         }
     },
     "tests": [

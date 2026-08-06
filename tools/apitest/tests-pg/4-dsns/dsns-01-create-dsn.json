@@ -20,9 +20,10 @@
         }
     },
     "response": {
-        "status": 200,
+        "status": 201,
         "headers": {
-            "Content-Type": ["dsn+json"]
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-{{DSNUUID}}"]
         }
     },
     "tests": [

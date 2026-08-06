@@ -18,9 +18,10 @@
          }
     },
     "response": {
-        "status": 200,
+        "status": 201,
         "headers": {
-            "Content-Type": ["application/vnd.ego.user+json"]
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Location": ["/admin/users/u{{USERUUID}}"]
         }
     },
     "tests": [

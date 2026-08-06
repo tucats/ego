@@ -571,6 +571,9 @@ object with the following fields:
 | password | The initial password for the user |
 | permissions | An optional array of permission name strings to assign |
 
+On success, reports `201 Created` with a `Location` header naming the new
+user's own URL (`/admin/users/_name_`).
+
 &nbsp;
 &nbsp;
 
@@ -812,6 +815,7 @@ the same request could ever succeed:
 | Code | Meaning | Typical cause |
 | :--- | :------ | :------------ |
 | 200 | Success | |
+| 201 | Success — new resource created | `PUT /dsns/_dsn_/tables/_table_` only (see [below](#createTable)); reports a `Location` header |
 | 204 | No content | An insert payload containing no rows |
 | 400 | The request is malformed, or contains a value the database will not accept | A value that cannot be converted to its column's type; an unknown column name; a `NOT NULL` or `CHECK` constraint violation |
 | 401 | Not authenticated | Missing, expired, or invalid token |
@@ -869,6 +873,9 @@ Supports the `?start=` and `?limit=` parameters to page through long lists.
 Creates a new data source name. The DSN definition is provided in the request
 body as a JSON object. If a password is provided it will be encrypted in the
 back-end store.
+
+On success, reports `201 Created` with a `Location` header naming the new
+DSN's own URL (`/dsns/_dsn_/`).
 
 #### GET /dsns/_dsn_/
 
@@ -984,6 +991,13 @@ Creates a new table. The payload must be a JSON object with a `columns` array.
 Each element in the array has a `name` and `type` field. If you do not specify
 a column named `_row_id_`, one is added automatically; it contains a UUID that
 uniquely identifies each row.
+
+On success, reports `201 Created` with a `Location` header naming the new
+table's own URL, which is the same as the request URL. (This is the one
+`201`-reporting endpoint in the table API that is not covered by the
+[Status Codes](#tableStatus) table above, since that table describes the
+shared failure codes across all table operations — see the note there for
+why row inserts do not get the same treatment.)
 
 Valid column types:
 

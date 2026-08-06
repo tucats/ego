@@ -2,6 +2,7 @@ package users
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
@@ -102,7 +103,14 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 			w.Header().Add(defs.ContentTypeHeader, defs.UserMediaType)
 			// The status is not sent here: util.WriteJSON below issues it, because it may
 			// first need to add a Content-Encoding header, and headers set after
-			// WriteHeader() are silently discarded.
+			// WriteHeader() are silently discarded. Setting Location here (a plain
+			// header, not the status line) is fine either way.
+
+			// A successful create reports 201, not 200, with a Location header
+			// naming the new user's own URL (RFC 9110 §10.2.2) -- the existence
+			// check above already ruled out an overwrite, and GET on this exact
+			// path returns the user just created (GetUserHandler).
+			w.Header().Set(defs.LocationHeader, defs.AdminUsersPath+url.PathEscape(userInfo.Name))
 
 			// Never return the password hash to the client — replace it with
 			// the elided placeholder string defined in defs.
@@ -111,9 +119,9 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 			response := defs.UserResponse{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				User:       u,
-				Status:     http.StatusOK,
+				Status:     http.StatusCreated,
 			}
-			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+			b := util.WriteJSON(w, session.Response(), http.StatusCreated, response)
 
 			if ui.IsActive(ui.RestLogger) {
 				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
@@ -121,7 +129,7 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 					"body":    string(b)})
 			}
 
-			return http.StatusOK
+			return http.StatusCreated
 		} else {
 			// SetUser succeeded but the subsequent ReadUser failed — unexpected
 			// server-side error.
