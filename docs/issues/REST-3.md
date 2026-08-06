@@ -27,10 +27,11 @@ across all handlers were counted but not reviewed"). This issue is that
 audit, plus a re-check of whether REST-1/REST-2's own fixes actually reached
 every file they claimed to.
 
-**Status: IN PROGRESS, on branch `http-status`. Sections 1 and 2 are fixed
-and committed (`ac59959f`, `2fc83daf`); sections 3+ are still open findings
-only. This document is for review as work proceeds; see "Open questions for
-review" at the end.**
+**Status: IN PROGRESS, on branch `http-status`. Sections 1-4 are fixed and
+committed (`ac59959f`, `2fc83daf`, `34d9a25e`); sections 5-7 (oauth,
+services, tables residual gaps) are still open findings only. This document
+is for review as work proceeds; see "Open questions for review" at the
+end.**
 
 ## How this was produced
 
@@ -232,7 +233,13 @@ line-item fix.
 
 ---
 
-## 3. `internal/server/dsns` — REST-2's fix did not reach every handler in the file
+## 3. `internal/server/dsns` — REST-2's fix did not reach every handler in the file — FIXED (`34d9a25e`)
+
+Also found and fixed during implementation, not in the original findings:
+`DSNPermissionsHandler`'s malformed-JSON error path was missing a `return`,
+falling through to a misleading `200 OK, 0 items` response written on top of
+the 400 already sent — the same missing-return/double-write bug class as
+the section 1 router fix.
 
 REST-2 states DSN-open failures are uniformly classified via
 `dberrors.PayloadStatus`. Re-checking the current file: that's true only for
@@ -272,7 +279,7 @@ already do, and change the "already exists" case to 409.
 
 ---
 
-## 4. `internal/server/cluster` — 401/403 conflated
+## 4. `internal/server/cluster` — 401/403 conflated — FIXED (`34d9a25e`)
 
 `internal/server/cluster/handlers.go`. The router layer itself correctly
 distinguishes these (`internal/router/serve.go:481` uses 401 for
