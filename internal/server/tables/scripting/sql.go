@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 )
 
@@ -81,5 +82,11 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 		return count, http.StatusOK, cacheFlush, nil
 	}
 
-	return count, http.StatusBadRequest, cacheFlush, errors.New(err)
+	// Distinct from the already-fixed top-level tables/sql.go @sql handler --
+	// this is the @transaction "sql" opcode, which had the same hardcoded
+	// 400 bug. Same classifier, same reasoning as doDelete/doDrop in this
+	// package: db.Exec has already run, so an unrecognized failure is a
+	// server fault by default, and a recognized one (missing table,
+	// constraint conflict) reports what it actually was.
+	return count, dberrors.ExecStatus(err), cacheFlush, errors.New(err)
 }

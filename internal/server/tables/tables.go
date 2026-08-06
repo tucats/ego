@@ -62,9 +62,14 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// Generate the SQL string that will create the table.
-		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider, db.HasRowID)
+		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, db.Provider, db.HasRowID)
 		if err != nil {
-			return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			// FormCreateQuery no longer writes its own response (REST-3
+			// 7.5) -- classify the returned error the same way every other
+			// payload-stage failure in this handler does, so
+			// ErrNoPrivilegeForOperation correctly reports 403 instead of
+			// being flattened to 400.
+			return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
 		if q == "" {

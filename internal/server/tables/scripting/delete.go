@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 )
@@ -66,5 +67,12 @@ func doDelete(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return int(count), http.StatusOK, nil
 	}
 
-	return 0, http.StatusBadRequest, errors.New(err)
+	// A missing table via this opcode used to be a flat 400, unlike the
+	// DROP TABLE opcode in this same package (doDrop), which already routes
+	// through dberrors.ExecStatus and so correctly answers 404. Same
+	// classifier here now, for the same reason: db.Exec has run, so an
+	// unrecognized failure is a server fault (500) by default, and a
+	// recognized one (missing table, constraint conflict) reports what it
+	// actually was instead of being flattened to "the request was wrong."
+	return 0, dberrors.ExecStatus(err), errors.New(err)
 }

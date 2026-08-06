@@ -2,7 +2,6 @@ package parsing
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -435,7 +434,7 @@ func bindTimeValue(v any, provider string) any {
 	}
 }
 
-func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, sessionID int, w http.ResponseWriter, provider string, useRowID bool) (string, error) {
+func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []defs.DBColumn, provider string, useRowID bool) (string, error) {
 	var (
 		err    error
 		result strings.Builder
@@ -479,9 +478,21 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		table, wasFullyQualified = FullName(provider, user, data.String(tableItem))
 		// Multi-part names (schema.table) require admin privileges when the schema
 		// is not the current user's own schema.
+		//
+		// This function used to write an error response directly here (it
+		// took an http.ResponseWriter and session ID for exactly that
+		// purpose) -- the one place in FormCreateQuery that touched the
+		// response at all, every other error path here just returns an
+		// error and lets the caller respond. TableCreate (tables.go), the
+		// only caller, saw the non-nil error returned below and wrote its
+		// own response on top of the one already sent: a second WriteHeader
+		// (superfluous; the first status, 403, wins on the wire) and a
+		// second JSON body concatenated onto the first, while the caller's
+		// own code believed it had sent 400 (REST-3 7.5). Just return the
+		// typed error now and let the caller classify it via
+		// dberrors.PayloadStatus, which already maps ErrNoPrivilegeForOperation
+		// to 403 -- consistent with every other error this function returns.
 		if !wasFullyQualified && !hasAdminPrivileges {
-			util.ErrorResponse(w, sessionID, errors.ErrNoPrivilegeForOperation.Error(), http.StatusForbidden)
-
 			return "", errors.ErrNoPrivilegeForOperation
 		}
 

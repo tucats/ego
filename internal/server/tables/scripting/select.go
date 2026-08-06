@@ -101,11 +101,36 @@ func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolT
 				rowPointers[i] = &row[i]
 			}
 
-			// Get the next row values. Note we only incorporate them into the symbol
-			// table on the first row (rowCount of zero), the rest are ignored. An error
-			// will be thrown later.
-			err = rows.Scan(rowPointers...)
-			if err == nil && rowCount == 0 {
+			// Get the next row values. Only the first row's values are stored
+			// into the symbol table; later rows are still scanned and
+			// counted (rowCount below), matching this function's own doc
+			// comment ("subsequent rows are counted but otherwise ignored").
+			// rowCount++ used to live inside the "if rowCount == 0" block
+			// below it, so it could only ever reach 1 and never higher --
+			// found while restructuring this loop for the scan-error fix
+			// below, fixed here as a straightforward correctness bug, but
+			// NOT the reason the "more than one row" branch a few lines down
+			// was unreachable: doSelect's caller always builds the query
+			// with "limit=1" (see fakeURL below in this file), which
+			// PagingClauses turns into a literal "LIMIT 1" -- so the
+			// database itself never returns more than one row, regardless
+			// of this loop's own counting. That is a separate, deeper bug
+			// (the ambiguity check needs LIMIT 2, not LIMIT 1, to ever see
+			// a second row to object to) outside REST-3's scope; flagged
+			// for separate follow-up, not fixed here.
+			if err = rows.Scan(rowPointers...); err != nil {
+				// A scan failure partway through the result set means the
+				// remaining rows cannot be trusted either. Stop immediately
+				// rather than continuing to call rows.Next(): looping on
+				// would let a later row's successful Scan overwrite err back
+				// to nil, making this failure disappear entirely by the time
+				// the loop ends (REST-3 7.4) -- silently reporting 200 (or
+				// even a stale symbol table from an earlier row) for a read
+				// that actually failed partway through.
+				break
+			}
+
+			if rowCount == 0 {
 				msg := strings.Builder{}
 
 				for i, v := range row {
@@ -119,12 +144,18 @@ func readTxRowData(db *database.Database, q string, sessionID int, syms *symbolT
 					msg.WriteString("=")
 					msg.WriteString(data.String(v))
 				}
-
-				rowCount++
 			}
+
+			rowCount++
 		}
 
-		if rowCount == 0 && emptyResultError {
+		if err != nil {
+			// Exec-stage failure discovered mid-scan: the query already ran,
+			// so an unrecognized cause defaults to 500, not 400 -- same
+			// classifier as the db.Query failure branch below, and every
+			// other opcode in this package.
+			status = dberrors.ExecStatus(err)
+		} else if rowCount == 0 && emptyResultError {
 			status = http.StatusNotFound
 			err = errors.ErrTableSelectNone
 		} else if rowCount > 1 {

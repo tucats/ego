@@ -1,13 +1,13 @@
 package parsing
 
 import (
-	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
 )
 
 // Test time string value used for validating timestamp handling in generators.
@@ -222,11 +222,10 @@ func TestFormCreateQuery_SQLiteTableNameIsQuoted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := &url.URL{Path: "/tables/" + tt.tableName}
-			w := httptest.NewRecorder()
 
 			items := []defs.DBColumn{{Name: "col", Type: "string", Nullable: defs.BoolValue{Specified: true, Value: true}}}
 
-			got, err := FormCreateQuery(u, "admin", false, items, 1, w, defs.SqliteProvider, false)
+			got, err := FormCreateQuery(u, "admin", false, items, defs.SqliteProvider, false)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -235,6 +234,29 @@ func TestFormCreateQuery_SQLiteTableNameIsQuoted(t *testing.T) {
 				t.Errorf("FormCreateQuery() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestFormCreateQuery_PostgresPrivilegeError_NoResponseWriter is a
+// regression test for REST-3 7.5: FormCreateQuery used to accept an
+// http.ResponseWriter and a session ID purely so its PostgreSQL
+// admin-privilege check could write an error response directly, which its
+// only caller (tables.go TableCreate) then wrote a second, conflicting
+// response on top of after seeing the returned error. The fix removed both
+// parameters from the signature entirely, which this test's call shape
+// itself demonstrates: there is no longer any way for this function to
+// touch a response at all, so the double-write it used to cause is now
+// structurally impossible rather than merely avoided by convention. What
+// remains observable from here is that the typed error is still returned
+// for the caller to classify (dberrors.PayloadStatus maps
+// ErrNoPrivilegeForOperation to 403).
+func TestFormCreateQuery_PostgresPrivilegeError_NoResponseWriter(t *testing.T) {
+	u := &url.URL{Path: "/tables/mytable"}
+	items := []defs.DBColumn{{Name: "col", Type: "string", Nullable: defs.BoolValue{Specified: true, Value: true}}}
+
+	_, err := FormCreateQuery(u, "someuser", false, items, defs.PostgresProvider, false)
+	if !errors.Equals(err, errors.ErrNoPrivilegeForOperation) {
+		t.Errorf("err = %v, want ErrNoPrivilegeForOperation", err)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 )
@@ -71,8 +72,9 @@ func doRows(sessionID int, user string, db *database.Database, task defs.TXOpera
 //   - true  → 404 + ErrTableNoRows
 //   - false → success; the stored slice is empty but present
 //
-// If the query itself fails, status is set to 400 and the error is wrapped and
-// returned; in that case the result set is not stored.
+// If the query itself fails, or a row fails to scan partway through the
+// result set, status is classified via dberrors.ExecStatus and the error is
+// wrapped and returned; in either case the result set is not stored.
 func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *symbolTable, emptyResultError bool) (int, int, error) {
 	var (
 		rows     *sql.Rows
@@ -105,30 +107,45 @@ func readTxRowResultSet(db *database.Database, q string, sessionID int, syms *sy
 				rowPointers[i] = &row[i]
 			}
 
-			err = rows.Scan(rowPointers...)
-			if err == nil {
-				newRow := map[string]any{}
-				for i, v := range row {
-					newRow[columnNames[i]] = v
-				}
-
-				result = append(result, newRow)
-				rowCount++
+			if err = rows.Scan(rowPointers...); err != nil {
+				// A scan failure partway through the result set means the
+				// remaining rows cannot be trusted either. Stop immediately
+				// rather than continuing to call rows.Next(): looping on
+				// would let a later row's successful Scan overwrite err back
+				// to nil, making this failure disappear entirely by the time
+				// the loop ends (REST-3 7.4) -- silently reporting 200 for a
+				// read that actually failed partway through.
+				break
 			}
+
+			newRow := map[string]any{}
+			for i, v := range row {
+				newRow[columnNames[i]] = v
+			}
+
+			result = append(result, newRow)
+			rowCount++
 		}
 
-		syms.symbols[resultSetSymbolName] = result
+		if err != nil {
+			// Exec-stage failure: the query already ran, so an unrecognized
+			// cause defaults to 500, not 400 -- same classifier every other
+			// opcode in this package uses for a post-Exec/Query failure.
+			status = dberrors.ExecStatus(err)
+		} else {
+			syms.symbols[resultSetSymbolName] = result
 
-		ui.Log(ui.TableLogger, "table.read", ui.A{
-			"session": sessionID,
-			"rows":    rowCount,
-			"columns": columnCount,
-			"status":  status})
+			ui.Log(ui.TableLogger, "table.read", ui.A{
+				"session": sessionID,
+				"rows":    rowCount,
+				"columns": columnCount,
+				"status":  status})
+		}
 	} else {
-		status = http.StatusBadRequest
+		status = dberrors.ExecStatus(err)
 	}
 
-	if rowCount == 0 && emptyResultError {
+	if err == nil && rowCount == 0 && emptyResultError {
 		return rowCount, http.StatusNotFound, errors.ErrTableNoRows
 	}
 
