@@ -6,7 +6,6 @@ package assets
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -58,15 +57,8 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		ui.Log(ui.AssetLogger, "asset.index", ui.A{
 			"session": session.ID,
 			"path":    path})
-		w.WriteHeader(http.StatusForbidden)
 
-		resp, _ := json.Marshal(struct {
-			Err string `json:"err"`
-		}{Err: i18n.T("msg.asset.index.forbidden")})
-		_, _ = w.Write(resp)
-		session.ResponseLength += len(resp)
-
-		return http.StatusForbidden
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "msg.asset.index.forbidden"), http.StatusForbidden)
 	}
 
 	// Do not permit relative path specifications to avoid poking _above_
@@ -75,15 +67,8 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		ui.Log(ui.AssetLogger, "asset.relative", ui.A{
 			"session": session.ID,
 			"path":    path})
-		w.WriteHeader(http.StatusForbidden)
 
-		resp, _ := json.Marshal(struct {
-			Err string `json:"err"`
-		}{Err: i18n.T("msg.asset.relative.forbidden")})
-		_, _ = w.Write(resp)
-		session.ResponseLength += len(resp)
-
-		return http.StatusForbidden
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "msg.asset.relative.forbidden"), http.StatusForbidden)
 	}
 
 	// Are we being asked to return just a portion of the asset because there is a range
@@ -134,15 +119,8 @@ func AssetsHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 			"session": session.ID,
 			"path":    path,
 			"error":   err.Error()})
-		w.WriteHeader(http.StatusNotFound)
 
-		resp, _ := json.Marshal(struct {
-			Err string `json:"err"`
-		}{Err: i18n.T("msg.asset.not.found")})
-		_, _ = w.Write(resp)
-		session.ResponseLength += len(resp)
-
-		return http.StatusNotFound
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "msg.asset.not.found"), http.StatusNotFound)
 	}
 
 	// Is the asset an .md (markdown) file? If so render it as HTML.

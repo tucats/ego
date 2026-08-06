@@ -405,8 +405,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// user authenticated as an admin account. If any permissions are missing, we fail
 	// with a Forbidden error.
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
+		allowed := true
+
 		for _, permission := range route.requiredPermissions {
 			if !auth.GetPermission(session.ID, session.User, permission) {
+				allowed = false
+
 				logger := ui.RouteLogger
 				if !ui.IsActive(logger) {
 					logger = ui.AuthLogger
@@ -426,15 +430,26 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						fmt.Sprintf(`Basic realm=%s, charset="UTF-8"`, strconv.Quote(Realm)))
 				}
 
+				// Stop at the first missing permission. Continuing to loop
+				// would call util.ErrorResponse again for every subsequent
+				// missing permission on a route that requires more than
+				// one -- each call writes its own status line and JSON
+				// body, and since a response can only be written to once,
+				// that means a second (and third, ...) body gets appended
+				// to the one already sent, corrupting it.
 				status = util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": permission}), sts)
+
+				break
 			}
 		}
 
-		ui.Log(ui.AuthLogger, "route.perm.authorized", ui.A{
-			"session":     session.ID,
-			"user":        session.User,
-			"permissions": route.requiredPermissions,
-		})
+		if allowed {
+			ui.Log(ui.AuthLogger, "route.perm.authorized", ui.A{
+				"session":     session.ID,
+				"user":        session.User,
+				"permissions": route.requiredPermissions,
+			})
+		}
 	}
 
 	// While we're here, copy the permissions list to the session for future use.

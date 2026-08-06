@@ -9,6 +9,7 @@
 package assets
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -576,6 +577,56 @@ func TestAssetsHandler_NotFound_Returns404(t *testing.T) {
 	status := AssetsHandler(makeSession(), w, req)
 	if status != http.StatusNotFound {
 		t.Errorf("missing file: want 404, got %d", status)
+	}
+}
+
+// TestAssetsHandler_ErrorBodiesUseStandardShape guards against the 403 and
+// 404 error paths reverting to their old hand-rolled `{"err": "..."}` body,
+// which disagreed with the `{"server", "status", "msg"}` shape every other
+// error response in the server -- including this handler's own 400
+// range-header errors a few lines above -- uses via util.ErrorResponse. A
+// client that already knows how to parse one Ego error response should be
+// able to parse all of them.
+func TestAssetsHandler_ErrorBodiesUseStandardShape(t *testing.T) {
+	dir, cleanup := makeTestDir(t)
+	defer cleanup()
+	setAssetRoot(t, dir)
+
+	cases := []struct {
+		name       string
+		path       string
+		wantStatus int
+	}{
+		{name: "empty path (403)", path: "", wantStatus: http.StatusForbidden},
+		{name: "path traversal (403)", path: "/assets/../../../etc/passwd", wantStatus: http.StatusForbidden},
+		{name: "missing file (404)", path: "/nonexistent.css", wantStatus: http.StatusNotFound},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			FlushAssetCache()
+
+			req := assetRequest(t, tc.path, "")
+			w := httptest.NewRecorder()
+
+			status := AssetsHandler(makeSession(), w, req)
+			if status != tc.wantStatus {
+				t.Fatalf("status = %d, want %d", status, tc.wantStatus)
+			}
+
+			var body defs.RestStatusResponse
+			if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+				t.Fatalf("response body did not parse as the standard RestStatusResponse shape: %v\nbody: %s", err, w.Body.String())
+			}
+
+			if body.Status != tc.wantStatus {
+				t.Errorf("body.Status = %d, want %d", body.Status, tc.wantStatus)
+			}
+
+			if body.Message == "" {
+				t.Error("body.Message is empty, want a localized error message")
+			}
+		})
 	}
 }
 

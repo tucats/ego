@@ -11,7 +11,14 @@
     "response": {
         "status": 403,
         "headers": {
-            "Content-Type": ["text/plain"]
+            "Content-Type": ["error+json"]
         }
-    }
+    },
+    "tests": [
+        {
+            "name": "status field is 403",
+            "query": "status",
+            "value": "403"
+        }
+    ]
 }

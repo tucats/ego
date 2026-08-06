@@ -43,12 +43,12 @@ func MakeBaseCollection(sessionID int) defs.BaseCollection {
 // is set in the response and is returned as the function value. This is intended
 // to be used as the exit operation from a REST API handler when an error occurs.
 func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
-	response := defs.RestStatusResponse{
-		ServerInfo: MakeServerInfo(sessionID),
-		Message:    msg,
-		Status:     status,
-	}
-
+	// Clamp to a valid HTTP status range, and strip postgres driver noise from
+	// the message, before either value goes into the response struct below.
+	// Both used to be adjusted only after `response` was already built, which
+	// meant the clamp and the trim never actually reached the JSON body sent
+	// to the client -- only the corrected status made it as far as the
+	// WriteHeader call a few lines down.
 	if status < 100 || status >= 600 {
 		status = http.StatusInternalServerError
 	}
@@ -58,6 +58,12 @@ func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int)
 	// postgres for some underlying functionality.
 	msg = strings.TrimPrefix(msg, "pq: ")
 	msg = strings.Replace(msg, " pq: ", "", 1)
+
+	response := defs.RestStatusResponse{
+		ServerInfo: MakeServerInfo(sessionID),
+		Message:    msg,
+		Status:     status,
+	}
 
 	// Construct a neatly formatted JSON response.
 	b, _ := json.MarshalIndent(response, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
