@@ -27,11 +27,12 @@ across all handlers were counted but not reviewed"). This issue is that
 audit, plus a re-check of whether REST-1/REST-2's own fixes actually reached
 every file they claimed to.
 
-**Status: IN PROGRESS, on branch `http-status`. Sections 1-6 are fixed and
-committed (`ac59959f`, `2fc83daf`, `34d9a25e`, `240cb961`, `130df06d`);
-section 7 (tables residual gaps) is still open findings only. This document
-is for review as work proceeds; see "Open questions for review" at the
-end.**
+**Status: FIXED, on branch `http-status`, not yet merged to `master`. All
+seven sections are committed: `ac59959f`, `2fc83daf`, `34d9a25e`,
+`240cb961`, `130df06d`, `968b7346`. One new, separate, security-relevant
+finding was surfaced (not fixed) while implementing 7.5 -- see the note at
+the end of section 7 -- and open questions 4-5 below remain genuinely open
+policy decisions, not implementation gaps.**
 
 ## How this was produced
 
@@ -532,7 +533,31 @@ right answer may be "don't let `os.exit()` do this at all" rather than
 
 ---
 
-## 7. `internal/server/tables` — REST-1/REST-2's own coverage has gaps
+## 7. `internal/server/tables` — REST-1/REST-2's own coverage has gaps — FIXED (`968b7346`)
+
+7.1-7.5 fixed as described. A bonus fix landed alongside 7.4: `readTxRowData`'s
+row counter was gated inside the same `if` block that stores the first
+row's values, so it could never exceed 1 — the function's own documented
+"more than one row is an error" behavior could never fire. Fixed as a
+straightforward correctness bug found while restructuring the loop, though
+note this alone doesn't make that check observable through `doSelect`
+in practice — see the code comment and commit message for why (a separate,
+deeper, `LIMIT 1` vs `LIMIT 2` bug, not fixed here).
+
+**New finding, not fixed, surfaced separately during 7.5:** `FormCreateQuery`'s
+PostgreSQL admin-privilege check (`internal/server/tables/parsing/generators.go`)
+appears to have an inverted condition. `FullName`'s `wasFullyQualified`
+return value is `true` when the caller supplied an explicit `schema.table`
+and `false` when the schema was auto-filled with the user's own name — but
+the privilege check fires on `!wasFullyQualified`, i.e. the auto-filled,
+same-schema, safe case, not the explicit-cross-schema case both the
+function's own comment and this document's original 7.5 description say it
+should. If this reading holds, an ordinary non-admin user creating a
+same-schema table is incorrectly rejected, while a non-admin user
+explicitly naming a *different* schema is not rejected at all — the
+opposite of the intended authorization check. This is an authorization-logic
+question, not a status-code one, and needs its own review; recommend
+opening a dedicated issue rather than folding a fix into this one.
 
 Re-checking the files REST-1/REST-2 name as fixed (`rows.go`,
 `rowsAbstract.go`, `sql.go`, `describe.go`, `tables.go`, `list.go`,
@@ -631,32 +656,33 @@ let callers classify them, which is the intended shape.
 
 ## Summary table
 
-| # | Area | Finding | Severity |
-|---|------|---------|----------|
-| 1.1 | util | `ErrorResponse` body/header status mismatch on invalid input | LOW |
-| 1.2 | router | Permission-check loop doesn't stop after first failure — malformed multi-write response | MEDIUM |
-| 1.3 | assets | Two different error body shapes in one handler | LOW |
-| 2.1 | admin | `ASTHandler` 500 vs. documented/sibling 200-with-body convention | MEDIUM |
-| 2.2 | admin | Token revoke/delete: post-storage failure defaults to 400 not 500 | MEDIUM |
-| 2.3 | admin | `validation.go` funnels all encode errors into 404 | MEDIUM |
-| 2.4 | admin/users | Update/delete: write failure after confirmed existence reported as 404 | MEDIUM |
-| 2.5 | admin/users | Create silently upserts, no 409 for duplicate | LOW/MEDIUM |
-| 2.6 | admin | Project-wide: no 201/204 for create/delete | Open question |
-| 3 | dsns | Three handlers bypass `dberrors`; same DSN error gets 3 different codes in one file; "already exists" is 400 not 409 | MEDIUM |
-| 4 | cluster | 401/403 conflated for missing vs. bad-role cluster token | MEDIUM |
-| 5.1 | oauth | AS endpoints use Ego's generic shape, not RFC 6749 `{error, error_description}` | HIGH |
-| 5.2 | oauth | Wrong RFC error-code category (`invalid_grant` used for `unsupported_grant_type`/`unauthorized_client`) | MEDIUM |
-| 5.3 | oauth | Missing `WWW-Authenticate` on 401s (except userinfo) | MEDIUM |
-| 5.4 | oauth | `authorize.go` uses 401 outside an auth context | MEDIUM |
-| 5.5 | oauth | `callback.go` discards typed IdP errors, always 502 | MEDIUM |
-| 5.6 | oauth | Three different response-construction idioms in one package | LOW |
-| 6.1 | services | Compile error vs. missing file indistinguishable, hardcoded 500 | MEDIUM |
-| 6.2 | services | Child-mode 400 is dead code; parent always hardcodes 500 | MEDIUM |
-| 6.3 | services | Script's own status always overwritten by 500 on runtime error | LOW/MEDIUM |
-| 6.4 | services | `os.exit()` in a script can shut down the real server process | HIGH |
-| 7.1–7.3 | tables/scripting | Three sibling opcodes bypass `dberrors.ExecStatus`, unlike their fixed neighbors | MEDIUM |
-| 7.4 | tables/scripting | Silent 200 on mid-scan failure in two files | HIGH |
-| 7.5 | tables/parsing | Query builder double-writes response, corrupting body | MEDIUM |
+| # | Area | Finding | Severity | Status |
+|---|------|---------|----------|--------|
+| 1.1 | util | `ErrorResponse` body/header status mismatch on invalid input | LOW | Fixed |
+| 1.2 | router | Permission-check loop doesn't stop after first failure — malformed multi-write response | MEDIUM | Fixed |
+| 1.3 | assets | Two different error body shapes in one handler | LOW | Fixed |
+| 2.1 | admin | `ASTHandler` 500 vs. documented/sibling 200-with-body convention | MEDIUM | Fixed |
+| 2.2 | admin | Token revoke/delete: post-storage failure defaults to 400 not 500 | MEDIUM | Fixed |
+| 2.3 | admin | `validation.go` funnels all encode errors into 404 | MEDIUM | Not a bug (verified) |
+| 2.4 | admin/users | Update/delete: write failure after confirmed existence reported as 404 | MEDIUM | Fixed |
+| 2.5 | admin/users | Create silently upserts, no 409 for duplicate | LOW/MEDIUM | Fixed |
+| 2.6 | admin | Project-wide: no 201/204 for create/delete | Open question | Open |
+| 3 | dsns | Three handlers bypass `dberrors`; same DSN error gets 3 different codes in one file; "already exists" is 400 not 409 | MEDIUM | Fixed |
+| 4 | cluster | 401/403 conflated for missing vs. bad-role cluster token | MEDIUM | Fixed |
+| 5.1 | oauth | AS endpoints use Ego's generic shape, not RFC 6749 `{error, error_description}` | HIGH | Fixed |
+| 5.2 | oauth | Wrong RFC error-code category (`invalid_grant` used for `unsupported_grant_type`/`unauthorized_client`) | MEDIUM | Fixed |
+| 5.3 | oauth | Missing `WWW-Authenticate` on 401s (except userinfo) | MEDIUM | Fixed |
+| 5.4 | oauth | `authorize.go` uses 401 outside an auth context | MEDIUM | Fixed |
+| 5.5 | oauth | `callback.go` discards typed IdP errors, always 502 | MEDIUM | Fixed |
+| 5.6 | oauth | Three different response-construction idioms in one package | LOW | Resolved as side effect of 5.1 |
+| 6.1 | services | Compile error vs. missing file indistinguishable, hardcoded 500 | MEDIUM | Fixed |
+| 6.2 | services | Child-mode 400 is dead code; parent always hardcodes 500 | MEDIUM | Fixed |
+| 6.3 | services | Script's own status always overwritten by 500 on runtime error | LOW/MEDIUM | Documented as deliberate policy |
+| 6.4 | services | `os.exit()` in a script can shut down the real server process | HIGH | Fixed (shutdown code removed) |
+| 7.1–7.3 | tables/scripting | Three sibling opcodes bypass `dberrors.ExecStatus`, unlike their fixed neighbors | MEDIUM | Fixed |
+| 7.4 | tables/scripting | Silent 200 on mid-scan failure in two files | HIGH | Fixed |
+| 7.5 | tables/parsing | Query builder double-writes response, corrupting body | MEDIUM | Fixed |
+| — | tables/parsing | **New:** `FormCreateQuery` PostgreSQL privilege check looks inverted (found during 7.5) | Needs review | Not fixed — separate issue recommended |
 
 ---
 
@@ -664,7 +690,8 @@ let callers classify them, which is the intended shape.
 
 1. **Scope for a first pass — RESOLVED.** Landed as a series of package-
    scoped commits (one per document section) on the `http-status` branch,
-   each independently reviewed, tested, and pushed. Sections 1-6 are done.
+   each independently reviewed, tested, and pushed. All seven sections are
+   done; the branch has not yet been merged to `master`.
 2. **OAuth error shape (5.1) — RESOLVED.** Confirmed: build the full
    RFC-6749-shaped writer and fix the error categories (5.2) and
    `WWW-Authenticate` headers (5.3) together. Done in `240cb961`.
@@ -685,6 +712,10 @@ let callers classify them, which is the intended shape.
    checks, the OAuth `oauthErrorCode` enum, etc.) rather than a shared
    package — that may be the answer in practice, but it was never decided
    as a deliberate policy.
+6. **New: `FormCreateQuery`'s PostgreSQL privilege check (found during
+   7.5).** Reads as inverted — see the note in section 7 above. Needs its
+   own review before any fix; recommend a dedicated issue rather than
+   folding it into this one after the fact.
 
 ## Related
 
