@@ -29,8 +29,11 @@ session. If the _Remember login_ setting is enabled (see [Settings](#settings) b
 token is also written to a browser cookie that expires after 24 hours, so the login survives
 a page refresh or a new tab opened to the same server.
 
-If you remain idle for more than **15 minutes**, the dashboard automatically signs you out and
-re-displays the login overlay.
+If you remain idle, the dashboard automatically signs you out and re-displays the login
+overlay. The idle timeout is set by the server (the `ego.server.dashboard.inactivity`
+setting) and sent to the dashboard as part of a successful login; **15 minutes** is only the
+default the dashboard falls back to if that value is ever unavailable, so the real timeout on
+a given server may be shorter or longer.
 
 ### Passkey Login (FaceID / TouchID)
 
@@ -40,30 +43,30 @@ the Sign In overlay shows a **Sign in with FaceID/TouchID** button beneath the s
 username/password fields. Click that button to authenticate with a previously registered
 passkey instead of typing a password.
 
-After a successful username/password login, the dashboard checks whether a passkey has
-already been registered for your account. If not, and if the current browser supports
-passkeys, you are prompted to store a passkey for future logins. You can dismiss the prompt
-to skip passkey registration.
+After a successful username/password login, if the current browser supports passkeys and you
+have not previously dismissed the prompt, you are offered the chance to store a passkey for
+future logins. This offer is not conditioned on whether a passkey already exists for your
+account anywhere else — it is based only on whether this particular browser has been told to
+stop asking. Two different buttons dismiss the prompt with different persistence: **Not Now**
+skips it for this session only, while **Don't Ask Again** suppresses it in this browser for 90
+days.
 
 &nbsp;
 
 ## Header Bar
 
-The top of every page shows:
-
-| Area | Content |
-| :--- | :--- |
-| Logo | Ego logo |
-| Server name & version | Hostname of the connected server and the server software version |
-| Instance ID | The server's unique UUID (useful when running multiple instances) |
-| Up since | The date and time the server was started |
-| ☰ (hamburger) | Opens a dropdown menu with Help, Settings, and Log Out |
+The top of every page is a simple strip containing just the Ego logo (left) and the hamburger
+menu button (right). Server identity — hostname, version, instance UUID, and start time — no
+longer lives in the header; it has moved to the **Server Info** sheet, opened from the Status
+tab's toolbar (see [Status Tab](#status-tab) below).
 
 &nbsp;
 
 ## Hamburger Menu
 
-Click the hamburger button (☰) in the top-right corner of the header to open the menu:
+Click the hamburger button (☰) in the top-right corner of the header to open the menu. When you
+are signed in, the dropdown's first line reads **Logging in as _username_**, followed by a
+divider and then the menu items:
 
 | Item | Action |
 | :--- | :--- |
@@ -76,13 +79,28 @@ Click the hamburger button (☰) in the top-right corner of the header to open t
 ## Settings
 
 The Settings sheet slides in from the right when you choose **Settings** from the hamburger
-menu. It contains three toggle switches:
+menu. It groups six settings under three headings:
+
+### Appearance
+
+| Setting | Description |
+| :--- | :--- |
+| **Dark mode** | A three-way switch — **Auto**, **On**, **Off** — rather than a simple toggle. **Auto** follows your browser/OS color-scheme preference and switches live if that preference changes while the dashboard is open. The Code tab always uses its own dark theme regardless of this setting. |
+| **Use Text Buttons** | When enabled (the default), toolbar buttons across every tab show an icon plus a text label. Turn it off to show icons only, for a more compact toolbar. |
+
+### Logins
 
 | Setting | Description |
 | :--- | :--- |
 | **Remember login** | When enabled, the session token is saved to a browser cookie so a page refresh does not require you to sign in again. The cookie expires after 24 hours. |
-| **Dark mode** | Switches the dashboard to a dark color scheme. The Code tab always uses a dark theme regardless of this setting. |
 | **Use passkeys** | Allow passkey (biometric / hardware key) login and registration. Turn off to use passwords only, even if the server supports passkeys. |
+
+### Code
+
+| Setting | Description |
+| :--- | :--- |
+| **Format** | When enabled, the Code tab's editor is automatically reformatted before every Run or Debug, and the SQL tab's editor before every Submit. Off by default. |
+| **Console** | Shows or hides the Code tab's Console (REPL) panel. On by default. |
 
 All settings are stored as browser cookies and persist across sessions.
 
@@ -99,15 +117,17 @@ tab is remembered between page loads.
 | :--- | :--- |
 | [Status](#status-tab) | Server metrics and cache summary |
 | [Users](#users-tab) | User account management |
-| [DSNs](#dsns-tab) | Database connection list |
+| [DSNs](#dsns-tab) | Create, manage, and set permissions on database connections |
 | [Tables](#tables-tab) | Browse tables in a DSN |
 | [Data](#data-tab) | Browse and edit table rows |
 | [SQL](#sql-tab) | Interactive SQL editor and builder |
 | [Code](#code-tab) | _Ego_ code editor, debugger, and REPL |
 | [Log](#log-tab) | Server log viewer and logger configuration |
 
-Most tabs are visible only to users with the `ego.admin` permission. The Code tab is
-available to any user with the `ego.code.run` permission.
+Most tabs (Status, Users, DSNs, Tables, Data, SQL, and Log) are hidden entirely unless the
+logged-in user has the `ego.root` permission. The Code tab is available to any user with the
+`ego.code` permission, and is the only tab shown to a non-admin user; a non-admin lands there
+automatically after signing in.
 
 &nbsp;
 
@@ -118,13 +138,13 @@ The Status tab shows two compact three-column grids: **Metrics** (Go runtime sta
 
 ```text
 ┌────────────────────────────────────────────────────────────────────┐
-│  ↺ Refresh   🗑 Flush Caches   ⚙ Configuration…                    │
+│  ↺ Refresh   🗑 Flush Caches   ℹ Server Info                       │
 ├────────────────────────────────────────────────────────────────────┤
 │  METRICS                                                           │
 │                                                                    │
 │  Uptime           2h 28m   Objects in Use      16,698   App Mem   …│
 │  Requests Proc.      100   Heap Memory       36.69 MB   Stack Mem …│
-│  GC Cycles            90                                           │
+│  GC Cycles            90   Goroutines             42                │
 ├────────────────────────────────────────────────────────────────────┤
 │  CACHE STATUS                                                      │
 │                                                                    │
@@ -149,6 +169,7 @@ The Status tab shows two compact three-column grids: **Metrics** (Go runtime sta
 | Heap Memory | Memory currently allocated on the heap |
 | Stack Memory | Memory currently in use by goroutine stacks |
 | Application Memory | Total memory obtained from the operating system |
+| Goroutines | Number of active Go goroutines in the server process |
 
 **Cache Status fields:**
 
@@ -175,9 +196,27 @@ its endpoint name, class (service or asset), reuse count, size, and last-access 
 | :--- | :--- |
 | ↺ Refresh | Reloads metrics and cache data from the server |
 | 🗑 Flush Caches | Deletes all cached items, forcing the server to recompile services and reload assets on the next request |
-| ⚙ Configuration… | Opens a read-only sheet listing every server configuration key and its current value |
+| ℹ Server Info | Opens the [Server Info sheet](#server-info-sheet) |
 
-> **Permission required:** `ego.admin`
+&nbsp;
+
+#### Server Info Sheet
+
+Click **ℹ Server Info** to open a read-only sheet with three parts:
+
+1. **Server identity** — the block of information that used to sit in the page header:
+   Host Name, Ego Version, Server UUID, and Started (with a live-computed uptime alongside
+   the timestamp, e.g. `Mon Jan 2 15:04:05 MST 2006 (up 2h 28m)`).
+2. **Host machine** — details about the machine the server process is running on: Platform
+   (e.g. `macOS 14.5`), Architecture, CPU Cores, Total Memory, and Available Memory. This
+   section is best-effort: if the underlying host query fails or is unavailable, it is
+   simply omitted and the rest of the sheet still works.
+3. **Setting / Value table** — every server configuration key and its current value, sorted
+   alphabetically, exactly as in earlier versions of this sheet. Each row is now clickable:
+   clicking a setting opens a small popup showing its full name, current value, and a
+   description of what it controls.
+
+> **Permission required:** `ego.root`
 
 &nbsp;
 
@@ -190,9 +229,11 @@ accounts.
 
 | Column | Description |
 | :--- | :--- |
-| Username | The login name for the account |
-| User ID | An internal identifier assigned by the server |
-| Permissions | Comma-separated list of capabilities granted to this user (e.g. `ego.logon, ego.admin`) |
+| User | The login name for the account |
+| ID | An internal identifier assigned by the server |
+| Permissions | Comma-separated list of capabilities granted to this user (e.g. `ego.logon, ego.root`) |
+| Passkeys | Number of passkeys registered for this account |
+| Last Login | Date and time of the account's most recent successful token issuance, or a dash if it has never logged in |
 
 **Creating a user** — click **New User** to open the creation sheet:
 
@@ -207,7 +248,8 @@ accounts.
 * Enter a **New password** to change the password, or leave the field blank to keep the
   current password.
 * Edit the **Permissions** field as needed.
-* The sheet also shows the user's **passkey count** and **last login** time (read-only).
+* The sheet also shows the user's **passkey count** and **last login** time (read-only) —
+  the same values already visible in the list, repeated here for convenience.
 * Click **Save** to apply changes, or **Delete** to remove the account entirely.
 
 When passkeys are enabled, the edit sheet also shows passkey buttons:
@@ -222,37 +264,65 @@ Common permission values:
 | Permission | Grants |
 | :--- | :--- |
 | `ego.logon` | Ability to authenticate (required for all interactive use) |
-| `ego.admin` | Full administrative access: users, loggers, caches, memory stats |
-| `ego.code.run` | Ability to execute arbitrary _Ego_ code in the Code tab |
+| `ego.root` | Full administrative access: users, loggers, caches, memory stats |
+| `ego.code` | Ability to execute arbitrary _Ego_ code in the Code tab |
 | `ego.dsn.admin` | Ability to manage data source connections |
 
-> **Permission required:** `ego.admin`
+> **Permission required:** `ego.root`
 
 &nbsp;
 
 ### DSNs Tab
 
 DSN stands for _Data Source Name_ — a named connection descriptor that tells the server how
-to connect to a database. The DSNs tab lists every DSN configured on the server.
+to connect to a database. The DSNs tab lists every DSN configured on the server, and lets you
+create, delete, and manage per-user permissions on them directly from the dashboard.
 
 **Columns:**
 
 | Column | Description |
 | :--- | :--- |
 | Name | The identifier used to reference this connection in _Ego_ programs and REST requests |
-| Provider | Database engine: `sqlite3`, `postgres`, `mysql`, etc. |
+| Provider | Database engine: `sqlite`, `postgres`, etc. |
 | Database | Name of the database (or file path for SQLite) |
 | Host | Hostname of the database server (blank for SQLite) |
 | Port | TCP port (blank for SQLite) |
 | User | Database login username |
-| Secured | `Yes` if the connection uses SSL/TLS |
-| Restricted | `Yes` if access to this DSN is limited to admin users |
+| Secured | `Yes` if _Ego_'s own per-table permission checks are enforced for this DSN's tables. When `No`, any user who can reach the DSN can perform any operation on any of its tables. |
+| Restricted | `Yes` if using this DSN at all requires an explicit per-user grant (see [Permissions](#dsn-permissions) below). When `No`, any authenticated user can use the DSN. |
 
-DSN management (creating and deleting connections) is done through the _Ego_ CLI or the REST
-API. The dashboard displays the current DSN list for reference. See
-[Ego Table Server Commands](TABLES.md) for more information.
+**Creating a DSN** — click **New DSN** to open the creation sheet:
 
-> **Permission required:** `ego.admin`
+1. Enter a **Name**.
+2. Choose a **Provider**: **Postgres** or **Sqlite3**.
+3. Fill in **Host**, **Port**, **Database**, **Schema**, and **User** as appropriate for the
+   provider (SQLite connections typically leave Host and Port blank).
+4. Check **Secured** to enable per-table permission checks, and/or **Restricted** to require
+   an explicit per-user grant before the DSN can be used at all.
+5. **Row ID** is checked by default — leave it checked so the server adds its automatic
+   `_row_id_` column to tables created through this DSN, which most dashboard features
+   (row editing, the SQL Build wizard) rely on to identify individual rows.
+6. Click **Save**.
+
+**Viewing and managing a DSN** — click any row in the table to open the detail sheet:
+
+* All of the DSN's attributes are shown in a read-only table.
+* If the DSN is **Restricted**, a **Permissions** section lists every user who has been
+  granted access, with their comma-separated permission list. Click a user row to edit or
+  remove their permissions.
+* Click **Show tables…** to jump to the [Tables tab](#tables-tab) with this DSN pre-selected.
+* Click **Add permission…** to grant a new user access (see below).
+* Click **Delete** to remove the DSN entirely, or **Close** to dismiss the sheet.
+
+<a id="dsn-permissions"></a>**Managing permissions** — from the detail sheet:
+
+* **Add permission…** opens a sheet with a **User** field and a comma-separated
+  **Permissions** field; click **Save** to grant them.
+* Clicking an existing user row in the Permissions list opens an edit sheet pre-filled with
+  their current permissions. Change the **Permissions** field and click **Save**, or click
+  **Delete** to revoke all of that user's permissions on this DSN.
+
+> **Permission required:** `ego.root`
 
 &nbsp;
 
@@ -260,12 +330,14 @@ API. The dashboard displays the current DSN list for reference. See
 
 The Tables tab lets you browse the database tables available through a DSN.
 
-1. Select a **DSN** from the dropdown at the top of the tab. The table list updates
-   automatically.
+1. Select a **DSN** from the dropdown at the top of the tab, or click **↺ Refresh** to reload
+   the table list for the currently selected DSN.
 2. The table list shows the **name**, **schema**, **column count**, and **row count** for
    each table.
 3. Click any table row to open a **detail sheet** listing each column's name, data type,
    size, and whether it is nullable or must contain a unique value.
+4. From the detail sheet, click **View Data** to jump straight to the [Data tab](#data-tab)
+   with this DSN and table pre-selected, or **Close** to dismiss the sheet.
 
 > **Permission required:** access to the selected DSN
 
@@ -280,31 +352,45 @@ The Data tab lets you browse and edit the rows stored in a database table.
 1. Choose a **DSN** from the first dropdown.
 2. Choose a **Table** from the second dropdown (populated automatically when a DSN is
    selected).
-3. The rows of the selected table are loaded and displayed.
+3. The rows of the selected table are loaded and displayed. Click **↺ Refresh** at any time
+   to reload just the row data without re-selecting the DSN or table.
 
 **Reading the data grid:**
 
 * Each column in the table becomes a column in the grid.
+* If the table's unique key is the server's internal `_row_id_` column, the grid adds its own
+  **Row ID** column for it, since `_row_id_` is otherwise excluded from the regular data
+  columns.
 * Numeric columns (`int`, `float`, and related types) are right-aligned.
 * Fields that contain no value are shown as `null` in italic grey text.
 * Float values always display a decimal point (e.g. `42.0`) to distinguish them from
   integers.
 * A **row count** summary is shown below the grid.
 
-**Choosing visible columns** — click **Columns** to open a picker sheet:
+**Choosing visible columns** — click **Columns…** to open a picker sheet:
 
 * Toggle individual columns on or off using the checkboxes.
 * Click **Select all** to make every column visible again.
 * The selection resets automatically when you switch to a different DSN or table.
 
-**Editing a row** — click any row in the grid to open an edit sheet:
+**Opening the data as SQL** — click **SQL…** to switch to the [SQL tab](#sql-tab) with a
+`SELECT` statement pre-filled for the current table, scoped to whichever columns are
+currently visible (or `SELECT *` if every column is shown).
 
-* All fields for that row are shown.
-* Modify field values and click **Edit** to save changes back to the database.
-* Click **Delete** to remove the row (only available for rows that have a row ID).
+**Editing a row** — click any row in the grid to open an edit sheet (titled **Edit Row**, or
+**Row Contents** if the row has no usable key):
+
+* All fields for that row are shown. The column that uniquely identifies the row (its unique
+  key, or `_row_id_` if the table has one) is marked with 🔑 and cannot be edited.
+* Each editable field has its own **Null** button beside it, to explicitly set that field to
+  SQL `NULL` rather than an empty string.
+* Modify field values and click **Save** to write changes back to the database. The **Save**
+  button stays disabled until at least one field actually differs from its original value.
+* Click **Delete** to remove the row (only available for rows that have a usable key).
 * Click **Cancel** to close the sheet without changes.
-* If a row has no internal row ID, the sheet shows a message indicating that the row
-  cannot be modified through the dashboard.
+* If a row has no internal row ID or other unique key, the sheet shows a message indicating
+  that the row cannot be modified through the dashboard, and both **Save** and **Delete**
+  stay disabled.
 
 > **Permission required:** access to the selected DSN and table
 
@@ -325,6 +411,7 @@ preprocessor, and a point-and-click wizard for building common SQL statements.
 | **DSN** picker | Selects the database connection that all statements in the editor will run against. |
 | **✕ Clear** | Clears the editor contents and any previous results. |
 | **🔨 Build** | Opens the SQL Build wizard to construct a statement interactively. |
+| **≡ Format** | Reformats the SQL currently in the editor. If the [Format setting](#settings) is enabled, this also happens automatically before every Submit. |
 | **▶ Submit** | Executes all statements in the editor. Keyboard shortcut: **Ctrl+Enter** (or **Cmd+Enter** on macOS). |
 | **📂 Open** | Opens a file picker to load a `.sql` or `.txt` file from your local disk into the editor. |
 | **💾 Save** | Saves the current editor contents to a file. On Chrome and Edge the browser shows a native Save dialog; on other browsers the file is downloaded to the default Downloads folder. |
@@ -339,29 +426,32 @@ type names, string literals, numeric literals, and comments as you type.
 **Multiple statements** are separated by semicolons. Each statement can span multiple lines;
 the preprocessor joins continuation lines automatically before sending them to the server.
 
-**Comment lines** — any line whose first non-whitespace characters are `//` is treated as a
-comment and stripped before execution. This lets you annotate your queries without affecting
-what the server sees:
+**Comments** — `--`, `//`, and `#` all introduce a line comment, and `/* ... */` block
+comments are also recognized; none of these need to be the first characters on the line, so
+trailing/inline comments are stripped too. This lets you annotate your queries without
+affecting what the server sees:
 
 ```sql
-// Fetch recent orders for reporting
-SELECT order_id, customer, total
+-- Fetch recent orders for reporting
+SELECT order_id, customer, total   -- only open orders
 FROM orders
 WHERE created_at > '2024-01-01'
 ORDER BY created_at DESC;
 ```
 
-**DSN hint** — a special comment of the form `// <name> dsn` (placed anywhere in the
-editor) automatically switches the DSN picker to the named connection when you press Enter
-at the end of that line:
+**DSN hint** — a comment anywhere in the editor that combines the word `dsn` with a
+connection name (in either order, e.g. `-- production dsn` or `-- dsn production`) switches
+the DSN picker to that connection whenever you press Enter anywhere in the editor, and again
+whenever a file is loaded with **Open**:
 
 ```sql
-// production dsn
+-- production dsn
 SELECT count(*) FROM customers;
 ```
 
 This is convenient for saved query files that are always intended to run against a specific
-database.
+database. If the editor contains hints for more than one distinct DSN name, no switch
+happens — resolve the ambiguity by removing the extra hint.
 
 **Results** appear below the editor:
 
@@ -502,6 +592,10 @@ Build a `CREATE TABLE (…)` statement to define a new table in the selected DSN
 | **Table name** | Type the name of the new table. An inline indicator shows ✔ when the name is available or ✘ when a table with that name already exists in the DSN. The Insert button is disabled until a valid, unique name is entered. |
 | **Columns** | Click **+ Add column** to add a column definition row. Each row has a **Name** input, a **Type** dropdown, a **Unique** checkbox, and a **Nullable** checkbox (checked by default). Remove a column with the **✕** button. At least one column is required. |
 
+If the selected DSN has Row ID support enabled, the wizard automatically adds a locked
+`_row_id_` column (marked with 🔒) as the first row — it cannot be edited or removed, and
+overrides any `_row_id_` column that a pre-loaded `CREATE TABLE` statement may have defined.
+
 The **Type** dropdown offers the most commonly used SQL data types:
 
 ```text
@@ -637,9 +731,9 @@ debug _Ego_ programs directly in the browser.
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│  [▶ Run ▾]  (spinner)  │  [Trace ◼]  │  [Console ◼]            │
+│  [▶ Run ▾]  [≡ Format]  (spinner)                                │
 ├────────────────────────────────────────┬─────────────────────────┤
-│  Editor            [📂 Open]  [✕]      │  Output   (elapsed) [✕]│
+│  Editor      [📂 Open] [💾 Save] [✕]   │  Output   (elapsed) [💾][✕]│
 │                                        │                         │
 │  (syntax-highlighted source)           │  (program output)       │
 │                                        │                         │
@@ -656,7 +750,8 @@ debug _Ego_ programs directly in the browser.
 ```
 
 The vertical divider between the editor and the right pane, and the horizontal divider
-above the console, can both be dragged to resize the panes.
+above the console, can both be dragged to resize the panes. The Console pane itself is shown
+or hidden by the **Console** setting in [Settings](#settings), not by a toolbar button.
 
 &nbsp;
 
@@ -667,10 +762,9 @@ The toolbar runs across the top of the Code tab:
 | Control | Description |
 | :--- | :--- |
 | **▶ Run** (main button) | Compiles and executes the program in the current run mode. |
-| **▾** (dropdown arrow) | Opens a menu to choose the run mode: **▶ Run** or **🐛 Debug**. The mode is remembered until changed. |
+| **▾** (dropdown arrow) | Opens a menu to choose the run mode: **▶ Run**, **🐛 Debug**, or **👣 Trace**. The mode is remembered until changed. In Trace mode, a normal run executes with the server's instruction-by-instruction virtual-machine trace streamed into the Output pane alongside the program's own output — Trace mode replaced what used to be a separate toggle button. |
+| **≡ Format** | Reformats the editor's source on demand, regardless of the Format setting below. |
 | _(spinner)_ | Animated spinner visible while the server is processing a request. |
-| **Trace ◼** | Toggle: when the indicator is filled (◼), the server streams a full instruction-by-instruction virtual-machine trace to the Output pane alongside program output. Click again to turn off. |
-| **Console ◼** | Toggle: shows or hides the Console pane at the bottom of the tab. The last state is remembered. |
 
 &nbsp;
 
@@ -682,11 +776,12 @@ The left pane contains the code editor:
 * Line numbers are shown on the left edge.
 * The current debug line is highlighted with a colored band during a debug session.
 
-The editor pane's label bar contains two inline buttons:
+The editor pane's label bar contains three inline buttons:
 
 | Button | Action |
 | :--- | :--- |
 | **📂 Open** | Opens a file picker to load an `.ego` file from your local disk into the editor. |
+| **💾 Save** | Saves the current editor contents to a `.ego` file. |
 | **✕** | Clears the editor contents. |
 
 **Ctrl+Enter** (or **Cmd+Enter** on macOS) runs the code without reaching for the mouse.
@@ -700,7 +795,21 @@ The right pane shows the output of the most recent run:
 * Output from `fmt.Print`, `fmt.Println`, and similar calls appears here.
 * Compiler errors and runtime errors are highlighted in red.
 * After a run completes, the elapsed execution time is displayed in the pane label bar.
-* The **✕** button in the label bar clears the output.
+* **💾** in the label bar saves the current output to a `.txt` file; **✕** clears it.
+
+&nbsp;
+
+#### Formatting Code
+
+Click **≡ Format** in the toolbar at any time to send the editor's current source to the
+server's AST-based _Ego_ formatter (the same kind of reformatting the SQL tab's Format button
+does for SQL, but this one understands _Ego_ syntax) and replace the editor contents with the
+result.
+
+If you would rather this happen automatically, enable the **Format** setting in
+[Settings](#settings): with it on, the editor is reformatted before every **Run** or **Debug**
+(Trace mode included, since it runs the same way as Run). The setting is off by default, so
+existing formatting is left alone unless you opt in.
 
 &nbsp;
 
@@ -759,6 +868,7 @@ Type `help` at the `debug>` prompt to display the full command reference:
 | `show breaks` | List all active breakpoints |
 | `show calls [<n>]` | Display the call stack to a given depth |
 | `show line` | Show the source line currently being executed |
+| `show package <name> [<name> ...]` | Display exported constants, types, and functions for one or more packages |
 | `show scope` | Display the nested call scope and symbol table chain |
 | `show source [<start>[:<end>]]` | Display source lines from the current module |
 | `show symbols` | Display all variables in the current scope |
@@ -774,7 +884,8 @@ or click the **✕** button to clear debugger output.
 #### Console Pane (REPL)
 
 The console at the bottom of the tab provides a read-eval-print loop (REPL). It can be
-shown or hidden with the **Console ◼** toggle button in the toolbar.
+shown or hidden with the **Console** toggle in [Settings](#settings); the preference persists
+across sessions and is applied as soon as the page loads.
 
 Type a single _Ego_ statement at the `ego>` prompt and press **Enter** to execute it
 immediately. The result or any output appears directly in the console history above the
@@ -793,7 +904,7 @@ specific browser tab (identified by a UUID generated when the page loads). Symbo
 for inactive sessions are automatically cleaned up by the server after one hour of
 inactivity.
 
-> **Permission required:** `ego.code.run`
+> **Permission required:** `ego.code`
 
 &nbsp;
 
@@ -859,7 +970,10 @@ server. The settings are remembered between visits.
   dashboard is displaying.
 * **Logging class** — restricts results to the checked categories. Leaving every box
   unchecked includes them all. Categories that are currently switched off are still listed,
-  because the log file may already contain lines written while they were on.
+  because the log file may already contain lines written while they were on. The list of
+  available classes is not hardcoded into the dashboard — it is fetched from the server, so
+  it always matches whatever logging categories that particular build of _Ego_ registers (see
+  [Available log categories](#available-log-categories) below).
 * **Clear filters** — removes every filter. This deliberately leaves **Limit results**
   alone, since that governs how much is fetched rather than what qualifies.
 
@@ -877,23 +991,45 @@ Opened with the gear.
   logger causes the server to start writing that category of messages immediately; disabling
   it stops them. Changes take effect as soon as you click **Save**.
 
-Available log categories:
+<a id="available-log-categories"></a>**Available log categories:**
+
+The current build of _Ego_ registers 28 logging categories. Both the sheets above populate
+their category lists directly from the server (`GET /admin/loggers`) rather than from a fixed
+list built into the dashboard, so a custom build that adds its own logger would show up here
+automatically. As of this writing, the categories are:
 
 | Logger | What it records |
 | :--- | :--- |
+| APP | General application/console-level messages outside the server request path |
+| ASSET | Static asset (dashboard HTML/CSS/JS) serving |
 | AUTH | Authentication and authorization decisions |
 | BYTECODE | Disassembly of compiled _Ego_ pseudo-instructions |
+| CACHE | In-memory cache add/evict/purge activity |
+| CHILD | Child-process service invocation (`ego.server.child.services`) |
 | CLI | Command-line argument processing |
 | COMPILER | Package imports and source-file compilation steps |
 | DB | Database connection lifecycle events |
+| DEBUG | Interactive debugger session activity |
+| GOROUTINE | _Ego_ `go` statement goroutine launch and lifecycle |
+| INFO | Informational request/response detail, such as header dumps |
+| INTERNAL | Internal error conditions and recovered panics; on by default |
+| OPTIMIZER | Bytecode optimizer decisions |
+| PACKAGES | Runtime package loading |
+| RESOURCES | The `internal/resources` struct-reflection DDL/CRUD framework |
 | REST | HTTP request and response details for the server |
+| ROUTE | Request routing and media-type negotiation |
 | SERVER | High-level server lifecycle events |
+| SERVICES | Compilation and execution of `lib/services/*.ego` service endpoints |
+| SQL | SQL statements generated by the tables/DSN REST endpoints |
+| STATS | Reserved for future statistics logging; not currently emitted |
 | SYMBOLS | Symbol table creation, lookup, and scope transitions |
-| TABLES | SQL statements generated by the `/tables` REST endpoint |
+| TABLES | Table-server request handling above the SQL-generation layer |
 | TRACE | Execution of every _Ego_ virtual-machine instruction |
+| TOKENIZER | Lexical analysis of _Ego_ source text |
 | USER | Messages generated by `@LOG` directives inside _Ego_ programs |
+| VALID | JSON request-body validation against endpoint schemas |
 
-> **Permission required:** `ego.admin` for logger configuration; no special permission is
+> **Permission required:** `ego.root` for logger configuration; no special permission is
 > needed to view the log.
 
 &nbsp;
