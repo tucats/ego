@@ -111,8 +111,8 @@ func TestPermissionsToData_Single(t *testing.T) {
 // The output format must be identical: this test confirms the rewrite is a
 // pure performance improvement with no behavioral change.
 func TestPermissionsToData_Multiple(t *testing.T) {
-	perms := []string{"ego.logon", "ego.tables.read", "ego.root"}
-	want := "ego.logon,ego.tables.read,ego.root"
+	perms := []string{"ego.logon", "ego.table.read", "ego.root"}
+	want := "ego.logon,ego.table.read,ego.root"
 
 	got := permissionsToData(perms)
 	if got != want {

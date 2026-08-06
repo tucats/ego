@@ -1,0 +1,19 @@
+{
+    "USER": "admin",
+    "PASSWORD": "password",
+
+    "AS_URL": "http://localhost:4040",
+
+    "OAUTH_CLIENT_ID": "apitest-client",
+    "OAUTH_CLIENT_SECRET": "apitest-secret-dev-only",
+    "OAUTH_MINIMAL_CLIENT_ID": "apitest-minimal",
+    "OAUTH_MINIMAL_CLIENT_SECRET": "apitest-minimal-secret",
+    "OAUTH_AUTHCODE_ONLY_CLIENT_ID": "apitest-authcode-only",
+    "OAUTH_AUTHCODE_ONLY_CLIENT_SECRET": "apitest-authcode-secret",
+    "OAUTH_REDIRECT_URI": "http://127.0.0.1:9999/callback",
+
+    "PKCE_VERIFIER": "apitest-static-pkce-verifier-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+    "PKCE_CHALLENGE": "V8JiZ_iJGBQzm0YyIcQc5bwbwPoc13Lox1r8M5Cbfws",
+
+    "OAUTHDSNUUID": "$hash"
+}

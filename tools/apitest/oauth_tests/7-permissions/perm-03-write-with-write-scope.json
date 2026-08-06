@@ -1,0 +1,22 @@
+{
+    "description": "a JWT with ego:write scope can insert table rows via the hybrid RS (default scope-to-permission map)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{WRITE_JWT}}"]
+        },
+        "body": { "id": 1, "label": "widget" }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        { "name": "one row inserted", "query": "count", "value": "1" }
+    ]
+}

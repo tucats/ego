@@ -1,0 +1,14 @@
+{
+    "description": "a JWT-shaped token with a tampered signature is rejected -- the RS validates against the AS's JWKS, it does not trust the token blindly",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{READ_JWT}}tampered"]
+        }
+    },
+    "response": {
+        "status": 403
+    }
+}

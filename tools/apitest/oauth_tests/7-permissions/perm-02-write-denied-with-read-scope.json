@@ -1,0 +1,16 @@
+{
+    "description": "a JWT with only ego:read scope cannot write table rows",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{READ_JWT}}"]
+        },
+        "body": { "id": 1, "label": "widget" }
+    },
+    "response": {
+        "status": 403
+    }
+}

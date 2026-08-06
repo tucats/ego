@@ -1253,6 +1253,81 @@ ego server start -k --port 8080
 See `docs/OAUTH.md` (section "Testing AS and RS Together Using Profiles") for
 the full walkthrough, including how to run `apitest` against each server.
 
+### Regression test suite (`tools/apitest/oauth_tests/`)
+
+An end-to-end apitest suite covering both AS and RS/hybrid roles together, added
+August 2026. Seven numbered groups (`1-logon` through `7-permissions`) exercise: AS
+discovery/JWKS; `client_credentials` grant with scope variants and RFC 6749 §5.2 error
+shapes; a full Authorization Code + PKCE flow (login form CSRF cookie, code capture from
+the redirect `Location` header, token exchange, refresh rotation, PKCE verifier
+mismatch); `/oauth2/userinfo` and `/oauth2/revoke`; and — the group that matters most —
+JWTs obtained from the AS presented as Bearer tokens against real `/dsns/.../rows`
+endpoints on a *separate* RS/hybrid-mode primary server, to prove the scope-to-permission
+mapping actually gates access the way `ego.server.oauth.permission.map` (or its built-in
+default) says it should.
+
+`tools/apitest/oauth_tests_fixtures/oauth-clients.json` is the client registry the suite
+authenticates as. It lives outside `oauth_tests/` deliberately: `apitest`'s directory
+scanner has no exclusion mechanism and treats every `.json` file except `dictionary.json`
+as a test to run, so a fixture file nested inside `oauth_tests/` gets "executed" and fails
+JSON-schema validation as a bogus test.
+
+`tools/test_container_entrypoint.sh` runs this suite automatically: it starts an AS
+instance on port 4040 *before* starting the normal primary instance (now also configured
+as `oauth.mode=hybrid` pointed at that AS — RS `Initialize()` fetches discovery + JWKS at
+startup and treats failure as fatal, so ordering matters), runs `tools/test.sh` as before,
+then runs `oauth_tests/` against both. Locally, a developer can run the same suite by
+hand-starting both servers (see "Running AS and RS simultaneously using profiles" above)
+and then `tools/apitest.sh oauth_tests/`.
+
+Writing this suite required two additions to the `apitest` tool itself (`tools/apitest/`,
+a separate Go module): `"no_redirect": true` on a request (`defs.RequestObject`) stops the
+client at the first 3xx response instead of transparently following it — needed because
+the Authorization Code flow's success response *is* a redirect carrying the code in its
+`Location` header, which a normal client-side "just follow it" behavior would throw away.
+And `"save"` entries can now pull a value out of a response *header* instead of the JSON
+body via a `"header:Name"` / `"header:Name:param"` / `"header:Name:cookie"` /
+`"header:Name:value"` value syntax (`dictionary.Update` in `tools/apitest/dictionary/
+update.go`) — used both for the `code`/`state` query parameters in a `Location` header and
+to replay the AS login form's CSRF cookie across requests, since apitest's HTTP client has
+no cookie jar of its own.
+
+#### Bugs this suite caught before it existed
+
+Building this suite surfaced three pre-existing, real bugs — exactly the kind of
+regression it exists to guard against going forward:
+
+1. **`internal/server/oauth/claims.go`'s built-in `defaultScopePermissions` map used the
+   wrong permission strings.** It mapped `ego:read`/`ego:write` to `"ego.tables.read"`/
+   `"ego.tables.write"` (plural) — but the actual constants checked everywhere else
+   (`defs.TableReadPermission`/`defs.TableWritePermission`) are `"ego.table.read"`/
+   `"ego.table.write"` (singular). The two strings never matched, so a JWT relying on the
+   default map never actually got table access. Fixed by building the table from the
+   `defs.*Permission` constants directly instead of hand-typed literals, so this class of
+   drift can't recur silently.
+2. **`internal/router/serve.go`'s route-level `.Permissions(...)` gate ignored
+   JWT-derived permissions entirely.** It called `auth.GetPermission(session.ID,
+   session.User, permission)` unconditionally — a lookup against the *local* Ego user
+   database. A JWT-authenticated identity deliberately has no local user record (that's
+   the point of federation), so this always missed and rejected every non-admin OAuth
+   request regardless of what the token actually granted; only root-scoped JWTs worked at
+   all, via the separate `session.Admin` bypass. Fixed: when `session.Permissions` is
+   already resolved (true only for the JWT path — the native-token path doesn't populate
+   it until after this check runs, so its behavior is unchanged), the gate checks that
+   list directly instead of hitting the database.
+3. **`internal/server/oauth/oauth.go`'s `ValidateJWT` rejected every `client_credentials`
+   token.** Such tokens have no `sub` claim by design (RFC 6749 §4.4 — there is no end
+   user, only a calling client), so `extractUsername` always returned `""` and the token
+   was rejected as "missing claim" before permissions were ever checked. This is the
+   single most common way to obtain a JWT for automated/API access, so it made the RS role
+   unusable for exactly that case. Fixed by capturing the JWT's `client_id` claim
+   (`jwtClaims.ClientID` in `internal/server/oauth/jwt.go`) and falling back to
+   `"client:" + clientID` as the synthetic username when the subject is empty.
+
+None of these were caught by the existing unit tests, because none of them exercised the
+real `defs` permission constants or a genuine cross-process AS→RS JWT handoff — the gap
+this suite closes.
+
 ### Full design document
 
 See `docs/OAUTH.md` for the full design, implementation checklist, and Phase 2 (RS mode) plans.

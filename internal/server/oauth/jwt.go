@@ -33,6 +33,15 @@ type jwtClaims struct {
 	// name here instead.
 	PreferredUsername string `json:"preferred_username,omitempty"`
 
+	// ClientID identifies the OAuth2 client the token was issued to. Ego's own
+	// Authorization Server always includes it (see authserver/jwt.go's egoClaims).
+	// It is the only identity available on a client_credentials token, which by
+	// RFC 6749 design has no "sub" -- there is no end user, only a calling client.
+	// extractUsername falls back to this claim when the subject is empty, so a
+	// client_credentials token authenticates as its client rather than being
+	// rejected outright for lacking a claim that was never meant to be there.
+	ClientID string `json:"client_id,omitempty"`
+
 	// AdditionalClaims captures any provider-specific fields not listed above.
 	// These are available for custom permission-claim configuration via
 	// ego.server.oauth.permission.claim.

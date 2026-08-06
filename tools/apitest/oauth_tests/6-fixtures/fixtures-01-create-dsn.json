@@ -1,0 +1,28 @@
+{
+    "description": "create a non-secured test DSN on the primary server for JWT permission tests",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "oauth-{{OAUTHDSNUUID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/oauth-db-{{OAUTHDSNUUID}}.db",
+            "rowid": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/oauth-{{OAUTHDSNUUID}}"]
+        }
+    },
+    "tests": [
+        { "name": "server id", "query": "server.id", "value": "{{SERVER_ID}}" }
+    ]
+}

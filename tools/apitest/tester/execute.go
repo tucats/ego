@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,6 +64,23 @@ func ExecuteTest(test *defs.Test) error {
 	tlsConfiguration := &tls.Config{InsecureSkipVerify: true}
 	client.SetTLSClientConfig(tlsConfiguration)
 	client.Header.Set("User-Agent", fmt.Sprint("apitest ", VersionString))
+
+	// When the test asks for it, stop at the first redirect instead of transparently
+	// following it. http.ErrUseLastResponse is the sentinel net/http's own Client
+	// treats specially: returning it from CheckRedirect makes Do() hand back the raw
+	// 3xx response (status, headers, body) with a nil error, instead of the default
+	// behavior of chasing the Location header and returning only the final response.
+	// A plain (non-sentinel) error from CheckRedirect would also stop the redirect,
+	// but net/http then returns that error alongside the response and resty's Execute
+	// (see gopkg.in/resty.v1's client.go) treats any non-nil err as total request
+	// failure and returns before reading the response body or letting the caller see
+	// the status/headers at all -- unusable for a test that needs to assert on a 302's
+	// Location header.
+	if test.Request.NoRedirect {
+		client.SetRedirectPolicy(resty.RedirectPolicyFunc(func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}))
+	}
 	// Set a duration timeout for requests, so we don't hang on a missing or
 	// invalid server, but fail immediately. The default duration is two
 	// seconds, but can be overridden by the REQUEST_TIMEOUT value in the
@@ -183,6 +201,12 @@ func ExecuteTest(test *defs.Test) error {
 	}
 
 	test.Duration = time.Since(now)
+
+	// Capture the actual response headers (as opposed to test.Response.Headers, which is
+	// the test file's list of headers to *assert against*) so ResponseObject.Save can pull
+	// values out of them -- e.g. the "code" query parameter of a Location header from an
+	// OAuth2 authorization redirect, which never appears in a JSON response body at all.
+	test.Response.ResponseHeaders = map[string][]string(resp.Header())
 
 	// Read and log the response body now, before any status/header checks, so it is
 	// always visible in -r mode even when the status code does not match.

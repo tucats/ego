@@ -132,6 +132,28 @@ If context is compacted or the session restarts, resume from the first unchecked
 - [x] `go test ./...` — no regressions in existing tests
 - [x] `./tools/build` — binary compiles cleanly
 
+### Phase 3: End-to-End Regression Test Suite (August 2026)
+
+- [x] `tools/apitest/oauth_tests/` — 7 groups, 40 tests: AS discovery/JWKS, `client_credentials`
+      scope variants + RFC 6749 error shapes, full Authorization Code + PKCE flow (login form
+      CSRF cookie, redirect code capture, token exchange, refresh rotation, PKCE mismatch),
+      `/oauth2/userinfo` + `/oauth2/revoke`, and JWT-bearer scope-to-permission enforcement
+      against real `/dsns/.../rows` endpoints on a separate RS/hybrid-mode instance
+- [x] `tools/apitest/oauth_tests_fixtures/oauth-clients.json` — client registry for the suite
+      (kept outside `oauth_tests/` so apitest's directory scanner doesn't try to run it as a test)
+- [x] `tools/apitest` tool: added `"no_redirect"` request option and `"header:Name[:param]"`
+      save-value syntax (needed to capture the Authorization Code flow's redirect `Location`
+      header and replay the login form's CSRF cookie — apitest has no cookie jar)
+- [x] `tools/test_container_entrypoint.sh` — starts an AS instance (port 4040) before the
+      primary instance (now `oauth.mode=hybrid`, pointed at that AS), runs `tools/test.sh` as
+      before, then runs `oauth_tests/` against both
+- [x] Fixed three bugs the suite caught before it existed (see `docs/internals/CLAUDE.md`'s
+      "OAuth2 Authorization Server" → "Regression test suite" section for the full writeup):
+      `claims.go`'s default scope map used the wrong (plural) permission strings; `serve.go`'s
+      route permission gate ignored JWT-derived `session.Permissions` and only checked the
+      local user database; `oauth.go`'s `ValidateJWT` rejected every `client_credentials` token
+      outright for lacking a `sub` claim it was never going to have
+
 ---
 
 ## Overview

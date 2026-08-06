@@ -17,6 +17,18 @@ type ResponseObject struct {
 
 	// This is a list of the items that should be extracted from the response body if it passes all the
 	// test requirements. The map defines key values for the substitution dictionary, and the value of the
-	// map are dot-notation strings that specify the items to extract.
+	// map are dot-notation strings that specify the items to extract from the JSON response body.
+	//
+	// A value may instead start with "header:" to extract from a response header rather than the JSON
+	// body: "header:Name" saves the header's raw value, and "header:Name:param" treats the header value
+	// as a URL and saves one of its query string parameters. For example, "header:Location:code" pulls
+	// the "code" query parameter out of a redirect's Location header -- how an OAuth2 Authorization Code
+	// flow test captures the authorization code, which never appears in a JSON body.
 	Save map[string]string `json:"save,omitempty"`
+
+	// ResponseHeaders holds the actual headers returned by the server for this request. It is populated
+	// by the test executor after the request completes and is not part of the test file format (there is
+	// deliberately no json tag) -- Headers above is the test author's list of headers to assert against,
+	// this is what the server actually sent, consulted by Save's "header:" extraction.
+	ResponseHeaders map[string][]string `json:"-"`
 }

@@ -1,0 +1,20 @@
+{
+    "description": "a JWT with ego:read scope can read table rows via the hybrid RS (default scope-to-permission map)",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{READ_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        { "name": "table starts empty", "query": "count", "value": "0" }
+    ]
+}

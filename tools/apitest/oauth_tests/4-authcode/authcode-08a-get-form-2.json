@@ -1,0 +1,30 @@
+{
+    "description": "second authorization request (fresh code), used to test PKCE verifier mismatch",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{AS_URL}}/oauth2/authorize",
+        "parameters": {
+            "response_type": "code",
+            "client_id": "{{OAUTH_CLIENT_ID}}",
+            "redirect_uri": "{{OAUTH_REDIRECT_URI}}",
+            "scope": "openid%20ego:read",
+            "state": "apitest-state-2",
+            "code_challenge": "{{PKCE_CHALLENGE}}",
+            "code_challenge_method": "S256"
+        },
+        "headers": {
+            "Accept": ["text/html"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["text/html"],
+            "Set-Cookie": ["ego_oauth_csrf"]
+        },
+        "save": {
+            "CSRF_COOKIE_2": "header:Set-Cookie:cookie",
+            "CSRF_TOKEN_VALUE_2": "header:Set-Cookie:value"
+        }
+    }
+}

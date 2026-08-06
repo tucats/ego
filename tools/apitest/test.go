@@ -63,7 +63,7 @@ func run(test *defs.Test) (time.Duration, error) {
 	}
 
 	// Save any results from the test back in the dictionary.
-	err = dictionary.Update(test.Response.Body, test.Response.Save)
+	err = dictionary.Update(test.Response.Body, test.Response.ResponseHeaders, test.Response.Save)
 
 	if err != nil {
 		err = fmt.Errorf("updating dictionary: %v", err)

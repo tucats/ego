@@ -1,0 +1,17 @@
+{
+    "description": "GET /oauth2/userinfo without a bearer token challenges for one",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{AS_URL}}/oauth2/userinfo",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Type": ["error+json"],
+            "Www-Authenticate": ["Bearer"]
+        }
+    }
+}

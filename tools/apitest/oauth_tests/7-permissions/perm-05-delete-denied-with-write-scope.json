@@ -1,0 +1,17 @@
+{
+    "description": "ego:write only maps to table-write, not table-delete -- deleting rows is denied",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "parameters": {
+            "filter": "EQ%28id%2C1%29"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{WRITE_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 403
+    }
+}

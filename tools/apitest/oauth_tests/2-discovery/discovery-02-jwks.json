@@ -1,0 +1,25 @@
+{
+    "description": "JWKS document publishes a usable EC P-256 signing key",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{AS_URL}}/.well-known/jwks.json",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        { "name": "key type is EC", "query": "keys.0.kty", "value": "EC" },
+        { "name": "curve is P-256", "query": "keys.0.crv", "value": "P-256" },
+        { "name": "alg is ES256", "query": "keys.0.alg", "value": "ES256" },
+        { "name": "use is sig", "query": "keys.0.use", "value": "sig" },
+        { "name": "kid present", "query": "keys.0.kid", "op": "exists", "value": "" },
+        { "name": "x coordinate present", "query": "keys.0.x", "op": "exists", "value": "" },
+        { "name": "y coordinate present", "query": "keys.0.y", "op": "exists", "value": "" }
+    ]
+}

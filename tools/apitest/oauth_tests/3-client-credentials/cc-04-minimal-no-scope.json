@@ -1,0 +1,22 @@
+{
+    "description": "client_credentials grant with no scope requested defaults to the client's full allowed scope list",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=client_credentials&client_id={{OAUTH_MINIMAL_CLIENT_ID}}&client_secret={{OAUTH_MINIMAL_CLIENT_SECRET}}"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        },
+        "save": { "MINIMAL_JWT": "access_token" }
+    },
+    "tests": [
+        { "name": "scope defaults to client's only registered scope", "query": "scope", "value": "openid" }
+    ]
+}

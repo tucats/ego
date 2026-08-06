@@ -407,8 +407,28 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
 		allowed := true
 
+		// JWT-authenticated sessions (OAuth2 resource-server/hybrid mode) have their
+		// permission list resolved directly from the token's claims and stored on
+		// session.Permissions before this handler ever runs (router/auth.go) -- there is
+		// deliberately no local user record for a federated identity, so a per-permission
+		// auth.GetPermission lookup against the local user database would always miss and
+		// reject every non-admin OAuth request regardless of what the token actually
+		// granted. Native Ego-token sessions still take the auth.GetPermission path below:
+		// session.Permissions is not populated yet at this point in that flow (it is filled
+		// in lazily further down, only after this check), so len(session.Permissions) == 0
+		// reliably distinguishes the two cases.
+		hasResolvedPermissions := len(session.Permissions) > 0
+
 		for _, permission := range route.requiredPermissions {
-			if !auth.GetPermission(session.ID, session.User, permission) {
+			var granted bool
+
+			if hasResolvedPermissions {
+				granted = util.InListInsensitive(permission, session.Permissions...)
+			} else {
+				granted = auth.GetPermission(session.ID, session.User, permission)
+			}
+
+			if !granted {
 				allowed = false
 
 				logger := ui.RouteLogger

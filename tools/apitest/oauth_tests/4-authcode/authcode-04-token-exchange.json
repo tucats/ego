@@ -1,0 +1,30 @@
+{
+    "description": "exchange the authorization code (with PKCE verifier) for tokens",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=authorization_code&code={{AUTH_CODE}}&redirect_uri={{OAUTH_REDIRECT_URI}}&client_id={{OAUTH_CLIENT_ID}}&client_secret={{OAUTH_CLIENT_SECRET}}&code_verifier={{PKCE_VERIFIER}}"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Cache-Control": ["no-store"]
+        },
+        "save": {
+            "USER_JWT": "access_token",
+            "USER_REFRESH_TOKEN": "refresh_token",
+            "USER_ID_TOKEN": "id_token"
+        }
+    },
+    "tests": [
+        { "name": "token type", "query": "token_type", "value": "Bearer" },
+        { "name": "scope contains ego:admin", "query": "scope", "op": "contains", "value": "ego:admin" },
+        { "name": "id token issued (openid scope)", "query": "id_token", "op": "exists", "value": "" },
+        { "name": "refresh token issued (client allows it)", "query": "refresh_token", "op": "exists", "value": "" }
+    ]
+}

@@ -360,7 +360,22 @@ func ValidateJWT(session int, tokenStr string) (string, []string, error) {
 	}
 
 	// Step 5: Extract the username.
+	//
+	// A client_credentials token has no end user by design (RFC 6749 §4.4) -- it
+	// represents the calling client itself, not a person, so none of the claims
+	// extractUsername reads (sub, email, preferred_username) are ever populated.
+	// Without this fallback such a token would be rejected outright as "missing
+	// claim", even though it is a perfectly valid, correctly-signed token; that
+	// would make client_credentials -- the standard grant for server-to-server /
+	// API-client access -- unusable against Ego's Resource Server entirely. The
+	// "client:" prefix keeps this synthetic identity visibly distinct from a real
+	// Ego username in logs and permission checks, so a client registered with an
+	// id that happens to collide with a real user's name can never be mistaken
+	// for that user.
 	user := extractUsername(claims, cfg.UserClaim)
+	if user == "" && claims.ClientID != "" {
+		user = "client:" + claims.ClientID
+	}
 
 	if user == "" {
 		return "", nil, errors.New(errors.ErrJWTMissingClaim).Context(cfg.UserClaim)

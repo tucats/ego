@@ -1,0 +1,30 @@
+{
+    "description": "OIDC discovery document is well-formed and standards-compliant",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{AS_URL}}/.well-known/openid-configuration",
+        "headers": {
+            "Accept": ["application/json"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        { "name": "issuer", "query": "issuer", "value": "{{AS_URL}}" },
+        { "name": "authorization_endpoint", "query": "authorization_endpoint", "op": "contains", "value": "/oauth2/authorize" },
+        { "name": "token_endpoint", "query": "token_endpoint", "op": "contains", "value": "/oauth2/token" },
+        { "name": "userinfo_endpoint", "query": "userinfo_endpoint", "op": "contains", "value": "/oauth2/userinfo" },
+        { "name": "jwks_uri", "query": "jwks_uri", "op": "contains", "value": "/.well-known/jwks.json" },
+        { "name": "revocation_endpoint", "query": "revocation_endpoint", "op": "contains", "value": "/oauth2/revoke" },
+        { "name": "response_types_supported has code", "query": "response_types_supported.0", "value": "code" },
+        { "name": "grant_types_supported has authorization_code", "query": "grant_types_supported.0", "value": "authorization_code" },
+        { "name": "grant_types_supported has client_credentials", "query": "grant_types_supported.1", "value": "client_credentials" },
+        { "name": "grant_types_supported has refresh_token", "query": "grant_types_supported.2", "value": "refresh_token" },
+        { "name": "id token alg is ES256", "query": "id_token_signing_alg_values_supported.0", "value": "ES256" },
+        { "name": "PKCE S256 supported", "query": "code_challenge_methods_supported.0", "value": "S256" }
+    ]
+}

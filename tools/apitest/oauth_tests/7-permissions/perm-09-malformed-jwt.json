@@ -1,0 +1,14 @@
+{
+    "description": "a bearer token that is not JWT-shaped and not a valid Ego token is rejected",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer not-a-real-token-at-all"]
+        }
+    },
+    "response": {
+        "status": 403
+    }
+}

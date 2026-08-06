@@ -1,0 +1,25 @@
+{
+    "description": "client_credentials grant with full admin scope",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=client_credentials&client_id={{OAUTH_CLIENT_ID}}&client_secret={{OAUTH_CLIENT_SECRET}}&scope=openid%20ego:admin%20ego:read%20ego:write%20ego:code"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Cache-Control": ["no-store"]
+        },
+        "save": { "ADMIN_JWT": "access_token" }
+    },
+    "tests": [
+        { "name": "token type", "query": "token_type", "value": "Bearer" },
+        { "name": "scope contains ego:admin", "query": "scope", "op": "contains", "value": "ego:admin" },
+        { "name": "no refresh token for client_credentials", "query": "refresh_token", "op": "not-exists", "value": "" }
+    ]
+}

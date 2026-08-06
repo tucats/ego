@@ -26,4 +26,13 @@ type RequestObject struct {
 	// expressed by this file path will be used as the request body. The contents of the file
 	// are not processed in any way.
 	File string `json:"file,omitempty"`
+
+	// NoRedirect, when true, disables automatic following of HTTP redirects (3xx responses)
+	// for this request. The raw redirect response (status code, headers including Location,
+	// and any body) is returned as-is instead of the client transparently fetching the
+	// redirect target. This is needed to test OAuth2 Authorization Code flow endpoints, which
+	// respond to a successful login with a 302 redirect to the client's redirect_uri carrying
+	// the authorization code and state as query parameters -- values the test needs to inspect
+	// and capture (see ResponseObject.Save), not silently discard by following the redirect.
+	NoRedirect bool `json:"no_redirect,omitempty"`
 }

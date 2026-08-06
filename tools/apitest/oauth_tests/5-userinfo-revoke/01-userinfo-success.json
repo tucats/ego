@@ -1,0 +1,20 @@
+{
+    "description": "GET /oauth2/userinfo returns identity claims for a user access token",
+    "request": {
+        "method": "GET",
+        "endpoint": "{{AS_URL}}/oauth2/userinfo",
+        "headers": {
+            "Accept": ["application/json"],
+            "Authorization": ["Bearer {{USER_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        { "name": "subject is the logged-in user", "query": "sub", "value": "{{USER}}" }
+    ]
+}

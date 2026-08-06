@@ -1,0 +1,21 @@
+{
+    "description": "requesting a scope outside the client's registered allowlist is rejected (RFC 6749 5.2 invalid_scope)",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=client_credentials&client_id={{OAUTH_MINIMAL_CLIENT_ID}}&client_secret={{OAUTH_MINIMAL_CLIENT_SECRET}}&scope=ego:admin"
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        { "name": "error code", "query": "error", "value": "invalid_scope" }
+    ]
+}

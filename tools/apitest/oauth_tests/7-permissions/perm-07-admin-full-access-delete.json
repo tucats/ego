@@ -1,0 +1,23 @@
+{
+    "description": "an ego:admin-scoped JWT can delete rows even though that requires a permission not in the default scope map",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "parameters": {
+            "filter": "EQ%28id%2C1%29"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{ADMIN_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        { "name": "one row deleted", "query": "count", "value": "1" }
+    ]
+}

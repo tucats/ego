@@ -1,0 +1,26 @@
+[
+  {
+    "client_id": "apitest-client",
+    "client_secret": "apitest-secret-dev-only",
+    "redirect_uris": ["http://127.0.0.1:9999/callback"],
+    "grant_types": ["authorization_code", "client_credentials", "refresh_token"],
+    "scopes": ["openid", "profile", "email", "ego:read", "ego:write", "ego:admin", "ego:code"],
+    "description": "Full-scope client used by tools/apitest/oauth_tests"
+  },
+  {
+    "client_id": "apitest-minimal",
+    "client_secret": "apitest-minimal-secret",
+    "redirect_uris": [],
+    "grant_types": ["client_credentials"],
+    "scopes": ["openid"],
+    "description": "Minimal-scope client used by tools/apitest/oauth_tests to test unscoped-token defaults"
+  },
+  {
+    "client_id": "apitest-authcode-only",
+    "client_secret": "apitest-authcode-secret",
+    "redirect_uris": ["http://127.0.0.1:9999/callback"],
+    "grant_types": ["authorization_code", "refresh_token"],
+    "scopes": ["openid", "ego:read"],
+    "description": "Client without client_credentials grant, used by tools/apitest/oauth_tests to test unauthorized_client rejection"
+  }
+]

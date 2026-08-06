@@ -1,0 +1,24 @@
+{
+    "description": "POST /oauth2/authorize with correct credentials issues an authorization code via redirect",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/authorize",
+        "no_redirect": true,
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["text/html"],
+            "Cookie": ["{{CSRF_COOKIE}}"]
+        },
+        "body": "client_id={{OAUTH_CLIENT_ID}}&redirect_uri={{OAUTH_REDIRECT_URI}}&scope=openid%20ego:admin&state=apitest-state-1&code_challenge={{PKCE_CHALLENGE}}&code_challenge_method=S256&username={{USER}}&password={{PASSWORD}}&csrf_token={{CSRF_TOKEN_VALUE}}"
+    },
+    "response": {
+        "status": 302,
+        "headers": {
+            "Location": ["{{OAUTH_REDIRECT_URI}}", "state=apitest-state-1", "code="]
+        },
+        "save": {
+            "AUTH_CODE": "header:Location:code",
+            "AUTH_STATE": "header:Location:state"
+        }
+    }
+}

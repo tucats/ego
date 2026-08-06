@@ -61,7 +61,7 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "openid ego:write",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"ego.logon", "ego.tables.write"},
+			expected:        []string{"ego.logon", "ego.table.write"},
 		},
 		{
 			name:            "ego:code grants code_run",
@@ -75,7 +75,7 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "openid ego:read ego:write ego:admin ego:code",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"ego.logon", "ego.tables.read", "ego.tables.write", "ego.root", "ego.code"},
+			expected:        []string{"ego.logon", "ego.table.read", "ego.table.write", "ego.root", "ego.code"},
 		},
 		{
 			name:            "unknown scope falls back to logon",

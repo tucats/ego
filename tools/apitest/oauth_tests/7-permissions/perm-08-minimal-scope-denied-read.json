@@ -1,0 +1,14 @@
+{
+    "description": "a JWT with only the openid scope (mapped to logon) has no table access",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{MINIMAL_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 403
+    }
+}

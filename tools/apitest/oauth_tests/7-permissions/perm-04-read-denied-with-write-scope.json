@@ -1,0 +1,14 @@
+{
+    "description": "a JWT with only ego:write scope cannot read table rows -- scopes are precise, not overlapping",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{WRITE_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 403
+    }
+}

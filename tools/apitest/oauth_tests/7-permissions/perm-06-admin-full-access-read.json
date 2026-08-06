@@ -1,0 +1,21 @@
+{
+    "description": "a JWT with ego:admin scope (mapped to root) bypasses per-route permission checks entirely",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{ADMIN_JWT}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        { "name": "row count", "query": "count", "value": "1" },
+        { "name": "row 0 label", "query": "rows.0.label", "value": "widget" }
+    ]
+}

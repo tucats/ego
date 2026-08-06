@@ -111,7 +111,7 @@ func TestValidateJWT_CacheHit_NotBlacklisted(t *testing.T) {
 
 	caches.Add(caches.OAuthJWTCache, fakeToken2, &JWTCacheEntry{
 		User:        user2,
-		Permissions: []string{"ego.logon", "ego.tables.read"},
+		Permissions: []string{"ego.logon", "ego.table.read"},
 		Expires:     time.Now().Add(time.Hour),
 		JTI:         jti2,
 	})

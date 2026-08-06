@@ -1,0 +1,23 @@
+{
+    "description": "log in again to obtain a second, fresh authorization code",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/authorize",
+        "no_redirect": true,
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["text/html"],
+            "Cookie": ["{{CSRF_COOKIE_2}}"]
+        },
+        "body": "client_id={{OAUTH_CLIENT_ID}}&redirect_uri={{OAUTH_REDIRECT_URI}}&scope=openid%20ego:read&state=apitest-state-2&code_challenge={{PKCE_CHALLENGE}}&code_challenge_method=S256&username={{USER}}&password={{PASSWORD}}&csrf_token={{CSRF_TOKEN_VALUE_2}}"
+    },
+    "response": {
+        "status": 302,
+        "headers": {
+            "Location": ["{{OAUTH_REDIRECT_URI}}", "state=apitest-state-2"]
+        },
+        "save": {
+            "AUTH_CODE_2": "header:Location:code"
+        }
+    }
+}

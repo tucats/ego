@@ -1,0 +1,22 @@
+{
+    "description": "client_credentials grant scoped to ego:read only",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=client_credentials&client_id={{OAUTH_CLIENT_ID}}&client_secret={{OAUTH_CLIENT_SECRET}}&scope=openid%20ego:read"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        },
+        "save": { "READ_JWT": "access_token" }
+    },
+    "tests": [
+        { "name": "scope is exactly what was requested", "query": "scope", "value": "openid ego:read" }
+    ]
+}

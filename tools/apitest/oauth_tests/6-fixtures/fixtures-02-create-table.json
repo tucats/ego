@@ -1,0 +1,38 @@
+{
+    "description": "create a test table for JWT scope-to-permission enforcement tests",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/oauth-{{OAUTHDSNUUID}}/tables/items",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "name": "id",
+                "type": "int",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique": { "specified": false, "value": false }
+            },
+            {
+                "name": "label",
+                "type": "string",
+                "size": 0,
+                "nullable": { "specified": false, "value": false },
+                "unique": { "specified": false, "value": false }
+            }
+        ]
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["rowcount+json"],
+            "Location": ["/dsns/oauth-{{OAUTHDSNUUID}}/tables/items"]
+        }
+    },
+    "tests": [
+        { "name": "server id", "query": "server.id", "value": "{{SERVER_ID}}" }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "description": "refresh_token grant exchanges the refresh token for a new access token and rotates the refresh token",
+    "request": {
+        "method": "POST",
+        "endpoint": "{{AS_URL}}/oauth2/token",
+        "headers": {
+            "Content-Type": ["application/x-www-form-urlencoded"],
+            "Accept": ["application/json"]
+        },
+        "body": "grant_type=refresh_token&refresh_token={{USER_REFRESH_TOKEN}}&client_id={{OAUTH_CLIENT_ID}}&client_secret={{OAUTH_CLIENT_SECRET}}"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        },
+        "save": {
+            "REFRESHED_JWT": "access_token",
+            "ROTATED_REFRESH_TOKEN": "refresh_token"
+        }
+    },
+    "tests": [
+        { "name": "token type", "query": "token_type", "value": "Bearer" },
+        { "name": "scope preserved", "query": "scope", "op": "contains", "value": "ego:admin" },
+        { "name": "id token re-issued", "query": "id_token", "op": "exists", "value": "" },
+        { "name": "new refresh token issued (rotation)", "query": "refresh_token", "op": "exists", "value": "" }
+    ]
+}

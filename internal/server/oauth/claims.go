@@ -2,6 +2,8 @@ package oauth
 
 import (
 	"strings"
+
+	"github.com/tucats/ego/internal/defs"
 )
 
 // defaultScopePermissions is the built-in mapping from OAuth2 scope names to Ego
@@ -13,21 +15,28 @@ import (
 //
 // Administrators can override any or all of these mappings via
 // ego.server.oauth.permission.map.
+//
+// Built from the defs.*Permission constants (rather than hand-typed literals) so this
+// table cannot silently drift from the strings the route-level permission gate
+// (internal/router/serve.go) actually checks -- it previously used "ego.tables.read"/
+// "ego.tables.write" (plural), which never matched defs.TableReadPermission/
+// defs.TableWritePermission ("ego.table.read"/"ego.table.write", singular), so every
+// non-admin JWT-authenticated request was silently denied table access.
 var defaultScopePermissions = map[string]string{
 	// openid is the mandatory OIDC scope; all authenticated users get logon.
-	"openid": "ego.logon",
+	"openid": defs.LogonPermission,
 
-	// ego:read maps to the logon permission — the user can call the server.
-	"ego:read": "ego.tables.read",
+	// ego:read maps to the table-read permission — the user can read tables.
+	"ego:read": defs.TableReadPermission,
 
-	// ego:write maps to the tables permission — the user can read and write tables.
-	"ego:write": "ego.tables.write",
+	// ego:write maps to the table-write permission — the user can read and write tables.
+	"ego:write": defs.TableWritePermission,
 
 	// ego:admin maps to the root permission — full administrative access.
-	"ego:admin": "ego.root",
+	"ego:admin": defs.RootPermission,
 
 	// ego:code maps to the code_run permission — the user can run Ego code via /admin/run.
-	"ego:code": "ego.code",
+	"ego:code": defs.CodeRunPermission,
 }
 
 // mapClaimsToPermissions derives the Ego permission list from the JWT claims
