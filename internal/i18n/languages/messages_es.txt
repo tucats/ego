@@ -432,6 +432,7 @@ oauth.as.pkce.required=los clientes públicos deben usar PKCE (se requiere code_
 oauth.as.token.create=no se pudo crear el token de acceso
 oauth.as.token.revoked.error=el token ha sido revocado
 oauth.as.token.serialize=no se pudo serializar la respuesta del token
+oauth.as.unauthorized.client=el cliente no está autorizado a usar este tipo de concesión
 oauth.as.unsupported.response_type=response_type debe ser "code"
 oauth.as.userinfo.serialize=no se pudo serializar la respuesta de userinfo
 oauth.callback.listener=error al iniciar el oyente de devolución de llamada OAuth2

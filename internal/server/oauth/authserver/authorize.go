@@ -112,8 +112,16 @@ func AuthorizeGetHandler(session *router.Session, w http.ResponseWriter, r *http
 
 	client := findClient(clientID)
 	if client == nil {
+		// This is a browser-facing login-form endpoint, not a Basic-Auth-
+		// protected API -- a 401 here would mimic the token endpoint's
+		// credential-challenge semantics with none of its context (no
+		// WWW-Authenticate header, no credential the browser could actually
+		// supply). RFC 6749 doesn't define a status for authorization-
+		// endpoint client errors; 400, the same code the sibling checks in
+		// this handler already use for "malformed/unknown request," is the
+		// consistent choice.
 		return util.ErrorResponse(w, session.ID,
-			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
+			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusBadRequest)
 	}
 
 	if redirectURI == "" {
@@ -340,8 +348,12 @@ func AuthorizePostHandler(session *router.Session, w http.ResponseWriter, r *htt
 
 	client := findClient(clientID)
 	if client == nil {
+		// Same rationale as the GET handler's identical check above: this
+		// endpoint is browser-facing, not a credential-challenge API, so 400
+		// (matching every sibling validation check in this handler) fits
+		// better than 401.
 		return util.ErrorResponse(w, session.ID,
-			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
+			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusBadRequest)
 	}
 
 	if !clientAllowsRedirect(client, redirectURI) {

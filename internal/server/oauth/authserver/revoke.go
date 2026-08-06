@@ -8,7 +8,6 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/language/tokens"
-	"github.com/tucats/ego/internal/util"
 )
 
 // RevokeHandler handles POST /oauth2/revoke (RFC 7009).
@@ -22,7 +21,7 @@ import (
 // valid.
 func RevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if err := r.ParseForm(); err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidRequest,
 			i18n.Text(session.Language, "error.oauth.as.body.parse"), http.StatusBadRequest)
 	}
 
@@ -40,13 +39,15 @@ func RevokeHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	clientID, clientSecret := validateBasicAuth(r)
 
 	if clientID == "" {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidRequest,
 			i18n.Text(session.Language, "error.oauth.as.missing.client_id"), http.StatusBadRequest)
 	}
 
 	client := findClient(clientID)
 	if client == nil || !validateClientSecret(client, clientSecret) {
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/auth"
-	"github.com/tucats/ego/internal/util"
 )
 
 // asGlobalConfig holds the resolved configuration loaded at startup.
@@ -27,7 +26,7 @@ var asGlobalConfig asConfig
 //   - "refresh_token"      — obtain a new access token from a refresh token
 func TokenHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	if err := r.ParseForm(); err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidRequest,
 			i18n.Text(session.Language, "error.oauth.as.body.parse"), http.StatusBadRequest)
 	}
 
@@ -41,7 +40,12 @@ func TokenHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	case "refresh_token":
 		return handleRefreshTokenGrant(session, w, r)
 	default:
-		return util.ErrorResponse(w, session.ID,
+		// RFC 6749 §5.2 defines this specific case as unsupported_grant_type,
+		// a different enum value from the invalid_grant used a few lines down
+		// in handleAuthorizationCodeGrant for an unknown/expired code -- the
+		// two used to share one internal message and, before this file
+		// spoke RFC 6749 error shape at all, one status.
+		return writeOAuthError(w, session.ID, oauthUnsupportedGrantType,
 			i18n.Text(session.Language, "error.oauth.as.invalid.grant"), http.StatusBadRequest)
 	}
 }
@@ -59,18 +63,20 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 
 	client := findClient(clientID)
 	if client == nil || !validateClientSecret(client, clientSecret) {
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	if !clientAllowsGrant(client, "authorization_code") {
-		return util.ErrorResponse(w, session.ID,
-			i18n.Text(session.Language, "error.oauth.as.invalid.grant"), http.StatusBadRequest)
+		return writeOAuthError(w, session.ID, oauthUnauthorizedClient,
+			i18n.Text(session.Language, "error.oauth.as.unauthorized.client"), http.StatusBadRequest)
 	}
 
 	pending, found := consumeCode(code)
 	if !found {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidGrant,
 			i18n.Text(session.Language, "error.oauth.as.invalid.code"), http.StatusBadRequest)
 	}
 
@@ -111,14 +117,18 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 			"reason": "code presented by a different client (client_id mismatch); H1",
 		})
 
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	// The redirect_uri in the token request must match the one used in the
-	// authorization request (RFC 6749 §4.1.3).
+	// authorization request (RFC 6749 §4.1.3). RFC 6749 §5.2's invalid_grant
+	// definition names this exact case ("does not match the redirection URI
+	// used in the authorization request") explicitly.
 	if pending.RedirectURI != redirectURI {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidGrant,
 			i18n.Text(session.Language, "error.oauth.as.invalid.redirect"), http.StatusBadRequest)
 	}
 
@@ -142,16 +152,17 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 			"user":   pending.Username,
 		})
 
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidGrant,
 			i18n.Text(session.Language, "error.oauth.as.pkce.required"), http.StatusBadRequest)
 	}
 
 	// Verify PKCE if the authorization request included a code_challenge.
 	// For confidential clients this check is optional (code_challenge may be
 	// empty); for public clients it is mandatory and guaranteed non-empty by
-	// the guard above.
+	// the guard above. RFC 7636 §4.6 classifies a code_verifier mismatch as
+	// invalid_grant, the same category as an unrecognized authorization code.
 	if err := verifyPKCE(pending, codeVerifier); err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidGrant,
 			i18n.Text(session.Language, "error.oauth.as.invalid.pkce"), http.StatusBadRequest)
 	}
 
@@ -159,7 +170,7 @@ func handleAuthorizationCodeGrant(session *router.Session, w http.ResponseWriter
 	accessToken, _, err := createAccessToken(asGlobalConfig, clientID, pending.Username, clientID, scope)
 
 	if err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthServerError,
 			i18n.Text(session.Language, "error.oauth.as.token.create"), http.StatusInternalServerError)
 	}
 
@@ -200,19 +211,21 @@ func handleClientCredentialsGrant(session *router.Session, w http.ResponseWriter
 
 	client := findClient(clientID)
 	if client == nil || !validateClientSecret(client, clientSecret) {
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	if !clientAllowsGrant(client, "client_credentials") {
-		return util.ErrorResponse(w, session.ID,
-			i18n.Text(session.Language, "error.oauth.as.invalid.grant"), http.StatusBadRequest)
+		return writeOAuthError(w, session.ID, oauthUnauthorizedClient,
+			i18n.Text(session.Language, "error.oauth.as.unauthorized.client"), http.StatusBadRequest)
 	}
 
 	// Validate requested scopes against the client's allowed scopes.
 	requested := splitScope(scopeStr)
 	if len(requested) > 0 && !clientAllowsScope(client, requested) {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidScope,
 			i18n.Text(session.Language, "error.oauth.as.invalid.scope"), http.StatusBadRequest)
 	}
 
@@ -226,7 +239,7 @@ func handleClientCredentialsGrant(session *router.Session, w http.ResponseWriter
 	// For client_credentials the "sub" (subject) is empty — there is no user.
 	accessToken, _, err := createAccessToken(asGlobalConfig, clientID, "", clientID, scope)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthServerError,
 			i18n.Text(session.Language, "error.oauth.as.token.create"), http.StatusInternalServerError)
 	}
 
@@ -254,24 +267,32 @@ func handleRefreshTokenGrant(session *router.Session, w http.ResponseWriter, r *
 
 	client := findClient(clientID)
 	if client == nil || !validateClientSecret(client, clientSecret) {
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
 	if !clientAllowsGrant(client, "refresh_token") {
-		return util.ErrorResponse(w, session.ID,
-			i18n.Text(session.Language, "error.oauth.as.invalid.grant"), http.StatusBadRequest)
+		return writeOAuthError(w, session.ID, oauthUnauthorizedClient,
+			i18n.Text(session.Language, "error.oauth.as.unauthorized.client"), http.StatusBadRequest)
 	}
 
 	data, found := consumeRefreshToken(refreshTokenStr)
 	if !found {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthInvalidGrant,
 			i18n.Text(session.Language, "error.oauth.as.invalid.refresh"), http.StatusBadRequest)
 	}
 
-	// The refresh token must belong to the client presenting it.
+	// The refresh token must belong to the client presenting it. Same
+	// generic-401 rationale as the client_id check in
+	// handleAuthorizationCodeGrant above: responding identically to "wrong
+	// secret" and "right secret, someone else's token" denies an attacker
+	// the ability to enumerate which is which.
 	if data.ClientID != clientID {
-		return util.ErrorResponse(w, session.ID,
+		setClientAuthChallenge(w)
+
+		return writeOAuthError(w, session.ID, oauthInvalidClient,
 			i18n.Text(session.Language, "error.oauth.as.invalid.client"), http.StatusUnauthorized)
 	}
 
@@ -279,7 +300,7 @@ func handleRefreshTokenGrant(session *router.Session, w http.ResponseWriter, r *
 
 	accessToken, jti, err := createAccessToken(asGlobalConfig, clientID, data.Username, clientID, scope)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthServerError,
 			i18n.Text(session.Language, "error.oauth.as.token.create"), http.StatusInternalServerError)
 	}
 
@@ -318,7 +339,7 @@ func handleRefreshTokenGrant(session *router.Session, w http.ResponseWriter, r *
 func writeTokenResponse(w http.ResponseWriter, session *router.Session, resp tokenResponse) int {
 	b, err := json.Marshal(resp)
 	if err != nil {
-		return util.ErrorResponse(w, session.ID,
+		return writeOAuthError(w, session.ID, oauthServerError,
 			i18n.Text(session.Language, "error.oauth.as.token.serialize"), http.StatusInternalServerError)
 	}
 

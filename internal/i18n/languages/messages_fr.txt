@@ -426,6 +426,7 @@ oauth.as.pkce.required=les clients publics doivent utiliser PKCE (code_challenge
 oauth.as.token.create=impossible de créer le jeton d'accès
 oauth.as.token.revoked.error=le jeton a été révoqué
 oauth.as.token.serialize=impossible de sérialiser la réponse du jeton
+oauth.as.unauthorized.client=le client n'est pas autorisé à utiliser ce type d'octroi
 oauth.as.unsupported.response_type=response_type doit être "code"
 oauth.as.userinfo.serialize=impossible de sérialiser la réponse userinfo
 oauth.callback.listener=erreur lors du démarrage de l'écouteur de rappel OAuth2

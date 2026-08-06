@@ -426,6 +426,7 @@ oauth.as.pkce.required=パブリッククライアントはPKCEを使用する�
 oauth.as.token.create=アクセストークンを作成できませんでした
 oauth.as.token.revoked.error=トークンは取り消されています
 oauth.as.token.serialize=トークンレスポンスをシリアライズできませんでした
+oauth.as.unauthorized.client=クライアントはこの許可タイプの使用を許可されていません
 oauth.as.unsupported.response_type=response_typeは "code" である必要があります
 oauth.as.userinfo.serialize=userinfoレスポンスをシリアライズできませんでした
 oauth.callback.listener=OAuth2コールバックリスナーの起動エラー

@@ -65,6 +65,41 @@ func sanitizeLogValue(s string) string {
 	return strings.TrimSpace(b.String())
 }
 
+// classifyExchangeError maps a failure from oauth.ExchangeCode/ExchangeCodePublic
+// to the HTTP status that best describes where the fault actually lies,
+// instead of flattening every case to a single hardcoded 502 regardless of
+// cause. The classification information already exists -- flow_authcode.go
+// returns a distinctly typed error for each failure mode -- it just wasn't
+// being consulted here.
+func classifyExchangeError(err error) int {
+	switch {
+	case errors.Equals(err, errors.ErrOAuthTokenRequest):
+		// Ego failed to build its own outbound request to the IdP -- this
+		// never reaches the network, so it's Ego's fault, not the IdP's.
+		return http.StatusInternalServerError
+
+	case errors.Equals(err, errors.ErrOAuthTokenError):
+		// The IdP understood the exchange request and explicitly rejected
+		// it (its response body carried an "error" field: a bad, expired,
+		// or already-used code, or a redirect_uri mismatch). That's a
+		// problem with the request as constructed from what the browser
+		// presented, not a connectivity failure -- 400, not 502.
+		return http.StatusBadRequest
+
+	default:
+		// ErrOAuthTokenPost (network failure reaching the IdP),
+		// ErrOAuthTokenRead (connection dropped mid-response),
+		// ErrOAuthTokenSizeLimit, ErrOAuthTokenParse (unparseable body), and
+		// ErrOAuthTokenHTTPStatus/ErrOAuthTokenNoToken (a non-error response
+		// that still didn't contain what the exchange needs) all mean the
+		// IdP was unreachable or sent something Ego could not use -- exactly
+		// what 502 Bad Gateway describes. Also the default for any future
+		// error this function doesn't yet know about, so a fault the IdP
+		// caused is never silently reported as Ego's own.
+		return http.StatusBadGateway
+	}
+}
+
 // CallbackHandler processes GET /services/admin/oauth/callback.
 //
 // This endpoint is the redirect target registered with the identity provider.
@@ -143,7 +178,7 @@ func CallbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		})
 
 		return util.ErrorResponse(w, session.ID,
-			"OAuth2 login failed", http.StatusBadGateway)
+			"OAuth2 login failed", classifyExchangeError(err))
 	}
 
 	// Validate the received JWT to extract the user identity and permissions.

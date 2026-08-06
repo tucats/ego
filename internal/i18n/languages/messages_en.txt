@@ -434,6 +434,7 @@ oauth.as.pkce.required=public clients must use PKCE (code_challenge required)
 oauth.as.token.create=could not create access token
 oauth.as.token.revoked.error=token has been revoked
 oauth.as.token.serialize=could not serialize token response
+oauth.as.unauthorized.client=client is not authorized to use this grant type
 oauth.as.unsupported.response_type=response_type must be "code"
 oauth.as.userinfo.serialize=could not serialize userinfo response
 oauth.callback.listener=error starting OAuth2 callback listener
