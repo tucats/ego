@@ -18,6 +18,7 @@ package users
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -84,6 +85,56 @@ func teardownTestAuthService(t *testing.T, ignoreErrors bool) {
 	if err := os.Remove(testFile); !ignoreErrors && err != nil {
 		t.Fatalf("remove test file: %v", err)
 	}
+}
+
+// failingWriteService wraps a real auth service, delegating every method to
+// it except WriteUser and DeleteUser, which unconditionally fail. This lets
+// a test put the handler on the path where a user is confirmed to exist (via
+// the wrapped ReadUser) but the subsequent storage write fails -- exercising
+// the "storage fault after existence is confirmed" branch that must report
+// 500, not 404, without needing to break the real file-based store to get
+// there.
+//
+// It is defined with function fields rather than embedding auth.userIOService
+// directly because that interface type is unexported; a struct built purely
+// from the method set below still satisfies it structurally when assigned to
+// auth.AuthService.
+type failingWriteService struct {
+	delegate interface {
+		ReadUser(session int, name string, doNotLog bool) (defs.User, error)
+		ListUsers(suppressPasswords bool) map[string]defs.User
+		Flush() error
+	}
+	writeErr  error
+	deleteErr error
+}
+
+func (f failingWriteService) ReadUser(session int, name string, doNotLog bool) (defs.User, error) {
+	return f.delegate.ReadUser(session, name, doNotLog)
+}
+
+func (f failingWriteService) WriteUser(session int, user defs.User) error {
+	if f.writeErr != nil {
+		return f.writeErr
+	}
+
+	return nil
+}
+
+func (f failingWriteService) DeleteUser(session int, name string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+
+	return nil
+}
+
+func (f failingWriteService) ListUsers(suppressPasswords bool) map[string]defs.User {
+	return f.delegate.ListUsers(suppressPasswords)
+}
+
+func (f failingWriteService) Flush() error {
+	return f.delegate.Flush()
 }
 
 // makeSession builds a minimal *router.Session for use in handler calls.
@@ -436,6 +487,33 @@ func TestCreateUserHandler_InvalidBody(t *testing.T) {
 	}
 }
 
+func TestCreateUserHandler_DuplicateName_ReturnsConflict(t *testing.T) {
+	// POSTing a name that already exists must report 409, not silently
+	// overwrite the existing user's password and permissions — auth.SetUser
+	// itself has no notion of "create" vs "update", so the handler is
+	// responsible for making that distinction.
+	setupTestAuthService(t)
+	defer teardownTestAuthService(t, true)
+
+	body := defs.User{Name: userName1, Password: "attempted-overwrite", Permissions: []string{"+custom.perm"}}
+	rr := httptest.NewRecorder()
+	status := CreateUserHandler(makeSession(nil, nil), rr, newRequest(t, http.MethodPost, "/admin/users", body))
+
+	if status != http.StatusConflict {
+		t.Errorf("expected 409, got %d — body: %s", status, rr.Body.String())
+	}
+
+	// Confirm the existing user's password was not touched by the rejected
+	// create attempt.
+	if !auth.ValidatePassword(0, userName1, "secret") {
+		t.Error("original password no longer valid -- duplicate create must not have modified the existing user")
+	}
+
+	if auth.ValidatePassword(0, userName1, "attempted-overwrite") {
+		t.Error("rejected create's password was applied to the existing user")
+	}
+}
+
 // ---------------------------------------------------------------------------
 // UpdateUserHandler tests
 // ---------------------------------------------------------------------------
@@ -591,6 +669,29 @@ func TestUpdateUserHandler_NoChangeIsOK(t *testing.T) {
 	}
 }
 
+func TestUpdateUserHandler_WriteFailure_ReturnsInternalServerError(t *testing.T) {
+	// ReadUser (the existence check at the top of the handler) already
+	// confirmed userName1 exists, so a subsequent WriteUser failure is a
+	// storage fault -- it must be reported as 500, not 404.
+	setupTestAuthService(t)
+	defer teardownTestAuthService(t, true)
+
+	real := auth.AuthService
+	auth.AuthService = failingWriteService{delegate: real, writeErr: errors.New("disk full")}
+
+	body := defs.User{Name: userName1, Password: "newPass"}
+	rr := httptest.NewRecorder()
+	status := UpdateUserHandler(
+		makeSession(map[string]any{"name": userName1}, nil),
+		rr,
+		newRequest(t, http.MethodPatch, "/admin/users/alice", body),
+	)
+
+	if status != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d — body: %s", status, rr.Body.String())
+	}
+}
+
 // ---------------------------------------------------------------------------
 // DeleteUserHandler tests
 // ---------------------------------------------------------------------------
@@ -664,5 +765,27 @@ func TestDeleteUserHandler_NonexistentUser(t *testing.T) {
 
 	if status != http.StatusNotFound {
 		t.Errorf("expected 404 for nonexistent user, got %d", status)
+	}
+}
+
+func TestDeleteUserHandler_DeleteFailure_ReturnsInternalServerError(t *testing.T) {
+	// The handler's own ReadUser call already confirmed userName1 exists,
+	// so a failure in the delete that follows is a storage fault, not a
+	// "not found" condition, and must be reported as 500.
+	setupTestAuthService(t)
+	defer teardownTestAuthService(t, true)
+
+	real := auth.AuthService
+	auth.AuthService = failingWriteService{delegate: real, deleteErr: errors.New("disk full")}
+
+	rr := httptest.NewRecorder()
+	status := DeleteUserHandler(
+		makeSession(map[string]any{"name": userName1}, nil),
+		rr,
+		newRequest(t, http.MethodDelete, "/admin/users/alice", nil),
+	)
+
+	if status != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d — body: %s", status, rr.Body.String())
 	}
 }

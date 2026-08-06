@@ -639,6 +639,7 @@ url.not.found=URL no encontrada
 url.scheme.unsupported=esquema de URL no compatible
 user.count=número incorrecto de usuarios actualizados por solicitud
 user.defined=error proporcionado por el usuario
+user.exists=el usuario ya existe
 user.hash.failed=Error al crear el hash de la contraseña: {{err}}
 user.name.not.found=No existe el usuario: {{name}}
 user.not.found=no existe tal usuario

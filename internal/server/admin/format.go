@@ -126,11 +126,16 @@ func ASTHandler(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 
+	// A parse error is reported in the response body's Error field with HTTP
+	// 200, matching FormatCodeHandler and /admin/run: a program that doesn't
+	// parse is a normal, expected client outcome (the user's source has a
+	// mistake), not a server failure.
 	if syntaxTree, err = parse.ParseAuto(req.Code); err != nil {
-		return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+		resp.Error = err.Error()
+	} else {
+		resp.Ast = syntaxTree
 	}
 
-	resp.Ast = syntaxTree
 	_ = util.WriteJSON(w, session.Response(), http.StatusOK, resp)
 
 	return http.StatusOK

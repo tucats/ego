@@ -7,6 +7,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/auth"
 	"github.com/tucats/ego/internal/language/symbols"
@@ -43,10 +44,19 @@ func DeleteUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	s.SetAlways(defs.SessionVariable, session.ID)
 
 	// Attempt the deletion. auth.DeleteUser returns (bool, error): true means
-	// the user was found and deleted, false means it was not found.
+	// the user was found and deleted, false with a nil error means it was not
+	// found (a race against another deletion of the same user between the
+	// ReadUser check above and this call), and a non-nil error means the
+	// underlying delete (or the flush that follows it) failed -- a server
+	// fault, not a "not found" condition, since ReadUser already confirmed
+	// the user existed a moment ago.
 	// data.BoolOrFalse() converts the returned any value to a plain bool.
 	v, err := auth.DeleteUser(s, data.NewList(u.Name))
-	if err != nil || !data.BoolOrFalse(v) {
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	}
+
+	if !data.BoolOrFalse(v) {
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusNotFound)

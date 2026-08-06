@@ -80,6 +80,20 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		args.SetAlways("permissions", perms)
 	}
 
+	// auth.SetUser (called below) unconditionally upserts -- it has no
+	// notion of "create" versus "update". Without this check, POSTing a
+	// name that already exists would silently overwrite that user's
+	// password and permissions instead of reporting the conflict a POST to
+	// a create endpoint is expected to report. This runs after payload
+	// validation above (malformed body, invalid/ambiguous permissions) so
+	// that a request that is wrong on its own terms is still reported as
+	// 400, not masked by a 409 for an existing name it never gets to check.
+	if _, err := auth.AuthService.ReadUser(session.ID, userInfo.Name, false); err == nil {
+		msg := errors.ErrUserAlreadyExists.Clone().Context(userInfo.Name).Localize(session.Language)
+
+		return util.ErrorResponse(w, session.ID, msg, http.StatusConflict)
+	}
+
 	// Call auth.SetUser to create (or replace) the user record. On success,
 	// immediately read the stored record back so we can return it to the
 	// caller with accurate field values.

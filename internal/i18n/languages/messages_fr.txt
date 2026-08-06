@@ -633,6 +633,7 @@ url.not.found=URL introuvable
 url.scheme.unsupported=schéma URL non supporté
 user.count=nombre incorrect d'utilisateurs mis à jour par la requête
 user.defined=erreur fournie par l'utilisateur
+user.exists=l'utilisateur existe déjà
 user.hash.failed=Échec du hachage du mot de passe : {{err}}
 user.name.not.found=Aucun utilisateur trouvé : {{name}}
 user.not.found=utilisateur inexistant

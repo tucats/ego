@@ -136,8 +136,11 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		// operations flush the cache, so skipping an unnecessary write avoids
 		// evicting cached credentials without cause.
 		if changed {
+			// The ReadUser call at the top of this handler already confirmed
+			// the user exists, so a WriteUser failure here is a storage
+			// fault, not a "not found" condition.
 			if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.update.failed", ui.A{"name": name, "err": err.Error()}), http.StatusNotFound)
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.update.failed", ui.A{"name": name, "err": err.Error()}), http.StatusInternalServerError)
 			}
 		}
 

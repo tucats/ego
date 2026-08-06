@@ -1,0 +1,33 @@
+{
+    "description": "invalid Ego program to /admin/ast reports 200 with an error field, not 500",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/ast",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "func main() {;  this is not valid ego syntax !!!;} ;"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "error field is present",
+            "query": "error",
+            "op": "exists"
+        },
+        {
+            "name": "no ast output",
+            "query": "ast",
+            "op": "not-exists"
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "description": "well-formed Ego program to /admin/ast returns 200 with the ast field populated",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/ast",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "code": "x := 1 + 2"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "ast field is present",
+            "query": "ast",
+            "op": "exists"
+        },
+        {
+            "name": "no error field",
+            "query": "error",
+            "op": "not-exists"
+        }
+    ]
+}

@@ -633,6 +633,7 @@ url.not.found=URLが見つかりません
 url.scheme.unsupported=サポートされていないURLスキーム
 user.count=リクエストで更新されたユーザーの数が正しくありません
 user.defined=ユーザー定義エラー
+user.exists=ユーザーは既に存在します
 user.hash.failed=パスワードのハッシュ化に失敗しました: {{err}}
 user.name.not.found=そのようなユーザーはいません: {{name}}
 user.not.found=そのようなユーザーはいません

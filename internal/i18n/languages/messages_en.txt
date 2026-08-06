@@ -641,6 +641,7 @@ url.not.found=URL not found
 url.scheme.unsupported=unsupported URL scheme
 user.count=incorrect number of users updated by request
 user.defined=user-supplied error
+user.exists=user already exists
 user.hash.failed=Failed to hash password: {{err}}
 user.name.not.found=No such user: {{name}}
 user.not.found=no such user

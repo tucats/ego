@@ -58,7 +58,10 @@ func TokenRevokeHandler(session *router.Session, w http.ResponseWriter, r *http.
 	for _, id := range ids {
 		err = tokens.Blacklist(id)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+			// tokens.Blacklist only ever fails on the underlying storage
+			// insert -- never on anything about the request itself -- so an
+			// unclassified failure here is a server fault, not a client one.
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
 		ui.Log(ui.AuthLogger, "auth.blacklist.added", ui.A{
@@ -218,7 +221,10 @@ func TokenDeleteHandler(session *router.Session, w http.ResponseWriter, r *http.
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusNotFound)
 		}
 
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+		// Anything else is a failure in the underlying storage delete, not a
+		// malformed request -- tokens.Delete never returns any other class
+		// of error.
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	ui.Log(ui.AuthLogger, "auth.blacklist.removed", ui.A{
