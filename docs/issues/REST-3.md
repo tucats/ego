@@ -27,11 +27,11 @@ across all handlers were counted but not reviewed"). This issue is that
 audit, plus a re-check of whether REST-1/REST-2's own fixes actually reached
 every file they claimed to.
 
-**Status: IN PROGRESS, on branch `http-status`. Sections 1-5 are fixed and
-committed (`ac59959f`, `2fc83daf`, `34d9a25e`, `240cb961`); sections 6-7
-(services, tables residual gaps) are still open findings only. This
-document is for review as work proceeds; see "Open questions for review" at
-the end.**
+**Status: IN PROGRESS, on branch `http-status`. Sections 1-6 are fixed and
+committed (`ac59959f`, `2fc83daf`, `34d9a25e`, `240cb961`, `130df06d`);
+section 7 (tables residual gaps) is still open findings only. This document
+is for review as work proceeds; see "Open questions for review" at the
+end.**
 
 ## How this was produced
 
@@ -427,7 +427,22 @@ idioms available in this package and no single one to reach for.
 
 ---
 
-## 6. `internal/server/services` — the user-service execution engine
+## 6. `internal/server/services` — the user-service execution engine — FIXED (`130df06d`)
+
+6.1, 6.2, and 6.4 fixed as described. 6.4 was resolved per explicit
+direction from the user: a service must never be able to shut down the
+server under any circumstance — that's exclusively an administrative
+action (POST `/services/admin/down`). The `os.Exit()`-triggers-a-real-
+shutdown code was removed outright in both `service.go` and `child.go`
+(the latter never endangered the real server, but was removed too, since
+it no longer served any purpose once the former was gone). The `errors.ErrExit`
+branch now reports 500, not 503 — once nothing is actually shutting down,
+503 no longer describes anything true. 6.3 was left unchanged, and
+documented in place as a deliberate policy rather than a bug: an uncaught
+runtime error always reports 500 regardless of what status the script had
+already set, since there's no reliable way to distinguish "script committed
+to a different status" from "script never touched status" from inside the
+engine.
 
 A script sets its response status via `response.WriteHeader(n)`
 (`internal/runtime/http/writer.go:146-156`), which only records it in the
@@ -647,30 +662,29 @@ let callers classify them, which is the intended shape.
 
 ## Open questions for review
 
-1. **Scope for a first pass.** This audit found issues in six different
-   packages. Should the fix land as one broad pass (risk: a large diff
-   touching many unrelated files) or a series of smaller, package-scoped
-   fixes (risk: the cross-file inconsistencies, like the DSN handler and the
-   scripting opcodes, are easiest to fix together, precisely because they're
-   inconsistent *with each other*)?
-2. **OAuth error shape (5.1).** This is the largest single change — a new
-   RFC-6749-shaped response writer used only by the AS endpoints. Worth
-   confirming this is wanted before it's built, since it also implies
-   picking canonical RFC error-code values for each internal condition
-   (5.2), which is a design decision, not just a mechanical fix.
-3. **`os.exit()` shutdown behavior (6.4).** Is real-process shutdown from a
-   user script the intended behavior at all, for any server configuration?
-   If yes, should it require an explicit admin-only permission gate on the
-   route, independent of everything else in this document? If no, the fix
-   is not a status-code change but removing the `os.Exit(0)` call.
-4. **201/204 convention (2.6).** Worth deciding once, project-wide, rather
-   than per-handler as each gets touched.
+1. **Scope for a first pass — RESOLVED.** Landed as a series of package-
+   scoped commits (one per document section) on the `http-status` branch,
+   each independently reviewed, tested, and pushed. Sections 1-6 are done.
+2. **OAuth error shape (5.1) — RESOLVED.** Confirmed: build the full
+   RFC-6749-shaped writer and fix the error categories (5.2) and
+   `WWW-Authenticate` headers (5.3) together. Done in `240cb961`.
+3. **`os.exit()` shutdown behavior (6.4) — RESOLVED.** Confirmed: never
+   intended behavior, for any server configuration — shutting down the
+   server is exclusively an administrative action
+   (POST `/services/admin/down`), never something a request handler can
+   trigger. The `os.Exit(0)` call (both the in-process and child-process
+   copies) was removed outright. Done in `130df06d`.
+4. **201/204 convention (2.6).** Still open. Worth deciding once,
+   project-wide, rather than per-handler as each gets touched.
 5. **Should `internal/server/dberrors` be reused by non-table packages**
    (`admin`, `dsns`, `cluster`, `services`), or is a second, differently
    shaped classifier warranted for errors that aren't database-shaped (e.g.
    `services`' compile/file-not-found distinction, which has nothing to do
-   with SQL)? The DSN findings (§3) are database-shaped and can reuse
-   `dberrors` directly; the `admin`/`services` findings mostly aren't.
+   with SQL)? Still open in general, though in practice each section ended
+   up with its own narrow, local classification logic (`os.IsNotExist`
+   checks, the OAuth `oauthErrorCode` enum, etc.) rather than a shared
+   package — that may be the answer in practice, but it was never decided
+   as a deliberate policy.
 
 ## Related
 
