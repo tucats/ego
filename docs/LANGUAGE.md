@@ -5,6 +5,8 @@ Version 1.9
 This document describes the language _Ego_, which is a scripting
 language and tool set patterned off of the _Go_ programming language.
 
+{% raw %}
+
 ## Table of Contents
 
 1. [Introduction](#intro)
@@ -9311,3 +9313,5 @@ This mode is effective only within the current statement block
 type enforcement returns to the state of the previous block. This
 value is controlled by the types preferences item or
 command-line option.
+
+{% endraw %}
