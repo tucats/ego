@@ -9,6 +9,8 @@ But unlike Go, Ego programs don't need to be compiled ahead of time — you type
 and it runs immediately, values are dynamically typed by default, and you get a REPL
 for free.
 
+{% raw %}
+
 ```sh
 $ ego run
 ego> fmt.Println(3*5)
@@ -108,3 +110,4 @@ human beings. Any code proposed by AI is reviewed by a human before it is commit
 (Tabnine and Claude Code) has been used to generate test cases, and the web dashboard was
 written entirely by Claude Code, with the resulting code reviewed to ensure it contains no
 data leaks or misuse of Ego API endpoints.
+{% endraw %}

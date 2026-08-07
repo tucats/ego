@@ -7,6 +7,8 @@ privileged user, APIs for directly accessing database tables and their data
 via named data source names (DSNs), and APIs for accessing user-written
 services (implemented as _Ego_ programs).
 
+{% raw %}
+
 ## Table of Contents
 
 1. [Introduction](#intro)
@@ -1637,3 +1639,5 @@ The following table lists every endpoint supported by the _Ego_ server.
 | PUT | /dsns/_dsn_/tables/_table_/permissions | Grants or revokes permissions on the named table for a user. |
 | DELETE | /dsns/_dsn_/tables/_table_/permissions | Revokes all permissions on the named table for a user. |
 | ANY | /services/_path_ | Loads, compiles, and runs the Ego service file mapped to the given path. |
+
+{% endraw %}
