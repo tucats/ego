@@ -15,7 +15,7 @@
 
 }
 
-@test "packages: i18n Format two-value return"
+@test "i18n: Format two-value return"
 {
     import "i18n"
 
@@ -32,7 +32,7 @@
     @assert m2 == "hello {{missing}}"
 }
 
-@test "packages: i18n Format preserves numeric types for Go format verbs"
+@test "i18n: Format preserves numeric types for Go format verbs"
 {
     // Parameter values passed through an Ego map must keep their native
     // type (float64, int, ...) so a "%..." format operator -- a real Go

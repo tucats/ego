@@ -11,7 +11,7 @@
     @assert lang != ""
 }
 
-@test "packages: i18n.T falls back to the built-in catalog with no @localization"
+@test "i18n: i18n.T falls back to the built-in catalog with no @localization"
 {
     import "i18n"
 
@@ -26,7 +26,7 @@
     @assert m2 == "¡Hola, Bob!"
 }
 
-@test "packages: i18n.T on an unknown key returns the key itself"
+@test "i18n: i18n.T on an unknown key returns the key itself"
 {
     import "i18n"
 

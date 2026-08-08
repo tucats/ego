@@ -1,4 +1,4 @@
-@test "server: unittest - verify server heartbeat"
+@test "server: REST - verify server heartbeat"
 {
     @global ServerAddr os.Hostname() + ".local"
     @global ServerAvailable true
@@ -18,7 +18,7 @@
     conn.Close()
 }
 
-@test "server: unittest - echo GET reflects method and query parameters"
+@test "server: REST - echo GET reflects method and query parameters"
 {
     if !ServerAvailable {
         return
@@ -33,7 +33,7 @@
     @assert r.parameters.count[0] == "5"
 }
 
-@test "server: unittest - echo GET rejects an unparsable count parameter"
+@test "server: REST - echo GET rejects an unparsable count parameter"
 {
     if !ServerAvailable {
         return
@@ -48,7 +48,7 @@
     @assert conn.Status == 400
 }
 
-@test "server: unittest - echo PUT reflects method and body"
+@test "server: REST - echo PUT reflects method and body"
 {
     if !ServerAvailable {
         return
@@ -62,7 +62,7 @@
     @assert index(r.body, "\"hello\":\"world\"") >= 0
 }
 
-@test "server: unittest - echo POST reflects method and body"
+@test "server: REST - echo POST reflects method and body"
 {
     if !ServerAvailable {
         return
@@ -76,7 +76,7 @@
     @assert index(r.body, "\"hello\":\"post\"") >= 0
 }
 
-@test "server: unittest - echo PATCH reflects method and body"
+@test "server: REST - echo PATCH reflects method and body"
 {
     if !ServerAvailable {
         return
@@ -90,7 +90,7 @@
     @assert index(r.body, "\"hello\":\"patch\"") >= 0
 }
 
-@test "server: unittest - echo DELETE reflects method and optional body"
+@test "server: REST - echo DELETE reflects method and optional body"
 {
     if !ServerAvailable {
         return
@@ -104,7 +104,7 @@
     @assert index(r.body, "\"hello\":\"delete\"") >= 0
 }
 
-@test "server: unittest - media negotiation returns JSON when requested"
+@test "server: REST - media negotiation returns JSON when requested"
 {
     if !ServerAvailable {
         return
@@ -117,7 +117,7 @@
     @assert r.format == "json"
 }
 
-@test "server: unittest - media negotiation returns text when requested"
+@test "server: REST - media negotiation returns text when requested"
 {
     if !ServerAvailable {
         return
@@ -130,7 +130,7 @@
     @assert index(string(r), "format=text") >= 0
 }
 
-@test "server: unittest - media negotiation rejects an unsupported Accept type"
+@test "server: REST - media negotiation rejects an unsupported Accept type"
 {
     if !ServerAvailable {
         return
@@ -142,7 +142,7 @@
     @assert conn.Status == 400
 }
 
-@test "server: unittest - protected endpoint rejects unauthenticated requests"
+@test "server: REST - protected endpoint rejects unauthenticated requests"
 {
     if !ServerAvailable {
         return
@@ -154,7 +154,7 @@
     @assert conn.Status == 401 || conn.Status == 403
 }
 
-@test "server: unittest - protected endpoint accepts an authenticated request"
+@test "server: REST - protected endpoint accepts an authenticated request"
 {
     if !ServerAvailable {
         return
@@ -172,7 +172,7 @@
     @assert r.username == "admin"
 }
 
-@test "server: unittest - status endpoint returns the requested status code"
+@test "server: REST - status endpoint returns the requested status code"
 {
     if !ServerAvailable {
         return
