@@ -20,10 +20,19 @@
 # means the suite runs in whatever zone the developer or container actually
 # uses, which is what would catch a regression of this kind.
 
+# run_captured (see tools/run_captured.sh) runs a command with its output
+# fully captured instead of streamed live, showing only a one-line summary
+# on success and the complete output on failure -- the same strategy
+# tools/gotests.sh uses for the Go suite. It's needed here for the Ego test
+# and apitest invocations below, and also by
+# tools/test_container_entrypoint.sh for the OAuth2 suite, so it lives in its
+# own file rather than being defined separately in each script.
+source "$(ego path)/tools/run_captured.sh"
+
 echo " "
 echo "Running native Go unit tests"
 
-$(ego path)/tools/gotests.sh 
+$(ego path)/tools/gotests.sh
 
 # "$?" is a special shell variable that holds the exit code of the last command.
 # By convention, exit code 0 means success; anything else means failure.
@@ -54,8 +63,10 @@ echo "Running Ego test stream with strict type checking"
 
 # Run the Ego test suite with strict typing. In strict mode, all variables must
 # be explicitly declared with a specific type, and type mismatches are errors.
-./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=strict
-if [ $? != 0 ]; then
+# Deliberately not passing -q: run_captured needs the full per-test PASS/FAIL
+# output available to show if this run fails, and it already keeps a clean
+# run's output down to one summary line without the binary's own help.
+if ! run_captured ./ego "${EXEC_TEST_ARGS[@]}" test --typing=strict; then
    echo "Ego test failure with strict typing"
    exit 1
 fi
@@ -67,8 +78,7 @@ echo "Running Ego test stream with relaxed type checking"
 # Run the Ego test suite with relaxed typing. In relaxed mode, some implicit
 # type conversions are allowed, making the language behave more like a scripting
 # language while still enforcing basic type rules.
-./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=relaxed
-if [ $? != 0 ]; then
+if ! run_captured ./ego "${EXEC_TEST_ARGS[@]}" test --typing=relaxed; then
    echo "Ego test failure with relaxed typing"
    exit 1
 fi
@@ -80,8 +90,7 @@ echo "Running Ego test stream with dynamic type checking"
 # Run the Ego test suite with dynamic (no) type checking. In dynamic mode,
 # variables can hold any type and all type coercions are automatic, similar
 # to how JavaScript or Python work.
-./ego "${EXEC_TEST_ARGS[@]}" -q test --typing=dynamic
-if [ $? != 0 ]; then
+if ! run_captured ./ego "${EXEC_TEST_ARGS[@]}" test --typing=dynamic; then
    echo "Ego test failure with dynamic typing"
    exit 1
 fi
@@ -130,8 +139,10 @@ AVAIL=""
 
 echo "Running API tests for REST server"
 # "-p tools/apitests/" tells apitest where to find the test definition files.
-tools/apitest.sh -q tests/
-if [ $? != 0 ]; then
+# Deliberately not passing -q here either, for the same reason as the Ego
+# test runs above: run_captured wants the per-file PASS/FAIL lines on hand
+# in case this run fails.
+if ! run_captured tools/apitest.sh tests/; then
    echo "TEST: API tests failed"
    exit 1
 fi

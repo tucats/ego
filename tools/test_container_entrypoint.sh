@@ -35,6 +35,11 @@
 # an empty array is not safe under nounset on every bash version.
 set -o pipefail
 
+# run_captured: see tools/run_captured.sh. Used below for the OAuth2 suite so
+# a clean run reports just a summary line, matching how tools/test.sh's own
+# Ego-test and apitest calls behave.
+source tools/run_captured.sh
+
 # tools/test.sh and its helpers (gotests.sh, apitest.sh) invoke the bare
 # "ego" command -- e.g. "$(ego path)/tools/gotests.sh" -- assuming it's on
 # PATH, the way it would be for a developer's normal local setup. Put the
@@ -165,7 +170,7 @@ echo " "
 # endpoints are addressed by the suite's own dictionary.json (AS_URL,
 # defaulting to http://localhost:4040) since they need a different scheme
 # and port than the primary instance.
-tools/apitest.sh -x HOST=localhost oauth_tests/
+run_captured tools/apitest.sh -x HOST=localhost oauth_tests/
 OAUTH_STATUS=$?
 
 if [[ "${TEST_STATUS}" -eq 0 ]]; then
