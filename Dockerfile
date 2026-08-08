@@ -29,8 +29,15 @@ ARG GENERATE_TEST_CERT=false
 # dashboard in a headless DOM to confirm it starts up. They are installed only
 # in this builder stage; the runtime stage below stays free of them, so the
 # shipped image gains no extra packages or CVE surface from a test-only tool.
+#
+# postgresql is for tests/sql/sql_postgres.ego, which otherwise silently
+# self-skips (see that file) when it can't reach a Postgres server. Installing
+# the package here creates a single default cluster ("main") at build time;
+# tools/test_container_entrypoint.sh starts it and creates the role/database
+# that test expects. Also test-only, so likewise kept out of the runtime
+# stage below.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git zsh nodejs npm \
+ && apt-get install -y --no-install-recommends git zsh nodejs npm postgresql \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build

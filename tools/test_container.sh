@@ -31,6 +31,10 @@
 #                          ego-test:latest, or $EGO_TEST_IMAGE if set).
 #   --no-cache             Build the image from scratch, ignoring Docker's
 #                          layer cache.
+#   -v, --verbose           Show every test's full output, not just a
+#                          summary line -- see tools/run_captured.sh. Useful
+#                          for comparing a container run against an
+#                          interactive tools/test.sh run line-for-line.
 #   -h, --help             Show this help and exit.
 #
 # Example:
@@ -46,6 +50,7 @@ set -o pipefail
 IMAGE="${EGO_TEST_IMAGE:-ego-test:latest}"
 NO_CACHE=0
 REMOTE=0
+VERBOSE=0
 SET_ARGS=()
 
 usage() {
@@ -73,11 +78,16 @@ Options:
                          (default: ego-test:latest).
   --no-cache             Build the image from scratch, ignoring Docker's
                          layer cache.
+  -v, --verbose          Show every test's full output, not just a summary
+                         line on success -- see tools/run_captured.sh. Makes
+                         it practical to diff a container run's output
+                         against an interactive tools/test.sh run.
   -h, --help             Show this help and exit.
 
 Example:
   tools/test_container.sh --set ego.server.js.minify=true
   tools/test_container.sh --remote
+  tools/test_container.sh --verbose
 EOF
 }
 
@@ -104,6 +114,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-cache)
             NO_CACHE=1
+            ;;
+        -v|--verbose)
+            VERBOSE=1
             ;;
         -h|--help)
             usage
@@ -175,9 +188,21 @@ if ! docker build "${BUILD_ARGS[@]}" "${REPO_ROOT}"; then
 fi
 
 echo "Running isolated test suite in container ..."
+
+# -v/--verbose sets TEST_VERBOSE in the container's environment, which
+# tools/run_captured.sh (sourced by both tools/test.sh and
+# tools/test_container_entrypoint.sh) checks to skip its own summary-only
+# behavior on success. RUN_ARGS is built as an array, not a plain string,
+# for the same word-splitting reason SET_ARGS is (see the note at the top of
+# this script).
+RUN_ARGS=()
+if [[ "${VERBOSE}" -eq 1 ]]; then
+    RUN_ARGS+=(-e TEST_VERBOSE=1)
+fi
+
 # No -p/--publish: the server inside the container is only ever reached by
 # the apitest run inside that same container, so no host port is needed.
-docker run --rm "${IMAGE}" bash tools/test_container_entrypoint.sh "${SET_ARGS[@]}"
+docker run --rm "${RUN_ARGS[@]}" "${IMAGE}" bash tools/test_container_entrypoint.sh "${SET_ARGS[@]}"
 STATUS=$?
 
 exit "${STATUS}"

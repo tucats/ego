@@ -16,6 +16,12 @@
 # successful run -- there's no partial output while the command is in
 # flight, only the final verdict.
 #
+# Setting TEST_VERBOSE to any non-empty value disables the caching -- every
+# run_captured call then always prints its complete output, pass or fail.
+# tools/test_container.sh's -v/--verbose flag sets this (via "docker run -e")
+# so a container run can be compared line-for-line against an interactive
+# tools/test.sh run instead of only ever seeing a full dump on failure.
+#
 # Written for POSIX-ish function syntax (no zsh-only or bash-only features)
 # since it is sourced by both a zsh script (test.sh) and a bash script
 # (test_container_entrypoint.sh).
@@ -26,7 +32,7 @@ run_captured() {
     output=$("$@" 2>&1)
     exit_code=$?
 
-    if [ "$exit_code" -eq 0 ]; then
+    if [ "$exit_code" -eq 0 ] && [ -z "${TEST_VERBOSE:-}" ]; then
         summary=$(printf '%s\n' "$output" | grep "^TEST: Completed" | tail -1)
         printf '%s\n' "${summary:-$output}"
     else

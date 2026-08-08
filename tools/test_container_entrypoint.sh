@@ -81,6 +81,55 @@ waitForPort() {
     return 1
 }
 
+# ─── PostgreSQL (localhost:5432) ─────────────────────────────────────────────
+#
+# tests/sql/sql_postgres.ego (run as part of tools/test.sh's Ego test pass)
+# self-skips with a warning if it can't reach a Postgres server, so without
+# this the Postgres-backed test path never actually ran in the container. It
+# expects a role "ego_test" (password "secret") with a same-named database it
+# owns, reachable at localhost:5432 -- see that file for the exact values.
+#
+# The Dockerfile's builder stage installs the "postgresql" package, which
+# creates exactly one cluster ("main") at build time. Its version directory
+# under /etc/postgresql is looked up here, rather than hardcoded, so this
+# keeps working across a Debian base image bump. Debian's default
+# postgresql.conf already listens on localhost, so nothing else needs
+# configuring beyond starting the cluster and creating the role/database.
+PG_VERSION=$(ls /etc/postgresql)
+
+echo " "
+echo "Starting PostgreSQL ${PG_VERSION} (cluster: main) ..."
+pg_ctlcluster "${PG_VERSION}" main start
+
+PG_READY=0
+for _ in $(seq 1 30); do
+    if pg_isready -q -h localhost -p 5432; then
+        PG_READY=1
+        break
+    fi
+
+    sleep 1
+done
+
+if [[ "${PG_READY}" -ne 1 ]]; then
+    echo "ERROR: PostgreSQL did not become ready; cluster log follows:" >&2
+    cat "/var/log/postgresql/postgresql-${PG_VERSION}-main.log" >&2
+    exit 1
+fi
+
+# Local Unix-socket connections authenticate via "peer" auth by default, so
+# running these as the "postgres" OS user (created by the package install)
+# reaches the Postgres superuser role of the same name without a password.
+if ! su postgres -c "psql -v ON_ERROR_STOP=1 -c \"CREATE ROLE ego_test LOGIN PASSWORD 'secret';\""; then
+    echo "ERROR: failed to create Postgres role 'ego_test'" >&2
+    exit 1
+fi
+
+if ! su postgres -c "createdb --owner=ego_test ego_test"; then
+    echo "ERROR: failed to create Postgres database 'ego_test'" >&2
+    exit 1
+fi
+
 # ─── OAuth2 Authorization Server instance (port 4040) ───────────────────────
 #
 # A scratch directory for this instance's SQLite database, log, signing key,
@@ -181,5 +230,8 @@ echo " "
 echo "Stopping isolated Ego servers ..."
 kill "${SERVER_PID}" "${AS_SERVER_PID}" 2>/dev/null
 wait "${SERVER_PID}" "${AS_SERVER_PID}" 2>/dev/null
+
+echo "Stopping PostgreSQL ..."
+pg_ctlcluster "${PG_VERSION}" main stop
 
 exit "${TEST_STATUS}"
