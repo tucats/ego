@@ -1,6 +1,11 @@
 @test "server: client - verify server heartbeat"
 {
-	@global ServerAddr os.Hostname() + ".local"
+	// os.Hostname() + ".local" only resolves where mDNS/Bonjour is available
+	// (e.g. a developer's Mac). The test container has no mDNS resolver, so
+	// tools/test_container_entrypoint.sh sets EGO_TEST_HOST=localhost, which
+	// this picks up instead. Outside the container EGO_TEST_HOST is unset,
+	// so this falls back to the original hostname-based lookup unchanged.
+	@global ServerAddr if os.Getenv("EGO_TEST_HOST") != "" { os.Getenv("EGO_TEST_HOST") } else { os.Hostname() + ".local" }
 	@global ServerAvailable true
 
     // Empty username in the New() call means no authentication provided.

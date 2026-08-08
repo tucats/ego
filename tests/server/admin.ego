@@ -1,7 +1,10 @@
 @test "server: admin - log on to server"
 {
-	@global ServerAddr os.Hostname() + ".local"
-    @global ServerAvailable true 
+	// See tests/server/client.ego's heartbeat test for why EGO_TEST_HOST is
+	// checked here: os.Hostname()+".local" needs mDNS, which the test
+	// container doesn't have.
+	@global ServerAddr if os.Getenv("EGO_TEST_HOST") != "" { os.Getenv("EGO_TEST_HOST") } else { os.Hostname() + ".local" }
+    @global ServerAvailable true
 
     // Empty username in the New() call means no authentication provided.
     conn := rest.New("").Base("https://" + ServerAddr + ":443").Verify(false).Media("application/json")

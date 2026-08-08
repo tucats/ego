@@ -206,7 +206,13 @@ echo " "
 # HOST=localhost overrides apitest's default of os.Hostname(), which inside a
 # container resolves to the container ID rather than something reachable.
 # See the comment in tools/apitest.sh for how APITEST_ARGS is consumed.
-APITEST_ARGS="-x HOST=localhost" zsh tools/test.sh
+#
+# EGO_TEST_HOST=localhost is the equivalent override for the Ego-language
+# tests in tests/server/*.ego, which otherwise probe
+# os.Hostname()+".local" -- a name that only resolves where mDNS/Bonjour is
+# available, which this container doesn't have. See tests/server/client.ego's
+# heartbeat test for the check that reads this.
+APITEST_ARGS="-x HOST=localhost" EGO_TEST_HOST=localhost zsh tools/test.sh
 TEST_STATUS=$?
 
 echo " "
