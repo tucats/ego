@@ -52,6 +52,7 @@ const (
 	BitOr
 	BitShift
 	Call
+	CallTest
 	Coerce
 	Console
 	Constant
@@ -197,6 +198,7 @@ var opcodeNames = map[Opcode]string{
 	BranchFalse:             "BranchFalse",
 	BranchTrue:              "BranchTrue",
 	Call:                    "Call",
+	CallTest:                "CallTest",
 	Coerce:                  "Coerce",
 	Console:                 "Console",
 	Constant:                "Constant",
@@ -337,6 +339,7 @@ func initializeDispatch() {
 		dispatchTable[BranchFalse] = branchFalseByteCode
 		dispatchTable[BranchTrue] = branchTrueByteCode
 		dispatchTable[Call] = callByteCode
+		dispatchTable[CallTest] = callTestByteCode
 		dispatchTable[Coerce] = coerceByteCode
 		dispatchTable[Console] = consoleByteCode
 		dispatchTable[Constant] = constantByteCode

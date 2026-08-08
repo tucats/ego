@@ -34,6 +34,38 @@ func localCallByteCode(c *Context, i any) error {
 	return err
 }
 
+// callTestByteCode runs a compiled @test block body (a separately compiled
+// *ByteCode fragment, carried directly as the instruction's operand) as a
+// subroutine of the current instruction stream, so that a "return" statement
+// inside it pops back to right after this instruction via the normal
+// Return/callFramePop path instead of halting the whole run loop -- see
+// compileTestBody in internal/language/compiler/testing.go for why @test
+// bodies need this and not a plain Call.
+//
+// Unlike callByteCode/callBytecodeFunction, this does NOT give the callee a
+// new child symbol table: it pushes c.symbols itself as the callee's table
+// (table == c.symbols is the same pointer, not a NewChildSymbolTable wrapper
+// around it), so a ":=" declaration or package import executed by the test
+// body is written directly into the table the caller -- and every other test
+// in the file, which all share that same table -- already uses. This is what
+// lets one test's "import" or shared top-level variable remain visible to
+// later tests in the file, exactly as it was before @test bodies got their
+// own call frame.
+//
+// The callee fragment must end with an explicit Return instruction (plain
+// Compile() does not append one automatically the way a real function body's
+// compile does); compileTestBody guarantees this.
+func callTestByteCode(c *Context, i any) error {
+	bc, ok := i.(*ByteCode)
+	if !ok {
+		return c.runtimeError(errors.ErrInvalidCallFrame)
+	}
+
+	c.callFramePushWithTable(c.symbols, bc, 0)
+
+	return nil
+}
+
 // callByteCode instruction processor calls a function (which can have
 // parameters and a return value). The function arguments are on the stack
 // followed by the function to be called. The function can be a builtin,

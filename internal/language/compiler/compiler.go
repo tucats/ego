@@ -153,6 +153,16 @@ type Compiler struct {
 	functionDepth      int                      // Current nested function declaration depth
 	blockDepth         int                      // Current nested statement block  depth
 	optimizationLevel  int                      // The optimization level (0=none, 1=low, 2=high)
+	// testBodyDepth is the functionDepth captured when compilation of an @test
+	// body begins (see testDirective/compileTestBody in testing.go), or 0 if
+	// this compiler is not compiling directly inside an @test body. compileReturn
+	// compares this against the CURRENT functionDepth to tell "return statement
+	// written directly in the test body" (functionDepth == testBodyDepth) apart
+	// from "return statement inside a func literal nested inside the test body"
+	// (functionDepth > testBodyDepth, since compileFunctionDefinition increments
+	// functionDepth for the nested function's own clone) -- only the former is
+	// restricted to a bare, valueless return (see ErrTestReturnValue).
+	testBodyDepth int
 
 	// scopeDepth counts how many runtime PushScope instructions are
 	// currently open at this exact point in the bytecode stream being
@@ -338,6 +348,7 @@ func (c *Compiler) Clone(name string) *Compiler {
 	clone.flags.closed = false
 	clone.functionDepth = c.functionDepth
 	clone.blockDepth = c.blockDepth
+	clone.testBodyDepth = c.testBodyDepth
 	clone.functionLocalScopeStart = c.functionLocalScopeStart
 	clone.statementCount = c.statementCount
 	clone.started = c.started

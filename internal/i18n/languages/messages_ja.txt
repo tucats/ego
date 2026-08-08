@@ -605,6 +605,7 @@ task.sql.unsupported=SQLタスクではサポートされていないフィー�
 task.symbols.unsupported=SYMBOLSタスクではサポートされていないフィールド
 template.name=無効なテンプレート名
 terminated=エラーで終了しました
+test.return.value=@testブロック内のreturn文は値を返せません
 this=無効な_this_識別子
 timer=無効なタイマー操作
 timezone=無効なタイムゾーン名

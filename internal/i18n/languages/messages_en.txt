@@ -613,6 +613,7 @@ task.sql.unsupported=field not supported for SQL task
 task.symbols.unsupported=field not supported for SYMBOLS task
 template.name=invalid template name
 terminated=terminated with errors
+test.return.value=return statement in @test block cannot return a value
 this=invalid _this_ identifier
 timer=invalid timer operation
 timezone=invalid timezone name

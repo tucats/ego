@@ -338,6 +338,7 @@ func (c *Compiler) compileTestBody(testDescription, pad string) error {
 	tokens := c.collectTestBodyTokens()
 
 	subCompiler := c.Clone("@test")
+	subCompiler.testBodyDepth = subCompiler.functionDepth
 
 	bc, compileErr := subCompiler.Compile("@test", tokens)
 	// Deliberately NOT also calling subCompiler.Errors() here: it walks
@@ -378,10 +379,40 @@ func (c *Compiler) compileTestBody(testDescription, pad string) error {
 		c.b.Emit(bytecode.Push, compileErr)
 		c.b.Emit(bytecode.Signal, nil)
 	} else {
+		// Invoke the compiled test body via CallTest instead of splicing its
+		// instructions directly into this stream the way a bare Append would.
+		// CallTest (bytecode/call.go) gives the body its own call frame, so a
+		// "return" statement written inside it pops back to right here via the
+		// ordinary Return/callFramePop machinery instead of stopping the whole
+		// file's run loop, which is what a "return" does when framePointer is
+		// still 0 (see bytecode/return.go's top-level branch, and
+		// docs/ISSUES.md).
+		//
+		// This deliberately is NOT the same Push+Call pattern used for an
+		// immediately-invoked function literal: an ordinary Call always gives
+		// the callee a brand-new child symbol table (see callBytecodeFunction),
+		// which would make a ":=" declaration or "import" executed directly in
+		// one test's body invisible to later tests in the file -- breaking the
+		// existing, relied-upon behavior (see the Clone/Close comment above)
+		// that every test in a file shares the same top-level scope. CallTest
+		// instead pushes c.symbols itself as the callee's table, so the body
+		// mutates that exact shared table, exactly as the old inline Append did.
+		//
+		// Every path out of the body -- an explicit "return" or simply falling
+		// off the end -- must execute a Return instruction so the pushed call
+		// frame is always popped exactly once; plain Compile() does not add one
+		// automatically the way a real function body's compile does, so an
+		// unconditional trailing Return is appended here to guarantee it. Only
+		// a bare "return" is permitted inside a test body (see compileReturn's
+		// testBodyDepth check in return.go), so this call never leaves a spare
+		// return value sitting on the caller's stack.
+		bc.Emit(bytecode.Return, 0)
+		bc.Seal()
+
 		// Bracket the test code with a capture operation
 		c.b.Emit(bytecode.BeginCapture)
 
-		c.b.Append(bc)
+		c.b.Emit(bytecode.CallTest, bc)
 
 		c.b.Emit(bytecode.EndCapture)
 

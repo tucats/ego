@@ -28,6 +28,18 @@ import (
 //  4. Bare return (no named variables, no expression): Return is emitted
 //     with a count of 0.
 func (c *Compiler) compileReturn() error {
+	// A return statement written directly in an @test body (as opposed to one
+	// inside a func literal nested inside that body, where functionDepth will
+	// have advanced past testBodyDepth) may only be a bare "return" -- @test
+	// blocks aren't functions with a declared return type, so there is no
+	// defined meaning for a returned value. See compileTestBody in testing.go
+	// for how the test body is invoked (a synthetic zero-argument call) and
+	// why a bare return is what lets it exit the test early without disturbing
+	// the caller's stack.
+	if c.testBodyDepth > 0 && c.functionDepth == c.testBodyDepth && !c.isStatementEnd() {
+		return c.compileError(errors.ErrTestReturnValue)
+	}
+
 	// Do we have named return values?
 	if len(c.returnVariables) > 0 {
 		// If explicit return values are provided, assign them to the named

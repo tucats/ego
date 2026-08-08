@@ -611,6 +611,7 @@ task.sql.unsupported=campo no soportado para la tarea SQL
 task.symbols.unsupported=campo no soportado para la tarea SYMBOLS
 template.name=nombre de plantilla no válido
 terminated=terminado con errores
+test.return.value=la instrucción return en un bloque @test no puede devolver un valor
 this=identificador _this_ no válido
 timer=operación de temporizador no válida
 timezone=nombre de zona horaria no válido

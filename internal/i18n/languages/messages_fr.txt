@@ -605,6 +605,7 @@ task.sql.unsupported=champ non pris en charge pour la tâche SQL
 task.symbols.unsupported=champ non pris en charge pour la tâche SYMBOLS
 template.name=nom de modèle invalide
 terminated=terminé avec des erreurs
+test.return.value=l'instruction return dans un bloc @test ne peut pas renvoyer de valeur
 this=identifiant _this_ invalide
 timer=opération de minuterie invalide
 timezone=nom de fuseau horaire invalide
