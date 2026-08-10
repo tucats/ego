@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
-	runtime_strings "github.com/tucats/ego/internal/runtime/strings"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/tokenizer"
+	runtime_strings "github.com/tucats/ego/internal/runtime/strings"
 	"github.com/tucats/ego/internal/util"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table string, user string, verb string, provider string) (string, error) {
@@ -34,7 +34,7 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 
 	where, err := WhereClause(filter)
 	if err != nil {
-		return "", err
+		return "", errors.ErrSQLBuild.Clone().Chain(errors.New(err))
 	}
 
 	if where != "" {
@@ -56,7 +56,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 	var result strings.Builder
 
 	if u == nil {
-		return "", nil, errors.ErrURLNotFound
+		return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.ErrURLNotFound)
 	}
 
 	// Two possible URL patterns: /tables/{{name}}/rows or /dsns/{{dsn}}/tables/{{name}}/rows
@@ -64,13 +64,13 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 	if !ok {
 		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}/rows")
 		if !ok {
-			return "", nil, errors.ErrInvalidURL
+			return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.ErrInvalidURL.Context(u.Path))
 		}
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", nil, errors.ErrMissingTableName
+		return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.ErrMissingTableName)
 	}
 
 	// Get the table name and make sure it is fully qualified
@@ -105,7 +105,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 			// Step 1: convert the raw value to the correct Go type for this column.
 			v, err := CoerceToColumnType(key, items[key], columns)
 			if err != nil {
-				return "", nil, err
+				return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.New(err))
 			}
 
 			// Step 2: format any time.Time value for the target provider.
@@ -128,7 +128,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 
 	where, err := WhereClause(FiltersFromURL(u))
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.New(err))
 	}
 
 	// If the items we are updating includes a non-empty rowID, then graft it onto
@@ -142,7 +142,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 		idString := data.String(id)
 		if idString != "" {
 			filterCount++
-			
+
 			values = append(values, idString)
 
 			rowIDClause := fmt.Sprintf("%s = $%d", egostrings.SQLIdentifier(defs.RowIDName), filterCount)
@@ -158,7 +158,7 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 	}
 
 	if where == "" && settings.GetBool(defs.TablesServerEmptyFilterError) {
-		return "", nil, errors.ErrTaskFilterRequired
+		return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.ErrTaskFilterRequired)
 	}
 
 	// If we have a filter string now, add it to the query.
@@ -224,7 +224,7 @@ func FormInsertQuery(table string, user string, provider string, columns []defs.
 			// (e.g. parse "2006-01-02T15:04:05Z" into time.Time for a timestamp column).
 			v, err = CoerceToColumnType(key, v, columns)
 			if err != nil {
-				return "", nil, err
+				return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.New(err))
 			}
 
 			// Step 2: format any time.Time value in the way the target provider expects
@@ -292,43 +292,43 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 			case "float", "double", "float64", "nullfloat64":
 				v, err = data.Float64(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "float32", "single", "nullfloat32":
 				v, err = data.Float32(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "bool", "boolean", "nullbool":
 				v, err = data.Bool(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "int", "integer", "nullint":
 				v, err = data.Int(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "int16", "nullint16":
 				v, err = data.Int16(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "int32", "nullint32":
 				v, err = data.Int32(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			case "int64", "nullint64":
 				v, err = data.Int64(v)
 				if err != nil {
-					return nil, err
+					return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 				}
 
 			// Time-related columns.  All variants of the column type name (portable
@@ -371,7 +371,7 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 				} else {
 					v, err = util.StrictParseTimestamp(data.String(v))
 					if err != nil {
-						return nil, errors.New(err).Context(key)
+						return nil, errors.ErrSQLCoerce.Context(column.Name).Chain(errors.New(err))
 					}
 				}
 			}
@@ -383,7 +383,7 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 	}
 
 	if !found && key != defs.RowIDName {
-		return nil, errors.ErrInvalidColumnName.Context(key)
+		return nil, errors.ErrSQLCoerce.Clone().Chain(errors.ErrInvalidColumnName.Context(key))
 	}
 
 	return v, nil
@@ -441,7 +441,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	)
 
 	if u == nil {
-		return "", errors.ErrURLNotFound
+		return "", errors.ErrSQLBuild.Clone().Chain(errors.ErrURLNotFound)
 	}
 
 	// Two possible URL patterns: /tables/{{name}} or /dsns/{{dsn}}/tables/{{name}}
@@ -449,13 +449,13 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 	if !ok {
 		parts, ok = runtime_strings.ParseURLPattern(u.Path, "/dsns/{{dsn}}/tables/{{name}}")
 		if !ok {
-			return "", errors.ErrInvalidURL
+			return "", errors.ErrSQLBuild.Clone().Chain(errors.ErrInvalidURL.Context(u.Path))
 		}
 	}
 
 	tableItem, ok := parts["name"]
 	if !ok {
-		return "", errors.ErrInvalidURL
+		return "", errors.ErrSQLBuild.Clone().Chain(errors.ErrInvalidURL.Context(u.Path))
 	}
 
 	// Resolve the table name to the form expected by the target provider.
@@ -497,7 +497,7 @@ func FormCreateQuery(u *url.URL, user string, hasAdminPrivileges bool, items []d
 		}
 
 	default:
-		return "", errors.ErrUnsupportedDatabase.Context(provider)
+		return "", errors.ErrSQLBuild.Clone().Chain(errors.ErrUnsupportedDatabase.Context(provider))
 	}
 
 	result.WriteString("CREATE TABLE ")
@@ -901,7 +901,7 @@ func WhereClause(filters []string) (string, error) {
 
 	clause, err := formWhereExpressions(filters)
 	if err != nil {
-		return "", err
+		return "", errors.ErrSQLWhere.Clone().Chain(errors.New(err))
 	}
 
 	return "WHERE " + clause, nil

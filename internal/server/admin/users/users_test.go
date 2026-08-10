@@ -680,8 +680,8 @@ func TestUpdateUserHandler_WriteFailure_ReturnsInternalServerError(t *testing.T)
 	setupTestAuthService(t)
 	defer teardownTestAuthService(t, true)
 
-	real := auth.AuthService
-	auth.AuthService = failingWriteService{delegate: real, writeErr: errors.New("disk full")}
+	realService := auth.AuthService
+	auth.AuthService = failingWriteService{delegate: realService, writeErr: errors.New("disk full")}
 
 	body := defs.User{Name: userName1, Password: "newPass"}
 	rr := httptest.NewRecorder()
@@ -779,8 +779,8 @@ func TestDeleteUserHandler_DeleteFailure_ReturnsInternalServerError(t *testing.T
 	setupTestAuthService(t)
 	defer teardownTestAuthService(t, true)
 
-	real := auth.AuthService
-	auth.AuthService = failingWriteService{delegate: real, deleteErr: errors.New("disk full")}
+	realService := auth.AuthService
+	auth.AuthService = failingWriteService{delegate: realService, deleteErr: errors.New("disk full")}
 
 	rr := httptest.NewRecorder()
 	status := DeleteUserHandler(

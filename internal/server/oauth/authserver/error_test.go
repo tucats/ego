@@ -122,6 +122,7 @@ func TestTokenHandler_ClientNotAllowedGrantType_IsUnauthorizedClient(t *testing.
 		GrantTypes: []string{"client_credentials"},
 		Scopes:     []string{"openid"},
 	}}
+	
 	t.Cleanup(func() { clients = nil })
 
 	form := url.Values{

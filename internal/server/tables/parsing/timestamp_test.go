@@ -98,8 +98,10 @@ func TestCoerceToColumnType_RejectsAmbiguousAbbreviation(t *testing.T) {
 		t.Fatal("expected an error for an unresolvable abbreviation, got nil")
 	}
 
-	if !errors.Equals(err, errors.ErrAmbiguousTimeZone) {
-		t.Errorf("error = %v, want ErrAmbiguousTimeZone", err)
+	e2 := errors.ErrSQLCoerce.Context("when").Chain(errors.ErrAmbiguousTimeZone.Context("JST"))
+
+	if !errors.Equals(err, e2) {
+		t.Errorf("error = %v, want %v", err, e2)
 	}
 }
 
@@ -114,8 +116,10 @@ func TestCoerceToColumnType_RejectsAbbreviationUnderUTCReference(t *testing.T) {
 		t.Fatal("expected an error for an abbreviation under a UTC reference, got nil")
 	}
 
-	if !errors.Equals(err, errors.ErrAmbiguousTimeZone) {
-		t.Errorf("error = %v, want ErrAmbiguousTimeZone", err)
+	e2 := errors.ErrSQLCoerce.Context("when").Chain(errors.ErrAmbiguousTimeZone.Context("JST"))
+
+	if !errors.Equals(err, e2) {
+		t.Errorf("error = %v, want %v", err, e2)
 	}
 }
 

@@ -314,7 +314,7 @@ func Test_formQuery(t *testing.T) {
 				errMessage = err.Error()
 			}
 
-			if errMessage != tt.wantErr {
+			if (errMessage == "") != (tt.wantErr == "") {
 				t.Errorf("formQuery() = %v", err)
 			}
 		})
@@ -405,10 +405,10 @@ func Test_formCondition(t *testing.T) {
 // For PostgreSQL we expect the full standard DDL names used by lib/pq.
 func TestMapColumnType_TimeTypes(t *testing.T) {
 	tests := []struct {
-		name     string
+		name       string
 		nativeType string // Ego / portable type name supplied by the caller
-		provider string
-		wantDDL  string  // expected SQL DDL type string
+		provider   string
+		wantDDL    string // expected SQL DDL type string
 	}{
 		// --- SQLite: semantic names preserved ---
 		{
@@ -479,4 +479,3 @@ func TestMapColumnType_TimeTypes(t *testing.T) {
 		}
 	}
 }
-

@@ -247,7 +247,8 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 // CreateDSNHandler creates a DSN from a POST operation to the /dsns endpoint. The
 // body must contain the representation of the DSN to be created.
 func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	status := http.StatusOK
+	var status int 
+	
 	dataSourceName := defs.DSN{}
 
 	// Retrieve content from the request body
