@@ -4158,6 +4158,65 @@ body.dark .sql-hl-ident   { color: #f9e2af; }   /* yellow  */
 }
 
 /* ==========================================================================
+   SQL Generate overlay (light mode)
+   ========================================================================== */
+
+#sql-generate-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#sql-generate-sheet {
+    background: #fff;
+    width: 420px;
+    max-width: 95vw;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#sql-generate-sheet h2 {
+    margin: 0 0 0.1rem;
+    font-size: 1.2rem;
+}
+
+#sql-generate-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+    margin: 0;
+}
+
+#sql-generate-sheet label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+#sql-generate-prompt {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+}
+
+#sql-generate-prompt:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* ==========================================================================
    SQL Build wizard (dark mode)
    ========================================================================== */
 
@@ -4373,3 +4432,20 @@ body.dark .sql-wiz-rename-input {
     padding-bottom: 2.5rem;
 }
 body.dark .sql-wiz-rename-input:focus { border-color: #4a90e2; }
+
+/* ==========================================================================
+   SQL Generate overlay (dark mode)
+   ========================================================================== */
+
+body.dark #sql-generate-sheet {
+    background: #16213e;
+    color: #cdd6f4;
+}
+body.dark #sql-generate-sheet h2    { color: #cdd6f4; }
+body.dark #sql-generate-sheet label { color: #aaa; }
+body.dark #sql-generate-prompt {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark #sql-generate-prompt:focus { border-color: #4a90e2; }

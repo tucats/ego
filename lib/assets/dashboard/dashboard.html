@@ -335,6 +335,8 @@
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard"><span class="btn-icon">&#x1F528;</span> <span class="btn-label">Build</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
+        <button class="toolbar-add-btn" onclick="showSqlGenerate()" title="Generate a SQL statement from a natural-language prompt"><span class="btn-icon">&#x2728;</span> <span class="btn-label">Generate</span></button>
+        <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="formatSqlEditor()" title="Reformat the SQL in the editor"><span class="btn-icon">&#x2261;</span> <span class="btn-label">Format</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL"><span class="btn-icon">&#x25B6;</span> <span class="btn-label">Submit</span></button>
@@ -390,6 +392,21 @@
         <div class="sheet-buttons">
             <button id="sql-build-cancel-btn" onclick="hideSqlBuild()">Cancel</button>
             <button id="sql-build-insert-btn" onclick="insertSqlBuild()" disabled>Insert</button>
+        </div>
+    </div>
+</div>
+
+<!-- SQL Generate overlay — slides in from the right when Generate is clicked -->
+<div id="sql-generate-overlay" onclick="overlayBackdropClick(event)">
+    <div id="sql-generate-sheet">
+        <h2 id="sql-generate-title">Generate SQL</h2>
+        <p id="sql-generate-error"></p>
+        <label for="sql-generate-prompt">Describe the SQL statement you want</label>
+        <textarea id="sql-generate-prompt" rows="6"
+                  placeholder="e.g. Show the five most recent orders for each customer"></textarea>
+        <div class="sheet-buttons">
+            <button id="sql-generate-cancel-btn" onclick="hideSqlGenerate()">Cancel</button>
+            <button id="sql-generate-submit-btn" onclick="submitSqlGenerate()">Generate</button>
         </div>
     </div>
 </div>
