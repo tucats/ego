@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/internal/builtins"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -437,11 +438,23 @@ func isFilterError(err error) bool {
 // e.g. "2026-08-12T10:15:00Z" or "2026-08-12T10:15:00") or a plain
 // "2026-08-12" date, which is taken to mean local midnight at the start of
 // that day.
+//
+// Anything else falls to dateparse.ParseIn, the same flexible parser behind
+// the "ego" command line's --since/--until normalization (see
+// normalizeLogQueryTime in internal/commands/logging.go). The Dashboard
+// sends an RFC 3339 value whenever its own browser-side Date parsing can
+// make sense of what the user typed, but falls back to sending the raw text
+// otherwise rather than refusing it outright -- this is what makes that raw
+// text usable server-side too, instead of just erroring.
 func parseLogQueryTime(value string) (time.Time, error) {
 	for _, format := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02"} {
 		if t, err := time.ParseInLocation(format, value, time.Local); err == nil {
 			return t, nil
 		}
+	}
+
+	if t, err := dateparse.ParseIn(value, time.Local); err == nil {
+		return t, nil
 	}
 
 	return time.Time{}, fmt.Errorf("invalid time value %q", value)

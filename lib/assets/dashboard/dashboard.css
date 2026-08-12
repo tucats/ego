@@ -1852,6 +1852,92 @@ body.dark .user-id { color: #666; }
     outline: none;
 }
 
+/* Since/Until: a text box with a calendar glyph parked inside it, the same
+   way .search-input-wrap parks the search field's clear button -- position:
+   relative on the wrapper is the reference point for the absolutely
+   positioned pieces inside it. Unlike the search clear button, the glyph
+   here is always visible rather than only appearing once there is something
+   to clear.
+
+   The glyph itself is decorative only (see .datetime-pick-icon below); what
+   actually opens the picker is a REAL native <input type="datetime-local">
+   stacked directly on top of it. That is deliberate: an earlier version drove
+   a shrunk-to-1px, pointer-events:none native input via JS showPicker()/
+   click() calls, which fought the browser's own popup-dismissal logic badly
+   enough that the calendar sometimes could not be closed at all. Giving the
+   browser a normally-hit-testable control to click, instead of faking the
+   click via script, makes open/close entirely the browser's own native
+   behavior again.
+
+   The glyph (and the real control under it) sits at the LEFT edge of the
+   field, not the right. This sheet is a drawer docked flush against the
+   right edge of the browser window, so the right edge of these fields sits
+   only a few dozen pixels from the actual right edge of the screen. A native
+   date/time popup is 250-300px wide, and at least Safari anchors it to grow
+   rightward from the control's position rather than flipping to stay
+   on-screen -- with the control at the field's right edge, the popup opened
+   almost entirely off the visible screen in "fill the screen" windows.
+   Anchoring from the field's left edge instead puts the whole width of the
+   field between the control and the screen edge, which is enough room for
+   the popup to render on-screen. */
+.datetime-input-wrap {
+    position: relative;
+    display: flex;
+}
+
+#log-filter-since,
+#log-filter-until {
+    flex: 1;
+    min-width: 0; /* let the flex item shrink below its content's natural width */
+    padding: 0.45rem 0.7rem 0.45rem 1.9rem; /* extra room on the left for the icon */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+#log-filter-since:focus,
+#log-filter-until:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Purely visual. pointer-events:none lets clicks fall through to the real
+   picker input stacked on top of it (below), so the glyph never has to
+   handle a click itself. */
+.datetime-pick-icon {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    color: #777;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.datetime-pick-icon .icon-glyph { width: 14px; height: 14px; }
+
+/* The real, fully native date/time control. It is sized and positioned to
+   cover just the calendar glyph -- not the whole field -- so the text box
+   underneath stays independently clickable for typing a value by hand.
+   Invisible via opacity rather than shrunk to nothing or display:none: the
+   browser needs to treat it as a genuine, normally-sized control for its own
+   click-to-open and click-away-to-dismiss handling to behave normally. */
+.datetime-picker-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    width: 1.8rem;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
 /* The class checkboxes. Two columns, because the list runs to two dozen or so
    entries and a single column would push the buttons off the bottom of the
    sheet on a short window. */
@@ -3147,11 +3233,15 @@ body.dark #dsn-perm-add-sheet input[type="text"],
 body.dark #logger-keep,
 body.dark #log-filter-tail,
 body.dark #log-filter-session,
-body.dark #log-filter-msg {
+body.dark #log-filter-msg,
+body.dark #log-filter-since,
+body.dark #log-filter-until {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
 }
+
+body.dark .datetime-pick-icon { color: #9fb4d8; }
 
 body.dark #new-dsn-sheet select {
     background: #222244;

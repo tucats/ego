@@ -120,6 +120,18 @@ func TestLogHandlerRejectsBadFilters(t *testing.T) {
 			parameters: map[string][]string{"session": {"not-a-number"}},
 			wantStatus: http.StatusBadRequest,
 		},
+		{
+			name:       "since value not parseable by any format",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"since": {"not-a-date"}},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "since after until",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"since": {"2026-08-12"}, "until": {"2026-08-01"}},
+			wantStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
@@ -191,6 +203,31 @@ func TestLogHandlerAcceptsValidFilters(t *testing.T) {
 			name:       "session filter against a text-format log",
 			format:     ui.TextFormat,
 			parameters: map[string][]string{"session": {"3"}},
+		},
+		{
+			name:       "archive flag",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"archive": {"true"}},
+		},
+		{
+			name:       "since in RFC 3339",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"since": {"2026-08-11T00:00:00Z"}},
+		},
+		{
+			// Anything RFC 3339/"YYYY-MM-DD" cannot parse falls to
+			// dateparse.ParseIn, the same flexible parser the CLI's
+			// --since/--until options normalize through -- this is what lets
+			// the Dashboard send a value it could not confidently normalize
+			// client-side and still have it work.
+			name:       "since in a free-form format via the dateparse fallback",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"since": {"8/11/2026"}},
+		},
+		{
+			name:       "until bounds the range",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"since": {"2026-08-01"}, "until": {"2026-08-31"}},
 		},
 	}
 
