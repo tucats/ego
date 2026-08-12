@@ -598,6 +598,16 @@
         </div>
         <span class="field-hint">Also looks in this server's rolled-over log files, and its zip archive if one is configured, going back only as far as needed to fill the limit above.</span>
 
+        <!-- Server ID only means anything together with Archive: the active
+             log file is written by one running process, so every entry in it
+             already shares the same ID. Disabled (and cleared) whenever
+             Archive is off, and re-enabled when it is checked -- wired in
+             dashboard-ui.js -- so the sheet can never hold the combination
+             the server would reject. -->
+        <label for="log-filter-serverid">Server ID</label>
+        <input type="text" id="log-filter-serverid" autocomplete="off" spellcheck="false" placeholder="Any server" disabled>
+        <span class="field-hint">Glob pattern matched against the writing server's UUID, e.g. <code>da35*</code> or <code>*34fd</code>. Requires "Search older &amp; archived logs" above.</span>
+
         <label for="log-filter-since">Since</label>
         <div class="datetime-input-wrap">
             <input type="text" id="log-filter-since" autocomplete="off" spellcheck="false" placeholder="Any time">

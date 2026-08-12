@@ -329,6 +329,16 @@ func TestTailFilteredValidatesFilter(t *testing.T) {
 			filter:  LogFilter{Message: "rest.[a-"},
 			wantErr: errors.ErrInvalidLogPattern,
 		},
+		{
+			name:    "malformed server ID pattern",
+			filter:  LogFilter{ServerID: "da35[a-", Archive: true},
+			wantErr: errors.ErrInvalidLogServerIDPattern,
+		},
+		{
+			name:    "server ID without archive",
+			filter:  LogFilter{ServerID: "da35*"},
+			wantErr: errors.ErrLogServerIDNeedsArchive,
+		},
 	}
 
 	for _, tt := range tests {
@@ -344,6 +354,113 @@ func TestTailFilteredValidatesFilter(t *testing.T) {
 				t.Errorf("got error %v, want %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+// writeArchiveableTestLog is writeTestLog plus the base/current log file name
+// bookkeeping the Archive search path (olderLogFileNames, in logfile.go)
+// reads. A ServerID filter requires Archive, so any TailFiltered call in
+// these tests exercises that path; without setting these, it would fall back
+// to scanning the test binary's own working directory instead of an empty
+// temp one.
+func writeArchiveableTestLog(t *testing.T, format string, entries []LogEntry) {
+	t.Helper()
+
+	writeTestLog(t, format, entries)
+
+	savedBase := baseLogFileName
+	savedCurrent := currentLogFileName
+
+	t.Cleanup(func() {
+		baseLogFileName = savedBase
+		currentLogFileName = savedCurrent
+	})
+
+	name := logFile.Name()
+	baseLogFileName = name
+	currentLogFileName = name
+}
+
+// serverIDEntries carries distinct instance UUIDs so a ServerID glob pattern
+// has something to discriminate between.
+func serverIDEntries() []LogEntry {
+	return []LogEntry{
+		{Timestamp: "t1", Sequence: 1, Class: "SERVER", Message: "server.start", ID: "da35b6e2-1111-1111-1111-111111111111"},
+		{Timestamp: "t2", Sequence: 2, Class: "SERVER", Message: "server.start", ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeee34fd"},
+		{Timestamp: "t3", Sequence: 3, Class: "SERVER", Message: "server.start", ID: "11112222-3333-4444-5555-666677778888"},
+	}
+}
+
+func TestTailFilteredServerIDGlob(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter LogFilter
+		want   []string
+	}{
+		{
+			name:   "prefix pattern",
+			filter: LogFilter{ServerID: "da35*", Archive: true},
+			want:   []string{"da35b6e2-1111-1111-1111-111111111111"},
+		},
+		{
+			name:   "suffix pattern",
+			filter: LogFilter{ServerID: "*34fd", Archive: true},
+			want:   []string{"aaaaaaaa-bbbb-cccc-dddd-eeeeeeee34fd"},
+		},
+		{
+			name:   "exact match with no wildcard",
+			filter: LogFilter{ServerID: "11112222-3333-4444-5555-666677778888", Archive: true},
+			want:   []string{"11112222-3333-4444-5555-666677778888"},
+		},
+		{
+			name:   "pattern ignores case",
+			filter: LogFilter{ServerID: "DA35*", Archive: true},
+			want:   []string{"da35b6e2-1111-1111-1111-111111111111"},
+		},
+		{
+			name:   "no matches yields an empty result, not an error",
+			filter: LogFilter{ServerID: "zzzz*", Archive: true},
+			want:   []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			writeArchiveableTestLog(t, JSONFormat, serverIDEntries())
+
+			lines, err := TailFiltered(100, tt.filter)
+			if err != nil {
+				t.Fatalf("TailFiltered returned an unexpected error: %v", err)
+			}
+
+			got := make([]string, 0, len(lines))
+
+			for _, line := range lines {
+				var entry LogEntry
+
+				if err := json.Unmarshal([]byte(line), &entry); err != nil {
+					t.Fatalf("returned line is not valid JSON: %q", line)
+				}
+
+				got = append(got, entry.ID)
+			}
+
+			if strings.Join(got, ",") != strings.Join(tt.want, ",") {
+				t.Errorf("filter %+v\n got: %v\nwant: %v", tt.filter, got, tt.want)
+			}
+		})
+	}
+}
+
+// A ServerID filter passes Validate (Archive is set and the pattern
+// compiles), but still needs a JSON-format log for the same reason class and
+// message filters do: a text-format line has no ID field to match against.
+func TestTailFilteredServerIDNeedsJSON(t *testing.T) {
+	writeArchiveableTestLog(t, TextFormat, serverIDEntries())
+
+	_, err := TailFiltered(100, LogFilter{ServerID: "da35*", Archive: true})
+	if !errors.Equals(err, errors.ErrLogFilterNeedsJSON) {
+		t.Errorf("got error %v, want %v", err, errors.ErrLogFilterNeedsJSON)
 	}
 }
 
@@ -408,6 +525,7 @@ func TestLogFilterNeedsStructuredLog(t *testing.T) {
 		{name: "session only has a text fallback", filter: LogFilter{Session: 3}, want: false},
 		{name: "class needs JSON", filter: LogFilter{Classes: []string{"REST"}}, want: true},
 		{name: "message needs JSON", filter: LogFilter{Message: "rest.*"}, want: true},
+		{name: "server ID needs JSON", filter: LogFilter{ServerID: "da35*", Archive: true}, want: true},
 	}
 
 	for _, tt := range tests {

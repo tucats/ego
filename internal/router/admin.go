@@ -176,16 +176,17 @@ func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 // is found in the Ego services library.
 func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		err     error
-		filter  int
-		count   int
-		classes string
-		message string
-		archive bool
-		since   time.Time
-		until   time.Time
-		status  = http.StatusOK
-		lines   = []string{}
+		err      error
+		filter   int
+		count    int
+		classes  string
+		message  string
+		archive  bool
+		since    time.Time
+		until    time.Time
+		serverID string
+		status   = http.StatusOK
+		lines    = []string{}
 	)
 
 	ui.Log(ui.RouteLogger, "route.native.log", ui.A{
@@ -279,6 +280,17 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		}
 	}
 
+	// Optional "serverid" filter: a glob pattern matched against the writing
+	// server's instance UUID, such as "da35*" or "*34fd". This only means
+	// anything together with "archive" -- the active log file is written by a
+	// single running process, so every one of its entries already shares the
+	// same ID -- and util.Log's underlying LogFilter.Validate rejects the
+	// combination of a serverid filter without archive, so no local check is
+	// duplicated here.
+	if v, found := session.Parameters["serverid"]; found && len(v) > 0 {
+		serverID = strings.TrimSpace(v[0])
+	}
+
 	// If no count was given, assume we want the last 50 lines.
 	if count <= 0 {
 		count = 50
@@ -312,7 +324,8 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		message,
 		archive,
 		sinceUnix,
-		untilUnix)
+		untilUnix,
+		serverID)
 
 	if err != nil {
 		// A rejected filter is the caller's mistake, not the server's: an unknown
@@ -424,6 +437,8 @@ func isFilterError(err error) bool {
 		errors.ErrInvalidLogPattern,
 		errors.ErrLogFilterNeedsJSON,
 		errors.ErrInvalidLogDateRange,
+		errors.ErrInvalidLogServerIDPattern,
+		errors.ErrLogServerIDNeedsArchive,
 	} {
 		if errors.Equals(err, filterError) {
 			return true

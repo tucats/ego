@@ -60,6 +60,12 @@ var ShowLogEntriesGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 	},
 	{
+		LongName:    "server-id",
+		Aliases:     []string{"server-uuid", "uuid", "id"},
+		Description: "server.logging.serverid",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:   "as-text",
 		ShortName:  "t",
 		OptionType: cli.BooleanType,

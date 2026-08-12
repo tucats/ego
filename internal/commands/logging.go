@@ -358,7 +358,8 @@ func reportServerLog(c *cli.Context) error {
 	// bound results by timestamp. Both dates are parsed as flexibly as
 	// dateparse.ParseAny can manage and normalized to RFC 3339, which is the
 	// format the endpoint's "since" and "until" parameters expect.
-	if c.Boolean("archive") {
+	archive := c.Boolean("archive")
+	if archive {
 		builder.Parameter("archive", true)
 	}
 
@@ -378,6 +379,21 @@ func reportServerLog(c *cli.Context) error {
 		}
 
 		builder.Parameter("until", normalized)
+	}
+
+	// --server-id is a glob pattern ("da35*", "*34fd") matched against the
+	// writing server's instance UUID. It only means anything together with
+	// --archive: the active log file is written by a single running
+	// process, so every entry in it already shares one ID. Rejecting the
+	// combination here, before any request goes out, is friendlier than
+	// letting the server do it -- which it also does, since this same
+	// combination is reachable directly through the REST API.
+	if serverID, found := c.String("server-id"); found && serverID != "" {
+		if !archive {
+			return errors.ErrLogServerIDNeedsArchive.Context(serverID)
+		}
+
+		builder.Parameter("serverid", serverID)
 	}
 
 	url := builder.String()

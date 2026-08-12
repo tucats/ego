@@ -984,6 +984,12 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.StringType,
 	},
 	{
+		LongName:    "server-id",
+		Aliases:     []string{"server-uuid", "uuid", "id"},
+		Description: "server.logging.serverid",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "keep",
 		Description: "server.logging.keep",
 		OptionType:  cli.IntType,

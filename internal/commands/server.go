@@ -673,7 +673,8 @@ func defineNativeAdminHandlers(r *router.Router) {
 			Parameter("msg", util.StringParameterType).
 			Parameter("archive", util.BoolParameterType).
 			Parameter("since", util.StringParameterType).
-			Parameter("until", util.StringParameterType)
+			Parameter("until", util.StringParameterType).
+			Parameter("serverid", util.StringParameterType)
 	}
 
 	if _, status := r.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {

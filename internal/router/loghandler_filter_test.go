@@ -132,6 +132,27 @@ func TestLogHandlerRejectsBadFilters(t *testing.T) {
 			parameters: map[string][]string{"since": {"2026-08-12"}, "until": {"2026-08-01"}},
 			wantStatus: http.StatusBadRequest,
 		},
+		{
+			// serverid only means anything together with archive: the active
+			// log file is written by one running process, so every entry in
+			// it already shares one ID.
+			name:       "serverid without archive",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"serverid": {"da35*"}},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "malformed serverid pattern",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"serverid": {"da35[a-"}, "archive": {"true"}},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "serverid against a text-format log",
+			format:     ui.TextFormat,
+			parameters: map[string][]string{"serverid": {"da35*"}, "archive": {"true"}},
+			wantStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
@@ -228,6 +249,11 @@ func TestLogHandlerAcceptsValidFilters(t *testing.T) {
 			name:       "until bounds the range",
 			format:     ui.JSONFormat,
 			parameters: map[string][]string{"since": {"2026-08-01"}, "until": {"2026-08-31"}},
+		},
+		{
+			name:       "serverid glob with archive",
+			format:     ui.JSONFormat,
+			parameters: map[string][]string{"serverid": {"da35*"}, "archive": {"true"}},
 		},
 	}
 

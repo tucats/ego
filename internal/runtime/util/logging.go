@@ -126,6 +126,10 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 		}
 	}
 
+	if args.Len() > 7 {
+		filter.ServerID = strings.TrimSpace(data.String(args.Get(7)))
+	}
+
 	lines, err := ui.TailFiltered(count, filter)
 	if err != nil {
 		// Context() replaces whatever context the error already carried, so only

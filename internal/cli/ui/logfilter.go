@@ -48,6 +48,16 @@ type LogFilter struct {
 	// lines pass the filter, only how many sources are searched, so it is
 	// deliberately left out of IsEmpty.
 	Archive bool
+
+	// ServerID is a glob pattern (e.g. "da35*" or "*34fd") matched against
+	// the writing server's instance UUID. An empty string means every
+	// server. This only means anything together with Archive: the active
+	// log file is written by exactly one running process, so every entry in
+	// it already shares the same ID -- filtering by it can only narrow
+	// anything down once older generations (which may carry a different ID,
+	// e.g. after a restart) are also being searched. Validate rejects a
+	// ServerID set without Archive rather than silently ignoring it.
+	ServerID string
 }
 
 // NeedsStructuredLog reports whether this filter depends on fields that only
@@ -60,13 +70,13 @@ type LogFilter struct {
 // mean something different than what the caller asked for. Callers use this to
 // refuse the request instead.
 func (f LogFilter) NeedsStructuredLog() bool {
-	return len(f.Classes) > 0 || f.Message != ""
+	return len(f.Classes) > 0 || f.Message != "" || f.ServerID != ""
 }
 
 // IsEmpty reports whether this filter selects everything, letting callers skip
 // the per-line work entirely.
 func (f LogFilter) IsEmpty() bool {
-	return f.Session <= 0 && len(f.Classes) == 0 && f.Message == "" &&
+	return f.Session <= 0 && len(f.Classes) == 0 && f.Message == "" && f.ServerID == "" &&
 		f.Since.IsZero() && f.Until.IsZero()
 }
 
@@ -115,6 +125,16 @@ func (f LogFilter) Validate() error {
 		}
 	}
 
+	if f.ServerID != "" {
+		if _, err := path.Match(f.ServerID, ""); err != nil {
+			return errors.ErrInvalidLogServerIDPattern.Context(f.ServerID)
+		}
+
+		if !f.Archive {
+			return errors.ErrLogServerIDNeedsArchive.Context(f.ServerID)
+		}
+	}
+
 	if !f.Since.IsZero() && !f.Until.IsZero() && f.Since.After(f.Until) {
 		return errors.ErrInvalidLogDateRange.Context(f.Since.Format(time.RFC3339) + " > " + f.Until.Format(time.RFC3339))
 	}
@@ -134,6 +154,10 @@ func (f LogFilter) matchesEntry(entry *LogEntry) bool {
 	}
 
 	if f.Message != "" && !matchesPattern(f.Message, entry.Message) {
+		return false
+	}
+
+	if f.ServerID != "" && !matchesPattern(f.ServerID, entry.ID) {
 		return false
 	}
 

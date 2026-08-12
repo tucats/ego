@@ -1852,6 +1852,26 @@ body.dark .user-id { color: #666; }
     outline: none;
 }
 
+/* Server ID is also a glob pattern matched against a UUID, so it gets the
+   same monospace treatment as the message pattern -- and the same
+   disabled/enabled toggling any other gated field would need, since it only
+   means anything together with Archive (see the comment beside it in
+   dashboard.html). */
+#log-filter-serverid {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+#log-filter-serverid:disabled {
+    background: #f0f0f0;
+    color: #999;
+    cursor: not-allowed;
+}
+
 /* Since/Until: a text box with a calendar glyph parked inside it, the same
    way .search-input-wrap parks the search field's clear button -- position:
    relative on the wrapper is the reference point for the absolutely
@@ -3235,10 +3255,16 @@ body.dark #log-filter-tail,
 body.dark #log-filter-session,
 body.dark #log-filter-msg,
 body.dark #log-filter-since,
-body.dark #log-filter-until {
+body.dark #log-filter-until,
+body.dark #log-filter-serverid {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
+}
+
+body.dark #log-filter-serverid:disabled {
+    background: #1a1a38;
+    color: #666;
 }
 
 body.dark .datetime-pick-icon { color: #9fb4d8; }
