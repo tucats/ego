@@ -52,7 +52,12 @@ const (
 	// every table in the named DSN (column names and types). The "@" prefix
 	// follows the same convention as @sql and @permissions pseudo-table names,
 	// distinguishing it from a real table named "metadata".
-	DSNMetadataPath          = DSNNamePath + "@metadata"
+	DSNMetadataPath = DSNNamePath + "@metadata"
+
+	// DSNGeneratePath is the endpoint that uses a server-configured AI
+	// text-generation service to turn a natural-language request into a SQL
+	// query for the named DSN, using the DSN's table/column schema as context.
+	DSNGeneratePath          = DSNNamePath + "generate"
 	ServicesPath             = "/services/"
 	ServicesDownPath         = ServicesPath + "admin/down/"
 	ServicesLogonPath        = ServicesPath + "admin/logon"
@@ -167,7 +172,9 @@ const (
 	// DSNMetadataMediaType is the Content-Type for the @metadata endpoint response.
 	// It contains a compact summary of every table in a DSN (table names + column
 	// name/type pairs), suitable for schema discovery without per-table requests.
-	DSNMetadataMediaType          = EgoMediaType + "metadata+json"
+	DSNMetadataMediaType = EgoMediaType + "metadata+json"
+	// DSNGenerateMediaType is the Content-Type for the /generate endpoint response.
+	DSNGenerateMediaType          = EgoMediaType + "generate+json"
 	ErrorMediaType                = EgoMediaType + "error+json"
 	UserMediaType                 = EgoMediaType + "user+json"
 	DSNMediaType                  = EgoMediaType + "dsn+json"

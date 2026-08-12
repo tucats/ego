@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"sort"
@@ -1051,6 +1052,7 @@ func makeFilter(filters []string) string {
 func TableSQL(c *cli.Context) error {
 	var sql string
 
+	generate := c.Boolean("generate")
 	showRowNumbers := c.Boolean("row-numbers")
 
 	for i := 0; i < 999; i++ {
@@ -1070,11 +1072,16 @@ func TableSQL(c *cli.Context) error {
 	if len(strings.TrimSpace(sql)) == 0 {
 		ui.Say("msg.enter.blank.line")
 
+		prompt := "sql> "
+		if generate {
+			prompt = "prompt> "
+		}
+
 		for {
 			// A blank line ends the statement, and so does the end of the
 			// input: pressing Ctrl-D here means the user is finished, not that
 			// they want to be asked again.
-			text, err := io.ReadConsoleText("sql> ")
+			text, err := io.ReadConsoleText(prompt)
 			if err != nil {
 				break
 			}
@@ -1096,7 +1103,13 @@ func TableSQL(c *cli.Context) error {
 		}
 	}
 
-	sqlPayload := []string{strings.TrimSpace(sql)}
+	sql = strings.TrimSpace(sql)
+
+	if generate {
+		return tableGenerate(c, sql)
+	}
+
+	sqlPayload := []string{sql}
 
 	path := rest.URLBuilder()
 	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
@@ -1156,6 +1169,41 @@ func TableSQL(c *cli.Context) error {
 	default:
 		ui.Say("msg.table.sql.rows", map[string]any{"count": resp.Count})
 	}
+
+	return nil
+}
+
+// tableGenerate sends the given natural-language request text to the server's
+// AI-backed /dsns/{dsn}/generate endpoint, and prints the generated SQL text
+// to the console instead of executing it. The target DSN comes from --dsn, or
+// failing that, the configured default data source.
+func tableGenerate(c *cli.Context, request string) error {
+	dsn := settings.Get(defs.DefaultDataSourceSetting)
+	if d, found := c.String(defs.DSNOption); found {
+		dsn = d
+	}
+
+	if dsn == "" {
+		return errors.New(errors.ErrDSNRequired)
+	}
+
+	path := rest.URLBuilder(defs.DSNGeneratePath, dsn)
+	resp := defs.DSNGenerateResponse{}
+
+	err := rest.Exchange(path.String(), http.MethodPost, []string{request}, &resp, defs.TableAgent, defs.DSNGenerateMediaType)
+	if err != nil {
+		return err
+	}
+
+	if resp.Status > http.StatusOK {
+		return errors.Message(resp.Message)
+	}
+
+	if ui.OutputFormat != ui.TextFormat {
+		return c.Output(resp)
+	}
+
+	fmt.Println(resp.SQL)
 
 	return nil
 }

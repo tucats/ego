@@ -213,14 +213,23 @@ var SQLGrammar = []cli.Option{
 		LongName:    "row-ids",
 		ShortName:   "i",
 		Aliases:     []string{"ids"},
+		Excludes:    []string{"generate"},
 		Description: "ego.sql.row-ids",
 		OptionType:  cli.BooleanType,
 	},
 	{
 		LongName:    "row-numbers",
 		ShortName:   "n",
+		Excludes:    []string{"generate"},
 		Aliases:     []string{"row-number", "row"},
 		Description: "ego.sql.row-numbers",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "generate",
+		ShortName:   "g",
+		Excludes:    []string{"row-numbers", "row-ids"},
+		Description: "ego.sql.generate",
 		OptionType:  cli.BooleanType,
 	},
 }

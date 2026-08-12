@@ -28,6 +28,16 @@ func AddStaticRoutes(r *router.Router) {
 		AcceptMedia(defs.DSNMetadataMediaType).
 		Class(router.TableRequestCounter)
 
+	// Use a server-configured AI endpoint to generate a SQL query for the
+	// named DSN from a natural-language request. The request body may be
+	// JSON (an array of strings) or plain text; both are always-accepted
+	// content types, so no explicit ContentMedia() restriction is needed.
+	r.New(defs.DSNGeneratePath, GenerateHandler, http.MethodPost).
+		Authentication(true, false).
+		Permissions(defs.DSNAdminPermission).
+		AcceptMedia(defs.DSNGenerateMediaType).
+		Class(router.TableRequestCounter)
+
 	// Run a transaction script
 	r.New(defs.TablesPath+"@transaction", scripting.Handler, http.MethodPost).
 		Authentication(true, false).

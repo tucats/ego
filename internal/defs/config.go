@@ -542,6 +542,20 @@ const (
 	// absorbed into a log entry.
 	ServerPanicRecoverySetting = ServerKeyPrefix + "panic.recovery"
 
+	// ServerAIEndpointSetting is the URL of an Ollama-compatible text-generation
+	// endpoint used by POST /dsns/{dsn}/generate to turn a natural-language
+	// request into a SQL query. Defaults to "http://localhost:11434/api/generate".
+	ServerAIEndpointSetting = ServerKeyPrefix + "ai.endpoint"
+
+	// ServerAIModelSetting is the model name passed to the AI endpoint configured
+	// by ServerAIEndpointSetting. Defaults to "gemma4".
+	ServerAIModelSetting = ServerKeyPrefix + "ai.model"
+
+	// ServerAITimeoutSetting is the maximum time to wait for a response from the
+	// AI endpoint configured by ServerAIEndpointSetting. Must be a Go duration
+	// string (e.g. "120s"). Defaults to "120s".
+	ServerAITimeoutSetting = ServerKeyPrefix + "ai.timeout"
+
 	// CLUSTER CONFIGURATION KEYS
 	// The prefix for all cluster-related configuration keys.
 	ClusterKeyPrefix = PrivilegedKeyPrefix + "cluster."
@@ -767,6 +781,9 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerMaxBodySizeSetting:          true,
 	ServerMaxItemLimitSetting:         true,
 	ServerPanicRecoverySetting:        true,
+	ServerAIEndpointSetting:           true,
+	ServerAIModelSetting:              true,
+	ServerAITimeoutSetting:            true,
 	ServerCompressionThresholdSetting: true,
 	RestClientCompressionSetting:      true,
 	ClusterNameSetting:                true,

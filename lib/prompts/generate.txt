@@ -1,0 +1,9 @@
+Here is a description of {{provider}} database tables available to you:
+{{metadata}} 
+
+Using this information, construct a valid SQL query string that performs the
+following task: {{request}}
+
+Do not add explanations about what you did and why, just show the valid SQL
+query that you generate. Make sure this SQL syntax is valid for the {{provider}}
+database dialect. Format this as plain text, not markdown.
