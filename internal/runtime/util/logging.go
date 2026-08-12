@@ -2,6 +2,7 @@ package util
 
 import (
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/language/data"
@@ -85,6 +86,44 @@ func getLogContents(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	if args.Len() > 3 {
 		filter.Message = strings.TrimSpace(data.String(args.Get(3)))
+	}
+
+	if args.Len() > 4 {
+		filter.Archive, err = data.Bool(args.Get(4))
+		if err != nil {
+			err = errors.New(err).In("Log")
+
+			return data.NewList(nil, err), err
+		}
+	}
+
+	// Since and until arrive as Unix seconds rather than a structured time
+	// value, because that is what can cross the boundary into an Ego
+	// builtin call cleanly; zero means "no bound" on either end.
+	if args.Len() > 5 {
+		since, err := data.Int64(args.Get(5))
+		if err != nil {
+			err = errors.New(err).In("Log")
+
+			return data.NewList(nil, err), err
+		}
+
+		if since != 0 {
+			filter.Since = time.Unix(since, 0)
+		}
+	}
+
+	if args.Len() > 6 {
+		until, err := data.Int64(args.Get(6))
+		if err != nil {
+			err = errors.New(err).In("Log")
+
+			return data.NewList(nil, err), err
+		}
+
+		if until != 0 {
+			filter.Until = time.Unix(until, 0)
+		}
 	}
 
 	lines, err := ui.TailFiltered(count, filter)

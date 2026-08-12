@@ -11,9 +11,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"slices"
 
+	"github.com/araddon/dateparse"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -345,12 +347,40 @@ func reportServerLog(c *cli.Context) error {
 		count = 50
 	}
 
-	url := fmt.Sprintf("/services/admin/log/?tail=%d", count)
+	builder := rest.URLBuilder("/services/admin/log/").Parameter("tail", count)
 
-	session, _ := c.Integer("session")
-	if session > 0 {
-		url = fmt.Sprintf("%s&session=%d", url, session)
+	if session, _ := c.Integer("session"); session > 0 {
+		builder.Parameter("session", session)
 	}
+
+	// --archive extends the search past the active log file into older
+	// rolled-over log files and the zip archive, if any; --since and --until
+	// bound results by timestamp. Both dates are parsed as flexibly as
+	// dateparse.ParseAny can manage and normalized to RFC 3339, which is the
+	// format the endpoint's "since" and "until" parameters expect.
+	if c.Boolean("archive") {
+		builder.Parameter("archive", true)
+	}
+
+	if since, found := c.String("since"); found && since != "" {
+		normalized, err := normalizeLogQueryTime(since)
+		if err != nil {
+			return err
+		}
+
+		builder.Parameter("since", normalized)
+	}
+
+	if until, found := c.String("until"); found && until != "" {
+		normalized, err := normalizeLogQueryTime(until)
+		if err != nil {
+			return err
+		}
+
+		builder.Parameter("until", normalized)
+	}
+
+	url := builder.String()
 
 	var response any
 
@@ -398,6 +428,19 @@ func reportServerLog(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+// normalizeLogQueryTime parses a user-supplied date/time value as flexibly as
+// dateparse.ParseAny can manage -- a bare date, a date and time, with or
+// without a zone -- and formats the result as RFC 3339, which is the format
+// the /admin/log endpoint's "since" and "until" parameters expect.
+func normalizeLogQueryTime(value string) (string, error) {
+	t, err := dateparse.ParseAny(value)
+	if err != nil {
+		return "", errors.New(err).Context(value)
+	}
+
+	return t.Format(time.RFC3339), nil
 }
 
 func reportLoggerStatusUpdate(response defs.LoggingResponse) {

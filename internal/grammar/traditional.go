@@ -969,6 +969,21 @@ var LoggingGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
+		LongName:    "archive",
+		Description: "server.logging.archive",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "since",
+		Description: "server.logging.since",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "until",
+		Description: "server.logging.until",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "keep",
 		Description: "server.logging.keep",
 		OptionType:  cli.IntType,

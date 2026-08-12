@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -142,6 +143,49 @@ func acquireArchiveLock(archiveName string) (func(), error) {
 
 		time.Sleep(archiveLockRetryInterval)
 	}
+}
+
+// archivedLogEntries opens the configured zip archive, if any, and returns
+// the entries in it that match this instance's rollover name pattern, sorted
+// newest to oldest by name. If no archive is configured, or the archive file
+// does not exist yet, it returns a nil reader and no entries rather than an
+// error -- that is the normal state before the first log has ever rolled
+// over.
+//
+// The archive is opened directly rather than through acquireArchiveLock: the
+// writer side (addToLogArchive) only ever makes the archive visible under its
+// final name via an atomic os.Rename, so a reader either sees the whole
+// previous archive or the whole new one, never a partial write.
+//
+// The returned *zip.ReadCloser, when non-nil, is the caller's to close.
+func archivedLogEntries() (*zip.ReadCloser, []*zip.File, error) {
+	if archiveLogFileName == "" {
+		return nil, nil, nil
+	}
+
+	reader, err := zip.OpenReader(archiveLogFileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil, nil
+		}
+
+		return nil, nil, err
+	}
+
+	pattern := rolloverNamePattern(baseLogFileName)
+	entries := make([]*zip.File, 0, len(reader.File))
+
+	for _, entry := range reader.File {
+		if pattern.MatchString(entry.Name) {
+			entries = append(entries, entry)
+		}
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Name > entries[j].Name
+	})
+
+	return reader, entries, nil
 }
 
 func copyExistingArchive(zipReader *zip.ReadCloser, targetZipWriter *zip.Writer) error {

@@ -220,19 +220,7 @@ func PurgeLogs() int {
 		return count
 	}
 
-	// Derive the per-instance name pattern from the base log filename stem so
-	// that purging is scoped to this specific server instance (cluster name +
-	// port). A plain prefix match is not enough here: a standalone server's
-	// stem (e.g. "ego-server_") is itself a string prefix of a cluster
-	// member's qualified stem (e.g. "ego-server_gang_8501_"), which would
-	// cause the standalone instance to scoop up and archive/delete another
-	// instance's log files. Anchoring the match to the exact rollover
-	// timestamp format that timeStampLogFileName() appends ensures only this
-	// instance's own rolled-over files are matched.
-	// For example, base "ego-server_foo_8501.log" → pattern
-	// "ego-server_foo_8501_" + timestamp + ".log".
-	logStem := strings.TrimSuffix(filepath.Base(baseLogFileName), ".log") + "_"
-	logNamePattern := regexp.MustCompile("^" + regexp.QuoteMeta(logStem) + `\d{4}-\d{2}-\d{2}-\d{6}\.log$`)
+	logNamePattern := rolloverNamePattern(baseLogFileName)
 
 	for _, file := range files {
 		if logNamePattern.MatchString(file.Name()) && !file.IsDir() {
@@ -286,4 +274,52 @@ func PurgeLogs() int {
 	}
 
 	return count
+}
+
+// rolloverNamePattern returns the regular expression that matches this
+// instance's rolled-over log file names, derived from the base log filename
+// stem. The match is scoped to this specific server instance (cluster name +
+// port): a plain prefix match is not enough, since a standalone server's stem
+// (e.g. "ego-server_") is itself a string prefix of a cluster member's
+// qualified stem (e.g. "ego-server_gang_8501_"), which would cause the
+// standalone instance to scoop up another instance's log files. Anchoring the
+// match to the exact rollover timestamp format that timeStampLogFileName()
+// appends avoids that.
+// For example, base "ego-server_foo_8501.log" → pattern
+// "ego-server_foo_8501_" + timestamp + ".log".
+func rolloverNamePattern(base string) *regexp.Regexp {
+	stem := strings.TrimSuffix(filepath.Base(base), ".log") + "_"
+
+	return regexp.MustCompile("^" + regexp.QuoteMeta(stem) + `\d{4}-\d{2}-\d{2}-\d{6}\.log$`)
+}
+
+// olderLogFileNames returns the directory holding the log files and the base
+// names of this instance's rolled-over log files that are still on disk,
+// sorted oldest to newest. The currently active log file is excluded even
+// though its own name matches the same timestamped pattern.
+func olderLogFileNames() (string, []string) {
+	dir := path.Dir(CurrentLogFile())
+
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return dir, nil
+	}
+
+	pattern := rolloverNamePattern(baseLogFileName)
+	active := filepath.Base(currentLogFileName)
+	names := []string{}
+
+	for _, file := range files {
+		if file.IsDir() || file.Name() == active {
+			continue
+		}
+
+		if pattern.MatchString(file.Name()) {
+			names = append(names, file.Name())
+		}
+	}
+
+	sort.Strings(names)
+
+	return dir, names
 }

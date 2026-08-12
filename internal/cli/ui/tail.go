@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"archive/zip"
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -89,10 +92,81 @@ func tailFile(count int, filter LogFilter) ([]string, error) {
 		return nil, err
 	}
 
-	defer file.Close()
+	activeLines, err := scanFilteredLines(file, filter)
 
-	text := []string{}
-	scanner := bufio.NewScanner(file)
+	file.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	result, remaining := takeNewest(nil, activeLines, count)
+
+	// The active log file alone satisfied the request, or the caller did not
+	// ask to look any further back.
+	if remaining <= 0 || !filter.Archive {
+		return result, nil
+	}
+
+	// Walk this instance's rolled-over log files still on disk, newest to
+	// oldest, filling in older lines until either the count is satisfied or
+	// there are no more files to consult.
+	dir, names := olderLogFileNames()
+
+	for i := len(names) - 1; i >= 0 && remaining > 0; i-- {
+		lines, err := scanFilteredLinesInFile(path.Join(dir, names[i]), filter)
+		if err != nil {
+			// A file that vanished or became unreadable between listing and
+			// opening (a concurrent rollover or purge) should not fail the
+			// whole request -- just move on to the next, older, file.
+			Log(InfoLogger, "logging.tail.archive.error", A{
+				"filename": names[i],
+				"error":    err})
+
+			continue
+		}
+
+		result, remaining = takeNewest(result, lines, remaining)
+	}
+
+	// If a zip archive is configured, keep going into it, again newest entry
+	// first, until the count is satisfied or the archive is exhausted.
+	if remaining > 0 {
+		zipReader, entries, err := archivedLogEntries()
+		if err != nil {
+			return nil, err
+		}
+
+		if zipReader != nil {
+			defer zipReader.Close()
+
+			for _, entry := range entries {
+				if remaining <= 0 {
+					break
+				}
+
+				lines, err := scanFilteredLinesInZipEntry(entry, filter)
+				if err != nil {
+					Log(InfoLogger, "logging.tail.archive.error", A{
+						"filename": entry.Name,
+						"error":    err})
+
+					continue
+				}
+
+				result, remaining = takeNewest(result, lines, remaining)
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// scanFilteredLines reads every line from reader, keeping only those that
+// pass filter, in the order they were read.
+func scanFilteredLines(reader io.Reader, filter LogFilter) ([]string, error) {
+	lines := []string{}
+	scanner := bufio.NewScanner(reader)
 
 	scanner.Split(bufio.ScanLines)
 
@@ -103,20 +177,49 @@ func tailFile(count int, filter LogFilter) ([]string, error) {
 			continue
 		}
 
-		text = append(text, line)
+		lines = append(lines, line)
 	}
 
-	// IF the scanner choked on an error, bail out.
-	if e := scanner.Err(); e != nil {
-		return nil, e
+	return lines, scanner.Err()
+}
+
+func scanFilteredLinesInFile(fileName string, filter LogFilter) ([]string, error) {
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0700)
+	if err != nil {
+		return nil, err
 	}
 
-	position := len(text) - count
-	if position < 0 {
-		position = 0
+	defer file.Close()
+
+	return scanFilteredLines(file, filter)
+}
+
+func scanFilteredLinesInZipEntry(entry *zip.File, filter LogFilter) ([]string, error) {
+	reader, err := entry.Open()
+	if err != nil {
+		return nil, err
 	}
 
-	return text[position:], nil
+	defer reader.Close()
+
+	return scanFilteredLines(reader, filter)
+}
+
+// takeNewest prepends the newest `remaining` lines of `older` (an
+// already-filtered, oldest-to-newest slice from a source that chronologically
+// precedes everything in `existing`) onto `existing`, and reports how many
+// more lines are still needed afterward.
+//
+// This is how a request that spans several files is assembled: each source is
+// visited newest first, but within a source lines stay in the order they were
+// written, so only the tail of an older source -- the lines immediately
+// preceding what has already been collected -- is ever needed.
+func takeNewest(existing []string, older []string, remaining int) ([]string, int) {
+	if len(older) > remaining {
+		older = older[len(older)-remaining:]
+	}
+
+	return append(older, existing...), remaining - len(older)
 }
 
 // keepLine reports whether one raw line from the log file passes the filter.
@@ -142,9 +245,34 @@ func keepLine(line string, filter LogFilter) bool {
 		return filter.matchesEntry(&entry)
 	}
 
-	if filter.Session > 0 {
-		return strings.Contains(line, fmt.Sprintf(": [%d] ", filter.Session))
+	if filter.Session > 0 && !strings.Contains(line, fmt.Sprintf(": [%d] ", filter.Session)) {
+		return false
+	}
+
+	if !filter.Since.IsZero() || !filter.Until.IsZero() {
+		// A text-format line starts with "[<timestamp>] ...". A line the
+		// filter cannot judge (no leading bracket, or a value that does not
+		// parse) is kept rather than dropped, for the same reason a line
+		// that fails JSON parsing is kept above.
+		if ts, ok := leadingTimestamp(line); ok && !inTimeRange(ts, filter) {
+			return false
+		}
 	}
 
 	return true
+}
+
+// leadingTimestamp extracts and parses the timestamp FormatLogMessage writes
+// at the start of every text-format log line: "[2006-01-02 15:04:05] ...".
+func leadingTimestamp(line string) (time.Time, bool) {
+	if !strings.HasPrefix(line, "[") {
+		return time.Time{}, false
+	}
+
+	end := strings.Index(line, "]")
+	if end < 0 {
+		return time.Time{}, false
+	}
+
+	return parseLogTimestamp(line[1:end])
 }

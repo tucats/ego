@@ -180,6 +180,9 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		count   int
 		classes string
 		message string
+		archive bool
+		since   time.Time
+		until   time.Time
 		status  = http.StatusOK
 		lines   = []string{}
 	)
@@ -232,9 +235,65 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		message = strings.TrimSpace(v[0])
 	}
 
+	// Optional "archive" flag: when true, the search extends past the active
+	// log file into this instance's older rolled-over log files on disk, and
+	// then into the configured zip archive if one exists, until the request
+	// has enough lines or every available log has been consulted.
+	if v, found := session.Parameters["archive"]; found && len(v) > 0 {
+		archive, err = data.Bool(v[0])
+		if err != nil {
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
+				"session": session.ID,
+				"status":  http.StatusBadRequest,
+				"error":   err})
+
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.archive.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+		}
+	}
+
+	// Optional "since" and "until" bounds restrict results to entries whose
+	// timestamp falls in that range. Each accepts RFC 3339 (with or without a
+	// time-of-day component) or a plain "YYYY-MM-DD" date.
+	if v, found := session.Parameters["since"]; found && len(v) > 0 {
+		since, err = parseLogQueryTime(v[0])
+		if err != nil {
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
+				"session": session.ID,
+				"status":  http.StatusBadRequest,
+				"error":   err})
+
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.since.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+		}
+	}
+
+	if v, found := session.Parameters["until"]; found && len(v) > 0 {
+		until, err = parseLogQueryTime(v[0])
+		if err != nil {
+			ui.Log(ui.RestLogger, "rest.error", ui.A{
+				"session": session.ID,
+				"status":  http.StatusBadRequest,
+				"error":   err})
+
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.until.invalid", ui.A{"value": v[0]}), http.StatusBadRequest)
+		}
+	}
+
 	// If no count was given, assume we want the last 50 lines.
 	if count <= 0 {
 		count = 50
+	}
+
+	// since and until cross into the builtin call as Unix seconds (0 meaning
+	// "unbounded") rather than as time.Time values, since builtin arguments
+	// are the same primitive types an Ego script could pass to util.Log.
+	var sinceUnix, untilUnix int64
+
+	if !since.IsZero() {
+		sinceUnix = since.Unix()
+	}
+
+	if !until.IsZero() {
+		untilUnix = until.Unix()
 	}
 
 	// This service requires using the util.Log runtime function. Create a symbol
@@ -249,7 +308,10 @@ func LogHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
 		count,
 		filter,
 		classes,
-		message)
+		message,
+		archive,
+		sinceUnix,
+		untilUnix)
 
 	if err != nil {
 		// A rejected filter is the caller's mistake, not the server's: an unknown
@@ -360,6 +422,7 @@ func isFilterError(err error) bool {
 		errors.ErrInvalidLoggerName,
 		errors.ErrInvalidLogPattern,
 		errors.ErrLogFilterNeedsJSON,
+		errors.ErrInvalidLogDateRange,
 	} {
 		if errors.Equals(err, filterError) {
 			return true
@@ -367,6 +430,21 @@ func isFilterError(err error) bool {
 	}
 
 	return false
+}
+
+// parseLogQueryTime parses the value of a "since" or "until" log query
+// parameter. It accepts RFC 3339 (with or without a time-of-day component,
+// e.g. "2026-08-12T10:15:00Z" or "2026-08-12T10:15:00") or a plain
+// "2026-08-12" date, which is taken to mean local midnight at the start of
+// that day.
+func parseLogQueryTime(value string) (time.Time, error) {
+	for _, format := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02"} {
+		if t, err := time.ParseInLocation(format, value, time.Local); err == nil {
+			return t, nil
+		}
+	}
+
+	return time.Time{}, fmt.Errorf("invalid time value %q", value)
 }
 
 // writeLogPayload sends a completed log response body to the client, compressing it

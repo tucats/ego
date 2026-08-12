@@ -40,8 +40,20 @@ var UtilPackage = data.NewPackageFromMap("util", map[string]any{
 					Name: "message",
 					Type: data.StringType,
 				},
+				{
+					Name: "archive",
+					Type: data.BoolType,
+				},
+				{
+					Name: "since",
+					Type: data.Int64Type,
+				},
+				{
+					Name: "until",
+					Type: data.Int64Type,
+				},
 			},
-			ArgCount: data.Range{1, 4},
+			ArgCount: data.Range{1, 7},
 			Returns:  []*data.Type{data.ArrayType(data.StringType), data.ErrorType},
 		},
 		Value: getLogContents,

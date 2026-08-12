@@ -3,6 +3,7 @@ package ui
 import (
 	"path"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/errors"
 )
@@ -30,6 +31,23 @@ type LogFilter struct {
 	// Message is a glob pattern matched against the message identifier, such
 	// as "rest.*" or "*.error". An empty string means every message.
 	Message string
+
+	// Since restricts results to entries at or after this time. The zero
+	// value means no lower bound.
+	Since time.Time
+
+	// Until restricts results to entries at or before this time. The zero
+	// value means no upper bound.
+	Until time.Time
+
+	// Archive, when true, extends the search past the active log file to
+	// this instance's older rolled-over log files still on disk, and then
+	// into the configured zip archive if one exists, oldest source
+	// consulted last, stopping as soon as enough lines have been found to
+	// satisfy the requested count. It does not affect which individual
+	// lines pass the filter, only how many sources are searched, so it is
+	// deliberately left out of IsEmpty.
+	Archive bool
 }
 
 // NeedsStructuredLog reports whether this filter depends on fields that only
@@ -48,7 +66,8 @@ func (f LogFilter) NeedsStructuredLog() bool {
 // IsEmpty reports whether this filter selects everything, letting callers skip
 // the per-line work entirely.
 func (f LogFilter) IsEmpty() bool {
-	return f.Session <= 0 && len(f.Classes) == 0 && f.Message == ""
+	return f.Session <= 0 && len(f.Classes) == 0 && f.Message == "" &&
+		f.Since.IsZero() && f.Until.IsZero()
 }
 
 // SplitClassList turns a comma-separated list of logger class names into the
@@ -96,6 +115,10 @@ func (f LogFilter) Validate() error {
 		}
 	}
 
+	if !f.Since.IsZero() && !f.Until.IsZero() && f.Since.After(f.Until) {
+		return errors.ErrInvalidLogDateRange.Context(f.Since.Format(time.RFC3339) + " > " + f.Until.Format(time.RFC3339))
+	}
+
 	return nil
 }
 
@@ -114,7 +137,44 @@ func (f LogFilter) matchesEntry(entry *LogEntry) bool {
 		return false
 	}
 
+	if !f.Since.IsZero() || !f.Until.IsZero() {
+		// A timestamp that fails to parse is not held against the entry: the
+		// field is always written by this same logger, so a parse failure
+		// means the timestamp format changed underfoot, not that the entry
+		// is out of range.
+		if ts, ok := parseLogTimestamp(entry.Timestamp); ok && !inTimeRange(ts, f) {
+			return false
+		}
+	}
+
 	return true
+}
+
+// inTimeRange reports whether ts falls within the filter's [Since, Until]
+// bound, treating a zero value on either end as unbounded.
+func inTimeRange(ts time.Time, f LogFilter) bool {
+	if !f.Since.IsZero() && ts.Before(f.Since) {
+		return false
+	}
+
+	if !f.Until.IsZero() && ts.After(f.Until) {
+		return false
+	}
+
+	return true
+}
+
+// parseLogTimestamp parses a timestamp using the same layout the logger used
+// to write it (LogTimeStampFormat, defaulting to "2006-01-02 15:04:05").
+func parseLogTimestamp(value string) (time.Time, bool) {
+	format := LogTimeStampFormat
+	if format == "" {
+		format = "2006-01-02 15:04:05"
+	}
+
+	ts, err := time.ParseInLocation(format, value, time.Local)
+
+	return ts, err == nil
 }
 
 // matchesAnyClass reports whether a log entry's class is one of the named

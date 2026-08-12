@@ -45,6 +45,21 @@ var ShowLogEntriesGrammar = []cli.Option{
 		OptionType:  cli.IntType,
 	},
 	{
+		LongName:    "archive",
+		Description: "server.logging.archive",
+		OptionType:  cli.BooleanType,
+	},
+	{
+		LongName:    "since",
+		Description: "server.logging.since",
+		OptionType:  cli.StringType,
+	},
+	{
+		LongName:    "until",
+		Description: "server.logging.until",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:   "as-text",
 		ShortName:  "t",
 		OptionType: cli.BooleanType,
