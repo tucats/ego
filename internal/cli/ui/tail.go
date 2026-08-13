@@ -60,7 +60,7 @@ func tailFile(count int, filter LogFilter) ([]string, error) {
 		}
 
 		if LogTimeStampFormat == "" {
-			LogTimeStampFormat = "2006-01-02 15:04:05"
+			LogTimeStampFormat = defs.DefaultLogTimestampFormat
 		}
 
 		result := []string{}

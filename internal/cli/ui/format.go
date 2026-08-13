@@ -101,7 +101,7 @@ func FormatLogMessage(class int, message string, args A) string {
 	sequenceString := fmt.Sprintf("%d", sequence)
 
 	if LogTimeStampFormat == "" {
-		LogTimeStampFormat = "2006-01-02 15:04:05"
+		LogTimeStampFormat = defs.DefaultLogTimestampFormat
 	}
 
 	if LogFormat != TextFormat {

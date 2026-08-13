@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 )
 
@@ -170,7 +171,7 @@ func TestTailFiltered_DateRange(t *testing.T) {
 		LogTimeStampFormat = savedTSFormat
 	})
 
-	LogTimeStampFormat = "2006-01-02 15:04:05"
+	LogTimeStampFormat = defs.DefaultLogTimestampFormat
 
 	entries := []LogEntry{
 		{Timestamp: "2026-08-12 01:00:00", Sequence: 1, Class: "SERVER", Message: "one"},

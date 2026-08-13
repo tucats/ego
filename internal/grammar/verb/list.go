@@ -1,10 +1,11 @@
-package grammar
+package verb
 
 import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/grammar/common"
 )
 
 var ListVerbGrammar = []cli.Option{
@@ -91,6 +92,6 @@ var ListVerbGrammar = []cli.Option{
 		Description: "ego.server.user.list",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ListUsers,
-		Value:       ServerListUsersGrammar,
+		Value:       common.ServerListUsersGrammar,
 	},
 }

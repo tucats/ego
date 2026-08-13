@@ -1,25 +1,6 @@
-package grammar
+package common
 
-import (
-	"github.com/tucats/ego/internal/cli/cli"
-	"github.com/tucats/ego/internal/commands"
-)
-
-var FlushVerbGrammar = []cli.Option{
-	{
-		LongName:    "cache",
-		Description: "ego.verb.flush.cache",
-		OptionType:  cli.Subcommand,
-		Action:      commands.FlushCaches,
-		Value:       CacheFlushGrammar,
-	},
-	{
-		LongName:    "tokens",
-		Description: "ego.verb.flush.tokens",
-		OptionType:  cli.Subcommand,
-		Action:      commands.TokenFlush,
-	},
-}
+import "github.com/tucats/ego/internal/cli/cli"
 
 var CacheFlushGrammar = []cli.Option{
 	{

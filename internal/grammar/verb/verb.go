@@ -1,10 +1,11 @@
-package grammar
+package verb
 
 import (
 	"github.com/tucats/ego/internal/cli/app"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/grammar/common"
 )
 
 // EgoGrammar handles the command line options. There is an entry here for
@@ -60,12 +61,11 @@ import (
 //  test
 //  update rows
 
-var VerbSubjectGrammar = []cli.Option{
+var MainGrammar = []cli.Option{
 	{
 		LongName:    "rest",
-		OptionType:  cli.Subcommand,
 		Description: "ego.verb.rest",
-		Value:       RestGrammar,
+		Value:       common.RestGrammar,
 	},
 	{
 		LongName:   "service",
@@ -88,12 +88,6 @@ var VerbSubjectGrammar = []cli.Option{
 		ParmDesc:    "opt.type",
 	},
 	{
-		LongName:    "cluster",
-		OptionType:  cli.Subcommand,
-		Value:       ClusterVerbGrammar,
-		Description: "ego.cluster",
-	},
-	{
 		LongName:    "describe",
 		OptionType:  cli.Subcommand,
 		Value:       DescribeVerbGrammar,
@@ -110,7 +104,7 @@ var VerbSubjectGrammar = []cli.Option{
 		LongName:      "format",
 		Aliases:       []string{"fmt"},
 		OptionType:    cli.Subcommand,
-		Value:         FormatVerbGrammar,
+		Value:         common.FormatVerbGrammar,
 		Description:   "ego.verb.format",
 		ExpectedParms: 1,
 		ParmDesc:      "opt.type",
@@ -181,7 +175,7 @@ var VerbSubjectGrammar = []cli.Option{
 		Description:   "ego.run",
 		OptionType:    cli.Subcommand,
 		Action:        commands.RunAction,
-		Value:         RunGrammar,
+		Value:         common.RunGrammar,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file",
 		DefaultVerb:   true,
@@ -195,7 +189,7 @@ var VerbSubjectGrammar = []cli.Option{
 	{
 		LongName:   "server",
 		OptionType: cli.Subcommand,
-		Value: append(ServerRunGrammar, []cli.Option{
+		Value: append(common.ServerRunGrammar, []cli.Option{
 			{
 				LongName:    "new-token",
 				Description: "new.token",
@@ -229,13 +223,13 @@ var VerbSubjectGrammar = []cli.Option{
 		Action:        commands.TableSQL,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "sql-text",
-		Value:         SQLGrammar,
+		Value:         common.SQLGrammar,
 	},
 	{
 		LongName:      "test",
 		Description:   "ego.test",
 		OptionType:    cli.Subcommand,
-		Value:         TestGrammar,
+		Value:         common.TestGrammar,
 		Action:        commands.TestAction,
 		ExpectedParms: defs.VariableParameterCount,
 		ParmDesc:      "parm.file.or.path",

@@ -92,7 +92,7 @@ func InitProfileDefaults(class int) error {
 		defs.ServerTokenKeySetting:         {ServerDefaults, serverToken},
 		defs.ThrowUncheckedErrorsSetting:   {RuntimeDefaults, defs.True},
 		defs.FullStackTraceSetting:         {RuntimeDefaults, defs.False},
-		defs.LogTimestampFormat:            {ServerDefaults, "2006-01-02 15:04:05"},
+		defs.LogTimestampFormat:            {ServerDefaults, defs.DefaultLogTimestampFormat},
 		defs.PidDirectorySetting:           {RuntimeDefaults, piddir},
 		defs.InsecureServerSetting:         {RuntimeDefaults, defs.False},
 		defs.RestClientErrorSetting:        {RuntimeDefaults, defs.True},

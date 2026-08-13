@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+// The default timestampt format (used by the time package) to
+// add a timestamp to each log entry.
+const DefaultLogTimestampFormat = "2006-01-02 15:04:05"
+
 type Arguments []any
 
 type ServerInfo struct {

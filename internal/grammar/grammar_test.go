@@ -8,6 +8,8 @@ import (
 
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/grammar/class"
+	"github.com/tucats/ego/internal/grammar/verb"
 )
 
 // Test to verify that all the actions referenced in the traditional RPM grammar area also
@@ -17,12 +19,12 @@ func Test_grammarMissingActions(t *testing.T) {
 		// Make a map for each named action in the traditional grammar.
 		a1 := map[string]int{}
 
-		actionScanner(ClassActionGrammar, a1)
+		actionScanner(class.MainGrammar, a1)
 
 		// Do the same for the verb-subject grammar
 		a2 := map[string]int{}
 
-		actionScanner(VerbSubjectGrammar, a2)
+		actionScanner(verb.MainGrammar, a2)
 
 		// Check that all actions in the traditional grammar have been
 		// captured in the verb-subject grammar.
@@ -110,13 +112,13 @@ func Test_validateGrammar(t *testing.T) {
 	}{
 		{
 			name:    "verb-subject grammar",
-			grammar: VerbSubjectGrammar,
+			grammar: verb.MainGrammar,
 
 			wantErr: false,
 		},
 		{
 			name:    "rpn grammar",
-			grammar: ClassActionGrammar,
+			grammar: class.MainGrammar,
 			wantErr: false,
 		},
 	}

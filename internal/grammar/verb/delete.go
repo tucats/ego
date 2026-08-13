@@ -1,10 +1,11 @@
-package grammar
+package verb
 
 import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/grammar/common"
 	"github.com/tucats/ego/internal/i18n"
 )
 
@@ -14,7 +15,7 @@ var DeleteVerbGrammar = []cli.Option{
 		Description: "ego.cluster.remove",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ClusterRemoveNode,
-		Value:       ClusterNodeGrammar,
+		Value:       common.ClusterNodeGrammar,
 	},
 	{
 		LongName:      "config",
@@ -94,6 +95,6 @@ var DeleteVerbGrammar = []cli.Option{
 		ParmDesc:      "username",
 		ExpectedParms: -1,
 		Action:        commands.DeleteUser,
-		Value:         ServerDeleteUserGrammar,
+		Value:         common.ServerDeleteUserGrammar,
 	},
 }

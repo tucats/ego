@@ -1,4 +1,4 @@
-package grammar
+package common
 
 import (
 	"github.com/tucats/ego/internal/cli/cli"

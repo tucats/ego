@@ -1,10 +1,11 @@
-package grammar
+package verb
 
 import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/grammar/common"
 	"github.com/tucats/ego/internal/i18n"
 )
 
@@ -68,6 +69,6 @@ var SetVerbGrammar = []cli.Option{
 		MinParams:     1,
 		Prompts:       []string{i18n.L("prompt.user.name")},
 		Action:        commands.UpdateUser,
-		Value:         ServerUserGrammar,
+		Value:         common.ServerUserGrammar,
 	},
 }

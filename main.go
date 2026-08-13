@@ -13,7 +13,8 @@ import (
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/grammar"
+	"github.com/tucats/ego/internal/grammar/class"
+	"github.com/tucats/ego/internal/grammar/verb"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/language/data"
@@ -51,10 +52,10 @@ func main() {
 	// grammar syntax. This defaults to the class-action grammar, but if the EGO_GRAMMAR
 	// environment variable is set to "verb", the grammar will be changed to the verb/subject
 	// grammar.
-	var syntax []cli.Option = grammar.ClassActionGrammar
+	var syntax []cli.Option = class.MainGrammar
 
 	if strings.Contains(strings.ToLower(os.Getenv("EGO_GRAMMAR")), "verb") {
-		syntax = grammar.VerbSubjectGrammar
+		syntax = verb.MainGrammar
 	}
 
 	// Successful runtime initialization of the symbols package will

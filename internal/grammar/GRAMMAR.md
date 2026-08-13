@@ -79,9 +79,16 @@ Note that the help output generated whenever an `ego` command ends in `--help` o
 based on the current grammar configuration. That is, the help output shows the command syntax based
 on the current grammar setting.
 
-In the ./grammar subdirectory of the project you will find all the grammar definitions. The traditional
-default "class" grammar is entirely contained in the file "traditional.go". The alternative "verb"
-grammar is expressed in the other .go files in the directory, and the root of this grammar is in "verbs.go".
+In the ./grammar subdirectory of the project you will find all the grammar definitions. These
+fall into three categories.
+
+- Grammar notation unique to the class-structured grammar reside in the `class` package.
+- Grammar notation unique to the verb-structure grammar resides in the `verb` package.
+- Grammar notatio shared by both grmmar structures are in the `common` package.
+
+There is a `MainGrammar` entry in both the `class` and `verb` package, used to select
+the grammar tree to be used based on the EGO_GRAMMAR selection. Any changes made to items
+in the `common` area will automatically be shared by both grammar styles.
 
 ## Error Handling
 

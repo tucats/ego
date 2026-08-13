@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 )
 
@@ -193,7 +194,7 @@ func inTimeRange(ts time.Time, f LogFilter) bool {
 func parseLogTimestamp(value string) (time.Time, bool) {
 	format := LogTimeStampFormat
 	if format == "" {
-		format = "2006-01-02 15:04:05"
+		format = defs.DefaultLogTimestampFormat
 	}
 
 	ts, err := time.ParseInLocation(format, value, time.Local)

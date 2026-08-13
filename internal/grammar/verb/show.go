@@ -1,10 +1,11 @@
-package grammar
+package verb
 
 import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/config"
 	"github.com/tucats/ego/internal/commands"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/grammar/common"
 	"github.com/tucats/ego/internal/i18n"
 )
 
@@ -93,7 +94,7 @@ var ShowVerbServerGrammar = []cli.Option{
 		Description: "ego.verb.show.server.memory",
 		OptionType:  cli.Subcommand,
 		Action:      commands.ServerMemory,
-		Value:       ServerMemoryGrammar,
+		Value:       common.ServerMemoryGrammar,
 	},
 	{
 		LongName:      "status",
@@ -103,7 +104,7 @@ var ShowVerbServerGrammar = []cli.Option{
 		ExpectedParms: -1,
 		ParmDesc:      "server",
 		DefaultVerb:   true,
-		Value:         ServerStateGrammar,
+		Value:         common.ServerStateGrammar,
 	},
 	{
 		LongName:      "validations",
@@ -294,7 +295,7 @@ var ShowVerbGrammar = []cli.Option{
 		MinParams:     1,
 		Prompts:       []string{i18n.L("prompt.user.name")},
 		Action:        commands.ShowUser,
-		Value:         ServerShowUserGrammar,
+		Value:         common.ServerShowUserGrammar,
 	},
 	{
 		LongName:    "table",
