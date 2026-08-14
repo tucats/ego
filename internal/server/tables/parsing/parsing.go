@@ -19,6 +19,26 @@ const (
 	invalidNamePlaceholder = "INVALID-NAME"
 )
 
+// IsSchemaAlteringStatement reports whether a raw SQL statement submitted by a
+// client could change a table's column layout, meaning any cached schema info
+// (internal/caches, caches.SchemaCache) for that table is now stale and must be
+// flushed. It recognizes ALTER TABLE and DROP TABLE, both of which are caught
+// regardless of provider: ALTER TABLE covers column add/drop/rename as well as
+// SQLite's "ALTER TABLE ... RENAME TO" table rename (Postgres table renames use
+// the same ALTER TABLE form, so a separate RENAME TABLE case is unnecessary).
+// CREATE TABLE is deliberately excluded -- a brand-new table has no stale cache
+// entry to evict.
+//
+// Detection is a simple token check, not a real SQL parse: it only looks at the
+// first two whitespace-separated words, so a leading comment on the same line as
+// the keywords would defeat it. Callers should pass a single already-trimmed
+// statement (e.g. one element of a semicolon-split batch).
+func IsSchemaAlteringStatement(statement string) bool {
+	tokens := strings.Fields(strings.ToLower(strings.TrimSpace(statement)))
+
+	return len(tokens) > 2 && tokens[1] == "table" && (tokens[0] == "alter" || tokens[0] == "drop")
+}
+
 // SQLEscape validates that source is safe to embed directly in a SQL
 // statement -- either as a single-quoted string literal or, at some call
 // sites (e.g. QueryParameters), inside a double-quote-delimited identifier

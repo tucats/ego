@@ -18,6 +18,7 @@ import (
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -135,14 +136,15 @@ func executeStatements(statements []string, sessionID int, db *database.Database
 	cacheFlush := false
 
 	for n, statement := range statements {
-		// Is this an ALTER TABLE statement? If so, set the flag saying we area a candidate for
-		// flushing the table schema cache (we might be changing a table in the cache, so make
-		// sure no one gets the stale metadata if the change succeeds)
-		tokens := strings.Fields(strings.TrimSpace(strings.ToLower(statement)))
-		if len(tokens) > 2 && tokens[0] == "alter" && tokens[1] == "table" {
+		// Is this an ALTER TABLE or DROP TABLE statement? If so, set the flag saying we are a
+		// candidate for flushing the table schema cache (we might be changing or removing a
+		// table that has cached metadata, so make sure no one gets stale info -- or a future
+		// CREATE TABLE reusing the same name inherits stale info -- if the change succeeds).
+		if parsing.IsSchemaAlteringStatement(statement) {
 			cacheFlush = true
 		}
 
+		tokens := strings.Fields(strings.TrimSpace(strings.ToLower(statement)))
 		if len(tokens) > 0 && tokens[0] == "select" {
 			if err := readRowDataTx(db, statement, startTime, w); err != nil {
 				// Unlike the query paths Ego builds itself, the statement here

@@ -45,16 +45,6 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
-		// Make sure there isn't a cached version fo this schema.
-		tableEntryKey := session.User
-		if dsnName == "" {
-			tableEntryKey += "-/" + tableName
-		} else {
-			tableEntryKey += dsnName + "/" + tableName
-		}
-
-		caches.Delete(caches.SchemaCache, tableEntryKey)
-
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
 		if !session.Admin && Authorized(session, user, tableName, defs.TableAdminPermission) {
@@ -105,6 +95,11 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		// Execute the SQL that creates the table. Also write to the log when SQLLogger is active.
 		counts, err := db.Exec(q)
 		if err == nil {
+			// A prior table by this name may have left cached schema info behind (e.g. it was
+			// dropped and is now being recreated with different columns), so flush the schema
+			// cache to make sure no one reads stale column info for the new table.
+			caches.Purge(caches.SchemaCache)
+
 			// If the table create was successful, construct a response object to send back to the
 			// client. For a table create, the response is a DBRowCount object.
 			rows, _ := counts.RowsAffected()
@@ -507,15 +502,10 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		_, err = db.Exec(q)
 		if err == nil {
-			// Make sure there isn't a cached version fo this table's schema.
-			tableEntryKey := session.User
-			if dsnName == "" {
-				tableEntryKey += "-/" + tableName
-			} else {
-				tableEntryKey += dsnName + "/" + tableName
-			}
-
-			caches.Delete(caches.SchemaCache, tableEntryKey)
+			// Make sure there isn't a cached version of this table's schema -- otherwise a
+			// future CREATE TABLE reusing this name would inherit the dropped table's stale
+			// cached column info.
+			caches.Purge(caches.SchemaCache)
 
 			// Remove the table permissions for this table.
 			if dsnName == "" {
