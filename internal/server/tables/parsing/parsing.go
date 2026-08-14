@@ -324,8 +324,8 @@ func MapColumnType(native, provider string) string {
 			data.StringTypeName: "TEXT",
 			data.Int32TypeName:  "INTEGER",
 			data.IntTypeName:    "INTEGER",
-			data.BoolTypeName:   "INTEGER", // SQLite has no native BOOLEAN; store as 0/1
-			"boolean":           "INTEGER",
+			data.BoolTypeName:   "BOOLEAN", // NUMERIC affinity stores 0/1; semantic name retained for introspection
+			"boolean":           "BOOLEAN",
 			"float32":           "REAL",
 			"float64":           "REAL",
 			"timestamp":         "TIMESTAMP", // RFC 3339 text; semantic name retained for introspection
