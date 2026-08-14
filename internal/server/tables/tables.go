@@ -17,7 +17,7 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
@@ -351,7 +351,7 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 					typeName = "int"
 					size = 8
 
-				case "BOOL":
+				case "BOOL", "BOOLEAN":
 					typeName = "bool"
 
 				case "INT32":
