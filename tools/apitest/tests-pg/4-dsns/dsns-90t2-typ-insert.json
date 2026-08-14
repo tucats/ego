@@ -1,0 +1,59 @@
+{
+    "description": "insert rows covering the positive/negative and true/false ends of each type (c_int64 stays under 1,000,000: the apitest comparison tool decodes JSON numbers as float64, and Go's default float formatting switches to scientific notation at that magnitude, which would make an exact-match assertion fail even though the server-side value is correct)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/typeprobe/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "c_bool":    true,
+                "c_int":     42,
+                "c_int32":   42,
+                "c_int16":   1234,
+                "c_int64":   654321,
+                "c_byte":    200,
+                "c_float32": 3.5,
+                "c_float64": 3.5,
+                "c_string":  "hello"
+            },
+            {
+                "c_bool":    false,
+                "c_int":     -7,
+                "c_int32":   -7,
+                "c_int16":   -1234,
+                "c_int64":   -654321,
+                "c_byte":    0,
+                "c_float32": -1.25,
+                "c_float64": -1.25,
+                "c_string":  ""
+            }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "two rows inserted",
+            "query": "count",
+            "value": "2"
+        }
+    ]
+}

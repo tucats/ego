@@ -1,0 +1,80 @@
+{
+    "description": "verify schema introspection reports the portable type name for each column, not the raw Postgres OID type name (BOOL, FLOAT4, FLOAT8, INT2, INT8). Note c_byte reports as int16: Postgres has no native byte type, so byte columns are created as SMALLINT and are indistinguishable from int16 columns on read-back (see dsns-90t1-typ-create and MapColumnType in parsing.go)",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/typeprobe",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["columns+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "column count: 9",
+            "query": "count",
+            "value": "9"
+        },
+        {
+            "name": "c_bool column type",
+            "query": "columns.0.type",
+            "value": "bool"
+        },
+        {
+            "name": "c_int column type",
+            "query": "columns.1.type",
+            "value": "int32"
+        },
+        {
+            "name": "c_int32 column type",
+            "query": "columns.2.type",
+            "value": "int32"
+        },
+        {
+            "name": "c_int16 column type",
+            "query": "columns.3.type",
+            "value": "int16"
+        },
+        {
+            "name": "c_int64 column type",
+            "query": "columns.4.type",
+            "value": "int64"
+        },
+        {
+            "name": "c_byte column type reports as int16 (Postgres byte/int16 both map to SMALLINT)",
+            "query": "columns.5.type",
+            "value": "int16"
+        },
+        {
+            "name": "c_float32 column type",
+            "query": "columns.6.type",
+            "value": "float32"
+        },
+        {
+            "name": "c_float64 column type",
+            "query": "columns.7.type",
+            "value": "float64"
+        },
+        {
+            "name": "c_string column type",
+            "query": "columns.8.type",
+            "value": "string"
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 package tables
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -313,122 +314,15 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 				continue
 			}
 
-			typeInfo := types[i]
-
-			// Start by seeing what Go type it will become. If that isn't
-			// known, then get the underlying database type name instead.
-			typeName := ""
-			if t := typeInfo.ScanType(); t != nil {
-				typeName = t.Name()
-			}
-
-			if typeName == "" {
-				typeName = typeInfo.DatabaseTypeName()
-			}
-
-			size, _ := typeInfo.Length()
-			nullable, _ := typeInfo.Nullable()
-			specified := true
-
-			// Normalize provider-specific type name strings into the portable names that the
-			// rest of the server uses (e.g. "timestamp", "string", "int").  Each database
-			// driver reports column type names differently; we map them here so that all
-			// downstream code can work with a single, consistent vocabulary.
-			// To add a new provider: add a case with the driver's type name mapping.
-			switch db.Provider {
-			case defs.SqliteProvider:
-				// The modernc SQLite driver reports column type names in upper-case and uses
-				// several non-standard names.  Map every known variant to the portable form.
-				// SQLite also does not support nullable column metadata via the Go sql
-				// interface, so we override those fields to safe defaults.
-				switch typeName {
-				case "INT":
-					typeName = "int"
-					size = 8
-
-				case "BOOL", "BOOLEAN":
-					typeName = "bool"
-
-				case "INT32":
-					typeName = "int32"
-					size = 4
-
-				case "INT16":
-					typeName = "int16"
-					size = 2
-
-				case "BYTE":
-					typeName = "byte"
-					size = 1
-
-				case "FLOAT":
-					typeName = "float64"
-					size = 8
-
-				case "STRING":
-					typeName = "string"
-
-				case "NullInt64":
-					typeName = "int64"
-					size = 8
-
-				case "NullFloat64":
-					typeName = "float64"
-					size = 8
-
-				case "NullString":
-					typeName = "string"
-
-				// Time-related columns: MapColumnType now declares these with their semantic
-				// names (TIMESTAMP, TIME, DATE) rather than TEXT, so the driver echoes those
-				// names back during schema introspection.  Normalize all known variants
-				// (including TIMESTAMPTZ and DATETIME which may appear in imported schemas)
-				// to lowercase portable names so that CoerceToColumnType can recognize them.
-				case "TIMESTAMP", "TIMESTAMPTZ", "DATETIME":
-					typeName = "timestamp"
-
-				case "TIME":
-					typeName = "time"
-
-				case "DATE":
-					typeName = "date"
-				}
-
-				nullable = false
-				specified = false
-
-			case defs.PostgresProvider:
-				// PostgreSQL normalization.  The lib/pq driver returns either the Go reflect
-				// type name (from ScanType().Name()) or the PostgreSQL-dialect DDL name (from
-				// DatabaseTypeName()).  In practice, ScanType().Name() for TIMESTAMP WITH TIME
-				// ZONE columns returns "Time" (the Go type name), while DatabaseTypeName()
-				// returns "TIMESTAMPTZ".  We normalize both to the portable lowercase names.
-				switch typeName {
-				case "Time", "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE",
-					"TIMESTAMP", "DATETIME":
-					// "Time" is what Go's reflect package returns for time.Time; the others
-					// are raw PostgreSQL DDL type names from DatabaseTypeName().
-					typeName = "timestamp"
-
-				case "TIME", "TIME WITH TIME ZONE":
-					typeName = "time"
-
-				case "DATE":
-					typeName = "date"
-				}
-
-			default:
-				// An unrecognized provider reached column introspection.
-				// The metadata query selection above should already have returned an error
-				// for an unknown provider, so this branch is not reachable in normal
-				// operation.  If it is reached, stop immediately with a clear error.
-				return nil, errors.ErrUnsupportedDatabase.Context(db.Provider)
+			typeName, size, nullable, specified, typeErr := normalizeColumnType(db.Provider, types[i])
+			if typeErr != nil {
+				return nil, typeErr
 			}
 
 			columns = append(columns, defs.DBColumn{
 				Name:     name,
 				Type:     typeName,
-				Size:     int(size),
+				Size:     size,
 				Nullable: defs.BoolValue{Specified: specified, Value: nullable}},
 			)
 		}
@@ -441,6 +335,131 @@ func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]d
 	}
 
 	return columns, nil
+}
+
+// normalizeColumnType converts a database/sql column type descriptor into the portable
+// type vocabulary used throughout the server (e.g. "timestamp", "string", "int"). Each
+// database driver reports column type names differently; this maps provider-specific
+// quirks to that shared vocabulary so callers such as parsing.CoerceToColumnType can work
+// with a single, consistent set of names regardless of which provider produced the row.
+// To add a new provider: add a case with the driver's type name mapping.
+func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName string, size int, nullable bool, specified bool, err error) {
+	// Start by seeing what Go type it will become. If that isn't
+	// known, then get the underlying database type name instead.
+	if t := typeInfo.ScanType(); t != nil {
+		typeName = t.Name()
+	}
+
+	if typeName == "" {
+		typeName = typeInfo.DatabaseTypeName()
+	}
+
+	length, _ := typeInfo.Length()
+	size = int(length)
+	nullable, _ = typeInfo.Nullable()
+	specified = true
+
+	switch provider {
+	case defs.SqliteProvider:
+		// The modernc SQLite driver reports column type names in upper-case and uses
+		// several non-standard names.  Map every known variant to the portable form.
+		// SQLite also does not support nullable column metadata via the Go sql
+		// interface, so we override those fields to safe defaults.
+		switch typeName {
+		case "INT":
+			typeName = "int"
+			size = 8
+
+		case "BOOL", "BOOLEAN":
+			typeName = "bool"
+
+		case "INT32":
+			typeName = "int32"
+			size = 4
+
+		case "INT16":
+			typeName = "int16"
+			size = 2
+
+		case "BYTE":
+			typeName = "byte"
+			size = 1
+
+		case "FLOAT":
+			typeName = "float64"
+			size = 8
+
+		case "STRING":
+			typeName = "string"
+
+		case "NullInt64":
+			typeName = "int64"
+			size = 8
+
+		case "NullFloat64":
+			typeName = "float64"
+			size = 8
+
+		case "NullString":
+			typeName = "string"
+
+		// Time-related columns: MapColumnType now declares these with their semantic
+		// names (TIMESTAMP, TIME, DATE) rather than TEXT, so the driver echoes those
+		// names back during schema introspection.  Normalize all known variants
+		// (including TIMESTAMPTZ and DATETIME which may appear in imported schemas)
+		// to lowercase portable names so that CoerceToColumnType can recognize them.
+		case "TIMESTAMP", "TIMESTAMPTZ", "DATETIME":
+			typeName = "timestamp"
+
+		case "TIME":
+			typeName = "time"
+
+		case "DATE":
+			typeName = "date"
+		}
+
+		nullable = false
+		specified = false
+
+	case defs.PostgresProvider:
+		// PostgreSQL normalization.  The lib/pq driver returns either the Go reflect
+		// type name (from ScanType().Name()) or the PostgreSQL-dialect DDL name (from
+		// DatabaseTypeName()).  In practice, ScanType().Name() for TIMESTAMP WITH TIME
+		// ZONE columns returns "Time" (the Go type name), while DatabaseTypeName()
+		// returns "TIMESTAMPTZ".  We normalize both to the portable lowercase names.
+		switch typeName {
+		case "Time", "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE",
+			"TIMESTAMP", "DATETIME":
+			// "Time" is what Go's reflect package returns for time.Time; the others
+			// are raw PostgreSQL DDL type names from DatabaseTypeName().
+			typeName = "timestamp"
+
+		case "TIME", "TIME WITH TIME ZONE":
+			typeName = "time"
+
+		case "DATE":
+			typeName = "date"
+
+		// lib/pq's ScanType() returns nil for REAL and DOUBLE PRECISION columns
+		// (unlike BOOL, INT4, and VARCHAR, which it resolves to concrete Go
+		// types), so typeName falls back to DatabaseTypeName() above and arrives
+		// here as the raw Postgres OID type name rather than a Go reflect name.
+		case "FLOAT4":
+			typeName = "float32"
+
+		case "FLOAT8":
+			typeName = "float64"
+		}
+
+	default:
+		// An unrecognized provider reached column introspection.  The caller should
+		// already have rejected an unknown provider earlier, so this branch is not
+		// reachable in normal operation.  If it is reached, stop immediately with a
+		// clear error rather than guessing at type semantics.
+		err = errors.ErrUnsupportedDatabase.Context(provider)
+	}
+
+	return typeName, size, nullable, specified, err
 }
 
 // DeleteTable will delete a database table from the user's schema.

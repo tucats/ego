@@ -251,6 +251,32 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 		columnNames, _ := rows.Columns()
 		columnCount := len(columnNames)
 
+		// Introspect the actual result-set column types (as opposed to a table's
+		// catalog metadata, which may not exist for an arbitrary query) so that
+		// driver-native representations -- such as SQLite storing "bool" columns
+		// as integers -- are normalized to their portable Ego types below. If type
+		// introspection is unavailable, coercion is skipped and raw driver values
+		// are returned, same as before this normalization was added.
+		var columns []defs.DBColumn
+
+		if typeData, typeErr := rows.ColumnTypes(); typeErr == nil {
+			columns = make([]defs.DBColumn, columnCount)
+
+			for i, ct := range typeData {
+				typeName, size, nullable, specified, normErr := normalizeColumnType(db.Provider, ct)
+				if normErr != nil {
+					return normErr
+				}
+
+				columns[i] = defs.DBColumn{
+					Name:     columnNames[i],
+					Type:     typeName,
+					Size:     size,
+					Nullable: defs.BoolValue{Specified: specified, Value: nullable},
+				}
+			}
+		}
+
 		for rows.Next() {
 			row := make([]any, columnCount)
 			rowPointers := make([]any, columnCount)
@@ -262,7 +288,15 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 			err = rows.Scan(rowPointers...)
 			if err == nil {
 				newRow := map[string]any{}
+
 				for i, v := range row {
+					if v != nil && columns != nil {
+						v, err = parsing.CoerceToColumnType(columnNames[i], v, columns)
+						if err != nil {
+							return err
+						}
+					}
+
 					newRow[columnNames[i]] = v
 				}
 

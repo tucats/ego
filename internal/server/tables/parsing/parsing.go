@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	runtime_strings "github.com/tucats/ego/internal/runtime/strings"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 const (
@@ -349,8 +349,8 @@ func MapColumnType(native, provider string) string {
 			"float32":           "REAL",
 			"float64":           "REAL",
 			"timestamp":         "TIMESTAMP", // RFC 3339 text; semantic name retained for introspection
-			"time":              "TIME",       // RFC 3339 text; semantic name retained for introspection
-			"date":              "DATE",       // RFC 3339 text; semantic name retained for introspection
+			"time":              "TIME",      // RFC 3339 text; semantic name retained for introspection
+			"date":              "DATE",      // RFC 3339 text; semantic name retained for introspection
 		}
 
 	case strings.EqualFold(provider, defs.PostgresProvider):
@@ -359,13 +359,21 @@ func MapColumnType(native, provider string) string {
 			data.StringTypeName: "CHAR VARYING",
 			data.Int32TypeName:  "INTEGER",
 			data.IntTypeName:    "INT",
-			data.BoolTypeName:   "BOOLEAN",
-			"boolean":           "BOOLEAN",
-			"float32":           "REAL",
-			"float64":           "DOUBLE PRECISION",
-			"timestamp":         "TIMESTAMP WITH TIME ZONE",
-			"time":              "TIME",
-			"date":              "DATE",
+			data.Int16TypeName:  "SMALLINT",
+			data.Int64TypeName:  "BIGINT",
+			// Postgres has no single-byte integer type; SMALLINT is the narrowest native
+			// type that holds the full 0-255 byte range. This makes a "byte" column
+			// indistinguishable from an "int16" one once created -- both report back as
+			// DatabaseTypeName "INT2" / ScanType "int16" on read (see normalizeColumnType
+			// in tables.go), so schema introspection reports "int16" for either.
+			data.ByteTypeName: "SMALLINT",
+			data.BoolTypeName: "BOOLEAN",
+			"boolean":         "BOOLEAN",
+			"float32":         "REAL",
+			"float64":         "DOUBLE PRECISION",
+			"timestamp":       "TIMESTAMP WITH TIME ZONE",
+			"time":            "TIME",
+			"date":            "DATE",
 		}
 
 	default:

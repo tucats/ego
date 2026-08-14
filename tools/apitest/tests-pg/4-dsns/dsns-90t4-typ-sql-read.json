@@ -1,0 +1,128 @@
+{
+    "description": "read the same rows back via the @sql endpoint and verify each column round-trips as its native JSON type, not as a Postgres OID type name (e.g. FLOAT4/FLOAT8/BOOL/INT2/INT8)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT c_bool, c_int, c_int32, c_int16, c_int64, c_byte, c_float32, c_float64, c_string FROM \"admin\".\"typeprobe\" ORDER BY c_int"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "two rows returned",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "row 0 (negative/false) bool is JSON false, not 0",
+            "query": "rows.0.c_bool",
+            "value": "false"
+        },
+        {
+            "name": "row 0 int",
+            "query": "rows.0.c_int",
+            "value": "-7"
+        },
+        {
+            "name": "row 0 int32",
+            "query": "rows.0.c_int32",
+            "value": "-7"
+        },
+        {
+            "name": "row 0 int16",
+            "query": "rows.0.c_int16",
+            "value": "-1234"
+        },
+        {
+            "name": "row 0 int64",
+            "query": "rows.0.c_int64",
+            "value": "-654321"
+        },
+        {
+            "name": "row 0 byte",
+            "query": "rows.0.c_byte",
+            "value": "0"
+        },
+        {
+            "name": "row 0 float32",
+            "query": "rows.0.c_float32",
+            "value": "-1.25"
+        },
+        {
+            "name": "row 0 float64",
+            "query": "rows.0.c_float64",
+            "value": "-1.25"
+        },
+        {
+            "name": "row 0 empty string",
+            "query": "rows.0.c_string",
+            "value": ""
+        },
+        {
+            "name": "row 1 (positive/true) bool is JSON true, not 1",
+            "query": "rows.1.c_bool",
+            "value": "true"
+        },
+        {
+            "name": "row 1 int",
+            "query": "rows.1.c_int",
+            "value": "42"
+        },
+        {
+            "name": "row 1 int32",
+            "query": "rows.1.c_int32",
+            "value": "42"
+        },
+        {
+            "name": "row 1 int16",
+            "query": "rows.1.c_int16",
+            "value": "1234"
+        },
+        {
+            "name": "row 1 int64",
+            "query": "rows.1.c_int64",
+            "value": "654321"
+        },
+        {
+            "name": "row 1 byte",
+            "query": "rows.1.c_byte",
+            "value": "200"
+        },
+        {
+            "name": "row 1 float32",
+            "query": "rows.1.c_float32",
+            "value": "3.5"
+        },
+        {
+            "name": "row 1 float64",
+            "query": "rows.1.c_float64",
+            "value": "3.5"
+        },
+        {
+            "name": "row 1 string",
+            "query": "rows.1.c_string",
+            "value": "hello"
+        }
+    ]
+}
