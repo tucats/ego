@@ -193,6 +193,9 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.runtime.symbol.allocation | Default allocation size of symbol table extensions |
 | ego.runtime.timezone | Reference zone ("local", "UTC", or an IANA name) used to resolve bare zone abbreviations |
 | ego.runtime.unchecked.errors | If true, unchecked errors are returned as runtime errors |
+| ego.server.ai.endpoint | URL of the Ollama-compatible AI text-generation endpoint used by `POST /dsns/_dsn_/tables/@generate` (default is `http://localhost:11434/api/generate`) |
+| ego.server.ai.model | Model name passed to the AI endpoint configured by ego.server.ai.endpoint; required to enable `@generate` — there is no default |
+| ego.server.ai.timeout | Maximum time to wait for a response from the AI endpoint configured by ego.server.ai.endpoint (e.g. "120s"); default is "120s" |
 | ego.server.allow.passkeys | If true, the server will allow FaceID/TouchID passkeys |
 | ego.server.cache.size | Number of service programs to cache in memory |
 | ego.server.child.services | Use child processes to execute services instead of threads |
@@ -494,6 +497,9 @@ Core server behavior (`ego.server.*`):
 
 | Setting | Description |
 | ------- | ----------- |
+| `ego.server.ai.model` | Model name passed to the AI endpoint configured by `ego.server.ai.endpoint`, used by `POST /dsns/_dsn_/tables/@generate`. **Required to enable that endpoint — there is no default.** If unset or empty, `@generate` requests fail with `503 Service Unavailable` rather than silently falling back to a model choice that would inevitably go stale. |
+| `ego.server.ai.endpoint` | URL of the Ollama-compatible AI text-generation endpoint used by `@generate`. Default `"http://localhost:11434/api/generate"`. |
+| `ego.server.ai.timeout` | Duration string for how long to wait for a response from the AI endpoint configured by `ego.server.ai.endpoint`. Default `"120s"`. |
 | `ego.server.report.fqdn` | If `true`, REST responses report the server's fully-qualified domain name instead of the short hostname. |
 | `ego.server.default.credential` | `user:password` used as the root account when no user database has been initialized yet. |
 | `ego.server.superuser` | `user:password` always granted superuser/root privileges regardless of the normal authorization data — an override, not the initial-setup credential above. |

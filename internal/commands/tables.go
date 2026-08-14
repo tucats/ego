@@ -1174,7 +1174,7 @@ func TableSQL(c *cli.Context) error {
 }
 
 // tableGenerate sends the given natural-language request text to the server's
-// AI-backed /dsns/{dsn}/generate endpoint, and prints the generated SQL text
+// AI-backed /dsns/{dsn}/tables/@generate endpoint, and prints the generated SQL text
 // to the console instead of executing it. The target DSN comes from --dsn, or
 // failing that, the configured default data source.
 func tableGenerate(c *cli.Context, request string) error {

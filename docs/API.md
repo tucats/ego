@@ -801,8 +801,9 @@ named `foo` in a DSN named `bar`, the endpoint is:
 GET /dsns/bar/tables/foo/rows
 ```
 
-The DSN endpoints also support transaction control (begin, commit, rollback) and
-an admin-only raw SQL execution endpoint.
+The DSN endpoints also support transaction control (begin, commit, rollback), an
+admin-only raw SQL execution endpoint, and an optional AI-assisted SQL
+generation endpoint.
 
 &nbsp;
 &nbsp;
@@ -1081,6 +1082,82 @@ last statement in the array.
 to a POST to meet REST expectations for lack of idempotency; using this
 endpoint can make arbitrary changes to the data and therefore should not
 be consider a PUT operation.
+
+&nbsp;
+&nbsp;
+
+#### POST /dsns/_dsn_/tables/@generate <a name="generate"></a>
+
+Uses a server-configured AI text-generation endpoint to turn a natural-language
+request into a SQL query for the named DSN. The DSN's table and column schema
+is sent to the AI endpoint as context, so the model knows what tables and
+columns are available. The generated SQL text is returned to the caller; it is
+**not** executed automatically — review it and submit it separately (for
+example, via [`@sql`](#sql)) if it looks correct.
+
+**This endpoint must be configured by the server administrator before it can
+be used.** There is no default AI model, since any hard-coded default would
+inevitably go stale as new models are released. If `ego.server.ai.model` is
+unset (or empty), every request to this endpoint fails immediately with
+`503 Service Unavailable` and the message "This server is not configured for
+AI operations" — the request is rejected before the DSN or its schema are
+even looked at.
+
+To enable this endpoint, the administrator must set the following
+configuration values (see [CONFIG.md](CONFIG.md) for how configuration values
+are set):
+
+| Setting | Purpose | Default |
+| :------ | :------ | :------ |
+| `ego.server.ai.model` | Name of the model to request from the AI endpoint (for example, `llama3`). **Required — there is no default.** | _(none)_ |
+| `ego.server.ai.endpoint` | URL of an Ollama-compatible text-generation endpoint. | `http://localhost:11434/api/generate` |
+| `ego.server.ai.timeout` | Maximum time to wait for a response from the AI endpoint, expressed as a Go duration string (for example, `120s`). | `120s` |
+
+For example, to point the server at a local Ollama instance running the
+`llama3` model:
+
+```sh
+ego config set ego.server.ai.endpoint=http://localhost:11434/api/generate
+ego config set ego.server.ai.model=llama3
+```
+
+The request body carries the caller's natural-language request, and may be
+either:
+
+* plain text (`Content-Type: text/plain`), used verbatim, or
+* a JSON-encoded string, or
+* a JSON-encoded array of strings, which are joined with spaces to form the
+  request text.
+
+For example:
+
+```json
+"list the names and email addresses of customers who placed an order in the last 30 days"
+```
+
+A successful response looks like:
+
+```json
+{
+    "server": { "...": "..." },
+    "sql": "SELECT name, email FROM customers WHERE id IN (SELECT customer_id FROM orders WHERE order_date >= NOW() - INTERVAL '30 days')",
+    "status": 200,
+    "msg": "SQL query generated from DSN mydsn"
+}
+```
+
+The current user must hold the `dsn.admin` permission for the named DSN —
+unlike `@sql`, full server admin privileges are not required — since the
+endpoint discloses the schema of every table in the DSN to the configured AI
+endpoint.
+
+In addition to the [status codes common to every table operation](#tableStatus),
+this endpoint can also report:
+
+| Code | Meaning |
+| :--- | :------ |
+| 503 | The server has no AI model configured (`ego.server.ai.model` is unset or empty). |
+| 502 | The configured AI endpoint could not be reached, returned an error status, or returned a response Ego could not parse. |
 
 &nbsp;
 &nbsp;
@@ -1629,6 +1706,7 @@ The following table lists every endpoint supported by the _Ego_ server.
 | GET | /dsns/_dsn_/tables/_table_ | Returns the column metadata (name, type, nullability) for the named table. |
 | DELETE | /dsns/_dsn_/tables/_table_ | Deletes the named table and all its data. |
 | PUT | /dsns/_dsn_/tables/@sql | Executes arbitrary SQL against the DSN (admin only). |
+| POST | /dsns/_dsn_/tables/@generate | Uses a server-configured AI endpoint to generate a SQL query from a natural-language request (DSN admin only; server must be configured with an AI model). |
 | POST | /dsns/_dsn_/tables/@transaction | Executes an atomic multi-step transaction across one or more tables. |
 | GET | /dsns/_dsn_/tables/@permissions | Returns permissions records for all tables in the DSN (admin only). |
 | GET | /dsns/_dsn_/tables/_table_/rows | Reads rows from a table, with optional filtering, sorting, and pagination. |

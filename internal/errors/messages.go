@@ -14,6 +14,7 @@ var ErrExit = Message("_exit")
 // Return values reflecting runtime error conditions.
 var ErrAIEndpointRequest = Message("ai.endpoint.request")
 var ErrAIEndpointStatus = Message("ai.endpoint.status")
+var ErrAINotConfigured = Message("ai.not.configured")
 var ErrAIPromptRead = Message("ai.prompt.read")
 var ErrAIRequestEmpty = Message("ai.request.empty")
 var ErrAIRequestPayload = Message("ai.request.payload")

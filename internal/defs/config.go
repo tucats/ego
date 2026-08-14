@@ -543,12 +543,15 @@ const (
 	ServerPanicRecoverySetting = ServerKeyPrefix + "panic.recovery"
 
 	// ServerAIEndpointSetting is the URL of an Ollama-compatible text-generation
-	// endpoint used by POST /dsns/{dsn}/generate to turn a natural-language
+	// endpoint used by POST /dsns/{dsn}/tables/@generate to turn a natural-language
 	// request into a SQL query. Defaults to "http://localhost:11434/api/generate".
 	ServerAIEndpointSetting = ServerKeyPrefix + "ai.endpoint"
 
 	// ServerAIModelSetting is the model name passed to the AI endpoint configured
-	// by ServerAIEndpointSetting. Defaults to "gemma4".
+	// by ServerAIEndpointSetting. There is no default; if unset (or empty), the
+	// @generate endpoint reports that the server is not configured for AI
+	// operations rather than silently falling back to a model choice that would
+	// inevitably go stale.
 	ServerAIModelSetting = ServerKeyPrefix + "ai.model"
 
 	// ServerAITimeoutSetting is the maximum time to wait for a response from the

@@ -16,6 +16,7 @@ const (
 	UpsertParameterName        = "upsert"
 	PermissionsPseudoTable     = "@permissions"
 	SQLPseudoTable             = "@sql"
+	GeneratePseudoTable        = "@generate"
 	ExpiresParameterName       = "expires"
 	TransactionIDParameterName = "transaction"
 )
@@ -57,7 +58,9 @@ const (
 	// DSNGeneratePath is the endpoint that uses a server-configured AI
 	// text-generation service to turn a natural-language request into a SQL
 	// query for the named DSN, using the DSN's table/column schema as context.
-	DSNGeneratePath          = DSNNamePath + "generate"
+	// The "@" prefix follows the same convention as @sql and @permissions
+	// pseudo-table names.
+	DSNGeneratePath          = TablesPath + GeneratePseudoTable
 	ServicesPath             = "/services/"
 	ServicesDownPath         = ServicesPath + "admin/down/"
 	ServicesLogonPath        = ServicesPath + "admin/logon"

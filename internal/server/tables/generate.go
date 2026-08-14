@@ -1,6 +1,6 @@
 package tables
 
-// generate.go implements POST /dsns/{dsnname}/generate, which uses a
+// generate.go implements POST /dsns/{dsnname}/tables/@generate, which uses a
 // server-configured, Ollama-compatible AI text-generation endpoint to turn a
 // natural-language request into a SQL query for the named DSN. The DSN's
 // table and column schema is included in the prompt as context, via the
@@ -32,7 +32,6 @@ import (
 
 const (
 	defaultAIEndpoint = "http://localhost:11434/api/generate"
-	defaultAIModel    = "gemma4"
 	defaultAITimeout  = "120s"
 
 	// maxAIResponseBytes bounds how much of the AI endpoint's response body is
@@ -59,7 +58,7 @@ type ollamaGenerateResponse struct {
 	Response string `json:"response"`
 }
 
-// GenerateHandler handles POST /dsns/{dsnname}/generate.
+// GenerateHandler handles POST /dsns/{dsnname}/tables/@generate.
 //
 // The request body supplies the caller's natural-language request. It is
 // either a JSON array of strings (joined with spaces to form the request
@@ -72,8 +71,19 @@ type ollamaGenerateResponse struct {
 //
 // Authorization: the caller must have at least read-level access to the DSN,
 // since the schema of every readable table is disclosed to the AI endpoint.
+//
+// There is no default model; the server administrator must set
+// ServerAIModelSetting explicitly. If it is unset (or empty), this handler
+// reports that the server is not configured for AI operations rather than
+// silently falling back to a model choice that would inevitably go stale.
 func GenerateHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
+
+	model := settings.Get(defs.ServerAIModelSetting)
+	if model == "" {
+		return util.ErrorResponse(w, session.ID, errors.Localize(errors.New(errors.ErrAINotConfigured), session.Language),
+			http.StatusServiceUnavailable)
+	}
 
 	requestText, status, err := readGenerateRequestText(r)
 	if err != nil {
@@ -110,11 +120,6 @@ func GenerateHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	endpoint := settings.Get(defs.ServerAIEndpointSetting)
 	if endpoint == "" {
 		endpoint = defaultAIEndpoint
-	}
-
-	model := settings.Get(defs.ServerAIModelSetting)
-	if model == "" {
-		model = defaultAIModel
 	}
 
 	timeoutSetting := settings.Get(defs.ServerAITimeoutSetting)
