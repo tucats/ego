@@ -1261,6 +1261,9 @@ table.update=table-name <column>=<value> [<column>=<value>...]
 admin.run.debug.session.reaped=Code API debug session {{id}} destroyed
 admin.run.session.created=Code API session {{id}} created
 admin.run.session.reaped=Code API session {{id}} destroyed
+ai.no.model=AI services unavailable, no model specified
+ai.prompt=AI server request, model {{model}}, timeout {{timeout}}, size {{size}}, prompt: {{prompt|lines}}
+ai.response=AI server response (load={{load}}, eval={{eval}}, size {{size}}) text: {{response||lines}}
 app.console.enable=Console output set to {{flag}}
 app.console.error=Console read failed, {{error}}
 app.console.pipe=Console pipe: {{flag}}

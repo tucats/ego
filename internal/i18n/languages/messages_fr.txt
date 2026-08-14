@@ -1230,6 +1230,9 @@ table.update=nom-table <colonne>=<valeur> [<colonne>=<valeur>...]
 admin.run.debug.session.reaped=Session de débogage API de code {{id}} détruite
 admin.run.session.created=Session API de code {{id}} créée
 admin.run.session.reaped=Session API de code {{id}} détruite
+ai.no.model=Services d'IA indisponibles, aucun modèle spécifié
+ai.prompt=Requête au serveur d'IA, modèle {{model}}, délai d'attente {{timeout}}, taille {{size}}, prompt : {{prompt|lines}}
+ai.response=Réponse du serveur d'IA (charge={{load}}, évaluation={{eval}}, taille {{size}}) texte : {{response||lines}}
 app.console.enable=Sortie console définie à {{flag}}
 app.console.error=Échec de la lecture de la console, {{error}}
 app.console.pipe=Tube console : {{flag}}

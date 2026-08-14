@@ -1230,6 +1230,9 @@ table.update=table-name <column>=<value> [<column>=<value>...]
 admin.run.debug.session.reaped=Code APIデバッグセッション {{id}} を破棄しました
 admin.run.session.created=Code APIセッション {{id}} を作成しました
 admin.run.session.reaped=Code APIセッション {{id}} を破棄しました
+ai.no.model=AIサービスは利用できません。モデルが指定されていません
+ai.prompt=AIサーバーリクエスト、モデル {{model}}、タイムアウト {{timeout}}、サイズ {{size}}、プロンプト: {{prompt|lines}}
+ai.response=AIサーバー応答 (load={{load}}, eval={{eval}}, サイズ {{size}}) テキスト: {{response||lines}}
 app.console.enable=コンソール出力を {{flag}} に設定しました
 app.console.error=コンソールの読み取りに失敗しました、{{error}}
 app.console.pipe=コンソールパイプ: {{flag}}

@@ -55,7 +55,10 @@ type ollamaGenerateRequest struct {
 // ollamaGenerateResponse is the subset of an Ollama-compatible non-streaming
 // generate response that this handler needs.
 type ollamaGenerateResponse struct {
-	Response string `json:"response"`
+	Response       string `json:"response"`
+	Duration       int64  `json:"total_duration"`
+	LoadDuration   int64  `json:"load_duration"`
+	PromptDuration int64  `json:"prompt_eval_duration"`
 }
 
 // GenerateHandler handles POST /dsns/{dsnname}/tables/@generate.
@@ -81,6 +84,8 @@ func GenerateHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	model := settings.Get(defs.ServerAIModelSetting)
 	if model == "" {
+		ui.Log(ui.AILogger, "ai.no.model", ui.A{})
+
 		return util.ErrorResponse(w, session.ID, errors.Localize(errors.New(errors.ErrAINotConfigured), session.Language),
 			http.StatusServiceUnavailable)
 	}
@@ -145,7 +150,7 @@ func GenerateHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		})
 	}
 
-	sql, err := callAIGenerateEndpoint(endpoint, model, prompt, timeout)
+	sql, err := callAIGenerateEndpoint(session.ID, endpoint, model, prompt, timeout)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadGateway)
 	}
@@ -278,7 +283,7 @@ func buildGeneratePrompt(metadata, request, provider string) (string, error) {
 // callAIGenerateEndpoint POSTs the given prompt to an Ollama-compatible
 // text-generation endpoint with streaming disabled, and returns the
 // generated text.
-func callAIGenerateEndpoint(endpoint, model, prompt string, timeout time.Duration) (string, error) {
+func callAIGenerateEndpoint(id int, endpoint, model, prompt string, timeout time.Duration) (string, error) {
 	payload, err := json.Marshal(ollamaGenerateRequest{
 		Model:  model,
 		Prompt: prompt,
@@ -287,6 +292,14 @@ func callAIGenerateEndpoint(endpoint, model, prompt string, timeout time.Duratio
 	if err != nil {
 		return "", errors.New(errors.ErrAIEndpointRequest).Context(err.Error())
 	}
+
+	ui.Log(ui.AILogger, "ai.prompt", ui.A{
+		"session": id,
+		"model":   model,
+		"timeout": timeout.String(),
+		"size":    len(prompt),
+		"prompt":  "\n" + prompt,
+	})
 
 	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(payload))
 	if err != nil {
@@ -323,6 +336,14 @@ func callAIGenerateEndpoint(endpoint, model, prompt string, timeout time.Duratio
 	if sql == "" {
 		return "", errors.New(errors.ErrAIResponseEmpty)
 	}
+
+	ui.Log(ui.AILogger, "ai.response", ui.A{
+		"session":  id,
+		"load":     time.Duration(parsed.LoadDuration).String(),
+		"eval":     time.Duration(parsed.PromptDuration).String(),
+		"size":     len(parsed.Response),
+		"response": "\n" + parsed.Response,
+	})
 
 	return sql, nil
 }

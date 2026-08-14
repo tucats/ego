@@ -1236,6 +1236,9 @@ table.update=nombre-tabla <columna>=<valor> [<columna>=<valor>...]
 admin.run.debug.session.reaped=Sesión de depuración de API de código {{id}} destruida
 admin.run.session.created=Sesión de API de código {{id}} creada
 admin.run.session.reaped=Sesión de API de código {{id}} destruida
+ai.no.model=Servicios de IA no disponibles, no se especificó ningún modelo
+ai.prompt=Solicitud al servidor de IA, modelo {{model}}, tiempo de espera {{timeout}}, tamaño {{size}}, prompt: {{prompt|lines}}
+ai.response=Respuesta del servidor de IA (carga={{load}}, evaluación={{eval}}, tamaño {{size}}) texto: {{response||lines}}
 app.console.enable=Salida de consola establecida en {{flag}}
 app.console.error=Fallo al leer de la consola, {{error}}
 app.console.pipe=Tubería de consola: {{flag}}

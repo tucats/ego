@@ -66,7 +66,7 @@ type LoggingItem struct {
 
 	// A map of each logger name and a boolean indicating if that
 	// logger is currently enabled on the server.
-	Loggers map[string]bool `json:"loggers,omitempty" validate:"enum=auth|db|internal|resources|rest|server|sql|tables|valid|app|asset|bytecode|cache|child|cli|compiler|debug|goroutine|info|optimizer|packages|route|services|stats|symbols|tokenizer|trace|user"`
+	Loggers map[string]bool `json:"loggers,omitempty" validate:"enum=ai|auth|db|internal|resources|rest|server|sql|tables|valid|app|asset|bytecode|cache|child|cli|compiler|debug|goroutine|info|optimizer|packages|route|services|stats|symbols|tokenizer|trace|user"`
 }
 
 type LoggingResponse struct {

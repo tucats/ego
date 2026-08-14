@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/settings"
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
@@ -39,7 +40,10 @@ type ollamaGenerateRequest struct {
 // ollamaGenerateResponse is the subset of an Ollama-compatible non-streaming
 // generate response that this package needs.
 type ollamaGenerateResponse struct {
-	Response string `json:"response"`
+	Response       string `json:"response"`
+	Duration       int64  `json:"total_duration"`
+	LoadDuration   int64  `json:"load_duration"`
+	PromptDuration int64  `json:"prompt_eval_duration"`
 }
 
 // newGenerator implements ai.NewGenerator(model string) (Generator, error). It
@@ -141,13 +145,19 @@ func setTimeout(s *symbols.SymbolTable, args data.List) (any, error) {
 func generate(s *symbols.SymbolTable, args data.List) (any, error) {
 	this := getThis(s)
 	if this == nil {
-		return data.NewList("", errors.ErrNoFunctionReceiver), nil
+		return data.NewList("", errors.ErrNoFunctionReceiver), errors.ErrNoFunctionReceiver
 	}
 
 	prompt := data.String(args.Get(0))
 
 	model := data.String(this.GetAlways(modelFieldName))
 	endpoint := data.String(this.GetAlways(endpointFieldName))
+
+	if model == "" {
+		ui.Log(ui.AILogger, "ai.no.model", ui.A{})
+
+		return data.NewList(nil, errors.ErrAINotConfigured), errors.ErrAINotConfigured
+	}
 
 	timeout, err := util.ParseDuration(data.String(this.GetAlways(timeoutFieldName)))
 	if err != nil || timeout <= 0 {
@@ -156,7 +166,7 @@ func generate(s *symbols.SymbolTable, args data.List) (any, error) {
 
 	text, err := callGenerateEndpoint(endpoint, model, prompt, timeout)
 	if err != nil {
-		return data.NewList("", err), nil
+		return data.NewList("", err), errors.New(err)
 	}
 
 	return data.NewList(text, nil), nil
@@ -174,6 +184,14 @@ func callGenerateEndpoint(endpoint, model, prompt string, timeout time.Duration)
 	if err != nil {
 		return "", errors.New(errors.ErrAIEndpointRequest).Context(err.Error())
 	}
+
+	ui.Log(ui.AILogger, "ai.prompt", ui.A{
+		"session": 0,
+		"model":   model,
+		"timeout": timeout.String(),
+		"size":    len(prompt),
+		"prompt":  "\n" + prompt,
+	})
 
 	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(payload))
 	if err != nil {
@@ -205,6 +223,14 @@ func callGenerateEndpoint(endpoint, model, prompt string, timeout time.Duration)
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		return "", errors.New(errors.ErrAIResponseParse).Context(err.Error())
 	}
+
+	ui.Log(ui.AILogger, "ai.response", ui.A{
+		"session":  0,
+		"load":     time.Duration(parsed.LoadDuration).String(),
+		"eval":     time.Duration(parsed.PromptDuration).String(),
+		"size":     len(parsed.Response),
+		"response": "\n" + parsed.Response,
+	})
 
 	text := strings.TrimSpace(parsed.Response)
 	if text == "" {

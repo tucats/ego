@@ -51,7 +51,8 @@ const (
 )
 
 const (
-	AppLogger = iota
+	AILogger = iota
+	AppLogger
 	AssetLogger
 	AuthLogger
 	ByteCodeLogger
@@ -101,6 +102,7 @@ func newLogger(name string, active bool) *logger {
 
 // The order of these items must match the numeric values of the logger classes above.
 var loggers []*logger = []*logger{
+	newLogger("AI", false),
 	newLogger("APP", false),
 	newLogger("ASSET", false),
 	newLogger("AUTH", false),
