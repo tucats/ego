@@ -40,6 +40,7 @@ var predefinedNames = map[string]bool{
 	"T": true,
 
 	// Packages auto-imported for `ego test` compilations.
+	"ai":       true,
 	"base64":   true,
 	"cipher":   true,
 	"cmplx":    true,

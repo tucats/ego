@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/tables"
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/i18n"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // StructAsString formats a map for printing as a table. The result is
@@ -39,10 +39,13 @@ func StructAsString(vv *data.Struct, showTypes bool) string {
 
 	// Scan over the struct using the field names to get the field name,
 	// and add the field name, optional type, and value to the table.
+	// Note the use of GetAlways on the struct, which shows unexported
+	// names as well as exported names when the struct is owned by
+	// a package other than the current one.
 	keys := vv.FieldNames(false)
 	for _, key := range keys {
 		keyString := data.String(key)
-		value, _ := vv.Get(keyString)
+		value := vv.GetAlways(keyString)
 		valueString := data.String(value)
 		typeString := data.TypeOf(value).String()
 

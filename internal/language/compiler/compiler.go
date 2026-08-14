@@ -909,6 +909,7 @@ func (c *Compiler) AutoImport(all bool, s *symbols.SymbolTable) error {
 		// then all packages with "2", etc. This allows the list to control any dependencies
 		// that might exist.
 		for _, name := range []string{
+			"1:ai",
 			"1:base64",
 			"1:cipher",
 			"1:cmplx",

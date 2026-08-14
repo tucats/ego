@@ -53,6 +53,7 @@ language and tool set patterned off of the _Go_ programming language.
 
 1. [Packages](#packages)
    1. [The `import` statement](#import)
+   1. [`ai` package](#ai)
    1. [`base64` package](#base64)
    1. [`cipher` package](#cipher)
    1. [`cmplx` package](#cmplx)
@@ -3146,6 +3147,92 @@ error naming the last path it tried.
 The following sections will describe the _built-in_ packages that are
 provided automatically as part of Ego. You can extend the packages
 by writing your own, as described later in the section on User Packages.
+
+---
+
+### ai Package <a name="ai"></a>
+
+The `ai` package provides access to a server-configured, Ollama-compatible
+AI text-generation gateway. The gateway's URL, default model, and request
+timeout are set by the server administrator via the `ego.server.ai.endpoint`,
+`ego.server.ai.model`, and `ego.server.ai.timeout` settings, respectively.
+
+`ai.NewGenerator()` creates an `ai.Generator` handle bound to a model name.
+With it, you can call `Generate()` to turn a prompt into generated text.
+
+Every fallible function and method in this package returns `(value, error)`,
+like everywhere else in the runtime.
+
+#### ai.NewGenerator(model string)
+
+```go
+func ai.NewGenerator(model string) (ai.Generator, error)
+```
+
+Resolves the AI gateway configuration and returns a `Generator` bound to
+`model`. If `model` is an empty string, the server-configured default model
+(`ego.server.ai.model`) is used instead. If there is no default model either,
+`NewGenerator()` returns an error rather than silently falling back to a
+model choice that would inevitably go stale.
+
+```go
+g, err := ai.NewGenerator("")
+if err != nil {
+    fmt.Println("could not create generator:", err)
+    return
+}
+
+text, err := g.Generate("why is the sky blue?")
+fmt.Println(text, err)
+```
+
+#### ai.Generator.Generate(prompt string)
+
+```go
+func (g ai.Generator) Generate(prompt string) (string, error)
+```
+
+Sends `prompt` to the Generator's AI gateway endpoint (with streaming
+disabled) using the model the Generator was created with, and returns the
+generated text.
+
+#### ai.Generator.Model(name string), .Endpoint(endpoint string), .Timeout(duration)
+
+```go
+func (g ai.Generator) Model(name string) ai.Generator
+func (g ai.Generator) Endpoint(endpoint string) ai.Generator
+func (g ai.Generator) Timeout(duration time.Duration) ai.Generator
+```
+
+These three methods override the model, gateway URL, and request timeout a
+Generator was created with, letting a program supply the correct values when
+the corresponding `ego.server.ai.*` setting is wrong, or missing entirely.
+Each returns the same Generator so calls can be chained, and none of them can
+fail, so none returns an error:
+
+- `Model()` and `Endpoint()` take plain strings.
+- `Timeout()` takes an actual `time.Duration` — obtained from
+  `time.ParseDuration()` — rather than a duration string, so the call itself
+  can never fail on a malformed value the way passing a raw string would.
+
+```go
+g, err := ai.NewGenerator("")
+if err != nil {
+    fmt.Println("could not create generator:", err)
+    return
+}
+
+d, err := time.ParseDuration("45s")
+if err != nil {
+    fmt.Println("invalid duration:", err)
+    return
+}
+
+g = g.Model("llama3").Endpoint("http://gateway.example.com/api/generate").Timeout(d)
+
+text, err := g.Generate("why is the sky blue?")
+fmt.Println(text, err)
+```
 
 ---
 

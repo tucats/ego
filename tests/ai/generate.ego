@@ -1,0 +1,72 @@
+// Tests that require a real, reachable Ollama-compatible AI gateway.
+//
+// Named "generate.ego" so it sorts alphabetically before "generator.ego" in
+// this directory: the latter temporarily overrides ego.server.ai.model to
+// test the "not configured" error path, and this file must run first so it
+// always sees the real, un-tampered server settings.
+//
+// AI generation results are not deterministic, so these tests cannot check
+// specific generated text. Instead they confirm a non-empty result comes
+// back, mirroring the "probe first, skip if unavailable" pattern used by
+// tests/sql/sql_postgres.ego for an optional external dependency.
+
+@test "ai: Generate() returns non-empty text from a real AI gateway"
+{
+    g, err := ai.NewGenerator("")
+    if err != nil {
+        fmt.Println("AI generator tests will not be run, no default model configured: " + err.Error())
+
+        return
+    }
+
+    text, err := g.Generate("Reply with exactly one word: hello")
+    if err != nil {
+        fmt.Println("AI generator tests will not be run, gateway unavailable: " + err.Error())
+
+        return
+    }
+
+    @assert len(text) > 0
+}
+
+@test "ai: Model/Endpoint/Timeout overrides still reach a real AI gateway"
+{
+    g, err := ai.NewGenerator("")
+    if err != nil {
+        fmt.Println("AI generator tests will not be run, no default model configured: " + err.Error())
+
+        return
+    }
+
+    // Probe with the defaults first, and skip cleanly if unreachable --
+    // same reasoning as the test above.
+    _, err = g.Generate("Reply with exactly one word: hello")
+    if err != nil {
+        fmt.Println("AI generator tests will not be run, gateway unavailable: " + err.Error())
+
+        return
+    }
+
+    // Re-derive the same configuration explicitly through the chainable
+    // setters (rather than relying on defaults) and confirm the overridden
+    // Generator still reaches the same real gateway and gets back a
+    // non-empty response.
+    model := profile.Get("ego.server.ai.model")
+
+    endpoint := profile.Get("ego.server.ai.endpoint")
+    if endpoint == "" {
+        endpoint = "http://localhost:11434/api/generate"
+    }
+
+    d, err := time.ParseDuration("60s")
+    @assert err == nil
+
+    g2, err := ai.NewGenerator(model)
+    @assert err == nil
+
+    g2 = g2.Model(model).Endpoint(endpoint).Timeout(d)
+
+    text, err := g2.Generate("Reply with exactly one word: hello")
+    @assert err == nil
+    @assert len(text) > 0
+}

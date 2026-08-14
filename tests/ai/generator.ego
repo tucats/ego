@@ -1,0 +1,180 @@
+// Deterministic tests for the ai package that do not require a reachable AI
+// gateway. See generate.ego for tests that do (probed, skipped when
+// unavailable -- this file must sort after it, see the note there).
+
+@test "ai: NewGenerator('') falls back to the configured default model"
+{
+    // Force a known default model via the ephemeral, in-memory settings
+    // overlay -- profile.Set on an "ego.*" key never touches the persisted
+    // config file, and is only permitted here because `ego test` runs in
+    // "test" mode; see setKey() in internal/runtime/profile/profile.go --
+    // then confirm an empty model argument resolves to it instead of
+    // erroring.
+    saved := profile.Get("ego.server.ai.model")
+    profile.Set("ego.server.ai.model", "placeholder-test-model")
+
+    g, err := ai.NewGenerator("")
+    @assert err == nil
+    @assert g != nil
+
+    profile.Set("ego.server.ai.model", saved)
+}
+
+@test "ai: NewGenerator('') errors when no default model is configured"
+{
+    // profile.Set(key, "") deletes the ephemeral override rather than
+    // forcing it to an empty string (see setKey()), so there is no way to
+    // simulate "unconfigured" from here when a real default model is
+    // already configured on this machine -- skip gracefully in that case
+    // rather than mutating the real persisted ego.server.ai.model setting
+    // just to test this.
+    if profile.Get("ego.server.ai.model") != "" {
+        fmt.Println("ai: skipping unconfigured-model test, a default model is already configured")
+
+        return
+    }
+
+    _, err := ai.NewGenerator("")
+    @assert err != nil
+}
+
+@test "ai: NewGenerator(model) succeeds without a default configured"
+{
+    // A non-empty explicit argument bypasses the default-model settings
+    // lookup entirely, so this is deterministic regardless of what (if
+    // anything) is configured on this machine.
+    g, err := ai.NewGenerator("explicit-model")
+    @assert err == nil
+    @assert g != nil
+}
+
+@test "ai: Model/Endpoint/Timeout return a chainable Generator"
+{
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    d, err := time.ParseDuration("30s")
+    @assert err == nil
+
+    // None of these three setters can fail -- confirm they chain together
+    // and yield a Generator that is still usable afterward.
+    g2 := g.Model("other-model").Endpoint("http://example.invalid/api/generate").Timeout(d)
+    @assert g2 != nil
+}
+
+@test "ai: Endpoint() overrides the URL Generate() posts to"
+{
+    // A malformed endpoint fails inside net/http's own URL parsing, entirely
+    // locally with no socket ever opened -- so this deterministically proves
+    // Endpoint() took effect, whether or not a real AI gateway is reachable
+    // from this machine.
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    g = g.Endpoint("://bogus-marker-xyz")
+
+    _, err = g.Generate("hello")
+    @assert err != nil
+    @assert strings.Contains(err.Error(), "bogus-marker-xyz")
+}
+
+@test "ai: Model() overrides the model name"
+{
+    // The Ollama request body isn't independently observable without a real
+    // (or fake) server on the other end, but this confirms the call itself
+    // succeeds and chains, and that the overridden Generator still reaches
+    // the same deterministic, no-network failure as the test above.
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    g = g.Model("a-different-model").Endpoint("://bogus-marker-xyz")
+
+    _, err = g.Generate("hello")
+    @assert err != nil
+    @assert strings.Contains(err.Error(), "bogus-marker-xyz")
+}
+
+@test "ai: Timeout() rejects or ignores a non-Duration argument"
+{
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    g = g.Endpoint("://bogus-marker-xyz")
+
+    // "not-a-duration" is a string, not a time.Duration. In strict typing
+    // mode the mismatch is rejected at the call boundary before setTimeout()
+    // ever runs -- a catchable runtime type-check error, not a compile
+    // error, so try/catch (not @compile) is what's needed here. In
+    // dynamic/relaxed mode the call reaches setTimeout(), which documents a
+    // wrong-typed argument as a silent no-op. Either way the Generator must
+    // remain usable afterward.
+    try {
+        g = g.Timeout("not-a-duration")
+    } catch(e) {
+        @assert e.Error() != ""
+    }
+
+    @assert g != nil
+
+    _, err = g.Generate("hello")
+    @assert err != nil
+    @assert strings.Contains(err.Error(), "bogus-marker-xyz")
+}
+
+@test "ai: Timeout() accepts a real time.Duration"
+{
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    d, err := time.ParseDuration("45s")
+    @assert err == nil
+
+    g = g.Endpoint("://bogus-marker-xyz").Timeout(d)
+
+    _, err = g.Generate("hello")
+    @assert err != nil
+    @assert strings.Contains(err.Error(), "bogus-marker-xyz")
+}
+
+@test "ai: String() formats all Generator fields"
+{
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    g = g.Endpoint("http://example.invalid/api/generate")
+
+    s := g.String()
+    @assert strings.Contains(s, "ai.Generator")
+    @assert strings.Contains(s, "\"Model\":\"test-model\"")
+    @assert strings.Contains(s, "\"Endpoint\":\"http://example.invalid/api/generate\"")
+    @assert strings.Contains(s, "\"Timeout\":")
+}
+
+@test "ai: String() shows <undefined> for an empty model"
+{
+    // Model("") is a legal, if unusual, call -- nothing validates the name
+    // -- and String() is documented to call that out explicitly rather than
+    // silently printing an empty value.
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    g = g.Model("")
+
+    s := g.String()
+    @assert strings.Contains(s, "\"Model\":\"<undefined>\"")
+}
+
+@test "ai: fmt.Sprint/Println invoke String() automatically"
+{
+    g, err := ai.NewGenerator("test-model")
+    @assert err == nil
+
+    direct := g.String()
+
+    @assert fmt.Sprint(g) == direct
+
+    @capture output := {
+        fmt.Println(g)
+    }
+    @assert output == direct + "\n"
+}

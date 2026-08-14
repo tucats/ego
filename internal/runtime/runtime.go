@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/language/symbols"
 	"github.com/tucats/ego/internal/packages"
+	"github.com/tucats/ego/internal/runtime/ai"
 	"github.com/tucats/ego/internal/runtime/base64"
 	"github.com/tucats/ego/internal/runtime/cipher"
 	"github.com/tucats/ego/internal/runtime/cmplx"
@@ -49,6 +50,7 @@ func AddPackages(s *symbols.SymbolTable) {
 	}
 
 	for _, name := range []string{
+		"ai",
 		"base64",
 		"cipher",
 		"cmplx",
@@ -107,6 +109,9 @@ func AddPackage(name string) *data.Package {
 	}
 
 	switch name {
+	case "ai":
+		p = ai.AiPackage
+
 	case "base64":
 		p = base64.Base64Package
 
