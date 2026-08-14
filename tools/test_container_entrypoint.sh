@@ -88,6 +88,7 @@ waitForPort() {
 # this the Postgres-backed test path never actually ran in the container. It
 # expects a role "ego_test" (password "secret") with a same-named database it
 # owns, reachable at localhost:5432 -- see that file for the exact values.
+# A second role, "tom", is created further below for tools/apitest/tests-pg/.
 #
 # The Dockerfile's builder stage installs the "postgresql" package, which
 # creates exactly one cluster ("main") at build time. Its version directory
@@ -127,6 +128,26 @@ fi
 
 if ! su postgres -c "createdb --owner=ego_test ego_test"; then
     echo "ERROR: failed to create Postgres database 'ego_test'" >&2
+    exit 1
+fi
+
+# tools/apitest/tests-pg/ (the Postgres-provider counterpart of tests/, run
+# further down) is checked in with its own dictionary.json defaulting
+# PG_USER/PG_PASSWORD/PG_DATABASE to "tom"/"secret"/"tom" -- the maintainer's
+# own local Postgres role, for interactive use outside the container. Those
+# can't be overridden with -x here: apitest loads a directory's own
+# dictionary.json *after* command-line -x/-d values are set, and
+# unconditionally overwrites, so a container-side PG_USER override would just
+# be clobbered the moment tests-pg/dictionary.json loads. Matching the
+# checked-in defaults with a same-named role is simpler than changing that
+# tool behavior or the fixture.
+if ! su postgres -c "psql -v ON_ERROR_STOP=1 -c \"CREATE ROLE tom LOGIN PASSWORD 'secret';\""; then
+    echo "ERROR: failed to create Postgres role 'tom'" >&2
+    exit 1
+fi
+
+if ! su postgres -c "createdb --owner=tom tom"; then
+    echo "ERROR: failed to create Postgres database 'tom'" >&2
     exit 1
 fi
 
@@ -230,6 +251,26 @@ OAUTH_STATUS=$?
 
 if [[ "${TEST_STATUS}" -eq 0 ]]; then
     TEST_STATUS="${OAUTH_STATUS}"
+fi
+
+echo " "
+echo "Running Postgres-backed REST API test suite ..."
+echo " "
+
+# tests-pg/ is the Postgres-provider counterpart of tests/: same REST
+# endpoints, but every dsn it creates points at a "postgres" provider instead
+# of "sqlite". It hits the primary instance (still up at this point), so its
+# HOST override matches the rest of this script's apitest calls. PG_HOST,
+# PG_PORT, PG_USER, PG_PASSWORD, and PG_DATABASE come from its own
+# dictionary.json (PG_HOST/PG_PORT already resolve to localhost:5432; the
+# "tom" role and database created above satisfy PG_USER/PG_PASSWORD/
+# PG_DATABASE) -- see the Postgres setup above for why those aren't overridden
+# here instead.
+run_captured tools/apitest.sh -x HOST=localhost tests-pg/
+PG_API_STATUS=$?
+
+if [[ "${TEST_STATUS}" -eq 0 ]]; then
+    TEST_STATUS="${PG_API_STATUS}"
 fi
 
 echo " "
