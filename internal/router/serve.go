@@ -624,18 +624,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"type":    contentType,
 			"length":  size,
 			"elapsed": elapsed})
-
-		// If the result status was indicating that the service is unavailable, let's start
-		// a shutdown to make this a true statement. We always sleep for one second to allow
-		// the response to clear back to the caller.
-		if status == http.StatusServiceUnavailable && session.Admin {
-			ServerShutdownLock.Lock()
-			go func() {
-				time.Sleep(1 * time.Second)
-				ui.Log(ui.ServerLogger, "server.shutdown", nil)
-				os.Exit(0)
-			}()
-		}
 	}
 }
 

@@ -164,10 +164,13 @@ func dashboardInactivityTimeout() string {
 // that performs this operation. The idea is that you can use this default, or you can
 // add a service endpoint that overrides this to extend its functionality.
 //
-// This function does not actually stop the server, but by returning an HTTP status
-// indicating the server is down, the router that called this handler will know that
-// the server is to be stopped.
+// This function requests an orderly shutdown of the server via RequestShutdown,
+// and then reports to the caller that the server is going down. The response
+// status is purely informational to the caller; it is not used by the router to
+// decide whether to shut down (see RequestShutdown for why).
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
+	RequestShutdown()
+
 	return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.server.stopped"), http.StatusServiceUnavailable)
 }
 
