@@ -2,7 +2,9 @@ package commands
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/tucats/ego/internal/cli/cli"
@@ -63,9 +65,18 @@ func FormatJSON(c *cli.Context) error {
 // formatJSON does the actual work of formatting the JSON file. The
 // input is a byte array containing the JSON data.
 func formatJSON(c *cli.Context, b []byte) error {
-	// If the indented option is specified, reformat the JSON as indented.
-	if c.Boolean("indented") {
+	// If the indented option is specified, reformat the JSON
+	// as indented. We dont' bother if this is a query operation
+	// since that output is always in indent format.
+	if !c.WasFound("query") && c.Boolean("indented") {
 		return indentJSON(b)
+	}
+
+	// If the input is really a list of objects, restructure it to
+	// be a JSON array of those objects.
+	b, err := asArray(b)
+	if err != nil {
+		return err
 	}
 
 	// If a query is specified, run the query against the JSON data.
@@ -74,41 +85,111 @@ func formatJSON(c *cli.Context, b []byte) error {
 
 		values, err := jaxon.GetItems(string(b), query)
 		if err != nil {
-			return errors.Message(err.Error())
+			return errors.ErrJSONQuery.Clone().Chain(errors.New(err).Context(query))
 		}
 
 		for _, v := range values {
 			ui.Say("%s", v)
 		}
 	} else {
-		// Just JSON output, but let's recompress it.
-		var data any
-
-		err := json.Unmarshal(b, &data)
+		b, err := asArray(b)
 		if err != nil {
-			return errors.New(err)
+			return err
 		}
 
-		b, _ = json.Marshal(data)
+		// Just JSON output, but let's recompress it.
+		var value any
+
+		err = json.Unmarshal(b, &value)
+		if err != nil {
+			return err
+		}
+
+		b, _ = json.Marshal(value)
+
 		ui.Say("%s", string(b))
 	}
 
 	return nil
 }
 
-// Reconstruct the json as an object, and then reformat it.
+// Reconstruct the json as one or more objects, and then reformat them.
 func indentJSON(b []byte) error {
-	// Reconstruct the json as an object, and then
-	// reformt it.
-	var data any
-
-	err := json.Unmarshal(b, &data)
+	// If the values are really a list of values, re-encode
+	b, err := asArray(b)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
-	b, _ = json.MarshalIndent(data, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
-	ui.Say("%s\n", string(b))
+	var value any
+
+	err = json.Unmarshal(b, &value)
+	if err != nil {
+		return err
+	}
+
+	b, _ = json.MarshalIndent(value, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+	ui.Say("%s", string(b))
 
 	return nil
+}
+
+// decodeJSONStream reads one or more consecutive JSON values from the byte
+// stream, such as a log file consisting of concatenated JSON objects rather
+// than a single value or array. Each decoded value is returned in order.
+func decodeJSONStream(b []byte) ([]any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(b))
+
+	values := make([]any, 0, 1)
+
+	for {
+		var data any
+
+		if err := decoder.Decode(&data); err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, errors.New(err)
+		}
+
+		values = append(values, data)
+	}
+
+	return values, nil
+}
+
+// For a byte stream that consiste of a single object, the object
+// is returned unaffected. If the stream contains multiple objects
+// in order, but not expressed a an array, they are reconstructed
+// as a JSON array of objects.
+func asArray(b []byte) ([]byte, error) {
+	// The input could be a list of objects, like a log file is,
+	// so scan for multiple objects and re-assemble as a proper
+	// JSON array if needed.
+	if itemList, err := decodeJSONStream(b); err != nil {
+		return nil, errors.New(err)
+	} else if len(itemList) > 1 {
+		concatenatedBytes := make([]byte, 0, len(b))
+		concatenatedBytes = append(concatenatedBytes, '[')
+
+		for index, item := range itemList {
+			var itemBytes []byte
+
+			itemBytes, err := json.Marshal(item)
+			if err != nil {
+				return nil, errors.New(err)
+			}
+
+			concatenatedBytes = append(concatenatedBytes, itemBytes...)
+
+			if index < len(itemList)-1 {
+				concatenatedBytes = append(concatenatedBytes, ',')
+			}
+		}
+
+		b = append(concatenatedBytes, ']')
+	}
+
+	return b, nil
 }
