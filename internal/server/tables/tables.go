@@ -526,10 +526,13 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 			// cached column info.
 			caches.Purge(caches.SchemaCache)
 
-			// Remove the table permissions for this table.
-			if dsnName == "" {
-				removeTablePermissions(session, tableName)
-			}
+			// Remove the table permissions for this table. This uses the raw,
+			// unqualified table name (not the FullName-qualified tableName
+			// above), because that's what GrantPermissions/ReadPermissions
+			// store in table_perms.table -- and it must run regardless of
+			// dsnName, since dsn is a required path segment here and "" just
+			// means the default/baseline DSN slot, not "no DSN".
+			removeTablePermissions(session, table)
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
 
