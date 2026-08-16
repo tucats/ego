@@ -168,8 +168,14 @@ func dashboardInactivityTimeout() string {
 // and then reports to the caller that the server is going down. The response
 // status is purely informational to the caller; it is not used by the router to
 // decide whether to shut down (see RequestShutdown for why).
+//
+// The default grace period is ten seconds. That is, whne a request is made to
+// shut down the server, any in-flight reqquests are given up to this time
+// to finish their task(s), before the server is shutdown, cancelling their
+// operations. The caller can override this default by passing a value as
+// the ?grace parameter to the query.
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	gracePeriod := 1 * time.Second
+	gracePeriod := 10 * time.Second
 
 	// See if there is a valid grace period on the request.
 	if len(session.Parameters["grace"]) > 0 {

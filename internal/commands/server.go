@@ -68,6 +68,7 @@ func RunServer(c *cli.Context) error {
 
 	start := time.Now()
 	router.StartTime = start.Format(time.UnixDate)
+	router.ServerStartTime = &start
 
 	// For now, we are always going to run in serialized symbol table access
 	// mode. This is slightly slower, but help keep things from getting muddy

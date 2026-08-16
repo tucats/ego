@@ -15,9 +15,9 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
-	"github.com/tucats/ego/internal/util/fork"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/runtime/profile"
+	"github.com/tucats/ego/internal/util/fork"
 )
 
 // Start launches a new ego server as a detached background process. It rewrites
@@ -34,6 +34,16 @@ import (
 //	Traditional: ego server start
 //	Verb:        ego start server
 func Start(c *cli.Context) error {
+	// The start command does not produce STATS logging for the
+	// actual operation of the server start -- this is only passed
+	// on to the actual server for it to log its stats. So set up
+	// a defer so when this action finishes, the STATS logger is
+	// turned off, which prevents the main program from dumping the
+	// stats of the server-start operation.
+	defer ui.Active(ui.StatsLogger, false)
+
+	// Make sure we have correct default profiels filled in before
+	// trying to start a server.
 	if err := profile.InitProfileDefaults(profile.RuntimeDefaults); err != nil {
 		return err
 	}
