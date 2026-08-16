@@ -1,5 +1,0 @@
-[
-  "insert into admin.simple(id,name) values(502, 'Susan')",
-  "select * from admin.simple"
-]
-
