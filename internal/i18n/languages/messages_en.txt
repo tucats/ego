@@ -1084,7 +1084,8 @@ server.run.superuser=Designate this user as a super-user with ROOT privileges
 server.run.users=File with authentication JSON data
 server.run.uuid=Sets the optional session UUID value
 server.show.id=Display the UUID of each user
-server.stop.force=Force the server to stop (on local machine) even if not authorized 
+server.stop.force=Force the server to stop (on local machine) even if not authorized
+server.stop.grace=Grace period to wait for in-flight requests to complete before stopping
 server.user.pass=Password to assign to user
 server.user.perms=Permissions to grant to user
 server.user.user=Username to create or update
@@ -1806,6 +1807,7 @@ server.service.dir=Scanning directory {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Invalid endpoint definition in {{file}}: {{error}}
 server.shutdown=Server shutdown by admin function
+server.shutdown.waiting=Server shutdown pending on {{count}} {{count|card request,requests}}, waiting for {{grace}}
 server.start.insecure=** REST service (insecure) starting on port {{port}}
 server.start.log.purged=Purged {{count}} {{count|card entry,entries}} from system startup log database
 server.start.secure=** REST service (secure) started on port {{port}}

@@ -169,7 +169,23 @@ func dashboardInactivityTimeout() string {
 // status is purely informational to the caller; it is not used by the router to
 // decide whether to shut down (see RequestShutdown for why).
 func DownHandler(session *Session, w http.ResponseWriter, r *http.Request) int {
-	RequestShutdown()
+	gracePeriod := 1 * time.Second
+
+	// See if there is a valid grace period on the request.
+	if len(session.Parameters["grace"]) > 0 {
+		text := session.Parameters["grace"][0]
+
+		g, err := time.ParseDuration(text)
+		if err != nil || g < 0 {
+			m := errors.ErrInvalidDuration.Context(text).Error()
+
+			return util.ErrorResponse(w, session.ID, m, http.StatusBadRequest)
+		}
+
+		gracePeriod = g
+	}
+
+	RequestShutdown(gracePeriod)
 
 	return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.admin.server.stopped"), http.StatusServiceUnavailable)
 }

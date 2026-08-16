@@ -1069,6 +1069,7 @@ server.run.users=Archivo con datos JSON de autenticación
 server.run.uuid=Establece el valor UUID de sesión opcional
 server.show.id=Mostrar el UUID de cada usuario
 server.stop.force=Forzar al servidor a detenerse (en la máquina local) incluso si no está autorizado
+server.stop.grace=Período de gracia para esperar a que finalicen las solicitudes en curso antes de detenerse
 server.user.pass=Contraseña a asignar al usuario
 server.user.perms=Permisos a otorgar al usuario
 server.user.user=Nombre de usuario a crear o actualizar
@@ -1781,6 +1782,7 @@ server.service.dir=Explorando directorio {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Definición de endpoint no válida en {{file}}: {{error}}
 server.shutdown=Servidor apagado por la función de administración
+server.shutdown.waiting=Apagado del servidor pendiente de {{count}} {{count|card solicitud,solicitudes}} en curso, tiempo de espera: {{grace}}
 server.start.insecure=** Servicio REST (inseguro) iniciando en el puerto {{port}}
 server.start.log.purged=Se purgaron {{count}} {{count|card entrada,entradas}} de la base de datos del registro de inicio del sistema
 server.start.secure=** Servicio REST (seguro) iniciado en el puerto {{port}}

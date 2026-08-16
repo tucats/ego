@@ -43,6 +43,11 @@ var StopVerbGrammar = []cli.Option{
 				Description: "server.stop.force",
 				OptionType:  cli.BooleanType,
 			},
+			{
+				LongName:    "grace",
+				Description: "server.stop.grace",
+				OptionType:  cli.StringType,
+			},
 		}...),
 	},
 	{

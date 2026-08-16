@@ -158,9 +158,13 @@ func Exchange(endpoint, method string, body any, response any, agentType string,
 				status = restResponse.StatusCode()
 			}
 
-			ui.Log(ui.RestLogger, "rest.error", ui.A{
-				"error":  err,
-				"status": status})
+			// If this is the "clean shutdown" message, don't
+			// log it as an error.
+			if !errors.Equal(err, errors.ErrServerDown) {
+				ui.Log(ui.RestLogger, "rest.error", ui.A{
+					"error":  err,
+					"status": status})
+			}
 		}
 
 		return errors.New(err)

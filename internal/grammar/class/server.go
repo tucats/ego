@@ -178,6 +178,11 @@ var ServerStopGrammar = []cli.Option{
 		OptionType:  cli.BooleanType,
 	},
 	{
+		LongName:    "grace",
+		Description: "server.stop.grace",
+		OptionType:  cli.StringType,
+	},
+	{
 		LongName:    "port",
 		ShortName:   "p",
 		OptionType:  cli.IntType,

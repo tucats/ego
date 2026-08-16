@@ -174,6 +174,12 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	// We are working on an in-flight request, so log the active request
+	// count so RequestShutdown() knows when we are done.
+
+	RequestsActive.Add(1)
+	defer RequestsActive.Add(-1)
+
 	// Record when this particular request began, and find the matching
 	// route for this request.
 	start := time.Now()

@@ -659,6 +659,7 @@ func defineNativeAdminHandlers(r *router.Router) {
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesDownPath, false); status != http.StatusOK {
 		r.New(defs.ServicesDownPath, router.DownHandler, http.MethodPost).
 			Authentication(true, true).
+			Parameter("grace", util.DurationParameterType).
 			Class(router.AdminRequestCounter)
 	}
 

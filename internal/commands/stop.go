@@ -15,8 +15,9 @@ import (
 )
 
 // Stop shuts down a running detached ego server. By default it sends a polite REST
-// shutdown request and waits up to five seconds for the server to stop. With --force
-// it kills the process directly using the PID stored in the PID file.
+// shutdown request and waits up to five seconds for the server to stop, extended by
+// --grace if given. With --force it kills the process directly using the PID stored
+// in the PID file.
 //
 // Not supported on Windows (detached processes use Unix-style process management).
 //
@@ -83,6 +84,22 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 	status, _ = router.ReadPidFile(c)
 
 	url := defs.ServicesDownPath
+
+	// The client normally waits up to five seconds for the server to stop. If the
+	// caller asked for a longer grace period, extend the wait so we don't give up
+	// -- and remove the PID file -- while the server is still draining requests.
+	waitSeconds := 5
+
+	if grace, found := c.String("grace"); found {
+		g, err := time.ParseDuration(grace)
+		if err != nil || g < 0 {
+			return nil, errors.ErrInvalidDuration.Context(grace)
+		}
+
+		url += "?grace=" + grace
+		waitSeconds += int(g.Seconds())
+	}
+
 	resp := defs.RestStatusResponse{}
 
 	err = rest.Exchange(url, http.MethodPost, nil, &resp, defs.AdminAgent)
@@ -102,8 +119,9 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 			"status": resp.Status})
 	}
 
-	// We'll wait five seconds for the server to stop. This normally takes only one second or so.
-	retries := 5
+	// We'll wait up to waitSeconds for the server to stop. This normally takes only
+	// one second or so, unless a longer --grace period was requested above.
+	retries := waitSeconds
 
 	for retries > 0 {
 		retries--
