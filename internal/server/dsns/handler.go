@@ -17,6 +17,7 @@ import (
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/dberrors"
+	"github.com/tucats/ego/internal/server/tables"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -213,6 +214,15 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		msg := fmt.Sprintf("unable to delete DSN, %s", err)
 
 		return util.ErrorResponse(w, session.ID, msg, dberrors.ExecStatus(err))
+	}
+
+	// Best-effort cleanup of any per-table permission grants for this DSN, so
+	// stale table_perms rows don't linger (and potentially reapply) if the DSN
+	// name is ever reused. This does not fail the DSN deletion if it errors.
+	if _, err := tables.DeletePermissionsByDSN(session.ID, name); err != nil {
+		ui.Log(ui.TableLogger, "table.delete.error", ui.A{
+			"session": session.ID,
+			"error":   err.Error()})
 	}
 
 	// Craft a response object to send back  that contains the DSN info

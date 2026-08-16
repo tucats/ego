@@ -407,7 +407,7 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	err = pHandle.Update(item)
+	err = pHandle.Update(item, pHandle.Equals("id", item.ID))
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
@@ -490,6 +490,43 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 		"count":   count})
 
 	return http.StatusOK
+}
+
+// DeletePermissionsByDSN removes every table_perms entry associated with the given
+// DSN name. This is called when a DSN itself is deleted, so that stale per-table
+// grants don't linger in the system database (and potentially reapply) if the DSN
+// name is ever reused.
+func DeletePermissionsByDSN(session int, dsnName string) (int, error) {
+	if !initPermissions() {
+		return 0, nil
+	}
+
+	list, err := pHandle.Read(pHandle.Equals("dsn", dsnName))
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+
+	for _, item := range list {
+		p := item.(*PermissionsObject)
+		if p == nil {
+			continue
+		}
+
+		if _, err := pHandle.Delete(pHandle.Equals("id", p.ID)); err != nil {
+			return count, err
+		}
+
+		count++
+	}
+
+	ui.Log(ui.TableLogger, "table.perms.deleted", ui.A{
+		"session": session,
+		"dsn":     dsnName,
+		"count":   count})
+
+	return count, nil
 }
 
 // Authorized uses the system database to determine if the proposed operation is permitted
