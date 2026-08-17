@@ -124,10 +124,12 @@ tab is remembered between page loads.
 | [Code](#code-tab) | _Ego_ code editor, debugger, and REPL |
 | [Log](#log-tab) | Server log viewer and logger configuration |
 
-Most tabs (Status, Users, DSNs, Tables, Data, SQL, and Log) are hidden entirely unless the
-logged-in user has the `ego.root` permission. The Code tab is available to any user with the
-`ego.code` permission, and is the only tab shown to a non-admin user; a non-admin lands there
-automatically after signing in.
+Most tabs (Status, Users, DSNs, Tables, Data, and Log) are hidden entirely unless the
+logged-in user has the `ego.root` permission. Two tabs are also available individually to a
+non-admin user: Code to anyone with the `ego.code` permission, and SQL to anyone with the
+`ego.sql` permission. A non-admin lands automatically on whichever of Code or SQL their
+permissions unlock after signing in (Code if they hold both), and sees only the tab(s) their
+permission(s) grant.
 
 &nbsp;
 
@@ -266,6 +268,7 @@ Common permission values:
 | `ego.logon` | Ability to authenticate (required for all interactive use) |
 | `ego.root` | Full administrative access: users, loggers, caches, memory stats |
 | `ego.code` | Ability to execute arbitrary _Ego_ code in the Code tab |
+| `ego.sql` | Ability to run SQL statements in the SQL tab, subject to that user's table_perms grants and (for schema changes) `ego.dsn.admin` |
 | `ego.dsn.admin` | Ability to manage data source connections |
 
 > **Permission required:** `ego.root`
@@ -716,7 +719,10 @@ ALTER TABLE customers RENAME COLUMN email TO email_address
 
 &nbsp;
 
-> **Permission required:** access to the selected DSN and table
+> **Permission required:** `ego.sql` (or `ego.root`) to use the tab at all. A non-admin
+> `ego.sql` user is further limited per statement: `ego.table.read` to `SELECT` a table,
+> `ego.table.write` to `INSERT`/`UPDATE`/`DELETE` it, and `ego.dsn.admin` for schema changes
+> (`CREATE`/`ALTER`/`DROP TABLE`, `CREATE`/`DROP INDEX`, `CREATE`/`DROP VIEW`).
 
 &nbsp;
 

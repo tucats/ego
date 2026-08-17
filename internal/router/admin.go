@@ -124,6 +124,7 @@ func LogonHandler(session *Session, w http.ResponseWriter, r *http.Request) int 
 	// Set the capability flags for this user.
 	response.CanAdmin = session.Admin
 	response.CanCode = session.Admin || util.InList(defs.CodeRunPermission, session.Permissions...)
+	response.CanSQL = session.Admin || util.InList(defs.SQLPermission, session.Permissions...)
 
 	// Tell the dashboard how long it should wait for user activity before
 	// signing out, so it doesn't need its own hard-coded default.

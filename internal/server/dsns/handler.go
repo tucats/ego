@@ -14,6 +14,7 @@ import (
 	"github.com/tucats/ego/internal/defs"
 	egodsns "github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/dberrors"
@@ -83,7 +84,24 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 }
 
 // ListDSNHandler reads all DSNs from a GET operation to the /dsns/ endpoint.
+//
+// The route itself (commands/routes.go) only requires authentication, not
+// any specific permission, because the two permissions that unlock this
+// endpoint -- ego.server.admin and ego.sql -- are alternatives (either one
+// is enough), and Route.Permissions() only expresses "all of these are
+// required". So the check is done here instead: an admin caller (or an
+// ego.server.admin holder) can list every DSN on the server; an ego.sql
+// holder (the dashboard's SQL tab, or a non-admin API caller with @sql
+// access -- see internal/server/tables/sql_permissions.go) can too, purely
+// so they have DSN names to choose from, not because ego.sql implies
+// server-admin standing more generally.
 func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	if !session.Admin &&
+		!util.InListInsensitive(defs.ServerAdminPermission, session.Permissions...) &&
+		!util.InListInsensitive(defs.SQLPermission, session.Permissions...) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.ServerAdminPermission}), http.StatusForbidden)
+	}
+
 	// Get the map of all the DSN names.
 	names, err := egodsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {

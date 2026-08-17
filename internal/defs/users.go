@@ -47,6 +47,7 @@ type LogonResponse struct {
 	// Capabilities of the user
 	CanAdmin bool `json:"admin"`
 	CanCode  bool `json:"coder"`
+	CanSQL   bool `json:"sql"`
 
 	// InactivityTimeout is the ego.server.dashboard.inactivity setting's value
 	// (a Go duration string, e.g. "15m"), so the dashboard can apply the

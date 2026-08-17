@@ -295,6 +295,7 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 	perms := auth.GetPermissions(session.ID, username)
 	isAdmin := util.InListInsensitive(defs.RootPermission, perms...)
 	canCode := isAdmin || util.InList(defs.CodeRunPermission, perms...)
+	canSQL := isAdmin || util.InList(defs.SQLPermission, perms...)
 
 	response := defs.LogonResponse{
 		Identity: username,
@@ -306,6 +307,7 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 		Expiration:        time.Now().Add(duration).Format(time.UnixDate),
 		CanAdmin:          isAdmin,
 		CanCode:           canCode,
+		CanSQL:            canSQL,
 		InactivityTimeout: dashboardInactivityTimeout(),
 	}
 

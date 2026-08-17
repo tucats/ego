@@ -216,14 +216,15 @@ func defineStaticRoutes() *router.Router {
 
 	ui.Log(ui.ServerLogger, "server.endpoints.dsn", nil)
 
-	// List all DSNS
+	// List all DSNS. Not gated by Permissions() here because the two
+	// permissions that unlock it -- ego.server.admin and ego.sql -- are
+	// alternatives, not both required; see the check inside ListDSNHandler.
 	r.New(defs.DSNPath, dsns.ListDSNHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNListMediaType).
 		Parameter("limit", util.IntParameterType).
 		Parameter("start", util.IntParameterType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.ServerAdminPermission)
+		Class(router.TableRequestCounter)
 
 	// Create a new DSN
 	r.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
