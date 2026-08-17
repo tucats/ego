@@ -1,0 +1,32 @@
+{
+    "description": "sanity check that the admin bypass (isAdmin short-circuit) in InsertAbstractRows is untouched by the fix -- admin can insert via the abstract endpoint on the restricted DSN with no table_perms or dsns_auth grant of its own",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "id": 2,
+            "name": "admin-insert"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

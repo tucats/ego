@@ -1,0 +1,42 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.2: user holds DSN-level read+write and a genuine table_perms write grant. This validates both fixes together -- the corrected dsns.DSNWriteAction request (was DSNNoAccess) gets the caller past AuthDSN, and the corrected negation (was missing '!') lets Authorized() admit a truly-granted caller instead of denying it.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "granted-insert"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

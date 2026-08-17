@@ -1,0 +1,33 @@
+{
+    "description": "grant the test user the identity-wide ego.table.read/write/update permissions. These gate the /dsns/{dsn}/tables/{table}/rows route itself (Permissions() in routes.go) and are a coarse, all-tables 'may reach this endpoint at all' check -- a completely separate mechanism from the per-table table_perms grants (also spelled ego.table.read/write/etc, but checked by Authorized() against a specific table) exercised by the rest of this test group. Without this grant, every request below would be rejected here, before ever reaching the dsns_auth/table_perms logic under test.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/pmu{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "pmu{{PERMTESTID}}",
+            "permissions": [
+                "+ego.table.read",
+                "+ego.table.write",
+                "+ego.table.update"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "identity table.read granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

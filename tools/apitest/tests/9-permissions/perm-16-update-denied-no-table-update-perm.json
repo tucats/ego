@@ -1,0 +1,38 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.2: user holds table_perms write (from perm-14) but not update -- these are independent PermissionsObject flags. UpdateAbstractRows checks defs.TableUpdatePermission specifically, so this must still be denied even though the same user can already insert.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true",
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        },
+        "body": {
+            "columns": [ { "name": "name" } ],
+            "rows": [ [ "should-not-update" ] ]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.2: user now holds table_perms update (in addition to read/write) and the matching DSN-level write access. Validates the corrected negation in UpdateAbstractRows admits a genuinely-granted caller.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true",
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        },
+        "body": {
+            "columns": [ { "name": "name" } ],
+            "rows": [ [ "updated-name" ] ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row updated",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
