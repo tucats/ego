@@ -41,11 +41,16 @@ func setKey(symbols *symbols.SymbolTable, args data.List) (any, error) {
 		return errors.ErrNoPrivilegeForOperation.In("Set").Context(key), nil
 	}
 
-	// Quick check here. The key must already exist if it's one of the
-	// "system" settings. That is, you can't create an ego.* setting that
-	// doesn't exist yet, for example
+	// Quick check here. The key must be one of the known "ego.*" settings.
+	// That is, you can't create an ego.* setting that isn't part of the
+	// defined schema. This is checked against defs.ValidSettings (the same
+	// schema the CLI's "ego config set" uses, see config.ValidateKey)
+	// rather than settings.Exists(), because Exists() only reports whether
+	// this profile happens to already have a stored value for the key --
+	// true for a setting no one has ever configured on this machine (e.g.
+	// a fresh container), even though the key is perfectly legal to set.
 	if isEgoSetting {
-		if !settings.Exists(key) {
+		if allowed, found := defs.ValidSettings[key]; !found || !allowed {
 			return errors.ErrReservedProfileSetting.In("Set").Context(key), nil
 		}
 	}
