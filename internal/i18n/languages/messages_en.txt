@@ -584,6 +584,7 @@ sql.parse.unterminated.identifier=unterminated quoted identifier
 sql.parse.unterminated.string=unterminated string literal
 sql.payload.empty=Empty request payload
 sql.payload.invalid=Invalid SQL payload: {{err}}
+sql.perm.table=User does not have privilege {{permission}} for table {{table}}
 sql.query.read=Error reading SQL query: {{err}}
 sql.select.last=SELECT statement can only be used as last statement in transaction
 stack.underflow=stack underflow

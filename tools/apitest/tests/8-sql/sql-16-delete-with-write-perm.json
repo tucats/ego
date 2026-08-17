@@ -1,0 +1,38 @@
+{
+    "description": "DELETE also counts as a write usage and succeeds with the table.write grant",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "DELETE FROM t{{SQLTESTID}} WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

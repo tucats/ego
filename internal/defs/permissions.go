@@ -6,6 +6,7 @@ const (
 	RootPermission        = "ego.root"
 	LogonPermission       = "ego.logon"
 	CodeRunPermission     = "ego.code"
+	SQLPermission         = "ego.sql"
 	TableReadPermission   = "ego.table.read"
 	TableWritePermission  = "ego.table.write"
 	TableUpdatePermission = "ego.table.update"
@@ -23,6 +24,7 @@ var AllPermissions = []string{
 	RootPermission,
 	LogonPermission,
 	CodeRunPermission,
+	SQLPermission,
 	TableReadPermission,
 	TableWritePermission,
 	TableUpdatePermission,

@@ -576,6 +576,7 @@ sql.parse.unterminated.identifier=終端されていない引用識別子
 sql.parse.unterminated.string=終端されていない文字列リテラル
 sql.payload.empty=空のリクエストペイロード
 sql.payload.invalid=無効なSQLペイロード: {{err}}
+sql.perm.table=ユーザーにはテーブル {{table}} に対する権限 {{permission}} がありません
 sql.query.read=SQLクエリの読み込みエラー: {{err}}
 sql.select.last=SELECT文はトランザクション内の最後の文としてのみ使用できます
 stack.underflow=スタックアンダーフロー

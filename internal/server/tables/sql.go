@@ -19,6 +19,7 @@ import (
 	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
+	"github.com/tucats/ego/internal/sqlparse"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -66,23 +67,41 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 		return httpStatus
 	}
 
-	// Sanity check -- if there is a SELECT in the transaction, it must be the last item in the
-	// array since there's no way to retain the result set otherwise.
-	for n, statement := range statements {
-		if strings.HasPrefix(strings.TrimSpace(strings.ToLower(statement)), "select ") {
-			if n < len(statements)-1 {
-				return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.select.last"), http.StatusBadRequest)
-			}
-		}
-	}
-
-	// We always do this under control of a transaction, so set that up now.
+	// We always do this under control of a transaction, so set that up now. This
+	// also tells us the DSN's Provider (sqlite vs. postgres), which the next step
+	// needs to parse and format each statement for the right dialect.
 	db, err := database.Open(session, data.String(session.URLParts["dsn"]), dsns.DSNWriteAction+dsns.DSNReadAction)
 	if err != nil {
 		// A DSN that does not exist is a 404, not a server fault (REST-2).
 		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	} else {
 		defer db.Close()
+	}
+
+	// Parse each statement, enforce table_perms/DSN-admin authorization for a
+	// non-admin caller, and rewrite each statement through the formatter so its
+	// identifier quoting matches db's dialect (see sql_permissions.go). This
+	// also gives us each statement's primary verb (kinds) so the "SELECT must
+	// be last" rule below can use the parsed statement, not a text guess.
+	statements, kinds, httpStatus := authorizeAndFormatStatements(session, db, statements, w)
+	if httpStatus > http.StatusOK {
+		return httpStatus
+	}
+
+	// Sanity check -- if there is a SELECT in the transaction, it must be the last item in the
+	// array since there's no way to retain the result set otherwise. A statement that failed to
+	// parse (only possible for an admin caller -- see authorizeAndFormatStatements) has an unknown
+	// kind here; fall back to the original text-prefix guess for that one statement so admins keep
+	// the same protection non-admins get from the parser.
+	for n, kind := range kinds {
+		isSelect := kind == sqlparse.StmtSelect
+		if kind == sqlparse.StmtUnknown {
+			isSelect = strings.HasPrefix(strings.TrimSpace(strings.ToLower(statements[n])), "select ")
+		}
+
+		if isSelect && n < len(kinds)-1 {
+			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.select.last"), http.StatusBadRequest)
+		}
 	}
 
 	err = db.Begin()

@@ -1,0 +1,41 @@
+{
+    "description": "grant the test user ego.dsn.admin -- a general permission, not a per-table table_perms grant -- so it can perform DDL",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/squ{{SQLTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "squ{{SQLTESTID}}",
+            "permissions": [
+                "+ego.dsn.admin"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "dsn.admin permission granted",
+            "query": "permissions.*",
+            "value": "ego.dsn.admin"
+        }
+    ]
+}

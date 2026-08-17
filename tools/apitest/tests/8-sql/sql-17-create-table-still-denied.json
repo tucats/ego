@@ -1,0 +1,39 @@
+{
+    "description": "table.read and table.write grants do not confer DDL rights -- CREATE TABLE is still forbidden without dsn.admin",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE t2{{SQLTESTID}} (id INTEGER NOT NULL, name TEXT NOT NULL)"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions the missing dsn.admin permission",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.dsn.admin"
+        }
+    ]
+}

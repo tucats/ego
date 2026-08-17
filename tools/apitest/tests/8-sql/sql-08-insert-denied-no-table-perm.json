@@ -1,0 +1,39 @@
+{
+    "description": "with ego.sql but no table_perms grant, an INSERT against the secured dsn's table is forbidden",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLTESTID}} (id, name) VALUES (1, 'Alice')"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions the missing write permission",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.table.write"
+        }
+    ]
+}

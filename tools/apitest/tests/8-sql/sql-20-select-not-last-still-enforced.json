@@ -1,0 +1,40 @@
+{
+    "description": "the 'SELECT must be the last statement' rule (now enforced via sqlparse.StatementKind, item 3) still applies on the fully-authorized non-admin path",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id FROM t{{SQLTESTID}}",
+            "INSERT INTO t{{SQLTESTID}} (id, name) VALUES (2, 'Ghost')"
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions SELECT restriction",
+            "query": "msg",
+            "op": "contains",
+            "value": "SELECT statement can only be used as last statement"
+        }
+    ]
+}

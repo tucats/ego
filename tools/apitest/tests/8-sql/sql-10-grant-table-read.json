@@ -1,0 +1,31 @@
+{
+    "description": "grant the test user read-only table_perms access to the scratch table",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "squ{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

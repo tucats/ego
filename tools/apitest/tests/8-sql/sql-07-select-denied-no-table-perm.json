@@ -1,0 +1,45 @@
+{
+    "description": "with ego.sql but no table_perms grant, a SELECT against the secured dsn's table is forbidden",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id FROM t{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions the missing read permission",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.table.read"
+        },
+        {
+            "name": "error message names the table",
+            "query": "msg",
+            "op": "contains",
+            "value": "t{{SQLTESTID}}"
+        }
+    ]
+}

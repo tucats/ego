@@ -564,10 +564,20 @@ func Authorized(session *router.Session, user string, table string, operations .
 		return true
 	}
 
+	// NOTE: this filtered on the nonexistent column "name" until fixed here.
+	// PermissionsObject has no "name" field (see its json tags above), so
+	// resources.Equals set its (function-local, discarded) error and
+	// returned a nil filter, which generateReadSQL then silently drops --
+	// meaning this read matched every user's grant for (dsn, table), not
+	// just user's. With exactly one grantee it authorized every caller as
+	// that grantee; with zero or more than one it denied everyone,
+	// including the correct owner. "user", matching the field name Go
+	// resolves the SQL column from (see ReadPermissions/GrantPermissions
+	// above, which already filter this same table on "user"), is correct.
 	items, err := pHandle.Read(
 		pHandle.Equals("dsn", dsn),
 		pHandle.Equals("table", table),
-		pHandle.Equals("name", user))
+		pHandle.Equals("user", user))
 	if err != nil {
 		ui.Log(ui.TableLogger, "table.read.error", ui.A{
 			"session": session.ID,

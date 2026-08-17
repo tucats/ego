@@ -169,14 +169,23 @@ func AddStaticRoutes(r *router.Router) {
 	// this was previous a PUT operation which is incorrect since it is not
 	// idempotent. It is now a POST operation as of 2024-06-05. The old PUT
 	// operation is still supported for backward compatibility.
+	//
+	// This no longer requires administrator status. An admin caller still
+	// has unrestricted access, as before; a non-admin caller instead needs
+	// defs.SQLPermission ("ego.sql"), and SQLTransaction itself (see sql.go
+	// and sql_permissions.go) authorizes each table the parsed SQL touches
+	// against that caller's table_perms grants and, for schema-changing
+	// statements, defs.DSNAdminPermission.
 	r.New(defs.TablesPath+defs.SQLPseudoTable, SQLTransaction, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true, false).
+		Permissions(defs.SQLPermission).
 		Class(router.TableRequestCounter)
 
 	// This is the deprecated old interface, which will be retired in
 	// Ego 1.11.
 	r.New(defs.TablesPath+defs.SQLPseudoTable, SQLTransaction, http.MethodPut).
-		Authentication(true, true).
+		Authentication(true, false).
+		Permissions(defs.SQLPermission).
 		Class(router.TableRequestCounter)
 
 	// Create a new table using a DSN

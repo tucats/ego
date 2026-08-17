@@ -1,0 +1,49 @@
+{
+    "description": "admin override: the ego.root user has never been granted table_perms on this table, yet can INSERT and SELECT it in one request -- admin bypasses both the table_perms and dsn.admin checks entirely",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLTESTID}} (id, name) VALUES (99, 'RootInsert')",
+            "SELECT id, name FROM t{{SQLTESTID}} WHERE id = 99"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "row 0 id",
+            "query": "rows.0.id",
+            "value": "99"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "RootInsert"
+        }
+    ]
+}

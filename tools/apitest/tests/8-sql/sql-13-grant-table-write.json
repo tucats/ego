@@ -1,0 +1,36 @@
+{
+    "description": "add write table_perms access to the scratch table, preserving the existing read grant",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "squ{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.write"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "write permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        },
+        {
+            "name": "read permission preserved",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

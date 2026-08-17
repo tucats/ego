@@ -582,6 +582,7 @@ sql.parse.unterminated.identifier=identificador entre comillas sin terminar
 sql.parse.unterminated.string=literal de cadena sin terminar
 sql.payload.empty=Cuerpo de la solicitud vacío
 sql.payload.invalid=Carga útil SQL inválida: {{err}}
+sql.perm.table=El usuario no tiene el privilegio {{permission}} para la tabla {{table}}
 sql.query.read=Error al leer la consulta SQL: {{err}}
 sql.select.last=La instrucción SELECT solo puede usarse como última instrucción en la transacción
 stack.underflow=desbordamiento negativo de la pila

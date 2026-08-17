@@ -1,0 +1,39 @@
+{
+    "description": "a non-admin user without ego.sql cannot reach @sql at all, regardless of table permissions (requirement: @sql now requires admin OR ego.sql)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id FROM t{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions the missing ego.sql privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.sql"
+        }
+    ]
+}

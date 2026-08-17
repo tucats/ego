@@ -1,0 +1,38 @@
+{
+    "description": "with a table.write grant, INSERT now succeeds. This also exercises the formatter's identifier quoting/formatting path (item 4) on the way to the database, since sql_permissions.go rewrites this statement through Format() before it is executed",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO t{{SQLTESTID}} (id, name) VALUES (1, 'Alice')"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

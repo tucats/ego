@@ -576,6 +576,7 @@ sql.parse.unterminated.identifier=identifiant entre guillemets non terminé
 sql.parse.unterminated.string=littéral de chaîne non terminé
 sql.payload.empty=Corps de la requête vide
 sql.payload.invalid=Charge utile SQL invalide : {{err}}
+sql.perm.table=L'utilisateur n'a pas le privilège {{permission}} pour la table {{table}}
 sql.query.read=Erreur lors de la lecture de la requête SQL : {{err}}
 sql.select.last=L'instruction SELECT ne peut être utilisée qu'en dernier dans une transaction
 stack.underflow=sous-dépassement de pile

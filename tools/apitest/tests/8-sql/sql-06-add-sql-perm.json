@@ -1,0 +1,41 @@
+{
+    "description": "grant the test user ego.sql so it can reach the @sql endpoint; it still has no table_perms or dsn.admin grants",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/squ{{SQLTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "squ{{SQLTESTID}}",
+            "permissions": [
+                "+ego.sql"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user permission",
+            "query": "permissions.*",
+            "value": "ego.sql"
+        }
+    ]
+}
