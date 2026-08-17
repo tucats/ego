@@ -1,0 +1,30 @@
+{
+    "description": "admin grants sqlspecificadmintest a DSN-specific dsns_auth record for dsn-sq{{PERMTESTID}} -- not an identity-level permission. Includes read+write alongside admin: AuthDSN's bitmask check has no 'admin implies read/write' shortcut the way IdentityAuthorizesAction does, and @sql opens the DSN with the combined DSNWriteAction+DSNReadAction regardless of statement kind (sql.go), so admin-only would fail at the DSN-open stage before ever reaching the UsageAdmin check this test is actually about.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "dsn-sq{{PERMTESTID}}",
+            "user": "sqlspecificadmintest",
+            "actions": ["+ego.dsn.admin", "+ego.dsn.read", "+ego.dsn.write"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

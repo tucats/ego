@@ -39,6 +39,16 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
+	// DATA-SECURITY.md §3.6: same identity-or-per-DSN-admin check as
+	// DeleteDSNHandler and DSNPermissionsHandler -- a DSN-specific admin
+	// can see what they're able to grant/revoke on their own DSN even
+	// without identity-level ego.dsn.admin.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
+	}
+
 	perms, err := egodsns.DSNService.Permissions(session.ID, session.User, name)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
@@ -239,6 +249,16 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		// the shared classifier so there is one place that decides, and so it
 		// cannot drift away from GetDSNHandler again (REST-2).
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+	}
+
+	// DATA-SECURITY.md §3.6: the route no longer requires identity-level
+	// ego.dsn.admin on its own -- a caller authorized only by a DSN-
+	// specific dsns_auth admin record for this one DSN (e.g. the DSN's
+	// own creator, per §3.3's self-grant) may delete it too.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
 	}
 
 	if err := egodsns.DSNService.DeleteDSN(session.ID, session.User, name); err != nil {
@@ -474,6 +494,18 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 			// error -- so that case still falls through to PayloadStatus's
 			// 400 default, unchanged from before.
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+		}
+
+		// DATA-SECURITY.md §3.6: checked per item, not once for the whole
+		// request, because a single request can grant/revoke permissions
+		// across more than one DSN -- being a DSN-specific admin of one
+		// does not make a caller an admin of another. Identity-level
+		// ego.dsn.admin still authorizes every DSN, same as everywhere
+		// else in this file.
+		if !session.Admin &&
+			!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+			!egodsns.DSNService.AuthDSN(session.ID, session.User, item.DSN, egodsns.DSNAdminAction) {
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
 		}
 
 		for _, action := range item.Actions {

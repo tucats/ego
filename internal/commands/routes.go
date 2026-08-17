@@ -259,26 +259,36 @@ func defineStaticRoutes() *router.Router {
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
-	// Delete an existing DSN
+	// Delete an existing DSN. Not gated by Permissions() here (DATA-
+	// SECURITY.md §3.6): a caller may be authorized either by identity-
+	// level ego.dsn.admin or by a DSN-specific dsns_auth admin record for
+	// this one DSN, and Route.Permissions() can only express the former
+	// -- it has no notion of "for this specific resource". The OR of the
+	// two is checked inside DeleteDSNHandler instead, the same pattern
+	// already used for ListDSNHandler/ListTablesHandler/DSNMetadataHandler.
 	r.New(defs.DSNNamePath, dsns.DeleteDSNHandler, http.MethodDelete).
 		Authentication(true, false).
 		AcceptMedia(defs.DSNMediaType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
-	// Add or delete DSN permissions
+	// Add or delete DSN permissions. Not gated by Permissions() for the
+	// same reason as delete, above -- DSNPermissionsHandler checks
+	// identity ego.dsn.admin OR a per-DSN admin record for each item's
+	// own {{dsn}} (a single request can name more than one DSN).
 	r.New(defs.DSNPath+defs.PermissionsPseudoTable, dsns.DSNPermissionsHandler, http.MethodPost).
 		Authentication(true, false).
 		AcceptMedia(defs.DSNPermissionsType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
-	// List permissions for a DSN
+	// List permissions for a DSN. Not gated by Permissions() for the same
+	// reason as delete/grant above -- the plan (DATA-SECURITY.md §3.6)
+	// doesn't name this route explicitly, but it has the identical
+	// route-level-only gate and gap, and a DSN-specific admin ought to be
+	// able to see what they can already grant/revoke.
 	r.New(defs.DSNNamePath+defs.PermissionsPseudoTable, dsns.ListDSNPermHandler, http.MethodGet).
 		Authentication(true, false).
 		AcceptMedia(defs.DSNListPermsMediaType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
 	ui.Log(ui.ServerLogger, "server.endpoints.tables", nil)
 

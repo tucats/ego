@@ -1,0 +1,43 @@
+{
+    "description": "create a test user with only ego.logon -- deliberately NO identity-level ego.dsn.* permission of any kind, so the tests below can isolate the DSN-specific dsns_auth admin record as the sole reason access succeeds. Static (non-{{PERMTESTID}}) name for the same reason as dsncreatortest in perm-40: apitest query expressions don't get dictionary substitution.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "specificadmintest",
+            "password": "zork",
+            "permissions": [
+                "ego.logon"
+            ]
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Location": ["/admin/users/specificadmintest"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user name",
+            "query": "name",
+            "value": "specificadmintest"
+        }
+    ]
+}
