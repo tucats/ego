@@ -190,6 +190,14 @@ larger model work — it's a one-character fix (add `!`) at three call sites.
 
 ### 3.3 HIGH — DSN creation never grants the creator DSN-specific access (plan item 1)
 
+**Fixed in `626130da`.** That commit also fixes §3.12 below, discovered
+while testing this one: until §3.12 landed, no non-root caller could ever
+reach `CreateDSNHandler` at all, which means the "identity-level
+`ego.dsn.admin` holder" scenario this finding is written around was not
+just locked out of using their new DSN (this finding) but could not
+create one in the first place (§3.12) — the two had to be fixed together
+for either to be observable.
+
 `CreateDSNHandler` (`internal/server/dsns/handler.go:290-393`) calls
 `egodsns.DSNService.WriteDSN(...)` and returns. Neither `WriteDSN`
 implementation (`dsn_file.go:101`, `dsn_sqldb.go:132`) inserts a
@@ -280,6 +288,19 @@ but today only meaning (a) is wired up for read/write, and meaning (b) only
 exists for `admin`.
 
 ### 3.6 MEDIUM — Deleting or granting DSN permissions ignores DSN-specific admin (plan items 3, 4)
+
+**Correction (post-`626130da`):** the "identity-level-only check" framing
+below was written before §3.12 was discovered. Until §3.12's fix, these
+two routes were not identity-level-gated at all — `Authentication(true,
+true)`'s `mustBeAdmin` made them **root-only**, so an identity-level
+`ego.dsn.admin` holder was blocked here too, one layer earlier than this
+section describes. §3.12's fix makes identity-level `ego.dsn.admin` work
+correctly on both routes now (via the same `Permissions()` mechanism
+described below, now actually reachable). What remains open, and is what
+this section is actually still about, is narrower than originally
+written: a caller with **only** a DSN-specific `dsns_auth` admin record
+(no identity-level `ego.dsn.admin` at all) still cannot delete or grant
+on that DSN.
 
 `DeleteDSNHandler` and `DSNPermissionsHandler` are both gated purely at the
 route level by `Permissions(defs.DSNAdminPermission)`
@@ -428,6 +449,55 @@ regression tests for §3.2 — but both materially affect §3.4, §3.7, §3.9, a
   actually executed real SQL against a DSN-scoped table (insert reported
   fake success; update crashed). Both now take the caller's already-
   resolved table name directly instead of re-deriving it.
+
+### 3.12 HIGH — Five DSN-admin routes required literal `ego.root`, making their `Permissions()` declaration dead code
+
+**Fixed in `626130da`** (found and fixed alongside §3.3 — see the note at
+the top of that section for why the two had to land together).
+
+`internal/commands/routes.go` registered `CreateDSNHandler`,
+`GetDSNHandler` (read one DSN), `DeleteDSNHandler`, `DSNPermissionsHandler`
+(grant), and `ListDSNPermHandler` (list permissions for one DSN) all with:
+
+```go
+r.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
+    Authentication(true, true).
+    ...
+    Permissions(defs.DSNAdminPermission)
+```
+
+`Route.Authentication(valid, administrator)`'s second argument sets
+`Route.mustBeAdmin` (`router.go:789-797`), which `serve.go:525` enforces —
+`route.mustBeAdmin && !session.Admin` — as a hard rejection *before* the
+`Permissions()` block is reached at all; that block is itself skipped
+whenever `session.Admin` is true (`serve.go:413`). Combined, this meant
+`Permissions(defs.DSNAdminPermission)` never had any effect on any of
+these five routes: reaching the handler already required literal
+`session.Admin` (`ego.root`), so the permission check downstream of it was
+always evaluated with `session.Admin` already true, which is precisely the
+condition under which `Permissions()` short-circuits to "allowed" without
+even looking at what permission was requested.
+
+Practical effect: no caller holding identity-level `ego.dsn.admin` without
+also being `ego.root` could reach any of these five routes — contradicting
+plan item 1's explicit statement that creating a DSN "requires ...
+`ego.dsn.admin` permission" (identity-level, the thing this whole document
+treats as separate from and less than full server-admin standing). This
+was invisible in earlier testing on this branch because every apitest DSN
+so far was created by the admin token. It surfaced only when §3.3's fix
+needed a **non-root** identity-`ego.dsn.admin` caller to create a DSN to
+prove the self-grant — and the creation request itself was rejected first,
+with a generic "not authorized" (403) rather than the
+`Permissions()`-specific "missing permission" message, since `mustBeAdmin`
+runs first and produces a different error path entirely.
+
+Fixed by changing all five routes to `Authentication(true, false)`,
+leaving `Permissions(defs.DSNAdminPermission)` as the sole admin decision
+— which already treats `session.Admin` as satisfying any permission
+(`session.HasAllPermissions`), so a root caller's access is unchanged.
+
+This also retroactively changes the accuracy of §3.6's original framing;
+see the correction note added there.
 
 ## 4. What's already correct
 
