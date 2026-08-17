@@ -338,7 +338,7 @@ subject to any of the checks described below.
 | `ego.root` | Full administrator. Bypasses every other check in this document. |
 | `ego.logon` | The user may log on to the server at all. Every non-`ego.root` user needs this. |
 | `ego.code` | The user may compile and run arbitrary Ego code via the dashboard's Code tab (`/admin/run`, `/admin/ast`, `/admin/format`). |
-| `ego.server.admin` | *Intended* to authorize server administration (users, logging, caches, tokens, memory/resource status) without full `ego.root`. **Currently has no effect**: every `/admin/*` route that declares this permission also requires the caller to actually be `ego.root`, so server administration requires `ego.root` today regardless of whether a user holds `ego.server.admin`. |
+| `ego.server.admin` | Authorizes server administration (users, logging, caches, tokens, memory/resource status) without full `ego.root`. Does not cover `/admin/config`, which has no per-permission override and remains `ego.root`-only. |
 | `ego.sql` | The user may reach the `@sql` endpoint to execute arbitrary SQL text against a DSN. What that SQL is actually allowed to do is still governed by the DSN- and table-level permissions below, statement by statement. |
 | `ego.dsn.admin` | **Identity-wide:** may create and delete DSNs, and may administer (grant/revoke/delete) *every* DSN on the server. **Per-DSN:** administers just that one DSN — see [DSN-level access](#dsn-access) below. |
 | `ego.dsn.read` | **Identity-wide:** may read from *every* restricted DSN on the server. **Per-DSN:** may read from just that one DSN. |

@@ -43,9 +43,31 @@ func defineStaticRoutes() *router.Router {
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
 
+	// BUG (found while documenting DATA-SECURITY.md's permission model):
+	// every /admin/* route below that declares Permissions(defs.
+	// ServerAdminPermission) also used Authentication(true, true) --
+	// mustBeAdmin, which serve.go enforces before the Permissions() check
+	// is even reached (and Permissions() is itself skipped once
+	// session.Admin is true). Exactly the same shape as §3.12's DSN-route
+	// bug, just across the whole admin/users/caches/logging/token/
+	// resources surface instead of DSNs: ego.server.admin -- defined
+	// specifically so an operator could administer the server without
+	// full ego.root -- had no effect on any route that named it, because
+	// reaching the route already required literal root. Changed every
+	// one below to Authentication(true, false); Permissions() now makes
+	// the only admin decision, and a root caller loses nothing since it
+	// already treats session.Admin as satisfying any permission.
+	//
+	// SetCacheSizeHandler (just below GetCacheHandler) had no
+	// Permissions() declaration of its own -- an oversight, not a
+	// deliberately stricter route, given its two siblings (view, purge)
+	// both use ServerAdminPermission for the same cache resource. Added
+	// it for consistency rather than leaving it as the one cache
+	// operation still requiring root.
+
 	// Get the current memory status
 	r.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
@@ -74,7 +96,7 @@ func defineStaticRoutes() *router.Router {
 	// Get the current validation dictionary. Can request a specific method and
 	// path to retrieve using parameters.
 	r.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Parameter("method", util.StringParameterType).
 		Parameter("path", util.StringParameterType).
@@ -101,19 +123,19 @@ func defineStaticRoutes() *router.Router {
 
 	// Create a new user
 	r.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Delete an existing user
 	r.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// List user(s)
 	r.New(defs.AdminUsersPath, users.ListUsersHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(router.AdminRequestCounter).
@@ -121,53 +143,54 @@ func defineStaticRoutes() *router.Router {
 
 	// Get a specific user
 	r.New(defs.AdminUsersPath+nameParameter, users.GetUserHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.UserMediaType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Modify a specific user
 	r.New(defs.AdminUsersPath+nameParameter, users.UpdateUserHandler, http.MethodPatch).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.UserMediaType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get the status of the server cache.
 	r.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Parameter("order-by", util.StringParameterType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Set the size of the cache.
 	r.New(defs.AdminCachesPath, caches.SetCacheSizeHandler, http.MethodPost).
-		Authentication(true, true).
-		Class(router.AdminRequestCounter)
+		Authentication(true, false).
+		Class(router.AdminRequestCounter).
+		Permissions(defs.ServerAdminPermission)
 
 	// Purge items from the cache.
 	r.New(defs.AdminCachesPath, caches.PurgeCacheHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission).
 		Parameter("class", util.ListParameterType)
 
 	// Get the current logging status
 	r.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Purge old logs
 	r.New(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		Parameter("keep", util.IntParameterType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Set loggers
 	r.New(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
@@ -178,13 +201,13 @@ func defineStaticRoutes() *router.Router {
 
 	// Add a token ID to the blacklist for this server
 	r.New(defs.AdminTokenPath, admin.TokenRevokeHandler, http.MethodPut).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get the list of all blacklisted tokens
 	r.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(router.AdminRequestCounter).
@@ -192,25 +215,25 @@ func defineStaticRoutes() *router.Router {
 
 	// Delete an individual token from the blacklist
 	r.New(defs.AdminTokenIDPath, admin.TokenDeleteHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Flush/delete the entire blacklist
 	r.New(defs.AdminTokenPath, admin.TokenFlushHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get overall server status (mashup of memory and caches, really)
 	r.New(defs.AdminResourcesPath, admin.GetResourcesHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get information about the host machine (CPU, memory, OS, architecture)
 	r.New(defs.AdminServerInfoPath, admin.GetServerInfoHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 

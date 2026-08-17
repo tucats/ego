@@ -1,0 +1,36 @@
+{
+    "description": "REGRESSION: ego.server.admin also gates the memory handler family, not just users",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/memory",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SVCADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["memory+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "Total memory present",
+            "query": "total",
+            "op": ">=",
+            "value": "10000"
+        }
+    ]
+}

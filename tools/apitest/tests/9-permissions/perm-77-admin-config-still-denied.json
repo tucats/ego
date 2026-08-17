@@ -1,0 +1,33 @@
+{
+    "description": "sanity: /admin/config has no Permissions() declaration at all and is genuinely root-only by design; ego.server.admin must not grant access here",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/vnd.ego.config.list+json"],
+            "Accept": ["application/vnd.ego.config+json"],
+            "Authorization": ["Bearer {{SVCADMIN_TOKEN}}"]
+        },
+        "body": [
+            "ego.compiler.normalized"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}
