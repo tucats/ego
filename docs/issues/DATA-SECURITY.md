@@ -101,6 +101,8 @@ exact code and explains the concrete failure it produces.
 
 ### 3.1 CRITICAL — Table-level enforcement is gated on the TLS flag, not the "restricted" flag
 
+**Fixed in `4a6146f9`.**
+
 `defs.DSN` has two independent booleans:
 
 ```go
