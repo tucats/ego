@@ -215,6 +215,8 @@ DSNReadAction|DSNWriteAction|DSNAdminAction, true)` when `Restricted` is set.
 
 ### 3.4 HIGH — Identity-level `ego.dsn.read`/`ego.dsn.write`/`ego.dsn.admin` never bypass per-DSN checks for actual data access (plan item 7)
 
+**Fixed in `54db92f8`.**
+
 `AuthDSN` (`dsn_sqldb.go:215-239`, `dsn_file.go:192-198`) only ever consults
 the `dsns_auth` table for `(user, dsn)`. It has no parameter or code path
 that looks at `session.Permissions`/identity grants at all. The **only**
@@ -248,6 +250,8 @@ filter) and partially addressed for `@sql` DDL (`sql_permissions.go`'s
 identity permissions) — but no other DSN-gated code path does.
 
 ### 3.5 HIGH — `ego.dsn.read` and `ego.dsn.write` cannot actually be granted as identity permissions
+
+**Fixed in `54db92f8`.**
 
 `defs.AllPermissions` (`internal/defs/permissions.go:23-35`) — the list used
 to validate any permission a user is granted, both via the admin REST API
