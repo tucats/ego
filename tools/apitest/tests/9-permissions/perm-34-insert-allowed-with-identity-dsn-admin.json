@@ -1,0 +1,42 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.4: identity-level ego.dsn.admin must also satisfy a write action, completing the proof that IdentityAuthorizesAction's admin check bypasses the read/write bit test entirely rather than happening to match one of them.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        },
+        "body": {
+            "id": 2,
+            "name": "identity-admin-insert"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

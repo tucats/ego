@@ -1,0 +1,38 @@
+{
+    "description": "baseline: identity test user has table_perms read on the table but no DSN-level access at all yet (no identity ego.dsn.*, no dsns_auth record) -- must be denied at the AuthDSN gate",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

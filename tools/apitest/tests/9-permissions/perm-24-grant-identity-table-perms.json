@@ -1,0 +1,33 @@
+{
+    "description": "grant the identity test user the coarse, identity-wide ego.table.read/write/update route gate -- see perm-05's description for why this is unrelated to the ego.dsn.* identity permissions this test group is actually about",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/idn{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "idn{{PERMTESTID}}",
+            "permissions": [
+                "+ego.table.read",
+                "+ego.table.write",
+                "+ego.table.update"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "identity table.read granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

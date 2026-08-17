@@ -1,0 +1,37 @@
+{
+    "description": "grant the identity test user table_perms read+write on the identity-bypass table, up front, so every test below is purely about whether the DSN-level identity permission (not table_perms) is what's gating access",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "idn{{PERMTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read",
+            "ego.table.write"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        },
+        {
+            "name": "write permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        }
+    ]
+}

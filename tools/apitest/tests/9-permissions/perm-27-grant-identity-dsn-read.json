@@ -1,0 +1,41 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.5: grant the identity test user ego.dsn.read as an IDENTITY permission (not a dsns_auth record). Before this fix, DSNReadPermission/DSNWritePermission were missing from defs.AllPermissions, so this exact PATCH was rejected with ErrInvalidPermission -- an operator could not grant identity-level ego.dsn.read at all, no matter what later code might have done with it.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/idn{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "idn{{PERMTESTID}}",
+            "permissions": [
+                "+ego.dsn.read"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "identity dsn.read granted",
+            "query": "permissions.*",
+            "value": "ego.dsn.read"
+        }
+    ]
+}

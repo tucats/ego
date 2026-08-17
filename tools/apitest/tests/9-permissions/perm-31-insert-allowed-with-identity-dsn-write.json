@@ -1,0 +1,42 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.4: with identity-level ego.dsn.write now also granted (still no dsns_auth record of any kind for this DSN), the insert that perm-29 correctly denied must now succeed -- proving IdentityAuthorizesAction's write-bit check, not just its read-bit check.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "identity-write-insert"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
