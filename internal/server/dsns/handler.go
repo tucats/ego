@@ -360,6 +360,30 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
+	// DATA-SECURITY.md §3.3: a Restricted DSN's dsns_auth table is where
+	// AuthDSN looks up per-DSN access, but nothing populated a record for
+	// the creator -- they could hold the identity-level ego.dsn.admin this
+	// route requires and still find themselves locked out of the very DSN
+	// they just created, needing a separate, explicit grant from an admin
+	// before they could open it. Mirrors createTablePermissions
+	// (server/tables/security.go), which seeds the same kind of self-grant
+	// on table create: best-effort (a failure here does not fail the DSN
+	// creation, matching DeleteDSNHandler's identical best-effort cleanup
+	// below), and unconditional regardless of who created it -- a
+	// redundant grant for an admin caller is inert, since admins bypass
+	// AuthDSN entirely, but it costs nothing to be consistent rather than
+	// special-casing them.
+	if dataSourceName.Restricted {
+		action := egodsns.DSNReadAction | egodsns.DSNWriteAction | egodsns.DSNAdminAction
+		if err := egodsns.DSNService.GrantDSN(session.ID, session.User, dataSourceName.Name, action, true); err != nil {
+			ui.Log(ui.AuthLogger, "auth.dsn.grant.error", ui.A{
+				"session": session.ID,
+				"user":    session.User,
+				"dsn":     dataSourceName.Name,
+				"error":   err})
+		}
+	}
+
 	// A successful create reports 201, not 200, with a Location header
 	// naming the new DSN's own URL -- RFC 9110 §10.2.2. This is a genuine
 	// creation (the existence check above already ruled out an overwrite),

@@ -1,0 +1,42 @@
+{
+    "description": "the non-admin dsncreatortest user (holding only identity-level ego.dsn.admin, not ego.root) creates a new restricted DSN. This is the scenario DATA-SECURITY.md §3.3 is about: does the creator end up with usable access to what they just created?",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{DSNCREATOR_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-cr{{PERMTESTID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-cr{{PERMTESTID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-cr{{PERMTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag echoed",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "description": "create a test user dedicated to the DSN-creator self-grant test (DATA-SECURITY.md §3.3), with identity-level ego.dsn.admin already granted at creation time since that's what the /dsns POST route requires to reach CreateDSNHandler at all. This user's name is intentionally NOT {{PERMTESTID}}-suffixed: the apitest query-expression language does not run values through dictionary substitution (only 'value' does), so a later test needs to address 'items.<username>.*' in the @permissions response by a name known at file-authoring time. Cleaned up at the end of this test group like everything else.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsncreatortest",
+            "password": "zork",
+            "permissions": [
+                "ego.logon",
+                "ego.dsn.admin"
+            ]
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Location": ["/admin/users/dsncreatortest"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user name",
+            "query": "name",
+            "value": "dsncreatortest"
+        }
+    ]
+}

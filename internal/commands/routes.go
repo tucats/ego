@@ -226,37 +226,56 @@ func defineStaticRoutes() *router.Router {
 		Parameter("start", util.IntParameterType).
 		Class(router.TableRequestCounter)
 
+	// BUG (found while validating DATA-SECURITY.md §3.3, now documented as
+	// §3.12): all five DSN-admin routes below used Authentication(true,
+	// true) -- the second argument sets Route.mustBeAdmin, which
+	// serve.go enforces as "route.mustBeAdmin && !session.Admin" before
+	// the Permissions() check is even reached (Permissions() is itself
+	// skipped whenever session.Admin is true). That made the
+	// Permissions(defs.DSNAdminPermission) declaration on each of these
+	// routes dead code: only a literal ego.root caller could ever reach
+	// any of them, contradicting the model's own stated intent -- item 1
+	// says creating a DSN "requires ... ego.dsn.admin permission",
+	// identity-level, not root -- and silently defeating §3.3's DSN-
+	// creator self-grant fix, since a non-root identity-admin holder
+	// could never reach CreateDSNHandler to trigger it in the first
+	// place. Changed to Authentication(true, false): authentication is
+	// still required, but the admin-or-equivalent decision is now made
+	// once, correctly, by Permissions() -- which already treats
+	// session.Admin as satisfying any permission, so a root caller loses
+	// nothing.
+
 	// Create a new DSN
 	r.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
 	// Read an existing DSN
 	r.New(defs.DSNNamePath, dsns.GetDSNHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
 	// Delete an existing DSN
 	r.New(defs.DSNNamePath, dsns.DeleteDSNHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
 	// Add or delete DSN permissions
 	r.New(defs.DSNPath+defs.PermissionsPseudoTable, dsns.DSNPermissionsHandler, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNPermissionsType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
 	// List permissions for a DSN
 	r.New(defs.DSNNamePath+defs.PermissionsPseudoTable, dsns.ListDSNPermHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true, false).
 		AcceptMedia(defs.DSNListPermsMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)

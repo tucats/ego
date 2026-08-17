@@ -1296,6 +1296,7 @@ auth.dsn.delete=DSN {{name}} supprimé
 auth.dsn.file=Création d'une nouvelle table DSN vide dans {{path}}
 auth.dsn.flush=DSN vidé vers le magasin de sauvegarde
 auth.dsn.found=Enregistrement DSN trouvé pour {{name}}
+auth.dsn.grant.error=Impossible d'accorder l'accès au DSN {{dsn}} à {{user}} : {{error}}
 auth.dsn.init=Initialisation des noms de sources de données
 auth.dsn.mask=Valeur du masque d'action autorisé DSN {{mask}}
 auth.dsn.memory=Création d'une nouvelle table DSN vide en mémoire
