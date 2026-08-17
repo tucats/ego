@@ -242,8 +242,13 @@ func listTableNamesForMetadata(db *database.Database, session *router.Session, r
 		// permitted to read. Authorized() returns true when the DSN is not
 		// secured (open access), when the user is a server administrator,
 		// or when an explicit read-permission record exists for this user
-		// and table. This mirrors the check in ListTablesHandler.
-		if !session.Admin && !Authorized(session, session.User, name, defs.TableReadPermission) {
+		// and table. This mirrors the check in ListTablesHandler. The table
+		// name must be qualified with the DSN (db.DSN+"."+name) because
+		// Authorized() splits on "." to determine which DSN's ACLs apply --
+		// an unqualified name left dsn empty here, ReadDSN("") always
+		// failed, and every table was silently denied (same bug ListTablesHandler
+		// had before it was fixed).
+		if !session.Admin && !Authorized(session, session.User, db.DSN+"."+name, defs.TableReadPermission) {
 			continue
 		}
 

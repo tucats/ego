@@ -20,9 +20,15 @@ func AddStaticRoutes(r *router.Router) {
 	// table in the DSN. Paging is supported via ?start= and ?limit=.
 	// This route is registered at the DSN level (/dsns/{dsn}/@metadata), not
 	// inside the tables/ sub-path, so it cannot conflict with any real table name.
+	//
+	// Not gated by Permissions() here, same reasoning as the tables-list route
+	// above: DSNMetadataHandler opens the DSN via GetDatabase (enforcing
+	// dsns.AuthDSN for a Restricted DSN) and listTableNamesForMetadata filters
+	// table-by-table via Authorized() for a Secured DSN, so a non-admin caller
+	// sees only what they actually have access to instead of being blocked
+	// outright without dsn.admin.
 	r.New(defs.DSNMetadataPath, DSNMetadataHandler, http.MethodGet).
 		Authentication(true, false).
-		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		AcceptMedia(defs.DSNMetadataMediaType).
@@ -46,10 +52,15 @@ func AddStaticRoutes(r *router.Router) {
 		AcceptMedia(defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
-	// List all tables in a DSN
+	// List all tables in a DSN. Not gated by Permissions() here: unlike the
+	// other DSN-scoped routes, this one doesn't require a single blanket
+	// permission. Instead ListTablesHandler opens the DSN via GetDatabase
+	// (which enforces dsns.AuthDSN for a Restricted DSN) and getTableNames
+	// filters the result table-by-table via Authorized() for a Secured DSN,
+	// so a non-admin caller only ever sees the DSNs/tables they actually
+	// have access to rather than being all-or-nothing gated on dsn.admin.
 	r.New(defs.TablesPath, ListTablesHandler, http.MethodGet).
 		Authentication(true, false).
-		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.StartParameterName, "int").
 		Parameter(defs.LimitParameterName, "int").
 		Parameter(defs.UserParameterName, util.StringParameterType).

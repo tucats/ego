@@ -112,6 +112,19 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
+	// Non-admin callers (e.g. an ego.sql holder without server-admin
+	// standing) only see DSNs that are unrestricted or that they have
+	// been explicitly granted read access to. This mirrors the AuthDSN
+	// check tables/database.Open() applies before it lets a non-admin
+	// touch a restricted DSN's data.
+	if !session.Admin && !util.InListInsensitive(defs.ServerAdminPermission, session.Permissions...) {
+		for key, dsn := range names {
+			if dsn.Restricted && !egodsns.DSNService.AuthDSN(session.ID, session.User, dsn.Name, egodsns.DSNReadAction) {
+				delete(names, key)
+			}
+		}
+	}
+
 	// Build a sorted list of DSN names for stable output.
 	keys := make([]string, 0, len(names))
 	for key := range names {

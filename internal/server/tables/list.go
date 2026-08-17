@@ -152,8 +152,12 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 			break
 		}
 
-		// Is the session.User authorized to see this table at all?
-		if !db.Session.Admin && !Authorized(db.Session, db.Session.User, name, defs.TableReadPermission) {
+		// Is the session.User authorized to see this table at all? Authorized()
+		// splits its table argument on "." to find the DSN name (see
+		// sql_permissions.go's identical dsn+"."+table usage), so the bare
+		// catalog name must be qualified here or every table looks unowned
+		// and gets denied.
+		if !db.Session.Admin && !Authorized(db.Session, db.Session.User, db.DSN+"."+name, defs.TableReadPermission) {
 			continue
 		}
 
