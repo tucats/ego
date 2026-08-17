@@ -1,5 +1,5 @@
 {
-    "description": "REGRESSION for DATA-SECURITY.md §3.2: user now holds DSN-level read plus a genuine table_perms read grant. Before the fix, ReadAbstractRows's inverted check denied exactly this legitimately-granted caller; it must now succeed.",
+    "description": "REGRESSION for DATA-SECURITY.md §3.2: user now holds DSN-level read plus a genuine table_perms read grant. Before the fix, ReadAbstractRows's inverted check denied exactly this legitimately-granted caller; it must now succeed. (§3.1's fix is what makes this DSN -- Restricted but not Secured, see perm-01 -- enforce table_perms at all; the decisive proof that enforcement is really happening, rather than just being switched off, is the denial in perm-08.)",
     "request": {
         "method": "GET",
         "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",

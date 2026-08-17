@@ -1,5 +1,5 @@
 {
-    "description": "create a restricted+secured dsn used to exercise the full DSN/table permission stack (dsns_auth AuthDSN gate plus table_perms Authorized gate)",
+    "description": "create a restricted dsn used to exercise the full DSN/table permission stack (dsns_auth AuthDSN gate plus table_perms Authorized gate, both gated on Restricted per DATA-SECURITY.md §3.1)",
     "request": {
         "method": "POST",
         "endpoint": "/dsns",
@@ -12,8 +12,7 @@
             "name": "dsn-{{PERMTESTID}}",
             "provider": "sqlite",
             "database": "{{ROOT}}/db-{{PERMTESTID}}.db",
-            "restricted": true,
-            "secured": true
+            "restricted": true
         }
     },
     "response": {

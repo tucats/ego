@@ -1,5 +1,5 @@
 {
-    "description": "create a secured dsn used to exercise @sql permission checks",
+    "description": "create a restricted dsn used to exercise @sql permission checks -- table_perms enforcement (Authorized()) is gated on Restricted, not Secured (DATA-SECURITY.md §3.1); Secured means TLS only and is irrelevant to a local sqlite file",
     "request": {
         "method": "POST",
         "endpoint": "/dsns",
@@ -13,7 +13,7 @@
             "provider": "sqlite",
             "database": "{{ROOT}}/db-{{SQLTESTID}}.db",
             "rowid": true,
-            "secured": true
+            "restricted": true
         }
     },
     "response": {
