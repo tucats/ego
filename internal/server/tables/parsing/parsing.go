@@ -9,7 +9,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/language/data"
 	runtime_strings "github.com/tucats/ego/internal/runtime/strings"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 const (
@@ -341,16 +341,16 @@ func MapColumnType(native, provider string) string {
 		// TIMESTAMP, TIME, and DATE are stored as TEXT affinity; the semantic names are
 		// preserved so schema introspection can recover them via getColumnInfo().
 		types = map[string]string{
-			data.StringTypeName: "TEXT",
-			data.Int32TypeName:  "INTEGER",
-			data.IntTypeName:    "INTEGER",
-			data.BoolTypeName:   "BOOLEAN", // NUMERIC affinity stores 0/1; semantic name retained for introspection
-			"boolean":           "BOOLEAN",
-			"float32":           "REAL",
-			"float64":           "REAL",
-			"timestamp":         "TIMESTAMP", // RFC 3339 text; semantic name retained for introspection
-			"time":              "TIME",      // RFC 3339 text; semantic name retained for introspection
-			"date":              "DATE",      // RFC 3339 text; semantic name retained for introspection
+			data.StringTypeName:  "TEXT",
+			data.Int32TypeName:   "INTEGER",
+			data.IntTypeName:     "INTEGER",
+			data.BoolTypeName:    "BOOLEAN", // NUMERIC affinity stores 0/1; semantic name retained for introspection
+			"boolean":            "BOOLEAN",
+			data.Float32TypeName: "REAL",
+			data.Float64TypeName: "REAL",
+			"timestamp":          "TIMESTAMP", // RFC 3339 text; semantic name retained for introspection
+			"time":               "TIME",      // RFC 3339 text; semantic name retained for introspection
+			"date":               "DATE",      // RFC 3339 text; semantic name retained for introspection
 		}
 
 	case strings.EqualFold(provider, defs.PostgresProvider):
@@ -366,14 +366,14 @@ func MapColumnType(native, provider string) string {
 			// indistinguishable from an "int16" one once created -- both report back as
 			// DatabaseTypeName "INT2" / ScanType "int16" on read (see normalizeColumnType
 			// in tables.go), so schema introspection reports "int16" for either.
-			data.ByteTypeName: "SMALLINT",
-			data.BoolTypeName: "BOOLEAN",
-			"boolean":         "BOOLEAN",
-			"float32":         "REAL",
-			"float64":         "DOUBLE PRECISION",
-			"timestamp":       "TIMESTAMP WITH TIME ZONE",
-			"time":            "TIME",
-			"date":            "DATE",
+			data.ByteTypeName:    "SMALLINT",
+			data.BoolTypeName:    "BOOLEAN",
+			"boolean":            "BOOLEAN",
+			data.Float32TypeName: "REAL",
+			data.Float64TypeName: "DOUBLE PRECISION",
+			"timestamp":          "TIMESTAMP WITH TIME ZONE",
+			"time":               "TIME",
+			"date":               "DATE",
 		}
 
 	default:

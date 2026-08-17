@@ -367,41 +367,41 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// interface, so we override those fields to safe defaults.
 		switch typeName {
 		case "INT":
-			typeName = "int"
+			typeName = data.IntTypeName
 			size = 8
 
 		case "BOOL", "BOOLEAN":
-			typeName = "bool"
+			typeName = data.BoolTypeName
 
 		case "INT32":
-			typeName = "int32"
+			typeName = data.Int32TypeName
 			size = 4
 
 		case "INT16":
-			typeName = "int16"
+			typeName = data.Int16TypeName
 			size = 2
 
 		case "BYTE":
-			typeName = "byte"
+			typeName = data.ByteTypeName
 			size = 1
 
 		case "FLOAT":
-			typeName = "float64"
+			typeName = data.Float64TypeName
 			size = 8
 
 		case "STRING":
-			typeName = "string"
+			typeName = data.StringTypeName
 
 		case "NullInt64":
-			typeName = "int64"
+			typeName = data.Int64TypeName
 			size = 8
 
 		case "NullFloat64":
-			typeName = "float64"
+			typeName = data.Float64TypeName
 			size = 8
 
 		case "NullString":
-			typeName = "string"
+			typeName = data.StringTypeName
 
 		// Time-related columns: MapColumnType now declares these with their semantic
 		// names (TIMESTAMP, TIME, DATE) rather than TEXT, so the driver echoes those
@@ -445,10 +445,10 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// types), so typeName falls back to DatabaseTypeName() above and arrives
 		// here as the raw Postgres OID type name rather than a Go reflect name.
 		case "FLOAT4":
-			typeName = "float32"
+			typeName = data.Float32TypeName
 
 		case "FLOAT8":
-			typeName = "float64"
+			typeName = data.Float64TypeName
 		}
 
 	default:
