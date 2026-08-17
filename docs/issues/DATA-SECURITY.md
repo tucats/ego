@@ -159,6 +159,8 @@ the DSN-open level. `Secured` keeps its current, sole use in
 
 ### 3.2 CRITICAL — Inverted authorization check on all three `@abstract` row endpoints
 
+**Fixed in `d60ebe84`.**
+
 `InsertAbstractRows`, `ReadAbstractRows`, and `UpdateAbstractRows`
 (`internal/server/tables/rowsAbstract.go:47,200,365`) each read:
 
@@ -401,6 +403,25 @@ defs.TableWritePermission)` — the same three-step chain item 6 already
 specifies for reads, applied to writes. `@sql`'s `authorizeStatement` needs
 the identical chain added ahead of its existing `Authorized()` call for
 `UsageWrite`.
+
+### 3.11 Two more bugs found and fixed alongside §3.2 (`d60ebe84`)
+
+Neither was a distinct finding above — both surfaced only while building
+regression tests for §3.2 — but both materially affect §3.4, §3.7, §3.9, and
+§3.10, so noting them here for that context:
+
+- `GetDatabase` (`transactions.go`) hardcoded `dsns.DSNWriteAction`,
+  discarding its own `action` parameter. Every `DSNReadAction`/
+  `DSNAdminAction` caller in the `tables` package was silently checked as a
+  write; a DSN-level read-only or admin-only grant never worked for
+  anything. Now uses the caller's actual `action`.
+- `formAbstractInsertQuery`/`formAbstractUpdateQuery` re-derived the table
+  name from the request URL with a pattern matcher that can only match the
+  legacy `/tables/{table}/rows` shape, never today's DSN-scoped
+  `/dsns/{dsn}/tables/{table}/rows` — so abstract insert/update never
+  actually executed real SQL against a DSN-scoped table (insert reported
+  fake success; update crashed). Both now take the caller's already-
+  resolved table name directly instead of re-deriving it.
 
 ## 4. What's already correct
 
