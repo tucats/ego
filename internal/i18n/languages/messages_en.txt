@@ -575,6 +575,7 @@ sql.build.where=error building WHERE clause
 sql.commit.error=Error committing transaction: {{err}}
 sql.execute.error=Error in SQL execute: {{err}}
 sql.name=invalid SQL name
+sql.parse.invalid.dialect=invalid SQL dialect
 sql.parse.invalid.number=invalid numeric literal
 sql.parse.pragma=PRAGMA statements are not supported
 sql.parse.syntax=syntax error

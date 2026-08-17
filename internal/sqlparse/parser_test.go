@@ -8,80 +8,84 @@ import (
 	"github.com/tucats/ego/internal/sqlparse/ast"
 )
 
-// valid is a broad smoke test: every statement here must parse without
-// error, in both dialects, and produce a statement of the given Kind.
-func TestParseValidStatements(t *testing.T) {
-	cases := []struct {
-		name string
-		sql  string
-		kind ast.Kind
-	}{
-		{"select star", `SELECT * FROM users`, ast.KindSelectStmt},
-		{"select columns with alias", `SELECT id, name AS n FROM users WHERE id = 1`, ast.KindSelectStmt},
-		{"select qualified star", `SELECT u.* FROM users u`, ast.KindSelectStmt},
-		{"select distinct", `SELECT DISTINCT name FROM users`, ast.KindSelectStmt},
-		{"select join", `SELECT u.id, o.total FROM users u INNER JOIN orders o ON o.user_id = u.id`, ast.KindSelectStmt},
-		{"select left join using", `SELECT * FROM a LEFT OUTER JOIN b USING (id)`, ast.KindSelectStmt},
-		{"select cross comma join", `SELECT * FROM a, b WHERE a.id = b.id`, ast.KindSelectStmt},
-		{"select group having", `SELECT dept, COUNT(*) FROM emp GROUP BY dept HAVING COUNT(*) > 1`, ast.KindSelectStmt},
-		{"select order limit offset", `SELECT * FROM t ORDER BY a DESC, b ASC LIMIT 10 OFFSET 5`, ast.KindSelectStmt},
-		{"select limit comma form", `SELECT * FROM t LIMIT 5, 10`, ast.KindSelectStmt},
-		{"select union", `SELECT a FROM t1 UNION SELECT a FROM t2 ORDER BY a`, ast.KindSelectStmt},
-		{"select union all intersect except", `SELECT a FROM t1 UNION ALL SELECT a FROM t2 INTERSECT SELECT a FROM t3 EXCEPT SELECT a FROM t4`, ast.KindSelectStmt},
-		{"select subquery", `SELECT * FROM (SELECT id FROM users) AS sub WHERE sub.id > 1`, ast.KindSelectStmt},
-		{"select scalar subquery", `SELECT id, (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) AS n FROM users u`, ast.KindSelectStmt},
-		{"select exists", `SELECT * FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`, ast.KindSelectStmt},
-		{"select not exists", `SELECT * FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`, ast.KindSelectStmt},
-		{"select in list", `SELECT * FROM t WHERE a IN (1, 2, 3)`, ast.KindSelectStmt},
-		{"select not in subquery", `SELECT * FROM t WHERE a NOT IN (SELECT id FROM u)`, ast.KindSelectStmt},
-		{"select between", `SELECT * FROM t WHERE a BETWEEN 1 AND 10`, ast.KindSelectStmt},
-		{"select not between", `SELECT * FROM t WHERE a NOT BETWEEN 1 AND 10`, ast.KindSelectStmt},
-		{"select like escape", `SELECT * FROM t WHERE name LIKE 'a%' ESCAPE '\'`, ast.KindSelectStmt},
-		{"select is null / is not null", `SELECT * FROM t WHERE a IS NULL AND b IS NOT NULL`, ast.KindSelectStmt},
-		{"select isnull notnull", `SELECT * FROM t WHERE a ISNULL AND b NOTNULL`, ast.KindSelectStmt},
-		{"select is distinct from", `SELECT * FROM t WHERE a IS DISTINCT FROM b`, ast.KindSelectStmt},
-		{"select case searched", `SELECT CASE WHEN a > 1 THEN 'x' WHEN a > 0 THEN 'y' ELSE 'z' END FROM t`, ast.KindSelectStmt},
-		{"select case simple", `SELECT CASE a WHEN 1 THEN 'one' ELSE 'other' END FROM t`, ast.KindSelectStmt},
-		{"select cast", `SELECT CAST(a AS VARCHAR(10)) FROM t`, ast.KindSelectStmt},
-		{"select function count star", `SELECT COUNT(*) FROM t`, ast.KindSelectStmt},
-		{"select function distinct filter", `SELECT COUNT(DISTINCT a) FILTER (WHERE a > 0) FROM t`, ast.KindSelectStmt},
-		{"select arithmetic precedence", `SELECT 1 + 2 * 3 - 4 / 2 FROM t`, ast.KindSelectStmt},
-		{"select bitwise and concat", `SELECT (a & b) | c, name || '!' FROM t`, ast.KindSelectStmt},
-		{"select placeholders anon", `SELECT * FROM t WHERE a = ? AND b = ?`, ast.KindSelectStmt},
-		{"select placeholders numbered postgres", `SELECT * FROM t WHERE a = $1 AND b = $2`, ast.KindSelectStmt},
-		{"select placeholders named", `SELECT * FROM t WHERE a = :name OR b = @other`, ast.KindSelectStmt},
-		{"select with cte", `WITH recent AS (SELECT id FROM orders WHERE created > 0) SELECT * FROM recent`, ast.KindSelectStmt},
-		{"select with recursive cte", `WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM r WHERE n < 10) SELECT * FROM r`, ast.KindSelectStmt},
-		{"select quoted identifier", `SELECT "select" FROM "order"`, ast.KindSelectStmt},
-		{"select bracket identifier", `SELECT [col] FROM [table]`, ast.KindSelectStmt},
-		{"select blob literal", `SELECT * FROM t WHERE b = X'48656C6C6F'`, ast.KindSelectStmt},
-		{"select negative and hex numbers", `SELECT -1, 0x1F, 1.5e10, .5, 100. FROM t`, ast.KindSelectStmt},
-		{"select json arrows postgres", `SELECT data->'key', data->>'key2' FROM t`, ast.KindSelectStmt},
-		{"select collate", `SELECT * FROM t ORDER BY name COLLATE NOCASE`, ast.KindSelectStmt},
-		{"select comments", "SELECT 1 -- trailing comment\nFROM t /* block comment */ WHERE a = 1", ast.KindSelectStmt},
+// statementCase is one entry of validStatementCases below.
+type statementCase struct {
+	name string
+	sql  string
+	kind ast.Kind
+}
 
-		{"insert values", `INSERT INTO t (a, b) VALUES (1, 2), (3, 4)`, ast.KindInsertStmt},
-		{"insert default values", `INSERT INTO t DEFAULT VALUES`, ast.KindInsertStmt},
-		{"insert select", `INSERT INTO t (a) SELECT a FROM u`, ast.KindInsertStmt},
-		{"insert or replace", `INSERT OR REPLACE INTO t (a) VALUES (1)`, ast.KindInsertStmt},
-		{"insert on conflict do nothing", `INSERT INTO t (a) VALUES (1) ON CONFLICT (a) DO NOTHING`, ast.KindInsertStmt},
-		{"insert on conflict do update", `INSERT INTO t (a, b) VALUES (1, 2) ON CONFLICT (a) DO UPDATE SET b = excluded.b WHERE t.a = 1`, ast.KindInsertStmt},
-		{"insert returning", `INSERT INTO t (a) VALUES (1) RETURNING id`, ast.KindInsertStmt},
+// validStatementCases is a broad corpus of syntactically valid statements,
+// one per supported construct, shared by TestParseValidStatements below and
+// by the Format round-trip test in format_test.go — both want the same
+// breadth of coverage, so it's kept in one place rather than duplicated.
+var validStatementCases = []statementCase{
+	{"select star", `SELECT * FROM users`, ast.KindSelectStmt},
+	{"select columns with alias", `SELECT id, name AS n FROM users WHERE id = 1`, ast.KindSelectStmt},
+	{"select qualified star", `SELECT u.* FROM users u`, ast.KindSelectStmt},
+	{"select distinct", `SELECT DISTINCT name FROM users`, ast.KindSelectStmt},
+	{"select join", `SELECT u.id, o.total FROM users u INNER JOIN orders o ON o.user_id = u.id`, ast.KindSelectStmt},
+	{"select left join using", `SELECT * FROM a LEFT OUTER JOIN b USING (id)`, ast.KindSelectStmt},
+	{"select cross comma join", `SELECT * FROM a, b WHERE a.id = b.id`, ast.KindSelectStmt},
+	{"select group having", `SELECT dept, COUNT(*) FROM emp GROUP BY dept HAVING COUNT(*) > 1`, ast.KindSelectStmt},
+	{"select order limit offset", `SELECT * FROM t ORDER BY a DESC, b ASC LIMIT 10 OFFSET 5`, ast.KindSelectStmt},
+	{"select limit comma form", `SELECT * FROM t LIMIT 5, 10`, ast.KindSelectStmt},
+	{"select union", `SELECT a FROM t1 UNION SELECT a FROM t2 ORDER BY a`, ast.KindSelectStmt},
+	{"select union all intersect except", `SELECT a FROM t1 UNION ALL SELECT a FROM t2 INTERSECT SELECT a FROM t3 EXCEPT SELECT a FROM t4`, ast.KindSelectStmt},
+	{"select subquery", `SELECT * FROM (SELECT id FROM users) AS sub WHERE sub.id > 1`, ast.KindSelectStmt},
+	{"select scalar subquery", `SELECT id, (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) AS n FROM users u`, ast.KindSelectStmt},
+	{"select exists", `SELECT * FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`, ast.KindSelectStmt},
+	{"select not exists", `SELECT * FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`, ast.KindSelectStmt},
+	{"select in list", `SELECT * FROM t WHERE a IN (1, 2, 3)`, ast.KindSelectStmt},
+	{"select not in subquery", `SELECT * FROM t WHERE a NOT IN (SELECT id FROM u)`, ast.KindSelectStmt},
+	{"select between", `SELECT * FROM t WHERE a BETWEEN 1 AND 10`, ast.KindSelectStmt},
+	{"select not between", `SELECT * FROM t WHERE a NOT BETWEEN 1 AND 10`, ast.KindSelectStmt},
+	{"select like escape", `SELECT * FROM t WHERE name LIKE 'a%' ESCAPE '\'`, ast.KindSelectStmt},
+	{"select is null / is not null", `SELECT * FROM t WHERE a IS NULL AND b IS NOT NULL`, ast.KindSelectStmt},
+	{"select isnull notnull", `SELECT * FROM t WHERE a ISNULL AND b NOTNULL`, ast.KindSelectStmt},
+	{"select is distinct from", `SELECT * FROM t WHERE a IS DISTINCT FROM b`, ast.KindSelectStmt},
+	{"select case searched", `SELECT CASE WHEN a > 1 THEN 'x' WHEN a > 0 THEN 'y' ELSE 'z' END FROM t`, ast.KindSelectStmt},
+	{"select case simple", `SELECT CASE a WHEN 1 THEN 'one' ELSE 'other' END FROM t`, ast.KindSelectStmt},
+	{"select cast", `SELECT CAST(a AS VARCHAR(10)) FROM t`, ast.KindSelectStmt},
+	{"select function count star", `SELECT COUNT(*) FROM t`, ast.KindSelectStmt},
+	{"select function distinct filter", `SELECT COUNT(DISTINCT a) FILTER (WHERE a > 0) FROM t`, ast.KindSelectStmt},
+	{"select arithmetic precedence", `SELECT 1 + 2 * 3 - 4 / 2 FROM t`, ast.KindSelectStmt},
+	{"select bitwise and concat", `SELECT (a & b) | c, name || '!' FROM t`, ast.KindSelectStmt},
+	{"select placeholders anon", `SELECT * FROM t WHERE a = ? AND b = ?`, ast.KindSelectStmt},
+	{"select placeholders numbered postgres", `SELECT * FROM t WHERE a = $1 AND b = $2`, ast.KindSelectStmt},
+	{"select placeholders named", `SELECT * FROM t WHERE a = :name OR b = @other`, ast.KindSelectStmt},
+	{"select with cte", `WITH recent AS (SELECT id FROM orders WHERE created > 0) SELECT * FROM recent`, ast.KindSelectStmt},
+	{"select with recursive cte", `WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM r WHERE n < 10) SELECT * FROM r`, ast.KindSelectStmt},
+	{"select quoted identifier", `SELECT "select" FROM "order"`, ast.KindSelectStmt},
+	{"select bracket identifier", `SELECT [col] FROM [table]`, ast.KindSelectStmt},
+	{"select blob literal", `SELECT * FROM t WHERE b = X'48656C6C6F'`, ast.KindSelectStmt},
+	{"select negative and hex numbers", `SELECT -1, 0x1F, 1.5e10, .5, 100. FROM t`, ast.KindSelectStmt},
+	{"select json arrows postgres", `SELECT data->'key', data->>'key2' FROM t`, ast.KindSelectStmt},
+	{"select collate", `SELECT * FROM t ORDER BY name COLLATE NOCASE`, ast.KindSelectStmt},
+	{"select comments", "SELECT 1 -- trailing comment\nFROM t /* block comment */ WHERE a = 1", ast.KindSelectStmt},
 
-		{"update simple", `UPDATE t SET a = 1, b = 2 WHERE id = 1`, ast.KindUpdateStmt},
-		{"update row value set", `UPDATE t SET (a, b) = (1, 2) WHERE id = 1`, ast.KindUpdateStmt},
-		{"update from", `UPDATE t SET a = u.a FROM u WHERE t.id = u.id`, ast.KindUpdateStmt},
-		{"update returning", `UPDATE t SET a = 1 RETURNING a, b`, ast.KindUpdateStmt},
+	{"insert values", `INSERT INTO t (a, b) VALUES (1, 2), (3, 4)`, ast.KindInsertStmt},
+	{"insert default values", `INSERT INTO t DEFAULT VALUES`, ast.KindInsertStmt},
+	{"insert select", `INSERT INTO t (a) SELECT a FROM u`, ast.KindInsertStmt},
+	{"insert or replace", `INSERT OR REPLACE INTO t (a) VALUES (1)`, ast.KindInsertStmt},
+	{"insert on conflict do nothing", `INSERT INTO t (a) VALUES (1) ON CONFLICT (a) DO NOTHING`, ast.KindInsertStmt},
+	{"insert on conflict do update", `INSERT INTO t (a, b) VALUES (1, 2) ON CONFLICT (a) DO UPDATE SET b = excluded.b WHERE t.a = 1`, ast.KindInsertStmt},
+	{"insert returning", `INSERT INTO t (a) VALUES (1) RETURNING id`, ast.KindInsertStmt},
 
-		{"delete simple", `DELETE FROM t WHERE id = 1`, ast.KindDeleteStmt},
-		{"delete using", `DELETE FROM t USING u WHERE t.id = u.id`, ast.KindDeleteStmt},
-		{"delete returning", `DELETE FROM t WHERE id = 1 RETURNING id`, ast.KindDeleteStmt},
-		{"delete no where", `DELETE FROM t`, ast.KindDeleteStmt},
+	{"update simple", `UPDATE t SET a = 1, b = 2 WHERE id = 1`, ast.KindUpdateStmt},
+	{"update row value set", `UPDATE t SET (a, b) = (1, 2) WHERE id = 1`, ast.KindUpdateStmt},
+	{"update from", `UPDATE t SET a = u.a FROM u WHERE t.id = u.id`, ast.KindUpdateStmt},
+	{"update returning", `UPDATE t SET a = 1 RETURNING a, b`, ast.KindUpdateStmt},
 
-		{"create table basic", `CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT NOT NULL)`, ast.KindCreateTableStmt},
-		{"create table if not exists", `CREATE TABLE IF NOT EXISTS t (id INTEGER)`, ast.KindCreateTableStmt},
-		{"create temp table", `CREATE TEMP TABLE t (id INTEGER)`, ast.KindCreateTableStmt},
-		{"create table full constraints", `CREATE TABLE t (
+	{"delete simple", `DELETE FROM t WHERE id = 1`, ast.KindDeleteStmt},
+	{"delete using", `DELETE FROM t USING u WHERE t.id = u.id`, ast.KindDeleteStmt},
+	{"delete returning", `DELETE FROM t WHERE id = 1 RETURNING id`, ast.KindDeleteStmt},
+	{"delete no where", `DELETE FROM t`, ast.KindDeleteStmt},
+
+	{"create table basic", `CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT NOT NULL)`, ast.KindCreateTableStmt},
+	{"create table if not exists", `CREATE TABLE IF NOT EXISTS t (id INTEGER)`, ast.KindCreateTableStmt},
+	{"create temp table", `CREATE TEMP TABLE t (id INTEGER)`, ast.KindCreateTableStmt},
+	{"create table full constraints", `CREATE TABLE t (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT UNIQUE NOT NULL,
 			age INTEGER DEFAULT 0 CHECK (age >= 0),
@@ -93,40 +97,44 @@ func TestParseValidStatements(t *testing.T) {
 			FOREIGN KEY (dept_id) REFERENCES dept (id) ON UPDATE SET NULL,
 			CHECK (age < 200)
 		)`, ast.KindCreateTableStmt},
-		{"create table without rowid", `CREATE TABLE t (id INTEGER PRIMARY KEY) WITHOUT ROWID`, ast.KindCreateTableStmt},
-		{"create table as select", `CREATE TABLE t AS SELECT * FROM u`, ast.KindCreateTableStmt},
-		{"create table deferrable fk", `CREATE TABLE t (a INTEGER REFERENCES u(id) DEFERRABLE INITIALLY DEFERRED)`, ast.KindCreateTableStmt},
-		{"create table typeless column", `CREATE TABLE t (a)`, ast.KindCreateTableStmt},
+	{"create table without rowid", `CREATE TABLE t (id INTEGER PRIMARY KEY) WITHOUT ROWID`, ast.KindCreateTableStmt},
+	{"create table as select", `CREATE TABLE t AS SELECT * FROM u`, ast.KindCreateTableStmt},
+	{"create table deferrable fk", `CREATE TABLE t (a INTEGER REFERENCES u(id) DEFERRABLE INITIALLY DEFERRED)`, ast.KindCreateTableStmt},
+	{"create table typeless column", `CREATE TABLE t (a)`, ast.KindCreateTableStmt},
 
-		{"drop table", `DROP TABLE t`, ast.KindDropTableStmt},
-		{"drop table if exists cascade", `DROP TABLE IF EXISTS t CASCADE`, ast.KindDropTableStmt},
+	{"drop table", `DROP TABLE t`, ast.KindDropTableStmt},
+	{"drop table if exists cascade", `DROP TABLE IF EXISTS t CASCADE`, ast.KindDropTableStmt},
 
-		{"alter table add column", `ALTER TABLE t ADD COLUMN a INTEGER`, ast.KindAlterTableStmt},
-		{"alter table add no keyword", `ALTER TABLE t ADD a INTEGER NOT NULL DEFAULT 0`, ast.KindAlterTableStmt},
-		{"alter table drop column", `ALTER TABLE t DROP COLUMN a`, ast.KindAlterTableStmt},
-		{"alter table rename to", `ALTER TABLE t RENAME TO t2`, ast.KindAlterTableStmt},
-		{"alter table rename column", `ALTER TABLE t RENAME COLUMN a TO b`, ast.KindAlterTableStmt},
+	{"alter table add column", `ALTER TABLE t ADD COLUMN a INTEGER`, ast.KindAlterTableStmt},
+	{"alter table add no keyword", `ALTER TABLE t ADD a INTEGER NOT NULL DEFAULT 0`, ast.KindAlterTableStmt},
+	{"alter table drop column", `ALTER TABLE t DROP COLUMN a`, ast.KindAlterTableStmt},
+	{"alter table rename to", `ALTER TABLE t RENAME TO t2`, ast.KindAlterTableStmt},
+	{"alter table rename column", `ALTER TABLE t RENAME COLUMN a TO b`, ast.KindAlterTableStmt},
 
-		{"create index", `CREATE INDEX idx_t_a ON t (a)`, ast.KindCreateIndexStmt},
-		{"create unique index where", `CREATE UNIQUE INDEX IF NOT EXISTS idx ON t (a DESC, b COLLATE NOCASE) WHERE a IS NOT NULL`, ast.KindCreateIndexStmt},
-		{"drop index", `DROP INDEX idx_t_a`, ast.KindDropIndexStmt},
-		{"drop index if exists", `DROP INDEX IF EXISTS idx_t_a`, ast.KindDropIndexStmt},
+	{"create index", `CREATE INDEX idx_t_a ON t (a)`, ast.KindCreateIndexStmt},
+	{"create unique index where", `CREATE UNIQUE INDEX IF NOT EXISTS idx ON t (a DESC, b COLLATE NOCASE) WHERE a IS NOT NULL`, ast.KindCreateIndexStmt},
+	{"drop index", `DROP INDEX idx_t_a`, ast.KindDropIndexStmt},
+	{"drop index if exists", `DROP INDEX IF EXISTS idx_t_a`, ast.KindDropIndexStmt},
 
-		{"create view", `CREATE VIEW v AS SELECT * FROM t`, ast.KindCreateViewStmt},
-		{"create or replace view columns", `CREATE OR REPLACE VIEW v (a, b) AS SELECT x, y FROM t`, ast.KindCreateViewStmt},
-		{"drop view if exists", `DROP VIEW IF EXISTS v`, ast.KindDropViewStmt},
+	{"create view", `CREATE VIEW v AS SELECT * FROM t`, ast.KindCreateViewStmt},
+	{"create or replace view columns", `CREATE OR REPLACE VIEW v (a, b) AS SELECT x, y FROM t`, ast.KindCreateViewStmt},
+	{"drop view if exists", `DROP VIEW IF EXISTS v`, ast.KindDropViewStmt},
 
-		{"begin", `BEGIN`, ast.KindBeginStmt},
-		{"begin deferred transaction named", `BEGIN DEFERRED TRANSACTION foo`, ast.KindBeginStmt},
-		{"commit", `COMMIT`, ast.KindCommitStmt},
-		{"end", `END`, ast.KindCommitStmt},
-		{"rollback", `ROLLBACK`, ast.KindRollbackStmt},
-		{"rollback to savepoint", `ROLLBACK TO SAVEPOINT sp1`, ast.KindRollbackStmt},
-		{"savepoint", `SAVEPOINT sp1`, ast.KindSavepointStmt},
-		{"release", `RELEASE SAVEPOINT sp1`, ast.KindReleaseStmt},
-	}
+	{"begin", `BEGIN`, ast.KindBeginStmt},
+	{"begin deferred transaction named", `BEGIN DEFERRED TRANSACTION foo`, ast.KindBeginStmt},
+	{"commit", `COMMIT`, ast.KindCommitStmt},
+	{"end", `END`, ast.KindCommitStmt},
+	{"rollback", `ROLLBACK`, ast.KindRollbackStmt},
+	{"rollback to savepoint", `ROLLBACK TO SAVEPOINT sp1`, ast.KindRollbackStmt},
+	{"savepoint", `SAVEPOINT sp1`, ast.KindSavepointStmt},
+	{"release", `RELEASE SAVEPOINT sp1`, ast.KindReleaseStmt},
+}
 
-	for _, tc := range cases {
+// TestParseValidStatements is a broad smoke test: every statement in
+// validStatementCases must parse without error, in both dialects, and
+// produce a statement of the given Kind.
+func TestParseValidStatements(t *testing.T) {
+	for _, tc := range validStatementCases {
 		for _, dialect := range []ast.Dialect{ast.DialectSQLite, ast.DialectPostgreSQL} {
 			t.Run(tc.name+"/"+dialect.String(), func(t *testing.T) {
 				stmt, err := Parse(tc.sql, dialect)

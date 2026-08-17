@@ -567,6 +567,7 @@ sql.build.where=WHERE句の構築エラー
 sql.commit.error=トランザクションのコミットエラー: {{err}}
 sql.execute.error=SQL実行エラー: {{err}}
 sql.name=無効なSQL名
+sql.parse.invalid.dialect=無効なSQL方言
 sql.parse.invalid.number=無効な数値リテラル
 sql.parse.pragma=PRAGMA文はサポートされていません
 sql.parse.syntax=構文エラー

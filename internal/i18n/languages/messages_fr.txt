@@ -567,6 +567,7 @@ sql.build.where=erreur lors de la construction de la clause WHERE
 sql.commit.error=Erreur lors de la validation de la transaction : {{err}}
 sql.execute.error=Erreur lors de l'exécution SQL : {{err}}
 sql.name=nom SQL invalide
+sql.parse.invalid.dialect=dialecte SQL invalide
 sql.parse.invalid.number=littéral numérique invalide
 sql.parse.pragma=les instructions PRAGMA ne sont pas prises en charge
 sql.parse.syntax=erreur de syntaxe
