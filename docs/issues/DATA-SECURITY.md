@@ -289,6 +289,8 @@ exists for `admin`.
 
 ### 3.6 MEDIUM — Deleting or granting DSN permissions ignores DSN-specific admin (plan items 3, 4)
 
+**Fixed in `852e6b20`.**
+
 **Correction (post-`626130da`):** the "identity-level-only check" framing
 below was written before §3.12 was discovered. Until §3.12's fix, these
 two routes were not identity-level-gated at all — `Authentication(true,
@@ -354,6 +356,8 @@ The same gap applies to `DSNMetadataHandler`/`listTableNamesForMetadata`
 the DSN-name-qualification bug already fixed for both in this session).
 
 ### 3.8 MEDIUM — `@sql` doesn't honor DSN-specific admin for DDL (plan item 9)
+
+**Fixed in `852e6b20`.**
 
 `authorizeStatement`'s `UsageAdmin` branch (schema-changing DDL) requires
 `hasPermission(session, defs.DSNAdminPermission)`
