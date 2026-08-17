@@ -1,0 +1,37 @@
+{
+    "description": "as admin, create a restricted dsn dedicated to testing DATA-SECURITY.md §3.8 -- a DSN-specific admin record authorizing @sql DDL (UsageAdmin) without identity-level ego.dsn.admin",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-sq{{PERMTESTID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-sq{{PERMTESTID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-sq{{PERMTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "description": "baseline: sqlspecificadmintest has ego.sql but no identity ego.dsn.admin and no DSN-specific admin record yet -- CREATE TABLE via @sql (a UsageAdmin statement) must be denied",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-sq{{PERMTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQLSPECIFICADMIN_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tsq{{PERMTESTID}} (id INTEGER NOT NULL, name TEXT NOT NULL)"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

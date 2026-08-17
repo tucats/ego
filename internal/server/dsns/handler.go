@@ -39,6 +39,16 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
+	// DATA-SECURITY.md §3.6: same identity-or-per-DSN-admin check as
+	// DeleteDSNHandler and DSNPermissionsHandler -- a DSN-specific admin
+	// can see what they're able to grant/revoke on their own DSN even
+	// without identity-level ego.dsn.admin.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
+	}
+
 	perms, err := egodsns.DSNService.Permissions(session.ID, session.User, name)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
@@ -114,10 +124,14 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 
 	// Non-admin callers (e.g. an ego.sql holder without server-admin
 	// standing) only see DSNs that are unrestricted or that they have
-	// been explicitly granted read access to. This mirrors the AuthDSN
-	// check tables/database.Open() applies before it lets a non-admin
-	// touch a restricted DSN's data.
-	if !session.Admin && !util.InListInsensitive(defs.ServerAdminPermission, session.Permissions...) {
+	// access to -- either an identity-wide ego.dsn.read/ego.dsn.admin
+	// grant, which (per DATA-SECURITY.md §3.4/§1a) unlocks every DSN, or a
+	// DSN-specific dsns_auth record (AuthDSN). This mirrors the same
+	// identity-then-per-DSN check tables/database.Open() applies before it
+	// lets a non-admin touch a restricted DSN's data.
+	if !session.Admin &&
+		!util.InListInsensitive(defs.ServerAdminPermission, session.Permissions...) &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNReadAction) {
 		for key, dsn := range names {
 			if dsn.Restricted && !egodsns.DSNService.AuthDSN(session.ID, session.User, dsn.Name, egodsns.DSNReadAction) {
 				delete(names, key)
@@ -235,6 +249,16 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		// the shared classifier so there is one place that decides, and so it
 		// cannot drift away from GetDSNHandler again (REST-2).
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+	}
+
+	// DATA-SECURITY.md §3.6: the route no longer requires identity-level
+	// ego.dsn.admin on its own -- a caller authorized only by a DSN-
+	// specific dsns_auth admin record for this one DSN (e.g. the DSN's
+	// own creator, per §3.3's self-grant) may delete it too.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
 	}
 
 	if err := egodsns.DSNService.DeleteDSN(session.ID, session.User, name); err != nil {
@@ -356,6 +380,30 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 	}
 
+	// DATA-SECURITY.md §3.3: a Restricted DSN's dsns_auth table is where
+	// AuthDSN looks up per-DSN access, but nothing populated a record for
+	// the creator -- they could hold the identity-level ego.dsn.admin this
+	// route requires and still find themselves locked out of the very DSN
+	// they just created, needing a separate, explicit grant from an admin
+	// before they could open it. Mirrors createTablePermissions
+	// (server/tables/security.go), which seeds the same kind of self-grant
+	// on table create: best-effort (a failure here does not fail the DSN
+	// creation, matching DeleteDSNHandler's identical best-effort cleanup
+	// below), and unconditional regardless of who created it -- a
+	// redundant grant for an admin caller is inert, since admins bypass
+	// AuthDSN entirely, but it costs nothing to be consistent rather than
+	// special-casing them.
+	if dataSourceName.Restricted {
+		action := egodsns.DSNReadAction | egodsns.DSNWriteAction | egodsns.DSNAdminAction
+		if err := egodsns.DSNService.GrantDSN(session.ID, session.User, dataSourceName.Name, action, true); err != nil {
+			ui.Log(ui.AuthLogger, "auth.dsn.grant.error", ui.A{
+				"session": session.ID,
+				"user":    session.User,
+				"dsn":     dataSourceName.Name,
+				"error":   err})
+		}
+	}
+
 	// A successful create reports 201, not 200, with a Location header
 	// naming the new DSN's own URL -- RFC 9110 §10.2.2. This is a genuine
 	// creation (the existence check above already ruled out an overwrite),
@@ -446,6 +494,18 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 			// error -- so that case still falls through to PayloadStatus's
 			// 400 default, unchanged from before.
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+		}
+
+		// DATA-SECURITY.md §3.6: checked per item, not once for the whole
+		// request, because a single request can grant/revoke permissions
+		// across more than one DSN -- being a DSN-specific admin of one
+		// does not make a caller an admin of another. Identity-level
+		// ego.dsn.admin still authorizes every DSN, same as everywhere
+		// else in this file.
+		if !session.Admin &&
+			!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+			!egodsns.DSNService.AuthDSN(session.ID, session.User, item.DSN, egodsns.DSNAdminAction) {
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
 		}
 
 		for _, action := range item.Actions {

@@ -44,6 +44,16 @@ func makeDSNSession(urlParts map[string]any) *router.Session {
 	return &router.Session{
 		ID:       1,
 		User:     "admin",
+		// Admin must be set explicitly -- it's a separate field from User,
+		// not implied by the username. These tests call handlers directly,
+		// bypassing the router's own authentication/authorization layer
+		// entirely, so DATA-SECURITY.md §3.6's in-handler admin check
+		// (added to DeleteDSNHandler/DSNPermissionsHandler/
+		// ListDSNPermHandler) is the first thing here that actually reads
+		// this field; every test in this package is about handler
+		// behavior, not authorization, so an admin session is the right
+		// default throughout.
+		Admin:    true,
 		URLParts: urlParts,
 	}
 }

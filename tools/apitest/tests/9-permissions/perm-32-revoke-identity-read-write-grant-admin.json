@@ -1,0 +1,33 @@
+{
+    "description": "revoke the identity test user's identity-level ego.dsn.read and ego.dsn.write, and grant identity-level ego.dsn.admin instead, to isolate and test IdentityAuthorizesAction's admin bypass (which satisfies any action) independent of the read/write bit checks exercised above",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/idn{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "idn{{PERMTESTID}}",
+            "permissions": [
+                "-ego.dsn.read",
+                "-ego.dsn.write",
+                "+ego.dsn.admin"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "identity dsn.admin granted",
+            "query": "permissions.*",
+            "value": "ego.dsn.admin"
+        }
+    ]
+}

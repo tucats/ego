@@ -31,27 +31,28 @@ func defineStaticRoutes() *router.Router {
 	router.InitializeValidations()
 
 	// Get the current status of the server))
-	// Get all config values
+	// Get all config values. Neither route has a per-permission alternative
+	// -- server config is genuinely root-only by design -- so that intent is
+	// expressed as an explicit Permissions(defs.RootPermission) rather than
+	// the old strict-admin flag on Authentication().
 	r.New(defs.AdminConfigPath, admin.GetAllConfigHandler, http.MethodGet).
-		Authentication(true, true).
+		Permissions(defs.RootPermission).
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
 
 	// Get specific config values
 	r.New(defs.AdminConfigPath, admin.GetConfigHandler, http.MethodPost).
-		Authentication(true, true).
+		Permissions(defs.RootPermission).
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
 
 	// Get the current memory status
 	r.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Compile and run Ego code submitted from the dashboard Code tab
 	r.New(defs.AdminRunPath, admin.RunCodeHandler, http.MethodPost).
-		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.CodeRunPermission)
 
@@ -59,7 +60,6 @@ func defineStaticRoutes() *router.Router {
 	// Format toggle. Same permission as /admin/run since it's the same
 	// Code tab feature set.
 	r.New(defs.AdminASTPath, admin.ASTHandler, http.MethodPost).
-		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.CodeRunPermission)
 
@@ -67,14 +67,12 @@ func defineStaticRoutes() *router.Router {
 	// Format toggle. Same permission as /admin/run since it's the same
 	// Code tab feature set.
 	r.New(defs.AdminFormatPath, admin.FormatCodeHandler, http.MethodPost).
-		Authentication(true, false).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.CodeRunPermission)
 
 	// Get the current validation dictionary. Can request a specific method and
 	// path to retrieve using parameters.
 	r.New(defs.AdminValidationPath, admin.GetValidationsHandler, http.MethodGet).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Parameter("method", util.StringParameterType).
 		Parameter("path", util.StringParameterType).
@@ -101,19 +99,16 @@ func defineStaticRoutes() *router.Router {
 
 	// Create a new user
 	r.New(defs.AdminUsersPath, users.CreateUserHandler, http.MethodPost).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Delete an existing user
 	r.New(defs.AdminUsersPath+nameParameter, users.DeleteUserHandler, http.MethodDelete).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// List user(s)
 	r.New(defs.AdminUsersPath, users.ListUsersHandler, http.MethodGet).
-		Authentication(true, true).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(router.AdminRequestCounter).
@@ -121,53 +116,46 @@ func defineStaticRoutes() *router.Router {
 
 	// Get a specific user
 	r.New(defs.AdminUsersPath+nameParameter, users.GetUserHandler, http.MethodGet).
-		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Modify a specific user
 	r.New(defs.AdminUsersPath+nameParameter, users.UpdateUserHandler, http.MethodPatch).
-		Authentication(true, true).
 		AcceptMedia(defs.UserMediaType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get the status of the server cache.
 	r.New(defs.AdminCachesPath, caches.GetCacheHandler, http.MethodGet).
-		Authentication(true, true).
 		Parameter("order-by", util.StringParameterType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Set the size of the cache.
 	r.New(defs.AdminCachesPath, caches.SetCacheSizeHandler, http.MethodPost).
-		Authentication(true, true).
-		Class(router.AdminRequestCounter)
+		Class(router.AdminRequestCounter).
+		Permissions(defs.ServerAdminPermission)
 
 	// Purge items from the cache.
 	r.New(defs.AdminCachesPath, caches.PurgeCacheHandler, http.MethodDelete).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission).
 		Parameter("class", util.ListParameterType)
 
 	// Get the current logging status
 	r.New(defs.AdminLoggersPath, admin.GetLoggingHandler, http.MethodGet).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Purge old logs
 	r.New(defs.AdminLoggersPath, admin.PurgeLogHandler, http.MethodDelete).
-		Authentication(true, true).
 		Parameter("keep", util.IntParameterType).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Set loggers
 	r.New(defs.AdminLoggersPath, admin.SetLoggingHandler, http.MethodPost).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
@@ -178,13 +166,11 @@ func defineStaticRoutes() *router.Router {
 
 	// Add a token ID to the blacklist for this server
 	r.New(defs.AdminTokenPath, admin.TokenRevokeHandler, http.MethodPut).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get the list of all blacklisted tokens
 	r.New(defs.AdminTokenPath, admin.TokenListHandler, http.MethodGet).
-		Authentication(true, true).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Class(router.AdminRequestCounter).
@@ -192,25 +178,21 @@ func defineStaticRoutes() *router.Router {
 
 	// Delete an individual token from the blacklist
 	r.New(defs.AdminTokenIDPath, admin.TokenDeleteHandler, http.MethodDelete).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Flush/delete the entire blacklist
 	r.New(defs.AdminTokenPath, admin.TokenFlushHandler, http.MethodDelete).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get overall server status (mashup of memory and caches, really)
 	r.New(defs.AdminResourcesPath, admin.GetResourcesHandler, http.MethodGet).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
 	// Get information about the host machine (CPU, memory, OS, architecture)
 	r.New(defs.AdminServerInfoPath, admin.GetServerInfoHandler, http.MethodGet).
-		Authentication(true, true).
 		Class(router.AdminRequestCounter).
 		Permissions(defs.ServerAdminPermission)
 
@@ -219,8 +201,9 @@ func defineStaticRoutes() *router.Router {
 	// List all DSNS. Not gated by Permissions() here because the two
 	// permissions that unlock it -- ego.server.admin and ego.sql -- are
 	// alternatives, not both required; see the check inside ListDSNHandler.
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.DSNPath, dsns.ListDSNHandler, http.MethodGet).
-		Authentication(true, false).
+		Authentication(true).
 		AcceptMedia(defs.DSNListMediaType).
 		Parameter("limit", util.IntParameterType).
 		Parameter("start", util.IntParameterType).
@@ -228,38 +211,49 @@ func defineStaticRoutes() *router.Router {
 
 	// Create a new DSN
 	r.New(defs.DSNPath, dsns.CreateDSNHandler, http.MethodPost).
-		Authentication(true, true).
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
 	// Read an existing DSN
 	r.New(defs.DSNNamePath, dsns.GetDSNHandler, http.MethodGet).
-		Authentication(true, true).
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
-	// Delete an existing DSN
+	// Delete an existing DSN. Not gated by Permissions() here (DATA-
+	// SECURITY.md §3.6): a caller may be authorized either by identity-
+	// level ego.dsn.admin or by a DSN-specific dsns_auth admin record for
+	// this one DSN, and Route.Permissions() can only express the former
+	// -- it has no notion of "for this specific resource". The OR of the
+	// two is checked inside DeleteDSNHandler instead, the same pattern
+	// already used for ListDSNHandler/ListTablesHandler/DSNMetadataHandler.
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.DSNNamePath, dsns.DeleteDSNHandler, http.MethodDelete).
-		Authentication(true, true).
+		Authentication(true).
 		AcceptMedia(defs.DSNMediaType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
-	// Add or delete DSN permissions
+	// Add or delete DSN permissions. Not gated by Permissions() for the
+	// same reason as delete, above -- DSNPermissionsHandler checks
+	// identity ego.dsn.admin OR a per-DSN admin record for each item's
+	// own {{dsn}} (a single request can name more than one DSN).
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.DSNPath+defs.PermissionsPseudoTable, dsns.DSNPermissionsHandler, http.MethodPost).
-		Authentication(true, true).
+		Authentication(true).
 		AcceptMedia(defs.DSNPermissionsType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
-	// List permissions for a DSN
+	// List permissions for a DSN. Not gated by Permissions() for the same
+	// reason as delete/grant above -- the plan (DATA-SECURITY.md §3.6)
+	// doesn't name this route explicitly, but it has the identical
+	// route-level-only gate and gap, and a DSN-specific admin ought to be
+	// able to see what they can already grant/revoke.
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.DSNNamePath+defs.PermissionsPseudoTable, dsns.ListDSNPermHandler, http.MethodGet).
-		Authentication(true, true).
+		Authentication(true).
 		AcceptMedia(defs.DSNListPermsMediaType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
 	ui.Log(ui.ServerLogger, "server.endpoints.tables", nil)
 

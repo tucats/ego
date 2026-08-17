@@ -1,0 +1,37 @@
+{
+    "description": "user now holds DSN-level read+write but still no table_perms write grant. Insert must still be denied: DSN-level write only gets InsertAbstractRows past the AuthDSN gate at DB-open time, it is not yet consulted by Authorized()'s table_perms check (DATA-SECURITY.md §3.10, not fixed by this commit -- the ego.dsn.write umbrella-grants-table-write rule is future work).",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "should-not-insert"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

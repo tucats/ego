@@ -1296,6 +1296,7 @@ auth.dsn.delete=dsn {{name}} を削除しました
 auth.dsn.file={{path}} に新しい空のDSNテーブルを作成中
 auth.dsn.flush=dsnをバッキングストアにフラッシュしました
 auth.dsn.found={{name}} のDSNレコードが見つかりました
+auth.dsn.grant.error=DSN {{dsn}} へのアクセスを {{user}} に付与できませんでした: {{error}}
 auth.dsn.init=データソース名を初期化中
 auth.dsn.mask=DSN認可アクションマスク値 {{mask}}
 auth.dsn.memory=メモリ内に新しい空のDSNテーブルを作成中

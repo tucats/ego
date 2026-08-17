@@ -522,14 +522,6 @@ func (m *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.auth.unauthenticated"), http.StatusUnauthorized)
 
 			return
-		} else if route.mustBeAdmin && !session.Admin {
-			ui.Log(ui.RouteLogger, "route.admin", ui.A{
-				"session": session.ID,
-			})
-
-			util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.auth.forbidden"), http.StatusForbidden)
-
-			return
 		}
 	}
 

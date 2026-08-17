@@ -530,9 +530,9 @@ func DeletePermissionsByDSN(session int, dsnName string) (int, error) {
 }
 
 // Authorized uses the system database to determine if the proposed operation is permitted
-// for the given table. This only applies for tables with a DSN that is marked as "secured".
-// By default, DSNS are not secured and depend on the underlying provider to handle all role
-// and permissions checks. If a DSN is considered secured, then before the provider is even
+// for the given table. This only applies for tables in a DSN that is marked as "restricted".
+// By default, DSNs are not restricted and depend on the underlying provider to handle all role
+// and permissions checks. If a DSN is restricted, then before the provider is even
 // contacted, we verify if the user/dsn/table and operation are authorized.
 func Authorized(session *router.Session, user string, table string, operations ...string) bool {
 	dsn := ""
@@ -554,8 +554,25 @@ func Authorized(session *router.Session, user string, table string, operations .
 		return false
 	}
 
-	// IF this DSN does not use security, then allow any operation.
-	if !dsnName.Secured {
+	// BUG (DATA-SECURITY.md §3.1): this used to test dsnName.Secured, which
+	// means "use TLS for the database connection" (see its doc comment on
+	// defs.DSN and its one legitimate use in dsns/connections.go, building
+	// the "?sslmode=disable" query string) -- an unrelated, purely
+	// transport-level setting that has nothing to do with authorization.
+	// dsnName.Restricted is the actual "the Ego permission model governs
+	// this DSN" flag: it already gates the DSN-level AuthDSN check
+	// (dsns/dsn_sqldb.go, dsn_file.go), so table_perms enforcement here
+	// needs to be driven by the same flag, not a coincidentally-similarly-
+	// named one. Before this fix, a Restricted DSN with per-table grants
+	// configured got no table-level enforcement at all unless an operator
+	// also happened to set Secured (TLS) -- which most local/sqlite DSNs,
+	// having no TLS concept, never do -- so table_perms was effectively
+	// dead code for the DSN configuration any operator would naturally
+	// choose. If the DSN is not Restricted, Ego performs no access checks
+	// at all, at either the DSN or table level; that is by design (see
+	// DATA-SECURITY.md §1a) -- access control is then entirely delegated
+	// to the backing database's own mechanism.
+	if !dsnName.Restricted {
 		return true
 	}
 

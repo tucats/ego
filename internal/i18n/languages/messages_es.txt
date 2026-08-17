@@ -1302,6 +1302,7 @@ auth.dsn.delete=DSN {{name}} eliminado
 auth.dsn.file=Creando nueva tabla DSN vacía en {{path}}
 auth.dsn.flush=DSN vaciado al almacén de respaldo
 auth.dsn.found=Registro DSN encontrado para {{name}}
+auth.dsn.grant.error=No se pudo conceder acceso al DSN {{dsn}} a {{user}}: {{error}}
 auth.dsn.init=Inicializando nombres de origen de datos
 auth.dsn.mask=Valor de máscara de acción autorizado DSN {{mask}}
 auth.dsn.memory=Creando nueva tabla DSN vacía en memoria

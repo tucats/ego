@@ -1,0 +1,37 @@
+{
+    "description": "create a second restricted dsn dedicated to exercising identity-level ego.dsn.read/write/admin bypass (DATA-SECURITY.md §3.4/§3.5), kept separate from dsn-{{PERMTESTID}} so its dsns_auth table stays empty for the identity test user throughout",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-id{{PERMTESTID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-id{{PERMTESTID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-id{{PERMTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -650,7 +650,6 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesLogonPath, false); status != http.StatusOK {
 		r.New(defs.ServicesLogonPath, router.LogonHandler, http.MethodPost).
-			Authentication(true, false).
 			Credentials(true).
 			Permissions(defs.LogonPermission).
 			Class(router.ServiceRequestCounter).
@@ -659,14 +658,14 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesDownPath, false); status != http.StatusOK {
 		r.New(defs.ServicesDownPath, router.DownHandler, http.MethodPost).
-			Authentication(true, true).
+			Permissions(defs.RootPermission).
 			Parameter("grace", util.DurationParameterType).
 			Class(router.AdminRequestCounter)
 	}
 
 	if _, status := r.FindRoute(http.MethodGet, defs.ServicesLogLinesPath, false); status != http.StatusOK {
 		r.New(defs.ServicesLogLinesPath, router.LogHandler, http.MethodGet).
-			Authentication(true, true).
+			Permissions(defs.RootPermission).
 			Class(router.AdminRequestCounter).
 			AcceptMedia(defs.JSONMediaType, defs.LogLinesJSONMediaType, defs.TextMediaType, defs.LogLinesTextMediaType).
 			Parameter("session", "int").
@@ -681,7 +680,7 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodGet, defs.ServicesAuthenticatePath, false); status != http.StatusOK {
 		r.New(defs.ServicesAuthenticatePath, router.AuthenticateHandler, http.MethodGet).
-			Authentication(true, false).
+			Authentication(true).
 			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
@@ -708,7 +707,6 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegisterBeginPath, false); status != http.StatusOK {
 		r.New(defs.ServicesWebAuthnRegisterBeginPath, router.WebAuthnRegisterBeginHandler, http.MethodPost).
-			Authentication(true, false).
 			Permissions(defs.LogonPermission).
 			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
@@ -716,7 +714,6 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnRegFinishPath, false); status != http.StatusOK {
 		r.New(defs.ServicesWebAuthnRegFinishPath, router.WebAuthnRegisterFinishHandler, http.MethodPost).
-			Authentication(true, false).
 			Permissions(defs.LogonPermission).
 			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
@@ -724,16 +721,19 @@ func defineNativeAdminHandlers(r *router.Router) {
 
 	if _, status := r.FindRoute(http.MethodDelete, defs.ServicesWebAuthnClearPasskeysPath, false); status != http.StatusOK {
 		r.New(defs.ServicesWebAuthnClearPasskeysPath, router.WebAuthnClearPasskeysHandler, http.MethodDelete).
-			Authentication(true, false).
 			Permissions(defs.LogonPermission).
 			Class(router.ServiceRequestCounter).
 			AcceptMedia(defs.JSONMediaType)
 	}
 
 	// Cluster control endpoints. These use the cluster HMAC token for auth,
-	// not standard admin credentials, so they do not set Authentication(true, ...).
+	// not standard admin credentials, so they do not set Authentication(true)
+	// themselves; the ones that don't reach here rely on their own in-handler
+	// ValidateClusterToken check instead (see cluster/handlers.go).
+	// ClusterStatusHandler remains root-only, expressed the same way any
+	// other root-only route now is: an explicit Permissions(defs.RootPermission).
 	r.New(defs.ServicesClusterPath+"/{{name}}", cluster.ClusterStatusHandler, http.MethodGet).
-		Authentication(true, true).
+		Permissions(defs.RootPermission).
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.JSONMediaType)
 

@@ -1,0 +1,37 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.4: identity test user now holds identity-level ego.dsn.read but still has NO dsns_auth record for this DSN. Before the fix, database.Open's AuthDSN check consulted only the per-DSN dsns_auth table and never looked at identity permissions at all, so this would still have been denied. dsns.IdentityAuthorizesAction now lets an identity-wide read grant open the DSN directly.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows.abstract+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "no rows yet",
+            "query": "count",
+            "value": "0"
+        }
+    ]
+}

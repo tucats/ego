@@ -1,0 +1,34 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.3: inspect the new DSN's dsns_auth table directly (as admin) to confirm CreateDSNHandler seeded a self-grant for the creator. This is checked structurally rather than by having dsncreatortest try to access the DSN, because that functional path is now confounded by §3.4's separate identity-level ego.dsn.admin bypass (already fixed in this branch) -- dsncreatortest holds that identity permission to be able to create DSNs at all, so it alone would let them read/write this DSN whether or not the per-DSN self-grant this test is actually about exists.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-cr{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["dsn.permissions.list+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "creator was granted read",
+            "query": "items.dsncreatortest.*",
+            "value": "ego.dsn.read"
+        },
+        {
+            "name": "creator was granted write",
+            "query": "items.dsncreatortest.*",
+            "value": "ego.dsn.write"
+        },
+        {
+            "name": "creator was granted admin",
+            "query": "items.dsncreatortest.*",
+            "value": "ego.dsn.admin"
+        }
+    ]
+}

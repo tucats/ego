@@ -1,0 +1,35 @@
+{
+    "description": "REGRESSION: ego.server.admin also gates the logging handler family, not just users",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/loggers",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SVCADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["log.status+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "SERVER logger",
+            "query": "loggers.SERVER",
+            "op": "exists"
+        }
+    ]
+}

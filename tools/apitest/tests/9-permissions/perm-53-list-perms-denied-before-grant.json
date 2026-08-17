@@ -1,0 +1,35 @@
+{
+    "description": "baseline: specificadmintest has no identity ego.dsn.admin and no DSN-specific admin record yet -- listing this DSN's permissions must be denied",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-sa{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SPECIFICADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

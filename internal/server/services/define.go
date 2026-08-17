@@ -77,11 +77,17 @@ func DefineLibHandlers(r *router.Router, root, subpath string) error {
 		authenticate := legacyAuthenticate || (spec != nil && spec.Authenticated) || len(permissions) > 0
 
 		// admin combines the legacy "@authenticated admin" directive with
-		// @endpoint's own admin/root bare term: both require
-		// route.Authentication(true, true) (the strict "caller must
-		// specifically be an admin" check), in addition to whatever
-		// Permissions() already contributes ("ego.root" among them).
+		// @endpoint's own admin/root bare term. @endpoint's own parser
+		// already adds defs.RootPermission to spec.Permissions when its
+		// admin/root term is used (see endpoint.go); the legacy directive
+		// carries no such list, so it's added here instead. Either way the
+		// "caller must specifically be an admin" requirement is now
+		// expressed entirely through Permissions(), not a separate
+		// strict-admin flag on Authentication().
 		admin := legacyAdmin || (spec != nil && spec.Admin)
+		if admin {
+			permissions = append(permissions, defs.RootPermission)
+		}
 
 		methodString := "(any)"
 		if method != router.AnyMethod {
@@ -112,7 +118,7 @@ func DefineLibHandlers(r *router.Router, root, subpath string) error {
 			"parms":  parameterString})
 
 		route := r.New(path, ServiceHandler, method).Filename(fileName).NeedsLock(true)
-		route.AllowRedirects(!authenticate).Authentication(authenticate, admin).CanAuthenticate(true)
+		route.AllowRedirects(!authenticate).Authentication(authenticate).CanAuthenticate(true)
 
 		if len(mediaTypes) > 0 {
 			route.AcceptMedia(mediaTypes...)

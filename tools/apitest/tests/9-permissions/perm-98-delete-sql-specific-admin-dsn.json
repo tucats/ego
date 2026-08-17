@@ -1,0 +1,44 @@
+{
+    "description": "clean up the @sql DSN-specific-admin test dsn -- this also removes its table_perms entries (DeletePermissionsByDSN) and dsns_auth entries (DeleteDSN)",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-sq{{PERMTESTID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ],
+    "tasks": [
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sq{{PERMTESTID}}.db"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sq{{PERMTESTID}}.db-shm"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sq{{PERMTESTID}}.db-wal"]
+        }
+    ]
+}

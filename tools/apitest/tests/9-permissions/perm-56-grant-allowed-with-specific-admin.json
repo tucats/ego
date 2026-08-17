@@ -1,0 +1,30 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.6: specificadmintest, authorized only by its DSN-specific admin record, grants itself ego.dsn.read on the same DSN. DSNPermissionsHandler's route used to require identity ego.dsn.admin alone; it must now accept a per-DSN admin record checked per item (this request names only one DSN, but the fix is per-item to support a request naming several).",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SPECIFICADMIN_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "dsn-sa{{PERMTESTID}}",
+            "user": "specificadmintest",
+            "actions": ["+ego.dsn.read"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

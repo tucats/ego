@@ -45,7 +45,25 @@ func GetDatabase(session *router.Session, dsnName string, action dsns.DSNAction)
 	}
 
 	// No transaction id was given, so just do the regular database connection.
-	return database.Open(session, dsnName, dsns.DSNWriteAction)
+	//
+	// BUG (found while validating DATA-SECURITY.md §3.2): this used to
+	// hardcode dsns.DSNWriteAction here, discarding the caller's own
+	// "action" parameter entirely. Every GetDatabase(session, dsnName,
+	// dsns.DSNReadAction) call in this package -- ReadRows/ReadAbstractRows,
+	// ListTablesHandler, DSNMetadataHandler, GenerateHandler -- was
+	// therefore silently checked against dsns.AuthDSN as if it were a
+	// write, and every dsns.DSNAdminAction call (describe.go, tables.go)
+	// the same way. For a Restricted DSN this meant a caller granted only
+	// ego.dsn.read (no write) was denied every read operation, and a caller
+	// granted only ego.dsn.admin was denied admin-only operations too --
+	// only a DSN-level write grant ever actually worked, regardless of
+	// which action the calling handler asked for. The bug had no effect on
+	// an unrestricted DSN (AuthDSN short-circuits true before the action
+	// bitmask is even examined), which is almost certainly why it went
+	// unnoticed: every existing apitest DSN that hits this path is either
+	// unrestricted or (the @sql tests) uses database.Open directly, not
+	// this wrapper.
+	return database.Open(session, dsnName, action)
 }
 
 // GetTransactionDB retrieves the database associated with a specific transaction id.

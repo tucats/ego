@@ -56,7 +56,7 @@ func panicRouter(t *testing.T, name, endpoint string) *Router {
 		broken["key"] = "value"
 
 		return http.StatusOK
-	}, http.MethodGet).Authentication(false, false)
+	}, http.MethodGet).Authentication(false)
 
 	return m
 }
@@ -121,7 +121,7 @@ func TestFindRoutePanicDoesNotLeakShutdownLock_NILPTR1(t *testing.T) {
 	m := NewRouter("findroute-panic-test")
 	m.New("/services/findroute-ok", func(session *Session, w http.ResponseWriter, r *http.Request) int {
 		return http.StatusOK
-	}, http.MethodGet).Authentication(false, false)
+	}, http.MethodGet).Authentication(false)
 
 	// Inject a nil route. This is reaching into package internals, which a test
 	// in the same package is allowed to do, and is the only way to make the
@@ -244,7 +244,7 @@ func TestNilHandlerDoesNotPanic_NILPTR2(t *testing.T) {
 
 	// Register the route with a nil handler function, which is the shape of an
 	// incompletely constructed Route.
-	m.New("/services/nil-handler", nil, http.MethodGet).Authentication(false, false)
+	m.New("/services/nil-handler", nil, http.MethodGet).Authentication(false)
 
 	r, err := http.NewRequest(http.MethodGet, "/services/nil-handler", nil)
 	if err != nil {

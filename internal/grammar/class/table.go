@@ -89,8 +89,21 @@ var TableGrammar = []cli.Option{
 		ParmDesc:      "parm.table.name",
 		Value: []cli.Option{
 			{
-				LongName:    "permission",
-				Aliases:     []string{"permission", "permissions", "perms", "perm"},
+				// BUG: this was registered as LongName "permission"
+				// (singular), but TableGrant reads it via
+				// c.StringList("permissions") (plural) -- both String()
+				// and StringList() (cli/query.go) match only on exact
+				// LongName, aliases are accepted while parsing the command
+				// line but do not change which entry a later lookup by
+				// name finds. So this option's value was never found: the
+				// grant silently sent an empty permissions list to the
+				// server on every call, regardless of what was typed.
+				// Renamed to the plural LongName the shared code actually
+				// reads, keeping the old singular spelling (and "perms"/
+				// "perm") as aliases so existing command lines with
+				// --permission still parse.
+				LongName:    "permissions",
+				Aliases:     []string{"permission", "perms", "perm"},
 				ShortName:   "p",
 				Description: "table.grant.permission",
 				OptionType:  cli.StringListType,
@@ -98,7 +111,20 @@ var TableGrammar = []cli.Option{
 				Prompts:     []string{"table.permissions"},
 			},
 			{
-				LongName:    "user",
+				// BUG: this was registered as LongName "user" with no
+				// "username" alias, but TableGrant (commands/tables.go)
+				// reads the target user via c.String(defs.UsernameOption)
+				// -- "username" -- not "user". The option's own value was
+				// therefore never found, so the grant silently applied to
+				// the calling user instead of the one named on the command
+				// line. The verb grammar's equivalent (`ego grant table`,
+				// GrantTableGrammar in grammar/verb/revoke.go) already gets
+				// this right: LongName defs.UsernameOption with "user" as
+				// an alias. Matched that here so both --user and
+				// --username work and actually reach TableGrant's read of
+				// defs.UsernameOption.
+				LongName:    defs.UsernameOption,
+				Aliases:     []string{"user"},
 				ShortName:   "u",
 				Description: "table.grant.user",
 				OptionType:  cli.StringType,

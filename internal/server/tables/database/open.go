@@ -8,9 +8,10 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/auth"
+	"github.com/tucats/ego/internal/util/strings"
 )
 
 type Database struct {
@@ -57,10 +58,13 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	sessionID := 0
 	isAdmin := false
 
+	var permissions []string
+
 	if session != nil {
 		user = session.User
 		sessionID = session.ID
 		isAdmin = session.Admin
+		permissions = session.Permissions
 	}
 
 	dsnName, err := dsns.DSNService.ReadDSN(sessionID, user, name, false)
@@ -77,7 +81,29 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	savedUser := user
 
 	if !isAdmin {
-		if !dsns.DSNService.AuthDSN(sessionID, user, name, action) {
+		// DATA-SECURITY.md §3.4: identity-level ego.dsn.admin/read/write --
+		// a permission attached to the user's own identity, granting that
+		// access for every DSN -- is checked first, ahead of the per-DSN
+		// dsns_auth grant AuthDSN looks up. Before this, only a per-DSN
+		// grant ever worked here: a user holding identity-level
+		// ego.dsn.admin (e.g. because they created this very DSN, per
+		// CreateDSNHandler's route-level Permissions() gate) still needed
+		// a separate, explicit per-DSN record to open it at all.
+		//
+		// permissions falls back to a direct lookup when session.Permissions
+		// was empty (e.g. a native Ego-token session reaching here before
+		// the router's own lazy population runs) -- mirroring the same
+		// two-path check sql_permissions.go's hasPermission uses, and for
+		// the same reason: a federated (JWT/OAuth) session's permissions
+		// live only on session.Permissions, with no local user record for
+		// auth.GetPermissions to find, so this must prefer an already-
+		// resolved non-empty list rather than re-deriving it.
+		if len(permissions) == 0 && user != "" {
+			permissions = auth.GetPermissions(sessionID, user)
+		}
+
+		if !dsns.IdentityAuthorizesAction(permissions, action) &&
+			!dsns.DSNService.AuthDSN(sessionID, user, name, action) {
 			ui.Log(ui.DBLogger, "db.dsn.no.auth", ui.A{
 				"session": sessionID,
 				"user":    user,

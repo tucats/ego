@@ -1,0 +1,42 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.4 (ListDSNHandler's filter): the identity test user holds identity-level ego.dsn.admin but has NO dsns_auth record on dsn-{{PERMTESTID}} at all (that DSN's grants, set up earlier in this test group, were all for pmu{{PERMTESTID}}). Before this fix, ListDSNHandler's visibility filter only bypassed for session.Admin or identity ego.server.admin, so this user would have seen dsn-{{PERMTESTID}} filtered out despite holding what item 5 of the model calls an identity permission that unlocks every DSN.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns",
+        "parameters": {
+            "limit": "1000"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["dsns+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "sees the other dsn it has no per-DSN grant on",
+            "query": "items.*.name",
+            "value": "dsn-{{PERMTESTID}}"
+        },
+        {
+            "name": "sees its own identity-bypass dsn",
+            "query": "items.*.name",
+            "value": "dsn-id{{PERMTESTID}}"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "description": "identity-level ego.dsn.read must not satisfy a write action. IdentityAuthorizesAction checks the matching bit of the requested action, not just whether any identity DSN permission is held, so an insert (DSNWriteAction) must still be denied even though this user's identity read grant just opened the same DSN for GET.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "should-not-insert"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

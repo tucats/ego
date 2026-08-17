@@ -41,11 +41,10 @@ type endpointSpec struct {
 	Authenticated bool
 
 	// Admin is true when the bare "admin" or "root" term was given. Unlike
-	// Authenticated, this requires the caller to specifically be an admin
-	// (route.Authentication(true, true)) *and* contributes the "ego.root"
-	// permission to Permissions -- matching the legacy "@authenticated
-	// admin" directive's behavior exactly, since admin/root is its
-	// intended replacement.
+	// Authenticated, this requires the caller to specifically be an admin,
+	// expressed by contributing the "ego.root" permission to Permissions --
+	// matching the legacy "@authenticated admin" directive's behavior
+	// exactly, since admin/root is its intended replacement.
 	Admin bool
 }
 

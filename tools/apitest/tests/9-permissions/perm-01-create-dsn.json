@@ -1,0 +1,42 @@
+{
+    "description": "create a restricted dsn used to exercise the full DSN/table permission stack (dsns_auth AuthDSN gate plus table_perms Authorized gate, both gated on Restricted per DATA-SECURITY.md §3.1)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-{{PERMTESTID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-{{PERMTESTID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-{{PERMTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag echoed",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}

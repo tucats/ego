@@ -1,5 +1,5 @@
 {
-    "description": "with ego.sql but no table_perms grant, a SELECT against the secured dsn's table is forbidden",
+    "description": "with ego.sql and DSN-level access but no table_perms grant, a SELECT against the restricted dsn's table is forbidden",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",

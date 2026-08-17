@@ -1327,6 +1327,7 @@ auth.dsn.delete=Deleted dsn {{name}}
 auth.dsn.file=Creating new empty DSN table in {{path}}
 auth.dsn.flush=Flushed dsn to backing store
 auth.dsn.found=Found DSN record for {{name}}
+auth.dsn.grant.error=Unable to grant DSN {{dsn}} access to {{user}}: {{error}}
 auth.dsn.init=Initializing data source names
 auth.dsn.mask=DSN authorized action mask value {{mask}}
 auth.dsn.memory=Creating new empty DSN table in memory

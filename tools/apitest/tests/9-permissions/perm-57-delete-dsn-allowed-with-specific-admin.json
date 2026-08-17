@@ -1,0 +1,44 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.6: specificadmintest deletes dsn-sa{{PERMTESTID}}, again authorized only by its DSN-specific admin record. DeleteDSNHandler's route used to require identity ego.dsn.admin alone. This also serves as this DSN's cleanup -- no separate delete-dsn step needed below.",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-sa{{PERMTESTID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SPECIFICADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ],
+    "tasks": [
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sa{{PERMTESTID}}.db"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sa{{PERMTESTID}}.db-shm"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-sa{{PERMTESTID}}.db-wal"]
+        }
+    ]
+}

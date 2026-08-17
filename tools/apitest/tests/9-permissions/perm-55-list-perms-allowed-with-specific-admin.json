@@ -1,0 +1,24 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.6: specificadmintest still holds no identity-level ego.dsn.admin, but now has a DSN-specific admin record for dsn-sa{{PERMTESTID}}. ListDSNPermHandler's route used to require identity ego.dsn.admin alone (Permissions(defs.DSNAdminPermission)); it must now accept the per-DSN record too.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-sa{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SPECIFICADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["dsn.permissions.list+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "sees its own admin grant",
+            "query": "items.specificadmintest.*",
+            "value": "ego.dsn.admin"
+        }
+    ]
+}

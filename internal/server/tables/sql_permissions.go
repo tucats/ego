@@ -6,6 +6,7 @@ import (
 
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/router"
@@ -162,7 +163,15 @@ func authorizeStatement(session *router.Session, w http.ResponseWriter, dsn stri
 				return denyTable(session, w, table, defs.TableWritePermission)
 			}
 		case sqlparse.UsageAdmin:
-			if !hasPermission(session, defs.DSNAdminPermission) {
+			// DATA-SECURITY.md §3.8: identity-level ego.dsn.admin
+			// (hasPermission) is not the only way to be an admin of this
+			// DSN -- a caller with a DSN-specific dsns_auth admin record
+			// for it (e.g. its own creator, per §3.3's self-grant) can run
+			// DDL against it too, same as DeleteDSNHandler/
+			// DSNPermissionsHandler now accept for DSN administration
+			// itself (§3.6).
+			if !hasPermission(session, defs.DSNAdminPermission) &&
+				!dsns.DSNService.AuthDSN(session.ID, session.User, dsn, dsns.DSNAdminAction) {
 				return denyTable(session, w, table, defs.DSNAdminPermission)
 			}
 		}

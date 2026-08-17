@@ -1,0 +1,32 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.2 and §3.1: user now has DSN-level read access (dsns_auth) but no table_perms grant on this table. Before §3.2's fix, ReadAbstractRows's inverted check (missing '!' before Authorized()) let an UNgranted caller like this one through. This DSN is also Restricted but NOT Secured (see perm-01) -- before §3.1's fix, Authorized() gated table_perms enforcement on Secured, so it would have returned true (no enforcement at all) for this DSN regardless of the negation bug, masking whether table_perms was even being consulted. Denial here requires both fixes.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -277,9 +277,6 @@ type Route struct {
 	// their credentials?
 	canAuthenticate bool
 
-	// Does this endpoint require a user with admin privileges to access this endpoint?
-	mustBeAdmin bool
-
 	// If true, this is a "lightweight" endpoint that has reduced logging. For example,
 	// an endpoint used to see if the server is up may not be logged.
 	lightweight bool
@@ -777,20 +774,25 @@ func (r *Route) Filename(filename string) *Route {
 }
 
 // Authentication indicates that the route might be otherwise valid but
-// must also match the required valid authentication and administrator
-// status. Note that any route that requires authentication will be
-// marked as not allowing automatic redirection from HTTP to HTTPS,
-// since that would imply transmission of credentials in plain text.
-// The intent is to catch those users immediately with an unsupported
-// request error.
+// must also match the required valid authentication status. Note that
+// any route that requires authentication will be marked as not allowing
+// automatic redirection from HTTP to HTTPS, since that would imply
+// transmission of credentials in plain text. The intent is to catch
+// those users immediately with an unsupported request error.
 //
-// If these are not set, they are not checked. But if they are set, the
-// router will return suitable HTTP status without calling the handler.
-func (r *Route) Authentication(valid, administrator bool) *Route {
+// If this is not set, it is not checked. But if it is set, the router
+// will return suitable HTTP status without calling the handler.
+//
+// This modifier is unnecessary for any route that also calls
+// Permissions(), which already implies authentication is required --
+// naming a required permission makes no sense for an unauthenticated
+// caller. A route that must be restricted to a specific permission
+// (including root-only) should express that entirely through
+// Permissions(), e.g. Permissions(defs.RootPermission).
+func (r *Route) Authentication(valid bool) *Route {
 	if r != nil {
-		r.mustAuthenticate = valid || administrator
-		r.mustBeAdmin = administrator
-		r.allowRedirects = !(valid || administrator)
+		r.mustAuthenticate = valid
+		r.allowRedirects = !valid
 	}
 
 	return r
@@ -1081,7 +1083,6 @@ func (m *Router) Dump() {
 			"endpoint": selector.endpoint,
 			"file":     route.filename,
 			"media":    route.acceptMediaTypes,
-			"admin":    route.mustBeAdmin,
 			"auth":     route.mustAuthenticate,
 			"perms":    route.requiredPermissions,
 		})

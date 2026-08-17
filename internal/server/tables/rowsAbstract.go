@@ -27,10 +27,34 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	var err error
 
 	dsnName := data.String(session.URLParts["dsn"])
-	db, err := GetDatabase(session, dsnName, 0)
 
-	// Amend any table name with the provider-appropriate user schema name.
-	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+	// Authorized() (security.go) expects its table argument in "dsn.table"
+	// form -- it splits on "." to find which DSN's table_perms apply -- so
+	// the bare table name must be captured here, before it is overwritten
+	// below with the provider-qualified form. See the DSN-qualification
+	// note further down for why this matters.
+	rawTableName := tableName
+
+	// This must request dsns.DSNWriteAction, not DSNNoAccess (0). The action
+	// value feeds dsns.AuthDSN's bitmask test "(auth.Action & action) != 0"
+	// (database/open.go), which can never be satisfied when action is 0 --
+	// so a Restricted DSN denied every non-admin caller here regardless of
+	// what they had been granted. Insert is a write, so this now matches
+	// InsertRows's own GetDatabase call in rows.go and the (correct) write
+	// action UpdateAbstractRows/DeleteRows request elsewhere in this
+	// package. See docs/issues/DATA-SECURITY.md §3.2.
+	// BUG (found while validating DATA-SECURITY.md §3.2): this used to be
+	// followed immediately by an unconditional "tableName, _ =
+	// parsing.FullName(db.Provider, ...)" call, before checking whether
+	// GetDatabase actually succeeded. When it failed (e.g. AuthDSN denying
+	// a non-admin caller on a Restricted DSN) db is nil, and dereferencing
+	// db.Provider on a nil *database.Database panics -- the request never
+	// got a real error response at all, just a generic 500 from the
+	// router's panic recovery. The equivalent, properly guarded FullName
+	// call already exists a few lines down inside "if err == nil && db !=
+	// nil"; this duplicate unguarded one has been removed rather than nil-
+	// checked, since it did nothing the guarded one doesn't already do.
+	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 
 	if p := parameterString(r); p != "" {
 		ui.Log(ui.TableLogger, "table.parms", ui.A{
@@ -44,7 +68,25 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
-		if !isAdmin && Authorized(session, user, tableName, defs.TableWritePermission) {
+		//
+		// Authorized() returns true when the caller IS permitted, so this
+		// condition must be negated to deny when they are NOT. The missing
+		// "!" inverted the whole check: a caller holding a valid table_perms
+		// grant was denied, while a caller with no grant at all fell through
+		// and was allowed to insert. See docs/issues/DATA-SECURITY.md §3.2.
+		//
+		// The table argument must be DSN-qualified (dsnName+"."+rawTableName),
+		// not the provider-qualified "tableName" computed just above -- for
+		// SQLite, parsing.FullName leaves the name undotted, so Authorized()
+		// would see no "." and resolve dsn="", ReadDSN("") would always fail,
+		// and every caller would be denied regardless of their table_perms
+		// grant. For PostgreSQL, "tableName" is schema-qualified
+		// ("user.table"), which does contain a dot, but the wrong one --
+		// Authorized() would parse the session's own username as the DSN
+		// name instead of the real DSN. Either way, using rawTableName here
+		// (matching sql_permissions.go's own dsn+"."+table usage) is what
+		// actually reaches the caller's grant.
+		if !isAdmin && !Authorized(session, user, dsnName+"."+rawTableName, defs.TableWritePermission) {
 			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.write"), http.StatusForbidden)
 		}
 
@@ -134,7 +176,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 				columnNames[i] = c.Name
 			}
 
-			q, values := formAbstractInsertQuery(r.URL, db.Provider, user, columnNames, row)
+			q, values := formAbstractInsertQuery(tableName, columnNames, row)
 
 			_, err := db.Exec(q, values...)
 			if err == nil {
@@ -192,45 +234,73 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 func ReadAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	dsnName := data.String(session.URLParts["dsn"])
 
+	// Authorized() expects "dsn.table"; capture the bare table name before
+	// it is overwritten below with the provider-qualified form. See the
+	// longer explanation on the equivalent line in InsertAbstractRows.
+	rawTableName := tableName
+
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
-	if err == nil && db != nil {
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
-		if !isAdmin && Authorized(session, user, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
+	// BUG (found while validating DATA-SECURITY.md §3.2): when GetDatabase
+	// failed -- e.g. AuthDSN denying a non-admin caller on a Restricted
+	// DSN, or the DSN not existing -- execution used to fall through to the
+	// tail of this function, which computed the right HTTP status into a
+	// local variable but never actually called util.ErrorResponse. Nothing
+	// was ever written to the ResponseWriter, so Go's net/http defaulted to
+	// sending 200 OK with an empty body: a denied or failed read looked
+	// like a successful empty one to the client, even though the server
+	// log recorded the intended (never-sent) status. Failing fast here,
+	// exactly like the DSN-open failure path in DeleteRows/InsertRows
+	// (rows.go) and InsertAbstractRows above, gives the caller a real
+	// response instead of a silent lie.
+	if err != nil || db == nil {
+		if err == nil {
+			err = errors.ErrNoDatabase
 		}
 
-		var q string
-
-		q, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
-		if err != nil {
-			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
-		}
-
-		if err = readAbstractRowData(db, q, session, w); errors.Nil(err) {
-			return http.StatusOK
-		}
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
-	if err == nil && db == nil {
-		err = errors.ErrNoDatabase
+	// Amend any table name with the provider-appropriate user schema name.
+	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+
+	// Authorized() returns true when the caller IS permitted, so this
+	// condition must be negated to deny when they are NOT. The missing
+	// "!" inverted the whole check (see docs/issues/DATA-SECURITY.md
+	// §3.2): a caller holding a valid table_perms grant was denied,
+	// while a caller with no grant at all fell through and was allowed
+	// to read.
+	//
+	// The table argument must be dsnName+"."+rawTableName, not the
+	// provider-qualified "tableName" above -- see InsertAbstractRows for
+	// why the provider-qualified form can never resolve correctly here.
+	if !isAdmin && !Authorized(session, user, dsnName+"."+rawTableName, defs.TableReadPermission) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
 	}
 
-	status := http.StatusOK
+	var q string
 
+	q, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
 	if err != nil {
-		ui.Log(ui.TableLogger, "table.read.error", ui.A{
-			"session": session.ID,
-			"error":   err.Error()})
-
-		// This used to look for SQLite's "no such table" wording, so the same
-		// missing table answered 404 against SQLite and 400 against PostgreSQL,
-		// which words it "relation ... does not exist" (REST-1).
-		status = dberrors.ExecStatus(err)
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
-	return status
+	if err = readAbstractRowData(db, q, session, w); errors.Nil(err) {
+		return http.StatusOK
+	}
+
+	// readAbstractRowData already wrote an error response to w (see its own
+	// error paths, each of which calls util.ErrorResponse itself) before
+	// returning this non-nil error; the status computed below only feeds
+	// the request log, it does not write to w again.
+	ui.Log(ui.TableLogger, "table.read.error", ui.A{
+		"session": session.ID,
+		"error":   err.Error()})
+
+	// This used to look for SQLite's "no such table" wording, so the same
+	// missing table answered 404 against SQLite and 400 against PostgreSQL,
+	// which words it "relation ... does not exist" (REST-1).
+	return dberrors.ExecStatus(err)
 }
 
 func readAbstractRowData(db *database.Database, q string, session *router.Session, w http.ResponseWriter) error {
@@ -357,102 +427,140 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	count := 0
 	dsnName := data.String(session.URLParts["dsn"])
 
-	db, err := GetDatabase(session, dsnName, 0)
-	if err == nil && db != nil {
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+	// Authorized() expects "dsn.table"; capture the bare table name before
+	// it is overwritten below with the provider-qualified form. See the
+	// longer explanation on the equivalent line in InsertAbstractRows.
+	rawTableName := tableName
 
-		if !isAdmin && Authorized(session, user, tableName, defs.TableUpdatePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
-		}
+	// This must request dsns.DSNWriteAction, not DSNNoAccess (0), for the
+	// same reason documented on InsertAbstractRows above: action 0 can
+	// never satisfy AuthDSN's bitmask test, so a Restricted DSN denied
+	// every non-admin caller regardless of their grants. See
+	// docs/issues/DATA-SECURITY.md §3.2.
+	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 
-		// Get the payload in a string.
-		buf := new(strings.Builder)
-		_, _ = io.Copy(buf, r.Body)
-		rawPayload := buf.String()
-
-		// Lets get the rows we are to update. This is either a row set, or a single object.
-		rowSet := defs.DBAbstractRowSet{
-			ServerInfo: util.MakeServerInfo(session.ID),
-		}
-
-		err = json.Unmarshal([]byte(rawPayload), &rowSet)
-		if err != nil || len(rowSet.Rows) == 0 {
-			// Not a valid row set, but might be a single item
-			item := []any{}
-
-			err = json.Unmarshal([]byte(rawPayload), &item)
-			if err != nil {
-				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.update.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
-			} else {
-				rowSet.Count = 1
-				rowSet.Rows = make([][]any, 1)
-				rowSet.Rows[0] = item
-			}
-		}
-
-		// Start a transaction to ensure atomicity of the entire update
-		_ = db.Begin()
-
-		// Loop over the row set doing the updates
-		for _, data := range rowSet.Rows {
-			ui.Log(ui.TableLogger, "table.values", ui.A{
-				"session": session.ID,
-				"data":    data})
-
-			// Get the column names for the update
-			columns := make([]string, len(rowSet.Columns))
-			for i, c := range rowSet.Columns {
-				columns[i] = c.Name
-			}
-
-			q, params, err := formAbstractUpdateQuery(r.URL, db.Provider, user, columns, data)
-			if err != nil {
-				return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
-			}
-
-			counts, err := db.Exec(q, params...)
-			if err == nil {
-				rowsAffected, _ := counts.RowsAffected()
-				count = count + int(rowsAffected)
-			} else {
-				_ = db.Rollback()
-
-				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
-			}
-		}
-
+	// BUG (found while validating DATA-SECURITY.md §3.2): this GetDatabase
+	// failure used to fall through to the tail of the function and share
+	// a single "else" branch with a completely different failure (a failed
+	// db.Commit(), see below), which reported a hardcoded
+	// http.StatusInternalServerError (500) no matter which of the two had
+	// actually happened -- so an AuthDSN denial, which should be a 403 like
+	// every other permission failure in this file, came back as a generic
+	// server error instead. Failing fast here, exactly like the DSN-open
+	// failure path in DeleteRows/InsertRows (rows.go) and
+	// InsertAbstractRows/ReadAbstractRows above, classifies it correctly
+	// and leaves the commit-failure branch below to mean only that.
+	if err != nil || db == nil {
 		if err == nil {
-			err = db.Commit()
+			err = errors.ErrNoDatabase
+		}
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+	}
+
+	// Amend any table name with the provider-appropriate user schema name.
+	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+
+	// Authorized() returns true when the caller IS permitted, so this
+	// condition must be negated to deny when they are NOT. The missing
+	// "!" inverted the whole check (see docs/issues/DATA-SECURITY.md
+	// §3.2): a caller holding a valid table_perms grant was denied,
+	// while a caller with no grant at all fell through and was allowed
+	// to update.
+	//
+	// The table argument must be dsnName+"."+rawTableName, not the
+	// provider-qualified "tableName" above -- see InsertAbstractRows for
+	// why the provider-qualified form can never resolve correctly here.
+	if !isAdmin && !Authorized(session, user, dsnName+"."+rawTableName, defs.TableUpdatePermission) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
+	}
+
+	// Get the payload in a string.
+	buf := new(strings.Builder)
+	_, _ = io.Copy(buf, r.Body)
+	rawPayload := buf.String()
+
+	// Lets get the rows we are to update. This is either a row set, or a single object.
+	rowSet := defs.DBAbstractRowSet{
+		ServerInfo: util.MakeServerInfo(session.ID),
+	}
+
+	err = json.Unmarshal([]byte(rawPayload), &rowSet)
+	if err != nil || len(rowSet.Rows) == 0 {
+		// Not a valid row set, but might be a single item
+		item := []any{}
+
+		err = json.Unmarshal([]byte(rawPayload), &item)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.update.payload", ui.A{"err": err.Error()}), http.StatusBadRequest)
+		} else {
+			rowSet.Count = 1
+			rowSet.Rows = make([][]any, 1)
+			rowSet.Rows[0] = item
+		}
+	}
+
+	// Start a transaction to ensure atomicity of the entire update
+	_ = db.Begin()
+
+	// Loop over the row set doing the updates
+	for _, data := range rowSet.Rows {
+		ui.Log(ui.TableLogger, "table.values", ui.A{
+			"session": session.ID,
+			"data":    data})
+
+		// Get the column names for the update
+		columns := make([]string, len(rowSet.Columns))
+		for i, c := range rowSet.Columns {
+			columns[i] = c.Name
+		}
+
+		q, params, err := formAbstractUpdateQuery(r.URL, tableName, columns, data)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
+		}
+
+		counts, err := db.Exec(q, params...)
+		if err == nil {
+			rowsAffected, _ := counts.RowsAffected()
+			count = count + int(rowsAffected)
 		} else {
 			_ = db.Rollback()
+
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 		}
 	}
 
-	if err == nil {
-		response := defs.DBRowCount{
-			ServerInfo: util.MakeServerInfo(session.ID),
-			Count:      count,
-			Status:     http.StatusOK,
-		}
+	// Every error path in the loop above already returned, so reaching here
+	// means every row updated cleanly; a failed commit is the only way this
+	// can still fail (matching InsertAbstractRows's own commit handling,
+	// which likewise treats a commit failure as a plain 500).
+	if err := db.Commit(); err != nil {
+		_ = db.Rollback()
 
-		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-
-		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
-
-		if ui.IsActive(ui.RestLogger) {
-			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
-				"session": session.ID,
-				"body":    string(b)})
-		}
-
-		ui.Log(ui.TableLogger, "table.updated", ui.A{
-			"session": session.ID,
-			"count":   count,
-			"status":  http.StatusOK})
-	} else {
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.update.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 	}
+
+	response := defs.DBRowCount{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Count:      count,
+		Status:     http.StatusOK,
+	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
+
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
+
+	ui.Log(ui.TableLogger, "table.updated", ui.A{
+		"session": session.ID,
+		"count":   count,
+		"status":  http.StatusOK})
 
 	return http.StatusOK
 }

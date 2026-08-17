@@ -1,0 +1,31 @@
+{
+    "description": "grant ego.sql so the identity test user can reach GET /dsns at all -- ListDSNHandler's route-level reachability gate (ego.server.admin or ego.sql) is a separate, deliberate design choice from the ego.dsn.read/admin visibility filter this test group is about to exercise (see ListDSNHandler's doc comment)",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/idn{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "idn{{PERMTESTID}}",
+            "permissions": [
+                "+ego.sql"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "ego.sql granted",
+            "query": "permissions.*",
+            "value": "ego.sql"
+        }
+    ]
+}

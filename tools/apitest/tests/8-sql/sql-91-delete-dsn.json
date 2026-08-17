@@ -31,6 +31,14 @@
         {
             "command": "DELETE",
             "parameters": ["{{ROOT}}/db-{{SQLTESTID}}.db"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-{{SQLTESTID}}.db-shm"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-{{SQLTESTID}}.db-wal"]
         }
     ]
 }

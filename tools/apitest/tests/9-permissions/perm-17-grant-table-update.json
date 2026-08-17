@@ -1,0 +1,31 @@
+{
+    "description": "grant the test user table_perms ego.table.update on the scratch table",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "pmu{{PERMTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.update"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "update permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.update"
+        }
+    ]
+}

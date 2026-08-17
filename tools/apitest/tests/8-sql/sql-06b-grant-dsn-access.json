@@ -1,0 +1,40 @@
+{
+    "description": "grant the test user DSN-specific ego.dsn.read and ego.dsn.write (dsns_auth records, not identity permissions) so @sql can open the now-Restricted DSN. AuthDSN's bitmask check is satisfied by either bit since @sql always opens with DSNWriteAction+DSNReadAction combined (sql.go), but both are granted here so later table_perms denials (sql-07/sql-08) are unambiguously about the table, not the DSN.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "dsn-{{SQLTESTID}}",
+            "user": "squ{{SQLTESTID}}",
+            "actions": ["+ego.dsn.read", "+ego.dsn.write"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

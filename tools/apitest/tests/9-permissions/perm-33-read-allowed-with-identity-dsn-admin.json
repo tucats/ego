@@ -1,0 +1,37 @@
+{
+    "description": "REGRESSION for DATA-SECURITY.md §3.4: identity-level ego.dsn.admin (no read or write grant of any kind, identity or per-DSN) must satisfy a read action -- IdentityAuthorizesAction's admin check is unconditional, matching item 7's 'admin grants that access for all DSNs'.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/rows",
+        "parameters": {
+            "abstract": "true"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{IDENTITY_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows.abstract+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row from perm-31's insert",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
