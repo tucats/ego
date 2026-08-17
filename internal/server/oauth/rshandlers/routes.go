@@ -21,19 +21,20 @@ func RegisterRoutes(r *router.Router) {
 	// They do not require prior Ego authentication.
 	r.New(defs.ServicesOAuthAuthorizePath, AuthorizeRedirectHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).
-		Authentication(false, false)
+		Authentication(false)
 
 	r.New(defs.ServicesOAuthCallbackPath, CallbackHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).
-		Authentication(false, false).
+		Authentication(false).
 		Parameter("code", "string").
 		Parameter("state", "string").
 		Parameter("error", "string").
 		Parameter("error_description", "string")
 
-	// The config endpoint exposes configuration details and requires admin access.
+	// The config endpoint exposes configuration details and requires admin
+	// access. Permissions() already implies authentication, so no separate
+	// Authentication() call is needed here.
 	r.New(defs.ServicesOAuthConfigPath, ConfigHandler, http.MethodGet).
 		Class(router.ServiceRequestCounter).
-		Authentication(true, true).
 		Permissions(defs.RootPermission)
 }

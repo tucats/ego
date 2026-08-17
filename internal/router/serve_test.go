@@ -91,7 +91,7 @@ func TestServeHTTPSetsSessionLanguage(t *testing.T) {
 		capturedSession = session
 
 		return http.StatusOK
-	}, http.MethodGet).Authentication(false, false)
+	}, http.MethodGet).Authentication(false)
 
 	r, err := http.NewRequest(http.MethodGet, "/services/language-test", nil)
 	if err != nil {

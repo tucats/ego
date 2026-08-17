@@ -24,7 +24,7 @@ import (
 // Route registration (in commands/server.go):
 //
 //	r.New("/services/cluster", cluster.ClusterStatusHandler, http.MethodGet).
-//	    Authentication(true, true)
+//	    Permissions(defs.RootPermission)
 func ClusterStatusHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sysDb, err := openSystemDB(nil)
 	if err != nil {
