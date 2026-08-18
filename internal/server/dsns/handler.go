@@ -106,12 +106,6 @@ func ListDSNPermHandler(session *router.Session, w http.ResponseWriter, r *http.
 // so they have DSN names to choose from, not because ego.sql implies
 // server-admin standing more generally.
 func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	if !session.Admin &&
-		!util.InListInsensitive(defs.ServerAdminPermission, session.Permissions...) &&
-		!util.InListInsensitive(defs.SQLPermission, session.Permissions...) {
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.ServerAdminPermission}), http.StatusForbidden)
-	}
-
 	// Get the map of all the DSN names.
 	names, err := egodsns.DSNService.ListDSNS(session.ID, session.User)
 	if err != nil {
@@ -312,8 +306,8 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 // CreateDSNHandler creates a DSN from a POST operation to the /dsns endpoint. The
 // body must contain the representation of the DSN to be created.
 func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
-	var status int 
-	
+	var status int
+
 	dataSourceName := defs.DSN{}
 
 	// Retrieve content from the request body
