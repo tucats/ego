@@ -1,0 +1,34 @@
+{
+    "description": "log on as the non-admin test user to get a bearer token for the GetDSNHandler permission tests below",
+    "request": {
+        "method": "POST",
+        "endpoint": "/services/admin/logon",
+        "body": {
+            "username": "gdu{{DSNUUID}}",
+            "password": "zork"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["logon+json"]
+        },
+        "save": { "GETDSN_TOKEN": "token" }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -215,11 +215,18 @@ func defineStaticRoutes() *router.Router {
 		Class(router.TableRequestCounter).
 		Permissions(defs.DSNAdminPermission)
 
-	// Read an existing DSN
+	// Read an existing DSN. Not gated by Permissions() here (DATA-
+	// SECURITY.md §3.6): a caller may be authorized either by identity-
+	// level ego.dsn.admin or by a DSN-specific dsns_auth admin record for
+	// this one DSN, and Route.Permissions() can only express the former
+	// -- it has no notion of "for this specific resource". The OR of the
+	// two is checked inside GetDSNHandler instead, the same pattern
+	// already used for DeleteDSNHandler/ListDSNHandler/ListDSNPermHandler.
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.DSNNamePath, dsns.GetDSNHandler, http.MethodGet).
+		Authentication(true).
 		AcceptMedia(defs.DSNMediaType).
-		Class(router.TableRequestCounter).
-		Permissions(defs.DSNAdminPermission)
+		Class(router.TableRequestCounter)
 
 	// Delete an existing DSN. Not gated by Permissions() here (DATA-
 	// SECURITY.md §3.6): a caller may be authorized either by identity-

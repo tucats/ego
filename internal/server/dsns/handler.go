@@ -205,6 +205,16 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
+	// DATA-SECURITY.md §3.6: the route no longer requires identity-level
+	// ego.dsn.admin on its own -- a caller authorized only by a DSN-
+	// specific dsns_auth admin record for this one DSN (e.g. the DSN's
+	// own creator, per §3.3's self-grant) may read it too.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
+	}
+
 	// Craft a response object to send back.
 	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),

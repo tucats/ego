@@ -1,0 +1,42 @@
+{
+    "description": "create a restricted DSN to verify GetDSNHandler enforces identity ego.dsn.admin OR a per-DSN dsns_auth admin record instead of always requiring identity ego.dsn.admin (AuthDSN's own unrestricted-DSN bypass would otherwise mask the check)",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "gdsn-{{DSNUUID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-gdsn-{{DSNUUID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/gdsn-{{DSNUUID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag echoed",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}
