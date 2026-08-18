@@ -151,7 +151,7 @@ func AddStaticRoutes(r *router.Router) {
 		Class(router.TableRequestCounter)
 
 	// Get metadata for a table via DSNS
-	r.New(defs.TablesPath+tableParameter, ReadTable, http.MethodGet).
+	r.New(defs.TablesPath+tableParameter, DescribeTable, http.MethodGet).
 		Authentication(true).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.RowIDs, util.BoolParameterType).

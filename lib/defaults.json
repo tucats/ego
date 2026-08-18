@@ -19,5 +19,6 @@
     "ego.console.output": "text",
     "ego.console.readline": true,
     "ego.runtime.precision.error": true,
-    "ego.runtime.float.div.zero.error": false
+    "ego.runtime.float.div.zero.error": false,
+    "ego.table.autoparse.dsn": true
 }

@@ -17,12 +17,12 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
-// ReadTable handler reads the metadata for a given table, and returns it as an array
+// DescribeTable handler reads the metadata for a given table, and returns it as an array
 // of column names and types. This is used by the 'ego tables show' command, for example.
-func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	// Get the table name and DSN name from the URL. If not present, these will be blank.
 	tableName := data.String(session.URLParts["table"])
 	dsn := data.String(session.URLParts["dsn"])
@@ -36,7 +36,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 
 	// Attempt to connect to the table. If the DSN name exists, then it is used to get the
 	// credentials for the database. Otherwise, the session user information is used to connect.
-	db, err := GetDatabase(session, dsn, dsns.DSNAdminAction)
+	db, err := GetDatabase(session, dsn, dsns.DSNReadAction)
 	if err == nil && db != nil {
 		// normalize the deprecated "sqlite3" alias to the canonical "sqlite" name.
 		if strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider) {
@@ -51,7 +51,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
 		}
 
-		// Get the table metadata. We don't do this for sqlite3.
+		// Get the table metadata.
 		var columns []defs.DBColumn
 
 		// Retrieve per-column uniqueness and nullability constraints using the
@@ -98,6 +98,7 @@ func ReadTable(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	// Something failed, and it's stored in the 'err' variable. Trim off any leading "pq: " prefix
 	// put there for database errors from the Postgresql driver.
 	msg := i18n.Text(session.Language, "error.table.metadata.error", ui.A{"err": strings.TrimPrefix(err.Error(), "pq: ")})
+
 	// A reference to a table that does not exist is a 404. This used to look
 	// for PostgreSQL's "does not exist" wording only, so the same missing table
 	// answered 400 against SQLite (REST-1). Reading metadata is driven entirely

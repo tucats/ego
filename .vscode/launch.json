@@ -237,7 +237,7 @@
             "mode": "debug",
             "env": {"EGO_GRAMMAR": "verb"},
             "program": "${workspaceFolder}", 
-            "args": [ "set", "logging"]
+            "args": [ "-p", "sam", "show", "table", "columns", "foo.bar"]
         },
         {
             "name": "Detached ego server",

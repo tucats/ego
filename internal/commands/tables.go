@@ -175,20 +175,33 @@ func TableShow(c *cli.Context) error {
 
 	resp := defs.TableColumnsInfo{}
 	table := c.Parameter(0)
+	dsn := ""
 
-	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
-	}
-
-	if dsn, found := c.String(defs.DSNOption); found {
-		urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
+	// IF there is an explicit --dsn option, use that value for the dsn. If not, and
+	// the table name has a dot, and autoparsing dsns is enabled, break up the name
+	// and use the two-part name as the dsn and table name.
+	if d, found := c.String(defs.DSNOption); found {
+		dsn = d
 	} else if settings.GetBool(defs.TableAutoParseDSNSetting) && strings.Contains(table, ".") {
 		parts := strings.SplitN(table, ".", 2)
-		schema := parts[0]
+		dsn = parts[0]
 		table = parts[1]
-
-		urlString = rest.URLBuilder(defs.TablesNamePath, schema, table).String()
 	}
+
+	// If we still don't have a dsn, see if there is a default DSN configured for our use.
+	if dsn == "" {
+		if d := settings.Get(defs.DefaultDataSourceSetting); d != "" {
+			dsn = d
+		}
+	}
+
+	// If no dsn then we cannot continue.
+	if dsn == "" {
+		return errors.ErrDSNRequired
+	}
+
+	// Generate the URL string from the dsn and table.
+	urlString = rest.URLBuilder(defs.TablesNamePath, dsn, table).String()
 
 	if c.WasFound("row-id") {
 		urlString += "?rowids=true"
