@@ -68,7 +68,7 @@
 </header>
 
 <div class="tab-container">
-    <div class="memory" onclick="openTab('memory')">Status</div>
+    <div class="memory" onclick="openTab('memory')">Server</div>
     <div class="users" onclick="openTab('users')">Users</div>
     <div class="dsns" onclick="openTab('dsns')">DSNs</div>
     <div class="tables" onclick="openTab('tables')">Tables</div>
@@ -178,7 +178,7 @@
 
 <div id="dsns" class="tab-content">
     <div class="tab-toolbar">
-        <button class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN"><span class="btn-icon">&#43;</span> <span class="btn-label">New DSN</span></button>
+        <button id="new-dsn-btn" class="toolbar-add-btn" onclick="showNewDsnSheet()" title="Create new DSN"><span class="btn-icon">&#43;</span> <span class="btn-label">New DSN</span></button>
     </div>
     <div id="dsns-content"></div>
 </div>
