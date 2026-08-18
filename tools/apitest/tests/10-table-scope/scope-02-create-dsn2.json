@@ -1,0 +1,42 @@
+{
+    "description": "create a second restricted dsn, used only for the same-table-name-in-two-DSNs regression (scope-50..52): a table_perms grant on dsn-ts{{TSID}}'s copy of a table must not authorize access to dsn-ts2{{TSID}}'s identically-named table",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-ts2{{TSID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-ts2{{TSID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-ts2{{TSID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag echoed",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}

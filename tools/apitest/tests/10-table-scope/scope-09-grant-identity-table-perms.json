@@ -1,0 +1,39 @@
+{
+    "description": "grant the test user the identity-wide ego.table.read/write/update/delete permissions, mirroring 9-permissions/perm-05's setup for the same reason -- kept for parity even though the plain rows routes (unlike @transaction) turn out not to declare a route-level Permissions() gate of their own; harmless either way and keeps this suite's setup consistent with 9-permissions",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/tsu{{TSID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "tsu{{TSID}}",
+            "permissions": [
+                "+ego.table.read",
+                "+ego.table.write",
+                "+ego.table.update",
+                "+ego.table.delete"
+            ]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "identity table.read granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        },
+        {
+            "name": "identity table.delete granted",
+            "query": "permissions.*",
+            "value": "ego.table.delete"
+        }
+    ]
+}

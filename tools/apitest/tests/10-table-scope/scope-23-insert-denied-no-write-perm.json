@@ -1,0 +1,34 @@
+{
+    "description": "REGRESSION for fdf0872a: user has table_perms read (scope-21) but not write on tblA{{TSID}}. A non-abstract PUT (InsertRows, not InsertAbstractRows) naming the DSN explicitly must still be denied -- read must not imply write, and the DSN-named path must not bypass table_perms the way it did before the fix",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "should-not-insert"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

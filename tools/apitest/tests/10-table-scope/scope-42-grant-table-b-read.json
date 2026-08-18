@@ -1,0 +1,31 @@
+{
+    "description": "grant the test user table_perms ego.table.read on tblB{{TSID}} only -- deliberately not write, to also verify per-permission scoping stays independent per table in scope-44",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblB{{TSID}}/permissions",
+        "parameters": {
+            "user": "tsu{{TSID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

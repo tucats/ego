@@ -1,0 +1,34 @@
+{
+    "description": "sanity check paired with scope-40: tblA{{TSID}} in the same DSN is still readable by the same user, confirming scope-40's denial was specific to tblB{{TSID}} lacking a grant, not some incidental loss of DSN-level access",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "empty after scope-31's delete",
+            "query": "count",
+            "value": "0"
+        }
+    ]
+}

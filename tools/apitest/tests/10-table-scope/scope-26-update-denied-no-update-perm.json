@@ -1,0 +1,36 @@
+{
+    "description": "REGRESSION: user holds table_perms read+write on tblA{{TSID}} (scope-21, scope-24) but not update -- these are independent PermissionsObject flags. UpdateRows must check defs.TableUpdatePermission specifically and deny this, even though the same user can already insert. (fdf0872a's refactor accidentally downgraded this check to TableWritePermission, which would have wrongly allowed a write-only grantee to update; fixed alongside adding this test.)",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "parameters": {
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        },
+        "body": {
+            "name": "should-not-update"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

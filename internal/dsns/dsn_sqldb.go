@@ -41,6 +41,12 @@ func NewDatabaseService(connStr string) (dsnService, error) {
 		return svc, err
 	}
 
+	// The natural key for this table is the (user, dsn) pair, not any
+	// single column -- pin the synthetic id field as the primary key
+	// explicitly rather than relying on SetDefaultPrimaryKey's fallback.
+	// See the ID field's doc comment on DSNAuthorization (dsn.go) for why.
+	svc.authHandle.SetPrimaryKey("id")
+
 	// Even though a DSN has an "id" field, it is indexed on the name of the DSN.
 	svc.dsnHandle.SetPrimaryKey("name")
 
@@ -200,11 +206,93 @@ func (pg *databaseService) initializeDatabase() error {
 		err = pg.authHandle.Begin().CreateIf()
 	}
 
+	if err == nil {
+		err = pg.migrateAuthTableIfNeeded()
+	}
+
 	if err != nil {
 		err = errors.New(err)
 	}
 
 	return err
+}
+
+// migrateAuthTableIfNeeded rebuilds an existing dsns_auth table that predates
+// the DSNAuthorization.ID field (see that field's doc comment in dsn.go).
+// CreateIf only creates the table when it's entirely missing, so a table
+// created by an older build -- with the (now-wrong) single-column "user"
+// primary key and no "id" column at all -- is left untouched by it. Left
+// unmigrated, every read/write below would fail outright with a "no such
+// column: id" (SQLite) or "column ... does not exist" (Postgres) error,
+// since insertSQL/readRowSQL always reference every field of the current
+// DSNAuthorization struct, id included.
+//
+// Detection: attempt a SELECT naming the id column. A pre-fix table doesn't
+// have it and errors; a fresh or already-migrated table succeeds and this
+// is a no-op. Migration then reads every existing (user, dsn, action) row
+// under the old schema, drops the table, recreates it under the current
+// schema (via authHandle.Create, so it stays in sync with the struct and
+// picks up the explicit "id" primary key set in NewDatabaseService), and
+// reinserts each row with a freshly generated id -- (user, dsn) pairs are
+// preserved exactly, only the storage key changes.
+func (pg *databaseService) migrateAuthTableIfNeeded() error {
+	if _, err := pg.authHandle.Database.Query("select id from " + pg.authHandle.Table + " where 1=0"); err == nil {
+		return nil
+	}
+
+	ui.Log(ui.AuthLogger, "auth.dsn.migrate", ui.A{
+		"table": pg.authHandle.Table})
+
+	rows, err := pg.authHandle.Database.Query("select user, dsn, action from " + pg.authHandle.Table)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	type oldRow struct {
+		user   string
+		dsn    string
+		action DSNAction
+	}
+
+	existing := []oldRow{}
+
+	for rows.Next() {
+		row := oldRow{}
+		if err := rows.Scan(&row.user, &row.dsn, &row.action); err != nil {
+			return err
+		}
+
+		existing = append(existing, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	rows.Close()
+
+	if _, err := pg.authHandle.Database.Exec("drop table " + pg.authHandle.Table); err != nil {
+		return err
+	}
+
+	if err := pg.authHandle.Begin().Create(); err != nil {
+		return err
+	}
+
+	for _, row := range existing {
+		if err := pg.authHandle.Insert(DSNAuthorization{
+			ID:     uuid.NewString(),
+			User:   row.user,
+			DSN:    row.dsn,
+			Action: row.action,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // AuthDSN determines if the given username is allowed to access the
@@ -281,6 +369,7 @@ func (pg *databaseService) GrantDSN(session int, user, name string, action DSNAc
 			"session": session,
 			"name":    name})
 
+		auth.ID = uuid.NewString()
 		auth.DSN = name
 		auth.User = user
 		auth.Action = existingAction

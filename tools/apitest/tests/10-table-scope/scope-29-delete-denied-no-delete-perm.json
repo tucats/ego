@@ -1,0 +1,33 @@
+{
+    "description": "REGRESSION: user holds table_perms read+write+update on tblA{{TSID}} (scope-21, scope-24, scope-27) but not delete -- ego.table.delete is a distinct PermissionsObject flag, never previously exercised by any apitest suite. DeleteRows must check defs.TableDeletePermission specifically and deny this. (fdf0872a's refactor accidentally downgraded this check to TableWritePermission too, which would have wrongly allowed a write-only grantee to delete rows; fixed alongside adding this test.)",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "parameters": {
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

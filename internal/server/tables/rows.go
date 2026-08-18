@@ -41,7 +41,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		defer db.Close()
 
 		if db.Restricted {
-			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableWritePermission) {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableDeletePermission) {
 				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.delete"), http.StatusForbidden)
 			}
 		}
@@ -764,7 +764,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
 		if db.Restricted {
-			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableWritePermission) {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableUpdatePermission) {
 				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
 			}
 		}

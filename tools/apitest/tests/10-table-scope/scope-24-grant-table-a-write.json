@@ -1,0 +1,36 @@
+{
+    "description": "add table_perms ego.table.write on tblA{{TSID}}, preserving the existing read grant",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/permissions",
+        "parameters": {
+            "user": "tsu{{TSID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.write"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "write permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        },
+        {
+            "name": "read permission still present",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

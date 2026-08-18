@@ -82,7 +82,20 @@ type dsnService interface {
 // for a given user to access a given DSN. The user is the name of the
 // user, the DSN is the name of the DSN, and the action is the action
 // bit-mask that describes the access rights for the user to the DSN.
+//
+// ID must come first and be populated with a fresh UUID for every new
+// row (see databaseService.GrantDSN). resources.ResHandle.Create falls
+// back to the struct's first field as the table's primary key whenever
+// SetPrimaryKey hasn't been called explicitly, and databaseService.
+// NewDatabaseService doesn't call it for this table -- without a
+// synthetic ID column, that fallback would have picked User (the
+// previous first field), making it the SQL-backed dsns_auth table's
+// sole primary key and silently limiting every user to a grant on at
+// most one restricted DSN, table-wide, since a second GrantDSN for the
+// same user (on any other DSN) would violate that column's implied
+// uniqueness. The natural key is the (User, DSN) pair, not User alone.
 type DSNAuthorization struct {
+	ID     string
 	User   string
 	DSN    string
 	Action DSNAction

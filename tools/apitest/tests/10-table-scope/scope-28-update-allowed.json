@@ -1,0 +1,41 @@
+{
+    "description": "REGRESSION: with table_perms update now granted, the same non-abstract PATCH that scope-26 correctly denied must now succeed via UpdateRows",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "parameters": {
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        },
+        "body": {
+            "name": "updated-name"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row updated",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

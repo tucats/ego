@@ -1,0 +1,29 @@
+{
+    "description": "REGRESSION -- this is the sharpest possible test for the bug fdf0872a fixed ('the test was being done on the table name alone, not the combination of dsn and table name'): dsn-ts2{{TSID}} has an identically-NAMED table sh{{TSID}} (scope-06), the user has DSN-level read+write on dsn-ts2{{TSID}} (scope-11), but has never been granted table_perms on THIS dsn's copy of sh{{TSID}} -- only on dsn-ts{{TSID}}'s copy (scope-50). If table_perms lookups keyed on table name alone, this would incorrectly succeed. Must be denied.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-ts2{{TSID}}/tables/sh{{TSID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

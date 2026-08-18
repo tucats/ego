@@ -1,0 +1,31 @@
+{
+    "description": "grant the test user table_perms ego.table.read on dsn-ts{{TSID}}'s copy of sh{{TSID}} -- deliberately only this DSN's copy, not dsn-ts2{{TSID}}'s identically-named table (scope-06)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/sh{{TSID}}/permissions",
+        "parameters": {
+            "user": "tsu{{TSID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

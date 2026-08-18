@@ -1,0 +1,38 @@
+{
+    "description": "REGRESSION: with table_perms delete now granted, the same non-abstract DELETE that scope-29 correctly denied must now succeed via DeleteRows. Leaves tblA{{TSID}} empty for the group-B tests below.",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "parameters": {
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row deleted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

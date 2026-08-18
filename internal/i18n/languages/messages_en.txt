@@ -1331,6 +1331,7 @@ auth.dsn.grant.error=Unable to grant DSN {{dsn}} access to {{user}}: {{error}}
 auth.dsn.init=Initializing data source names
 auth.dsn.mask=DSN authorized action mask value {{mask}}
 auth.dsn.memory=Creating new empty DSN table in memory
+auth.dsn.migrate=Migrating {{table}} table to add synthetic id primary key
 auth.dsn.not.found=No dsn record for {{name}}
 auth.dsn.restrict=DSN {{name}} marked as restricted
 auth.dsn.update=Updated dsn {{name}}

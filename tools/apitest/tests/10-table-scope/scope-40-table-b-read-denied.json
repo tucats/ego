@@ -1,0 +1,29 @@
+{
+    "description": "REGRESSION for the 'access to a DSN, but only some of its tables' scenario: the user has full table_perms (read/write/update/delete, scope-21..30) on tblA{{TSID}} and the same DSN-level access applies to every table in dsn-ts{{TSID}}, but has never been granted anything on tblB{{TSID}} -- a second table in the SAME restricted DSN. Must still be denied for tblB, proving a grant on one table does not leak to another table in the same DSN.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblB{{TSID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "description": "REGRESSION for describe.go's db.Restricted gating (fdf0872a): GET .../tables/{table} (metadata, not /rows) on dsn-ts2{{TSID}}'s copy of sh{{TSID}} must be denied -- the user has DSN-level access but no table_perms read grant on this DSN's copy of the table (only on dsn-ts{{TSID}}'s, scope-50). No apitest suite exercised this endpoint under a restricted DSN with a non-admin user before this test.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-ts2{{TSID}}/tables/sh{{TSID}}",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

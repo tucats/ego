@@ -1,0 +1,34 @@
+{
+    "description": "REGRESSION: user has table_perms write on tblA{{TSID}} (scope-24) and read (only) on tblB{{TSID}} (scope-42), both in the same DSN. An insert on tblB must still be denied: the write grant on tblA must not leak to tblB, and read must not imply write.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblB{{TSID}}/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "should-not-insert"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -1300,6 +1300,7 @@ auth.dsn.grant.error=Impossible d'accorder l'accès au DSN {{dsn}} à {{user}} :
 auth.dsn.init=Initialisation des noms de sources de données
 auth.dsn.mask=Valeur du masque d'action autorisé DSN {{mask}}
 auth.dsn.memory=Création d'une nouvelle table DSN vide en mémoire
+auth.dsn.migrate=Migration de la table {{table}} pour ajouter une clé primaire id synthétique
 auth.dsn.not.found=Aucun enregistrement DSN pour {{name}}
 auth.dsn.restrict=DSN {{name}} marqué comme restreint
 auth.dsn.update=DSN {{name}} mis à jour

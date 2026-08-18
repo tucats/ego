@@ -1,0 +1,30 @@
+{
+    "description": "grant the test user DSN-specific ego.dsn.read and ego.dsn.write on dsn-ts2{{TSID}} too -- so the same-table-name-two-DSNs regression (scope-50..52) is unambiguously about table_perms scoping, not about the user lacking DSN-level standing on the second DSN",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "dsn-ts2{{TSID}}",
+            "user": "tsu{{TSID}}",
+            "actions": ["+ego.dsn.read", "+ego.dsn.write"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

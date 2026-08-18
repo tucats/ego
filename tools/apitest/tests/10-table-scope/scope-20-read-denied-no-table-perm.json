@@ -1,0 +1,29 @@
+{
+    "description": "REGRESSION for fdf0872a: user has DSN-level read+write on dsn-ts{{TSID}} but no table_perms grant on tblA{{TSID}}, and this request names the DSN explicitly and does NOT set ?abstract=true -- it goes through ReadRows, not ReadAbstractRows. Before the fix, ReadRows only ever consulted Authorized() when dsnName was empty (the legacy no-DSN-segment path); any request naming a DSN explicitly, like this one, skipped table_perms entirely and relied on the DSN-level check alone. Must be denied.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblA{{TSID}}/rows",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}
