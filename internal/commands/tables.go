@@ -43,19 +43,24 @@ func TableList(c *cli.Context) error {
 	}
 
 	url := rest.URLBuilder(defs.TablesPath)
+	dsn := ""
 
-	if parms := c.FindGlobal().Parameters; len(parms) > 0 && settings.GetBool(defs.TableAutoParseDSNSetting) {
-		dsn := parms[0]
-		url = rest.URLBuilder(defs.TablesPath, dsn)
+	if parms := c.FindGlobal().Parameters; len(parms) > 0 /* && settings.GetBool(defs.TableAutoParseDSNSetting)*/ {
+		dsn = parms[0]
+	} else if d, found := c.String(defs.DSNOption); found {
+		dsn = d
+	} else if d := settings.Get(defs.DefaultDataSourceSetting); d != "" {
+		dsn = d
 	}
 
-	if dsn := settings.Get(defs.DefaultDataSourceSetting); dsn != "" {
-		url = rest.URLBuilder(defs.TablesPath, dsn)
+	// If we didn't get a DSN on the command line as a parameter or option, and there
+	// isn't a default DSN, we cannot proceed.
+	if dsn == "" {
+		return errors.ErrDSNRequired
 	}
 
-	if dsn, found := c.String(defs.DSNOption); found {
-		url = rest.URLBuilder(defs.TablesPath, dsn)
-	}
+	// Otherwise, add the DSN to the URL.
+	url = rest.URLBuilder(defs.TablesPath, dsn)
 
 	if limit, found := c.Integer("limit"); found {
 		url.Parameter(defs.LimitParameterName, limit)
@@ -74,6 +79,14 @@ func TableList(c *cli.Context) error {
 		if resp.Status > http.StatusOK {
 			err = errors.Message(resp.Message)
 		} else {
+			if resp.Count == 0 {
+				ui.Say(i18n.M("dsns.metadata.empty", ui.A{
+					"name": dsn,
+				}))
+
+				return nil
+			}
+
 			if ui.OutputFormat == ui.TextFormat {
 				if rowCounts {
 					t, _ := tables.New([]string{i18n.L("Schema"), i18n.L("Name"), i18n.L("Columns"), i18n.L("Rows")})
