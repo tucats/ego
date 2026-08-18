@@ -19,7 +19,7 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 // InsertRows updates the rows (specified by a filter clause as needed) with the data from the payload.
@@ -42,18 +42,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	// what they had been granted. Insert is a write, so this now matches
 	// InsertRows's own GetDatabase call in rows.go and the (correct) write
 	// action UpdateAbstractRows/DeleteRows request elsewhere in this
-	// package. See docs/issues/DATA-SECURITY.md §3.2.
-	// BUG (found while validating DATA-SECURITY.md §3.2): this used to be
-	// followed immediately by an unconditional "tableName, _ =
-	// parsing.FullName(db.Provider, ...)" call, before checking whether
-	// GetDatabase actually succeeded. When it failed (e.g. AuthDSN denying
-	// a non-admin caller on a Restricted DSN) db is nil, and dereferencing
-	// db.Provider on a nil *database.Database panics -- the request never
-	// got a real error response at all, just a generic 500 from the
-	// router's panic recovery. The equivalent, properly guarded FullName
-	// call already exists a few lines down inside "if err == nil && db !=
-	// nil"; this duplicate unguarded one has been removed rather than nil-
-	// checked, since it did nothing the guarded one doesn't already do.
+	// package.
 	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 
 	if p := parameterString(r); p != "" {
@@ -240,19 +229,6 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 	rawTableName := tableName
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
-
-	// BUG (found while validating DATA-SECURITY.md §3.2): when GetDatabase
-	// failed -- e.g. AuthDSN denying a non-admin caller on a Restricted
-	// DSN, or the DSN not existing -- execution used to fall through to the
-	// tail of this function, which computed the right HTTP status into a
-	// local variable but never actually called util.ErrorResponse. Nothing
-	// was ever written to the ResponseWriter, so Go's net/http defaulted to
-	// sending 200 OK with an empty body: a denied or failed read looked
-	// like a successful empty one to the client, even though the server
-	// log recorded the intended (never-sent) status. Failing fast here,
-	// exactly like the DSN-open failure path in DeleteRows/InsertRows
-	// (rows.go) and InsertAbstractRows above, gives the caller a real
-	// response instead of a silent lie.
 	if err != nil || db == nil {
 		if err == nil {
 			err = errors.ErrNoDatabase
@@ -435,21 +411,8 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	// This must request dsns.DSNWriteAction, not DSNNoAccess (0), for the
 	// same reason documented on InsertAbstractRows above: action 0 can
 	// never satisfy AuthDSN's bitmask test, so a Restricted DSN denied
-	// every non-admin caller regardless of their grants. See
-	// docs/issues/DATA-SECURITY.md §3.2.
+	// every non-admin caller regardless of their grants. 
 	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
-
-	// BUG (found while validating DATA-SECURITY.md §3.2): this GetDatabase
-	// failure used to fall through to the tail of the function and share
-	// a single "else" branch with a completely different failure (a failed
-	// db.Commit(), see below), which reported a hardcoded
-	// http.StatusInternalServerError (500) no matter which of the two had
-	// actually happened -- so an AuthDSN denial, which should be a 403 like
-	// every other permission failure in this file, came back as a generic
-	// server error instead. Failing fast here, exactly like the DSN-open
-	// failure path in DeleteRows/InsertRows (rows.go) and
-	// InsertAbstractRows/ReadAbstractRows above, classifies it correctly
-	// and leaves the commit-failure branch below to mean only that.
 	if err != nil || db == nil {
 		if err == nil {
 			err = errors.ErrNoDatabase

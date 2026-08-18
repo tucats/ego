@@ -154,7 +154,7 @@ import (
 	"github.com/tucats/ego/internal/runtime/cipher"
 	auth "github.com/tucats/ego/internal/server/auth"
 	"github.com/tucats/ego/internal/util"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 const webAuthnChallengeCookie = "webauthn_challenge"
@@ -293,10 +293,6 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 	duration, _ := util.ParseDuration(serverDurationString)
 
 	perms := auth.GetPermissions(session.ID, username)
-	isAdmin := util.InListInsensitive(defs.RootPermission, perms...)
-	canCode := isAdmin || util.InList(defs.CodeRunPermission, perms...)
-	canSQL := isAdmin || util.InList(defs.SQLPermission, perms...)
-
 	response := defs.LogonResponse{
 		Identity: username,
 		RestStatusResponse: defs.RestStatusResponse{
@@ -305,9 +301,7 @@ func issueToken(w http.ResponseWriter, session *Session, username string) int {
 		},
 		Token:             tokenStr,
 		Expiration:        time.Now().Add(duration).Format(time.UnixDate),
-		CanAdmin:          isAdmin,
-		CanCode:           canCode,
-		CanSQL:            canSQL,
+		Permissions:       perms,
 		InactivityTimeout: dashboardInactivityTimeout(),
 	}
 

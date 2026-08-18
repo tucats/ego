@@ -254,9 +254,9 @@ func (l *lexer) scanIdentOrPrefixedLiteral(line, col int) (token, error) {
 func (l *lexer) scanQuotedIdent(line, col int) (token, error) {
 	open := l.advance()
 
-	close := open
+	closeChar := open
 	if open == '[' {
-		close = ']'
+		closeChar = ']'
 	}
 
 	var b strings.Builder
@@ -268,13 +268,13 @@ func (l *lexer) scanQuotedIdent(line, col int) (token, error) {
 
 		r := l.advance()
 
-		if r == close {
+		if r == closeChar {
 			// Doubled delimiter (e.g. "" inside "...") is an escaped literal
 			// delimiter character, not the closing quote — but bracket
 			// identifiers have no escape convention.
-			if close != ']' && l.peek() == close {
+			if closeChar != ']' && l.peek() == closeChar {
 				l.advance()
-				b.WriteRune(close)
+				b.WriteRune(closeChar)
 
 				continue
 			}

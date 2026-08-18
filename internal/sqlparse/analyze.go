@@ -260,7 +260,6 @@ func (p Sqlparse) Tables() []TableUsage {
 	case *ast.DropViewStmt:
 		admin(s.Name)
 	case *ast.BeginStmt, *ast.CommitStmt, *ast.RollbackStmt, *ast.SavepointStmt, *ast.ReleaseStmt:
-		// Transaction control statements never reference a table.
 	}
 
 	return out

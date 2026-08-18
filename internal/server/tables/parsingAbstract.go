@@ -16,18 +16,17 @@ import (
 // The row ID, when present, is appended as the last $N parameter rather than being
 // embedded as a string literal in the WHERE clause.
 //
-// BUG (found while validating DATA-SECURITY.md §3.2): "table" used to be
-// re-derived here by matching u.Path against the pattern
-// "/tables/{{name}}/rows" via runtime_strings.ParseURLPattern. That
-// matcher requires the URL to have no more path segments than the
-// pattern (urls.go: "if len(urlParts) > len(patternParts) { return nil,
-// false }"), so it could only ever match the legacy, DSN-less shape
-// "/tables/{table}/rows" (4 segments). The actual DSN-scoped route this
-// function is called from, "/dsns/{dsn}/tables/{table}/rows" (6
-// segments), always failed to match -- silently returning ("", nil, nil):
-// an empty SQL string, no error. The caller (UpdateAbstractRows) then ran
-// db.Exec("") and called RowsAffected() on the result, which SQLite
-// returns as nil for a no-op empty statement, so that call panicked (a
+// An issue was found here where "table" used to be re-derived by 
+// matching u.Path against the pattern "/tables/{{name}}/rows" via
+// runtime_strings.ParseURLPattern. That matcher requires the URL to 
+// have no more path segments than the pattern, so it could only ever
+// match the legacy, DSN-less shape "/tables/{table}/rows" (4 segments).
+// The actual DSN-scoped route this function is called from, 
+// "/dsns/{dsn}/tables/{table}/rows" (6 // segments), always failed to 
+// match -- silently returning ("", nil, nil):  an empty SQL string, 
+// no error. The caller (UpdateAbstractRows) then ran db.Exec("") and 
+// called RowsAffected() on the result, which SQLite returns as nil for 
+// a no-op empty statement, so that call panicked (a
 // 500 masking what should have been a successful, silent no-op that
 // updated nothing). The caller already computes the correct,
 // provider-qualified table name once via parsing.FullName() before
