@@ -43,8 +43,6 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 			db.Provider = defs.SqliteProvider
 		}
 
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
-
 		// For a restricted DSN, If the current user is not an administrator,
 		// see if the user has read permission for this table/ If not, return
 		// a 403 Forbidden error.
@@ -57,11 +55,13 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 		// caller with no grant at all fell through and was allowed to
 		// read the table's metadata.
 		if db.Restricted {
-			if !session.Admin && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
+			if !session.Admin && !Authorized(session, session.User, dsn+"."+tableName, defs.TableReadPermission) {
 				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
 			}
 		}
-		
+
+		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+
 		// Get the table metadata.
 		var columns []defs.DBColumn
 
