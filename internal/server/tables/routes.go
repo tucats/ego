@@ -39,13 +39,13 @@ func AddStaticRoutes(r *router.Router) {
 	// JSON (an array of strings) or plain text; both are always-accepted
 	// content types, so no explicit ContentMedia() restriction is needed.
 	r.New(defs.DSNGeneratePath, GenerateHandler, http.MethodPost).
-		Permissions(defs.DSNAdminPermission).
+		Permissions(defs.SQLPermission).
 		AcceptMedia(defs.DSNGenerateMediaType).
 		Class(router.TableRequestCounter)
 
 	// Run a transaction script
 	r.New(defs.TablesPath+"@transaction", scripting.Handler, http.MethodPost).
-		Permissions(defs.TableReadPermission, defs.TableUpdatePermission).
+		Authentication(true).
 		Parameter(defs.FilterParameterName, defs.Any).
 		AcceptMedia(defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
@@ -68,14 +68,14 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Start a transaction for a dsn
 	r.New(defs.DSNBeginPath, BeginHandler, http.MethodGet).
-		Permissions(defs.TableReadPermission).
+		Authentication(true).
 		Parameter(defs.ExpiresParameterName, util.DurationParameterType).
 		AcceptMedia(defs.TransactionMediaType).
 		Class(router.TableRequestCounter)
 
 	// Rollback a transaction for a dsn
 	r.New(defs.DSNRollbackPath, RollbackHandler, http.MethodGet).
-		Permissions(defs.TableReadPermission).
+		Authentication(true).
 		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
 		AcceptMedia(defs.TransactionMediaType).
 		Class(router.TableRequestCounter)
@@ -89,7 +89,7 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Read rows from a table via a DSN
 	r.New(defs.TablesRowsPath, ReadRows, http.MethodGet).
-		Permissions(defs.TableReadPermission).
+		Authentication(true).
 		Parameter(defs.StartParameterName, util.IntParameterType).
 		Parameter(defs.LimitParameterName, util.IntParameterType).
 		Parameter(defs.ColumnParameterName, util.ListParameterType).
@@ -103,7 +103,7 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Insert rows into a table via a DSN
 	r.New(defs.TablesRowsPath, InsertRows, http.MethodPut).
-		Permissions(defs.TableWritePermission).
+		Authentication(true).
 		Parameter(defs.AbstractParameterName, util.BoolParameterType).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.UpsertParameterName, util.StringOrFlagParameterType).
@@ -114,7 +114,7 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Delete rows from a table via a DSN
 	r.New(defs.TablesRowsPath, DeleteRows, http.MethodDelete).
-		Permissions(defs.TableDeletePermission).
+		Authentication(true).
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
@@ -123,7 +123,7 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Update rows from a table via a DSN
 	r.New(defs.TablesRowsPath, UpdateRows, http.MethodPatch).
-		Permissions(defs.TableUpdatePermission).
+		Authentication(true).
 		Parameter(defs.FilterParameterName, defs.Any).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Parameter(defs.ColumnParameterName, util.StringParameterType).
@@ -134,19 +134,19 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Read permissions for a table via a DSN
 	r.New(defs.TablesPath+tableParameter+"/permissions", ReadPermissions, http.MethodGet).
-		Permissions(defs.TableAdminPermission).
+		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
 	// Grant permissions for a table
 	r.New(defs.TablesPath+"{{table}}/permissions", GrantPermissions, http.MethodPut).
-		Permissions(defs.TableAdminPermission).
+		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
 	// Revoke permissions from a table
 	r.New(defs.TablesPath+"{{table}}/permissions", DeletePermissions, http.MethodDelete).
-		Permissions(defs.TableAdminPermission).
+		Permissions(defs.DSNAdminPermission).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
@@ -192,12 +192,12 @@ func AddStaticRoutes(r *router.Router) {
 
 	// Create a new table using a DSN
 	r.New(defs.TablesPath+tableParameter, TableCreate, http.MethodPut).
-		Permissions(defs.TableUpdatePermission).
+		Permissions(defs.DSNAdminPermission).
 		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
 	// Delete a table using a DSN
 	r.New(defs.TablesPath+tableParameter, DeleteTable, http.MethodDelete).
-		Permissions(defs.TableDeletePermission).
+		Permissions(defs.DSNAdminPermission).
 		Class(router.TableRequestCounter)
 }
