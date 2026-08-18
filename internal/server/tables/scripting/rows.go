@@ -14,16 +14,20 @@ import (
 	"github.com/tucats/ego/internal/server/tables/parsing"
 )
 
-// doRows handles the "readrows" opcode (and SQL SELECT statements promoted from
-// the "sql" opcode in Handler). It runs a SELECT query and stores the complete
-// result set — all matching rows — as a single symbol under the key
-// resultSetSymbolName. After the transaction commits, Handler detects that key
-// and returns its value as the HTTP response body (a defs.DBRowSet), rather
-// than returning the plain row-count response.
+// doRows handles the "readrows" opcode. It runs a SELECT (or other
+// row-returning) query and stores the complete result set — all matching
+// rows — as a single symbol under the key resultSetSymbolName. After the
+// transaction commits, Handler detects that key and returns its value as
+// the HTTP response body (a defs.DBRowSet), rather than returning the
+// plain row-count response.
 //
-// The SQL query is taken from task.SQL when present (e.g. for a raw "select …"
-// statement). Otherwise it is built from task.Table, task.Filters, and
-// task.Columns just like doSelect.
+// The SQL query is taken from task.SQL when present (e.g. for a raw
+// "select …" statement, authorized via authorizeAndClassifySQL the same
+// way doSQL's "sql" opcode is). Otherwise it is built from task.Table,
+// task.Filters, and task.Columns just like doSelect, and authorized via
+// authorizedForTable instead. A raw "sql" opcode whose text is a SELECT is
+// no longer promoted to this opcode by Handler -- doSQL classifies and
+// handles that case directly now (see sql.go).
 //
 // Unlike doSelect, any number of rows is valid. If task.EmptyError is true and
 // zero rows are returned, the operation fails with 404.
@@ -32,19 +36,39 @@ func doRows(sessionID int, user string, db *database.Database, task defs.TXOpera
 		err    error
 		count  int
 		status int
-		q      = task.SQL
 	)
 
 	if err := applySymbolsToTask(sessionID, &task, id, syms); err != nil {
 		return 0, http.StatusBadRequest, err
 	}
 
-	fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows")
+	// Captured after applySymbolsToTask (not before, as this used to read)
+	// so that a {{name}} reference inside a raw SQL string is actually
+	// expanded -- q used to be captured from task.SQL before symbol
+	// substitution ran, so it silently ignored the substituted value and
+	// used the original, unexpanded text instead.
+	q := task.SQL
 
 	if q == "" {
+		if !authorizedForTable(db, task.Table, defs.TableReadPermission) {
+			return 0, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(task.Table)
+		}
+
+		fakeURL, _ := url.Parse("http://localhost/tables/" + task.Table + "/rows")
+
 		q, err = parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, strings.Join(task.Columns, ","), task.Table, user, selectVerb, db.Provider)
 		if err != nil {
 			return count, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
+		}
+	} else {
+		// Raw SQL text supplied directly (task.SQL, rather than the
+		// structured Table/Filters/Columns fields) -- authorize every
+		// table it references, the same way doSQL does for the "sql"
+		// opcode; this is the other opcode that can run client-supplied
+		// SQL text. Gated at Handler's first pass on defs.SQLPermission
+		// before either handler is ever reached.
+		if _, _, status, err := authorizeAndClassifySQL(db, q); err != nil {
+			return 0, status, err
 		}
 	}
 

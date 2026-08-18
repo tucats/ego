@@ -51,6 +51,10 @@ func doInsert(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return http.StatusBadRequest, errors.ErrTaskInsertUnsupported.Context("columns")
 	}
 
+	if !authorizedForTable(db, task.Table, defs.TableWritePermission) {
+		return http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(task.Table)
+	}
+
 	// Get the column metadata for the table we're inserting into.
 	columns, err := getColumnInfo(db, user, task.Table)
 	if err != nil {

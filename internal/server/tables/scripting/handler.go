@@ -107,6 +107,24 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 			return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 		}
+
+		// Raw SQL text (the "sql" opcode, or an explicit "readrows"
+		// carrying task.SQL instead of a structured Table/Filters/Columns)
+		// bypasses the per-table_perms authorization the structured
+		// opcodes get above -- it is authorized per-statement instead,
+		// once parsed (see authorizeAndClassifySQL, used by doSQL/doRows).
+		// But reaching that at all first requires the same
+		// defs.SQLPermission the dedicated @sql endpoint's own route
+		// requires (commands/routes.go): @transaction's own route has no
+		// such gate (Authentication(true) only), so without this check a
+		// baseline ego.logon-only caller could run arbitrary SQL through
+		// a transaction script that @sql itself would refuse outright.
+		if strings.TrimSpace(task.SQL) != "" && !hasPermission(session, defs.SQLPermission) {
+			msg := fmt.Sprintf("transaction operation %d requires the %s permission to execute SQL text",
+				n, defs.SQLPermission)
+
+			return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
+		}
 	}
 
 	// Open the database connection (read+write access required) and begin
@@ -149,14 +167,11 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 				}
 			}
 
-			// A "sql" opcode whose SQL text starts with SELECT is really a
-			// "readrows" operation — promote it so the correct handler runs.
-			if strings.EqualFold(task.Opcode, sqlOpcode) {
-				if strings.HasPrefix(strings.TrimSpace(strings.ToLower(task.SQL)), "select ") {
-					task.Opcode = rowsOpcode
-				}
-			}
-
+			// A "sql" opcode is no longer promoted to "readrows" here based
+			// on a text prefix -- doSQL now classifies task.SQL itself
+			// (via authorizeAndClassifySQL, using the SQL parser) and
+			// handles a SELECT the same way doRows would, so the dispatch
+			// below can send every "sql" opcode to doSQL unconditionally.
 			var cacheFlush bool
 
 			// Dispatch to the operation-specific handler. Each handler:

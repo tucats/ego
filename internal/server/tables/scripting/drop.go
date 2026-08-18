@@ -37,6 +37,16 @@ func doDrop(sessionID int, user string, db *database.Database, task defs.TXOpera
 		return http.StatusBadRequest, errors.ErrTaskDropUnsupported.Context("columns")
 	}
 
+	// Structured "drop" opcode: matches DeleteTable's own per-table check
+	// (tables.go), a table_perms admin grant -- not the DSN-wide check
+	// authorizeAndClassifySQL uses for a raw "DROP TABLE ..." statement
+	// via the "sql" opcode, which mirrors @sql's DDL path instead. The two
+	// opcodes reach the same SQL outcome through different route
+	// families, so each is authorized the same way its REST sibling is.
+	if !authorizedForTable(db, task.Table, defs.TableAdminPermission) {
+		return http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(task.Table)
+	}
+
 	// Resolve the table name for the DROP TABLE statement.
 	// DDL statements do not support positional parameter substitution for
 	// identifiers, so the table name is embedded directly in the SQL string.

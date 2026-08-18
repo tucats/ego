@@ -36,6 +36,10 @@ func doDelete(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.ErrTaskDeleteUnsupported.Context("columns")
 	}
 
+	if !authorizedForTable(db, task.Table, defs.TableDeletePermission) {
+		return 0, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(task.Table)
+	}
+
 	if where, err := parsing.WhereClause(task.Filters); where == "" {
 		if settings.GetBool(defs.TablesServerEmptyFilterError) {
 			return 0, http.StatusBadRequest, errors.ErrTaskFilterRequired

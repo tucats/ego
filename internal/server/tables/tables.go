@@ -48,7 +48,15 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 
 		// Verify that we are allowed to do this. The caller must either be a root user or
 		// explicitly have update permission for the table.
-		if !session.Admin && Authorized(session, user, tableName, defs.TableAdminPermission) {
+		//
+		// Authorized() returns true when the caller IS permitted, so this
+		// condition must be negated to deny when they are NOT -- the same
+		// inverted-check bug as DATA-SECURITY.md §3.2 (fixed at three other
+		// call sites in d60ebe84), found here independently: a caller
+		// holding a valid table_perms admin grant was denied create
+		// access, while a caller with no grant at all fell through and
+		// was allowed to create (or overwrite) the table.
+		if !session.Admin && !Authorized(session, user, tableName, defs.TableAdminPermission) {
 			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
 		}
 

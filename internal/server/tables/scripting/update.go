@@ -50,6 +50,10 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
+	if !authorizedForTable(db, task.Table, defs.TableUpdatePermission) {
+		return 0, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(task.Table)
+	}
+
 	// Resolve the table name for the UPDATE statement.
 	// SQLite has no schema concept; PostgreSQL requires schema qualification.
 	// To add a new provider: add a case with the appropriate name-resolution logic.
