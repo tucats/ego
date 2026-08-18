@@ -1,0 +1,31 @@
+{
+    "description": "grant the test user table_perms ego.table.admin ONLY on tblC{{TSID}} -- deliberately no read/write/update/delete. scope-72..75 verify Authorized() treats perm.Admin as implicitly satisfying all four operation checks (security.go's Read/Write/Update/Delete cases now read '!perm.X && !perm.Admin')",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblC{{TSID}}/permissions",
+        "parameters": {
+            "user": "tsu{{TSID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.admin"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "admin permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.admin"
+        }
+    ]
+}

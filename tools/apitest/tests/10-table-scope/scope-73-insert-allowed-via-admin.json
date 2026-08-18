@@ -1,0 +1,39 @@
+{
+    "description": "REGRESSION for the table.admin-implies-write fix: same user, still no explicit ego.table.write grant on tblC{{TSID}} -- only ego.table.admin (scope-71). A non-abstract PUT (InsertRows) must succeed via Authorized()'s TableWritePermission case now accepting perm.Admin.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-ts{{TSID}}/tables/tblC{{TSID}}/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TS_TOKEN}}"]
+        },
+        "body": {
+            "id": 1,
+            "name": "admin-implied-insert"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

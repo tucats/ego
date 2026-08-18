@@ -597,12 +597,12 @@ func Authorized(session *router.Session, user string, table string, operations .
 	for _, operation := range operations {
 		switch strings.ToLower(operation) {
 		case defs.TableReadPermission:
-			if !perm.Read {
+			if !perm.Read && !perm.Admin {
 				auth = false
 			}
 
 		case defs.TableWritePermission:
-			if !perm.Write {
+			if !perm.Write && !perm.Admin {
 				auth = false
 			}
 
@@ -612,12 +612,12 @@ func Authorized(session *router.Session, user string, table string, operations .
 			}
 
 		case defs.TableDeletePermission:
-			if !perm.Delete {
+			if !perm.Delete && !perm.Admin {
 				auth = false
 			}
 
 		case defs.TableUpdatePermission:
-			if !perm.Update {
+			if !perm.Update && !perm.Admin {
 				auth = false
 			}
 
@@ -637,7 +637,7 @@ func Authorized(session *router.Session, user string, table string, operations .
 			ui.WriteLog(ui.TableLogger, "table.auth", ui.A{
 				"session": session.ID,
 				"user":    user,
-				"perms":    operations,
+				"perms":   operations,
 				"table":   table})
 		}
 	}
