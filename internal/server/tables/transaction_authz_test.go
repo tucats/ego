@@ -44,6 +44,7 @@ func setUpTransactionAuthzTest(t *testing.T) func(session *router.Session, ops [
 	t.Helper()
 
 	dataFile := "testing-tx-authz-data-" + uuid.New().String() + ".db"
+	
 	t.Cleanup(func() {
 		_ = os.Remove(dataFile)
 		_ = os.Remove(dataFile + "-wal")
@@ -81,6 +82,7 @@ func setUpTransactionAuthzTest(t *testing.T) func(session *router.Session, ops [
 	}
 
 	permsFile := "testing-tx-authz-perms-" + uuid.New().String() + ".db"
+	
 	t.Cleanup(func() {
 		_ = os.Remove(permsFile)
 		_ = os.Remove(permsFile + "-wal")
@@ -102,6 +104,7 @@ func setUpTransactionAuthzTest(t *testing.T) func(session *router.Session, ops [
 	// the one just configured above. Force a fresh handle for this test.
 	pValid = false
 	pHandle = nil
+	
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	post := func(session *router.Session, ops []defs.TXOperation) (int, *httptest.ResponseRecorder) {
@@ -161,6 +164,7 @@ func grantTablePermission(t *testing.T, user, tableName, permission string) {
 	}
 	body, _ := json.Marshal([]string{permission})
 	req, err := http.NewRequest(http.MethodPut, "/dsns/d1/tables/"+tableName+"/permissions?user="+user, bytes.NewReader(body))
+	
 	if err != nil {
 		t.Fatalf("http.NewRequest: %v", err)
 	}
@@ -181,6 +185,7 @@ func TestTransactionSelect_RequiresTablePermission(t *testing.T) {
 	post := setUpTransactionAuthzTest(t)
 
 	bob := &router.Session{ID: 2, User: "bob", Admin: false, Permissions: []string{defs.LogonPermission}}
+	
 	grantDSNAccess(t, "bob")
 
 	ops := []defs.TXOperation{{Opcode: "select", Table: "secrets", Filters: []string{"EQ(id,1)"}}}
@@ -226,6 +231,7 @@ func TestTransactionSQL_RequiresTablePermission(t *testing.T) {
 	post := setUpTransactionAuthzTest(t)
 
 	bob := &router.Session{ID: 2, User: "bob", Admin: false, Permissions: []string{defs.LogonPermission, defs.SQLPermission}}
+	
 	grantDSNAccess(t, "bob")
 
 	ops := []defs.TXOperation{{Opcode: "sql", SQL: "SELECT * FROM secrets"}}

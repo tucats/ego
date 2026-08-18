@@ -53,6 +53,16 @@ func panicRouter(t *testing.T, name, endpoint string) *Router {
 		// failure as a nil-pointer dereference and needs no import to trigger.
 		var broken map[string]string
 
+		// This little charade is to settle down the linter, which seems
+		// determined to tell me what we already know -- the write
+		// to the map is to a nil value. So adding a little logic
+		// the linter can predict get it to be quiet. The seesion.ID
+		// will _never_ be less than zero, so we always panic -- as
+		// the code is inteded to do.
+		if session.ID < 0 {
+			broken = map[string]string{}
+		}
+
 		broken["key"] = "value"
 
 		return http.StatusOK
