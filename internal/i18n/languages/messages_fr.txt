@@ -1873,7 +1873,7 @@ symbols.set.readonly=Marquage de {{name}} dans la table {{table}}. readonly={{fl
 table.abstract=Indicateur abstrait={{flag}}
 table.affected={{count}} {{count|cardinal ligne, lignes}} affectée(s)
 table.assume.null.columns={{columns|cardinal Colonne,Colonnes}} {{columns|list}} non fournie(s) dans la requête ; valeur nulle supposée
-table.auth=L'utilisateur {{user}} a la permission {{perm|list}} pour la table {{table}}
+table.auth=L'utilisateur {{user}} a la permission {{perms|list}} pour la table {{table}}
 table.created=Table créée
 table.deleted=Table {{name}} supprimée
 table.deleted.rows={{count}} {{count|cardinal ligne, lignes}} supprimée(s) ; {{status}}

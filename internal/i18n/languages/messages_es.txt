@@ -1879,7 +1879,7 @@ symbols.set.readonly=Marcando {{name}} en la tabla {{table}}. readonly={{flag}}
 table.abstract=Indicador abstracto={{flag}}
 table.affected=Afectadas {{count}} {{count|cardinal fila, filas}}
 table.assume.null.columns={{columns|cardinal Columna,Columnas}} {{columns|list}} no proporcionadas en la solicitud; asumiendo valor nulo
-table.auth=El usuario {{user}} tiene permiso {{perm|list}} para la tabla {{table}}
+table.auth=El usuario {{user}} tiene permiso {{perms|list}} para la tabla {{table}}
 table.created=Tabla creada
 table.deleted=Tabla {{name}} eliminada
 table.deleted.rows=Se eliminaron {{count}} {{count|cardinal fila, filas}}; {{status}}

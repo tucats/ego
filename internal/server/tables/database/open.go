@@ -11,7 +11,7 @@ import (
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/auth"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 type Database struct {
@@ -26,6 +26,7 @@ type Database struct {
 	Provider    string
 	Schema      string
 	HasRowID    bool
+	Restricted  bool
 }
 
 // Open the database that is associated with the named DSN.
@@ -140,12 +141,13 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		"constr":  redactURLString(conStr)})
 
 	db = &Database{
-		User:     savedUser,
-		DSN:      name,
-		Schema:   dsnName.Schema,
-		HasRowID: dsnName.RowId,
-		Session:  session,
-		Name:     dsnName.Name,
+		User:       savedUser,
+		DSN:        name,
+		Schema:     dsnName.Schema,
+		HasRowID:   dsnName.RowId,
+		Session:    session,
+		Name:       dsnName.Name,
+		Restricted: dsnName.Restricted,
 	}
 
 	scheme, err := egostrings.FindScheme(conStr)

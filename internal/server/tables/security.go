@@ -637,7 +637,7 @@ func Authorized(session *router.Session, user string, table string, operations .
 			ui.WriteLog(ui.TableLogger, "table.auth", ui.A{
 				"session": session.ID,
 				"user":    user,
-				"perms":   operations,
+				"perms":    operations,
 				"table":   table})
 		}
 	}

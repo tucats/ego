@@ -45,8 +45,9 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
-		// If the current user is not an administrator, see if the user has read permission for this table.
-		// If not, return a 403 Forbidden error.
+		// For a restricted DSN, If the current user is not an administrator,
+		// see if the user has read permission for this table/ If not, return
+		// a 403 Forbidden error.
 		//
 		// Authorized() returns true when the caller IS permitted, so this
 		// condition must be negated to deny when they are NOT -- the same
@@ -55,10 +56,12 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 		// holding a valid table_perms read grant was denied, while a
 		// caller with no grant at all fell through and was allowed to
 		// read the table's metadata.
-		if !session.Admin && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
+		if db.Restricted {
+			if !session.Admin && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
+			}
 		}
-
+		
 		// Get the table metadata.
 		var columns []defs.DBColumn
 

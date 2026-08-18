@@ -1873,7 +1873,7 @@ symbols.set.readonly={{table}} 内の {{name}} をマーク中。readonly={{flag
 table.abstract=Abstractフラグ={{flag}}
 table.affected={{count}}行に影響しました
 table.assume.null.columns=列 {{columns|list}} がリクエストで提供されていません; null値を想定します
-table.auth=ユーザー {{user}} はテーブル {{table}} の {{perm|list}} 権限を持っています
+table.auth=ユーザー {{user}} はテーブル {{table}} の {{perms|list}} 権限を持っています
 table.created=テーブルを作成しました
 table.deleted=テーブル {{name}} を削除しました
 table.deleted.rows={{count}}行を削除しました; {{status}}

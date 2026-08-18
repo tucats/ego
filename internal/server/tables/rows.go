@@ -24,7 +24,7 @@ import (
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/server/tables/parsing"
 	"github.com/tucats/ego/internal/util"
-	"github.com/tucats/ego/internal/util/strings"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 const insertErrorPrefix = "insert error: "
@@ -40,12 +40,14 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 	if err == nil && db != nil {
 		defer db.Close()
 
+		if db.Restricted {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableWritePermission) {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.delete"), http.StatusForbidden)
+			}
+		}
+
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
-
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.delete"), http.StatusForbidden)
-		}
 
 		if where, err := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
@@ -73,7 +75,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.start", ui.A{
 				"session": session.ID,
 			})
 
@@ -82,7 +84,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			defer func() {
 				if db.Transaction != nil {
 					db.Rollback()
-					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+					ui.Log(ui.DBLogger, "db.local.tx.rollback", ui.A{
 						"session": session.ID,
 					})
 				}
@@ -121,7 +123,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			if localTx {
 				_ = db.Commit()
 
-				ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+				ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
 					"session": session.ID,
 				})
 			}
@@ -163,12 +165,14 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			upsertList = []string{defs.RowIDName}
 		}
 
+		if db.Restricted {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableWritePermission) {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.write"), http.StatusForbidden)
+			}
+		}
+
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
-
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableWritePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.write"), http.StatusForbidden)
-		}
 
 		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
@@ -208,7 +212,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.start", ui.A{
 				"session": session.ID,
 			})
 
@@ -217,7 +221,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			defer func() {
 				if db.Transaction != nil {
 					db.Rollback()
-					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+					ui.Log(ui.DBLogger, "db.local.tx.rollback", ui.A{
 						"session": session.ID,
 					})
 				}
@@ -254,7 +258,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		if localTx {
 			err = db.Commit()
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
 				"session": session.ID,
 			})
 		}
@@ -508,7 +512,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		if db.Transaction == nil {
 			localTx = true
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.start", ui.A{
 				"session": session.ID,
 			})
 
@@ -517,19 +521,22 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 			defer func() {
 				if db.Transaction != nil {
 					db.Rollback()
-					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+					ui.Log(ui.DBLogger, "db.local.tx.rollback", ui.A{
 						"session": session.ID,
 					})
 				}
 			}()
 		}
 
+		// If this is a restricted DSN, check the authorization for this dsn.table
+		if db.Restricted {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableReadPermission) {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
+			}
+		}
+
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
-
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableReadPermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.read"), http.StatusForbidden)
-		}
 
 		columns, err = getColumnInfo(db, tableName, true)
 		if err != nil {
@@ -605,7 +612,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 			if localTx {
 				err = db.Commit()
 
-				ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+				ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
 					"session": session.ID,
 				})
 			}
@@ -756,12 +763,14 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
+		if db.Restricted {
+			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableWritePermission) {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
+			}
+		}
+
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
-
-		if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableUpdatePermission) {
-			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)
-		}
 
 		columns, err = getColumnInfo(db, tableName, false)
 
@@ -783,7 +792,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		if db.Transaction == nil {
 			localTx = true
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.start"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.start", ui.A{
 				"session": session.ID,
 			})
 
@@ -792,7 +801,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			defer func() {
 				if db.Transaction != nil {
 					db.Rollback()
-					ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.rollback"), ui.A{
+					ui.Log(ui.DBLogger, "db.local.tx.rollback", ui.A{
 						"session": session.ID,
 					})
 				}
@@ -808,7 +817,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		if err == nil && localTx {
 			err = db.Commit()
 
-			ui.Log(ui.DBLogger, i18n.T("log.db.local.tx.commit"), ui.A{
+			ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
 				"session": session.ID,
 			})
 		}

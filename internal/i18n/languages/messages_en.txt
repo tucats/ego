@@ -1904,7 +1904,7 @@ symbols.set.readonly=Marking {{name}} in table {{table}}. readonly={{flag}}
 table.abstract=Abstract flag={{flag}}
 table.affected=Affected {{count}} {{count|cardinal row, rows}}
 table.assume.null.columns={{columns|cardinal Column,Columns}} {{columns|list}} not provided in request; assuming null value
-table.auth=User {{user}} has {{perm|list}} permission for table {{table}}
+table.auth=User {{user}} has {{perms|list}} permission for table {{table}}
 table.created=Table created
 table.deleted=Table {{name}} deleted
 table.deleted.rows=Deleted {{count}} {{count|cardinal row, rows}}; {{status}}
