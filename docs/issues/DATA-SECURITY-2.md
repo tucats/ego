@@ -198,6 +198,22 @@ themselves, the same shape used in `internal/server/dsns/handler.go`'s
 
 ## 4. HIGH — `ego.table.admin` cannot actually be used to administer a table's permissions
 
+**Fixed in `dfb502d0`.** All four routes now register with
+`Authentication(true)` only; each handler calls a new shared
+`authorizedForTablePermissions` (`internal/server/tables/security.go`),
+which accepts `session.Admin`, identity-wide `ego.dsn.admin`, a DSN-specific
+`dsns_auth` admin grant, or a table-specific `table_perms` admin grant — the
+same OR-chain shape as findings #2/#3, with the table-specific link added
+since these are the one set of routes where a resource smaller than a whole
+DSN is meaningful. A second, unrelated bug was found and fixed in the same
+commit: `DeletePermissions`' `?user=` filter was built against a
+nonexistent `"name"` column (should have been `"user"`, matching every
+other filter in this file), which silently dropped the filter entirely and
+caused a scoped revoke to delete *every* user's grant on the table — caught
+by a pre-existing test (`perm-83`) once the new regression tests started
+exercising this path for the first time in the suite's history. Regression
+coverage: `tools/apitest/tests/9-permissions/perm-66` through `perm-66j`.
+
 `docs/SERVER.md`'s own stated reason for `ego.table.admin` to exist is:
 
 > `ego.table.admin` | **Per-table only:** may administer that specific
