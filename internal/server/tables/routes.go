@@ -138,6 +138,11 @@ func AddStaticRoutes(r *router.Router) {
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
+	// List every user's permissions on a table via a DSN
+	r.New(defs.TablesNameAllPermissionsPath, ReadTablePermissions, http.MethodGet).
+		Permissions(defs.DSNAdminPermission).
+		Class(router.TableRequestCounter)
+
 	// Grant permissions for a table
 	r.New(defs.TablesPath+"{{table}}/permissions", GrantPermissions, http.MethodPut).
 		Permissions(defs.DSNAdminPermission).

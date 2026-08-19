@@ -1,0 +1,92 @@
+{
+    "description": "as admin (identity ego.root, which bypasses the route's DSNAdminPermission gate), list every grant on t{{PERMTESTID}}. Expect exactly 3 records: the table creator's auto-grant from perm-80's PUT (server/tables/security.go's createTablePermissions grants the creating user full read/write/update/delete/admin), pmu{{PERMTESTID}}'s read/update/write grants from earlier in this test group, and zuser2{{PERMTESTID}}'s read grant from the previous test -- and NOT cuser{{PERMTESTID}}, whose grant is on the second table (t2{{PERMTESTID}}) only. Records are sorted by user name, and 'admin' < 'pmu...' < 'zuser2...' regardless of the random PERMTESTID hash, so the exact count and the index-1/index-2 assertions below double as a regression guard against the table filter leaking grants from other tables",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "count is exactly 3 -- cuser's grant on the other table did not leak in",
+            "query": "count",
+            "value": "3"
+        },
+        {
+            "name": "permissions array has 3 entries",
+            "query": "permissions.*",
+            "op": "len",
+            "value": "3"
+        },
+        {
+            "name": "second record is pmu{{PERMTESTID}}",
+            "query": "permissions.1.user",
+            "value": "pmu{{PERMTESTID}}"
+        },
+        {
+            "name": "second record's dsn is correct",
+            "query": "permissions.1.dsn",
+            "value": "dsn-{{PERMTESTID}}"
+        },
+        {
+            "name": "second record's table is correct",
+            "query": "permissions.1.table",
+            "value": "t{{PERMTESTID}}"
+        },
+        {
+            "name": "pmu{{PERMTESTID}} has exactly 3 permissions",
+            "query": "permissions.1.permissions.*",
+            "op": "len",
+            "value": "3"
+        },
+        {
+            "name": "pmu{{PERMTESTID}} permission 0 is read (alphabetically first)",
+            "query": "permissions.1.permissions.0",
+            "value": "ego.table.read"
+        },
+        {
+            "name": "pmu{{PERMTESTID}} permission 1 is update",
+            "query": "permissions.1.permissions.1",
+            "value": "ego.table.update"
+        },
+        {
+            "name": "pmu{{PERMTESTID}} permission 2 is write",
+            "query": "permissions.1.permissions.2",
+            "value": "ego.table.write"
+        },
+        {
+            "name": "third record is zuser2{{PERMTESTID}}",
+            "query": "permissions.2.user",
+            "value": "zuser2{{PERMTESTID}}"
+        },
+        {
+            "name": "zuser2{{PERMTESTID}} has exactly 1 permission",
+            "query": "permissions.2.permissions.*",
+            "op": "len",
+            "value": "1"
+        },
+        {
+            "name": "zuser2{{PERMTESTID}} permission 0 is read",
+            "query": "permissions.2.permissions.0",
+            "value": "ego.table.read"
+        }
+    ]
+}

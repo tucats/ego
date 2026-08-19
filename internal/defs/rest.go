@@ -86,7 +86,12 @@ const (
 	ServicesClusterRemovePath   = ServicesPath + "cluster/remove"
 	TablesPermissionsPath       = TablesPath + PermissionsPseudoTable
 	TablesNamePermissionsPath   = TablesPath + "{{table}}/permissions"
-	UIPath                      = "/ui"
+	// TablesNameAllPermissionsPath lists every user's grants on a single table --
+	// the table-scoped analog of the DSNNamePath+PermissionsPseudoTable route,
+	// gated on DSNAdminPermission rather than the RootPermission that
+	// TablesPermissionsPath's DSN-wide dump needs.
+	TablesNameAllPermissionsPath = TablesPath + "{{table}}/" + PermissionsPseudoTable
+	UIPath                       = "/ui"
 
 	// OAuth2 Authorization Server endpoints — registered at the server root using
 	// the standard OIDC path conventions so that any compliant client library can

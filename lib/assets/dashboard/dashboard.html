@@ -358,7 +358,7 @@
         </div>
         <div id="sql-resize-handle"></div>
         <div id="sql-results-area">
-            <label class="sql-editor-label">Results</label>
+            <label class="sql-editor-label">Results<span id="sql-elapsed"></span></label>
             <div id="sql-status"></div>
             <div id="sql-results"></div>
         </div>
@@ -698,9 +698,47 @@
         <h2 id="table-detail-title">Table</h2>
         <p id="table-detail-error"></p>
         <div id="table-detail-content"></div>
+        <div id="table-permissions-section" style="display:none">
+            <h3>Permissions</h3>
+            <div id="table-permissions-content"></div>
+        </div>
         <div class="sheet-buttons">
             <button id="table-detail-view-btn" onclick="viewDataFromTable()">View Data</button>
+            <button id="table-detail-add-perm-btn" onclick="showTablePermAdd()">Set permissions&hellip;</button>
             <button id="table-detail-close-btn" onclick="hideTableDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Table permission edit sheet — slides in from the right when a permission row is clicked -->
+<div id="table-perm-edit-overlay" onclick="overlayBackdropClick(event)">
+    <div id="table-perm-edit-sheet">
+        <h2>Edit Permissions</h2>
+        <p id="table-perm-edit-error"></p>
+        <label for="table-perm-edit-user">User</label>
+        <input type="text" id="table-perm-edit-user" autocomplete="off" disabled>
+        <label for="table-perm-edit-perms">Permissions <span class="field-hint">(comma-separated)</span></label>
+        <input type="text" id="table-perm-edit-perms" autocomplete="off">
+        <div class="sheet-buttons">
+            <button id="table-perm-edit-delete-btn" onclick="submitDeleteTablePerm()" class="sheet-delete-btn">Delete</button>
+            <button id="table-perm-edit-cancel-btn" onclick="hideTablePermEdit()">Cancel</button>
+            <button id="table-perm-edit-save-btn" onclick="submitTablePermEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Table Permission sheet — slides in from the right when "Set permissions…" is clicked -->
+<div id="table-perm-add-overlay" onclick="overlayBackdropClick(event)">
+    <div id="table-perm-add-sheet">
+        <h2>Add Permission</h2>
+        <p id="table-perm-add-error"></p>
+        <label for="table-perm-add-user">User</label>
+        <input type="text" id="table-perm-add-user" autocomplete="off">
+        <label for="table-perm-add-perms">Permissions <span class="field-hint">(comma-separated)</span></label>
+        <input type="text" id="table-perm-add-perms" autocomplete="off">
+        <div class="sheet-buttons">
+            <button id="table-perm-add-cancel-btn" onclick="hideTablePermAdd()">Cancel</button>
+            <button id="table-perm-add-save-btn" onclick="submitTablePermAdd()">Save</button>
         </div>
     </div>
 </div>

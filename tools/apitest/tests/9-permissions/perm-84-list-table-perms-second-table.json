@@ -1,0 +1,61 @@
+{
+    "description": "as admin, list grants on the second table (t2{{PERMTESTID}}) to confirm its own grant (cuser{{PERMTESTID}}, from perm-81) is reported correctly and that this table's listing is unaffected by the additional grants made on t{{PERMTESTID}} in the previous two tests -- the other half of the cross-table isolation check started in perm-83",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t2{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "count is exactly 2 -- t{{PERMTESTID}}'s extra grants did not leak in",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "permissions array has 2 entries",
+            "query": "permissions.*",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "second record is cuser{{PERMTESTID}}",
+            "query": "permissions.1.user",
+            "value": "cuser{{PERMTESTID}}"
+        },
+        {
+            "name": "second record's table is t2{{PERMTESTID}}",
+            "query": "permissions.1.table",
+            "value": "t2{{PERMTESTID}}"
+        },
+        {
+            "name": "cuser{{PERMTESTID}} has exactly 1 permission",
+            "query": "permissions.1.permissions.*",
+            "op": "len",
+            "value": "1"
+        },
+        {
+            "name": "cuser{{PERMTESTID}} permission 0 is read",
+            "query": "permissions.1.permissions.0",
+            "value": "ego.table.read"
+        }
+    ]
+}

@@ -35,7 +35,8 @@ import (
 func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
-	tableName := data.String(session.URLParts["table"])
+	table := data.String(session.URLParts["table"])
+	tableName := table
 	dsnName := data.String(session.URLParts["dsn"])
 
 	// Open the database connection. Pass the optional DSN if given as a part of the path. If a DSN is
@@ -118,7 +119,14 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 				Status:     http.StatusCreated,
 			}
 
-			_ = createTablePermissions(session, user, dsnName, tableName)
+			// Use the raw, unqualified table name (not the FullName-qualified
+			// tableName above) -- that's what GrantPermissions/ReadPermissions/
+			// ReadTablePermissions store and filter table_perms.table by (see
+			// removeTablePermissions's identical note in DeleteTable below). Before
+			// this fix, the creator's own auto-grant was stored under the quoted
+			// name (e.g. `"mytable"`) and so never matched a later lookup by any
+			// of those three handlers -- it was silently unreachable.
+			_ = createTablePermissions(session, user, dsnName, table)
 
 			tableName, _ = parsing.FullName(db.Provider, user, tableName)
 			response.Message = i18n.T("msg.server.table.created", ui.A{"name": tableName})

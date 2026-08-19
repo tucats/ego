@@ -122,6 +122,9 @@ type DBAbstractRowSet struct {
 
 	// Any error message text
 	Message string `json:"msg"`
+
+	// Elapsed time for query
+	Elapsed string `json:"elapsed,omitempty"`
 }
 
 type TableColumnsInfo struct {

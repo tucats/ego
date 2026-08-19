@@ -1,0 +1,31 @@
+{
+    "description": "grant a third, otherwise-uninvolved user table_perms ego.table.read on t{{PERMTESTID}} (the first table), so the listing below has to report multiple distinct grantees -- named with a 'z' prefix so it always sorts after 'pmu{{PERMTESTID}}' regardless of the random PERMTESTID hash, keeping the ordering assertions in the next test deterministic",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "zuser2{{PERMTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}
