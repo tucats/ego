@@ -1,0 +1,36 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #5, the @transaction side: sqtx{{SQLTESTID}} holds only ego.table.write on t{{SQLTESTID}} (sql-16f), and runs an UPDATE through @transaction's raw-SQL 'sql' opcode (scripting/authz.go's authorizeAndClassifySQL, the @transaction counterpart to sql_permissions.go's authorizeStatement that sql-15 exercises for the top-level @sql endpoint). Before the fix this succeeded -- write covered every INSERT/UPDATE/DELETE here too -- so this must now be denied. The WHERE clause deliberately matches no row; only the authorization outcome (403 vs 200) is what this test is about.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQLTX_TOKEN}}"]
+        },
+        "body": [
+            {
+                "operation": "sql",
+                "sql": "UPDATE t{{SQLTESTID}} SET name = 'ShouldNotApply' WHERE id = 424242"
+            }
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

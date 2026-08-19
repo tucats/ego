@@ -1,0 +1,36 @@
+{
+    "description": "add delete table_perms access to the scratch table, preserving the existing read+write+update grants -- needed so sql-16b below can prove DELETE succeeds once the caller actually holds ego.table.delete.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "squ{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.delete"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "delete permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.delete"
+        },
+        {
+            "name": "update permission preserved",
+            "query": "permissions.*",
+            "value": "ego.table.update"
+        }
+    ]
+}

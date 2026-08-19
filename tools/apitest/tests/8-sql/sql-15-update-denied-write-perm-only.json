@@ -1,0 +1,39 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #5: UPDATE is a write-usage table reference (sqlparse's own three-way read/write/admin split has no separate 'update' bucket), but @sql now maps that to the specific ego.table.update permission based on the statement's own kind, not to ego.table.write -- squ{{SQLTESTID}} holds only table.write at this point (granted at sql-13), so this must now be denied. Before the fix this succeeded, because every UPDATE was authorized as if it were an INSERT.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "UPDATE t{{SQLTESTID}} SET name = 'Alicia' WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

@@ -100,15 +100,17 @@ func hasPermission(session *router.Session, permission string) bool {
 // For a non-admin caller (only reachable at all with defs.SQLPermission;
 // see routes.go), every statement must parse, and every table it
 // references (sqlparse's Tables()) must be one the caller is allowed to use
-// that way: UsageRead requires defs.TableReadPermission, UsageWrite
-// requires defs.TableWritePermission (this collapses INSERT/UPDATE/DELETE
-// into one check; table_perms' separate update/delete flags are not
-// consulted here -- see the doc comment on Tables in sqlparse/analyze.go for
-// the same read/write/admin split this mirrors), and UsageAdmin
-// (CREATE/ALTER/DROP TABLE, CREATE/DROP INDEX, CREATE/DROP VIEW) requires
-// defs.DSNAdminPermission instead of a table_perms grant, since altering the
-// DSN's schema is a DSN-wide capability rather than something a per-table
-// grant is meant to cover.
+// that way: UsageRead requires defs.TableReadPermission, UsageWrite requires
+// whichever of defs.TableWritePermission/TableUpdatePermission/
+// TableDeletePermission matches the statement's own kind (see
+// writePermissionForKind below -- sqlparse's own UsageMode only has three
+// values, read/write/admin, but the statement's separate StatementKind
+// already distinguishes INSERT from UPDATE from DELETE, which is all this
+// function needs to preserve table_perms' full five-way granularity here
+// too), and UsageAdmin (CREATE/ALTER/DROP TABLE, CREATE/DROP INDEX,
+// CREATE/DROP VIEW) requires defs.DSNAdminPermission instead of a
+// table_perms grant, since altering the DSN's schema is a DSN-wide
+// capability rather than something a per-table grant is meant to cover.
 //
 // On any failure, an error response has already been written to w, and the
 // returned status is greater than http.StatusOK; the caller must stop and
@@ -145,11 +147,54 @@ func authorizeAndFormatStatements(session *router.Session, db *database.Database
 	return formatted, kinds, http.StatusOK
 }
 
+// writePermissionForKind reports which specific ego.table.* permission a
+// sqlparse.UsageWrite table reference actually requires, given the kind of
+// the statement it came from.
+//
+// DATA-SECURITY-2.md finding #5: sqlparse.Tables() (sqlparse/analyze.go)
+// only ever tags a table UsageWrite for an INSERT, UPDATE, or DELETE
+// statement -- see that function's own doc comment, and its "write" helper,
+// which is called from exactly those three switch cases and nowhere else.
+// Within any one statement there is only one StatementKind (sqlparse's own
+// doc comment on that type: "There is exactly one StatementKind per
+// concrete ast.Statement type"), so every UsageWrite reference in a given
+// statement maps to the same one of the three permissions below -- this
+// function does not need to look at anything about the specific table
+// reference, only the statement kind the caller already has in hand.
+//
+// Go note for readers new to the language: a "switch" with no expression
+// after the word "switch" (as authorizeStatement's outer switch below has,
+// switching on t.Usage) picks whichever "case" matches first, top to
+// bottom; this one switches on an explicit value (kind) instead, which
+// works the same way -- try each case in order, run the first one that
+// matches. "default" catches anything not explicitly listed.
+func writePermissionForKind(kind sqlparse.StatementKind) string {
+	switch kind {
+	case sqlparse.StmtUpdate:
+		return defs.TableUpdatePermission
+	case sqlparse.StmtDelete:
+		return defs.TableDeletePermission
+	default:
+		// StmtInsert is the only other kind Tables() ever pairs with
+		// UsageWrite today, so this default only exists to keep the
+		// function total (every possible StatementKind must return
+		// *something*) rather than because any other kind is expected
+		// to reach here in practice.
+		return defs.TableWritePermission
+	}
+}
+
 // authorizeStatement checks every table p's parsed statement references
 // against session's permissions, as described in authorizeAndFormatStatements
 // above. It returns http.StatusOK if every reference is permitted; otherwise
 // it writes an error response to w and returns the status that was written.
 func authorizeStatement(session *router.Session, w http.ResponseWriter, dsn string, p *sqlparse.Sqlparse) int {
+	// Computed once per statement, outside the loop below, because -- per
+	// writePermissionForKind's doc comment -- every UsageWrite reference in
+	// this one statement needs the identical answer, so there is no reason
+	// to ask p.StatementKind() more than once.
+	kind := p.StatementKind()
+
 	for _, t := range p.Tables() {
 		table := baseTableName(t.Name)
 
@@ -159,8 +204,18 @@ func authorizeStatement(session *router.Session, w http.ResponseWriter, dsn stri
 				return denyTable(session, w, table, defs.TableReadPermission)
 			}
 		case sqlparse.UsageWrite:
-			if !Authorized(session, session.User, dsn+"."+table, defs.TableWritePermission) {
-				return denyTable(session, w, table, defs.TableWritePermission)
+			// DATA-SECURITY-2.md finding #5: this used to always require
+			// defs.TableWritePermission here, regardless of whether the
+			// statement was an INSERT, UPDATE, or DELETE -- so a caller
+			// granted only ego.table.write (meant to authorize inserting
+			// new rows) could also UPDATE or DELETE existing ones via
+			// @sql, bypassing the finer read/write/update/delete boundary
+			// the plain REST row endpoints (rows.go) already enforce for
+			// the exact same table. writePermissionForKind picks the
+			// permission that actually matches what this statement does.
+			permission := writePermissionForKind(kind)
+			if !Authorized(session, session.User, dsn+"."+table, permission) {
+				return denyTable(session, w, table, permission)
 			}
 		case sqlparse.UsageAdmin:
 			// DATA-SECURITY.md §3.8: identity-level ego.dsn.admin

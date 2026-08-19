@@ -1,0 +1,39 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #5: DELETE is a write-usage table reference too, but @sql now maps it to the specific ego.table.delete permission based on the statement's own kind, not ego.table.write. squ{{SQLTESTID}} holds write and (as of sql-15a) update, but not delete, so this must be denied. Before the fix this succeeded, because every DELETE was authorized as if it were an INSERT.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SQL_TOKEN}}"]
+        },
+        "body": [
+            "DELETE FROM t{{SQLTESTID}} WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

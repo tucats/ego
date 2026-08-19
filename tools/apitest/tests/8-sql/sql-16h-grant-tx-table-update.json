@@ -1,0 +1,36 @@
+{
+    "description": "add update table_perms access for sqtx{{SQLTESTID}}, preserving the existing write grant -- needed so sql-16i can prove the @transaction 'sql' opcode UPDATE now succeeds once the caller actually holds ego.table.update.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "sqtx{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.update"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "update permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.update"
+        },
+        {
+            "name": "write permission preserved",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        }
+    ]
+}

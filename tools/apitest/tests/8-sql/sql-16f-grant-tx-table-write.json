@@ -1,0 +1,31 @@
+{
+    "description": "grant sqtx{{SQLTESTID}} table.write ONLY on t{{SQLTESTID}} -- deliberately no update, so sql-16g below can prove UPDATE via @transaction's raw-SQL 'sql' opcode is still denied by write alone, the same way sql-15 already proved for the top-level @sql endpoint.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "sqtx{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.write"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "write permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "description": "create a second non-admin test user, dedicated to proving DATA-SECURITY-2.md finding #5's fix applies to @transaction's raw-SQL 'sql' opcode (scripting/authz.go's authorizeAndClassifySQL) too, not just the top-level @sql endpoint (sql_permissions.go's authorizeStatement) that sql-15/sql-16 above already cover. @transaction's route itself has no ego.sql requirement (routes.go gates it with Authentication(true) only), but its per-opcode Handler still requires ego.sql specifically to run the raw-SQL 'sql' opcode (handler.go's own comment: without that check, a baseline ego.logon-only caller could run arbitrary SQL through a transaction script that @sql itself would refuse outright) -- so this user needs ego.sql too, plus the same DSN- and table-level grants squ{{SQLTESTID}} needed.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "sqtx{{SQLTESTID}}",
+            "password": "zork",
+            "permissions": [
+                "ego.logon",
+                "ego.sql"
+            ]
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Location": ["/admin/users/sqtx{{SQLTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user name",
+            "query": "name",
+            "value": "sqtx{{SQLTESTID}}"
+        }
+    ]
+}

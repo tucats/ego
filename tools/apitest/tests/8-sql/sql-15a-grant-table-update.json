@@ -1,0 +1,36 @@
+{
+    "description": "add update table_perms access to the scratch table, preserving the existing read+write grants -- needed so sql-15b below can prove UPDATE succeeds once the caller actually holds ego.table.update, not just ego.table.write",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/t{{SQLTESTID}}/permissions",
+        "parameters": {
+            "user": "squ{{SQLTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.update"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "update permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.update"
+        },
+        {
+            "name": "write permission preserved",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        }
+    ]
+}

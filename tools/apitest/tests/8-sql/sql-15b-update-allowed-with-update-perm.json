@@ -1,5 +1,5 @@
 {
-    "description": "DELETE also counts as a write usage and succeeds with the table.write grant",
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #5: now that squ{{SQLTESTID}} holds ego.table.update specifically (sql-15a), the identical UPDATE statement sql-15 just denied now succeeds -- proving the fix grants exactly the permission that matches the statement, not that it blocks UPDATE outright.",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
@@ -9,7 +9,7 @@
             "Authorization": ["Bearer {{SQL_TOKEN}}"]
         },
         "body": [
-            "DELETE FROM t{{SQLTESTID}} WHERE id = 1"
+            "UPDATE t{{SQLTESTID}} SET name = 'Alicia' WHERE id = 1"
         ]
     },
     "response": {

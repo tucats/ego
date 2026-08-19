@@ -133,6 +133,31 @@ func isSchemaAlteringKind(kind sqlparse.StatementKind) bool {
 	}
 }
 
+// writePermissionForKind mirrors tables/sql_permissions.go's function of
+// the same name -- see that copy's doc comment for the full explanation.
+// Kept as a small local copy, rather than exported and imported, for the
+// same import-cycle reason AuthorizedFunc is injected instead of imported
+// directly (see this file's own top-of-file comment).
+//
+// DATA-SECURITY-2.md finding #5: sqlparse.Tables() only ever tags a table
+// UsageWrite for an INSERT, UPDATE, or DELETE statement, and a statement
+// has exactly one StatementKind, so every UsageWrite reference in the
+// statement authorizeAndClassifySQL is currently authorizing needs this
+// same one answer.
+func writePermissionForKind(kind sqlparse.StatementKind) string {
+	switch kind {
+	case sqlparse.StmtUpdate:
+		return defs.TableUpdatePermission
+	case sqlparse.StmtDelete:
+		return defs.TableDeletePermission
+	default:
+		// StmtInsert is the only other kind Tables() ever pairs with
+		// UsageWrite today; this default exists to keep the function
+		// total, not because any other kind is expected to reach here.
+		return defs.TableWritePermission
+	}
+}
+
 // authorizeAndClassifySQL parses sqlText (expected to already be
 // symbol-expanded -- see applySymbolsToTask) against db's provider
 // dialect, authorizes every table it references against db.Session's
@@ -184,7 +209,15 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (sqlparse.St
 				return kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
 			}
 		case sqlparse.UsageWrite:
-			if !authorizedForTable(db, table, defs.TableWritePermission) {
+			// DATA-SECURITY-2.md finding #5: this used to always require
+			// defs.TableWritePermission regardless of whether the
+			// statement was an INSERT, UPDATE, or DELETE. See
+			// sql_permissions.go's identical fix (the top-level @sql
+			// endpoint's counterpart to this function) for the full
+			// explanation of why that let an insert-only grant also
+			// update or delete rows.
+			permission := writePermissionForKind(kind)
+			if !authorizedForTable(db, table, permission) {
 				return kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
 			}
 		case sqlparse.UsageAdmin:

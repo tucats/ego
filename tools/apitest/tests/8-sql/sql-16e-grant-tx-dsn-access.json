@@ -1,0 +1,30 @@
+{
+    "description": "grant sqtx{{SQLTESTID}} DSN-specific ego.dsn.read and ego.dsn.write on dsn-{{SQLTESTID}} so it can open the Restricted DSN via @transaction, same as sql-06b did for squ{{SQLTESTID}}.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "dsn-{{SQLTESTID}}",
+            "user": "sqtx{{SQLTESTID}}",
+            "actions": ["+ego.dsn.read", "+ego.dsn.write"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
