@@ -47,19 +47,56 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		// Amend any table name with the provider-appropriate user schema name.
 		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
 
-		// Verify that we are allowed to do this. The caller must either be a root user or
-		// explicitly have update permission for the table.
+		// DATA-SECURITY-2.md findings #2 and #3: there used to be an extra
+		// permission check here, calling Authorized(session, user,
+		// tableName, defs.TableAdminPermission) to ask "does the caller
+		// have an ego.table.admin grant in table_perms for this table?"
+		// before letting the create proceed. It was removed, not fixed, for
+		// two reasons that both point the same way:
 		//
-		// Authorized() returns true when the caller IS permitted, so this
-		// condition must be negated to deny when they are NOT -- the same
-		// inverted-check bug as DATA-SECURITY.md §3.2 (fixed at three other
-		// call sites in d60ebe84), found here independently: a caller
-		// holding a valid table_perms admin grant was denied create
-		// access, while a caller with no grant at all fell through and
-		// was allowed to create (or overwrite) the table.
-		if !session.Admin && !Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
-		}
+		//  1. Go note for readers new to the language: "tableName" at this
+		//     point in the function is NOT the same string as the "table"
+		//     variable declared at the top -- it was just reassigned two
+		//     lines up, by parsing.FullName(), to a *provider-qualified*
+		//     name (for example "myschema.orders" on PostgreSQL, or just a
+		//     quoted "orders" on SQLite, with no DSN name anywhere in it).
+		//     Authorized() (security.go) expects its table argument in
+		//     "dsn.table" form -- it splits on the first "." to figure out
+		//     which DSN's permissions to check -- so passing the
+		//     provider-qualified name meant Authorized() was asking about a
+		//     DSN that does not exist (an empty name on SQLite, or the
+		//     database schema name mistaken for a DSN name on PostgreSQL).
+		//     That lookup always failed, so Authorized() always returned
+		//     false, for every caller who was not session.Admin (literal
+		//     ego.root). No non-root caller could ever create a table.
+		//
+		//  2. Even if that argument had been fixed to the correct
+		//     "dsnName+"."+table" form (the pattern used everywhere else in
+		//     this package -- see rows.go, list.go, describe.go), the check
+		//     still could not have worked as intended: table_perms only
+		//     gets a row for a table *after* it is created (see
+		//     createTablePermissions, called a little further down, once
+		//     the CREATE TABLE below actually succeeds). Asking "does the
+		//     caller already hold ego.table.admin on this not-yet-existing
+		//     table" can only ever answer "no" for a restricted DSN, for
+		//     literally any caller. A per-table grant is the wrong tool for
+		//     authorizing the act of creating the table in the first place.
+		//
+		// The check this function actually needs is "does the caller have
+		// admin standing on the DSN itself" -- and that check already
+		// happened, correctly, a few lines up: GetDatabase(session,
+		// dsnName, dsns.DSNAdminAction) only returned a non-nil db here
+		// because the caller is session.Admin, holds identity-wide
+		// ego.dsn.admin, holds a DSN-specific dsns_auth admin grant for
+		// dsnName, or the DSN is unrestricted (in which case docs/SERVER.md
+		// says Ego imposes no access control of its own at all). That is
+		// exactly the same DSN-level authorization every other
+		// schema-changing operation in this codebase requires -- compare
+		// sql_permissions.go's UsageAdmin branch and
+		// scripting/authz.go's authorizedForDDL, neither of which consults
+		// table_perms either, for the identical reason. Nothing more needs
+		// checking here; the route registration in routes.go was updated to
+		// match (see its comment for the other half of this fix).
 
 		// Create an array of column definitions which will receive the JSON payload from the
 		// request.
@@ -482,7 +519,6 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
 	user := session.User
-	isAdmin := session.Admin
 	table := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
@@ -490,9 +526,34 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 	if err == nil && db != nil {
 		tableName, _ := parsing.FullName(db.Provider, user, table)
 
-		if !isAdmin && dsnName == "" && !Authorized(session, user, tableName, defs.TableAdminPermission) {
-			return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.perm.admin"), http.StatusForbidden)
-		}
+		// DATA-SECURITY-2.md findings #2 and #3: this used to have an extra
+		// check here -- "if !isAdmin && dsnName == "" && ..." -- guarding an
+		// Authorized(session, user, tableName, defs.TableAdminPermission)
+		// call. It was removed for the same reasons TableCreate's
+		// equivalent check was removed just above in this file (see that
+		// function's much longer comment for the full explanation); the
+		// short version:
+		//
+		// The route this handler is registered on (routes.go) is
+		// "/dsns/{{dsn}}/tables/{{table}}" -- the "{{dsn}}" URL segment is
+		// mandatory for a request to match this route at all, so
+		// "dsnName == """" is not a real, reachable case for a request that
+		// actually got routed here; this was dead code. And even if it
+		// somehow were reached, the Authorized() call it guarded had the
+		// same bug as TableCreate's: tableName here is the
+		// provider-qualified name from parsing.FullName() a couple of
+		// lines up, not the "dsn.table" form Authorized() expects, so the
+		// check could never succeed for a non-admin caller anyway.
+		//
+		// The actual authorization for deleting a table already happened
+		// above, in GetDatabase(session, dsnName, dsns.DSNAdminAction):
+		// only a caller with DSN-level admin standing (identity-wide,
+		// DSN-specific, or an unrestricted DSN) gets a non-nil db back at
+		// all. That is the correct and sufficient check -- dropping a table
+		// is a schema change, and every other schema-changing operation in
+		// this codebase (see sql_permissions.go's UsageAdmin branch and
+		// scripting/authz.go's authorizedForDDL) is authorized at the DSN
+		// level too, never against a per-table table_perms grant.
 
 		// Note the deliberate use of a separate name here rather than ":=" on
 		// "err". A ":=" would declare a *second* err scoped to this block, and

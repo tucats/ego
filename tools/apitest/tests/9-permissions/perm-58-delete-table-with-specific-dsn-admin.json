@@ -1,0 +1,30 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #3, the delete side: specificadmintest, still authorized only by its DSN-specific dsns_auth admin record (no identity-level ego.dsn.admin), drops the table it just created in perm-57. Before the fix, DeleteTable's route had the identical identity-only Permissions(defs.DSNAdminPermission) gate as TableCreate, so this would have been rejected before the handler ran.",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-sa{{PERMTESTID}}/tables/tbl-sa{{PERMTESTID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{SPECIFICADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "description": "confirms perm-44's table create was a genuine, fully-authorized create -- not some degraded partial success -- by checking that createTablePermissions ran and gave dsncreatortest the full five-permission self-grant docs/SERVER.md promises a table's creator. No ?user= parameter is given, so ReadPermissions reports the caller's own grants.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-cr{{PERMTESTID}}/tables/tbl-cr{{PERMTESTID}}/permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{DSNCREATOR_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "creator was granted admin",
+            "query": "permissions.*",
+            "value": "ego.table.admin"
+        },
+        {
+            "name": "creator was granted read",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        },
+        {
+            "name": "creator was granted write",
+            "query": "permissions.*",
+            "value": "ego.table.write"
+        },
+        {
+            "name": "creator was granted update",
+            "query": "permissions.*",
+            "value": "ego.table.update"
+        },
+        {
+            "name": "creator was granted delete",
+            "query": "permissions.*",
+            "value": "ego.table.delete"
+        }
+    ]
+}

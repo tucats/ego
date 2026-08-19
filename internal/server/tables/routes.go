@@ -195,14 +195,37 @@ func AddStaticRoutes(r *router.Router) {
 		Permissions(defs.SQLPermission).
 		Class(router.TableRequestCounter)
 
-	// Create a new table using a DSN
+	// Create a new table using a DSN. Not gated by Permissions() here
+	// (DATA-SECURITY-2.md finding #3): Permissions(defs.DSNAdminPermission)
+	// only ever checks a caller's *identity-wide* permissions (see
+	// router/serve.go's requiredPermissions loop) -- it has no notion of "is
+	// this caller an admin of just this one DSN". A caller who was granted
+	// DSN-specific admin (for example, the DSN's own creator -- see
+	// CreateDSNHandler's self-grant in internal/server/dsns/handler.go) but
+	// holds no identity-wide ego.dsn.admin would be rejected by that route
+	// gate before TableCreate's handler body ever ran, even though they are
+	// exactly the kind of caller "whoever creates a table is automatically
+	// granted all five actions on it" (docs/SERVER.md) is describing.
+	//
+	// TableCreate's own GetDatabase(session, dsnName, dsns.DSNAdminAction)
+	// call, a few lines into the handler, already performs the correct
+	// check: identity-wide ego.dsn.admin, OR a DSN-specific dsns_auth admin
+	// record for this DSN, OR (if the DSN is unrestricted) no check at all
+	// -- the same identity-OR-per-DSN pattern already used by
+	// DeleteDSNHandler and friends. Relying on that one check, instead of
+	// duplicating a second, different one at the route level, is what fixes
+	// this gap. Still requires plain authentication via Authentication(true)
+	// -- an anonymous caller is still rejected before reaching the handler.
 	r.New(defs.TablesPath+tableParameter, TableCreate, http.MethodPut).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		AcceptMedia(defs.SQLStatementsMediaType, defs.RowSetMediaType, defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
-	// Delete a table using a DSN
+	// Delete a table using a DSN. Not gated by Permissions() here for the
+	// identical reason as TableCreate just above (DATA-SECURITY-2.md
+	// finding #3) -- DeleteTable's own GetDatabase(..., dsns.DSNAdminAction)
+	// call already performs the correct identity-OR-per-DSN-admin check.
 	r.New(defs.TablesPath+tableParameter, DeleteTable, http.MethodDelete).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		Class(router.TableRequestCounter)
 }

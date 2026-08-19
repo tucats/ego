@@ -1,5 +1,5 @@
 {
-    "description": "clean up the DSN-specific-admin test user (its dsn, dsn-sa{{PERMTESTID}}, was already deleted by perm-57 as part of that regression test)",
+    "description": "clean up the DSN-specific-admin test user (its dsn, dsn-sa{{PERMTESTID}}, was already deleted by perm-59 as part of that regression test)",
     "request": {
         "method": "DELETE",
         "endpoint": "/admin/users/specificadmintest",
