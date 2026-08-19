@@ -1,0 +1,34 @@
+{
+    "description": "GET .../tables/{table}/@permissions (ReadTablePermissions) lists every user's table_perms grants on a single table -- the table-scoped analog of GET /dsns/{dsn}/@permissions, added so the dashboard's Table detail sheet can show a permissions list without needing ego.root (which the existing DSN-wide /dsns/{dsn}/tables/@permissions dump requires). A table name with no table_perms rows at all (never created, so it never received the creator's auto-grant either) must report an empty list, not an error or a null array",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/tnogrants{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "count is zero",
+            "query": "count",
+            "value": "0"
+        }
+    ]
+}

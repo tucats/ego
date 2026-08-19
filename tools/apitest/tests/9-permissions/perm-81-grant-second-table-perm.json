@@ -1,0 +1,31 @@
+{
+    "description": "grant a user that is otherwise uninvolved in this test group table_perms ego.table.read on the second table only -- setup for the cross-table isolation check below",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t2{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "cuser{{PERMTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

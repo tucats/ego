@@ -1498,14 +1498,22 @@ body.dark .user-id { color: #666; }
     min-height: 1.1em;
 }
 
+#table-detail-sheet h3 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1rem;
+    color: #444;
+}
+
 /* The column table inside the sheet — styled to match the tab-content tables */
-#table-detail-content table {
+#table-detail-content table,
+#table-permissions-content table {
     border-collapse: collapse;
     width: 100%;
     font-size: 0.88rem;
 }
 
-#table-detail-content table th {
+#table-detail-content table th,
+#table-permissions-content table th {
     background: #1C6EA4;
     color: #fff;
     text-align: left;
@@ -1513,18 +1521,21 @@ body.dark .user-id { color: #666; }
     font-weight: 600;
 }
 
-#table-detail-content table td {
+#table-detail-content table td,
+#table-permissions-content table td {
     padding: 0.4rem 0.75rem;
     border-bottom: 1px solid #dde3ec;
     color: #333;
     text-align: left;
 }
 
-#table-detail-content table tbody tr:nth-child(even) td {
+#table-detail-content table tbody tr:nth-child(even) td,
+#table-permissions-content table tbody tr:nth-child(even) td {
     background: #f0f4fa;
 }
 
-#table-detail-view-btn {
+#table-detail-view-btn,
+#table-detail-add-perm-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -1534,7 +1545,8 @@ body.dark .user-id { color: #666; }
     cursor: pointer;
 }
 
-#table-detail-view-btn:hover { background: #357abd; }
+#table-detail-view-btn:hover,
+#table-detail-add-perm-btn:hover { background: #357abd; }
 
 #table-detail-close-btn {
     padding: 0.45rem 1rem;
@@ -1553,7 +1565,9 @@ body.dark .user-id { color: #666; }
    Same right-side slide-in pattern as the user edit sheet.
    ========================================================================== */
 #dsn-perm-edit-overlay,
-#dsn-perm-add-overlay {
+#dsn-perm-add-overlay,
+#table-perm-edit-overlay,
+#table-perm-add-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -1564,7 +1578,9 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-perm-edit-sheet,
-#dsn-perm-add-sheet {
+#dsn-perm-add-sheet,
+#table-perm-edit-sheet,
+#table-perm-add-sheet {
     background: #fff;
     width: 360px;
     padding: 2rem;
@@ -1576,20 +1592,26 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-perm-edit-sheet h2,
-#dsn-perm-add-sheet h2 {
+#dsn-perm-add-sheet h2,
+#table-perm-edit-sheet h2,
+#table-perm-add-sheet h2 {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
 }
 
 #dsn-perm-edit-error,
-#dsn-perm-add-error {
+#dsn-perm-add-error,
+#table-perm-edit-error,
+#table-perm-add-error {
     color: #c0392b;
     font-size: 0.85rem;
     min-height: 1.1em;
 }
 
 #dsn-perm-edit-sheet label,
-#dsn-perm-add-sheet label {
+#dsn-perm-add-sheet label,
+#table-perm-edit-sheet label,
+#table-perm-add-sheet label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
@@ -1597,7 +1619,9 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-perm-edit-sheet input[type="text"],
-#dsn-perm-add-sheet input[type="text"] {
+#dsn-perm-add-sheet input[type="text"],
+#table-perm-edit-sheet input[type="text"],
+#table-perm-add-sheet input[type="text"] {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -1605,14 +1629,17 @@ body.dark .user-id { color: #666; }
     outline: none;
 }
 
-#dsn-perm-edit-sheet input[type="text"]:disabled {
+#dsn-perm-edit-sheet input[type="text"]:disabled,
+#table-perm-edit-sheet input[type="text"]:disabled {
     background: #f4f4f4;
     color: #888;
     cursor: default;
 }
 
 #dsn-perm-edit-sheet input[type="text"]:focus,
-#dsn-perm-add-sheet input[type="text"]:focus {
+#dsn-perm-add-sheet input[type="text"]:focus,
+#table-perm-edit-sheet input[type="text"]:focus,
+#table-perm-add-sheet input[type="text"]:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -3220,6 +3247,8 @@ body.dark #edit-user-sheet,
 body.dark #new-dsn-sheet,
 body.dark #dsn-perm-edit-sheet,
 body.dark #dsn-perm-add-sheet,
+body.dark #table-perm-edit-sheet,
+body.dark #table-perm-add-sheet,
 body.dark #table-detail-sheet,
 body.dark #dsn-detail-sheet,
 body.dark #logger-config-sheet,
@@ -3234,13 +3263,17 @@ body.dark #new-user-sheet h2,
 body.dark #edit-user-sheet h2,
 body.dark #new-dsn-sheet h2,
 body.dark #dsn-perm-edit-sheet h2,
-body.dark #dsn-perm-add-sheet h2 { color: #cdd6f4; }
+body.dark #dsn-perm-add-sheet h2,
+body.dark #table-perm-edit-sheet h2,
+body.dark #table-perm-add-sheet h2 { color: #cdd6f4; }
 
 body.dark #new-user-sheet label,
 body.dark #edit-user-sheet label,
 body.dark #new-dsn-sheet label,
 body.dark #dsn-perm-edit-sheet label,
 body.dark #dsn-perm-add-sheet label,
+body.dark #table-perm-edit-sheet label,
+body.dark #table-perm-add-sheet label,
 body.dark #logger-config-sheet label,
 body.dark #log-filter-sheet label { color: #cdd6f4; }
 
@@ -3253,6 +3286,8 @@ body.dark #edit-user-sheet input[type="password"],
 body.dark #new-dsn-sheet input[type="text"],
 body.dark #dsn-perm-edit-sheet input[type="text"],
 body.dark #dsn-perm-add-sheet input[type="text"],
+body.dark #table-perm-edit-sheet input[type="text"],
+body.dark #table-perm-add-sheet input[type="text"],
 body.dark #logger-keep,
 body.dark #log-filter-tail,
 body.dark #log-filter-session,
@@ -3289,6 +3324,8 @@ body.dark #edit-user-cancel-btn,
 body.dark #new-dsn-cancel-btn,
 body.dark #dsn-perm-edit-cancel-btn,
 body.dark #dsn-perm-add-cancel-btn,
+body.dark #table-perm-edit-cancel-btn,
+body.dark #table-perm-add-cancel-btn,
 body.dark #logger-cancel-btn,
 body.dark #table-detail-close-btn,
 body.dark #dsn-detail-close-btn,
@@ -3302,24 +3339,31 @@ body.dark #edit-user-cancel-btn:hover,
 body.dark #new-dsn-cancel-btn:hover,
 body.dark #dsn-perm-edit-cancel-btn:hover,
 body.dark #dsn-perm-add-cancel-btn:hover,
+body.dark #table-perm-edit-cancel-btn:hover,
+body.dark #table-perm-add-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
 body.dark #table-detail-close-btn:hover,
 body.dark #dsn-detail-close-btn:hover,
 body.dark #data-edit-cancel-btn:hover { background: #2a3a5a; }
 
-body.dark #dsn-perm-edit-sheet input[type="text"]:disabled {
+body.dark #dsn-perm-edit-sheet input[type="text"]:disabled,
+body.dark #table-perm-edit-sheet input[type="text"]:disabled {
     background: #1a1a38;
     color: #666;
 }
 
 /* Table detail sheet */
-body.dark #table-detail-sheet h2 { color: #cdd6f4; }
-body.dark #table-detail-content table th { background: #1C5080; }
-body.dark #table-detail-content table td {
+body.dark #table-detail-sheet h2,
+body.dark #table-detail-sheet h3 { color: #cdd6f4; }
+body.dark #table-detail-content table th,
+body.dark #table-permissions-content table th { background: #1C5080; }
+body.dark #table-detail-content table td,
+body.dark #table-permissions-content table td {
     border-bottom-color: #2a3a5a;
     color: #cdd6f4;
 }
-body.dark #table-detail-content table tbody tr:nth-child(even) td { background: #202040; }
+body.dark #table-detail-content table tbody tr:nth-child(even) td,
+body.dark #table-permissions-content table tbody tr:nth-child(even) td { background: #202040; }
 
 /* DSN detail sheet */
 body.dark #dsn-detail-sheet h2,

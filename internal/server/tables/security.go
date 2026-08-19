@@ -201,6 +201,99 @@ func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Req
 	return http.StatusOK
 }
 
+// ReadTablePermissions lists the permissions every user has been granted on a single
+// table. Unlike ReadPermissions (which reports one user's grants -- the caller's own,
+// or one named via ?user=), this has no user filter: it is the table-scoped analog of
+// dsns.ListDSNPermHandler, and requires only DSNAdminPermission on the route rather
+// than the RootPermission that ReadAllPermissions demands for its DSN-wide dump.
+func ReadTablePermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	tableName := data.String(session.URLParts["table"])
+	dsnName := data.String(session.URLParts["dsn"])
+
+	if !initPermissions() {
+		err := errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	}
+
+	list, err := pHandle.Read(
+		pHandle.Equals("dsn", dsnName),
+		pHandle.Equals("table", tableName))
+
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	}
+
+	response := defs.AllPermissionResponse{
+		ServerInfo:  util.MakeServerInfo(session.ID),
+		Permissions: []defs.PermissionObject{},
+	}
+
+	for _, item := range list {
+		perm := item.(*PermissionsObject)
+
+		perms := []string{}
+
+		if perm.Admin {
+			perms = append(perms, defs.TableAdminPermission)
+		}
+
+		if perm.Read {
+			perms = append(perms, defs.TableReadPermission)
+		}
+
+		if perm.Write {
+			perms = append(perms, defs.TableWritePermission)
+		}
+
+		if perm.Update {
+			perms = append(perms, defs.TableUpdatePermission)
+		}
+
+		if perm.Delete {
+			perms = append(perms, defs.TableDeletePermission)
+		}
+
+		if len(perms) == 0 {
+			continue
+		}
+
+		sort.Strings(perms)
+
+		response.Permissions = append(response.Permissions, defs.PermissionObject{
+			User:        perm.User,
+			DSNName:     perm.DSN,
+			Table:       perm.Table,
+			Permissions: perms,
+		})
+	}
+
+	sort.Slice(response.Permissions, func(i, j int) bool {
+		return response.Permissions[i].User < response.Permissions[j].User
+	})
+
+	response.Count = len(response.Permissions)
+	response.Status = http.StatusOK
+
+	ui.Log(ui.TableLogger, "table.permissions", ui.A{
+		"session": session.ID,
+		"dsn":     parsing.StripQuotes(dsnName),
+		"table":   parsing.StripQuotes(tableName),
+		"count":   response.Count})
+
+	w.Header().Set("Content-Type", defs.JSONMediaType)
+
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
+
+	return http.StatusOK
+}
+
 // ReadAllPermissions reads all permissions for all tables. By default it is for all users, though you can use the
 // ?user= parameter to specify permissions for a given user for all tables. The result is an array of permissions
 // objects for each permutation of owner and table name visible to the user.

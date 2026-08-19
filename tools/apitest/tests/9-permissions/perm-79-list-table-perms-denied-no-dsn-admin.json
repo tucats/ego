@@ -1,0 +1,35 @@
+{
+    "description": "the new listing route is registered with Permissions(defs.DSNAdminPermission), the same identity-level gate as GrantPermissions/ReadPermissions/DeletePermissions -- pmu{{PERMTESTID}} holds table_perms read/write/update on t{{PERMTESTID}} itself (granted earlier in this test group) plus dsns_auth read/write on the DSN, but none of that is ego.dsn.admin, so listing must still be denied",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{PERM_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}
