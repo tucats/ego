@@ -76,6 +76,16 @@ for every other permission (see §5).
 
 ## 2. HIGH — Non-admin table creation is unconditionally broken
 
+**Fixed in `81a13a9b`** (together with finding #3 — the right fix for this
+one depends on the route-level change that finding makes). The broken
+`Authorized(..., defs.TableAdminPermission)` check was removed rather than
+re-qualified: `GetDatabase(session, dsnName, dsns.DSNAdminAction)`, a few
+lines above it, already authorizes the operation correctly, and a
+`table_perms` check can never succeed for a table that doesn't exist yet
+regardless of how it's qualified. See the commit message and the in-code
+comments on `TableCreate`/`DeleteTable` for the full reasoning. Regression
+coverage: `tools/apitest/tests/9-permissions/perm-44`/`perm-45`.
+
 `TableCreate` (`internal/server/tables/tables.go:35-177`), after opening the
 DSN, runs:
 
@@ -130,6 +140,16 @@ all in its current form — see next finding.
 &nbsp;
 
 ## 3. HIGH — Table create/delete never got the per-DSN-admin escape hatch the DSN routes did
+
+**Fixed in `81a13a9b`**, together with finding #2. `TableCreate`/`DeleteTable`
+now register with `Authentication(true)` only, the same as the DSN admin
+routes, relying on `GetDatabase(..., dsns.DSNAdminAction)`'s own
+identity-wide-OR-per-DSN-admin-OR-unrestricted-DSN check instead of a
+route-level gate that could only express the identity-wide half of that OR.
+Note: finding #4 (the four table-permission-management routes) is a separate,
+still-open instance of this same underlying pattern — this fix does not
+touch those routes. Regression coverage:
+`tools/apitest/tests/9-permissions/perm-57`/`perm-58`.
 
 `docs/issues/resolved/DATA-SECURITY.md` §3.6/§3.12 fixed exactly this
 pattern for `CreateDSNHandler`, `GetDSNHandler`, `DeleteDSNHandler`,
