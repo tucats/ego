@@ -460,7 +460,22 @@ rather than doing so implicitly.
 
 ## 8. LOW — `docs/SERVER.md` no longer accurately describes where table-level grants are enforced
 
-The "Table-level access" section states:
+**Fixed in `ab65a819`.** "Table-level access" now states that enforcement is uniform
+across the plain row endpoints, `?abstract=true`, `@sql`, and `@transaction`, with no
+remaining behavioral difference tied to `?abstract=true`; it also now notes `@sql`/
+`@transaction`'s `UPDATE`/`DELETE`-vs-`INSERT` split (finding #5). "Putting it together"
+drops the `?abstract=true` framing per the suggested fix's second option, and now says
+explicitly that the same four-step check applies regardless of it or of which of the
+four request paths is used. Two related gaps found and fixed in the same pass, both
+outside this finding's original text: "DSN-level access" never documented the implicit
+Restricted-on-first-grant side effect finding #7 is about (the suggested fix for #7
+asked for this specifically); and the new `PATCH /dsns/{dsn}` endpoint from that same
+fix had no REST reference entry at all. Both are now documented — the former as a
+callout in "DSN-level access" plus a full `#### ego dsns update` subsection in
+`SERVER.md`, the latter as a new `#### PATCH /dsns/_dsn_/` entry (and summary-table row)
+in `docs/API.md`.
+
+The "Table-level access" section stated:
 
 > The standard (non-`abstract`) row read/insert/update/delete endpoints
 > currently authorize at the DSN level only — any caller who can open the DSN
