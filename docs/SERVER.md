@@ -408,6 +408,67 @@ POST /dsns/@permissions
 { "dsn": "<dsn-name>", "user": "<user>", "actions": ["+ego.dsn.read", "+ego.dsn.write"] }
 ```
 
+> **Granting a permission on an unrestricted DSN restricts it.** The first grant made
+> against a DSN that was not created with `--restricted` flips its `Restricted` flag to
+> `true` as a side effect, so future access goes through the checks above instead of
+> being open to everyone. This is deliberate — an operator granting a per-DSN
+> permission almost always wants it enforced — but it means every other user's
+> previously unfettered access to that DSN ends at that moment too, not just the
+> grantee's. There is no confirmation step or flag to suppress this; use `ego dsns
+> update --restricted false` (below) if you need to undo it.
+
+&nbsp;
+
+#### ego dsns update <a name="dsn-update"></a>
+
+The `ego dsns update` command changes an existing DSN's stored password, its `Secured`
+flag, and/or its `Restricted` flag, without deleting and recreating the DSN. The DSN
+name is given as the command parameter; only the flags you actually specify are
+changed — anything left out stays exactly as it was.
+
+```sh
+ego dsns update <dsn-name> [--password <string>] [--secured true|false] [--restricted true|false] [--force]
+```
+
+* `--password` replaces the stored credential used to connect to the backing database.
+  It is rejected for a `sqlite` DSN — a SQLite database is a local file with no network
+  connection and no credential to store.
+* `--secured` explicitly sets whether the connection uses TLS. `--secured true` is
+  rejected for a `sqlite` DSN (TLS is meaningless for a local file); `--secured false`
+  is accepted — it's already the DSN's effective state, so it's a harmless no-op.
+* `--restricted` explicitly sets whether the DSN uses Ego's own access control (see
+  above). Turning it **on** (`true`) is always safe — it simply starts enforcing the
+  checks described above for a DSN that wasn't enforcing them before. Turning it
+  **off** (`false`) is more consequential: the server deletes every permission record
+  granted for that DSN as part of the change, since those records have no meaning once
+  the DSN is open to everyone — and if the DSN is ever restricted again later, none of
+  the old grants come back. Because of that, the CLI checks for existing permission
+  records before sending this request and refuses to proceed if any are found, unless
+  `--force` is also given.
+
+```sh
+# Rotate the password for a Postgres-backed DSN
+ego dsns update accounting --password "new-Secr3t!"
+
+# Turn off TLS on a DSN that no longer needs it
+ego dsns update accounting --secured false
+
+# Open a restricted DSN up to everyone -- refused if grants exist and --force is absent
+ego dsns update accounting --restricted false --force
+```
+
+The equivalent REST call is:
+
+```text
+PATCH /dsns/{dsn}
+{ "password": "new-Secr3t!", "secured": false, "restricted": false }
+```
+
+All three fields are optional in the request body; fields left out are unchanged. The
+endpoint performs the `Restricted: false` permission cascade unconditionally whenever
+that transition is requested — the `--force` confirmation described above is a
+CLI-side safeguard only, not something the endpoint itself enforces.
+
 &nbsp;
 
 #### Table-level access <a name="table-access"></a>
@@ -428,28 +489,30 @@ PUT /dsns/{dsn}/tables/{table}/permissions?user=<user>
 The body is a JSON array of permission names, each optionally prefixed `+` (grant, the
 default) or `-` (revoke). `GET` the same path to see the current grants for a user.
 
-**Where table-level grants are enforced today:** table visibility (`GET
-/dsns/{dsn}/tables`, `GET /dsns/{dsn}/@metadata`) and row access via the `?abstract=true`
-query parameter or `@sql` are all checked against table-level grants, table by table.
-The standard (non-`abstract`) row read/insert/update/delete endpoints currently
-authorize at the DSN level only — any caller who can open the DSN for the matching
-action (read or write, per the previous section) can act on any table's rows through
-those endpoints, regardless of table-level grants. If you need enforcement down to
-individual tables for row access, use `?abstract=true` or `@sql`, or hold identity- and
-DSN-level permissions loosely enough that this doesn't matter for your deployment.
+**Where table-level grants are enforced:** table visibility (`GET /dsns/{dsn}/tables`,
+`GET /dsns/{dsn}/@metadata`) and row access — read, insert, update, and delete — are all
+checked against table-level grants, table by table, uniformly across the plain row
+endpoints, the `?abstract=true` variants, `@sql`, and `@transaction`. There is no
+behavioral difference between `?abstract=true` and its absence with respect to
+table-level enforcement: a caller who can open the DSN for the matching action (read or
+write, per the previous section) still needs the specific table's grant before they can
+act on its rows through any of these paths. `@sql` and `@transaction` also distinguish
+`UPDATE` and `DELETE` statements from `INSERT`, requiring `ego.table.update`/
+`ego.table.delete` specifically rather than accepting `ego.table.write` for all three —
+the same three-way split the row endpoints have always enforced.
 
 Remember also that identity-wide `ego.table.read`/`write`/`update`/`delete` is a
 *coarse* gate — it only controls whether a user can reach the corresponding REST
 endpoint at all, for any table. Unlike the DSN-level identity permissions, it is **not**
-a blanket bypass of table-level grants: reaching `?abstract=true` or `@sql` still
-requires the specific table grant for whatever table is actually named in the request.
+a blanket bypass of table-level grants: every path above still requires the specific
+table grant for whatever table is actually named in the request.
 
 &nbsp;
 
 #### Putting it together
 
-A request to read rows from `/dsns/payroll/tables/employees/rows?abstract=true` is
-authorized as follows:
+A request to read rows from `/dsns/payroll/tables/employees/rows` is authorized as
+follows:
 
 1. Is the caller `ego.root`? If so, allowed, full stop.
 2. Is `payroll` restricted? If not, allowed, full stop (subject only to
@@ -459,8 +522,9 @@ authorized as follows:
 4. Does the caller hold `ego.table.read` specifically for `payroll`'s `employees`
    table? If so, allowed; otherwise denied.
 
-Drop `?abstract=true` from the same request and step 4 is skipped entirely — see
-[Table-level access](#table-access) above for which endpoints do and don't reach it.
+This is the same four-step check regardless of whether `?abstract=true` is present on
+the request, and regardless of whether the request goes through the plain row
+endpoints, `@sql`, or `@transaction` — see [Table-level access](#table-access) above.
 
 &nbsp;
 &nbsp;

@@ -888,6 +888,37 @@ Retrieves the stored definition for the named DSN.
 
 Deletes the named DSN and its configuration.
 
+#### PATCH /dsns/_dsn_/
+
+Applies a partial update to an existing DSN. The JSON request body may
+contain any combination of `password`, `secured`, and `restricted`; fields
+left out of the body are unchanged.
+
+```text
+PATCH /dsns/accounting/
+{ "password": "new-Secr3t!", "secured": false, "restricted": false }
+```
+
+* `password` replaces the stored credential, encrypted in the back-end
+  store the same way `POST /dsns/` encrypts it on create. A `sqlite` DSN
+  has no network connection or credential at all, so a non-empty
+  `password` against one is rejected with `400`.
+* `secured` sets whether the connection uses TLS. `secured: true` against
+  a `sqlite` DSN is rejected with `400` (TLS is meaningless for a local
+  file); `secured: false` is always accepted, since it's already a
+  sqlite DSN's effective state.
+* `restricted` sets whether the DSN is gated by Ego's own permission
+  system (see [Permissions Model](SERVER.md#dsn-access) in `SERVER.md`).
+  Setting it from `true` to `false` **unconditionally deletes every
+  permission record for that DSN** as part of the same request — there
+  is no confirmation step at this layer. (The `ego dsns update` CLI
+  command adds a client-side confirmation, gated behind `--force`, before
+  it will send this specific request; a caller talking to this endpoint
+  directly is responsible for making that decision itself.)
+
+On success, returns the same representation as `GET /dsns/_dsn_/`, with
+`password` elided in the response exactly as it is elsewhere.
+
 #### POST /dsns/@permissions
 
 Grants or revokes permissions on a DSN. The JSON payload defines one or more
@@ -1696,6 +1727,7 @@ The following table lists every endpoint supported by the _Ego_ server.
 | POST | /dsns/ | Creates a new data source name. |
 | GET | /dsns/_dsn_/ | Returns the configuration for the named DSN. |
 | DELETE | /dsns/_dsn_/ | Deletes the named DSN. |
+| PATCH | /dsns/_dsn_/ | Updates a DSN's password, `secured`, and/or `restricted` fields. |
 | POST | /dsns/@permissions | Grants or revokes permissions on a DSN for one or more users. |
 | GET | /dsns/_dsn_/@permissions | Lists the current permissions for the named DSN. |
 | GET | /dsns/_dsn_/begin | Starts a new explicit database transaction; returns a transaction ID. |
