@@ -401,6 +401,27 @@ side effect from both — see §7) to `fileService.GrantDSN` for consistency.
 
 ## 7. LOW — granting a DSN permission silently converts it to `Restricted`
 
+**Fixed in `44d1dc05`**, per an explicit product decision to go beyond the
+suggested fix's minimum (documenting the behavior) or its "require
+confirmation the first time" alternative: `GrantDSN`'s implicit
+Restricted-on-first-grant side effect stays exactly as it was, but the
+*reverse* direction is now a fully supported, explicit operation instead
+of nonexistent. A new `PATCH /dsns/{dsn}` endpoint (`UpdateDSNHandler`,
+`internal/server/dsns/handler.go`) can flip `Restricted` back to `false`
+directly, and does so accompanied by an unconditional cascade-delete of
+every permission record for that DSN (a new `RevokeAllDSN` method on the
+`dsnService` interface, implemented on both backends). The confirmation
+step this finding's suggested fix asked for lives client-side instead of
+server-side: `ego dsns update`/`ego set dsn` (`internal/commands/
+dsns.go`'s `DSNSUpdate`) probes `GET .../@permissions` before ever sending
+a `Restricted:false` request and refuses to proceed unless `--force` is
+given or no permission records exist yet. The same endpoint also gained
+the ability to change a DSN's stored password and `Secured` flag, with
+sqlite-specific validation (no password, no `Secured:true`) enforced
+identically in the CLI and the endpoint. Regression coverage:
+`internal/dsns/dsn_file_test.go`'s `TestFileServiceRevokeAllDSN` and
+`tools/apitest/tests/4-dsns/dsns-94a` through `dsns-94n`.
+
 `databaseService.GrantDSN` (`internal/dsns/dsn_sqldb.go:390-403`):
 
 ```go
