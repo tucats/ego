@@ -1885,7 +1885,7 @@ table.dsn.metadata.count={{count}}個のテーブルのDSNメタデータを返�
 table.dsn.metadata.start=DSNメタデータを読み取り中: dsn={{dsn}}、provider={{provider}}、start={{start}}、limit={{limit}}
 table.exclude=除外リスト = {{data||list}}
 table.inserted.rows={{count}}行を挿入しました; {{status}}
-table.no.auth=ユーザー {{user}} にはテーブル {{table}} の {{perm|list}} 権限がありません
+table.no.auth=ユーザー {{user}} にはテーブル {{table}} の {{perms|list}} 権限がありません
 table.nullable.columns=NULL許容の列: {{list}}
 table.op=操作 {{operation}}
 table.op.table=テーブル {{table}} での操作 {{operation}}

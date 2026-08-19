@@ -1891,7 +1891,7 @@ table.dsn.metadata.count=Devolviendo metadatos del DSN para {{count}} {{count|ca
 table.dsn.metadata.start=Leyendo metadatos del DSN: dsn={{dsn}}, proveedor={{provider}}, inicio={{start}}, límite={{limit}}
 table.exclude=Lista de exclusión = {{data||list}}
 table.inserted.rows=Se insertaron {{count}} {{count|cardinal fila, filas}}; {{status}}
-table.no.auth=El usuario {{user}} no tiene permiso {{perm|list}} para la tabla {{table}}
+table.no.auth=El usuario {{user}} no tiene permiso {{perms|list}} para la tabla {{table}}
 table.nullable.columns=Columnas anulables: {{list}}
 table.op=Operación {{operation}}
 table.op.table=Operación {{operation}} en la tabla {{table}}

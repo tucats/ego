@@ -1916,7 +1916,7 @@ table.dsn.metadata.count=Returning DSN metadata for {{count}} {{count|cardinal t
 table.dsn.metadata.start=Reading DSN metadata: dsn={{dsn}}, provider={{provider}}, start={{start}}, limit={{limit}}
 table.exclude=Exclude list = {{data||list}}
 table.inserted.rows=Inserted {{count}} {{count|cardinal row, rows}}; {{status}}
-table.no.auth=User {{user}} does not have {{perm|list}} permission for table {{table}}
+table.no.auth=User {{user}} does not have {{perms|list}} permission for table {{table}}
 table.nullable.columns=Nullable columns: {{list}}
 table.op=Operation {{operation}}
 table.op.table=Operation {{operation}} on table {{table}}

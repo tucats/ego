@@ -1885,7 +1885,7 @@ table.dsn.metadata.count=Retour des métadonnées DSN pour {{count}} {{count|car
 table.dsn.metadata.start=Lecture des métadonnées DSN : dsn={{dsn}}, fournisseur={{provider}}, début={{start}}, limite={{limit}}
 table.exclude=Liste d'exclusion = {{data||list}}
 table.inserted.rows={{count}} {{count|cardinal ligne, lignes}} insérée(s) ; {{status}}
-table.no.auth=L'utilisateur {{user}} n'a pas la permission {{perm|list}} pour la table {{table}}
+table.no.auth=L'utilisateur {{user}} n'a pas la permission {{perms|list}} pour la table {{table}}
 table.nullable.columns=Colonnes nullables : {{list}}
 table.op=Opération {{operation}}
 table.op.table=Opération {{operation}} sur la table {{table}}
