@@ -1,0 +1,38 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #7: PATCH restricted:false, sent by the per-DSN admin (udu, not session.Admin), succeeds and the server unconditionally cascades to delete every permission record for this DSN -- both udu's own admin grant (dsns-94e) and udx's unrelated read grant (dsns-94i). The CLI's --force confirmation gate is a client-side safeguard only; the endpoint itself never refuses this transition.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{UPDATEDSN_TOKEN}}"]
+        },
+        "body": {
+            "restricted": false
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag cleared",
+            "query": "restricted",
+            "value": "false"
+        }
+    ]
+}

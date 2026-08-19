@@ -71,6 +71,100 @@ func DSNSAdd(c *cli.Context) error {
 	return err
 }
 
+// DSNSUpdate applies a partial update to an existing DSN: the stored
+// password, the Secured flag, and/or the Restricted flag. Only the flags
+// actually given on the command line are changed; everything else about
+// the DSN (name, provider, host, etc.) is left as-is.
+//
+// DATA-SECURITY-2.md finding #7's suggested fix, expanded per an explicit
+// product decision: rather than just documenting that a grant silently
+// flips a DSN to Restricted, GrantDSN's existing implicit flip stays as
+// is, but the reverse direction (Restricted -> unrestricted) is made
+// explicit and deliberate instead of ever happening as a side effect.
+// Turning Restricted off deletes every permission record for the DSN (the
+// server side of this, in UpdateDSNHandler, does that unconditionally),
+// so before ever sending that request this function probes
+// GET .../permissions itself and refuses to proceed if any exist, unless
+// --force was given -- the confirmation step the endpoint itself does not
+// perform.
+//
+// --password and --secured true are both rejected locally for a sqlite
+// DSN before any request is sent, matching the same two checks
+// UpdateDSNHandler makes server-side: sqlite has no network connection at
+// all, so a stored password and a "use TLS" flag are both meaningless for
+// it. --secured false is still accepted for sqlite -- it's already the
+// DSN's effective state, so it is a harmless no-op rather than a
+// contradiction.
+//
+// Invoked by:
+//
+//	Traditional: ego dsns update <dsn-name> [--password <string>] [--secured true|false] [--restricted true|false] [--force]
+//	Verb:        ego set dsn <dsn-name> [--password <string>] [--secured true|false] [--restricted true|false] [--force]
+func DSNSUpdate(c *cli.Context) error {
+	name := c.FindGlobal().Parameter(0)
+
+	dsnResp := defs.DSNResponse{}
+	url := rest.URLBuilder(defs.DSNNamePath, name)
+
+	if err := rest.Exchange(url.String(), http.MethodGet, nil, &dsnResp, defs.TableAgent, defs.DSNMediaType); err != nil {
+		return err
+	}
+
+	req := defs.DSNUpdateRequest{}
+
+	if password, found := c.String(defs.PasswordOption); found {
+		if dsnResp.Provider == defs.SqliteProvider {
+			return errors.ErrDSNPasswordNotApplicable.Context(name)
+		}
+
+		req.Password = password
+	}
+
+	if c.WasFound("secured") {
+		secured := c.Boolean("secured")
+		if secured && dsnResp.Provider == defs.SqliteProvider {
+			return errors.ErrDSNSecuredNotApplicable.Context(name)
+		}
+
+		req.Secured = &secured
+	}
+
+	if c.WasFound("restricted") {
+		restricted := c.Boolean("restricted")
+
+		// Downgrading Restricted -> unrestricted deletes every permission
+		// record for this DSN server-side. Probe for existing records
+		// first and require --force before proceeding, so that deletion
+		// is never a surprise.
+		if dsnResp.Restricted && !restricted && !c.Boolean("force") {
+			permResp := defs.DSNPermissionResponse{}
+			permURL := rest.URLBuilder(defs.DSNNamePath+defs.PermissionsPseudoTable, name)
+
+			if err := rest.Exchange(permURL.String(), http.MethodGet, nil, &permResp, defs.TableAgent, defs.DSNListPermsMediaType); err != nil {
+				return err
+			}
+
+			if len(permResp.Items) > 0 {
+				return errors.ErrDSNRestrictedHasPermissions.Context(name)
+			}
+		}
+
+		req.Restricted = &restricted
+	}
+
+	resp := defs.DSNResponse{}
+
+	err := rest.Exchange(url.String(), http.MethodPatch, req, &resp, defs.TableAgent, defs.DSNMediaType)
+	if err == nil {
+		msg := i18n.M("dsns.updated", map[string]any{"name": name})
+		ui.Say(msg)
+	} else {
+		ui.Say(resp.Message)
+	}
+
+	return err
+}
+
 // DSNShow shows the permissions for a named DSN as a table, indicating the user(s) and
 // permission(s). If the DSN has no permissions (i.e., it is unrestricted), a message is
 // printed indicating that anyone can use the DSN.

@@ -313,6 +313,144 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	return status
 }
 
+// UpdateDSNHandler applies a partial update to an existing DSN from a PATCH
+// operation to the /dsns/{{name}} endpoint. The request body is a
+// defs.DSNUpdateRequest; only the fields present in it are changed --
+// Password (an empty string means "leave unchanged"), Secured, and
+// Restricted (both nil-able, so "leave unchanged" and "explicitly set to
+// false" can be told apart). The DSN's Name and Provider cannot be changed
+// through this endpoint.
+func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	name := strings.TrimSpace(data.String(session.URLParts["dsn"]))
+
+	dataSourceName, err := egodsns.DSNService.ReadDSN(session.ID, session.User, name, false)
+	if err != nil {
+		// Same shared classifier as GetDSNHandler/DeleteDSNHandler for the
+		// identical "no such DSN" condition (REST-2).
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+	}
+
+	// DATA-SECURITY.md §3.6: same identity-or-per-DSN-admin check as
+	// GetDSNHandler/DeleteDSNHandler -- a caller authorized only by a
+	// DSN-specific dsns_auth admin record for this one DSN may update it.
+	if !session.Admin &&
+		!egodsns.IdentityAuthorizesAction(session.Permissions, egodsns.DSNAdminAction) &&
+		!egodsns.DSNService.AuthDSN(session.ID, session.User, name, egodsns.DSNAdminAction) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.DSNAdminPermission}), http.StatusForbidden)
+	}
+
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(r.Body)
+
+	ui.Log(ui.RestLogger, "rest.request.payload", ui.A{
+		"session": session.ID,
+		"body":    buf.String()})
+
+	update := defs.DSNUpdateRequest{}
+	if err := json.Unmarshal(buf.Bytes(), &update); err != nil {
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+			"session": session.ID,
+			"error":   err})
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+	}
+
+	// DATA-SECURITY-2.md finding #7's suggested fix: sqlite has no network
+	// connection at all, so a stored password and TLS are both meaningless
+	// for it -- matching CreateDSNHandler's existing skip of host/port
+	// defaults and password encryption for the same provider. Per an
+	// explicit product decision, --secured false is still accepted for
+	// sqlite (already the DSN's effective state, so it's a harmless
+	// no-op); only --secured true is rejected as actually contradictory.
+	if dataSourceName.Provider == defs.SqliteProvider {
+		if update.Password != "" {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNPasswordNotApplicable.Context(name), session.Language), http.StatusBadRequest)
+		}
+
+		if update.Secured != nil && *update.Secured {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNSecuredNotApplicable.Context(name), session.Language), http.StatusBadRequest)
+		}
+	}
+
+	changed := false
+
+	if update.Password != "" {
+		encoded, err := encrypt(update.Password)
+		if err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		}
+
+		dataSourceName.Password = encoded
+		changed = true
+	}
+
+	if update.Secured != nil {
+		dataSourceName.Secured = *update.Secured
+		changed = true
+	}
+
+	// DATA-SECURITY-2.md finding #7: unlike GrantDSN's own implicit
+	// Restricted-on-first-grant side effect, going the other way
+	// (Restricted -> unrestricted) is never implicit -- it only happens
+	// here, in response to an explicit Restricted:false in the request
+	// body, and it unconditionally cascades to delete every permission
+	// record for this DSN. The CLI is what gates this behind a
+	// confirmation (probing for existing permissions and requiring
+	// --force -- see commands.DSNSUpdate); by the time a request reaches
+	// this handler, that confirmation has already happened, so the
+	// endpoint itself performs the cascade unconditionally rather than
+	// leaving stale permission records that could silently reactivate if
+	// the DSN were ever restricted again.
+	wasRestricted := dataSourceName.Restricted
+
+	if update.Restricted != nil {
+		dataSourceName.Restricted = *update.Restricted
+		changed = true
+	}
+
+	if wasRestricted && update.Restricted != nil && !*update.Restricted {
+		if err := egodsns.DSNService.RevokeAllDSN(session.ID, name); err != nil {
+			ui.Log(ui.AuthLogger, "auth.dsn.grant.error", ui.A{
+				"session": session.ID,
+				"user":    session.User,
+				"dsn":     name,
+				"error":   err})
+		}
+	}
+
+	if changed {
+		if err := egodsns.DSNService.WriteDSN(session.ID, session.User, dataSourceName); err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
+		}
+	}
+
+	response := defs.DSNResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Name:       dataSourceName.Name,
+		Provider:   dataSourceName.Provider,
+		Host:       dataSourceName.Host,
+		Port:       dataSourceName.Port,
+		User:       dataSourceName.Username,
+		Schema:     dataSourceName.Schema,
+		Secured:    dataSourceName.Secured,
+		Restricted: dataSourceName.Restricted,
+		Password:   defs.ElidedPassword,
+		Status:     http.StatusOK,
+	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
+
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+	if ui.IsActive(ui.RestLogger) {
+		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
+
+	return http.StatusOK
+}
+
 // CreateDSNHandler creates a DSN from a POST operation to the /dsns endpoint. The
 // body must contain the representation of the DSN to be created.
 func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {

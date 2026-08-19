@@ -1,0 +1,41 @@
+{
+    "description": "create a restricted sqlite DSN to exercise UpdateDSNHandler (PATCH /dsns/{dsn}) -- DATA-SECURITY-2.md finding #7",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "udsn-{{DSNUUID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-udsn-{{DSNUUID}}.db",
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag echoed",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}

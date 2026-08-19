@@ -1,0 +1,44 @@
+{
+    "description": "clean up the DSN created for the UpdateDSNHandler permission tests",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ],
+    "tasks": [
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-udsn-{{DSNUUID}}.db"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-udsn-{{DSNUUID}}.db-shm"]
+        },
+        {
+            "command": "DELETE",
+            "parameters": ["{{ROOT}}/db-udsn-{{DSNUUID}}.db-wal"]
+        }
+    ]
+}

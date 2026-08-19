@@ -247,6 +247,47 @@ func TestFileServiceListDSNSReturnsCopy(t *testing.T) {
 	}
 }
 
+// TestFileServiceRevokeAllDSN is DATA-SECURITY-2.md finding #7: when a DSN
+// transitions from Restricted to unrestricted, its permission records must
+// be deleted, not left behind to silently reactivate if the DSN is ever
+// restricted again. RevokeAllDSN is the primitive UpdateDSNHandler uses for
+// that; this confirms it clears every user's grant but leaves the DSN
+// record itself untouched.
+func TestFileServiceRevokeAllDSN(t *testing.T) {
+	svc, err := NewFileService("memory")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.WriteDSN(0, "owner", defs.DSN{Name: "shared", Restricted: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.GrantDSN(0, "alice", "shared", DSNReadAction, true); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.GrantDSN(0, "bob", "shared", DSNReadAction, true); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := svc.RevokeAllDSN(0, "shared"); err != nil {
+		t.Fatal(err)
+	}
+
+	if svc.AuthDSN(0, "alice", "shared", DSNReadAction) {
+		t.Fatal("expected alice's grant to be removed by RevokeAllDSN")
+	}
+
+	if svc.AuthDSN(0, "bob", "shared", DSNReadAction) {
+		t.Fatal("expected bob's grant to be removed by RevokeAllDSN")
+	}
+
+	if _, err := svc.ReadDSN(0, "owner", "shared", true); err != nil {
+		t.Fatal("RevokeAllDSN must not delete the DSN record itself")
+	}
+}
+
 // TestFileServiceListDSNSRedactsPassword is finding #6: ListDSNS used to
 // return DSN entries verbatim, including the stored (encrypted) password
 // value, unlike databaseService.ListDSNS which redacts it.

@@ -75,6 +75,7 @@ type dsnService interface {
 	ListDSNS(session int, user string) (map[string]defs.DSN, error)
 	GrantDSN(session int, user, name string, action DSNAction, grant bool) error
 	Permissions(session int, user, name string) (map[string]DSNAction, error)
+	RevokeAllDSN(session int, name string) error
 	Flush() error
 }
 

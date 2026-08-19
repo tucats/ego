@@ -41,6 +41,7 @@ import (
 //. run
 //  set  config
 //. set cache size
+//. set dsn
 //  show dsn
 //. show log
 //. show log status

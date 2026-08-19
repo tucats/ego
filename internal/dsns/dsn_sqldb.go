@@ -178,7 +178,7 @@ func (pg *databaseService) DeleteDSN(session int, user, name string) error {
 	err = pg.dsnHandle.Begin().DeleteOne(name)
 	if err == nil {
 		// Delete any authentication objects for this DSN as well...
-		_, _ = pg.authHandle.Begin().Delete(pg.authHandle.Equals("dsn", name))
+		_ = pg.RevokeAllDSN(session, name)
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
 			"session": session,
@@ -188,6 +188,20 @@ func (pg *databaseService) DeleteDSN(session int, user, name string) error {
 	if errors.Equal(err, errors.ErrNotFound) {
 		err = errors.New(errors.ErrNoSuchDSN).Context(name)
 	}
+
+	return err
+}
+
+// RevokeAllDSN removes every user's dsns_auth record for the named DSN,
+// without touching the DSN record itself. Used both by DeleteDSN (as part
+// of deleting the DSN entirely) and by UpdateDSNHandler when a DSN
+// transitions from Restricted to unrestricted (DATA-SECURITY-2.md finding
+// #7): the permission records that governed access under the old
+// Restricted state have no meaning once the DSN is open to everyone, and
+// leaving them behind would let them silently reactivate if the DSN were
+// ever restricted again.
+func (pg *databaseService) RevokeAllDSN(session int, name string) error {
+	_, err := pg.authHandle.Begin().Delete(pg.authHandle.Equals("dsn", name))
 
 	return err
 }

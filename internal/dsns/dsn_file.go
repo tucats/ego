@@ -143,18 +143,7 @@ func (f *fileService) DeleteDSN(session int, user, name string) error {
 		f.dirty = true
 
 		delete(f.Data, u.Name)
-
-		// Remove every user's auth record for this DSN, not just the
-		// caller's -- matching databaseService.DeleteDSN, which deletes
-		// every dsns_auth row keyed by this DSN name. Leaving other
-		// users' grants behind would let them silently reactivate if a
-		// DSN of the same name is ever recreated.
-		for key := range f.Auth {
-			parts := strings.SplitN(key, "|", 2)
-			if len(parts) == 2 && parts[1] == u.Name {
-				delete(f.Auth, key)
-			}
-		}
+		f.revokeAllLocked(u.Name)
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
 			"session": session,
@@ -162,6 +151,42 @@ func (f *fileService) DeleteDSN(session int, user, name string) error {
 	}
 
 	return f.Flush()
+}
+
+// RevokeAllDSN removes every user's auth record for the named DSN, without
+// touching the DSN record itself. Used both by DeleteDSN (as part of
+// deleting the DSN entirely) and by UpdateDSNHandler when a DSN
+// transitions from Restricted to unrestricted (DATA-SECURITY-2.md finding
+// #7): the permission records that governed access under the old
+// Restricted state have no meaning once the DSN is open to everyone, and
+// leaving them behind would let them silently reactivate if the DSN were
+// ever restricted again.
+func (f *fileService) RevokeAllDSN(session int, name string) error {
+	// revokeAllLocked must run unconditionally on the left of this
+	// assignment -- "f.dirty || f.revokeAllLocked(name)" would short-
+	// circuit and never call it at all once f.dirty was already true from
+	// an earlier write in the same request.
+	changed := f.revokeAllLocked(name)
+	f.dirty = f.dirty || changed
+
+	return f.Flush()
+}
+
+// revokeAllLocked removes every user's auth record for the named DSN from
+// f.Auth in place. It returns true if anything was actually removed, so
+// callers only mark the service dirty when there was a real change.
+func (f *fileService) revokeAllLocked(name string) bool {
+	changed := false
+
+	for key := range f.Auth {
+		parts := strings.SplitN(key, "|", 2)
+		if len(parts) == 2 && parts[1] == name {
+			delete(f.Auth, key)
+			changed = true
+		}
+	}
+
+	return changed
 }
 
 // Flush writes the file-based data to a json file. This operation is not

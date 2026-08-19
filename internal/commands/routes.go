@@ -241,6 +241,16 @@ func defineStaticRoutes() *router.Router {
 		AcceptMedia(defs.DSNMediaType).
 		Class(router.TableRequestCounter)
 
+	// Update (PATCH) an existing DSN's password, Secured flag, and/or
+	// Restricted flag. Same identity-or-per-DSN-admin gate as
+	// Get/DeleteDSNHandler above, checked inside UpdateDSNHandler for the
+	// same reason -- Route.Permissions() has no notion of "admin of this
+	// specific resource".
+	r.New(defs.DSNNamePath, dsns.UpdateDSNHandler, http.MethodPatch).
+		Authentication(true).
+		AcceptMedia(defs.DSNMediaType).
+		Class(router.TableRequestCounter)
+
 	// Add or delete DSN permissions. Not gated by Permissions() for the
 	// same reason as delete, above -- DSNPermissionsHandler checks
 	// identity ego.dsn.admin OR a per-DSN admin record for each item's

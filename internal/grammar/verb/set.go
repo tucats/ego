@@ -42,6 +42,17 @@ var SetVerbGrammar = []cli.Option{
 		Action:        config.SetDescriptionAction,
 	},
 	{
+		LongName:      defs.DSNOption,
+		Aliases:       []string{"dsns"},
+		Description:   "ego.verb.set.dsn",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNSUpdate,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
+		MinParams:     1,
+		Value:         SetDSNGrammar,
+	},
+	{
 		LongName:      "logging",
 		Aliases:       []string{"log"},
 		Description:   "ego.verb.set.logging",

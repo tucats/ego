@@ -178,6 +178,39 @@ var DSNSGrammar = []cli.Option{
 		},
 	},
 	{
+		LongName:      "update",
+		Description:   "ego.dsns.update",
+		OptionType:    cli.Subcommand,
+		Action:        commands.DSNSUpdate,
+		ParmDesc:      "dsn-name",
+		ExpectedParms: 1,
+		Value: []cli.Option{
+			{
+				LongName:    defs.PasswordOption,
+				Aliases:     []string{"pw"},
+				ShortName:   "p",
+				Description: "dsns.update.password",
+				OptionType:  cli.StringType,
+			},
+			{
+				LongName:    "secured",
+				Aliases:     []string{"secure"},
+				Description: "dsns.update.secured",
+				OptionType:  cli.BooleanValueType,
+			},
+			{
+				LongName:    "restricted",
+				Description: "dsns.update.restricted",
+				OptionType:  cli.BooleanValueType,
+			},
+			{
+				LongName:    "force",
+				Description: "dsns.update.force",
+				OptionType:  cli.BooleanType,
+			},
+		},
+	},
+	{
 		LongName:    "list",
 		Description: "ego.dsns.list",
 		OptionType:  cli.Subcommand,

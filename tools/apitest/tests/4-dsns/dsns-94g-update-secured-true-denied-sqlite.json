@@ -1,0 +1,39 @@
+{
+    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "secured": true
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions secured",
+            "query": "msg",
+            "op": "contains",
+            "value": "secured"
+        }
+    ]
+}
