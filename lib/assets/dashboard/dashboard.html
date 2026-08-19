@@ -119,8 +119,14 @@
 <div id="config-item-overlay" onclick="overlayBackdropClick(event)">
     <div id="config-item-sheet">
         <div class="config-item-header">
-            <span id="config-item-key" class="config-item-key"></span>
-            <span id="config-item-value" class="config-item-value"></span>
+            <div class="config-item-row">
+                <span class="config-item-label">Key:</span>
+                <span id="config-item-key" class="config-item-key"></span>
+            </div>
+            <div class="config-item-row">
+                <span class="config-item-label">Value:</span>
+                <span id="config-item-value" class="config-item-value"></span>
+            </div>
         </div>
         <p id="config-item-desc" class="settings-hint"></p>
         <div class="sheet-buttons">

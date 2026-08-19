@@ -2299,23 +2299,43 @@ body.dark .user-id { color: #666; }
 
 .config-item-header {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.config-item-row {
+    display: flex;
     align-items: baseline;
-    gap: 1rem;
+    gap: 0.5rem;
+}
+
+.config-item-label {
+    flex-shrink: 0;
+    width: 3.6rem;
+    font-weight: 600;
+    color: #888;
+}
+
+.config-item-key,
+.config-item-value {
     font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    word-break: break-all;
 }
 
 .config-item-key {
     color: #1C6EA4;
     font-weight: 600;
-    word-break: break-all;
 }
 
 .config-item-value {
     color: #333;
     font-weight: 600;
-    text-align: right;
-    word-break: break-all;
+}
+
+/* Larger than the shared .settings-hint size — this is the sole content of
+   the popup once the header line is read, so it needs to read comfortably. */
+#config-item-desc {
+    font-size: 1rem;
 }
 
 #config-close-btn {
@@ -3415,8 +3435,10 @@ body.dark #config-content table td {
 body.dark #config-content table td:first-child { color: #7eb8f7; }
 body.dark #config-content table tbody tr:nth-child(even) td { background: #202040; }
 body.dark #config-item-sheet { background: #16213e; color: #cdd6f4; }
+body.dark .config-item-label { color: #666; }
 body.dark .config-item-key   { color: #7eb8f7; }
 body.dark .config-item-value { color: #cdd6f4; }
+body.dark #config-item-desc  { color: #fff; }
 body.dark #config-close-btn {
     background: #222244;
     color: #cdd6f4;
