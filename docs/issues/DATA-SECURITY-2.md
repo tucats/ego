@@ -24,6 +24,14 @@ Findings are ordered by severity.
 
 ## 1. CRITICAL — `ego.server.admin` is a full `ego.root` grant, not a lesser one
 
+**Fixed in `aba6bdc0`.** Both `CreateUserHandler` and `UpdateUserHandler` now
+enforce "you cannot grant a permission you do not hold yourself" on every
+`ego.*` permission a create/update request tries to add, bypassed only by
+`session.Admin` (literal `ego.root`). Custom (non-`ego.`) permission names
+are deliberately excluded from the rule — see the fix's commit message and
+the in-code comments on both handlers for why. Regression coverage:
+`tools/apitest/tests/9-permissions/perm-85` through `perm-89`.
+
 `docs/SERVER.md` describes `ego.server.admin` as authorizing "server
 administration (users, logging, caches, tokens, memory/resource status)
 without full `ego.root`." In practice it *is* full `ego.root`, because it
