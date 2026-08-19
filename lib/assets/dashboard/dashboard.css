@@ -2530,7 +2530,8 @@ body.dark #code-ui {
 
 .code-pane-label button:hover { color: var(--ct); }
 
-#code-elapsed {
+#code-elapsed,
+#sql-elapsed {
     font-style: italic;
     font-weight: 400;
     color: var(--ct2);
