@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
@@ -83,8 +84,24 @@ func NewFileService(userDatabaseFile string) (dsnService, error) {
 	return svc, nil
 }
 
+// ListDSNS lists the DSNs stored in the file, keyed by name. The returned
+// map is a fresh copy, not the service's own internal Data map -- matching
+// databaseService.ListDSNS's contract, since ListDSNHandler mutates the map
+// it gets back (deleting entries the caller isn't authorized to see) and
+// handing out f.Data directly would let that delete corrupt the live store.
+// Each entry's Password is redacted for the same reason
+// databaseService.ListDSNS redacts it: this is a list endpoint, and the
+// stored value (even though it's the encrypted ciphertext, not plaintext)
+// has no business being echoed back here.
 func (f *fileService) ListDSNS(session int, user string) (map[string]defs.DSN, error) {
-	return f.Data, nil
+	r := make(map[string]defs.DSN, len(f.Data))
+
+	for name, dsn := range f.Data {
+		dsn.Password = defs.ElidedPassword
+		r[name] = dsn
+	}
+
+	return r, nil
 }
 
 func (f *fileService) ReadDSN(session int, user, name string, doNotLog bool) (defs.DSN, error) {
@@ -100,6 +117,10 @@ func (f *fileService) ReadDSN(session int, user, name string, doNotLog bool) (de
 
 func (f *fileService) WriteDSN(session int, user string, dsn defs.DSN) error {
 	_, found := f.Data[dsn.Name]
+	if !found {
+		dsn.ID = uuid.NewString()
+	}
+
 	f.Data[dsn.Name] = dsn
 	f.dirty = true
 
@@ -119,11 +140,21 @@ func (f *fileService) WriteDSN(session int, user string, dsn defs.DSN) error {
 func (f *fileService) DeleteDSN(session int, user, name string) error {
 	u, err := f.ReadDSN(session, user, name, false)
 	if err == nil {
-		key := user + "|" + name
 		f.dirty = true
 
 		delete(f.Data, u.Name)
-		delete(f.Auth, key)
+
+		// Remove every user's auth record for this DSN, not just the
+		// caller's -- matching databaseService.DeleteDSN, which deletes
+		// every dsns_auth row keyed by this DSN name. Leaving other
+		// users' grants behind would let them silently reactivate if a
+		// DSN of the same name is ever recreated.
+		for key := range f.Auth {
+			parts := strings.SplitN(key, "|", 2)
+			if len(parts) == 2 && parts[1] == u.Name {
+				delete(f.Auth, key)
+			}
+		}
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
 			"session": session,
@@ -189,7 +220,22 @@ func (f *fileService) Flush() error {
 // AuthDSN determines if the given username is allowed to access the
 // named DSN. This will involve lookups to the auth map to determine
 // if the DSN is restricted, and if so, is this user on the list?
+//
+// DATA-SECURITY-2.md finding #6: this used to skip the Restricted check
+// entirely, so an unrestricted DSN was gated exactly like a restricted one
+// -- any caller without an explicit Auth entry was denied, inverting the
+// documented default that an unrestricted DSN "is not gated by Ego in any
+// way." Mirrors databaseService.AuthDSN's early return.
 func (f *fileService) AuthDSN(session int, user, name string, action DSNAction) bool {
+	dsn, err := f.ReadDSN(session, user, name, true)
+	if err != nil {
+		return false
+	}
+
+	if !dsn.Restricted {
+		return true
+	}
+
 	key := user + "|" + name
 
 	if value, found := f.Auth[key]; found {
@@ -202,6 +248,14 @@ func (f *fileService) AuthDSN(session int, user, name string, action DSNAction) 
 // GrantDSN sets the allowed actions for an item. The grant flag indicates if the
 // value is granted versus revoked.
 func (f *fileService) GrantDSN(session int, user, name string, action DSNAction, grant bool) error {
+	// Does this DSN even exist? If not, this is an error -- matching
+	// databaseService.GrantDSN, which refuses to create an orphaned auth
+	// record for a DSN that was never created (or already deleted).
+	dsn, found := f.Data[name]
+	if !found {
+		return errors.ErrNoSuchDSN.Context(name)
+	}
+
 	key := user + "|" + name
 
 	if value, found := f.Auth[key]; found {
@@ -219,6 +273,20 @@ func (f *fileService) GrantDSN(session int, user, name string, action DSNAction,
 			f.Auth[key] = DSNNoAccess
 		}
 	}
+
+	// If the DSN was not previously marked as restricted, mark it now so
+	// future access uses the auth map for authorization checks -- matching
+	// databaseService.GrantDSN's identical side effect.
+	if !dsn.Restricted {
+		dsn.Restricted = true
+		f.Data[name] = dsn
+
+		ui.Log(ui.AuthLogger, "auth.dsn.restrict", ui.A{
+			"session": session,
+			"name":    name})
+	}
+
+	f.dirty = true
 
 	return f.Flush()
 }
