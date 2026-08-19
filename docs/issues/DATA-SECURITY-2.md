@@ -256,6 +256,18 @@ inside each handler.
 
 ## 5. MEDIUM — `@sql`/`@transaction` collapse `ego.table.update`/`ego.table.delete` into `ego.table.write`
 
+**Fixed in `bb00c342`.** Both `authorizeStatement` (`sql_permissions.go`)
+and `authorizeAndClassifySQL` (`scripting/authz.go`) now call a new
+`writePermissionForKind` helper — one small copy per file, matching this
+pair's existing pattern for other shared logic, since `scripting` cannot
+import `tables` — that maps a `UsageWrite` table reference to
+`TableUpdatePermission`/`TableDeletePermission`/`TableWritePermission`
+based on the statement's own `sqlparse.StatementKind`, rather than
+collapsing all three into `TableWritePermission`. Per the suggested fix's
+first option, this preserves the row endpoints' full five-way granularity
+instead of just documenting the coarsening. Regression coverage:
+`tools/apitest/tests/8-sql/sql-15` through `sql-16j`.
+
 `docs/SERVER.md` documents three separate per-table write permissions:
 `ego.table.write` (insert), `ego.table.update`, and `ego.table.delete`, and
 the plain REST row endpoints enforce exactly that split (`rows.go:46,173,775`
