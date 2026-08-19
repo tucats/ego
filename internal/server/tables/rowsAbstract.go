@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -26,6 +27,7 @@ import (
 func InsertAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var err error
 
+	startTime := time.Now()
 	dsnName := data.String(session.URLParts["dsn"])
 
 	// Authorized() (security.go) expects its table argument in "dsn.table"
@@ -182,6 +184,7 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      count,
 				Status:     http.StatusOK,
+				Elapsed:    time.Since(startTime).String(),
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -281,11 +284,12 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 
 func readAbstractRowData(db *database.Database, q string, session *router.Session, w http.ResponseWriter) error {
 	var (
-		rows     *sql.Rows
-		err      error
-		rowCount int
-		result   = [][]any{}
-		columns  []defs.DBAbstractColumn
+		rows      *sql.Rows
+		err       error
+		rowCount  int
+		result    = [][]any{}
+		columns   []defs.DBAbstractColumn
+		startTime = time.Now()
 	)
 
 	rows, err = db.Query(q)
@@ -378,6 +382,7 @@ func readAbstractRowData(db *database.Database, q string, session *router.Sessio
 		Start:      session.Start,
 		Limit:      effectiveLimit,
 		Status:     http.StatusOK,
+		Elapsed:    time.Since(startTime).String(),
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.AbstractRowSetMediaType)
@@ -402,7 +407,8 @@ func readAbstractRowData(db *database.Database, q string, session *router.Sessio
 func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	count := 0
 	dsnName := data.String(session.URLParts["dsn"])
-
+	startTime := time.Now()
+	
 	// Authorized() expects "dsn.table"; capture the bare table name before
 	// it is overwritten below with the provider-qualified form. See the
 	// longer explanation on the equivalent line in InsertAbstractRows.
@@ -411,7 +417,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	// This must request dsns.DSNWriteAction, not DSNNoAccess (0), for the
 	// same reason documented on InsertAbstractRows above: action 0 can
 	// never satisfy AuthDSN's bitmask test, so a Restricted DSN denied
-	// every non-admin caller regardless of their grants. 
+	// every non-admin caller regardless of their grants.
 	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err != nil || db == nil {
 		if err == nil {
@@ -508,6 +514,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Count:      count,
 		Status:     http.StatusOK,
+		Elapsed:    time.Since(startTime).String(),
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)

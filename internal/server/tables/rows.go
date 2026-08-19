@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
@@ -35,6 +36,7 @@ const insertErrorPrefix = "insert error: "
 func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
+	startTime := time.Now()
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
@@ -99,10 +101,19 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 			}
 
+			if localTx {
+				_ = db.Commit()
+
+				ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
+					"session": session.ID,
+				})
+			}
+
 			response := defs.DBRowCount{
 				ServerInfo: util.MakeServerInfo(session.ID),
 				Count:      int(rowCount),
 				Status:     http.StatusOK,
+				Elapsed:    time.Since(startTime).String(),
 			}
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -119,14 +130,6 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				"session": session.ID,
 				"count":   rowCount,
 				"status":  response.Status})
-
-			if localTx {
-				_ = db.Commit()
-
-				ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
-					"session": session.ID,
-				})
-			}
 
 			return response.Status
 		}
@@ -149,6 +152,7 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
+	startTime := time.Now()
 
 	if useAbstract(r) {
 		return InsertAbstractRows(session.User, session.Admin, tableName, session, w, r)
@@ -239,10 +243,19 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.row.not.found"), http.StatusNotFound)
 		}
 
+		if localTx {
+			err = db.Commit()
+
+			ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
+				"session": session.ID,
+			})
+		}
+
 		response := defs.DBRowCount{
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
 			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
 		}
 
 		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -253,14 +266,6 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 				"session": session.ID,
 				"body":    string(b)})
-		}
-
-		if localTx {
-			err = db.Commit()
-
-			ui.Log(ui.DBLogger, "db.local.tx.commit", ui.A{
-				"session": session.ID,
-			})
 		}
 
 		if err == nil {
@@ -634,10 +639,11 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 
 func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns []string, q string, session *router.Session, w http.ResponseWriter) error {
 	var (
-		rows     *sql.Rows
-		err      error
-		rowCount int
-		result   = []map[string]any{}
+		rows      *sql.Rows
+		err       error
+		rowCount  int
+		result    = []map[string]any{}
+		startTime = time.Now()
 	)
 
 	// If the list of selected columns from the user is empty, we assume we're return all the
@@ -707,6 +713,7 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 			Start:      session.Start,
 			Limit:      effectiveLimit,
 			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
 		}
 
 		status := http.StatusOK
@@ -737,10 +744,11 @@ func readRowData(db *database.Database, columns []defs.DBColumn, selectedColumns
 // UpdateRows updates the rows (specified by a filter clause as needed) with the data from the payload.
 func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var (
-		db      *database.Database
-		err     error
-		rowSet  defs.DBRowSet
-		columns []defs.DBColumn
+		db        *database.Database
+		err       error
+		rowSet    defs.DBRowSet
+		columns   []defs.DBColumn
+		startTime = time.Now()
 	)
 
 	tableName := data.String(session.URLParts["table"])
@@ -832,6 +840,7 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      count,
 			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
 		}
 
 		status := http.StatusOK

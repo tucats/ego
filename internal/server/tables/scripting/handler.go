@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -36,6 +37,8 @@ import (
 // the result-set symbol) or a simple row-count.
 func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	var needCacheFlush bool
+
+	startTime := time.Now()
 
 	// Decode the JSON array of operations from the request body.
 	tasks := []defs.TXOperation{}
@@ -331,6 +334,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 					Rows:       rows,
 					Count:      len(rows),
 					Status:     http.StatusOK,
+					Elapsed:    time.Since(startTime).String(),
 				}
 
 				ui.Log(ui.TableLogger, "table.tx.done", ui.A{
@@ -361,6 +365,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 			ServerInfo: util.MakeServerInfo(session.ID),
 			Count:      rowsAffected,
 			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
 		}
 
 		ui.Log(ui.TableLogger, "table.tx.affected", ui.A{
