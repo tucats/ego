@@ -311,10 +311,22 @@ body {
     gap: 0.6rem;
 }
 
-#login-box h2 {
+#login-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin: 0 0 0.5rem;
+}
+
+#login-logo {
+    height: 32px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+#login-box h2 {
+    margin: 0;
     font-size: 1.3rem;
-    text-align: center;
 }
 
 #login-error {
@@ -3233,6 +3245,7 @@ body.dark #login-box {
     background: #16213e;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
 }
+body.dark #login-box h2 { color: #cdd6f4; }
 body.dark #login-box label { color: #cdd6f4; }
 body.dark #login-box input[type="text"],
 body.dark #login-box input[type="password"] {
