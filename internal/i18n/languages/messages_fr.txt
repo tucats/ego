@@ -866,6 +866,7 @@ debug.start=Démarrer le programme avec un appel au point d'entrée {{name}}()
 dsns.added=Nouveau nom de source de données créé : {{name}}
 dsns.deleted=Nom de source de données existant supprimé : {{name}}
 dsns.updated=Nom de source de données mis à jour : {{name}}
+dsns.now.restricted=Le nom de source de données {{name}} n'était pas restreint auparavant et l'est désormais
 dsns.metadata.empty=Le DSN {{name}} n'a pas de tables
 dsns.metadata.header=Schéma du DSN {{name}} ({{provider}}) : {{count}} {{count|cardinal table, tables}}
 dsns.permissions=Permissions utilisateur pour le nom de source de données {{name}}

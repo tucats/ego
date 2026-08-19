@@ -872,6 +872,7 @@ debug.start=Iniciar programa con llamada al punto de entrada {{name}}()
 dsns.added=Nombre de origen de datos nuevo creado: {{name}}
 dsns.deleted=Nombre de origen de datos existente eliminado: {{name}}
 dsns.updated=Nombre de origen de datos actualizado: {{name}}
+dsns.now.restricted=El nombre de origen de datos {{name}} antes no tenía restricciones y ahora está restringido
 dsns.metadata.empty=El DSN {{name}} no tiene tablas
 dsns.metadata.header=Esquema del DSN {{name}} ({{provider}}): {{count}} {{count|cardinal tabla, tablas}}
 dsns.permissions=Permisos de usuario para el nombre de origen de datos {{name}}

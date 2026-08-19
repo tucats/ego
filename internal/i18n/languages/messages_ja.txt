@@ -866,6 +866,7 @@ debug.start=エントリポイント {{name}}() を呼び出してプログラ�
 dsns.added=新しいデータソース名を作成しました: {{name}}
 dsns.deleted=既存のデータソース名を削除しました: {{name}}
 dsns.updated=データソース名を更新しました: {{name}}
+dsns.now.restricted=データソース名 {{name}} は以前は制限されていませんでしたが、現在は制限されています
 dsns.metadata.empty=DSN {{name}} にテーブルがありません
 dsns.metadata.header=DSN {{name}} ({{provider}}) のスキーマ: {{count}}個のテーブル
 dsns.permissions=データソース名 {{name}} のユーザー権限

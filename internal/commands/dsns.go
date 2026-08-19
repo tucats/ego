@@ -513,10 +513,29 @@ func setPermissions(c *cli.Context, grant string) error {
 		item.Actions[index] = grant + action
 	}
 
+	// The server's DSNAdminPermission endpoint flips a previously-unrestricted
+	// DSN's Restricted flag to true as a side effect of the very first grant or
+	// revoke against it (DATA-SECURITY-2.md finding #7). Probe the DSN's current
+	// state first so that, if this call is about to trigger that flip, the user
+	// can be told about it below rather than have it happen silently.
+	dsnResp := defs.DSNResponse{}
+	dsnURL := rest.URLBuilder(defs.DSNNamePath, item.DSN)
+
+	if err = rest.Exchange(dsnURL.String(), http.MethodGet, nil, &dsnResp, defs.TableAgent, defs.DSNMediaType); err != nil {
+		return err
+	}
+
+	wasUnrestricted := !dsnResp.Restricted
+
 	url := rest.URLBuilder(defs.DSNPath + defs.PermissionsPseudoTable)
 	resp := defs.DBRowCount{}
 
 	err = rest.Exchange(url.String(), http.MethodPost, item, &resp, defs.TableAgent, defs.DSNPermissionsType)
+
+	if err == nil && wasUnrestricted {
+		msg := i18n.M("dsns.now.restricted", map[string]any{"name": item.DSN})
+		ui.Say(msg)
+	}
 
 	if ui.OutputFormat != ui.TextFormat {
 		c.Output(resp)

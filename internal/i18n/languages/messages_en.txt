@@ -884,6 +884,7 @@ debug.start=Start program with call to entrypoint {{name}}()
 dsns.added=Created new data source name: {{name}}
 dsns.deleted=Deleted existing data source name: {{name}}
 dsns.updated=Updated data source name: {{name}}
+dsns.now.restricted=Data source name {{name}} was previously unrestricted and is now restricted
 dsns.metadata.empty=DSN {{name}} has no tables
 dsns.metadata.header=Schema for DSN {{name}} ({{provider}}): {{count}} {{count|cardinal table, tables}}
 dsns.permissions=User permissions for data source name {{name}}
