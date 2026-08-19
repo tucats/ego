@@ -304,6 +304,46 @@ than collapsing everything under `UsageWrite`.
 
 ## 6. MEDIUM — the JSON-file DSN backend ignores `Restricted` entirely
 
+**Fixed in `bb7e38d0`,** together with six more divergences from
+`databaseService` found during the same pass (`internal/dsns/dsn_file.go`
+had received no updates in step with `dsn_sqldb.go` for months, and had no
+unit test coverage at all -- `internal/dsns/dsn_file_test.go` now covers
+all seven):
+
+- `AuthDSN` now checks `Restricted` before falling through to the auth map,
+  matching this finding's original report.
+- `GrantDSN` now returns `ErrNoSuchDSN` for a DSN that doesn't exist,
+  instead of silently creating an orphaned auth entry, matching
+  `databaseService.GrantDSN`.
+- `GrantDSN` now flips `Restricted` to `true` on a previously-unrestricted
+  DSN's first grant, the same side effect `databaseService.GrantDSN` has
+  (see finding #7 below on whether that side effect itself is a good idea).
+- `GrantDSN` never set the service's dirty flag, so `Flush()` silently
+  no-opped and every file-backed grant was lost on restart unless an
+  unrelated write happened to flush it along the way -- found while fixing
+  the two items above, not part of the original report.
+- `DeleteDSN` now removes every user's auth record for the deleted DSN,
+  not just the calling user's -- previously, another user's grant on a
+  deleted DSN would silently reactivate if a DSN of the same name was
+  ever recreated.
+- `WriteDSN` now assigns a fresh UUID to a newly-created DSN's `ID` field,
+  matching `databaseService.WriteDSN`; previously every file-backed DSN had
+  a permanently empty `id` in API responses.
+- **`ListDSNS` now returns a copy of the DSN map, not the service's own
+  live `Data` map, and redacts `Password` on the way out.** This was the
+  most severe of the seven: `ListDSNHandler` (`internal/server/dsns/
+  handler.go`) filters DSNs a non-admin caller can't see by calling
+  `delete(names, key)` on the map `ListDSNS` returns. Go maps are
+  reference types, so against the unfixed code that delete landed on the
+  live store -- **any non-admin user calling `GET /dsns/` while a
+  restricted DSN existed that they had no access to would permanently
+  delete that DSN**, the first time they listed DSNs at all. Confirmed live
+  against a rebuilt server: before the fix, a non-admin `reader` account's
+  `GET /dsns/` call removed a restricted DSN from a second admin session's
+  view immediately afterward; after the fix it does not.
+  `databaseService.ListDSNS` was never affected -- it already built a
+  fresh map.
+
 DSN and user data can be persisted either as a database (the default, and
 what every automated test in this repo exercises) or as a plain JSON file
 (still a fully supported, documented `--users <path>` configuration —
