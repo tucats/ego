@@ -1690,7 +1690,8 @@ body.dark .user-id { color: #666; }
     background: #f0f4fa;
 }
 
-#dsn-detail-tables-btn {
+#dsn-detail-tables-btn,
+#dsn-detail-add-perm-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -1700,7 +1701,8 @@ body.dark .user-id { color: #666; }
     cursor: pointer;
 }
 
-#dsn-detail-tables-btn:hover { background: #357abd; }
+#dsn-detail-tables-btn:hover,
+#dsn-detail-add-perm-btn:hover { background: #357abd; }
 
 #dsn-detail-close-btn {
     padding: 0.45rem 1rem;
