@@ -115,6 +115,64 @@ func UpdateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 				}
 
 				if add {
+					// SECURITY RULE: "you cannot grant a permission you do
+					// not hold yourself." This check only runs on the "add"
+					// side of a +/- update, never on "-" (removing a
+					// permission only takes privilege away, it can never be
+					// used to escalate, so it is always allowed).
+					//
+					// It also only applies to Ego's own built-in permission
+					// names -- the ones starting with "ego." that appear in
+					// defs.AllPermissions, like "ego.root" or
+					// "ego.dsn.admin". Ego also lets an operator invent
+					// arbitrary "custom" permission names (e.g. "payroll")
+					// for their own service code to check -- see the
+					// "ego server users create" example in docs/SERVER.md.
+					// Those custom names carry no special meaning to the
+					// server itself, so handing one to another user is not
+					// a privilege-escalation risk the way handing out a
+					// built-in "ego." permission is, and must keep working
+					// exactly as it always has.
+					//
+					// Go note for readers new to the language:
+					// strings.HasPrefix(perm, "ego.") reports whether perm
+					// starts with the literal text "ego." -- true for
+					// "ego.root", false for "payroll". "!" is the boolean
+					// NOT operator and "&&" is boolean AND, so the full
+					// condition below reads as "this is a built-in ego.*
+					// permission, AND the caller is not root, AND the
+					// caller does not already hold this exact permission."
+					// All three must be true for the request to be
+					// rejected.
+					//
+					// Why this check exists: without it, a caller who holds
+					// only "ego.server.admin" -- a deliberately lesser
+					// permission meant for day-to-day user and server
+					// administration, not full control of the server --
+					// could PATCH any user (including themselves) to add
+					// "ego.root", the one permission that bypasses every
+					// other check in the server. That would make
+					// "ego.server.admin" secretly equivalent to full
+					// "ego.root", which defeats the entire point of having
+					// two separate permission levels. See create.go's
+					// identical check (and its longer comment) for the
+					// create-a-new-user side of this same rule.
+					//
+					// session.Admin means "this caller holds ego.root" (set
+					// once at login time -- see router/auth.go). Root can
+					// always grant anything, including root itself, so
+					// "!session.Admin" short-circuits the rest of the
+					// condition and skips straight to allowing the grant
+					// for a root caller. session.HasAllPermissions(perm)
+					// answers "does the caller's own permission list
+					// already contain perm?" -- if not, they are trying to
+					// hand out something they don't have themselves.
+					if strings.HasPrefix(perm, "ego.") && !session.Admin && !session.HasAllPermissions(perm) {
+						msg := errors.ErrPermissionNotHeld.Clone().Context(perm).Localize(session.Language)
+
+						return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
+					}
+
 					set[perm] = true
 				} else {
 					delete(set, perm)

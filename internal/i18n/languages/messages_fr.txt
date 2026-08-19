@@ -515,6 +515,7 @@ perm.read=L'utilisateur n'a pas les autorisations de lecture
 perm.update=L'utilisateur n'a pas les autorisations de mise à jour
 perm.write=L'utilisateur n'a pas les autorisations d'écriture
 permission.name=nom de permission invalide
+permission.not.held=impossible d'accorder une permission que vous ne possédez pas vous-même
 permissions.unavailable=Les permissions ne sont pas disponibles
 pkce.state.generate=erreur lors de la génération de l'état PKCE
 pkce.verifier.generate=erreur lors de la génération du vérificateur de code PKCE

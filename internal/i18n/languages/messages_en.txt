@@ -523,6 +523,7 @@ perm.read=User does not have read permission
 perm.update=User does not have update permission
 perm.write=User does not have write permission
 permission.name=invalid permission name
+permission.not.held=cannot grant a permission you do not already hold
 permissions.unavailable=Permissions are not available
 pkce.state.generate=error generating PKCE state
 pkce.verifier.generate=error generating PKCE code verifier

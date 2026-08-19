@@ -521,6 +521,7 @@ perm.read=El usuario no tiene permiso de lectura
 perm.update=El usuario no tiene permiso de actualización
 perm.write=El usuario no tiene permiso de escritura
 permission.name=nombre de permiso no válido
+permission.not.held=no se puede otorgar un permiso que usted mismo no posee
 permissions.unavailable=Los permisos no están disponibles
 pkce.state.generate=error al generar el estado PKCE
 pkce.verifier.generate=error al generar el verificador de código PKCE

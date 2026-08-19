@@ -1,0 +1,40 @@
+{
+    "description": "Confirms perm-85's rejected request was not a false negative -- the 403 must mean the write never happened at all, not just that the response was reported wrong. Read the same user back as root and check that ego.root is genuinely absent from its permission list, alongside the ego.server.admin it held all along (perm-73) and still has.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/users/svc{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "ego.root was not granted",
+            "query": "permissions",
+            "op": "not contains",
+            "value": "ego.root"
+        },
+        {
+            "name": "ego.server.admin is still present",
+            "query": "permissions.*",
+            "value": "ego.server.admin"
+        }
+    ]
+}

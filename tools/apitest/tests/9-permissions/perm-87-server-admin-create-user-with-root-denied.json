@@ -1,0 +1,37 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #1, the create-a-new-user side of the same rule: svc{{PERMTESTID}} (ego.server.admin only, no ego.root) tries to create a brand-new user pre-loaded with ego.root. This is the same escalation as perm-85 by a different route -- instead of granting root to an existing account, hand it to a fresh one. CreateUserHandler must reject this exactly like UpdateUserHandler does.",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{SVCADMIN_TOKEN}}"]
+        },
+        "body": {
+            "name": "escalate{{PERMTESTID}}",
+            "password": "zork",
+            "permissions": [
+                "ego.root"
+            ]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

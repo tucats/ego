@@ -1,0 +1,29 @@
+{
+    "description": "Confirms perm-87's rejected create request had no side effect: escalate{{PERMTESTID}} must not exist at all. Since the request was rejected before CreateUserHandler ever calls auth.SetUser, no cleanup step is needed for this user elsewhere in this test group -- it was never created.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/admin/users/escalate{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

@@ -515,6 +515,7 @@ perm.read=ユーザーに読み取り権限がありません
 perm.update=ユーザーに更新権限がありません
 perm.write=ユーザーに書き込み権限がありません
 permission.name=無効な権限名
+permission.not.held=自分が持っていない権限を付与することはできません
 permissions.unavailable=権限を利用できません
 pkce.state.generate=PKCE stateの生成エラー
 pkce.verifier.generate=PKCE code verifierの生成エラー

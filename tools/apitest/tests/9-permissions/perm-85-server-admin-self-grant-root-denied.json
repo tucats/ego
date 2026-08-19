@@ -1,0 +1,36 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #1: the svc{{PERMTESTID}} test user holds only ego.server.admin (not ego.root -- see perm-70/perm-73). ego.server.admin is documented as administration 'without full ego.root', so it must not be usable to grant ego.root to anyone, including yourself. Before the fix, UpdateUserHandler validated a granted permission name only against the list of all known permission names, with no check on whether the caller granting it actually held it -- so this exact request silently succeeded and handed the caller full root.",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/svc{{PERMTESTID}}",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vmd.ego.user+json"],
+            "Authorization": ["Bearer {{SVCADMIN_TOKEN}}"]
+        },
+        "body": {
+            "name": "svc{{PERMTESTID}}",
+            "permissions": [
+                "+ego.root"
+            ]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

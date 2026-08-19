@@ -57,6 +57,45 @@ func CreateUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 
 					return util.ErrorResponse(w, session.ID, msg, http.StatusBadRequest)
 				}
+
+				// SECURITY RULE: "you cannot grant a permission you do not
+				// hold yourself." Go note for readers new to the language:
+				// "!" is the boolean NOT operator, and "&&" is boolean AND,
+				// so this condition reads as "the caller is not root, AND
+				// the caller does not already have this exact permission."
+				// Both halves must be true for us to reject the request.
+				//
+				// Why this check exists: creating a new user is how an
+				// account gets its very first permissions. Without this
+				// check, anyone who could reach this endpoint at all (which
+				// only requires the "ego.server.admin" permission — a
+				// deliberately lesser permission meant for day-to-day user
+				// and server administration, NOT full control of the
+				// server) could create a brand new user and hand that new
+				// user "ego.root", the one permission that bypasses every
+				// other check in the whole server. That would make
+				// "ego.server.admin" secretly equivalent to "ego.root",
+				// which defeats the entire point of having two separate
+				// permission levels.
+				//
+				// session.Admin is Ego's shorthand for "this caller holds
+				// ego.root" (set once at login time — see router/auth.go).
+				// A root caller is always allowed to grant any permission,
+				// including root itself, so we check "!session.Admin"
+				// first: if the caller *is* root, the "&&" short-circuits
+				// and we skip the second check entirely without even
+				// looking at what permission is being requested.
+				//
+				// For every other caller, session.HasAllPermissions(perm)
+				// answers "does this caller's own permission list already
+				// contain perm?" If it does not, the caller is trying to
+				// hand out something they don't have themselves, which is
+				// exactly the escalation this rule exists to stop.
+				if !session.Admin && !session.HasAllPermissions(perm) {
+					msg := errors.ErrPermissionNotHeld.Clone().Context(perm).Localize(session.Language)
+
+					return util.ErrorResponse(w, session.ID, msg, http.StatusForbidden)
+				}
 			} else {
 				// The caller omitted the "ego." prefix. Check whether adding
 				// it would match a known permission, and if so, tell the caller
