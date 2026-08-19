@@ -1,0 +1,24 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #4: tabadmintest, authorized only by the ego.table.admin grant from perm-66c (no identity-wide ego.dsn.admin, no dsns_auth record for this DSN at all), reads its own permissions on t{{PERMTESTID}}. Before the fix, ReadPermissions' route was gated by Permissions(defs.DSNAdminPermission) alone, which only ever checks identity-wide permissions, so this exact request was rejected before the handler ever ran -- making ego.table.admin unusable for the self-service purpose docs/SERVER.md describes it for.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TABADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "sees its own admin grant",
+            "query": "permissions.*",
+            "value": "ego.table.admin"
+        }
+    ]
+}

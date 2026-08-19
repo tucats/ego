@@ -1,0 +1,35 @@
+{
+    "description": "negative control for DATA-SECURITY-2.md finding #4: tabadmintest's ego.table.admin grant is scoped to t{{PERMTESTID}} only, not a blanket bypass -- it must still be denied on a completely different table in a different DSN (tid{{PERMTESTID}} in dsn-id{{PERMTESTID}}, still alive from the identity test group -- not deleted until perm-93) that it holds no grant of any kind on.",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-id{{PERMTESTID}}/tables/tid{{PERMTESTID}}/@permissions",
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TABADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

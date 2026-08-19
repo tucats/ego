@@ -1,0 +1,31 @@
+{
+    "description": "admin grants tabadmintest ego.table.admin on t{{PERMTESTID}} -- ONLY that, deliberately no read/write/update/delete and no DSN-level or identity-level grant of any kind, so perm-66d..perm-66g below isolate exactly what DATA-SECURITY-2.md finding #4 is about.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "tabadmintest"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.admin"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "admin permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.admin"
+        }
+    ]
+}

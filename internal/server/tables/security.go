@@ -99,11 +99,63 @@ func validPermissions(perms []string) bool {
 	return true
 }
 
+// authorizedForTablePermissions reports whether the caller may administer
+// (read, list, grant, or revoke) the table_perms grants for the named table
+// -- that is, whether they are allowed to reach any of the four handlers
+// below (ReadPermissions, ReadTablePermissions, GrantPermissions,
+// DeletePermissions) at all.
+//
+// DATA-SECURITY-2.md finding #4: docs/SERVER.md describes ego.table.admin
+// as existing specifically so that "table administration is granted per
+// table, by whoever already administers it or the DSN it lives in" -- but
+// until this function existed, none of the four handlers checked anything
+// beyond the route-level Permissions(defs.DSNAdminPermission) gate
+// (routes.go), which -- like every other Route.Permissions() check in this
+// codebase -- only ever looks at the caller's *identity-wide* permissions.
+// A caller who held ego.table.admin on this one table (granted, for
+// example, automatically to whoever created it -- see
+// createTablePermissions below) but no identity-wide ego.dsn.admin was
+// rejected before any of these four handlers ever ran, making
+// ego.table.admin unusable for the exact purpose docs/SERVER.md says it
+// exists for.
+//
+// This mirrors the same identity-OR-per-DSN-admin pattern used by
+// DeleteDSNHandler and, since DATA-SECURITY-2.md findings #2/#3, by
+// TableCreate/DeleteTable -- with one more link added at the end: a caller
+// who is specifically an admin of *this table* (via table_perms, checked by
+// Authorized() below) is now also accepted, which the DSN-level handlers
+// have no equivalent of, because they have no notion of a resource smaller
+// than a whole DSN.
+//
+// Go note for readers new to the language: "||" is the boolean OR operator.
+// Each of the four conditions below is tried in turn, and Go stops (without
+// evaluating any of the remaining ones) as soon as one of them is true --
+// this is called "short-circuit evaluation". So for the overwhelmingly
+// common case (an ordinary, non-admin caller checking their own table),
+// only the cheap in-memory checks (session.Admin, IdentityAuthorizesAction)
+// run before the two checks that each require a database read
+// (AuthDSN, Authorized) -- and even those two stop as soon as either one
+// succeeds.
+func authorizedForTablePermissions(session *router.Session, dsnName, tableName string) bool {
+	return session.Admin ||
+		dsns.IdentityAuthorizesAction(session.Permissions, dsns.DSNAdminAction) ||
+		dsns.DSNService.AuthDSN(session.ID, session.User, dsnName, dsns.DSNAdminAction) ||
+		Authorized(session, session.User, dsnName+"."+tableName, defs.TableAdminPermission)
+}
+
 // ReadPermissions reads the permissions data for a specific table. This operation requires either ownership
 // of the table or admin privileges. The response is a Permission object for the given user, dsn, and table.
 func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
+
+	// DATA-SECURITY-2.md finding #4: this route (routes.go) no longer
+	// requires identity-wide ego.dsn.admin on its own -- see
+	// authorizedForTablePermissions' doc comment above for the full
+	// explanation of what else now satisfies this check and why.
+	if !authorizedForTablePermissions(session, dsnName, tableName) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.TableAdminPermission}), http.StatusForbidden)
+	}
 
 	userName := session.User
 	if users := session.Parameters["user"]; len(users) == 1 {
@@ -204,11 +256,20 @@ func ReadPermissions(session *router.Session, w http.ResponseWriter, r *http.Req
 // ReadTablePermissions lists the permissions every user has been granted on a single
 // table. Unlike ReadPermissions (which reports one user's grants -- the caller's own,
 // or one named via ?user=), this has no user filter: it is the table-scoped analog of
-// dsns.ListDSNPermHandler, and requires only DSNAdminPermission on the route rather
-// than the RootPermission that ReadAllPermissions demands for its DSN-wide dump.
+// dsns.ListDSNPermHandler, and requires the same DSN/table admin standing
+// authorizedForTablePermissions checks -- much narrower than the RootPermission that
+// ReadAllPermissions demands for its DSN-wide dump.
 func ReadTablePermissions(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
+
+	// DATA-SECURITY-2.md finding #4: see the doc comment on
+	// authorizedForTablePermissions (above ReadPermissions, earlier in this
+	// file) for what this check accepts and why the route no longer gates
+	// this by itself.
+	if !authorizedForTablePermissions(session, dsnName, tableName) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.TableAdminPermission}), http.StatusForbidden)
+	}
 
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone().Context(dsnName + "." + tableName)
@@ -419,6 +480,15 @@ func GrantPermissions(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	tableName := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
+
+	// DATA-SECURITY-2.md finding #4: see the doc comment on
+	// authorizedForTablePermissions (earlier in this file, just above
+	// ReadPermissions) for what this check accepts and why the route no
+	// longer gates this by itself.
+	if !authorizedForTablePermissions(session, dsnName, tableName) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.TableAdminPermission}), http.StatusForbidden)
+	}
+
 	user := session.User
 
 	if users := session.Parameters["user"]; len(users) == 1 {
@@ -517,6 +587,23 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 
 	tableName := data.String(session.URLParts["table"])
 
+	// DATA-SECURITY-2.md finding #4: see the doc comment on
+	// authorizedForTablePermissions (earlier in this file, just above
+	// ReadPermissions) for what this check accepts and why the route no
+	// longer gates this by itself.
+	//
+	// Note dsnName may be "" here (the "@all" pseudo-DSN name normalized a
+	// few lines up, meaning "sweep this table name across every DSN").
+	// AuthDSN and Authorized() both fail an empty DSN name, so only
+	// session.Admin or an identity-wide ego.dsn.admin grant -- never a
+	// DSN-specific or table-specific one -- can satisfy this check for that
+	// wide a sweep, which is the correct outcome: a caller who only
+	// administers one specific DSN or table has no standing to touch grants
+	// on tables of the same name in every *other* DSN too.
+	if !authorizedForTablePermissions(session, dsnName, tableName) {
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.privilege", ui.A{"permission": defs.TableAdminPermission}), http.StatusForbidden)
+	}
+
 	if !initPermissions() {
 		err := errors.ErrPermissionsUnavailable.Clone()
 
@@ -525,13 +612,39 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 
 	var nameFilter, dsnFilter, tableFilter *resources.Filter
 
+	// BUG found while testing DATA-SECURITY-2.md finding #4: this used to
+	// filter on the column name "name", but PermissionsObject (this file,
+	// near the top) has no "name" field -- its field is "User" (stored as
+	// SQL column "user_name", looked up here by the Go field name "User",
+	// which ResHandle.Equals matches case-insensitively as "user"; see
+	// ReadAllPermissions' identical pHandle.Equals("user", text) call
+	// above, and Authorized()'s own doc comment further down in this file
+	// for a fuller explanation of this exact failure mode elsewhere in the
+	// package).
+	//
+	// Go note for readers new to the language: ResHandle.Equals
+	// (internal/resources/filters.go) has a *value* receiver ("func (r
+	// ResHandle) Equals(...)"), so each call works on its own private copy
+	// of the handle, not the shared pHandle variable -- when the column
+	// name doesn't match anything, that copy silently records the mismatch
+	// on itself (discarded the moment the call returns) and hands back a
+	// plain nil *Filter. No panic, no error returned to this function, and
+	// no lasting effect on pHandle for the next call.
+	//
+	// The practical effect here: pHandle.Read(dsnFilter, tableFilter,
+	// nameFilter) below received nameFilter == nil whenever a ?user= query
+	// parameter was given, which is the same as passing no user filter at
+	// all -- so a request meant to revoke exactly one user's grant on one
+	// table instead matched and deleted *every* user's table_perms row for
+	// that dsn+table. A DELETE meant to be narrow was silently deleting far
+	// more than the caller asked for.
 	if f := parsing.RequestForUser("", r.URL); f != "" {
 		text, err := parsing.SQLEscape(f)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.filter.invalid"), http.StatusBadRequest)
 		}
 
-		nameFilter = pHandle.Equals("name", text)
+		nameFilter = pHandle.Equals("user", text)
 	}
 
 	if tableName != "" {

@@ -1,0 +1,17 @@
+{
+    "description": "cleanup: tabadmintest revokes its own ego.table.admin grant on t{{PERMTESTID}} (using its own token, still authorized at the moment this request is evaluated -- see authorizedForTablePermissions' doc comment for why a caller can always act on a table it currently administers, including revoking its own standing). This also doubles as one more DATA-SECURITY-2.md finding #4 regression: DeletePermissions' route no longer requires identity-wide ego.dsn.admin either. Needed so perm-83 later in this test group sees the exact grant count it expects on t{{PERMTESTID}} -- leaving this grant behind would otherwise leak into that count.",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "tabadmintest"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TABADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    }
+}

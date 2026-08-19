@@ -1,0 +1,31 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #4: tabadmintest, still authorized only by its own ego.table.admin grant, grants a different user (idn{{PERMTESTID}}, still alive from the identity test group -- not deleted until perm-92) ego.table.read on t{{PERMTESTID}}. This is the actual point of ego.table.admin per docs/SERVER.md: letting a table's admin manage that table's grants without needing any DSN-wide standing at all.",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "idn{{PERMTESTID}}"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TABADMIN_TOKEN}}"]
+        },
+        "body": [
+            "ego.table.read"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "read permission granted",
+            "query": "permissions.*",
+            "value": "ego.table.read"
+        }
+    ]
+}

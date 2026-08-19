@@ -132,26 +132,44 @@ func AddStaticRoutes(r *router.Router) {
 		AcceptMedia(defs.RowCountMediaType).
 		Class(router.TableRequestCounter)
 
-	// Read permissions for a table via a DSN
+	// Read permissions for a table via a DSN. Not gated by Permissions()
+	// here (DATA-SECURITY-2.md finding #4): as with TableCreate/DeleteTable
+	// above, Permissions(defs.DSNAdminPermission) only ever checks the
+	// caller's *identity-wide* permissions, which made ego.table.admin --
+	// documented in docs/SERVER.md as existing precisely so a table's own
+	// admin can manage its permissions -- useless for that purpose, since a
+	// table.admin holder with no identity-wide ego.dsn.admin was rejected
+	// before ReadPermissions' handler body ever ran. The four routes below
+	// now all call security.go's authorizedForTablePermissions themselves,
+	// which accepts session.Admin, identity-wide ego.dsn.admin, a
+	// DSN-specific dsns_auth admin grant, OR a table-specific table_perms
+	// admin grant -- see that function's doc comment for the full OR-chain.
+	// Still requires plain authentication via Authentication(true).
 	r.New(defs.TablesPath+tableParameter+"/permissions", ReadPermissions, http.MethodGet).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
-	// List every user's permissions on a table via a DSN
+	// List every user's permissions on a table via a DSN. Not gated by
+	// Permissions() for the identical reason as ReadPermissions just above
+	// (DATA-SECURITY-2.md finding #4).
 	r.New(defs.TablesNameAllPermissionsPath, ReadTablePermissions, http.MethodGet).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		Class(router.TableRequestCounter)
 
-	// Grant permissions for a table
+	// Grant permissions for a table. Not gated by Permissions() for the
+	// identical reason as ReadPermissions above (DATA-SECURITY-2.md
+	// finding #4).
 	r.New(defs.TablesPath+"{{table}}/permissions", GrantPermissions, http.MethodPut).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 
-	// Revoke permissions from a table
+	// Revoke permissions from a table. Not gated by Permissions() for the
+	// identical reason as ReadPermissions above (DATA-SECURITY-2.md
+	// finding #4).
 	r.New(defs.TablesPath+"{{table}}/permissions", DeletePermissions, http.MethodDelete).
-		Permissions(defs.DSNAdminPermission).
+		Authentication(true).
 		Parameter(defs.UserParameterName, util.StringParameterType).
 		Class(router.TableRequestCounter)
 

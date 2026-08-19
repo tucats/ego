@@ -1,0 +1,17 @@
+{
+    "description": "REGRESSION for DATA-SECURITY-2.md finding #4: tabadmintest, still authorized only by its own ego.table.admin grant, revokes the ego.table.read grant it just gave idn{{PERMTESTID}} in perm-66f (DeletePermissions). Note DeletePermissions writes no response body at all on success -- only the 200 status is meaningful here, which is why this test has no body-based assertions.",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/dsn-{{PERMTESTID}}/tables/t{{PERMTESTID}}/permissions",
+        "parameters": {
+            "user": "idn{{PERMTESTID}}"
+        },
+        "headers": {
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{TABADMIN_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200
+    }
+}
