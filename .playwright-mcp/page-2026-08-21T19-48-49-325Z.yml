@@ -1,0 +1,46 @@
+- generic [ref=e1]:
+  - banner [ref=e17]:
+    - img "Ego logo" [ref=e18]
+    - button "Menu" [ref=e20] [cursor=pointer]
+  - generic [ref=e24]:
+    - generic [ref=e25] [cursor=pointer]: Server
+    - generic [ref=e26] [cursor=pointer]: Users
+    - generic [ref=e27] [cursor=pointer]: DSNs
+    - generic [ref=e28] [cursor=pointer]: Tables
+    - generic [ref=e29] [cursor=pointer]: Data
+    - generic [ref=e30] [cursor=pointer]: SQL
+    - generic [ref=e31] [cursor=pointer]: Code
+    - generic [ref=e32] [cursor=pointer]: Log
+  - generic [ref=e559]:
+    - generic [ref=e560]:
+      - generic [ref=e561]:
+        - button "▶ Run" [ref=e562] [cursor=pointer]
+        - button "▼" [ref=e563] [cursor=pointer]
+      - button "≡ Format" [ref=e564] [cursor=pointer]
+    - generic [ref=e565]:
+      - generic [ref=e566]:
+        - generic [ref=e567]:
+          - text: Editor
+          - button "📂 Open" [ref=e568] [cursor=pointer]
+          - button "💾 Save" [ref=e569] [cursor=pointer]
+          - button "✕" [ref=e570] [cursor=pointer]
+        - generic [ref=e571]:
+          - generic [ref=e572]: 1 2 3 4 5 6 7 8
+          - generic [ref=e573]:
+            - generic: "package main import \"fmt\" func main() { fmt.Println(\"Hello, world\") }"
+            - textbox [ref=e574]: "package main import \"fmt\" func main() { fmt.Println(\"Hello, world\") }"
+      - generic [ref=e576]:
+        - generic [ref=e577]:
+          - text: Output
+          - generic [ref=e589]: Ran in 0.1595ms
+          - button "💾 Save" [ref=e578] [cursor=pointer]
+          - button "✕" [ref=e579] [cursor=pointer]
+        - generic [ref=e580]: Hello, world
+    - generic [ref=e582]:
+      - generic [ref=e583]:
+        - text: Console
+        - button "✕" [ref=e584] [cursor=pointer]
+      - generic [ref=e585]: ego> x := 6 * 7
+      - generic [ref=e586]:
+        - generic [ref=e587]: ego>
+        - textbox "Enter Ego code…" [active] [ref=e588]

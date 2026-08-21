@@ -1,0 +1,107 @@
+- generic [ref=e1]:
+  - banner [ref=e17]:
+    - img "Ego logo" [ref=e18]
+    - button "Menu" [ref=e20] [cursor=pointer]
+  - generic [ref=e24]:
+    - generic [ref=e25] [cursor=pointer]: Server
+    - generic [ref=e26] [cursor=pointer]: Users
+    - generic [ref=e27] [cursor=pointer]: DSNs
+    - generic [ref=e28] [cursor=pointer]: Tables
+    - generic [ref=e29] [cursor=pointer]: Data
+    - generic [ref=e30] [cursor=pointer]: SQL
+    - generic [ref=e31] [cursor=pointer]: Code
+    - generic [ref=e32] [cursor=pointer]: Log
+  - generic [ref=e460]:
+    - generic [ref=e461]:
+      - generic [ref=e462]: DSN
+      - combobox "DSN" [ref=e463] [cursor=pointer]:
+        - option "foo" [selected]
+        - option "foo2"
+        - option "pg1"
+      - button "✕ Clear" [ref=e464] [cursor=pointer]
+      - button "🔨 Build" [active] [ref=e465] [cursor=pointer]
+      - button "✨ Generate" [ref=e466] [cursor=pointer]
+      - button "≡ Format" [ref=e467] [cursor=pointer]
+      - button "▶ Submit" [ref=e468] [cursor=pointer]
+      - button "📂 Open" [ref=e469] [cursor=pointer]
+      - button "💾 Save" [ref=e470] [cursor=pointer]
+    - generic [ref=e471]:
+      - generic [ref=e472]:
+        - generic [ref=e473]: SQL commands
+        - generic [ref=e474]:
+          - generic: "-- List everyone in the family table SELECT * FROM family ORDER BY last;"
+          - textbox "SQL commands" [ref=e475]:
+            - /placeholder: Enter SQL commands…
+            - text: "-- List everyone in the family table SELECT * FROM family ORDER BY last;"
+      - generic [ref=e477]:
+        - generic [ref=e478]: ResultsRan in 74.667µs
+        - table [ref=e481]:
+          - rowgroup [ref=e482]:
+            - row [ref=e483]:
+              - columnheader "id" [ref=e484]
+              - columnheader "last" [ref=e485]
+              - columnheader "first" [ref=e486]
+              - columnheader "nichname" [ref=e487]
+          - rowgroup [ref=e488]:
+            - row [ref=e489]:
+              - cell "101" [ref=e490]
+              - cell "101" [ref=e491]
+              - cell "Tom" [ref=e492]
+              - cell "null" [ref=e493]
+            - row [ref=e494]:
+              - cell "102" [ref=e495]
+              - cell "101" [ref=e496]
+              - cell "Mary" [ref=e497]
+              - cell "null" [ref=e498]
+            - row [ref=e499]:
+              - cell "103" [ref=e500]
+              - cell "101" [ref=e501]
+              - cell "Chelsea" [ref=e502]
+              - cell "C-Bear" [ref=e503]
+            - row [ref=e504]:
+              - cell "104" [ref=e505]
+              - cell "102" [ref=e506]
+              - cell "Sarah" [ref=e507]
+              - cell "Sar-Bear" [ref=e508]
+            - row [ref=e509]:
+              - cell "105" [ref=e510]
+              - cell "102" [ref=e511]
+              - cell "David" [ref=e512]
+              - cell "null" [ref=e513]
+  - generic [ref=e515]:
+    - heading "Build SQL Statement" [level=2] [ref=e516]
+    - generic [ref=e517]:
+      - generic [ref=e518]:
+        - button "SELECT" [ref=e519] [cursor=pointer]
+        - button "INSERT" [ref=e520] [cursor=pointer]
+        - button "UPDATE" [ref=e521] [cursor=pointer]
+        - button "DELETE" [ref=e522] [cursor=pointer]
+      - generic [ref=e523]:
+        - button "ALTER TABLE" [ref=e524] [cursor=pointer]
+        - button "CREATE TABLE" [ref=e525] [cursor=pointer]
+    - generic [ref=e526]:
+      - generic [ref=e527]:
+        - generic [ref=e528]: Table
+        - combobox [ref=e530] [cursor=pointer]:
+          - option "ages"
+          - option "bar"
+          - option "bars"
+          - option "family" [selected]
+          - option "surnames"
+      - generic [ref=e531]:
+        - generic [ref=e532]: Columns
+        - generic [ref=e534]:
+          - checkbox "Select all columns (*)" [checked] [ref=e535]
+          - generic [ref=e536] [cursor=pointer]: Select all columns (*)
+      - generic [ref=e538]:
+        - generic [ref=e539]: WHERE clause
+        - button "+ Add condition" [ref=e540] [cursor=pointer]
+      - generic [ref=e542]:
+        - generic [ref=e543]: ORDER BY
+        - button "+ Add column" [ref=e544] [cursor=pointer]
+    - generic [ref=e545]:
+      - generic [ref=e546]: Preview
+      - generic [ref=e548]: SELECT * FROM ages
+    - generic [ref=e549]:
+      - button "Cancel" [ref=e550] [cursor=pointer]
+      - button "Insert" [ref=e551] [cursor=pointer]

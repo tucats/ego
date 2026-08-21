@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e17]:
+    - img "Ego logo" [ref=e18]
+    - button "Menu" [ref=e20] [cursor=pointer]
+  - generic [ref=e24]:
+    - generic [ref=e25] [cursor=pointer]: Server
+    - generic [ref=e26] [cursor=pointer]: Users
+    - generic [ref=e27] [cursor=pointer]: DSNs
+    - generic [ref=e28] [cursor=pointer]: Tables
+    - generic [ref=e29] [cursor=pointer]: Data
+    - generic [ref=e30] [cursor=pointer]: SQL
+    - generic [ref=e31] [cursor=pointer]: Code
+    - generic [ref=e32] [cursor=pointer]: Log
+  - generic [ref=e206]:
+    - button "+ New DSN" [ref=e208] [cursor=pointer]
+    - table [ref=e210]:
+      - rowgroup [ref=e211]:
+        - row [ref=e212]:
+          - columnheader "Name" [ref=e213]
+          - columnheader "Provider" [ref=e214]
+          - columnheader "Database" [ref=e215]
+          - columnheader "Host" [ref=e216]
+          - columnheader "Port" [ref=e217]
+          - columnheader "User" [ref=e218]
+          - columnheader "Secured" [ref=e219]
+          - columnheader "Restricted" [ref=e220]
+      - rowgroup [ref=e221]:
+        - row [ref=e222] [cursor=pointer]:
+          - cell "foo" [ref=e223]
+          - cell "sqlite" [ref=e224]
+          - cell "/Users/tom/foo.db" [ref=e225]
+          - cell [ref=e226]
+          - cell [ref=e227]
+          - cell [ref=e228]
+          - cell "No" [ref=e229]
+          - cell "Yes" [ref=e230]
+        - row [ref=e231] [cursor=pointer]:
+          - cell "foo2" [ref=e232]
+          - cell "sqlite" [ref=e233]
+          - cell "foo2.db" [ref=e234]
+          - cell [ref=e235]
+          - cell [ref=e236]
+          - cell [ref=e237]
+          - cell "No" [ref=e238]
+          - cell "No" [ref=e239]
+        - row [ref=e240] [cursor=pointer]:
+          - cell "pg1" [ref=e241]
+          - cell "sqlite" [ref=e242]
+          - cell "perfectGift.db" [ref=e243]
+          - cell [ref=e244]
+          - cell [ref=e245]
+          - cell [ref=e246]
+          - cell "No" [ref=e247]
+          - cell "No" [ref=e248]
+  - generic [ref=e250]:
+    - heading "foo" [level=2] [ref=e251]
+    - paragraph [ref=e252]
+    - table [ref=e254]:
+      - rowgroup [ref=e255]:
+        - row [ref=e256]:
+          - columnheader "Attribute" [ref=e257]
+          - columnheader "Value" [ref=e258]
+      - rowgroup [ref=e259]:
+        - row [ref=e260]:
+          - cell "Name" [ref=e261]
+          - cell "foo" [ref=e262]
+        - row [ref=e263]:
+          - cell "Provider" [ref=e264]
+          - cell "sqlite" [ref=e265]
+        - row [ref=e266]:
+          - cell "Database" [ref=e267]
+          - cell "/Users/tom/foo.db" [ref=e268]
+        - row [ref=e269]:
+          - cell "Host" [ref=e270]
+          - cell [ref=e271]
+        - row [ref=e272]:
+          - cell "Port" [ref=e273]
+          - cell [ref=e274]
+        - row [ref=e275]:
+          - cell "User" [ref=e276]
+          - cell [ref=e277]
+        - row [ref=e278]:
+          - cell "Secured" [ref=e279]
+          - cell "No" [ref=e280]
+        - row [ref=e281]:
+          - cell "Restricted" [ref=e282]
+          - cell "Yes" [ref=e283]
+    - generic [ref=e284]:
+      - heading "Permissions" [level=3] [ref=e285]
+      - table [ref=e287]:
+        - rowgroup [ref=e288]:
+          - row [ref=e289]:
+            - columnheader "User" [ref=e290]
+            - columnheader "Permissions" [ref=e291]
+        - rowgroup [ref=e292]:
+          - row [ref=e293] [cursor=pointer]:
+            - cell "sam" [ref=e294]
+            - cell "ego.dsn.read" [ref=e295]
+    - generic [ref=e296]:
+      - button "Delete" [ref=e297] [cursor=pointer]
+      - button "Show tables…" [ref=e298] [cursor=pointer]
+      - button "Add permission…" [ref=e299] [cursor=pointer]
+      - button "Close" [ref=e300] [cursor=pointer]

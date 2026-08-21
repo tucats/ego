@@ -24,6 +24,8 @@ was started with TLS enabled, use `https://` instead.
 When the dashboard first loads it shows a **Sign In** overlay. Enter the username and password
 for an account that has been configured on the server.
 
+![Sign In overlay](images/dashboard/signin-overlay.png)
+
 Once authenticated, the dashboard stores a bearer token in memory for the current browser
 session. If the _Remember login_ setting is enabled (see [Settings](#settings) below), the
 token is also written to a browser cookie that expires after 24 hours, so the login survives
@@ -51,6 +53,8 @@ stop asking. Two different buttons dismiss the prompt with different persistence
 skips it for this session only, while **Don't Ask Again** suppresses it in this browser for 90
 days.
 
+![Create a Passkey prompt](images/dashboard/passkey-prompt.png)
+
 &nbsp;
 
 ## Header Bar
@@ -74,12 +78,16 @@ divider and then the menu items:
 | **⚙ Settings** | Opens the [Settings](#settings) sheet |
 | **✕ Log Out** | Immediately ends your session and returns to the login overlay |
 
+![Hamburger menu open](images/dashboard/hamburger-menu.png)
+
 &nbsp;
 
 ## Settings
 
 The Settings sheet slides in from the right when you choose **Settings** from the hamburger
 menu. It groups six settings under three headings:
+
+![Settings sheet](images/dashboard/settings-sheet.png)
 
 ### Appearance
 
@@ -133,32 +141,12 @@ permission(s) grant.
 
 &nbsp;
 
-### Status Tab
+### Server Tab
 
-The Status tab shows two compact three-column grids: **Metrics** (Go runtime statistics) and
+The Server tab shows two compact three-column grids: **Metrics** (Go runtime statistics) and
 **Cache Status** (server cache summary). Both grids refresh each time you open the tab.
 
-```text
-┌────────────────────────────────────────────────────────────────────┐
-│  ↺ Refresh   🗑 Flush Caches   ℹ Server Info                       │
-├────────────────────────────────────────────────────────────────────┤
-│  METRICS                                                           │
-│                                                                    │
-│  Uptime           2h 28m   Objects in Use      16,698   App Mem   …│
-│  Requests Proc.      100   Heap Memory       36.69 MB   Stack Mem …│
-│  GC Cycles            90   Goroutines             42                │
-├────────────────────────────────────────────────────────────────────┤
-│  CACHE STATUS                                                      │
-│                                                                    │
-│  DSN Entries           0   Cached Services        3   Authorizations│
-│  Schema Entries        0   Service Cache Size  20 items   Tokens   │
-│  Code Run Sessions     0   Cached Assets          2   Blacklist    │
-│  Code Debug Sessions   0   Asset Cache size    24 KB               │
-├────────────────────────────────────────────────────────────────────┤
-│  Cached Endpoints  │ Class │ Reuse count │ Size │ Last accessed    │
-│  …                                                                 │
-└────────────────────────────────────────────────────────────────────┘
-```
+![Status tab](images/dashboard/status-tab.png)
 
 **Metrics fields:**
 
@@ -206,6 +194,8 @@ its endpoint name, class (service or asset), reuse count, size, and last-access 
 
 Click **ℹ Server Info** to open a read-only sheet with three parts:
 
+![Server Info sheet](images/dashboard/server-info-sheet.png)
+
 1. **Server identity** — the block of information that used to sit in the page header:
    Host Name, Ego Version, Server UUID, and Started (with a live-computed uptime alongside
    the timestamp, e.g. `Mon Jan 2 15:04:05 MST 2006 (up 2h 28m)`).
@@ -227,6 +217,8 @@ Click **ℹ Server Info** to open a read-only sheet with three parts:
 The Users tab lists every user account on the server and lets you create, edit, and delete
 accounts.
 
+![Users tab](images/dashboard/users-tab.png)
+
 **User list columns:**
 
 | Column | Description |
@@ -245,6 +237,8 @@ accounts.
 4. Click **Save**.
 
 **Editing a user** — click any row in the table to open the edit sheet:
+
+![Edit User sheet](images/dashboard/user-edit-sheet.png)
 
 * The username is shown but cannot be changed here.
 * Enter a **New password** to change the password, or leave the field blank to keep the
@@ -281,6 +275,8 @@ DSN stands for _Data Source Name_ — a named connection descriptor that tells t
 to connect to a database. The DSNs tab lists every DSN configured on the server, and lets you
 create, delete, and manage per-user permissions on them directly from the dashboard.
 
+![DSNs tab](images/dashboard/dsns-tab.png)
+
 **Columns:**
 
 | Column | Description |
@@ -309,6 +305,8 @@ create, delete, and manage per-user permissions on them directly from the dashbo
 
 **Viewing and managing a DSN** — click any row in the table to open the detail sheet:
 
+![DSN detail sheet](images/dashboard/dsn-detail-sheet.png)
+
 * All of the DSN's attributes are shown in a read-only table.
 * If the DSN is **Restricted**, a **Permissions** section lists every user who has been
   granted access, with their comma-separated permission list. Click a user row to edit or
@@ -333,14 +331,20 @@ create, delete, and manage per-user permissions on them directly from the dashbo
 
 The Tables tab lets you browse the database tables available through a DSN.
 
+![Tables tab](images/dashboard/tables-tab.png)
+
 1. Select a **DSN** from the dropdown at the top of the tab, or click **↺ Refresh** to reload
    the table list for the currently selected DSN.
 2. The table list shows the **name**, **schema**, **column count**, and **row count** for
    each table.
 3. Click any table row to open a **detail sheet** listing each column's name, data type,
-   size, and whether it is nullable or must contain a unique value.
+   size, and whether it is nullable or must contain a unique value, along with any
+   table-level permissions already granted.
 4. From the detail sheet, click **View Data** to jump straight to the [Data tab](#data-tab)
-   with this DSN and table pre-selected, or **Close** to dismiss the sheet.
+   with this DSN and table pre-selected, **Set permissions…** to grant or change a user's
+   access to this table, or **Close** to dismiss the sheet.
+
+![Table detail sheet](images/dashboard/table-detail-sheet.png)
 
 > **Permission required:** access to the selected DSN
 
@@ -357,6 +361,8 @@ The Data tab lets you browse and edit the rows stored in a database table.
    selected).
 3. The rows of the selected table are loaded and displayed. Click **↺ Refresh** at any time
    to reload just the row data without re-selecting the DSN or table.
+
+![Data tab](images/dashboard/data-tab.png)
 
 **Reading the data grid:**
 
@@ -382,6 +388,8 @@ currently visible (or `SELECT *` if every column is shown).
 
 **Editing a row** — click any row in the grid to open an edit sheet (titled **Edit Row**, or
 **Row Contents** if the row has no usable key):
+
+![Edit Row sheet](images/dashboard/data-edit-row-sheet.png)
 
 * All fields for that row are shown. The column that uniquely identifies the row (its unique
   key, or `_row_id_` if the table has one) is marked with 🔑 and cannot be edited.
@@ -414,6 +422,7 @@ preprocessor, and a point-and-click wizard for building common SQL statements.
 | **DSN** picker | Selects the database connection that all statements in the editor will run against. |
 | **✕ Clear** | Clears the editor contents and any previous results. |
 | **🔨 Build** | Opens the SQL Build wizard to construct a statement interactively. |
+| **✨ Generate** | Generates a SQL statement from a natural-language description, using the server's configured AI endpoint. |
 | **≡ Format** | Reformats the SQL currently in the editor. If the [Format setting](#settings) is enabled, this also happens automatically before every Submit. |
 | **▶ Submit** | Executes all statements in the editor. Keyboard shortcut: **Ctrl+Enter** (or **Cmd+Enter** on macOS). |
 | **📂 Open** | Opens a file picker to load a `.sql` or `.txt` file from your local disk into the editor. |
@@ -425,6 +434,8 @@ preprocessor, and a point-and-click wizard for building common SQL statements.
 
 Type or paste one or more SQL statements into the editor. The editor highlights SQL keywords,
 type names, string literals, numeric literals, and comments as you type.
+
+![SQL tab](images/dashboard/sql-tab.png)
 
 **Multiple statements** are separated by semicolons. Each statement can span multiple lines;
 the preprocessor joins continuation lines automatically before sending them to the server.
@@ -474,6 +485,8 @@ happens — resolve the ambiguity by removing the extra hint.
 
 Click **🔨 Build** to open the SQL Build wizard. The wizard slides in from the right and
 guides you through building a complete SQL statement without typing.
+
+![SQL Build wizard](images/dashboard/sql-build-wizard.png)
 
 1. Choose a **Statement type** using the button bar at the top of the wizard. Row operations
    (SELECT, INSERT, UPDATE, DELETE) appear on the first row; schema operations (ALTER TABLE,
@@ -731,6 +744,8 @@ ALTER TABLE customers RENAME COLUMN email TO email_address
 The Code tab is an interactive development environment that lets you write, run, and
 debug _Ego_ programs directly in the browser.
 
+![Code tab](images/dashboard/code-tab.png)
+
 &nbsp;
 
 #### Layout
@@ -918,6 +933,8 @@ inactivity.
 
 The Log tab displays the server's log output and lets you configure which categories of
 messages are written to the log.
+
+![Log tab](images/dashboard/log-tab.png)
 
 **Viewing the log:**
 
