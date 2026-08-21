@@ -6,12 +6,26 @@ function call within an Ego program to generate an instance of this error code.
 
 | Code | Message |
 | :--- | :------ |
+| error.admin.archive.invalid | Invalid archive boolean value: {{value}} |
+| error.admin.format.too.large | code payload too large |
 | error.admin.run.session.invalid | invalid session id |
 | error.admin.run.too.large | code payload too large |
 | error.admin.server.stopped | Server stopped |
+| error.admin.serverinfo.error | Error retrieving {{item}} host information: {{error}} |
 | error.admin.session.invalid | Invalid session id value: {{value}} |
+| error.admin.since.invalid | Invalid since date/time value: {{value}} |
 | error.admin.tail.invalid | Invalid tail integer value: {{value}} |
+| error.admin.until.invalid | Invalid until date/time value: {{value}} |
+| error.ai.endpoint.request | Error calling AI endpoint |
+| error.ai.endpoint.status | AI endpoint returned an error status |
+| error.ai.not.configured | This server is not configured for AI operations |
+| error.ai.prompt.read | Unable to read AI prompt template |
+| error.ai.request.empty | AI generate request text must not be empty |
+| error.ai.request.payload | Invalid AI generate request payload |
+| error.ai.response.empty | AI endpoint returned an empty response |
+| error.ai.response.parse | Unable to parse AI endpoint response |
 | error.ambiguous.permission | permission name conflicts with reserved name, or was misspelled |
+| error.ambiguous.timezone | ambiguous timezone abbreviation; use a numeric offset such as -05:00 |
 | error.arg.count | incorrect function argument count |
 | error.arg.list | internal error: invalid local function argument list |
 | error.arg.type | incorrect function argument type |
@@ -49,6 +63,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.catch | missing 'catch' clause |
 | error.cert.parse | error parsing certificate file |
 | error.channel.assignment | invalid use of assignment list for channel |
+| error.channel.element.type | channels do not have an element type; use "chan" alone, not "chan T" |
 | error.channel.not.open | channel not open |
 | error.child.timeout | no child process available to process request |
 | error.circular.import | Invalid import cycle |
@@ -69,6 +84,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.column.number | invalid column number |
 | error.column.width | invalid column width |
 | error.compiler | internal compiler error |
+| error.complex.value | cannot convert complex value; use real()/imag() |
 | error.conditional.bool | invalid conditional expression type |
 | error.config | while processing configuration |
 | error.constant | invalid constant expression file |
@@ -91,13 +107,19 @@ function call within an Ego program to generate an instance of this error code.
 | error.directive | invalid directive name |
 | error.directive.mode | directive invalid for mode |
 | error.div.zero | division by zero |
+| error.dsn.exists | dsn already exists |
 | error.dsn.limit.invalid | Invalid limit parameter |
 | error.dsn.not.found | no such data source name |
+| error.dsn.password.sqlite | a password is not applicable to a sqlite data source name |
+| error.dsn.required | A DSN name must be specified using --dsn, or set a default data source |
+| error.dsn.restricted.permissions | cannot remove restriction while permission records exist; use --force to remove them |
+| error.dsn.secured.sqlite | the secured flag cannot be set to true for a sqlite data source name |
 | error.dsn.start.invalid | Invalid start parameter |
 | error.dup.column | duplicate column name |
 | error.dup.type | duplicate type name |
 | error.empty.column | empty column list |
 | error.endpoint | invalid endpoint path string |
+| error.endpoint.definition | invalid endpoint definition |
 | error.entry.not.found | undefined entrypoint name |
 | error.eof.marker | @compile eof marker not found before end of source |
 | error.equals | missing '=' |
@@ -207,6 +229,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.keyword.option | invalid option keyword |
 | error.line.number | invalid line number |
 | error.list | invalid list |
+| error.log.date.range | invalid date range: {{value}} |
+| error.log.filter.format | log class and message filters require a JSON-format log file |
+| error.log.pattern | invalid log message pattern |
+| error.log.serverid.archive | the server ID filter requires the archive option to be enabled |
+| error.log.serverid.pattern | invalid server ID pattern |
 | error.logger.conflict | conflicting or duplicate logger state |
 | error.logger.keep.invalid | Invalid keep value: {{value}} |
 | error.logger.name | invalid logger name |
@@ -243,6 +270,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.no.info | no information for item |
 | error.no.main.package | no main package found |
 | error.no.permission | no permission for operation |
+| error.no.source.files | no Ego source files found in project directory |
 | error.no.symbol.table | no symbol table available |
 | error.not.assignment.list | not an assignment list |
 | error.not.channel | neither source or destination is a channel |
@@ -280,6 +308,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.oauth.as.token.create | could not create access token |
 | error.oauth.as.token.revoked.error | token has been revoked |
 | error.oauth.as.token.serialize | could not serialize token response |
+| error.oauth.as.unauthorized.client | client is not authorized to use this grant type |
 | error.oauth.as.unsupported.response_type | response_type must be "code" |
 | error.oauth.as.userinfo.serialize | could not serialize userinfo response |
 | error.oauth.callback.listener | error starting OAuth2 callback listener |
@@ -352,6 +381,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.perm.update | User does not have update permission |
 | error.perm.write | User does not have write permission |
 | error.permission.name | invalid permission name |
+| error.permission.not.held | cannot grant a permission you do not already hold |
 | error.permissions.unavailable | Permissions are not available |
 | error.pkce.state.generate | error generating PKCE state |
 | error.pkce.verifier.generate | error generating PKCE code verifier |
@@ -370,6 +400,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.request.too.large | request body too large |
 | error.reserved.name | reserved profile setting name |
 | error.resource.handle | internal error, invalid use of nil resource handle |
+| error.rest | error processing REST request |
 | error.rest.closed | rest client closed |
 | error.return.list | invalid return type list |
 | error.return.void | invalid return value for void function |
@@ -381,6 +412,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.route.not.found | not found |
 | error.row.number | invalid row number |
 | error.rune.value | invalid rune value |
+| error.runtime | internal runtime error |
 | error.sandbox.path | invalid sandbox path |
 | error.scan.eof | EOF |
 | error.scan.expected.integer | expected integer |
@@ -396,11 +428,22 @@ function call within an Ego program to generate an instance of this error code.
 | error.slice.index | invalid slice index |
 | error.sort.order.invalid | Invalid sort order: {{order}} |
 | error.spacing | invalid spacing value |
+| error.sql.build | error building SQL query |
+| error.sql.build.coerce | error coercing column value to type |
+| error.sql.build.where | error building WHERE clause |
 | error.sql.commit.error | Error committing transaction: {{err}} |
 | error.sql.execute.error | Error in SQL execute: {{err}} |
 | error.sql.name | invalid SQL name |
+| error.sql.parse.invalid.dialect | invalid SQL dialect |
+| error.sql.parse.invalid.number | invalid numeric literal |
+| error.sql.parse.pragma | PRAGMA statements are not supported |
+| error.sql.parse.syntax | syntax error |
+| error.sql.parse.unterminated.comment | unterminated block comment |
+| error.sql.parse.unterminated.identifier | unterminated quoted identifier |
+| error.sql.parse.unterminated.string | unterminated string literal |
 | error.sql.payload.empty | Empty request payload |
 | error.sql.payload.invalid | Invalid SQL payload: {{err}} |
+| error.sql.perm.table | User does not have privilege {{permission}} for table {{table}} |
 | error.sql.query.read | Error reading SQL query: {{err}} |
 | error.sql.select.last | SELECT statement can only be used as last statement in transaction |
 | error.stack.underflow | stack underflow |
@@ -456,8 +499,10 @@ function call within an Ego program to generate an instance of this error code.
 | error.task.symbols.unsupported | field not supported for SYMBOLS task |
 | error.template.name | invalid template name |
 | error.terminated | terminated with errors |
+| error.test.return.value | return statement in @test block cannot return a value |
 | error.this | invalid _this_ identifier |
 | error.timer | invalid timer operation |
+| error.timezone | invalid timezone name |
 | error.token.encryption | invalid token encryption |
 | error.token.extra | unexpected token |
 | error.try.stack | try/catch stack error |
@@ -473,6 +518,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.type.def | missing type definition |
 | error.type.mismatch | type mismatch |
 | error.type.name | invalid type name |
+| error.type.name.variable | built-in type names cannot be used as variable names |
 | error.type.not.found | no such type |
 | error.type.operation | invalid type for this operation |
 | error.type.spec | invalid type specification |
@@ -484,6 +530,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.url.scheme.unsupported | unsupported URL scheme |
 | error.user.count | incorrect number of users updated by request |
 | error.user.defined | user-supplied error |
+| error.user.exists | user already exists |
 | error.user.hash.failed | Failed to hash password: {{err}} |
 | error.user.name.not.found | No such user: {{name}} |
 | error.user.not.found | no such user |

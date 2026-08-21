@@ -316,9 +316,9 @@ specific:
 
 1. **Identity permissions** — granted directly to a user's account (`ego server users
    update`). Some apply server-wide with no finer equivalent (`ego.root`, `ego.logon`,
-   `ego.code`); others are also the *broad* form of a permission that has a narrower,
+   `ego.code`); others are also the _broad_ form of a permission that has a narrower,
    resource-specific counterpart at one of the tiers below (for example, identity-wide
-   `ego.dsn.read` authorizes reading *every* data source name on the server).
+   `ego.dsn.read` authorizes reading _every_ data source name on the server).
 2. **Data source name (DSN) permissions** — granted to one user for one specific DSN
    (`ego dsns grant`). These are the narrow counterpart of the DSN-related identity
    permissions: `ego.dsn.read`, `ego.dsn.write`, `ego.dsn.admin`, but scoped to a single
@@ -340,9 +340,9 @@ subject to any of the checks described below.
 | `ego.code` | The user may compile and run arbitrary Ego code via the dashboard's Code tab (`/admin/run`, `/admin/ast`, `/admin/format`). |
 | `ego.server.admin` | Authorizes server administration (users, logging, caches, tokens, memory/resource status) without full `ego.root`. Does not cover `/admin/config`, which has no per-permission override and remains `ego.root`-only. |
 | `ego.sql` | The user may reach the `@sql` endpoint to execute arbitrary SQL text against a DSN. What that SQL is actually allowed to do is still governed by the DSN- and table-level permissions below, statement by statement. |
-| `ego.dsn.admin` | **Identity-wide:** may create and delete DSNs, and may administer (grant/revoke/delete) *every* DSN on the server. **Per-DSN:** administers just that one DSN — see [DSN-level access](#dsn-access) below. |
-| `ego.dsn.read` | **Identity-wide:** may read from *every* restricted DSN on the server. **Per-DSN:** may read from just that one DSN. |
-| `ego.dsn.write` | **Identity-wide:** may write to *every* restricted DSN on the server. **Per-DSN:** may write to just that one DSN. |
+| `ego.dsn.admin` | **Identity-wide:** may create and delete DSNs, and may administer (grant/revoke/delete) _every_ DSN on the server. **Per-DSN:** administers just that one DSN — see [DSN-level access](#dsn-access) below. |
+| `ego.dsn.read` | **Identity-wide:** may read from _every_ restricted DSN on the server. **Per-DSN:** may read from just that one DSN. |
+| `ego.dsn.write` | **Identity-wide:** may write to _every_ restricted DSN on the server. **Per-DSN:** may write to just that one DSN. |
 | `ego.table.read` | **Identity-wide:** may reach the row-read REST endpoints at all, for any table. **Per-table:** may read that specific table's rows — see [Table-level access](#table-access) below for why both forms matter. |
 | `ego.table.write` | **Identity-wide:** may reach the row-insert REST endpoint at all. **Per-table:** may insert rows into that specific table. |
 | `ego.table.update` | **Identity-wide:** may reach the row-update REST endpoint at all. **Per-table:** may update rows in that specific table. |
@@ -365,7 +365,7 @@ not mentioned are left alone.
 When a DSN is created (`ego dsns add ... --restricted`, or `"restricted": true` in the
 REST body), Ego's own permission system governs who may use it at all: opening it for
 read, write, or administration requires a grant, following the rules below. A DSN
-created *without* `--restricted` (the default) is not gated by Ego in any way — access
+created _without_ `--restricted` (the default) is not gated by Ego in any way — access
 control is left entirely to the backing database engine (for example, PostgreSQL roles;
 SQLite has no such mechanism of its own, so an unrestricted SQLite DSN is open to any
 authenticated caller).
@@ -374,7 +374,7 @@ authenticated caller).
 > one described here. `--secured` only controls whether the connection to the backing
 > database uses TLS — it has no bearing on who is authorized to use the DSN.
 
-A caller may open a restricted DSN for a given action (read, write, or admin) if *any*
+A caller may open a restricted DSN for a given action (read, write, or admin) if _any_
 of the following is true:
 
 * They are `ego.root`.
@@ -502,7 +502,7 @@ act on its rows through any of these paths. `@sql` and `@transaction` also disti
 the same three-way split the row endpoints have always enforced.
 
 Remember also that identity-wide `ego.table.read`/`write`/`update`/`delete` is a
-*coarse* gate — it only controls whether a user can reach the corresponding REST
+_coarse_ gate — it only controls whether a user can reach the corresponding REST
 endpoint at all, for any table. Unlike the DSN-level identity permissions, it is **not**
 a blanket bypass of table-level grants: every path above still requires the specific
 table grant for whatever table is actually named in the request.
