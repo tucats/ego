@@ -1804,6 +1804,7 @@ server.service.dir=Explorando directorio {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Definición de endpoint no válida en {{file}}: {{error}}
 server.shutdown=Servidor apagado por la función de administración
+server.shutdown.auth.error=Error al cerrar el servicio de autenticación durante el apagado: {{error}}
 server.shutdown.dsn.error=Error al cerrar el servicio DSN durante el apagado: {{error}}
 server.shutdown.waiting=Apagado del servidor pendiente de {{count}} {{count|card solicitud,solicitudes}} en curso, tiempo de espera: {{grace}}
 server.start.insecure=** Servicio REST (inseguro) iniciando en el puerto {{port}}

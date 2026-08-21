@@ -1798,6 +1798,7 @@ server.service.dir=ディレクトリ {{path}} をスキャン中...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid={{file}} の無効なエンドポイント定義: {{error}}
 server.shutdown=管理者機能によりサーバーがシャットダウンされました
+server.shutdown.auth.error=シャットダウン中の認証サービス終了エラー: {{error}}
 server.shutdown.dsn.error=シャットダウン中のDSNサービス終了エラー: {{error}}
 server.shutdown.waiting=サーバーシャットダウンは処理中の{{count}}件のリクエストの完了を待機しています (猶予期間: {{grace}})
 server.start.insecure=** RESTサービス (非セキュア) がポート {{port}} で起動中

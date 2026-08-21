@@ -104,6 +104,7 @@ type failingWriteService struct {
 		ReadUser(session int, name string, doNotLog bool) (defs.User, error)
 		ListUsers(suppressPasswords bool) map[string]defs.User
 		Flush() error
+		Close() error
 	}
 	writeErr  error
 	deleteErr error
@@ -135,6 +136,10 @@ func (f failingWriteService) ListUsers(suppressPasswords bool) map[string]defs.U
 
 func (f failingWriteService) Flush() error {
 	return f.delegate.Flush()
+}
+
+func (f failingWriteService) Close() error {
+	return f.delegate.Close()
 }
 
 // makeSession builds a minimal *router.Session for use in handler calls.

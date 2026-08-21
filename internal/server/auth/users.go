@@ -23,6 +23,15 @@ type userIOService interface {
 	DeleteUser(session int, name string) error
 	ListUsers(suppressPasswords bool) map[string]defs.User
 	Flush() error
+
+	// Close releases any resources (open database connections, file
+	// handles) held by this service. It should be called once the service
+	// is no longer needed. It is safe to call Close without first calling
+	// Flush; implementations flush any pending data themselves before
+	// releasing resources. Mirrors dsns.dsnService.Close, added for the
+	// same reason: nothing previously released this service's resources
+	// short of the whole process exiting.
+	Close() error
 }
 
 // AuthService stores the specific instance of a service provider for

@@ -260,3 +260,13 @@ func (f *fileService) Flush() error {
 
 	return err
 }
+
+// Close releases any resources held by this service. The file-based
+// service doesn't keep a persistent file handle open between operations
+// (Flush opens and closes its own file descriptor each time -- see
+// above), so there is nothing to release here beyond making sure any
+// pending changes are written out first, exactly like a well-behaved
+// io.Closer should.
+func (f *fileService) Close() error {
+	return f.Flush()
+}

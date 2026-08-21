@@ -9,6 +9,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/language/bytecode"
+	"github.com/tucats/ego/internal/server/auth"
 )
 
 // This stores the start time when the server is started up, and is
@@ -86,6 +87,16 @@ func RequestShutdown(grace time.Duration) {
 		if dsns.DSNService != nil {
 			if err := dsns.DSNService.Close(); err != nil {
 				ui.Log(ui.ServerLogger, "server.shutdown.dsn.error", ui.A{
+					"error": err.Error(),
+				})
+			}
+		}
+
+		// Same reasoning as DSNService above, for the authentication service's
+		// own database connection or file handle.
+		if auth.AuthService != nil {
+			if err := auth.AuthService.Close(); err != nil {
+				ui.Log(ui.ServerLogger, "server.shutdown.auth.error", ui.A{
 					"error": err.Error(),
 				})
 			}

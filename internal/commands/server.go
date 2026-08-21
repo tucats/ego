@@ -300,6 +300,16 @@ func RunServer(c *cli.Context) error {
 				}
 			}
 
+			// Same reasoning as DSNService above, for the authentication
+			// service's own database connection or file handle.
+			if auth.AuthService != nil {
+				if err := auth.AuthService.Close(); err != nil {
+					ui.Log(ui.ServerLogger, "server.shutdown.auth.error", ui.A{
+						"error": err.Error(),
+					})
+				}
+			}
+
 			// Wait one second to give any inflight connections a chance to finish.
 			time.Sleep(1 * time.Second)
 

@@ -318,3 +318,21 @@ func (pg *databaseService) Flush() error {
 
 	return err
 }
+
+// Close releases this service's underlying database connection
+// (userHandle). Previously there was no way to do this at all -- the
+// *sql.DB handle opened in NewDatabaseService lived for the lifetime of
+// the process, relying on the OS to reclaim it on exit.
+//
+// Note: startHandle, the other resource this package opens (used only
+// during NewDatabaseService to record and prune this instance's entry in
+// the "starts" log table), is already closed synchronously right after
+// it's used, above -- it never outlives NewDatabaseService, so there is
+// nothing left over for Close to release there.
+func (pg *databaseService) Close() error {
+	if err := pg.userHandle.Close(); err != nil {
+		return errors.New(err)
+	}
+
+	return nil
+}
