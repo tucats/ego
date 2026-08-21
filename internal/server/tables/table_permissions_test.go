@@ -41,6 +41,7 @@ func TestReadTablePermissions(t *testing.T) {
 	// operating against another test's already-cleaned-up database file.
 	pValid = false
 	pHandle = nil
+
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	newRequest := func(t *testing.T, tableName string, body any) *http.Request {
@@ -150,6 +151,7 @@ func TestReadTablePermissions_NoGrants(t *testing.T) {
 
 	pValid = false
 	pHandle = nil
+	
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	session := &router.Session{ID: 1, User: "admin", Admin: true, URLParts: map[string]any{"dsn": "d1", "table": "empty"}}
@@ -176,8 +178,8 @@ func TestReadTablePermissions_NoGrants(t *testing.T) {
 	}
 }
 
-// TestReadTablePermissions_IncludesCreatorAutoGrant is a regression test for a
-// bug found while adding the apitest coverage for this endpoint: TableCreate
+// TestReadTablePermissions_IncludesCreatorAutoGrant is a regression test for
+// a bug found while adding the apitest coverage for this endpoint: TableCreate
 // passed the FullName-qualified/quoted table name (e.g. `"t1"`) to
 // createTablePermissions instead of the raw name that GrantPermissions,
 // ReadPermissions, and ReadTablePermissions all store and filter table_perms.table
@@ -229,9 +231,11 @@ func TestReadTablePermissions_IncludesCreatorAutoGrant(t *testing.T) {
 
 	pValid = false
 	pHandle = nil
+
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	columns := []defs.DBColumn{{Name: "id", Type: "int"}}
+	
 	body, err := json.Marshal(columns)
 	if err != nil {
 		t.Fatalf("marshal column payload: %v", err)

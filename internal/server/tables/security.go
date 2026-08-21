@@ -612,7 +612,7 @@ func DeletePermissions(session *router.Session, w http.ResponseWriter, r *http.R
 
 	var nameFilter, dsnFilter, tableFilter *resources.Filter
 
-	// BUG found while testing DATA-SECURITY-2.md finding #4: this used to
+	// Found while testing DATA-SECURITY-2.md finding #4: this used to
 	// filter on the column name "name", but PermissionsObject (this file,
 	// near the top) has no "name" field -- its field is "User" (stored as
 	// SQL column "user_name", looked up here by the Go field name "User",

@@ -13,7 +13,7 @@ import (
 // fileService.AuthDSN used to skip the Restricted check entirely, so an
 // unrestricted DSN was denied to any caller without an explicit Auth entry
 // -- inverting the documented default that an unrestricted DSN "is not
-// gated by Ego in any way."
+// gated by Ego in any way".
 func TestFileServiceAuthDSNUnrestricted(t *testing.T) {
 	svc, err := NewFileService("memory")
 	if err != nil {

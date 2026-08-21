@@ -182,6 +182,7 @@ func (f *fileService) revokeAllLocked(name string) bool {
 		parts := strings.SplitN(key, "|", 2)
 		if len(parts) == 2 && parts[1] == name {
 			delete(f.Auth, key)
+			
 			changed = true
 		}
 	}
