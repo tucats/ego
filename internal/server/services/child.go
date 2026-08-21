@@ -763,6 +763,12 @@ func compileChildService(
 			"error":   err.Error()})
 	}
 
+	// The request parameter may not always be needed by a service, so let's mark it as
+	// optionally used, to prevent compiler errors for services that never reference it.
+	// See the matching comment in compileAndCacheService (compile.go), the in-process
+	// equivalent of this function.
+	compilerInstance.UsageOptional("req")
+
 	serviceCode, err = compilerInstance.Compile(name, tokens)
 
 	return serviceCode, tokens, err
