@@ -1,6 +1,8 @@
 package symbols
 
 import (
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/defs"
 )
@@ -57,6 +59,13 @@ var RootSymbolTable = SymbolTable{
 	size:     len(rootNames),
 	values:   rootValues,
 	isRoot:   true,
+	// RootSymbolTable is declared directly as a struct literal (it is the one
+	// table not built by NewSymbolTable/NewChildSymbolTable), so it must set up
+	// its own mutex pointer here explicitly. Without this, mutex would default
+	// to nil, and since init() below marks this table shared, the very first
+	// Lock()/RLock() call anywhere in the program would dereference a nil
+	// pointer and panic.
+	mutex: &sync.RWMutex{},
 }
 
 // init is a Go-specific function that is called one time during the

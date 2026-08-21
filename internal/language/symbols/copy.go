@@ -3,9 +3,9 @@ package symbols
 import (
 	"strings"
 
-	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 )
 
 // NewChildProxy creates a new symbol table that points to the same dictionary
@@ -17,6 +17,19 @@ import (
 // table, which might be shared between multiple invocations so the parent
 // value cannot be written directly to the package table. But we want to be
 // sure to use the same symbol dictionary and values storage.
+//
+// Concurrency note: a proxy is created fresh every time a package is referenced
+// at runtime (see inPackageByteCode in internal/language/bytecode/package.go),
+// which for a busy server can mean many goroutines each building their own
+// proxy for the very same package at the same time. Every one of those proxies
+// aliases the SAME underlying symbols map and values storage as the receiver
+// table s, so they all need to be protected by the SAME lock -- otherwise two
+// goroutines could each believe they safely hold "the" lock while actually
+// holding two different, uncontended locks, and both mutate the shared map at
+// once (this used to happen here: the old code gave the proxy its own brand
+// new mutex instead of reusing s's, so the locking was decorative). Copying
+// the *pointer* to s's mutex (rather than creating a new mutex) is what fixes
+// that: proxy.mutex and s.mutex are now literally the same sync.RWMutex.
 func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 	s.shared.Store(true)
 
@@ -31,6 +44,9 @@ func (s *SymbolTable) NewChildProxy(parent *SymbolTable) *SymbolTable {
 		isRoot:   false,
 		isClone:  false,
 		proxy:    true,
+		// Share the original table's mutex (a pointer copy, not a new mutex) so
+		// that locking the proxy and locking s serialize against each other.
+		mutex: s.mutex,
 	}
 	proxy.shared.Store(true)
 
@@ -75,8 +91,22 @@ func (s *SymbolTable) CopyPackagesFromTable(source *SymbolTable) (count int) {
 // Returns the number of symbols merged.
 func (s *SymbolTable) Merge(source *SymbolTable) (count int) {
 	if source == nil {
-		return
+		return 0
 	}
+
+	// Take a read lock on source before looking at its symbols map. Without this,
+	// Merge used to range over source.symbols completely unprotected, even when
+	// source.shared was true -- so a table meant to be safe for concurrent access
+	// (for example, a cached, compiled service's symbol table that is reused by
+	// every subsequent request to the same REST endpoint, see
+	// internal/server/services/cache.go's getCachedService) could have its
+	// underlying Go map read here at the exact moment another goroutine was
+	// writing to it elsewhere. Concurrent unsynchronized access to a Go map is
+	// undefined behavior and can crash or hang the whole process. RLock/RUnlock
+	// are no-ops when source.shared is false, so this costs nothing for tables
+	// that really are private to one goroutine.
+	source.RLock()
+	defer source.RUnlock()
 
 	for k, attributes := range source.symbols {
 		if strings.HasPrefix(k, defs.ReadonlyVariablePrefix) {

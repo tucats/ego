@@ -197,7 +197,17 @@ type SymbolTable struct {
 
 	// The synchronization mutex used to serialize access to this table from multiple go routines. Only
 	// used if the shared flag is true.
-	mutex sync.RWMutex
+	//
+	// This is a *pointer* to a mutex, not an embedded mutex value. That matters for proxy tables (see
+	// NewChildProxy in copy.go): a proxy table shares its underlying symbols map and values storage
+	// with the original table it proxies, but before this fix it got its own brand-new, independent
+	// mutex -- which meant locking through the proxy and locking through the original table protected
+	// nothing from each other, even though both were reading/writing the exact same map and slices.
+	// By storing a *pointer* here, NewChildProxy can copy the pointer (proxy.mutex = s.mutex) so both
+	// tables lock the very same underlying sync.RWMutex. Every other constructor still gets its own
+	// fresh mutex (a new &sync.RWMutex{}), so ordinary, non-proxy tables remain independently locked
+	// as before.
+	mutex *sync.RWMutex
 }
 
 // NewRootSymbolTable generates a new root symbol table. A root symbol table is any table that does not
@@ -215,6 +225,11 @@ func NewSymbolTable(name string) *SymbolTable {
 		symbols: map[string]*SymbolAttribute{},
 		id:      newTableID(),
 		depth:   0,
+		// Every table gets its own fresh mutex here. It is only ever shared with
+		// another table by NewChildProxy (see copy.go), which explicitly copies
+		// the pointer -- so a table built by this constructor always protects its
+		// own, independent storage.
+		mutex: &sync.RWMutex{},
 	}
 	symbols.shared.Store(SerializeTableAccess)
 	symbols.initializeValues()
@@ -229,6 +244,10 @@ func NewChildSymbolTable(name string, parent *SymbolTable) *SymbolTable {
 		Name:    name,
 		symbols: map[string]*SymbolAttribute{},
 		id:      newTableID(),
+		// See the matching comment in NewSymbolTable above: this table gets its
+		// own fresh mutex unless something later shares it explicitly (only
+		// NewChildProxy does that).
+		mutex: &sync.RWMutex{},
 	}
 	symbols.shared.Store(SerializeTableAccess)
 
@@ -575,11 +594,21 @@ func (s *SymbolTable) SetParent(p *SymbolTable) *SymbolTable {
 // Package returns the package for which this symbol table provides
 // symbol information. If there is no package, it returns an empty string.
 func (s *SymbolTable) Package() string {
+	s.RLock()
+	defer s.RUnlock()
+
 	return s.forPackage
 }
 
-// SetPackage sets the package name for this symbol table.
+// SetPackage sets the package name for this symbol table. Locked for
+// consistency with Package() above -- forPackage is ordinarily set once,
+// before a table is reachable from more than one goroutine, but taking the
+// lock here costs nothing for a private table and protects against any
+// future caller that sets it later, after the table is shared.
 func (s *SymbolTable) SetPackage(name string) {
+	s.Lock()
+	defer s.Unlock()
+
 	s.forPackage = name
 }
 
@@ -598,8 +627,15 @@ func (s *SymbolTable) ID() uint64 {
 // Names returns an array of strings containing the names of the
 // symbols in the table, sorted in lexicographical order.
 func (s *SymbolTable) Names() []string {
-	s.Lock()
-	defer s.Unlock()
+	// Fix: this used to take the exclusive write lock (Lock/Unlock) for
+	// what is a pure read of the table. That was not incorrect on its own
+	// (an exclusive lock still protects the read), but it needlessly blocked
+	// every other reader of this table (for example, another goroutine's
+	// Get() call, which only needs a read lock) for as long as Names() was
+	// running. Using RLock/RUnlock here instead lets concurrent readers
+	// proceed together, and still correctly blocks out any writer.
+	s.RLock()
+	defer s.RUnlock()
 
 	seen := map[string]bool{}
 	result := []string{}

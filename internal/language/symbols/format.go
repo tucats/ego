@@ -46,6 +46,21 @@ func (s *SymbolTable) Format(includeBuiltins bool) string {
 // chain we are (0 = the table Format was called on). includeBuiltins controls
 // whether built-in function symbols are shown in the output.
 func (s *SymbolTable) formatWithLevel(level int, includeBuiltins bool) string {
+	// Lock just this one table before looking at its symbols map. This used to
+	// be completely unprotected: formatWithLevel (called from the "show
+	// symbols" debug/admin commands, and indirectly whenever trace logging is
+	// on) read s.symbols directly with no lock at all, even for a table marked
+	// shared and reachable from other, concurrently-running goroutines. RLock
+	// is a no-op when s.shared is false, so this adds no cost for the common
+	// case of a private table. The lock is released via defer, which runs
+	// after the recursive call into the parent table below returns -- that
+	// recursive call locks the *parent's own, separate* mutex, so this is the
+	// same "lock one table at a time while walking the chain" pattern already
+	// used by Get()/Set() elsewhere in this package, not a repeated lock of
+	// the same table.
+	s.RLock()
+	defer s.RUnlock()
+
 	var b strings.Builder
 
 	b.WriteString("Symbol table")
@@ -259,6 +274,15 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 		return
 	}
 
+	// Same reasoning as formatWithLevel above: Log() is called on every service
+	// request when the symbol logger is enabled (internal/server/services/
+	// service.go), reading s.symbols directly. Without a lock here, that read
+	// could race with a concurrent Set()/Create()/Delete() call on this same
+	// table from another goroutine's request. RLock/RUnlock are no-ops for a
+	// table that is not shared.
+	s.RLock()
+	defer s.RUnlock()
+
 	name := s.Name
 	if name != "" {
 		name = " " + strconv.Quote(name)
@@ -383,6 +407,12 @@ func (s *SymbolTable) Log(session int, logger int, omitPackages bool) {
 
 // Format formats a symbol table into a string for printing/display.
 func (s *SymbolTable) FormattedData(includeBuiltins bool) [][]string {
+	// Same reasoning as formatWithLevel/Log above: protect the read of
+	// s.symbols (via getVisibleSymbolNames and the loop below) against a
+	// concurrent writer. No-op when s.shared is false.
+	s.RLock()
+	defer s.RUnlock()
+
 	rows := make([][]string, 0)
 
 	// Iterate over the members to get a list of the keys. Discard invisible

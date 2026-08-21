@@ -77,7 +77,18 @@ func FlushServiceCache() {
 // Update the cache entry for a given endpoint with the supplied compiler, bytecode, and tokens. If necessary,
 // age out the oldest cached item (based on last time-of-access) from the cache to keep it within the maximum
 // cache size.
+//
+// This function used to write to (and, in the aging loop below, delete from)
+// the ServiceCache map without holding serviceCacheMutex at all. Two 
+// goroutines calling this at the same time -- for example, the first two
+// concurrent requests for a service that isn't cached yet -- were
+// both writing to the same Go map with no synchronization, which is
+// undefined behavior and can crash or hang the process. See also the fix in
+// getCachedService below, which had a matching unprotected read.
 func addToCache(session *router.Session, endpoint string, code *bytecode.ByteCode, tokens *tokenizer.Tokenizer) {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
+
 	ui.Log(ui.ServicesLogger, "services.cache.add", ui.A{
 		"session":  session,
 		"endpoint": endpoint})
@@ -124,7 +135,22 @@ func addToCache(session *router.Session, endpoint string, code *bytecode.ByteCod
 // updateCacheUsage updates the metadata for the service cache entry to reflect
 // that the service was reused. In particular, this updates the timestamp used
 // to support aging LRU cache entries, and the count of usages of this service.
+//
+// This used to read and write the ServiceCache map (cachedItem.Age,
+// cachedItem.Count) without holding serviceCacheMutex, even though every other
+// function in this file that touches ServiceCache does take that lock. A
+// busy server handling many requests to the same endpoint at once (exactly
+// the kind of load examples/swarm.ego generates against /services/factor)
+// would have many goroutines calling this at the same time, all reading and
+// writing the same map and the same *CachedCompilationUnit fields with no
+// synchronization at all -- a textbook concurrent-map-access data race, and
+// on the shared cachedItem.Count field, a lost-update race too (both
+// goroutines could read the same old value before either writes back the
+// incremented one).
 func updateCacheUsage(endpoint string) {
+	serviceCacheMutex.Lock()
+	defer serviceCacheMutex.Unlock()
+
 	if cachedItem, ok := ServiceCache[endpoint]; ok {
 		cachedItem.Age = time.Now()
 		cachedItem.Count++
@@ -157,8 +183,23 @@ func updateCachedServiceSymbols(sessionID int, endpoint string, symbolTable *sym
 func getCachedService(session *router.Session, endpoint string, debug bool, file string, symbolTable *symbols.SymbolTable) (serviceCode *bytecode.ByteCode, tokens *tokenizer.Tokenizer, err error) {
 	sessionID := session.ID
 
+	// This lookup used to read the ServiceCache map directly with no
+	// lock held (`if cachedItem, ok := ServiceCache[endpoint]; ok {`), even
+	// though addToCache below writes to the very same map. Take the lock just
+	// long enough to do the lookup and copy out the *CachedCompilationUnit
+	// pointer, then release it -- the rest of this function only touches
+	// fields on that one cached item (protected individually by
+	// updateCacheUsage and by Merge's own lock on cachedItem.s), or calls
+	// addToCache/compileAndCacheService, which take the map lock themselves
+	// when they need it. Holding serviceCacheMutex for the whole function
+	// would risk a self-deadlock, since updateCacheUsage (called below) also
+	// acquires it.
+	serviceCacheMutex.Lock()
+	cachedItem, found := ServiceCache[endpoint]
+	serviceCacheMutex.Unlock()
+
 	// Is this endpoint already in the cache of compiled services?
-	if cachedItem, ok := ServiceCache[endpoint]; ok {
+	if found {
 		serviceCode = cachedItem.b
 		tokens = cachedItem.t
 
@@ -173,10 +214,20 @@ func getCachedService(session *router.Session, endpoint string, debug bool, file
 				"endpoint": endpoint})
 		}
 
-		if count := symbolTable.Merge(cachedItem.s); count > 0 {
+		// cachedItem.s is written once, under serviceCacheMutex, by
+		// updateCachedServiceSymbols the first time this endpoint finishes
+		// executing (see below). Read it back under the same lock rather than
+		// touching cachedItem.s directly here, since another goroutine
+		// finishing that first execution concurrently could be writing it at
+		// the exact same moment.
+		serviceCacheMutex.Lock()
+		cachedServiceSymbols := cachedItem.s
+		serviceCacheMutex.Unlock()
+
+		if count := symbolTable.Merge(cachedServiceSymbols); count > 0 {
 			ui.Log(ui.ServicesLogger, "services.pkg.loaded", ui.A{
 				"session": sessionID,
-				"name":    cachedItem.s.Name,
+				"name":    cachedServiceSymbols.Name,
 				"count":   count})
 		}
 	} else {

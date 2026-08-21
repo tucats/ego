@@ -44,8 +44,10 @@ var PathList []string
 var ServerRouter *router.Router
 
 // If not overridden explicitly, when running as a server, do we fully serialize
-// symbol table access? This is a safety measure to prevent concurrent access to symbol tables
-// from different goroutines, which can cause all sorts of weirdness.
+// symbol table access? This is a safety measure to prevent concurrent access to
+// symbol tables from different goroutines, which can cause all sorts of weirdness.
+// Do not turn this off unless you are testing/debugging whether your use of Ego
+// runs without goroutines or HTTP server operations.
 var SerializeSymbolTableAccess = true
 
 // RunServer initializes and runs the REST server in the foreground, listening for

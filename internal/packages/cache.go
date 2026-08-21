@@ -20,7 +20,20 @@ func Get(path string) *data.Package {
 // GetByName returns the package by the given package name in the
 // package statements (which is distinct from the package by the path
 // given on the import statement).
+//
+// Fix: unlike every other function in this file, this one used to range
+// over the cache map without holding cacheLock at all. The server calls this
+// (via bytecode.GetPackage) while handling requests concurrently, and Save()
+// below writes to the very same map from a different goroutine whenever a
+// package is imported for the first time. Save() taking the lock does not
+// help on its own -- *every* accessor of a Go map needs to agree on the same
+// lock, or an unprotected reader here can still observe the map mid-write
+// (for example, while it is being resized internally to hold a new entry),
+// which is undefined behavior and can crash or hang the process.
 func GetByName(name string) *data.Package {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
 	for _, pkg := range cache {
 		if pkg.Name == name {
 			return pkg

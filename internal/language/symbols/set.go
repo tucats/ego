@@ -61,18 +61,29 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 		return errors.ErrNoSymbolTable.In("SetReadOnly")
 	}
 
-	if s.shared.Load() {
-		s.Lock()
-		defer s.Unlock()
-	}
-
+	// Walk up the scope chain one table at a time, starting at the receiver.
+	// syms is reassigned on each pass of the loop as we move outward toward the
+	// root, the same way Get() and Set() do it elsewhere in this package.
 	syms := s
 
 	for syms != nil {
+		// Lock only the one table we are about to look at, not the whole chain
+		// at once. Lock()/Unlock() are no-ops when syms.shared is false, so this
+		// costs nothing for the (common) case of a private, unshared table.
+		//
+		// This replaces the old code, which locked only the receiver s once at
+		// the top of the function and then read every ancestor table's symbols
+		// map on the way up completely unlocked -- so a shared ancestor (for
+		// example a package's symbol table, reachable from many goroutines at
+		// once) could be read here at the same moment another goroutine was
+		// writing to it, which is undefined behavior for a Go map.
+		syms.Lock()
+
 		attr, found := syms.symbols[name]
 		if found {
 			attr.Readonly = flag
-			s.modified = true
+			syms.modified = true
+			syms.Unlock()
 
 			if ui.IsActive(ui.SymbolLogger) {
 				ui.Log(ui.SymbolLogger, "symbols.set.readonly", ui.A{
@@ -84,11 +95,22 @@ func (s *SymbolTable) SetReadOnly(name string, flag bool) error {
 			return nil
 		}
 
-		if !syms.IsRoot() {
-			syms = s.FindNextScope()
-		} else {
+		syms.Unlock()
+
+		if syms.IsRoot() {
 			break
 		}
+
+		// This used to call s.FindNextScope() here -- always asking the
+		// *original* receiver table for its next scope, instead of asking syms
+		// (the table we just finished looking at) for its own next scope. Since
+		// s.FindNextScope() returns the same answer every time it's called, syms
+		// was reassigned to the exact same table on every trip through the loop
+		// once we were past the first parent, and the loop would spin forever
+		// (chewing CPU, never finding the name and never returning) whenever the
+		// name wasn't found in the first two tables checked. Asking syms for its
+		// own next scope is what actually advances the walk up the chain.
+		syms = syms.FindNextScope()
 	}
 
 	return errors.ErrUnknownSymbol.Context(name)
