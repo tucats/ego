@@ -77,6 +77,14 @@ type dsnService interface {
 	Permissions(session int, user, name string) (map[string]DSNAction, error)
 	RevokeAllDSN(session int, name string) error
 	Flush() error
+
+	// Close releases any resources (open database connections, file
+	// handles) held by this service. It should be called once the service
+	// is no longer needed -- for example, by a test that creates a fresh
+	// service per test case. It is safe to call Close without first
+	// calling Flush; implementations flush any pending data themselves
+	// before releasing resources.
+	Close() error
 }
 
 // DSNAuthorization is a structure that describes the authorization

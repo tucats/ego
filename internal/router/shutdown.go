@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/language/bytecode"
 )
 
@@ -74,6 +75,20 @@ func RequestShutdown(grace time.Duration) {
 
 		if ui.IsActive(ui.StatsLogger) && ServerStartTime != nil {
 			dumpStats(*ServerStartTime)
+		}
+
+		// Release the DSN service's own resources (open database connections,
+		// for the SQL-backed provider) before the process exits. DSNService is
+		// only nil if the server started without a DSN provider configured at
+		// all, which InitializeFromURL/Initialize guarantee doesn't happen once
+		// the server is actually running -- but the nil check costs nothing and
+		// avoids a nil-interface panic if that assumption is ever wrong.
+		if dsns.DSNService != nil {
+			if err := dsns.DSNService.Close(); err != nil {
+				ui.Log(ui.ServerLogger, "server.shutdown.dsn.error", ui.A{
+					"error": err.Error(),
+				})
+			}
 		}
 
 		ui.Log(ui.ServerLogger, "server.shutdown", nil)

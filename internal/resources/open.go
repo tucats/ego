@@ -76,10 +76,18 @@ func Open(object any, table, connection string) (*ResHandle, error) {
 // Close closes the underlying database represented by this handle. If the
 // handle is nil, no action is taken. When this is called on a valid handle,
 // the database driver determines what resource(s) are free up versus cached.
-func (r *ResHandle) Close() {
-	if r != nil {
-		r.Database.Close()
+//
+// The error from the underlying *sql.DB.Close() is now returned instead of
+// being silently discarded, so a caller that cares (for example, a test
+// that wants to be sure the connection -- and, for SQLite, its WAL/SHM
+// sidecar files -- were actually released before checking the filesystem)
+// has a way to find out if it failed.
+func (r *ResHandle) Close() error {
+	if r == nil {
+		return nil
 	}
+
+	return r.Database.Close()
 }
 
 func (r *ResHandle) DropAllResources() error {

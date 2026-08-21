@@ -1829,6 +1829,7 @@ server.service.dir=Scanning directory {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Invalid endpoint definition in {{file}}: {{error}}
 server.shutdown=Server shutdown by admin function
+server.shutdown.dsn.error=Error closing DSN service during shutdown: {{error}}
 server.shutdown.waiting=Server shutdown pending on {{count}} {{count|card request,requests}}, waiting for {{grace}}
 server.start.insecure=** REST service (insecure) starting on port {{port}}
 server.start.log.purged=Purged {{count}} {{count|card entry,entries}} from system startup log database

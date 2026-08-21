@@ -29,7 +29,29 @@ func TestCacheError(t *testing.T) {
 
 		defer func() {
 			service.Flush()
+
+			// Close the underlying database connections before removing the
+			// files on disk. Previously there was no Close() to call at all,
+			// so the *sql.DB handles were simply abandoned for the OS to
+			// clean up whenever the test binary exited.
+			if err := service.Close(); err != nil {
+				t.Errorf("service.Close() failed: %v", err)
+			}
+
 			os.Remove(fileName)
+
+			// SQLite runs in WAL (Write-Ahead Log) mode here (see
+			// internal/resources/pragmas.go's applyWriterPragmas), which keeps
+			// two sidecar files alongside the main database file: "-wal" (the
+			// not-yet-checkpointed write log) and "-shm" (a shared-memory index
+			// into that log). Removing only fileName left these two behind on
+			// every test run, since nothing else in this test's cleanup path
+			// knows about them. Close() above should have let SQLite check-
+			// point and clean these up on its own, but the explicit removal
+			// here is a harmless backstop if it doesn't (os.Remove on a file
+			// that no longer exists is not an error).
+			os.Remove(fileName + "-wal")
+			os.Remove(fileName + "-shm")
 		}()
 
 		// Write a DSN to the service.

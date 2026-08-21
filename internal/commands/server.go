@@ -285,6 +285,21 @@ func RunServer(c *cli.Context) error {
 			// Remove this node from the cluster membership table before exiting.
 			cluster.Shutdown()
 
+			// Release the DSN service's own resources (open database
+			// connections, for the SQL-backed provider) before exiting. This
+			// is a second, independent shutdown path from RequestShutdown in
+			// internal/router/shutdown.go (that one runs when the server is
+			// asked to stop over REST, via "ego stop server"; this one runs
+			// on an OS interrupt signal such as Ctrl-C) so it needs the same
+			// cleanup call.
+			if dsns.DSNService != nil {
+				if err := dsns.DSNService.Close(); err != nil {
+					ui.Log(ui.ServerLogger, "server.shutdown.dsn.error", ui.A{
+						"error": err.Error(),
+					})
+				}
+			}
+
 			// Wait one second to give any inflight connections a chance to finish.
 			time.Sleep(1 * time.Second)
 

@@ -1798,6 +1798,7 @@ server.service.dir=Analyse du répertoire {{path}}...
 server.service.route=  {{method}} {{path}}{{parms}} {{auth|label "auth="}}
 server.service.route.invalid=Définition d'endpoint invalide dans {{file}} : {{error}}
 server.shutdown=Serveur arrêté par la fonction d'administration
+server.shutdown.dsn.error=Erreur lors de la fermeture du service DSN pendant l'arrêt : {{error}}
 server.shutdown.waiting=Arrêt du serveur en attente de {{count}} {{count|card requête,requêtes}} en cours, délai d'attente : {{grace}}
 server.start.insecure=** Service REST (non sécurisé) démarrant sur le port {{port}}
 server.start.log.purged={{count}} {{count|card entrée,entrées}} purgée(s) de la base de données du journal de démarrage du système

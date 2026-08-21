@@ -218,10 +218,18 @@ func (f *fileService) Flush() error {
 	}
 
 	// Write to the database file. Create a new file descriptor for the output file.
+	//
+	// Bug fix: fd was never closed anywhere in this function -- every single
+	// call to Flush() (i.e. every write to a file-backed DSN store) leaked
+	// one open file descriptor. On a long-running server that eventually
+	// exhausts the process's file descriptor limit. The defer below closes
+	// it on every return path, successful or not.
 	fd, err := os.OpenFile(f.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		return errors.New(err)
 	}
+
+	defer fd.Close()
 
 	// Form the JSON header text followed by the JSON data.
 	text := fmt.Sprintf(jsonHeader, time.Now().Format(time.RFC3339))
@@ -241,6 +249,15 @@ func (f *fileService) Flush() error {
 	}
 
 	return err
+}
+
+// Close releases any resources held by this service. The file-based service
+// doesn't keep a persistent file handle open between operations (Flush opens
+// and closes its own file descriptor each time -- see above), so there is
+// nothing to release here beyond making sure any pending changes are
+// written out first, exactly like a well-behaved io.Closer should.
+func (f *fileService) Close() error {
+	return f.Flush()
 }
 
 // AuthDSN determines if the given username is allowed to access the

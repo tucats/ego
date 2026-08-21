@@ -206,11 +206,43 @@ func (pg *databaseService) RevokeAllDSN(session int, name string) error {
 	return err
 }
 
-// Required interface, but does no work for the Database service.
+// Required interface, but does no work for the Database service. Every
+// write already goes straight to the database, so there is nothing
+// buffered to flush.
 func (pg *databaseService) Flush() error {
 	var err error
 
 	return err
+}
+
+// Close releases both of this service's underlying database connections
+// (dsnHandle and authHandle). Previously there was no way to do this at
+// all -- the *sql.DB handles opened in NewDatabaseService lived for the
+// lifetime of the process (or, for a test, the test binary), relying on
+// the OS to reclaim them on exit rather than being released explicitly.
+// For SQLite in particular, that also meant the WAL/SHM sidecar files
+// (see internal/resources/pragmas.go) never got a clean checkpoint-and-
+// release from this service's own code path.
+//
+// Both handles are closed even if the first one fails, so a problem
+// closing dsnHandle doesn't leak authHandle. If both fail, both errors are
+// reported by chaining them together with errors.Chain.
+func (pg *databaseService) Close() error {
+	var result error
+
+	if err := pg.dsnHandle.Close(); err != nil {
+		result = errors.New(err)
+	}
+
+	if err := pg.authHandle.Close(); err != nil {
+		if result == nil {
+			result = errors.New(err)
+		} else {
+			result = errors.New(result).Chain(errors.New(err))
+		}
+	}
+
+	return result
 }
 
 // Verify that the database is initialized.
