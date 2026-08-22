@@ -108,8 +108,15 @@ func (f fsPersist) Load(application string, name string) (*Configuration, error)
 		ui.Log(ui.AppLogger, "config.base.loaded", ui.A{
 			"path": path})
 
-		// For any keys that are stored as separate file values, get them now.
-		readOutboardConfigFiles(home, name, c)
+		// For any keys that are stored as separate file values, get them now
+		// -- unless the caller has told us (via SkipEncryptedProfileValues)
+		// that this invocation will never read any of them, in which case
+		// skip the several Argon2id decryptions that would otherwise cost
+		// tens of milliseconds each for nothing. See the doc comment on
+		// SkipEncryptedProfileValues (interface.go) for the full rationale.
+		if !SkipEncryptedProfileValues {
+			readOutboardConfigFiles(home, name, c)
+		}
 
 		if c.ID == "" {
 			c.ID = uuid.New().String()
@@ -259,8 +266,14 @@ func (f fsPersist) Load(application string, name string) (*Configuration, error)
 		cp.Dirty = true
 	}
 
-	// Last step; for any keys that are stored as separate file values, get them now.
-	readOutboardConfigFiles(home, name, cp)
+	// Last step; for any keys that are stored as separate file values, get
+	// them now -- unless SkipEncryptedProfileValues says this invocation
+	// will never read them (see its doc comment in interface.go). Skipping
+	// avoids one Argon2id key derivation per encrypted file present, each
+	// costing tens of milliseconds, for values that would just sit unused.
+	if !SkipEncryptedProfileValues {
+		readOutboardConfigFiles(home, name, cp)
+	}
 
 	// Patch up anything that should be changed by the newly loaded configuration.
 	if err == nil {

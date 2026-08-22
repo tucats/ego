@@ -193,6 +193,35 @@ func runFromContext(context *cli.Context) error {
 		grammar = append(grammar, baseCommands...)
 	}
 
+	// Child-service invocations are spawned by the server (see
+	// internal/server/services/child.go, runChildViaFile/runChildViaPipe) as
+	// `<ego-binary> --log-format json --log <loggers> --service <file|pipe>`
+	// to run exactly one already-authorized REST request in an isolated
+	// process. That process never reads any of the encrypted profile
+	// settings (auth tokens, database credentials/URL -- see
+	// settings.SkipEncryptedProfileValues for the full list and rationale),
+	// so tell Load to skip decrypting them, which otherwise costs an
+	// Argon2id key derivation (tens of milliseconds each) per encrypted
+	// value present in the profile.
+	//
+	// This has to be a raw scan of the not-yet-parsed argument list, rather
+	// than a check of the parsed --service option's value, because Load
+	// must run *before* Parse (immediately below) so that profile-based
+	// option defaults are available to it -- by the time Parse runs and
+	// could tell us --service was given, Load has already returned. The
+	// "--service" long name is safe to match literally: it is declared
+	// Private in both grammars (internal/grammar/class/class.go and
+	// internal/grammar/verb/verb.go) with Action: app.ChildService, so it
+	// has no other meaning and is never present except when child.go itself
+	// constructed the command line.
+	for _, arg := range context.Args {
+		if arg == "--service" {
+			settings.SkipEncryptedProfileValues = true
+
+			break
+		}
+	}
+
 	// Load the active profile, if any from the profile for this application. When
 	// this function returns, the program execution is complete so this is also the
 	// time to tell the settings manager to free up any resources and/or commit any

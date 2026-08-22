@@ -785,7 +785,24 @@ func runChildRequest(r *ChildServiceRequest, respond func(ChildServiceResponse) 
 	// running a service.
 	settings.SetDefault(defs.RuntimeDeepScopeSetting, "true")
 
-	// Add the runtime packages to the symbol table.
+	// Add the runtime packages to the symbol table. This is deliberately
+	// AutoImport(true, ...) -- every auto-importable package, not just the
+	// minimal requiredPackages set -- so that any Ego code this session
+	// runs beyond just the compiled service handler itself (for example,
+	// code injected by a directive) has every package available, since a
+	// child process has no follow-up request to lazily pick up a package
+	// it turns out to need. compileChildService (below) calls AutoImport a
+	// second time on this same symbolTable, honoring the actual
+	// ego.compiler.auto-import setting -- that is NOT redundant with this
+	// call despite operating on packages already imported here: it is what
+	// binds this specific compiled unit's own Import bytecode instructions,
+	// which is a per-compilation concern, not a per-symbol-table one. This
+	// mirrors the in-process path exactly (service.go:174 calls
+	// AutoImport(false, ...) up front, compile.go:66 calls it again with
+	// the configured setting) -- the only difference is the boolean here,
+	// not the two-call shape, so don't "simplify" this to one call without
+	// making the same change in service.go/compile.go, or the two
+	// implementations will drift out of parity again.
 	comp := compiler.New("auto-import")
 	_ = comp.AutoImport(true, symbolTable)
 
@@ -832,8 +849,20 @@ func runChildRequest(r *ChildServiceRequest, respond func(ChildServiceResponse) 
 		return nil
 	}
 
-	// Add the standard non-package function into this symbol table
-	_ = compiler.AddStandard(symbolTable)
+	// compileChildService (above) already called compiler.AddStandard on
+	// this exact symbolTable object before compiling, so the standard
+	// non-package functions (len(), make(), etc.) are already present here
+	// -- a second call on the same object would just repeat AddStandard's
+	// full scan of builtins.FunctionDictionary for no effect, since it is
+	// idempotent (it only sets a name that isn't already bound as an
+	// Immutable constant). This used to call AddStandard again here; it was
+	// removed as pure waste, not a behavior change. Contrast with the
+	// in-process equivalent (service.go/compile.go), which legitimately
+	// calls AddStandard twice because a *different* symbol table is
+	// involved: a child table created via symbols.NewChildSymbolTable
+	// between the two calls. There is no such intervening child-table
+	// creation on this path -- symbolTable here is the same object from
+	// start to finish -- so that justification does not apply.
 
 	// If enabled, dump out the symbol table to the log. Omit package definitions
 	// from the log (those are default and assumed present)
@@ -1010,8 +1039,21 @@ func compileChildService(
 	compilerInstance := compiler.New(name).SetExtensionsEnabled(true).SetRoot(symbolTable)
 
 	// Add the standard non-package functions, and any auto-imported packages.
+	// This is the only AddStandard call on this symbolTable in the whole
+	// child-service path (runChildRequest, our caller, used to call it
+	// again after we return; that was removed as a same-object no-op, see
+	// the comment left in its place there).
 	compiler.AddStandard(symbolTable)
 
+	// This AutoImport call looks redundant with runChildRequest's own
+	// AutoImport(true, ...) on this same symbolTable, since every package
+	// this call could possibly import is already cached from that one --
+	// but it is not: this is what emits this specific compiled unit's
+	// Import bytecode instructions and registers its packages with
+	// compilerInstance's own compile-time bookkeeping, which is scoped to
+	// this compilation, not to the symbol table. See the longer comment on
+	// runChildRequest's AutoImport call for why the two are kept in parity
+	// with the in-process compile.go/service.go pair rather than merged.
 	err = compilerInstance.AutoImport(settings.GetBool(defs.AutoImportSetting), symbolTable)
 	if err != nil {
 		ui.Log(ui.ServicesLogger, "services.import.error", ui.A{

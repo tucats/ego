@@ -269,8 +269,15 @@ func (d dbPersist) Load(application, name string) (*Configuration, error) {
 			return nil, err
 		}
 
-		// Some specific items must be decrypted.
-		if _, ok := encryptedKeyValue[key]; ok {
+		// Some specific items must be decrypted -- unless the caller has told
+		// us (via SkipEncryptedProfileValues, see its doc comment in
+		// interface.go) that this invocation will never read any of them,
+		// in which case leave the value as still-encrypted ciphertext in
+		// config.Items and skip the Argon2id key derivation entirely. That
+		// derivation is deliberately expensive (tens of milliseconds), so
+		// this matters for every row in encryptedKeyValue that happens to
+		// be present in the table, not just one.
+		if _, ok := encryptedKeyValue[key]; ok && !SkipEncryptedProfileValues {
 			rawEncrypted := value
 
 			value, _ = Decrypt(rawEncrypted, config.Salt+internalProfileID)

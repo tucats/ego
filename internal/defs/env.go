@@ -152,4 +152,29 @@ const (
 	// (ChildServicesPipeMode). Internal only: set by the parent when spawning
 	// the child, not a user-facing setting.
 	EgoChildPipeTokenEnv = "EGO_CHILD_TOKEN"
+
+	// EgoHostKernelVersionEnv, EgoHostPlatformEnv, EgoHostPlatformVersionEnv,
+	// and EgoHostMemoryEnv carry the host machine facts that
+	// internal/runtime/runtime.captureHostInfo() would otherwise have to
+	// query the OS for via gopsutil on every process start (kernel version,
+	// platform name, platform version, and total physical memory -- the
+	// values behind the Ego runtime package's OS_KERNEL_VERSION, OS_PLATFORM,
+	// OS_PLATFORM_VERSION, and OS_MEMORY constants). Those facts cannot
+	// change for the lifetime of the host machine, so once any Ego process
+	// has queried them, it publishes them into its own environment via
+	// os.Setenv; any child process it spawns afterward -- in particular, a
+	// child-service process spawned by internal/server/services/child.go --
+	// inherits them automatically (exec.Cmd falls back to os.Environ() at
+	// Start() time whenever its own Env field is left nil, and the one place
+	// that builds it explicitly, runChildViaPipe, seeds it from
+	// os.Environ() too) and can read them directly instead of paying for
+	// the same OS query again. That query measured at ~25-30ms in local
+	// testing (dominated by the gopsutil host.Info() call), so this removes
+	// what was, before this change, the second-largest fixed cost in a
+	// child-service request's startup latency. Internal only: never set by
+	// a user, only ever produced and consumed by captureHostInfo() itself.
+	EgoHostKernelVersionEnv   = "EGO_HOST_KERNEL_VERSION"
+	EgoHostPlatformEnv        = "EGO_HOST_PLATFORM"
+	EgoHostPlatformVersionEnv = "EGO_HOST_PLATFORM_VERSION"
+	EgoHostMemoryEnv          = "EGO_HOST_MEMORY"
 )

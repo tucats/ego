@@ -22,6 +22,36 @@ type SettingsPersistence interface {
 var Persistence SettingsPersistence
 var persistenceLock = &sync.Mutex{}
 
+// SkipEncryptedProfileValues, when true, tells Load to skip decrypting the
+// handful of profile settings that are stored encrypted at rest --
+// ego.logon.token, ego.logon.refresh.token, ego.server.token.key,
+// ego.server.database.credentials, ego.server.database.url, and
+// ego.server.default.credential (see encryptedKeyValue in defs.go). Both
+// persistence backends decrypt every one of these on every Load(), whether
+// or not the invocation ever reads them: the file-backed persistence
+// (files.go) does it in readOutboardConfigFiles, and the database-backed
+// persistence (databases.go) does it inline while scanning the settings
+// table. Each decryption derives its key via Argon2id (32 MiB memory cost,
+// see the argon2* constants in crypto.go), a deliberately expensive
+// operation that measured at ~40-50ms per call in local testing -- so a
+// profile with two or three of these values present can spend upwards of
+// 100ms on decryption alone before Load() even returns.
+//
+// This is set (never by end users -- there is no CLI flag or profile
+// setting for it) by internal/cli/app/run.go, immediately before it calls
+// Load, when it detects the invocation is a child-service process spawned
+// by internal/server/services/child.go (`ego --service <file|pipe>`). A
+// child-service process runs exactly one already-authorized REST request
+// and exits; it never calls settings.Get on any of the six keys above --
+// the one value a service might need from that set, the DSN database URL,
+// is instead handed to it explicitly in the per-request JSON payload (see
+// ChildServiceRequest.DSNDatabaseURL), which the parent server already
+// decrypted once when it first loaded its own profile. Skipping the
+// decryption here removes what was, before this change, the single
+// largest cost in a child-service request's startup latency, with no
+// change in behavior on that path since the values were never used there.
+var SkipEncryptedProfileValues = false
+
 // Initialize creates the correct instance of settings persistence based on the
 // provided configuration.
 func Initialize(application, config string) error {
