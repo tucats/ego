@@ -1,0 +1,512 @@
+{
+    "admin.config:patch": {
+        "type": "struct",
+        "allow_foreign_key": false,
+        "fields": [
+            {
+                "name": "ego.console.auto.help",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.import",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.normalized",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.child.services.retain",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.child.services",
+                "type": "bool"
+            },
+            {
+                "name": "ego.console.prompt.missing.options",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.constfold",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.exec",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.extensions",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.full.stack",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.stack.trace",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.globalcache",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.js.minify",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.js.shortvarnames",
+                "type": "bool"
+            },
+            {
+                "name": "ego.console.no.copyright",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.oauth.as.enabled",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.precision.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.registers",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.rest.compression",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.rest.errors",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.float.div.zero.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.panics",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.insecure.redirect",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.panic.recovery",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.report.fqdn",
+                "type": "bool"
+            },
+            {
+                "name": "ego.table.autoparse.dsn",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.database.partial.insert.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.database.empty.filter.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.database.empty.rowset.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.unchecked.errors",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.type.shadowing",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.unknown.var.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.var.usage.logging",
+                "type": "bool"
+            },
+            {
+                "name": "ego.compiler.unused.var.error",
+                "type": "bool"
+            },
+            {
+                "name": "ego.console.readline",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.allow.passkeys",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.auth.maxattempts",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.child.services.limit",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.log.retain",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.service.cache.size",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.compiler.optimize",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true,
+                "max_value": 3,
+                "has_max_value": true
+            },
+            {
+                "name": "ego.server.compression.threshold",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.max.body.size",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.cache.maxsize",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.max.item.limit",
+                "type": "int",
+                "min_value": 1,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.start.log.age",
+                "type": "int",
+                "min_value": 0,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.child.services.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.child.services.run.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.cluster.ping.interval",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.cluster.ping.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.dashboard.inactivity",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.memory.log.interval",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.oauth.as.code.expiration",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.oauth.as.refresh.expiration",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.oauth.as.token.expiration",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.oauth.jwks.cache.ttl",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.runtime.rest.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.ai.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.idle.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.read.header.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.read.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.token.expiration",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.server.write.timeout",
+                "type": "time.Duration"
+            },
+            {
+                "name": "ego.compiler.types",
+                "type": "string",
+                "enums": [
+                    "strict",
+                    "relaxed",
+                    "dynamic"
+                ]
+            },
+            {
+                "name": "ego.console.output",
+                "type": "string",
+                "enums": [
+                    "text",
+                    "indented",
+                    "json"
+                ]
+            },
+            {
+                "name": "ego.console.log",
+                "type": "string",
+                "enums": [
+                    "text",
+                    "indented",
+                    "json"
+                ]
+            },
+            {
+                "name": "ego.server.oauth.mode",
+                "type": "string",
+                "enums": [
+                    "resource-server",
+                    "proxy",
+                    "hybrid"
+                ]
+            },
+            {
+                "name": "ego.server.child.services.dir",
+                "type": "string"
+            },
+            {
+                "name": "ego.cluster.name",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.default.credential",
+                "type": "string"
+            },
+            {
+                "name": "ego.table.default.dsn",
+                "type": "string"
+            },
+            {
+                "name": "ego.runtime.path",
+                "type": "string"
+            },
+            {
+                "name": "ego.log.archive",
+                "type": "string"
+            },
+            {
+                "name": "ego.log.timestamp",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.superuser",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.token.expiration",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.userdata",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.as.clients",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.as.issuer",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.as.key.file",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.audience",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.oauth.client.id",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.oauth.scopes",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.oauth.server",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.client.id",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.client.secret",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.permission.claim",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.permission.map",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.provider",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.redirect.uri",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.scopes",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.oauth.user.claim",
+                "type": "string"
+            },
+            {
+                "name": "ego.runtime.timezone",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.ai.endpoint",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.ai.model",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.default.log.file",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.default.logging",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.webauthn.rpid",
+                "type": "string"
+            },
+            {
+                "name": "ego.application.server",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.server",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.userdata.key",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.default.port",
+                "type": "int",
+                "min_value": 1,
+                "has_min_value": true,
+                "max_value": 65535,
+                "has_max_value": true
+            },
+            {
+                "name": "ego.runtime.symbol.allocation",
+                "type": "int",
+                "min_value": 1,
+                "has_min_value": true
+            },
+            {
+                "name": "ego.server.insecure",
+                "type": "bool"
+            },
+            {
+                "name": "ego.server.token.key",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.token",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.piddir",
+                "type": "string"
+            },
+            {
+                "name": "ego.logon.refresh.token",
+                "type": "string"
+            },
+            {
+                "name": "ego.console.history",
+                "type": "string"
+            },
+            {
+                "name": "ego.runtime.rest.server.cert",
+                "type": "string"
+            },
+            {
+                "name": "ego.runtime.sandbox.path",
+                "type": "string"
+            },
+            {
+                "name": "ego.runtime.deep.scope",
+                "type": "bool"
+            },
+            {
+                "name": "ego.runtime.path.lib",
+                "type": "string"
+            },
+            {
+                "name": "ego.server.plaintext.passwords",
+                "type": "bool"
+            }
+        ]
+    }
+}

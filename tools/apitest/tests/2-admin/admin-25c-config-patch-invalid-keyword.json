@@ -1,0 +1,51 @@
+{
+    "description": "PATCH /admin/config rejects an enumerated setting value that isn't one of the allowed keywords",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "ego.compiler.types": "loose"
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "invalid enumerated value error message",
+            "query": "msg",
+            "op": "contains",
+            "value": "invalid enumerated value"
+        },
+        {
+            "name": "invalid enumerated value error names the key",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.compiler.types"
+        },
+        {
+            "name": "invalid enumerated value error lists the allowed keywords",
+            "query": "msg",
+            "op": "contains",
+            "value": "strict, relaxed, dynamic"
+        }
+    ]
+}

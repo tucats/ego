@@ -1,0 +1,45 @@
+{
+    "description": "PATCH /admin/config rejects an int setting value below its configured minimum",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "ego.server.max.item.limit": 0
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "out of range error message",
+            "query": "msg",
+            "op": "contains",
+            "value": "out of range"
+        },
+        {
+            "name": "out of range error names the key",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.server.max.item.limit"
+        }
+    ]
+}
