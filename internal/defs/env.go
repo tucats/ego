@@ -139,4 +139,17 @@ const (
 	// This environment variable contains a boolean value that tells if symbol table access
 	// should be serialized or not. This overrides the defaults for RUN or SERVER modes.
 	EgoSerializeSymbolTablesEnv = "EGO_SERIALIZE_SYMBOLTABLES"
+
+	// EgoChildPipeAddrEnv contains the "host:port" of the loopback listener the
+	// parent server process opened for this request, when running a child
+	// service in the socket transport (ChildServicesPipeMode). Internal only:
+	// set by the parent when spawning the child, not a user-facing setting.
+	EgoChildPipeAddrEnv = "EGO_CHILD_ADDR"
+
+	// EgoChildPipeTokenEnv contains the one-time random token the child must
+	// send back to the parent's loopback listener to authenticate the
+	// connection, when running a child service in the socket transport
+	// (ChildServicesPipeMode). Internal only: set by the parent when spawning
+	// the child, not a user-facing setting.
+	EgoChildPipeTokenEnv = "EGO_CHILD_TOKEN"
 )

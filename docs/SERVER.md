@@ -595,15 +595,26 @@ There are a number of configuration options that are used to control this featur
 | ------ | ----------- |
 | ego.server.child.services | If "true", run in child services mode |
 | ego.server.child.services.limit | If greater than zero, limits the number of simultaneous services running |
-| ego.server.child.services.timeout | If present, specifies duration ("60s") a child service waits for an execution slot |
-| ego.server.child.services.dir | If present, location where service request temp files are written |
-| ego.server.child.services.retain | If "true", the service request temp files are retained for debugging |
+| ego.server.child.services.timeout | If present, specifies duration ("60s") a child service waits for an execution _slot_ (only relevant when `.limit` is set and all slots are busy) |
+| ego.server.child.services.run.timeout | If present and nonzero, specifies the maximum duration ("60s") a single child process may run before it is killed and the request fails. Default "0s" means no limit. Distinct from `.timeout` above, which bounds the wait for a slot, not execution itself |
+| ego.server.child.services.dir | If unset, or set to the reserved value "pipe", request and response payloads are exchanged over a loopback socket and never touch disk (see below). Any other value names a directory and switches to writing request/response payloads as temp files there, for debugging |
+| ego.server.child.services.retain | If "true", the request/response payload files are retained for debugging. Only meaningful with an explicit `.dir` — the socket transport has no files to retain, and logs a notice instead |
 
 &nbsp;
 
-If the services directory is not specified, it defaults to "/tmp" on Mac or Linux, and "c:\Temp\" on Windows.
-By default, the service request temp files are deleted when the service complete execution. You can retain
-them if debugging and issue where looking at the details of the request sent to the child process is helpful.
+By default (`.dir` unset, or explicitly `"pipe"`), a request/response payload never touches the filesystem:
+the parent opens a loopback TCP listener on an OS-assigned port, generates a random one-time token for the
+request, and passes both to the child process via environment variables (not command-line arguments, so
+they don't show up in `ps`). The child dials back, presents the token, and the request and response JSON
+are exchanged over that connection. This is the recommended mode for production use, since it means a
+local user on the host can't read a live (or, with the old file transport's `.retain` option, a retained)
+request or response payload — which can include headers, the request body, and the resolved DSN database
+URL — off disk.
+
+Setting `.dir` to an explicit directory switches to the older file-based transport instead: the request and
+response are written as JSON files in that directory, which is useful when you want to inspect a request's
+exact payload while debugging (especially paired with `.retain`, see above). This is not recommended for a
+production deployment, since anyone able to read that directory can read live service payloads.
 
 The services limit value allows you to limit the number of simultaneous child service processes are
 running at one time. If this value is not set, or has a value less than 1, then there are no limits. This

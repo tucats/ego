@@ -381,6 +381,9 @@ const (
 	ChildServicesKeyPrefix = ChildServicesSetting + "."
 
 	// Optional override for the location where request payloads are stored.
+	// The reserved value defs.ChildServicesPipeMode ("pipe"), and leaving this
+	// unset, both select the socket-based transport instead -- see
+	// defs.ChildServicesPipeMode.
 	ChildRequestDirSetting = ChildServicesKeyPrefix + "dir"
 
 	// If a positive integer, this limits the number of simultaneous child
@@ -389,11 +392,23 @@ const (
 
 	// Flag to indicate if the child response payload files should be retained
 	// for debugging, etc. By default they are deleted when the request completes.
+	// Has no effect in the pipe transport (ChildServicesPipeMode), since there
+	// are no payload files to retain.
 	ChildRequestRetainSetting = ChildServicesKeyPrefix + "retain"
 
 	// Duration string indicating how long we wait for an available child
-	// process before returning an error.
+	// process SLOT before returning an error -- this only matters when
+	// ChildRequestLimitSetting is in effect and all slots are busy. This is
+	// distinct from ChildRunTimeoutSetting, which bounds how long a child that
+	// has already started is allowed to run.
 	ChildRequestTimeoutSetting = ChildServicesKeyPrefix + "timeout"
+
+	// Duration string indicating the maximum time a single child process is
+	// allowed to run before it is killed and the request fails. A value of
+	// "0s", or leaving this unset, means no limit. Distinct from
+	// ChildRequestTimeoutSetting, which bounds the wait for a free slot
+	// before the child even starts.
+	ChildRunTimeoutSetting = ChildServicesKeyPrefix + "run.timeout"
 
 	// The URL path for the tables database functionality.
 	ServerDatabaseKeyPrefix = ServerKeyPrefix + "database."
@@ -758,6 +773,8 @@ var ValidSettings map[string]bool = map[string]bool{
 	ChildRequestDirSetting:            true,
 	ChildRequestRetainSetting:         true,
 	ChildRequestLimitSetting:          true,
+	ChildRequestTimeoutSetting:        true,
+	ChildRunTimeoutSetting:            true,
 	DefaultDataSourceSetting:          true,
 	RestClientServerCert:              true,
 	RuntimeDeepScopeSetting:           true,

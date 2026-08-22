@@ -25,11 +25,6 @@ func runChildService(t *testing.T, filename string) ChildServiceResponse {
 
 	dir := t.TempDir()
 
-	saved := ChildTempDir
-	ChildTempDir = dir
-	
-	t.Cleanup(func() { ChildTempDir = saved })
-
 	const serverID = "rest3-test-server"
 
 	sessionID := 1

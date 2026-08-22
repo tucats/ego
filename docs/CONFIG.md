@@ -199,9 +199,11 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.server.allow.passkeys | If true, the server will allow FaceID/TouchID passkeys |
 | ego.server.cache.size | Number of service programs to cache in memory |
 | ego.server.child.services | Use child processes to execute services instead of threads |
-| ego.server.child.services.dir | Location for transient request and response files (default is /tmp) |
+| ego.server.child.services.dir | Payload location, or `pipe` (the default) to use a loopback socket instead of files |
 | ego.server.child.services.limit | Maximum number of child services to run simultaneously |
-| ego.server.child.services.retain | If true, keep child service payload files after service ends |
+| ego.server.child.services.retain | If true, keep child service payload files after service ends (no effect in `pipe` mode) |
+| ego.server.child.services.run.timeout | Maximum time a single child service process may run before being terminated (default: no limit) |
+| ego.server.child.services.timeout | Maximum time to wait for an available child process slot before giving up (default: 3m) |
 | ego.server.compression.threshold | Smallest response payload size in bytes that the server will compress |
 | ego.server.database.empty.filter.error | If true, empty filter values are treated as errors |
 | ego.server.database.empty.rowset.error | If true, empty rowset values are treated as errors |
@@ -543,10 +545,11 @@ separate OS process instead of an in-process goroutine, generally for stronger i
 | Setting | Description |
 | ------- | ----------- |
 | `ego.server.child.services` | If `true`, service requests run in a child process rather than in-process. |
-| `ego.server.child.services.dir` | Where request/response payload files for child processes are written. Defaults to the system temp directory. |
+| `ego.server.child.services.dir` | Where request/response payloads for child processes go. Unset (the default) or the reserved value `pipe` selects the socket transport, described below; any other value names a directory and selects the legacy file transport, useful for debugging. |
 | `ego.server.child.services.limit` | Maximum number of child service processes running simultaneously. |
-| `ego.server.child.services.retain` | If `true`, keep a child process's response payload files after the request completes, for debugging. Normally deleted. |
-| `ego.server.child.services.timeout` | Duration string for how long to wait for an available child process slot before giving up with an error. |
+| `ego.server.child.services.retain` | If `true`, keep a child process's request/response payload files after the request completes, for debugging. Normally deleted. Only meaningful in the file transport — it's a no-op (logged, not silently ignored) in the socket transport, which has no payload files. |
+| `ego.server.child.services.run.timeout` | Duration string for the maximum time a single child process is allowed to run before it is killed and the request fails. `"0s"`, or leaving it unset, means no limit. |
+| `ego.server.child.services.timeout` | Duration string for how long to wait for an available child process _slot_ before giving up with an error — only relevant when `.limit` is set and all slots are busy. Distinct from `.run.timeout`, which bounds a child that has already started. |
 
 Database/table server enforcement (`ego.server.database.*`):
 

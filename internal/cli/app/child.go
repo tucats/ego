@@ -29,10 +29,19 @@ func ChildService(c *cli.Context) error {
 
 	ui.LogFormat = ui.JSONFormat
 
-	// Run the child service handler. This simulates a web service
-	// handler, but the request information is found in the file system
-	// instead of via the HTTP request.
-	err := services.ChildService(filename)
+	// Run the child service handler. This simulates a web service handler,
+	// but the request information is found either in the file system or
+	// (when filename is the reserved defs.ChildServicesPipeMode sentinel)
+	// via a loopback connection back to the parent, instead of via the HTTP
+	// request.
+	var err error
+
+	if filename == defs.ChildServicesPipeMode {
+		err = services.ChildServicePipe()
+	} else {
+		err = services.ChildService(filename)
+	}
+
 	if err == nil {
 		os.Exit(0)
 	}

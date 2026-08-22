@@ -42,6 +42,14 @@ const (
 	ChildResponseFileFormat = "ego-response-%s-%d.json"
 )
 
+// ChildServicesPipeMode is the reserved value for ego.server.child.services.dir
+// (and, correspondingly, the --service CLI argument passed to a spawned child)
+// that selects the socket-based transport instead of the file-based one: the
+// request and response payloads are exchanged over a loopback TCP connection
+// and never touch the filesystem. It is also the default when the setting is
+// unset.
+const ChildServicesPipeMode = "pipe"
+
 // This is the name for objects that otherwise have no name.
 const Anon = "<anon>"
 
