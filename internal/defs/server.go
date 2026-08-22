@@ -341,8 +341,14 @@ type ConfigListRequest []string
 // config" shows), so a caller like the dashboard's Configuration sheet can
 // show a tooltip for each item without a second round-trip.
 type ConfigItem struct {
-	Value       string `json:"value"`
+	// Key value for the confguration item
+	Value string `json:"value"`
+
+	// Text description of what the config item is used for
 	Description string `json:"description,omitempty"`
+
+	// True if this item cannot be set remotely via rest endpoint
+	Readonly bool `json:"readonly,omitempty"`
 }
 
 type ConfigResponse struct {

@@ -2309,6 +2309,10 @@ body.dark .user-id { color: #666; }
     gap: 0.5rem;
 }
 
+.config-item-value-row {
+    align-items: center;
+}
+
 .config-item-label {
     flex-shrink: 0;
     width: 3.6rem;
@@ -2338,7 +2342,56 @@ body.dark .user-id { color: #666; }
     font-size: 1rem;
 }
 
-#config-close-btn {
+/* Editable value input -- occupies the same slot as .config-item-value and
+   is shown in its place (never both at once) once the pencil button is
+   clicked; see startConfigItemEdit() in dashboard-admin.js. */
+.config-item-value-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-weight: 600;
+    outline: none;
+}
+
+.config-item-value-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Pencil button that reveals the editable value input. Only shown when the
+   item isn't readonly and the logged-in user holds ego.root -- see
+   _configItemEditable in dashboard-admin.js. */
+.config-item-edit-btn {
+    flex-shrink: 0;
+    padding: 0.1rem 0.4rem;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #888;
+    cursor: pointer;
+}
+
+.config-item-edit-btn:hover {
+    background: #f4f4f4;
+    border-color: #ccc;
+    color: #333;
+}
+
+#config-item-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+    margin: 0;
+}
+
+#config-close-btn,
+#config-item-close-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
     color: #333;
@@ -2347,6 +2400,22 @@ body.dark .user-id { color: #666; }
     font-size: 0.9rem;
     cursor: pointer;
 }
+
+#config-item-close-btn:hover { background: #e0e0e0; }
+
+#config-item-save-btn {
+    padding: 0.45rem 1rem;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#config-item-save-btn:hover    { background: #357abd; }
+#config-item-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 #config-close-btn:hover { background: #e0e0e0; }
 
@@ -3362,7 +3431,8 @@ body.dark #table-perm-add-cancel-btn,
 body.dark #logger-cancel-btn,
 body.dark #table-detail-close-btn,
 body.dark #dsn-detail-close-btn,
-body.dark #data-edit-cancel-btn {
+body.dark #data-edit-cancel-btn,
+body.dark #config-item-close-btn {
     background: #222244;
     color: #cdd6f4;
     border-color: #2a3a5a;
@@ -3377,7 +3447,8 @@ body.dark #table-perm-add-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
 body.dark #table-detail-close-btn:hover,
 body.dark #dsn-detail-close-btn:hover,
-body.dark #data-edit-cancel-btn:hover { background: #2a3a5a; }
+body.dark #data-edit-cancel-btn:hover,
+body.dark #config-item-close-btn:hover { background: #2a3a5a; }
 
 body.dark #dsn-perm-edit-sheet input[type="text"]:disabled,
 body.dark #table-perm-edit-sheet input[type="text"]:disabled {
@@ -3439,6 +3510,17 @@ body.dark .config-item-label { color: #666; }
 body.dark .config-item-key   { color: #7eb8f7; }
 body.dark .config-item-value { color: #cdd6f4; }
 body.dark #config-item-desc  { color: #fff; }
+body.dark .config-item-value-input {
+    background: #222244;
+    color: #cdd6f4;
+    border-color: #2a3a5a;
+}
+body.dark .config-item-edit-btn { color: #9fb4d8; }
+body.dark .config-item-edit-btn:hover {
+    background: #222244;
+    border-color: #2a3a5a;
+    color: #cdd6f4;
+}
 body.dark #config-close-btn {
     background: #222244;
     color: #cdd6f4;

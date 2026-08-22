@@ -200,6 +200,7 @@ const (
 	LogonMediaType                = EgoMediaType + "logon+json"
 	ConfigListMediaType           = EgoMediaType + "config.list+json"
 	ConfigMediaType               = EgoMediaType + "config+json"
+	ConfigValuesMediaType         = EgoMediaType + "config.values+json"
 	ValidationDictionaryMediaType = EgoMediaType + "validation.dictionary+json"
 	TokensMediaType               = EgoMediaType + "tokens.list+json"
 	TransactionResponseMediaType  = EgoMediaType + "transaction.response+json"

@@ -10,6 +10,7 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/util"
 )
@@ -59,6 +60,7 @@ func GetConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 		config[item] = defs.ConfigItem{
 			Value:       value,
+			Readonly:    defs.ReadonlySetting[item],
 			Description: cliconfig.Description(session.Language, item),
 		}
 	}
@@ -112,6 +114,7 @@ func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http
 
 		config[item] = defs.ConfigItem{
 			Value:       value,
+			Readonly:    defs.ReadonlySetting[item],
 			Description: cliconfig.Description(session.Language, item),
 		}
 	}
@@ -130,6 +133,75 @@ func GetAllConfigHandler(session *router.Session, w http.ResponseWriter, r *http
 		ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
 			"session": session.ID,
 			"body":    string(b)})
+	}
+
+	return http.StatusOK
+}
+
+// PatchConfigHandler is the HTTP handler for POST /admin/config. The caller
+// supplies a JSON object with configuration key names and their string value
+// to be applied to the current server instance. Some keys require special
+// handling other that being placed in the ephemeral settings table.
+// Not all key values can be modified.
+func PatchConfigHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	// items will hold the list of setting names decoded from the request body.
+	items := map[string]any{}
+
+	// Decode the JSON request body directly into items without an intermediate
+	// buffer. The JSON object maps directly to the items map.
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{
+			"session": session.ID,
+			"error":   err})
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+	}
+
+	if ui.IsActive(ui.RestLogger) {
+		b, _ := json.MarshalIndent(items, ui.JSONIndentPrefix, ui.JSONIndentSpacer)
+		ui.WriteLog(ui.RestLogger, "rest.request.payload", ui.A{
+			"session": session.ID,
+			"body":    string(b)})
+	}
+
+	// First thing that must be done; determine if the request contains items that cannot be set.
+	// If so, we don't do the set operation at all.
+	invalid := []string{}
+	status := http.StatusOK
+
+	for key := range items {
+		key = strings.ToLower(key)
+		if defs.ReadonlySetting[key] {
+			invalid = append(invalid, key)
+			status = http.StatusBadRequest
+		}
+	}
+
+	// If we got a readonly setting then bail out now and make no changes.
+	if status != http.StatusOK {
+		err := errors.ErrReadOnly.Clone().Context(strings.Join(invalid, ", "))
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+	}
+
+	// Settings okay, spin through them and make the changes.
+	for key, item := range items {
+		key = strings.ToLower(key)
+		text := data.String(item)
+
+		settings.Set(key, text)
+
+		// Special handling for some key values, which also require storage
+		// into package variables which act as a faster access to the items.
+		// We will count on the payload validation phase detecting bad types
+		// so we don't worry about checking conversion return codes here.
+		switch key {
+		case defs.LogRetainCountSetting:
+			ui.LogRetainCount, _ = data.Int(text)
+
+		case defs.LogArchiveSetting:
+			ui.SetArchive(text)
+		}
 	}
 
 	return http.StatusOK

@@ -218,12 +218,6 @@ func (f *fileService) Flush() error {
 	}
 
 	// Write to the database file. Create a new file descriptor for the output file.
-	//
-	// Bug fix: fd was never closed anywhere in this function -- every single
-	// call to Flush() (i.e. every write to a file-backed DSN store) leaked
-	// one open file descriptor. On a long-running server that eventually
-	// exhausts the process's file descriptor limit. The defer below closes
-	// it on every return path, successful or not.
 	fd, err := os.OpenFile(f.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		return errors.New(err)

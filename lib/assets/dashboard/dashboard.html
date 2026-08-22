@@ -115,7 +115,12 @@
      current value on one line, and its description below in the same style
      as the Settings sheet's hint text. z-index above #config-overlay so it
      layers on top of it, matching the #dsn-perm-edit-overlay precedent for a
-     sheet nested over another already-open one. -->
+     sheet nested over another already-open one. The pencil button next to the
+     Value line is only shown when the item isn't readonly (per GET
+     /admin/config's "readonly" flag) AND the logged-in user holds ego.root
+     (server.admin is not enough -- see _isAdmin in dashboard-core.js);
+     clicking it swaps the value span for an editable input in place and
+     reveals the Save button, which PATCHes the change to /admin/config. -->
 <div id="config-item-overlay" onclick="overlayBackdropClick(event)">
     <div id="config-item-sheet">
         <div class="config-item-header">
@@ -123,14 +128,18 @@
                 <span class="config-item-label">Key:</span>
                 <span id="config-item-key" class="config-item-key"></span>
             </div>
-            <div class="config-item-row">
+            <div class="config-item-row config-item-value-row">
                 <span class="config-item-label">Value:</span>
                 <span id="config-item-value" class="config-item-value"></span>
+                <input type="text" id="config-item-value-input" class="config-item-value-input" autocomplete="off">
+                <button id="config-item-edit-btn" class="config-item-edit-btn" onclick="startConfigItemEdit()" title="Edit value">&#9998;</button>
             </div>
         </div>
         <p id="config-item-desc" class="settings-hint"></p>
+        <p id="config-item-error"></p>
         <div class="sheet-buttons">
-            <button onclick="hideConfigItemDetail()">Close</button>
+            <button id="config-item-close-btn" onclick="hideConfigItemDetail()">Close</button>
+            <button id="config-item-save-btn" onclick="submitConfigItemEdit()" disabled>Save</button>
         </div>
     </div>
 </div>

@@ -139,18 +139,17 @@ const maxChildProcesses = 128
 
 var activeChildServices atomic.Int32
 
-// isPipeMode reports whether dirSetting (the value of
-// ego.server.child.services.dir) selects the socket-based transport rather
-// than the file-based one. An empty setting (the default) and the reserved
-// value defs.ChildServicesPipeMode both mean "use the socket transport";
-// anything else names a directory and selects the legacy file transport.
+// isPipeMode reports whether dirSetting (the value of ego.server.child.services.dir)
+// selects the socket-based transport rather than the file-based one. An empty setting
+// (the default) and the reserved value defs.ChildServicesPipeMode both mean "use the
+// socket transport"; anything else names a directory and selects the legacy file transport.
 func isPipeMode(dirSetting string) bool {
 	return dirSetting == "" || dirSetting == defs.ChildServicesPipeMode
 }
 
 // childRunTimeout returns the configured ego.server.child.services.run.timeout
 // duration, or zero if it is unset, empty, or unparseable -- all of which mean
-// "no limit."
+// "no limit".
 func childRunTimeout() time.Duration {
 	if d := settings.Get(defs.ChildRunTimeoutSetting); d != "" {
 		if parsed, err := util.ParseDuration(d); err == nil {
@@ -411,6 +410,7 @@ func runChildViaPipe(sessionID int, child ChildServiceRequest, runTimeout time.D
 		"command": strings.Join(strArray, " ")})
 
 	cmd := exec.Command(strArray[0], strArray[1:]...)
+
 	cmd.Env = append(os.Environ(),
 		defs.EgoChildPipeAddrEnv+"="+listener.Addr().String(),
 		defs.EgoChildPipeTokenEnv+"="+token)
@@ -533,6 +533,7 @@ func runChildProcess(cmd *exec.Cmd, timeout time.Duration) ([]byte, error) {
 			// Process finished within the allowed time.
 		case <-time.After(timeout):
 			_ = cmd.Process.Kill()
+
 			<-done
 
 			return outBuf.Bytes(), errors.ErrChildRunTimeout

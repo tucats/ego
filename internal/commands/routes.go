@@ -46,6 +46,12 @@ func defineStaticRoutes() *router.Router {
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.ConfigMediaType)
 
+	// Modify specific config values
+	r.New(defs.AdminConfigPath, admin.PatchConfigHandler, http.MethodPatch).
+		Permissions(defs.RootPermission).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.ConfigValuesMediaType)
+
 	// Get the current memory status
 	r.New(defs.AdminMemoryPath, admin.GetMemoryHandler, http.MethodGet).
 		Class(router.AdminRequestCounter).

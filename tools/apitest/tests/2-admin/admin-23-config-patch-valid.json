@@ -1,0 +1,18 @@
+{
+    "description": "PATCH /admin/config to a new valid ego.runtime.rest.timeout value, as a root-privileged user",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "ego.runtime.rest.timeout": "3m"
+        }
+    },
+    "response": {
+        "status": 200
+    }
+}

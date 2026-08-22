@@ -1,0 +1,32 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - img "Ego logo" [ref=f1e5]
+      - heading "Sign In" [level=2] [ref=f1e6]
+    - paragraph [ref=f1e7]
+    - generic [ref=f1e8]: Username
+    - textbox "Username" [active] [ref=f1e9]
+    - generic [ref=f1e10]: Password
+    - textbox "Password" [ref=f1e11]
+    - button "Sign In" [ref=f1e12] [cursor=pointer]
+    - generic [ref=f1e13]:
+      - separator [ref=f1e14]
+      - text: or
+      - separator [ref=f1e15]
+    - button "Sign in with FaceID/TouchID" [ref=f1e16]
+  - banner [ref=f1e17]:
+    - img "Ego logo" [ref=f1e18]
+    - button "Menu" [ref=f1e20] [cursor=pointer]
+  - generic [ref=f1e24]:
+    - generic [ref=f1e25] [cursor=pointer]: Server
+    - generic [ref=f1e26] [cursor=pointer]: Users
+    - generic [ref=f1e27] [cursor=pointer]: DSNs
+    - generic [ref=f1e28] [cursor=pointer]: Tables
+    - generic [ref=f1e29] [cursor=pointer]: Data
+    - generic [ref=f1e30] [cursor=pointer]: SQL
+    - generic [ref=f1e31] [cursor=pointer]: Code
+    - generic [ref=f1e32] [cursor=pointer]: Log
+  - generic [ref=f1e34]:
+    - button "↺ Refresh" [ref=f1e35] [cursor=pointer]
+    - button "🗑 Flush Caches" [ref=f1e36] [cursor=pointer]
+    - button "ℹ Server Info" [ref=f1e37] [cursor=pointer]

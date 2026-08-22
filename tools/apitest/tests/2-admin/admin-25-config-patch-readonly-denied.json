@@ -1,0 +1,45 @@
+{
+    "description": "PATCH /admin/config on a readonly setting is rejected even for a root-privileged user",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "ego.server.piddir": "/tmp/should-not-be-set"
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "read-only error message",
+            "query": "msg",
+            "op": "contains",
+            "value": "read-only"
+        },
+        {
+            "name": "read-only error names the key",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.server.piddir"
+        }
+    ]
+}

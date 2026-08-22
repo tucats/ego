@@ -1,0 +1,44 @@
+{
+    "description": "create a test user with ego.server.admin but not ego.root, to verify PATCH /admin/config requires ego.root specifically",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/users/",
+        "headers": {
+            "Accept": ["application/vnd.ego.user+json"],
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "cfg{{CONFIGTESTID}}",
+            "password": "zork",
+            "permissions": [
+                "ego.logon",
+                "ego.server.admin"
+            ]
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.user+json"],
+            "Location": ["/admin/users/cfg{{CONFIGTESTID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user name",
+            "query": "name",
+            "value": "cfg{{CONFIGTESTID}}"
+        }
+    ]
+}

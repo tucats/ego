@@ -1,0 +1,38 @@
+{
+    "description": "Confirm the PATCHed ego.runtime.rest.timeout value was actually persisted, not just accepted",
+    "request": {
+        "method": "POST",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/vnd.ego.config.list+json"],
+            "Accept": ["application/vnd.ego.config+json"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "ego.runtime.rest.timeout"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.config+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "ego.runtime.rest.timeout updated",
+            "query": "items.ego\\.runtime\\.rest\\.timeout.value",
+            "value": "3m"
+        }
+    ]
+}

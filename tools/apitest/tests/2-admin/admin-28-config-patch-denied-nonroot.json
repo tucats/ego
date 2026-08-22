@@ -1,0 +1,39 @@
+{
+    "description": "PATCH /admin/config is denied for a user holding ego.server.admin but not ego.root -- server.admin is not sufficient for this endpoint",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{CONFIGTEST_TOKEN}}"]
+        },
+        "body": {
+            "ego.runtime.rest.timeout": "4m"
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "denied for lack of ego.root",
+            "query": "msg",
+            "op": "contains",
+            "value": "ego.root"
+        }
+    ]
+}

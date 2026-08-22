@@ -341,7 +341,7 @@ const (
 	MemoryLogIntervalSetting = ServerKeyPrefix + "memory.log.interval"
 
 	// Maximum number of items that can be stored in the high-speed internal
-	// caches. This is different that the service or asset caches, and handles
+	// caches. This is different from the service or asset caches, and handles
 	// low-level items like tokens, schemas, dsn permissions, etc. that the
 	// server manages in-memory when possible. This is an integer value that
 	// indicates the maximum number of items that can be stored in any individual
@@ -850,4 +850,27 @@ var RestrictedSettings map[string]bool = map[string]bool{
 	LogArchiveSetting:        true,
 	EgoDefaultLogFileName:    true,
 	RestClientServerCert:     true,
+}
+
+// ReadonlySettings is a list of settings that cannot be set by the server
+// PATCH to /admin/config. These either are immutable by nature, or protected
+// against change because changing them could destabilize the running server.
+var ReadonlySetting map[string]bool = map[string]bool{
+	ApplicationServerSetting:     true,
+	LogonServerSetting:           true,
+	LogonUserdataKeySetting:      true,
+	ServerDefaultPortSetting:     true,
+	SymbolTableAllocationSetting: true,
+	InsecureServerSetting:        true,
+	ServerTokenKeySetting:        true,
+	LogonTokenSetting:            true,
+	PidDirectorySetting:          true,
+	LogonRefreshTokenSetting:     true,
+	ConsoleHistorySetting:        true,
+	EgoDefaultLogFileName:        true,
+	RestClientServerCert:         true,
+	SandboxPathSetting:           true,
+	RuntimeDeepScopeSetting:      true,
+	EgoLibPathSetting:            true,
+	PlaintextPasswordSetting:     true,
 }

@@ -1,0 +1,18 @@
+{
+    "description": "restore ego.runtime.rest.timeout to its original value saved by admin-22",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/admin/config",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "ego.runtime.rest.timeout": "{{REST_TIMEOUT_ORIG}}"
+        }
+    },
+    "response": {
+        "status": 200
+    }
+}
