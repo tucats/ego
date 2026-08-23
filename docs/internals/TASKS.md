@@ -1,0 +1,229 @@
+# Scheduled Server Tasks
+
+Status: **planned, not yet implemented**. This doc doubles as the implementation tracker
+during development and as the internals reference for the feature once it lands — update
+it in place rather than leaving stale sections once code diverges from the plan below.
+
+## Progress
+
+- [ ] Config keys added (`internal/defs/config.go`)
+- [ ] `internal/server/tasks` package: `defs.go`
+- [ ] `internal/server/tasks` package: `permissions.go`
+- [ ] `internal/server/tasks` package: `load.go`
+- [ ] `internal/server/tasks` package: `state.go`
+- [ ] `internal/server/tasks` package: `scheduler.go`
+- [ ] `internal/server/tasks` package: `dispatch.go` (incl. ported `{{key}}` substitution)
+- [ ] `internal/server/tasks` package: `routes.go` + `/admin/tasks` path constants
+- [ ] TASKS log class registered
+- [ ] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
+- [ ] Unit tests (load/state/scheduler/dispatch)
+- [ ] End-to-end verification (see Verification section)
+- [ ] Permission-enforcement verification
+
+## Context
+
+Ego's server currently has no way to run recurring or startup-triggered work on its own —
+anything periodic (cleanup, data refresh, calling another service on a timer) has to be
+driven from outside the process (cron, an external script). This feature adds a task
+subsystem: JSON files under `lib/tasks/` each describe one scheduled call to an Ego server
+endpoint (method, body, expected status, a value-extraction/substitution mechanism, and a
+repeat interval), a background scheduler dispatches them under a concurrency cap, and a new
+`/admin/tasks` endpoint lets a root operator inspect, force-run, or deactivate them. Because
+task files can carry credentials or sensitive request bodies, file-permission enforcement
+(0600, owner-only) is a hard precondition for a task to be loadable at all.
+
+## Task file format
+
+One JSON file per task under `lib/tasks/`, comments allowed (`#` or `//` at the start of a
+line, stripped before parsing):
+
+```jsonc
+{
+	"task": "description of the task",
+	"id": "a40452b9-91d3-45fc-a374-d271e81f308f",
+	"active": "true",
+	"user": "admin",
+	"method": "post",
+	"endpoint": "/services/jiggle",
+	"parameters": {
+		"source": "true"
+	},
+	"body": {
+		"table": "mydata",
+		"operation": "purge"
+	},
+	"status": 200,
+	"save": {
+		"TOKEN": "system.token"
+	},
+	"timeout": "5m",
+	"repeat": "once"
+}
+```
+
+Field semantics:
+
+- `task` — free-text description, used only in logging.
+- `id` — unique identifier (UUID recommended, not required). Duplicate IDs across files are
+  a load-time error (see Gaps #4).
+- `active` — whether the scheduler may run this task; `false` means loaded and validated at
+  startup but never dispatched.
+- `user` — identity the task runs as; the endpoint call carries this user's real, live
+  permissions (see Dispatch mechanism below).
+- `method`, `endpoint`, `parameters`, `body` — the request to make.
+- `status` — expected HTTP status; on mismatch, the `save` block is skipped and a TASKS
+  error is logged.
+- `save` — map of `name: jsonPath` pulled out of the response body into a global,
+  in-memory, cross-task substitution dictionary (`{{name}}` usable in a later task's
+  `endpoint`/`parameters`/`body`).
+- `timeout` — Go duration string, with an Ego extension allowing `d` for days (e.g. `"30d"`).
+  Defaults to `ego.server.tasks.default.timeout`, clamped to `ego.server.tasks.max.timeout`.
+- `repeat` — `"once"` (startup only) or a duration string (Ego `d`-extended) for recurring
+  execution. The interval restarts from when the task *finishes*, not when it starts.
+
+## Decisions made during design
+
+- **Last-run persistence**: a sidecar state file (not the task JSON itself) tracks
+  last-run time/status per task, so recurring schedules survive server restarts without
+  ever rewriting — or risking comments in — the user-authored task file.
+- **`save` dictionary scope**: one global, in-memory, cross-task key/value store (matches
+  `tools/apitest`'s save/substitute model). Lost on restart; not persisted, since
+  perpetuating secrets like tokens across restarts is its own can of worms.
+- **Dispatch mechanism**: in-process. The scheduler mints a real bearer token via the
+  existing `tokens.New()` (already used by the OAuth2 AS flow to hand a caller a token with
+  no password check), builds an `*http.Request` with `httptest.NewRequest`, and drives it
+  straight through the existing `Router.ServeHTTP` with an `httptest.NewRecorder()` — no
+  TCP/TLS/reverse-proxy-prefix concerns, and it exercises the exact same auth/permission
+  code every real caller goes through.
+- **`DELETE /admin/tasks/{id}`**: deactivates by a surgical text patch of just the
+  `"active"` field's value in the raw file (not a full JSON re-marshal), so hand-written
+  comments in the task file survive.
+
+## Gaps / concerns
+
+1. **Config key naming** in the original spec was inconsistent (`ego.server.tasks.enabled`,
+   `ego.server.task.default.timeout`, `ego.config.task.max.timeout`,
+   `ego.sever.task.max.concurrent` — note the "sever" typo and `task`/`tasks` and
+   `server`/`config` prefix drift). Normalized below to one `ego.server.tasks.*` family.
+2. **Directory permissions, not just file permissions**: `lib/tasks/` itself is checked and
+   enforced to `0700` at startup, in addition to the `0600` file check — a world-readable
+   directory can leak filenames/existence even if file contents are protected.
+3. **Unknown/invalid `user` field**: treated like any other load-time validation failure —
+   logged to TASKS and marked not-runnable, without blocking the load of other tasks.
+4. **Duplicate `id` across files**: first file wins (sorted filename order, deterministic);
+   the second is rejected and logged as a TASKS error; the rest of the directory still loads.
+5. **`"body"` vs `"request"`**: the field is `"body"`, matching the JSON sample (the prose
+   in the original request used both terms for the same thing).
+6. **Startup `"once"` tasks must not block server start** — dispatched onto the scheduler's
+   worker pool asynchronously like any other due task, not run synchronously during
+   `Initialize()`.
+7. **Overdue recurring tasks**: if a restart happens after a task's interval has already
+   elapsed (per the sidecar state), it's treated as immediately due and runs on the next
+   scheduler tick rather than waiting a full fresh interval.
+8. **Logging sensitive payloads**: task `body`/`parameters` and saved values (e.g. tokens)
+   are never logged at normal TASKS verbosity — only task id/description, endpoint, status,
+   duration, and pass/fail go to the default log line. Full bodies are never logged in the
+   clear, matching how credentials are handled elsewhere in this codebase.
+9. **No live task-reload endpoint** — only per-task run (`POST`) and deactivate (`DELETE`)
+   are exposed. Adding/editing tasks requires a server restart to pick up new/changed files.
+   Accepted as a v1 limitation.
+
+## Config keys
+
+Added to `internal/defs/config.go`, following the existing `ServerKeyPrefix`-block
+convention, all under `TasksKeyPrefix = ServerKeyPrefix + "tasks."`:
+
+| Key | Type | Default | Purpose |
+|---|---|---|---|
+| `ego.server.tasks.enabled` | bool | `false` | Master switch; when false, no task loading, no scheduler goroutine, no `/admin/tasks` route registered. |
+| `ego.server.tasks.default.timeout` | duration | `"30s"` | Used when a task omits `"timeout"`. |
+| `ego.server.tasks.max.timeout` | duration | `"1h"` | Hard ceiling; a task requesting more is clamped and logged. |
+| `ego.server.tasks.max.concurrent` | int | `3` | Size of the scheduler's worker pool. |
+
+All four need entries in `ValidSettings`. None need `RestrictedSettings` (nothing secret) or
+special-casing in `ReadonlySetting` for `PATCH /admin/config` — they're safe to leave
+patchable like other server tuning knobs.
+
+## Package layout
+
+New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
+`internal/server/admin/`:
+
+- **`defs.go`** — `Task` struct (json tags matching the spec above), an in-memory
+  `TaskState` (last run time, last status, running bool), and the package-level registry
+  (`map[string]*Task` keyed by id, guarded by a mutex).
+- **`load.go`** — directory scan of `lib/tasks/` (path resolved the same way
+  `loadAllValidations()` resolves `lib/validations/` in
+  `internal/router/validations.go:67-73`: `settings.Get(defs.LibPathName)` or fall back to
+  `filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)`, then join `"tasks"`).
+  For each `*.json` file: enforce/repair permissions (see `permissions.go`), read via
+  `ui.ReadJSONFile` (`internal/cli/ui/json.go:14`) to strip comment lines, `json.Unmarshal`,
+  validate required fields and `id` uniqueness, register into the task map.
+- **`permissions.go`** — directory (`0700`) and file (`0600`) permission check-and-repair,
+  generalizing the existing pattern in `internal/server/oauth/authserver/permissions.go`
+  (`ensureMode`, ~line 88). A file that can't be fixed (e.g. `chmod` fails because the
+  process doesn't own it) is skipped and logged via `ui.Log(tasksLogger, ...)`, not fatal to
+  the rest.
+- **`state.go`** — sidecar state file (e.g. `lib/tasks/.state.json`, itself kept at `0600`)
+  recording `{id: {lastRun, lastStatus, success}}`; loaded once at startup, written after
+  each task run.
+- **`scheduler.go`** — background goroutine following the existing idiom
+  (`internal/router/ratelimit.go`'s `time.Sleep` loop / `internal/server/oauth/oauth.go`'s
+  `time.Ticker`, both wrapped in `util.SafeCall` for panic isolation, per the "NILPTR-6"
+  precedent). Each tick: find due tasks (`active == true`, not currently running, and
+  `now >= lastRun + repeat`, or never run), dispatch up to
+  `ego.server.tasks.max.concurrent` at once via a buffered channel/semaphore, skip the rest
+  until the next tick if the pool is full.
+- **`dispatch.go`** — for one task: mint a token with
+  `tokens.New(task.User, "", timeoutOrTaskTTL, defs.InstanceID, sessionID)`
+  (`internal/language/tokens/new.go:60`), apply the global save-dictionary substitution to
+  `endpoint`/`parameters`/`body` (porting the `{{key}}` substitution logic from
+  `tools/apitest/dictionary/subs.go` into this package, since `apitest` is a separate Go
+  module and can't be imported directly), build the request with
+  `httptest.NewRequest(method, endpoint, bodyReader)` plus query params, run it through
+  `router.ServerRouter.ServeHTTP(httptest.NewRecorder(), req)`, compare the resulting status
+  to `task.status`, and on match run the `save` extractions via
+  `internal/cli/parser.GetItem` (`internal/cli/parser/item.go:9`) against the response body,
+  storing results in the global save map. Update `state.go` with the outcome either way.
+- **`routes.go`** — `AddStaticRoutes(r *router.Router)`, called from
+  `internal/commands/routes.go` the same way `tables.AddStaticRoutes(r)` is (routes.go:284),
+  gated on `settings.GetBool(defs.TasksEnabledSetting)` so the routes don't even exist when
+  the feature is off. Registers:
+  - `GET /admin/tasks` — `.Permissions(defs.RootPermission)`, returns the task list with
+    description/id/last-run/status from the registry + state.
+  - `POST /admin/tasks/{id}` — same permission; runs the named task immediately (still
+    counts against the concurrency cap) and resets its repeat timer from completion time.
+  - `DELETE /admin/tasks/{id}` — same permission; surgical text-patch of the `"active"`
+    field in the on-disk file to `false`, and marks the in-memory task inactive.
+  - Path constants added to `internal/defs/rest.go` next to the other `Admin*Path`
+    constants: `AdminTasksPath = AdminPath + "tasks/"`,
+    `AdminTasksIDPath = AdminTasksPath + "{{id}}"`.
+
+New **TASKS** log class: added via `ui.DefineLogger("TASKS", false)`
+(`internal/cli/ui/messaging.go:147`) at package init, rather than editing the static `iota`
+block and its parallel `loggers` slice — avoids the two-list-in-lockstep footgun and needs
+no changes to existing files.
+
+## Startup wiring
+
+In `internal/commands/server.go`'s `RunServer`, alongside the existing `auth.Initialize(c)` /
+`dsns.Initialize(c)` calls (server.go:177, 182): if `settings.GetBool(defs.TasksEnabledSetting)`,
+call `tasks.Initialize()` (loads tasks, starts the scheduler goroutine). Route registration
+hooks into `defineStaticRoutes()` in `internal/commands/routes.go` next to
+`tables.AddStaticRoutes(r)`.
+
+## Verification
+
+- **Unit tests** per package file (`load.go`: permission-repair success/failure/skip cases
+  with `t.TempDir()`; `state.go`: round-trip persistence; `scheduler.go`: due-task selection
+  logic with a fake clock; `dispatch.go`: substitution and save-extraction against canned
+  responses) — following this repo's existing table-driven test conventions.
+- **End-to-end**: start the server with `ego.server.tasks.enabled=true` and a `lib/tasks/`
+  containing one `"repeat": "once"` task hitting a harmless existing endpoint (e.g.
+  `/admin/heartbeat`), confirm via `GET /admin/tasks` that it ran and succeeded, confirm the
+  TASKS log shows the run without leaking the task body, then `POST /admin/tasks/{id}` to
+  re-run it manually and `DELETE` it and confirm the file's `active` field flips to `false`
+  while its comments are intact.
+- **Permission enforcement**: manually `chmod 644` a task file before startup, confirm the
+  server fixes it to `600` and loads it; then put it in an unfixable state (e.g. a read-only
+  parent dir) and confirm it's skipped and logged, not loaded.
