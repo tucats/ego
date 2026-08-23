@@ -1956,11 +1956,14 @@ table.values=liste de valeurs = {{data|list}}
 table.write.error=Erreur lors de l'écriture/mise à jour : {{error}}
 tasks.dir.created=Répertoire des tâches créé : {{path}}
 tasks.disabled=Sous-système de tâches désactivé ({{setting}} est false)
+tasks.dispatch.unavailable=Aucun répartiteur enregistré ; la tâche {{id}} n'a pas été exécutée
 tasks.load.duplicate=Identifiant de tâche en double {{id}} dans {{path}} ; déjà défini dans {{existing}}
 tasks.load.skipped=Fichier de tâche {{path}} ignoré : {{error}}
 tasks.loaded=Tâche {{id}} ({{description}}) chargée depuis {{path}}
 tasks.permissions.fixed=Permissions du {{kind}} de tâche {{path}} corrigées à {{mode}}
 tasks.permissions.fixing=Le {{kind}} de tâche {{path}} a les permissions {{have}} ; correction vers {{want}}
+tasks.state.load.error=Erreur d'analyse du fichier d'état des tâches {{path}} : {{error}} ; toutes les tâches démarrent comme jamais exécutées
+tasks.state.save.error=Erreur lors de l'enregistrement de l'état des tâches : {{error}}
 test.test1=Message de test1 {{path}}
 test.test2=Message de test2
 test.test3=[{{session}}] session de test {{path}}

@@ -1987,11 +1987,14 @@ table.values=values list = {{data|list}}
 table.write.error=Error writing/updating: {{error}}
 tasks.dir.created=Tasks directory created: {{path}}
 tasks.disabled=Task subsystem disabled ({{setting}} is false)
+tasks.dispatch.unavailable=No dispatcher registered; task {{id}} was not run
 tasks.load.duplicate=Duplicate task id {{id}} in {{path}}; already defined in {{existing}}
 tasks.load.skipped=Skipping task file {{path}}: {{error}}
 tasks.loaded=Loaded task {{id}} ({{description}}) from {{path}}
 tasks.permissions.fixed=Task {{kind}} {{path}} permissions corrected to {{mode}}
 tasks.permissions.fixing=Task {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
+tasks.state.load.error=Error parsing task state file {{path}}: {{error}}; all tasks start as never-run
+tasks.state.save.error=Error saving task state: {{error}}
 test.test1=Test message1 {{path}}
 test.test2=Test message2
 test.test3=[{{session}}] test session {{path}}

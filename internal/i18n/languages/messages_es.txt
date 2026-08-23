@@ -1962,11 +1962,14 @@ table.values=lista de valores = {{data|list}}
 table.write.error=Error al escribir/actualizar: {{error}}
 tasks.dir.created=Directorio de tareas creado: {{path}}
 tasks.disabled=Subsistema de tareas deshabilitado ({{setting}} es false)
+tasks.dispatch.unavailable=No hay despachador registrado; la tarea {{id}} no se ejecutó
 tasks.load.duplicate=Id de tarea duplicado {{id}} en {{path}}; ya definido en {{existing}}
 tasks.load.skipped=Omitiendo archivo de tarea {{path}}: {{error}}
 tasks.loaded=Tarea {{id}} ({{description}}) cargada desde {{path}}
 tasks.permissions.fixed=Permisos de {{kind}} de tarea {{path}} corregidos a {{mode}}
 tasks.permissions.fixing=El {{kind}} de tarea {{path}} tiene permisos {{have}}; corrigiendo a {{want}}
+tasks.state.load.error=Error al analizar el archivo de estado de tareas {{path}}: {{error}}; todas las tareas comienzan como nunca ejecutadas
+tasks.state.save.error=Error al guardar el estado de tareas: {{error}}
 test.test1=Mensaje de prueba1 {{path}}
 test.test2=Mensaje de prueba2
 test.test3=[{{session}}] sesión de prueba {{path}}

@@ -12,14 +12,24 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] `internal/server/tasks` package: `load.go` (directory scan, validation, dup-id handling)
 - [x] TASKS log class registered (`ui.DefineLogger("TASKS", false)`)
 - [x] Unit tests for `permissions.go` and `load.go`
-- [ ] `internal/server/tasks` package: `state.go`
-- [ ] `internal/server/tasks` package: `scheduler.go`
+- [x] `internal/server/tasks` package: `state.go` (sidecar `.state.json`, 0600)
+- [x] `internal/server/tasks` package: `scheduler.go` (due-task selection, concurrency cap)
+- [x] Unit tests for `state.go` and `scheduler.go` (race-clean, `-race -count=10`)
 - [ ] `internal/server/tasks` package: `dispatch.go` (incl. ported `{{key}}` substitution)
 - [ ] `internal/server/tasks` package: `routes.go` + `/admin/tasks` path constants
 - [ ] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
-- [ ] Unit tests (state/scheduler/dispatch)
+- [ ] Unit tests (dispatch)
 - [ ] End-to-end verification (see Verification section)
 - [ ] Permission-enforcement verification (manual, see note in that section)
+
+Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
+(default: log "no dispatcher registered" and report failure) so the scheduler's due-task
+and concurrency logic is unit-testable without a running router/auth service. Phase 3's
+`dispatch.go` will assign the real implementation. Also: `recordRun` (`state.go`)
+deliberately keeps a task's `Running` flag true until *after* `SaveState` returns, not
+just until the endpoint call finishes -- a run isn't fully done until its result is
+durably recorded, and it gives callers a single, simple signal (`runningCount() == 0`) for
+"this run, including its state write, has completely finished."
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
