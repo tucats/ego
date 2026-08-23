@@ -410,6 +410,31 @@ const (
 	// before the child even starts.
 	ChildRunTimeoutSetting = ChildServicesKeyPrefix + "run.timeout"
 
+	// TASKS CONFIGURATION KEYS
+	// The prefix for all scheduled-task configuration keys.
+	TasksKeyPrefix = ServerKeyPrefix + "tasks."
+
+	// If true, the server loads task definitions from lib/tasks and runs the
+	// background scheduler. When false (the default) the task subsystem is
+	// entirely inert: nothing is loaded, no goroutine starts, and the
+	// /admin/tasks route is not registered.
+	TasksEnabledSetting = TasksKeyPrefix + "enabled"
+
+	// Duration string used for a task's HTTP call when the task itself does
+	// not specify a "timeout" field. Supports the Ego "d" (days) extension.
+	// Defaults to "30s".
+	TasksDefaultTimeoutSetting = TasksKeyPrefix + "default.timeout"
+
+	// Duration string that caps the "timeout" a task may request; a task
+	// asking for more is clamped to this value and the clamp is logged.
+	// Defaults to "1h".
+	TasksMaxTimeoutSetting = TasksKeyPrefix + "max.timeout"
+
+	// Maximum number of tasks the scheduler will run at the same time. Tasks
+	// that become due while the pool is full wait for the next scheduler
+	// tick. Defaults to 3.
+	TasksMaxConcurrentSetting = TasksKeyPrefix + "max.concurrent"
+
 	// The URL path for the tables database functionality.
 	ServerDatabaseKeyPrefix = ServerKeyPrefix + "database."
 
@@ -835,6 +860,10 @@ var ValidSettings map[string]bool = map[string]bool{
 	ServerInsecureRedirect:      true,
 	ServerMaxCacheSizeSetting:   true,
 	AuthMaxAttemptsSetting:      true,
+	TasksEnabledSetting:         true,
+	TasksDefaultTimeoutSetting:  true,
+	TasksMaxTimeoutSetting:      true,
+	TasksMaxConcurrentSetting:   true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

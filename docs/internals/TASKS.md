@@ -1,24 +1,33 @@
 # Scheduled Server Tasks
 
-Status: **planned, not yet implemented**. This doc doubles as the implementation tracker
+Status: **in progress** (Phase 1 landed). This doc doubles as the implementation tracker
 during development and as the internals reference for the feature once it lands — update
 it in place rather than leaving stale sections once code diverges from the plan below.
 
 ## Progress
 
-- [ ] Config keys added (`internal/defs/config.go`)
-- [ ] `internal/server/tasks` package: `defs.go`
-- [ ] `internal/server/tasks` package: `permissions.go`
-- [ ] `internal/server/tasks` package: `load.go`
+- [x] Config keys added (`internal/defs/config.go`, `ego.server.tasks.*`)
+- [x] `internal/server/tasks` package: `defs.go` (Task/State types, registry)
+- [x] `internal/server/tasks` package: `permissions.go` (dir 0700 / file 0600 enforcement)
+- [x] `internal/server/tasks` package: `load.go` (directory scan, validation, dup-id handling)
+- [x] TASKS log class registered (`ui.DefineLogger("TASKS", false)`)
+- [x] Unit tests for `permissions.go` and `load.go`
 - [ ] `internal/server/tasks` package: `state.go`
 - [ ] `internal/server/tasks` package: `scheduler.go`
 - [ ] `internal/server/tasks` package: `dispatch.go` (incl. ported `{{key}}` substitution)
 - [ ] `internal/server/tasks` package: `routes.go` + `/admin/tasks` path constants
-- [ ] TASKS log class registered
 - [ ] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
-- [ ] Unit tests (load/state/scheduler/dispatch)
+- [ ] Unit tests (state/scheduler/dispatch)
 - [ ] End-to-end verification (see Verification section)
-- [ ] Permission-enforcement verification
+- [ ] Permission-enforcement verification (manual, see note in that section)
+
+Phase 1 note: task-file validation checks that `user` is present but does **not** check
+that the named user actually exists in the auth database (`internal/server/auth`) — that
+check is deferred to first dispatch in Phase 2/3, not done at load time as originally
+sketched in Gap #3 below. Reasoning: the auth subsystem is a separate, independently
+initialized service, a load-time check could only ever catch the common case anyway (a
+user can be deleted after the server starts), and keeping `load.go` free of an `auth`
+import keeps its unit tests independent of auth initialization order.
 
 ## Context
 
