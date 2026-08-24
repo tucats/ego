@@ -9,6 +9,11 @@ import (
 	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
+// testSystemDSNName is the catalog DSN name used by these tests -- an
+// arbitrary admin-chosen value, since EnsureSystemDSN no longer has a
+// hardcoded default name.
+const testSystemDSNName = "ego-system"
+
 // newTestDatabaseService creates a fresh sqlite-backed DSN service, wires it
 // up as the package-level DSNService/DSNDatabaseURL (the way Initialize
 // would), and returns a cleanup function.
@@ -51,11 +56,11 @@ func TestEnsureSystemDSN_NotDatabaseBacked(t *testing.T) {
 	DSNDatabaseURL = "memory"
 	defer func() { DSNDatabaseURL = "" }()
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("EnsureSystemDSN() returned error for non-database store: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("EnsureSystemDSN(testSystemDSNName) returned error for non-database store: %v", err)
 	}
 
-	if _, err := DSNService.ReadDSN(0, "", SystemDSNName, true); err == nil {
+	if _, err := DSNService.ReadDSN(0, "", testSystemDSNName, true); err == nil {
 		t.Fatal("expected no system DSN to be created for a non-database store")
 	}
 }
@@ -64,11 +69,11 @@ func TestEnsureSystemDSN_CreatesRestrictedSQLiteDSN(t *testing.T) {
 	cleanup := newTestDatabaseService(t)
 	defer cleanup()
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("EnsureSystemDSN() failed: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("EnsureSystemDSN(testSystemDSNName) failed: %v", err)
 	}
 
-	dsn, err := DSNService.ReadDSN(0, "", SystemDSNName, true)
+	dsn, err := DSNService.ReadDSN(0, "", testSystemDSNName, true)
 	if err != nil {
 		t.Fatalf("expected system DSN to exist, got error: %v", err)
 	}
@@ -91,15 +96,15 @@ func TestEnsureSystemDSN_IdempotentWhenAlreadyRestricted(t *testing.T) {
 	cleanup := newTestDatabaseService(t)
 	defer cleanup()
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("first EnsureSystemDSN() failed: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("first EnsureSystemDSN(testSystemDSNName) failed: %v", err)
 	}
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("second EnsureSystemDSN() failed: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("second EnsureSystemDSN(testSystemDSNName) failed: %v", err)
 	}
 
-	dsn, err := DSNService.ReadDSN(0, "", SystemDSNName, true)
+	dsn, err := DSNService.ReadDSN(0, "", testSystemDSNName, true)
 	if err != nil {
 		t.Fatalf("expected system DSN to still exist: %v", err)
 	}
@@ -113,11 +118,11 @@ func TestEnsureSystemDSN_RestoresRestrictedFlag(t *testing.T) {
 	cleanup := newTestDatabaseService(t)
 	defer cleanup()
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("EnsureSystemDSN() failed: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("EnsureSystemDSN(testSystemDSNName) failed: %v", err)
 	}
 
-	dsn, err := DSNService.ReadDSN(0, "", SystemDSNName, true)
+	dsn, err := DSNService.ReadDSN(0, "", testSystemDSNName, true)
 	if err != nil {
 		t.Fatalf("expected system DSN to exist: %v", err)
 	}
@@ -129,28 +134,28 @@ func TestEnsureSystemDSN_RestoresRestrictedFlag(t *testing.T) {
 		t.Fatalf("failed to unrestrict DSN for test setup: %v", err)
 	}
 
-	if err := EnsureSystemDSN(); err != nil {
-		t.Fatalf("EnsureSystemDSN() failed on repair: %v", err)
+	if err := EnsureSystemDSN(testSystemDSNName); err != nil {
+		t.Fatalf("EnsureSystemDSN(testSystemDSNName) failed on repair: %v", err)
 	}
 
-	dsn, err = DSNService.ReadDSN(0, "", SystemDSNName, true)
+	dsn, err = DSNService.ReadDSN(0, "", testSystemDSNName, true)
 	if err != nil {
 		t.Fatalf("expected system DSN to exist: %v", err)
 	}
 
 	if !dsn.Restricted {
-		t.Error("expected EnsureSystemDSN() to restore the restricted flag")
+		t.Error("expected EnsureSystemDSN(testSystemDSNName) to restore the restricted flag")
 	}
 }
 
 func TestSystemDSNFromURL_Postgres(t *testing.T) {
-	dsn, err := systemDSNFromURL("postgres://scott:tiger@dbhost:5433/catalog?sslmode=disable")
+	dsn, err := systemDSNFromURL("postgres://scott:tiger@dbhost:5433/catalog?sslmode=disable", testSystemDSNName)
 	if err != nil {
 		t.Fatalf("systemDSNFromURL() failed: %v", err)
 	}
 
-	if dsn.Name != SystemDSNName {
-		t.Errorf("expected name %q, got %q", SystemDSNName, dsn.Name)
+	if dsn.Name != testSystemDSNName {
+		t.Errorf("expected name %q, got %q", testSystemDSNName, dsn.Name)
 	}
 
 	if dsn.Provider != defs.PostgresProvider {

@@ -11,17 +11,14 @@ import (
 	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
-// SystemDSNName is the name of the DSN automatically created (when enabled
-// via the ego.server.dsn.catalog setting) to point at the same database
-// used to store the DSN catalog itself.
-const SystemDSNName = "ego-system"
-
-// EnsureSystemDSN creates the "ego-system" DSN if it does not already
-// exist, pointing at the same database that stores the DSN catalog itself
-// (DSNDatabaseURL). It is a no-op unless the DSN store is database-backed
-// (a Postgres or SQLite URL, as opposed to the in-memory or JSON file
-// store) -- callers are expected to gate on the ego.server.dsn.catalog
-// setting before calling this.
+// EnsureSystemDSN creates a DSN named by name, if one does not already
+// exist by that name, pointing at the same database that stores the DSN
+// catalog itself (DSNDatabaseURL). It is a no-op unless the DSN store is
+// database-backed (a Postgres or SQLite URL, as opposed to the in-memory
+// or JSON file store) -- callers are expected to gate on the
+// ego.server.dsn.catalog setting (whose value is name) before calling
+// this, so a caller with no such setting configured never needs to pass
+// an empty name here.
 //
 // The DSN is always created restricted, with no ownership grant made for
 // any user, so only an administrator -- who bypasses per-DSN authorization
@@ -29,14 +26,14 @@ const SystemDSNName = "ego-system"
 // Restricted flag is checked and corrected; its connection details are
 // left alone since those are fixed by the database this server was
 // started against.
-func EnsureSystemDSN() error {
+func EnsureSystemDSN(name string) error {
 	connStr := strings.TrimSuffix(strings.TrimPrefix(DSNDatabaseURL, "\""), "\"")
 
 	if !isDatabaseURL(connStr) {
 		return nil
 	}
 
-	existing, err := DSNService.ReadDSN(0, "", SystemDSNName, true)
+	existing, err := DSNService.ReadDSN(0, "", name, true)
 	if err == nil {
 		if existing.Restricted {
 			return nil
@@ -48,7 +45,7 @@ func EnsureSystemDSN() error {
 			return err
 		}
 
-		ui.Log(ui.AuthLogger, "auth.dsn.system.restrict", ui.A{"name": SystemDSNName})
+		ui.Log(ui.AuthLogger, "auth.dsn.system.restrict", ui.A{"name": name})
 
 		return nil
 	}
@@ -57,7 +54,7 @@ func EnsureSystemDSN() error {
 		return err
 	}
 
-	systemDSN, err := systemDSNFromURL(connStr)
+	systemDSN, err := systemDSNFromURL(connStr, name)
 	if err != nil {
 		return err
 	}
@@ -66,16 +63,16 @@ func EnsureSystemDSN() error {
 		return err
 	}
 
-	ui.Log(ui.AuthLogger, "auth.dsn.system.create", ui.A{"name": SystemDSNName})
+	ui.Log(ui.AuthLogger, "auth.dsn.system.create", ui.A{"name": name})
 
 	return nil
 }
 
-// systemDSNFromURL builds the "ego-system" DSN definition from the resolved
-// database URL used to store the DSN catalog, reusing that same connection
-// information (type, host, port, credentials, database name) so the new
-// DSN points at the very database that holds it.
-func systemDSNFromURL(connStr string) (*defs.DSN, error) {
+// systemDSNFromURL builds the catalog DSN definition, named name, from the
+// resolved database URL used to store the DSN catalog, reusing that same
+// connection information (type, host, port, credentials, database name)
+// so the new DSN points at the very database that holds it.
+func systemDSNFromURL(connStr, name string) (*defs.DSN, error) {
 	scheme, err := egostrings.FindScheme(connStr)
 	if err != nil {
 		return nil, errors.New(err)
@@ -84,7 +81,7 @@ func systemDSNFromURL(connStr string) (*defs.DSN, error) {
 	if scheme == defs.SqliteProvider || scheme == defs.DeprecatedSqliteProvider {
 		path := egostrings.StripScheme(connStr)
 
-		return NewDSN(SystemDSNName, defs.SqliteProvider, path, "", "", "", 0, true, false), nil
+		return NewDSN(name, defs.SqliteProvider, path, "", "", "", 0, true, false), nil
 	}
 
 	u, err := url.Parse(connStr)
@@ -106,5 +103,5 @@ func systemDSNFromURL(connStr string) (*defs.DSN, error) {
 	secured := u.Query().Get("sslmode") != "disable"
 	database := strings.TrimPrefix(u.Path, "/")
 
-	return NewDSN(SystemDSNName, defs.PostgresProvider, database, user, password, u.Hostname(), port, true, secured), nil
+	return NewDSN(name, defs.PostgresProvider, database, user, password, u.Hostname(), port, true, secured), nil
 }

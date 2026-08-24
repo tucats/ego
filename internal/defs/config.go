@@ -439,11 +439,13 @@ const (
 	// The prefix for all DSN subsystem configuration keys.
 	DSNKeyPrefix = ServerKeyPrefix + "dsn."
 
-	// If true, and the DSN store itself is database-backed (Postgres or
-	// SQLite, not the in-memory or JSON file store), the server
-	// automatically creates a restricted "ego-system" DSN that points at
-	// that same database when the DSN subsystem is initialized. Defaults
-	// to false.
+	// If non-empty, and the DSN store itself is database-backed (Postgres
+	// or SQLite, not the in-memory or JSON file store), the server
+	// automatically creates a restricted DSN by this name, pointing at
+	// that same database, when the DSN subsystem is initialized. The
+	// value is the DSN name to create, letting the administrator avoid
+	// collisions with an existing DSN name. Defaults to empty, meaning no
+	// catalog DSN is created.
 	DSNCatalogSetting = DSNKeyPrefix + "catalog"
 
 	// The URL path for the tables database functionality.

@@ -184,10 +184,10 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
-	// If enabled, and the DSN store itself is database-backed, ensure the
-	// "ego-system" catalog DSN exists, pointing at that same database.
-	if settings.GetBool(defs.DSNCatalogSetting) {
-		if err := dsns.EnsureSystemDSN(); err != nil {
+	// If set, and the DSN store itself is database-backed, ensure a catalog
+	// DSN by this name exists, pointing at that same database.
+	if catalogName := settings.Get(defs.DSNCatalogSetting); catalogName != "" {
+		if err := dsns.EnsureSystemDSN(catalogName); err != nil {
 			ui.Log(ui.ServerLogger, "server.dsn.system.failed", ui.A{"error": err.Error()})
 		}
 	}
