@@ -76,6 +76,7 @@ const (
 	StatsLogger
 	SymbolLogger
 	TableLogger
+	TaskLogger
 	TraceLogger
 	TokenLogger
 	UserLogger
@@ -127,6 +128,7 @@ var loggers []*logger = []*logger{
 	newLogger("STATS", false),
 	newLogger("SYMBOLS", false),
 	newLogger("TABLES", false),
+	newLogger("TASKS", true),
 	newLogger("TRACE", false),
 	newLogger("TOKENIZER", false),
 	newLogger("USER", false),

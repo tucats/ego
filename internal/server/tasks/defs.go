@@ -13,7 +13,7 @@ import (
 )
 
 // tasksLogger is the log class used for all task-subsystem activity.
-var tasksLogger = ui.DefineLogger("TASKS", false)
+var tasksLogger = ui.TaskLogger
 
 // Task describes one scheduled call to an Ego server endpoint, as loaded
 // from a JSON file under lib/tasks/.
