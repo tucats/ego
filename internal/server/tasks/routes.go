@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -43,6 +44,13 @@ func AddStaticRoutes(r *router.Router) {
 	r.New(defs.AdminTasksIDPath, DeleteTaskHandler, http.MethodDelete).
 		Permissions(defs.RootPermission).
 		Class(router.AdminRequestCounter)
+
+	// Patch a task's scheduling knobs (active/interval/count/after) in
+	// place, both in the running registry and in the task's own file.
+	r.New(defs.AdminTasksIDPath, PatchTaskHandler, http.MethodPatch).
+		Permissions(defs.RootPermission).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.TaskMediaType)
 }
 
 // GetTasksHandler is the HTTP handler for GET /admin/tasks.
@@ -91,6 +99,19 @@ func GetTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 		return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrNotFound.Clone().Context(id), session.Language), http.StatusNotFound)
 	}
 
+	response := taskDetailResponse(session, detail)
+
+	w.Header().Add(defs.ContentTypeHeader, defs.TaskMediaType)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+	return http.StatusOK
+}
+
+// taskDetailResponse builds the defs.TaskDetailResponse for detail --
+// shared by GetTaskHandler and PatchTaskHandler, since a successful PATCH
+// reports the task's new combined definition/state exactly the way GET
+// does.
+func taskDetailResponse(session *router.Session, detail Detail) defs.TaskDetailResponse {
 	checks := make([]defs.TaskCheck, 0, len(detail.Tests))
 	for _, check := range detail.Tests {
 		checks = append(checks, defs.TaskCheck{
@@ -101,7 +122,7 @@ func GetTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 		})
 	}
 
-	response := defs.TaskDetailResponse{
+	return defs.TaskDetailResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Status:     http.StatusOK,
 
@@ -130,11 +151,6 @@ func GetTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 		FailedTest: detail.FailedTest,
 		LoadedAt:   detail.LoadedAt,
 	}
-
-	w.Header().Add(defs.ContentTypeHeader, defs.TaskMediaType)
-	util.WriteJSON(w, session.Response(), http.StatusOK, response)
-
-	return http.StatusOK
 }
 
 // RunTaskHandler is the HTTP handler for POST /admin/tasks/{id}. It starts
@@ -196,6 +212,58 @@ func DeleteTaskHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	setActive(id, false)
 
 	ui.Log(tasksLogger, "tasks.deactivated", ui.A{"id": id, "user": session.User})
+
+	return http.StatusOK
+}
+
+// PatchTaskHandler is the HTTP handler for PATCH /admin/tasks/{id}. It
+// changes a task's scheduling knobs -- Active, Interval, Count, After --
+// which is all defs.TaskPatchRequest exposes; every other field of a
+// task's definition can only be changed by editing the task file directly
+// and calling POST /admin/tasks/@reload. See patchTask (patch.go) for the
+// validate-then-write-then-reload sequence this delegates to.
+func PatchTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	id := data.String(session.URLParts["id"])
+
+	task, found := Lookup(id)
+	if !found {
+		return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrNotFound.Clone().Context(id), session.Language), http.StatusNotFound)
+	}
+
+	var patch defs.TaskPatchRequest
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&patch); err != nil {
+		ui.Log(ui.RestLogger, "rest.bad.payload", ui.A{"session": session.ID, "error": err})
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(errors.New(err), session.Language), http.StatusBadRequest)
+	}
+
+	if patch.Active == nil && patch.Interval == nil && patch.Count == nil && patch.After == nil {
+		err := errors.New(errors.ErrTasksMissingField).Context("active, interval, count, or after")
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+	}
+
+	updated, err := patchTask(task, patch)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Equals(err, errors.ErrTasksInvalidField) || errors.Equals(err, errors.ErrTasksMissingField) {
+			status = http.StatusBadRequest
+		}
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), status)
+	}
+
+	ui.Log(tasksLogger, "tasks.patched", ui.A{"id": id, "user": session.User})
+
+	detail, _ := LookupDetail(updated.ID)
+	response := taskDetailResponse(session, detail)
+
+	w.Header().Add(defs.ContentTypeHeader, defs.TaskMediaType)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK
 }

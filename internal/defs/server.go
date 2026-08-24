@@ -433,6 +433,34 @@ type TasksResponse struct {
 	Items      []TaskStatus `json:"items"`
 }
 
+// TaskPatchRequest is the request body for PATCH /admin/tasks/{id}. Only a
+// task's scheduling knobs -- Active, Interval, Count, After -- may be
+// patched this way; every other field of a task's definition can only be
+// changed by editing the task file directly and calling
+// POST /admin/tasks/@reload.
+//
+// Every field is a pointer so the handler can distinguish "not included in
+// this patch" (nil) from "explicitly set to the type's zero value" (for
+// example, clearing Interval back to "" to make a task one-shot again, or
+// Count back to 0 for "unlimited"). `omitempty` has no effect on JSON
+// *decoding* -- only encoding -- so a plain, non-pointer field would leave
+// those two cases indistinguishable on the way in.
+type TaskPatchRequest struct {
+	// Active sets whether the scheduler is allowed to run this task.
+	Active *bool `json:"active,omitempty"`
+
+	// Interval sets the task's recurring-execution duration string ("5m",
+	// "1h", ...). An empty string makes the task one-shot.
+	Interval *string `json:"interval,omitempty"`
+
+	// Count sets the task's lifetime run cap. Zero means no limit.
+	Count *int `json:"count,omitempty"`
+
+	// After sets the task's first-run eligibility delay, as a duration
+	// string. An empty string means eligible immediately.
+	After *string `json:"after,omitempty"`
+}
+
 // TaskCheck mirrors one entry of a task's "tests" block (see
 // internal/server/tasks.Check) -- a single response validation performed
 // after a run's status matched the task's expected status.

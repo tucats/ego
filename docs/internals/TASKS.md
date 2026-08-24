@@ -66,6 +66,26 @@ it in place rather than leaving stale sections once code diverges from the plan 
       scheme detection, and a save/restart/reload round trip against a real temp SQLite
       database, run interleaved with the existing file-store tests to confirm no test-order
       leakage.
+- [x] `GET /admin/tasks/{id}`: `GetTaskHandler` (`routes.go`), `defs.TaskDetailResponse` /
+      `defs.TaskCheck` (`internal/defs/server.go`), `Detail` / `LookupDetail` (`defs.go`) --
+      reports a single task's full definition plus current state, unlike the list endpoint's
+      abbreviated summary. Backs the new `ego show task <id>` / `ego task show <id>` CLI
+      command (`internal/commands/tasks.go`, `internal/grammar/verb/show.go`,
+      `internal/grammar/class/tasks.go`).
+- [x] `PATCH /admin/tasks/{id}`: `PatchTaskHandler` (`routes.go`), `defs.TaskPatchRequest`
+      (`internal/defs/server.go`), `patchTask` / `patchTaskFile` (`patch.go`) -- changes a
+      task's scheduling knobs (`active`/`interval`/`count`/`after`) in both the running
+      registry and the task's own file, comments and all other formatting preserved. Built
+      on a new general-purpose (non-task-specific) comment-preserving JSON field patcher,
+      `patchJSONFields` (`jsonpatch.go`), rather than generalizing `deactivate.go`'s
+      single-field regex -- see the Package layout section below for why.
+- [x] Comprehensive unit tests for the new JSON patcher (`jsonpatch_test.go`) and the PATCH
+      endpoint (`patch_test.go`, plus HTTP-level tests in `routes_test.go`), including the
+      nested-same-named-key correctness guarantee (a `"count"`/`"active"` field inside a
+      task's own `body`/`parameters`/`tests` must never be mistaken for the document's own
+      top-level field of the same name), missing-field insertion with indentation matching,
+      unusual colon spacing, comment preservation, and the same load-time validation rules
+      (`validateTask`) rejecting an invalid or ambiguous patch before any file is written.
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
@@ -610,6 +630,12 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
   the feature is off. Registers:
   - `GET /admin/tasks` — `.Permissions(defs.RootPermission)`, returns the task list with
     description/id/last-run/status from the registry + state.
+  - `GET /admin/tasks/{id}` — same permission; returns everything known about one task
+    (`defs.TaskDetailResponse`, `GetTaskHandler`) — its full definition (method, endpoint,
+    parameters, body, save, tests, timeout, interval, count, after, path, ...) combined with
+    its current execution state, in contrast to the list endpoint's abbreviated per-task
+    summary. Used by `ego show task <id>` / `ego task show <id>`
+    (`internal/commands/tasks.go`).
   - `POST /admin/tasks/{id}` — same permission; runs the named task immediately (still
     counts against the concurrency cap) and resets its interval timer from completion time.
     The reserved id `@reload` (`ReloadTaskID`, `reload.go`) is special-cased instead to
@@ -619,9 +645,45 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
     reactivate a task without stopping the server.
   - `DELETE /admin/tasks/{id}` — same permission; surgical text-patch of the `"active"`
     field in the on-disk file to `false`, and marks the in-memory task inactive.
+  - `PATCH /admin/tasks/{id}` — same permission; changes a task's scheduling knobs --
+    `active`, `interval`, `count`, `after` (`defs.TaskPatchRequest`, `PatchTaskHandler`) --
+    the only fields this endpoint may touch; every other field can only be changed by
+    editing the task file directly and calling `POST /admin/tasks/@reload`. Every request
+    field is a pointer so a caller can distinguish "not included in this patch" from
+    "explicitly cleared to the zero value" (e.g. setting `interval` back to `""` to make a
+    task one-shot again). `json.Decoder.DisallowUnknownFields()` rejects a patch naming any
+    other field outright (400), rather than silently ignoring it. `patch.go`'s `patchTask`
+    validates the merged result against the same rules load-time validation applies
+    (`validateTask` — so a PATCH can never leave a task file in a state that would fail to
+    load), rewrites only the changed fields into the task's own file (see `jsonpatch.go`
+    below), then re-parses that file and calls `upsert` — the same
+    validate-then-write-then-reload-one-task sequence `POST /admin/tasks/@reload` already
+    uses for a single task, so a task's execution history (`State`) survives a PATCH
+    untouched and any run already in flight keeps running against the definition it started
+    with. Returns the same `defs.TaskDetailResponse` shape as `GET /admin/tasks/{id}`,
+    reflecting the task's new combined definition/state.
   - Path constants added to `internal/defs/rest.go` next to the other `Admin*Path`
     constants: `AdminTasksPath = AdminPath + "tasks/"`,
     `AdminTasksIDPath = AdminTasksPath + "{{id}}"`.
+- **`jsonpatch.go`** — `patchJSONFields`, a general-purpose (not task-specific) function for
+  surgically rewriting or inserting top-level fields of a JSONC document (JSON with
+  whole-line `#`/`//` comments) while leaving every comment, every other field, and all
+  other formatting untouched. Built for `PATCH /admin/tasks/{id}` (and reused directly by
+  `patch.go`'s `patchTaskFile`) rather than generalizing the existing `deactivate.go`
+  regex, since that endpoint only ever needs to set one field (`active`) that's always
+  present in a valid task file, while PATCH needs to set any of four fields, up to three of
+  which (`interval`/`count`/`after`) are commonly absent and must be inserted rather than
+  replaced. Uses `encoding/json`'s own streaming token scanner
+  (`json.Decoder.Token()`/`InputOffset()`) to track object/array nesting depth so that a
+  same-named key nested inside another field's opaque value (for example a `"count"` field
+  inside a task's own free-form `body` or `parameters`) is never mistaken for the
+  document's own top-level field of the same name — something a plain string or regex
+  replace cannot distinguish. A newly-inserted field's indentation is copied from the line
+  above the insertion point, so the result reads as if it had been part of the original
+  file. Comment-to-original byte-offset mapping (`commentLineMapper`) exploits the fact
+  that `ui.ReadJSONFile`'s comment stripping only ever removes whole lines, never edits a
+  kept line's own content, so every surviving line's within-line column is unchanged and
+  only its line number shifts.
 
 New **TASKS** log class: added via `ui.DefineLogger("TASKS", false)`
 (`internal/cli/ui/messaging.go:147`) at package init, rather than editing the static `iota`
