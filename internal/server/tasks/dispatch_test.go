@@ -67,9 +67,10 @@ func TestResolveTimeoutClampsToConfiguredMax(t *testing.T) {
 }
 
 // testEchoHandler is registered on the test router at POST /test/echo. It
-// reports back the authenticated identity, the raw query string, and the
-// parsed request body, all nested under "echoed" so a task's "save" block
-// (dot-notation path) can pull a value back out.
+// reports back the authenticated identity, the raw query string, the parsed
+// request body, and the received User-Agent header, all nested under
+// "echoed" so a task's "save" block (dot-notation path) can pull a value
+// back out.
 func testEchoHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	body, _ := io.ReadAll(r.Body)
 
@@ -79,9 +80,10 @@ func testEchoHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	response := map[string]any{
 		"echoed": map[string]any{
-			"user":  session.User,
-			"query": r.URL.RawQuery,
-			"body":  parsedBody,
+			"user":      session.User,
+			"query":     r.URL.RawQuery,
+			"body":      parsedBody,
+			"userAgent": r.Header.Get("User-Agent"),
 		},
 	}
 
@@ -129,6 +131,40 @@ func TestDispatchEndToEndSuccessAppliesSave(t *testing.T) {
 
 	if got := substitute("{{CALLER}}"); got != defs.DefaultAdminUsername {
 		t.Errorf("saved CALLER = %q, want %q (proves the minted token resolved to the right identity)", got, defs.DefaultAdminUsername)
+	}
+}
+
+// TestDispatchSetsTaskIdentifyingUserAgent confirms a task's outbound call
+// carries a "User-Agent: Ego task <id>" header, so the REST logger's header
+// dump (rest.header.values, enabled by --log rest) can distinguish a
+// task-originated call from a real external client -- see doDispatch.
+func TestDispatchSetsTaskIdentifyingUserAgent(t *testing.T) {
+	resetSaved(t)
+
+	r := useTestRouter(t)
+	r.New("/test/echo", testEchoHandler, "POST")
+
+	const id = "22222222-2222-2222-2222-222222222222"
+
+	task := &Task{
+		ID:       id,
+		User:     defs.DefaultAdminUsername,
+		Method:   "POST",
+		Endpoint: "/test/echo",
+		Status:   http.StatusCreated,
+		Save:     map[string]string{"AGENT": "echoed.userAgent"},
+	}
+
+	status, success, _ := dispatch(task)
+
+	if status != http.StatusCreated || !success {
+		t.Fatalf("dispatch did not succeed: status=%d success=%v", status, success)
+	}
+
+	want := "Ego task " + id
+
+	if got := substitute("{{AGENT}}"); got != want {
+		t.Errorf("User-Agent received by the target handler = %q, want %q", got, want)
 	}
 }
 

@@ -107,6 +107,10 @@ func doDispatch(task *Task) (status int, success bool, failedTest string) {
 	req.Header.Set(defs.ContentTypeHeader, defs.JSONMediaType)
 	req.Header.Set("Accept", defs.JSONMediaType)
 	req.Header.Set("Authorization", defs.AuthScheme+token)
+	// Identifies this call as task-originated (not an external client) in
+	// the REST logger's header dump (rest.header.values, logging.go) when
+	// REST logging is enabled.
+	req.Header.Set("User-Agent", "Ego task "+task.ID)
 
 	recorder := httptest.NewRecorder()
 
