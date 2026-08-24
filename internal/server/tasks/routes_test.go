@@ -206,11 +206,11 @@ func TestDeleteTaskHandlerDeactivatesFileAndMemory(t *testing.T) {
 		t.Fatalf("read back: %v", err)
 	}
 
-	if !strings.Contains(string(content),`"active": "false"`) {
+	if !strings.Contains(string(content), `"active": "false"`) {
 		t.Errorf("file content was not patched to active:false:\n%s", content)
 	}
 
-	if !strings.Contains(string(content),"# a comment") {
+	if !strings.Contains(string(content), "# a comment") {
 		t.Errorf("file comment was lost during deactivation:\n%s", content)
 	}
 }
@@ -225,5 +225,62 @@ func TestDeleteTaskHandlerUnknownIDReturnsNotFound(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+func TestRunTaskHandlerReloadTriggersRescan(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	r := useTestRouter(t)
+	AddStaticRoutes(r)
+
+	// No task files exist yet, so a POST to the reserved id should
+	// succeed (not 404, even though "@reload" doesn't name a real task)
+	// and report zero tasks found.
+	rec := doAdminRequest(t, http.MethodPost, defs.AdminTasksPath+ReloadTaskID)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+
+	var response defs.TasksResponse
+
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to parse response: %v, body=%s", err, rec.Body.String())
+	}
+
+	if response.Count != 0 {
+		t.Errorf("count = %d, want 0 before any task file exists", response.Count)
+	}
+
+	// Now add a task file on disk (as an admin editing lib/tasks/ directly
+	// would) and reload again -- it should be picked up without a restart.
+	writeTaskFile(t, dir, "example.json", validTaskJSON)
+
+	rec = doAdminRequest(t, http.MethodPost, defs.AdminTasksPath+ReloadTaskID)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to parse response: %v, body=%s", err, rec.Body.String())
+	}
+
+	if response.Count != 1 {
+		t.Errorf("count = %d, want 1 after adding a task file and reloading", response.Count)
+	}
+
+	if _, found := Lookup("11111111-1111-1111-1111-111111111111"); !found {
+		t.Error("expected the new task to be registered after POST @reload")
 	}
 }

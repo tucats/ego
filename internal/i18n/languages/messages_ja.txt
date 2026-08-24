@@ -1966,6 +1966,9 @@ tasks.load.skipped=タスクファイル {{path}} をスキップします: {{er
 tasks.loaded=タスク {{id}} ({{description}}) を {{path}} から読み込みました
 tasks.permissions.fixed=タスク{{kind}} {{path}} の権限を {{mode}} に修正しました
 tasks.permissions.fixing=タスク{{kind}} {{path}} の権限は {{have}} です。{{want}} に修正します
+tasks.reload={{user}}によりタスクディレクトリが再読み込みされました: 合計{{total}}、新規{{new}}、更新{{updated}}、削除{{removed}}
+tasks.reload.removed=タスク{{id}}を削除しました(ファイルが存在しません)
+tasks.reload.updated=タスク{{id}}({{description}})を{{path}}から更新しました
 tasks.run.complete=タスク{{id}}はステータス{{status}}で終了しました(期待値{{expected}});success={{success}}
 tasks.run.manual=タスク{{id}}は{{user}}によって手動で開始されました
 tasks.run.timeout=タスク{{id}}はタイムアウト{{timeout}}を超過したため、呼び出しを中断し失敗として記録しました

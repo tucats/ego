@@ -43,34 +43,10 @@ func Directory() string {
 // problem (missing and can't be created, or permissions that can't be
 // corrected), since that affects every task, not just one file.
 func LoadAll() error {
-	dir := Directory()
-
-	if err := ensureDirPermissions(dir); err != nil {
+	names, dir, err := listTaskFiles()
+	if err != nil {
 		return err
 	}
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return errors.New(errors.ErrTasksDirAccess).Context(err.Error())
-	}
-
-	names := make([]string, 0, len(entries))
-
-	for _, entry := range entries {
-		name := entry.Name()
-
-		// Hidden files (e.g. the sidecar state file) and non-JSON files are
-		// not task definitions.
-		if entry.IsDir() || strings.HasPrefix(name, ".") || !strings.HasSuffix(name, ".json") {
-			continue
-		}
-
-		names = append(names, name)
-	}
-
-	// Sorted, deterministic load order: when two files declare the same
-	// task id, the first one loaded (alphabetically by filename) wins.
-	sort.Strings(names)
 
 	for _, name := range names {
 		loadOne(filepath.Join(dir, name))
@@ -79,37 +55,79 @@ func LoadAll() error {
 	return nil
 }
 
-func loadOne(path string) {
-	if err := ensureFilePermissions(path); err != nil {
-		ui.Log(tasksLogger, "tasks.load.skipped", ui.A{"path": path, "error": err.Error()})
+// listTaskFiles enforces the tasks directory's permissions, then returns
+// the sorted, deterministic list of task filenames within it (hidden files
+// -- the sidecar state file -- and anything not ending in .json are
+// excluded). Shared by LoadAll (startup) and Reload (POST
+// /admin/tasks/@reload), so both scan the directory identically.
+func listTaskFiles() (names []string, dir string, err error) {
+	dir = Directory()
 
-		return
+	if err := ensureDirPermissions(dir); err != nil {
+		return nil, dir, err
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, dir, errors.New(errors.ErrTasksDirAccess).Context(err.Error())
+	}
+
+	names = make([]string, 0, len(entries))
+
+	for _, entry := range entries {
+		name := entry.Name()
+
+		if entry.IsDir() || strings.HasPrefix(name, ".") || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+
+		names = append(names, name)
+	}
+
+	// Sorted, deterministic order: when two files declare the same task id,
+	// the first one processed (alphabetically by filename) wins.
+	sort.Strings(names)
+
+	return names, dir, nil
+}
+
+// parseTaskFile enforces one file's permissions, reads and parses it
+// (stripping comment lines), validates the result, and stamps its source
+// path onto the returned Task. Shared by LoadAll and Reload.
+func parseTaskFile(path string) (*Task, error) {
+	if err := ensureFilePermissions(path); err != nil {
+		return nil, err
 	}
 
 	b, err := ui.ReadJSONFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var task Task
+
+	if err := json.Unmarshal(b, &task); err != nil {
+		return nil, err
+	}
+
+	if err := validateTask(&task); err != nil {
+		return nil, err
+	}
+
+	task.Path = path
+
+	return &task, nil
+}
+
+func loadOne(path string) {
+	task, err := parseTaskFile(path)
 	if err != nil {
 		ui.Log(tasksLogger, "tasks.load.skipped", ui.A{"path": path, "error": err.Error()})
 
 		return
 	}
 
-	var task Task
-
-	if err := json.Unmarshal(b, &task); err != nil {
-		ui.Log(tasksLogger, "tasks.load.skipped", ui.A{"path": path, "error": err.Error()})
-
-		return
-	}
-
-	if err := validateTask(&task); err != nil {
-		ui.Log(tasksLogger, "tasks.load.skipped", ui.A{"path": path, "error": err.Error()})
-
-		return
-	}
-
-	task.Path = path
-
-	if existing, duplicate := register(&task); duplicate {
+	if existing, duplicate := register(task); duplicate {
 		ui.Log(tasksLogger, "tasks.load.duplicate", ui.A{"id": task.ID, "path": path, "existing": existing.Path})
 
 		return
@@ -129,6 +147,8 @@ func validateTask(task *Task) error {
 	switch {
 	case task.ID == "":
 		return errors.New(errors.ErrTasksMissingField).Context("id")
+	case task.ID == ReloadTaskID:
+		return errors.New(errors.ErrTasksInvalidField).Context("id: " + ReloadTaskID + " is reserved")
 	case task.User == "":
 		return errors.New(errors.ErrTasksMissingField).Context("user")
 	case task.Method == "":

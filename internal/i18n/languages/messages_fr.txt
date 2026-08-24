@@ -1966,6 +1966,9 @@ tasks.load.skipped=Fichier de tâche {{path}} ignoré : {{error}}
 tasks.loaded=Tâche {{id}} ({{description}}) chargée depuis {{path}}
 tasks.permissions.fixed=Permissions du {{kind}} de tâche {{path}} corrigées à {{mode}}
 tasks.permissions.fixing=Le {{kind}} de tâche {{path}} a les permissions {{have}} ; correction vers {{want}}
+tasks.reload=Répertoire des tâches rechargé par {{user}} : {{total}} au total, {{new}} nouvelles, {{updated}} mises à jour, {{removed}} supprimées
+tasks.reload.removed=Tâche {{id}} supprimée (le fichier n'existe plus)
+tasks.reload.updated=Tâche {{id}} ({{description}}) mise à jour depuis {{path}}
 tasks.run.complete=La tâche {{id}} s'est terminée avec le statut {{status}} (attendu {{expected}}) ; success={{success}}
 tasks.run.manual=Tâche {{id}} démarrée manuellement par {{user}}
 tasks.run.timeout=La tâche {{id}} a dépassé son délai d'attente de {{timeout}} ; appel abandonné et enregistré comme échoué

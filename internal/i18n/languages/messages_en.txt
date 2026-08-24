@@ -1997,6 +1997,9 @@ tasks.load.skipped=Skipping task file {{path}}: {{error}}
 tasks.loaded=Loaded task {{id}} ({{description}}) from {{path}}
 tasks.permissions.fixed=Task {{kind}} {{path}} permissions corrected to {{mode}}
 tasks.permissions.fixing=Task {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
+tasks.reload=Task directory reloaded by {{user}}: {{total}} total, {{new}} new, {{updated}} updated, {{removed}} removed
+tasks.reload.removed=Task {{id}} removed (file no longer present)
+tasks.reload.updated=Task {{id}} ({{description}}) updated from {{path}}
 tasks.run.complete=Task {{id}} finished with status {{status}} (expected {{expected}}); success={{success}}
 tasks.run.manual=Task {{id}} started manually by {{user}}
 tasks.run.timeout=Task {{id}} exceeded its {{timeout}} timeout; call abandoned and recorded as failed

@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/tucats/ego/internal/cli/ui"
@@ -22,7 +23,9 @@ func AddStaticRoutes(r *router.Router) {
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.TasksMediaType)
 
-	// Start a task immediately, outside its normal schedule.
+	// Start a task immediately, outside its normal schedule. The reserved
+	// id "@reload" (ReloadTaskID) is special-cased inside RunTaskHandler to
+	// re-scan the tasks directory instead of running a task by that name.
 	r.New(defs.AdminTasksIDPath, RunTaskHandler, http.MethodPost).
 		Permissions(defs.RootPermission).
 		Class(router.AdminRequestCounter)
@@ -71,8 +74,16 @@ func GetTasksHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 // rather than blocking for as long as the task's own timeout allows.
 // Its repeat timer restarts from when this run finishes, exactly like a
 // normal scheduled run.
+//
+// The reserved id ReloadTaskID ("@reload") is special-cased to
+// ReloadTasksHandler instead: it doesn't name a task at all, it tells the
+// task manager to re-scan the tasks directory.
 func RunTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	id := data.String(session.URLParts["id"])
+
+	if id == ReloadTaskID {
+		return ReloadTasksHandler(session, w, r)
+	}
 
 	task, found := Lookup(id)
 	if !found {
@@ -116,6 +127,38 @@ func DeleteTaskHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	setActive(id, false)
 
 	ui.Log(tasksLogger, "tasks.deactivated", ui.A{"id": id, "user": session.User})
+
+	return http.StatusOK
+}
+
+// ReloadTasksHandler implements POST /admin/tasks/@reload. It re-scans the
+// tasks directory and merges what it finds into the running registry (see
+// Reload), so an admin can add, edit, or reactivate a task by editing its
+// file, without stopping the server.
+func ReloadTasksHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	result, err := Reload()
+	if err != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	}
+
+	ui.Log(tasksLogger, "tasks.reload", ui.A{
+		"user":    session.User,
+		"total":   result.Total,
+		"new":     result.New,
+		"updated": result.Updated,
+		"removed": result.Removed,
+	})
+
+	response := defs.TasksResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
+		Message: fmt.Sprintf("reloaded: %d total, %d new, %d updated, %d removed",
+			result.Total, result.New, result.Updated, result.Removed),
+		Count: result.Total,
+	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.TasksMediaType)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK
 }

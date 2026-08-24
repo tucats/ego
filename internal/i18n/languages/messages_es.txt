@@ -1972,6 +1972,9 @@ tasks.load.skipped=Omitiendo archivo de tarea {{path}}: {{error}}
 tasks.loaded=Tarea {{id}} ({{description}}) cargada desde {{path}}
 tasks.permissions.fixed=Permisos de {{kind}} de tarea {{path}} corregidos a {{mode}}
 tasks.permissions.fixing=El {{kind}} de tarea {{path}} tiene permisos {{have}}; corrigiendo a {{want}}
+tasks.reload=Directorio de tareas recargado por {{user}}: {{total}} en total, {{new}} nuevas, {{updated}} actualizadas, {{removed}} eliminadas
+tasks.reload.removed=Tarea {{id}} eliminada (el archivo ya no existe)
+tasks.reload.updated=Tarea {{id}} ({{description}}) actualizada desde {{path}}
 tasks.run.complete=La tarea {{id}} finalizó con estado {{status}} (se esperaba {{expected}}); success={{success}}
 tasks.run.manual=La tarea {{id}} fue iniciada manualmente por {{user}}
 tasks.run.timeout=La tarea {{id}} superó su tiempo de espera de {{timeout}}; llamada abandonada y registrada como fallida

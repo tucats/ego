@@ -103,6 +103,62 @@ func register(task *Task) (existing *Task, duplicate bool) {
 	return nil, false
 }
 
+// upsert adds a newly-parsed task to the registry, or replaces an existing
+// task's definition in place if one with the same ID is already
+// registered. Unlike register (startup only, first-file-wins), this is
+// used by Reload to pick up edits to an already-loaded task -- it swaps in
+// the new *Task pointer (so any run already in flight, holding the old
+// pointer from before the reload, keeps running against the definition it
+// started with) but leaves the existing *State alone, so a task's
+// LastRun/LastStatus/Success/Running history survives an edit instead of
+// resetting to "never run". Returns true if this ID is new.
+func upsert(task *Task) (isNew bool) {
+	registryLock.Lock()
+	defer registryLock.Unlock()
+
+	_, existed := registry[task.ID]
+
+	registry[task.ID] = task
+
+	if !existed {
+		states[task.ID] = &State{}
+	}
+
+	return !existed
+}
+
+// removeMissing deletes every registered task whose backing file path is
+// not in present -- used by Reload to forget tasks whose file was deleted.
+//
+// This keys on path, not id: a task whose file still exists but currently
+// fails to parse or validate must NOT be removed here just because Reload
+// couldn't re-derive its id this pass. It keeps running (or waiting to
+// run) with its last-known-good definition until the file is fixed -- a
+// bad edit should not be able to kill a task's registration or execution
+// history out from under it.
+//
+// Execution history in states is deliberately left behind rather than
+// deleted: it's unreachable via Snapshot (which only iterates registry)
+// the moment the task is removed here, and keeping it costs nothing but
+// lets the same id reappearing in a later reload be treated as an update
+// rather than a fresh "never run" task.
+func removeMissing(present map[string]bool) []string {
+	registryLock.Lock()
+	defer registryLock.Unlock()
+
+	removed := make([]string, 0)
+
+	for id, task := range registry {
+		if !present[task.Path] {
+			delete(registry, id)
+
+			removed = append(removed, id)
+		}
+	}
+
+	return removed
+}
+
 // Tasks returns every registered task, sorted by ID for deterministic
 // order. Used internally by the scheduler; reporting (GET /admin/tasks)
 // uses Snapshot instead, which reads each task's mutable fields under the

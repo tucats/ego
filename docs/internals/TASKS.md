@@ -23,6 +23,11 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
 - [x] End-to-end verification against the real built binary (see Verification section)
 - [x] Permission-enforcement verification (done as part of the same end-to-end run)
+- [x] `POST /admin/tasks/@reload`: `reload.go` (`Reload`, `ReloadTaskID`), `routes.go`
+      (`ReloadTasksHandler`), `defs.go` (`upsert`/`removeMissing`) -- add/edit/reactivate a
+      task by editing its file, no restart required
+- [x] Unit tests for `reload.go` and `ReloadTasksHandler`; end-to-end verified against the
+      built binary (add, edit, delete a task file while the server runs; see Phase 5 notes)
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -86,6 +91,34 @@ Phase 4 notes:
   and `DELETE /admin/tasks/{id}` flipped `"active": "true"` to `"active": "false"` in the
   file while leaving every comment and all formatting untouched. All test artifacts
   (temp directory, CLI profile, log files) were cleaned up afterward.
+
+Phase 5 notes (`POST /admin/tasks/@reload`):
+
+- **`@reload` is a reserved task id**, following the same convention as this codebase's
+  other `@name` pseudo-identifiers (`@sql`, `@permissions`, `@metadata`, `@generate`):
+  `validateTask` (`load.go`) rejects any real task file that tries to declare
+  `"id": "@reload"`, so it can never collide with a real task.
+- **Removal is keyed on file path, not on id.** `Reload`'s `removeMissing` (`defs.go`)
+  only forgets a task whose *file* is confirmed gone from the directory listing. A file
+  that's still present but currently fails to parse or validate must NOT cause its task to
+  be removed -- that would let one bad edit silently kill a running task's registration and
+  execution history. `TestReloadSkipsInvalidFileWithoutTouchingExistingEntry` pins this
+  down; the first implementation got it wrong (it keyed removal on which *ids* were
+  successfully parsed this pass, which conflated "file deleted" with "file broken").
+- **`upsert` swaps the `*Task` pointer rather than mutating fields on the existing one.**
+  A run already in flight, holding the pointer it captured before the reload, keeps running
+  against the definition it started with -- only *later* lookups see the edit. This also
+  means an edited task's `*State` (last run/status/success) is deliberately left alone by
+  upsert, so editing a task's definition doesn't erase its execution history.
+- **The response reuses `defs.TasksResponse`** with a human-readable `Message` summarizing
+  counts (e.g. `"reloaded: 1 total, 0 new, 1 updated, 0 removed"`) rather than a new
+  response type, since the shape (`ServerInfo`/`Status`/`Message`/`Count`) already fit.
+- **End-to-end verified against the built binary**, live, without restarting the server:
+  added a task file after startup and reloaded (picked up, ran on the next scheduler tick);
+  edited its description and reloaded (definition updated, `lastRun`/`success` preserved);
+  deleted the file and reloaded (task removed, `GET` back to empty). The server's own log
+  showed `tasks.reload` with correct new/updated/removed counts and the calling admin's
+  username at every step.
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
@@ -268,6 +301,11 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
     description/id/last-run/status from the registry + state.
   - `POST /admin/tasks/{id}` — same permission; runs the named task immediately (still
     counts against the concurrency cap) and resets its repeat timer from completion time.
+    The reserved id `@reload` (`ReloadTaskID`, `reload.go`) is special-cased instead to
+    re-scan `lib/tasks/` and merge the results into the running registry (`Reload`) — new
+    files are added, edited files are updated in place (execution history preserved),
+    and files that were deleted are forgotten. This is what lets an admin add, edit, or
+    reactivate a task without stopping the server.
   - `DELETE /admin/tasks/{id}` — same permission; surgical text-patch of the `"active"`
     field in the on-disk file to `false`, and marks the in-memory task inactive.
   - Path constants added to `internal/defs/rest.go` next to the other `Admin*Path`
