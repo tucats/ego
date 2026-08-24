@@ -1982,6 +1982,7 @@ tasks.run.token.error=Error al crear el token de autenticación para la tarea {{
 tasks.save.error=La tarea {{id}} no pudo guardar {{name}} desde {{path}}: {{error}}
 tasks.state.load.error=Error al analizar el archivo de estado de tareas {{path}}: {{error}}; todas las tareas comienzan como nunca ejecutadas
 tasks.state.save.error=Error al guardar el estado de tareas: {{error}}
+tasks.test.failed=La tarea {{id}} falló la prueba {{test}}
 tasks.timeout.clamped=El tiempo de espera solicitado {{requested}} de la tarea {{id}} supera el máximo; ajustado a {{max}}
 test.test1=Mensaje de prueba1 {{path}}
 test.test2=Mensaje de prueba2

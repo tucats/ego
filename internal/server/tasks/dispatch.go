@@ -42,20 +42,29 @@ const (
 )
 
 // dispatch performs one task's endpoint call in-process (no real network
-// round trip) and reports the resulting HTTP status and whether it matched
-// the task's expected status. This is the function scheduler.go's
+// round trip) and reports the resulting HTTP status, whether it's
+// considered successful, and -- only when a failing Check in Task.Tests is
+// the reason -- that Check's Name. This is the function scheduler.go's
 // dispatchFunc variable is wired to via this file's init().
-func dispatch(task *Task) (status int, success bool) {
+func dispatch(task *Task) (status int, success bool, failedTest string) {
 	timeout := resolveTimeout(task)
 
-	done := make(chan int, 1)
+	type result struct {
+		status     int
+		success    bool
+		failedTest string
+	}
+
+	done := make(chan result, 1)
 
 	go func() {
-		done <- doDispatch(task)
+		st, ok, ft := doDispatch(task)
+		done <- result{st, ok, ft}
 	}()
 
 	select {
-	case status = <-done:
+	case r := <-done:
+		status, success, failedTest = r.status, r.success, r.failedTest
 	case <-time.After(timeout):
 		// The in-process call has no way to be preempted -- Go has no
 		// cooperative cancellation hook into an arbitrary running
@@ -66,10 +75,8 @@ func dispatch(task *Task) (status int, success bool) {
 		// in-process rather than over a real HTTP connection.
 		ui.Log(tasksLogger, "tasks.run.timeout", ui.A{"id": task.ID, "timeout": timeout.String()})
 
-		return 0, false
+		return 0, false, ""
 	}
-
-	success = status == task.Status
 
 	ui.Log(tasksLogger, "tasks.run.complete", ui.A{
 		"id":       task.ID,
@@ -78,20 +85,22 @@ func dispatch(task *Task) (status int, success bool) {
 		"success":  success,
 	})
 
-	return status, success
+	return status, success, failedTest
 }
 
 // doDispatch mints a token for the task's user, builds the request (with
 // {{name}} substitution applied to the endpoint, parameters, and body),
-// runs it through the server's own router in-process, and -- only if the
-// response status matches what the task expects -- applies the task's
-// save block. It returns the actual response status.
-func doDispatch(task *Task) int {
+// and runs it through the server's own router in-process. If the response
+// status matches what the task expects, it applies the task's save block
+// (regardless of what happens next) and then runs Task.Tests: any failing
+// check downgrades success to false and is named in the third return
+// value, even though the status itself matched.
+func doDispatch(task *Task) (status int, success bool, failedTest string) {
 	token, err := tokens.New(task.User, "", tokenTTL, defs.InstanceID, 0)
 	if err != nil {
 		ui.Log(tasksLogger, "tasks.run.token.error", ui.A{"id": task.ID, "error": err.Error()})
 
-		return 0
+		return 0, false, ""
 	}
 
 	req := httptest.NewRequest(task.Method, buildURL(task), buildBody(task))
@@ -103,13 +112,23 @@ func doDispatch(task *Task) int {
 
 	router.ServerRouter.ServeHTTP(recorder, req)
 
-	status := recorder.Code
+	status = recorder.Code
+	success = status == task.Status
 
-	if status == task.Status {
-		applySave(task, recorder.Body.Bytes())
+	if success {
+		body := recorder.Body.Bytes()
+
+		applySave(task, body)
+
+		if ok, name := runTests(task, body); !ok {
+			success = false
+			failedTest = name
+
+			ui.Log(tasksLogger, "tasks.test.failed", ui.A{"id": task.ID, "test": name})
+		}
 	}
 
-	return status
+	return status, success, failedTest
 }
 
 // buildURL applies {{name}} substitution to the task's endpoint and

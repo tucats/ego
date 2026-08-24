@@ -1,6 +1,6 @@
 # Scheduled Server Tasks
 
-Status: **implemented** (Phases 1-6 landed, end-to-end verified). This doc doubles as the implementation tracker
+Status: **implemented** (Phases 1-8 landed, end-to-end verified). This doc doubles as the implementation tracker
 during development and as the internals reference for the feature once it lands — update
 it in place rather than leaving stale sections once code diverges from the plan below.
 
@@ -41,6 +41,18 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] `lib/tasks/sample.json` checked in as a real, working example: a harmless recurring
       `GET /services/up` no-op, used as illustration, as a manual test/demo fixture, and as
       the fixture future dashboard task-support work can build against; see Phase 7 notes
+- [x] `"tests"` block added to the task definition, patterned after `tools/apitest`'s own
+      response validation: `tests.go` (`Check`, `runTests`, `evaluateCheck`, ported operator
+      set), wired into `dispatch.go` so a status match can still be downgraded to failure,
+      with the failing check's name recorded in the new persisted `State.FailedTest` /
+      `defs.TaskStatus.FailedTest`
+- [x] `lib/tasks/sample.json` extended with a `tests` entry checking that the response's
+      `server.id` equals `{{SESSIONID}}`, doubling as a worked example of the feature
+- [x] Unit tests for `tests.go` (every operator, first-failure-wins, `{{name}}` substitution
+      in `value`, the bare-array `len` case) and for `dispatch.go`'s integration (passing
+      tests keep success, a failing test overrides it while `save` still runs, a status
+      mismatch skips tests entirely) and `load.go`'s new validations; end-to-end verified
+      against the built binary (see Phase 8 notes)
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -200,6 +212,66 @@ Phase 7 notes (`SESSIONID` preload, `lib/tasks/sample.json`):
   `lib/services/up.ego`) into an isolated temp directory instead, the same way earlier
   phases' end-to-end tests already did for synthetic task files.
 
+Phase 8 notes (`"tests"` block, patterned after `tools/apitest`):
+
+- **`save` and `tests` are independent, deliberately.** Both still gate only on the HTTP
+  status matching (`dispatch.go`'s `doDispatch`); `applySave` always runs first, then
+  `runTests` runs regardless of what `save` found, and a failing test does not un-run or
+  hide anything `save` already extracted. This differs from `tools/apitest` itself, where
+  its `save`-equivalent gates on the *entire* test (status, headers, and every check)
+  succeeding — a deliberate divergence: extracting data for later tasks is a different
+  concern from grading this run pass/fail, and coupling them would make a failing check
+  silently break a later task's `{{name}}` substitution too.
+- **First failing check wins, matching `tools/apitest`'s own behavior exactly.** `runTests`
+  stops at the first failing `Check` and reports only its `Name` — not a list of every
+  failure. This is a faithful, intentional port of `tools/apitest/tester/validate.go`'s
+  control flow, not an oversight; the user-visible ask was specifically "the test
+  description that failed" (singular).
+- **Operators are a cleaned-up subset of `tools/apitest`'s**, not a verbatim alias table:
+  `eq` (default), `ne`, `lt`, `le`, `gt`, `ge`, `contains`, `not-contains`, `len`, `exists`,
+  `not-exists`. `tools/apitest` accepts many spelling variants per operator (`==`, `.eq.`,
+  `equals`, ...); tasks require one canonical spelling each, validated at load time
+  (`validCheckOperators`, `tests.go`) rather than only discovered at run time the way
+  `tools/apitest` does it.
+- **The `len`-on-bare-array footgun documented in `tools/apitest` does not carry over**,
+  confirmed empirically (`TestEvaluateCheckOperators/len_bare_array` in `tests_test.go`).
+  `tools/apitest`'s own parser stringifies a whole unindexed array into one string (so
+  `len` always measures `1` unless the query ends in `.*`); this feature reuses the
+  main-module's `internal/cli/parser.GetItems`, whose separate `format()` flattening pass
+  already expands array elements individually, so `"query": "items"` with `op: "len"`
+  reports the real element count with no `.*` workaround needed.
+- **`not-exists`/`exists` are simpler and more robust than the port source.**
+  `tools/apitest/tester/validate.go` narrowly string-matches `"Map element not found"` in
+  the raw error text to let `not-exists` pass, and treats every other resolution error as a
+  hard abort of the whole `tests` block. Since the main module's parser returns typed
+  errors (`errors.ErrJSONElementNotFound` and friends) rather than ad hoc strings, and since
+  there's no reason a different resolution failure (a missing array, a malformed body)
+  should mean something different to `not-exists` than a missing map key does,
+  `evaluateCheck` treats *any* `GetItems` error as "doesn't exist" for that operator —
+  simpler, and it can't be broken by an error-message wording change elsewhere.
+- **The int→float→string ordering fallback is one generic function, not three copies.**
+  `tools/apitest/tester/validate.go` repeats the same three-way `strconv.Atoi` /
+  `strconv.ParseFloat` / plain-string fallback chain separately for `lt`, `le`, `ge`, and
+  `gt` (about 100 lines of near-duplicate code). The port collapses this into
+  `compareOrdered` (one fallback chain) calling a generic `compareOperator[T int | float64 |
+  string]` (one switch), since this module's Go toolchain supports generics.
+- **`Task.Count`/`Interval` semantics are untouched by this feature.** A failing test still
+  counts as a "run" for `Count`/`RunCount` purposes (a task doesn't get extra attempts just
+  because its checks kept failing) — `recordRun` increments `RunCount` unconditionally, as
+  it already did before this phase.
+- **`FailedTest` persists like `LastStatus`/`Success`, and is always overwritten on every
+  run** (including a subsequent *successful* run, which clears it back to `""`) so it only
+  ever reflects the outcome of the task's most recent execution, never a stale failure from
+  several runs ago.
+- **End-to-end verified against the built binary**: `lib/tasks/sample.json`'s new check
+  (`server.id` from the live `/services/up` response equals the preloaded `{{SESSIONID}}`)
+  passed on a real scheduled run, reported via `GET /admin/tasks` with `success: true` and
+  no `failedTest`. A second, deliberately-failing task (checking `server.id` against a
+  wrong literal) was loaded via `POST /admin/tasks/@reload`, run manually via
+  `POST /admin/tasks/{id}`, and reported back exactly as designed: `lastStatus: 200`,
+  `success` false, `failedTest: "this check is designed to fail"` — confirmed both via the
+  REST response and the server's own `tasks.test.failed` log entry.
+
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
 check is deferred to first dispatch in Phase 2/3, not done at load time as originally
@@ -245,6 +317,14 @@ line, stripped before parsing):
 	"save": {
 		"TOKEN": "system.token"
 	},
+	"tests": [
+		{
+			"name": "purge count is a number",
+			"query": "affected",
+			"op": "ge",
+			"value": "0"
+		}
+	],
 	"timeout": "5m",
 	"interval": "1h",
 	"count": 24,
@@ -270,6 +350,17 @@ Field semantics:
   `endpoint`/`parameters`/`body`). One entry, `{{SESSIONID}}`, is preloaded automatically at
   startup with this server instance's UUID (`defs.InstanceID`) -- no `save` step needed to
   obtain it.
+- `tests` — **optional** array of response validations, patterned after `tools/apitest`'s
+  own response `tests` block (see Phase 8 notes for the full design writeup). Each entry:
+  `name` (required, used for diagnostics), `query` (required, a dot-notation path evaluated
+  against the response body), `value` (the expected value, `{{name}}`-substituted before
+  comparing; ignored by `exists`/`not-exists`), and `op` (one of `eq` [default], `ne`, `lt`,
+  `le`, `gt`, `ge`, `contains`, `not-contains`, `len`, `exists`, `not-exists`). Evaluated
+  only when the status already matched (same gate as `save`, run independently of it); stops
+  at the first failing check. A task whose status matched but whose `tests` did not all pass
+  is still recorded as unsuccessful, with the first failing check's `name` reported as
+  `failedTest` in `GET /admin/tasks` -- so a query of the tasks shows not just *that* a task
+  failed, but *which check* failed it, when that's the reason.
 - `timeout` — Go duration string, with an Ego extension allowing `d` for days (e.g. `"30d"`).
   Defaults to `ego.server.tasks.default.timeout`, clamped to `ego.server.tasks.max.timeout`.
 - `interval` — Go duration string (Ego `d`-extended) for recurring execution: the task
@@ -404,7 +495,17 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
   `router.ServerRouter.ServeHTTP(httptest.NewRecorder(), req)`, compare the resulting status
   to `task.status`, and on match run the `save` extractions via
   `internal/cli/parser.GetItem` (`internal/cli/parser/item.go:9`) against the response body,
-  storing results in the global save map. Update `state.go` with the outcome either way.
+  storing results in the global save map, then run the task's `tests` block (`tests.go`) --
+  a failing check downgrades success to false and names itself for `state.go`. Update
+  `state.go` with the outcome either way.
+- **`tests.go`** — `Check` evaluation engine for the `tests` field: `runTests` (loops,
+  stops at first failure) and `evaluateCheck` (one query via
+  `internal/cli/parser.GetItems`, one operator switch), ported from
+  `tools/apitest/tester/validate.go` since `apitest` is a separate Go module and can't be
+  imported directly. See Phase 8 notes for exactly what was kept, simplified, or fixed
+  relative to the port source (operator set, `not-exists` robustness, the `len`-on-bare-
+  array behavior, and collapsing three near-identical numeric-fallback functions into one
+  generic `compareOperator[T int | float64 | string]`).
 - **`routes.go`** — `AddStaticRoutes(r *router.Router)`, called from
   `internal/commands/routes.go` the same way `tables.AddStaticRoutes(r)` is (routes.go:284),
   gated on `settings.GetBool(defs.TasksEnabledSetting)` so the routes don't even exist when
@@ -445,8 +546,9 @@ All items below are done, not just planned.
   conventions: `permissions_test.go`, `load_test.go`, `state_test.go`, `scheduler_test.go`
   (fake-clock due-task selection, concurrency-limit races run under `-race`),
   `save_test.go` (substitution), `dispatch_test.go` (a genuine in-process router round
-  trip, not a mock), `deactivate_test.go`, `routes_test.go`. Whole-package result: clean
-  under `go test ./internal/server/tasks/... -race -count=10`.
+  trip, not a mock), `deactivate_test.go`, `routes_test.go`, `tests_test.go` (every
+  operator, table-driven, plus first-failure-wins and `{{name}}` substitution in `value`).
+  Whole-package result: clean under `go test ./internal/server/tasks/... -race -count=10`.
 - **End-to-end, against the real built binary**: an isolated `taskstest` CLI profile
   pointed `ego.runtime.path` at a temp directory, `ego.server.tasks.enabled=true`. Multiple
   runs across phases, all against `/admin/heartbeat` (harmless, always 200, no auth
@@ -462,7 +564,13 @@ All items below are done, not just planned.
     stopped; a delayed one-shot (`after: "20s"`) correctly withheld its first run until
     eligible, then never ran again; a `count: 5` task with no `interval` was rejected at
     load with the expected validation error.
-  See the Phase 4/5/6 notes above for the full transcript summaries.
+  - **Phase 8** (against `/services/up`, whose response includes the server's own instance
+    id): `lib/tasks/sample.json`'s `{{SESSIONID}}`-matching check passed on a real scheduled
+    run (`success: true`, no `failedTest`); a second, deliberately-failing task was loaded
+    via `@reload`, run manually, and correctly reported `lastStatus: 200` (the HTTP call
+    itself succeeded) with `success` false and `failedTest` naming the exact check, both in
+    the REST response and the `tasks.test.failed` log line.
+  See the Phase 4/5/6/8 notes above for the full transcript summaries.
 - **Permission enforcement**: covered both ways in the same end-to-end run and in unit
   tests. The real run started with the task file at `0644` and the tasks directory at
   default `0755`; the log showed both corrected to `0600`/`0700` before the task loaded.

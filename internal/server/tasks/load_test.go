@@ -354,6 +354,150 @@ func TestLoadAllAcceptsIntervalCountAfterCombination(t *testing.T) {
 	}
 }
 
+func TestLoadAllAcceptsValidTests(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "88888888-8888-8888-8888-888888888888",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"tests": [
+			{"name": "status ok", "query": "status", "value": "ok"},
+			{"name": "count present", "query": "items", "op": "len", "value": "2"},
+			{"name": "no error field", "query": "error", "op": "not-exists"}
+		]
+	}`
+
+	writeTaskFile(t, dir, "with-tests.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	task, found := Lookup("88888888-8888-8888-8888-888888888888")
+	if !found {
+		t.Fatal("expected task with a valid tests block to load")
+	}
+
+	if len(task.Tests) != 3 {
+		t.Fatalf("len(task.Tests) = %d, want 3", len(task.Tests))
+	}
+}
+
+func TestLoadAllSkipsTestMissingName(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "99999999-9999-9999-9999-999999999999",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"tests": [{"query": "status", "value": "ok"}]
+	}`
+
+	writeTaskFile(t, dir, "test-missing-name.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("99999999-9999-9999-9999-999999999999"); found {
+		t.Error("expected a test entry with no name to be rejected")
+	}
+}
+
+func TestLoadAllSkipsTestMissingQuery(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"tests": [{"name": "no query", "value": "ok"}]
+	}`
+
+	writeTaskFile(t, dir, "test-missing-query.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"); found {
+		t.Error("expected a test entry with no query to be rejected")
+	}
+}
+
+func TestLoadAllSkipsTestInvalidOperator(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"tests": [{"name": "bad op", "query": "status", "op": "frobnicate"}]
+	}`
+
+	writeTaskFile(t, dir, "test-invalid-op.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"); found {
+		t.Error("expected a test entry with an invalid operator to be rejected")
+	}
+}
+
+func TestLoadAllSkipsTestLenWithNonNumericValue(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"tests": [{"name": "bad len", "query": "items", "op": "len", "value": "not-a-number"}]
+	}`
+
+	writeTaskFile(t, dir, "test-invalid-len.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("cccccccc-cccc-cccc-cccc-cccccccccccc"); found {
+		t.Error("expected a \"len\" test with a non-numeric value to be rejected")
+	}
+}
+
 func TestLoadAllDuplicateIDFirstFileWins(t *testing.T) {
 	root := useTempLibDir(t)
 	dir := filepath.Join(root, "tasks")

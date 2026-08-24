@@ -22,15 +22,16 @@ const (
 )
 
 // dispatchFunc performs one task's endpoint call and reports the resulting
-// HTTP status and whether the run is considered successful (actual status
-// matched the task's expected status). It is a package variable, not a
-// direct call, so the scheduler's due-task and concurrency logic can be
-// unit tested without a running router/auth service. dispatch.go assigns
-// the real implementation.
-var dispatchFunc = func(task *Task) (status int, success bool) {
+// HTTP status, whether the run is considered successful (actual status
+// matched the task's expected status AND every Check in Task.Tests
+// passed), and -- only when a Check is why it failed -- that Check's
+// Name. It is a package variable, not a direct call, so the scheduler's
+// due-task and concurrency logic can be unit tested without a running
+// router/auth service. dispatch.go assigns the real implementation.
+var dispatchFunc = func(task *Task) (status int, success bool, failedTest string) {
 	ui.Log(tasksLogger, "tasks.dispatch.unavailable", ui.A{"id": task.ID})
 
-	return 0, false
+	return 0, false, ""
 }
 
 var schedulerOnce sync.Once
@@ -212,17 +213,19 @@ func tryClaim(id string) bool {
 // records reflects when the task finished, per the "interval restarts
 // from completion" contract.
 func runOne(task *Task) {
-	var status int
-
-	var success bool
+	var (
+		status     int
+		success    bool
+		failedTest string
+	)
 
 	completed := util.SafeCall("run task "+task.ID, func() {
-		status, success = dispatchFunc(task)
+		status, success, failedTest = dispatchFunc(task)
 	})
 
 	if !completed {
-		status, success = 0, false
+		status, success, failedTest = 0, false, ""
 	}
 
-	recordRun(task.ID, status, success, time.Now())
+	recordRun(task.ID, status, success, failedTest, time.Now())
 }

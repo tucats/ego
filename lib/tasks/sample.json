@@ -3,21 +3,35 @@
 # harmless, low-load test task for exercising the scheduler (and, later,
 # any dashboard support for tasks) without needing to invent a fixture.
 #
-# All it does is call the always-available GET /services/up endpoint and
-# ignore the result -- no "save" block, nothing consumed from the response.
+# It calls the always-available GET /services/up endpoint and, via the
+# "tests" block, checks that the "server.id" field in the JSON response
+# equals {{SESSIONID}} -- the same server instance UUID the task manager
+# preloads into the substitution dictionary at startup. This illustrates
+# the "tests" feature (patterned after tools/apitest's own response
+# validation) with a check that's actually meaningful: it fails if the
+# call somehow reached a different server instance than expected. No
+# "save" block -- the response isn't needed for anything past this check.
+#
 # It runs four times, thirty seconds apart, starting one minute after the
 # server (or this task) loads, and then stops for good. Those intervals
 # are deliberately short so the whole run finishes in about two and a half
 # minutes, making it easy to watch end to end, while still amounting to
 # only four total requests -- no real load on the server either way.
 {
-	"task": "sample task: periodic no-op liveness check via /services/up",
+	"task": "sample task: periodic liveness check via /services/up, verifying the instance id in the reply",
 	"id": "0479ae18-4e6d-4c14-bf9b-6d55872ef32f",
 	"active": "true",
 	"user": "admin",
 	"method": "get",
 	"endpoint": "/services/up",
 	"status": 200,
+	"tests": [
+		{
+			"name": "response instance id matches this server",
+			"query": "server.id",
+			"value": "{{SESSIONID}}"
+		}
+	],
 	"after": "1m",
 	"interval": "30s",
 	"count": 4

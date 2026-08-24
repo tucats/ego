@@ -1976,6 +1976,7 @@ tasks.run.token.error=Erreur lors de la création du jeton d'authentification po
 tasks.save.error=La tâche {{id}} n'a pas pu enregistrer {{name}} depuis {{path}} : {{error}}
 tasks.state.load.error=Erreur d'analyse du fichier d'état des tâches {{path}} : {{error}} ; toutes les tâches démarrent comme jamais exécutées
 tasks.state.save.error=Erreur lors de l'enregistrement de l'état des tâches : {{error}}
+tasks.test.failed=La tâche {{id}} a échoué au test {{test}}
 tasks.timeout.clamped=Le délai d'attente demandé {{requested}} de la tâche {{id}} dépasse le maximum ; limité à {{max}}
 test.test1=Message de test1 {{path}}
 test.test2=Message de test2

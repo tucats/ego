@@ -1976,6 +1976,7 @@ tasks.run.token.error=タスク{{id}}の認証トークン作成エラー: {{err
 tasks.save.error=タスク{{id}}は{{path}}から{{name}}を保存できませんでした: {{error}}
 tasks.state.load.error=タスク状態ファイル {{path}} の解析エラー: {{error}}; すべてのタスクは未実行として開始します
 tasks.state.save.error=タスク状態の保存エラー: {{error}}
+tasks.test.failed=タスク{{id}}はテスト{{test}}に失敗しました
 tasks.timeout.clamped=タスク{{id}}が要求したタイムアウト{{requested}}は上限を超えているため、{{max}}に制限しました
 test.test1=テストメッセージ1 {{path}}
 test.test2=テストメッセージ2

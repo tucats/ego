@@ -409,12 +409,17 @@ type TaskStatus struct {
 	LastStatus int `json:"lastStatus,omitempty"`
 
 	// Success is whether the last run's actual status matched the task's
-	// expected status.
+	// expected status AND every one of the task's "tests" (if any) passed.
 	Success bool `json:"success,omitempty"`
 
 	// RunCount is the number of times this task has ever run (across
 	// restarts), regardless of outcome.
 	RunCount int `json:"runCount,omitempty"`
+
+	// FailedTest is the name of the first failing entry in the task's
+	// "tests" block from the last run, if that -- rather than a status
+	// mismatch -- is why Success is false. Empty otherwise.
+	FailedTest string `json:"failedTest,omitempty"`
 }
 
 // TasksResponse describes the response object returned from

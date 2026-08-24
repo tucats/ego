@@ -27,6 +27,7 @@ type persistedState struct {
 	LastStatus int       `json:"lastStatus"`
 	Success    bool      `json:"success"`
 	RunCount   int       `json:"runCount"`
+	FailedTest string    `json:"failedTest,omitempty"`
 }
 
 // StateFile returns the path to the sidecar state file.
@@ -87,6 +88,7 @@ func LoadState() error {
 		state.LastStatus = entry.LastStatus
 		state.Success = entry.Success
 		state.RunCount = entry.RunCount
+		state.FailedTest = entry.FailedTest
 	}
 
 	return nil
@@ -108,6 +110,7 @@ func SaveState() error {
 			LastStatus: state.LastStatus,
 			Success:    state.Success,
 			RunCount:   state.RunCount,
+			FailedTest: state.FailedTest,
 		}
 	}
 
@@ -129,12 +132,14 @@ func SaveState() error {
 // persists the full state file so the result survives a restart. RunCount
 // is incremented unconditionally -- it counts every attempt, successful or
 // not, since Task.Count is a lifetime cap on how many times the task runs
-// at all, not on how many times it succeeds. Running is deliberately left
-// true until the state file write has been attempted: the task isn't
-// really "done" until its result is durably recorded, and callers that
-// poll runningCount() to know when a run has fully finished (including its
-// state write) depend on that ordering.
-func recordRun(id string, status int, success bool, when time.Time) {
+// at all, not on how many times it succeeds. failedTest is recorded
+// verbatim (including empty, clearing any previous value) so it always
+// reflects the *last* run, the same as LastStatus/Success. Running is
+// deliberately left true until the state file write has been attempted:
+// the task isn't really "done" until its result is durably recorded, and
+// callers that poll runningCount() to know when a run has fully finished
+// (including its state write) depend on that ordering.
+func recordRun(id string, status int, success bool, failedTest string, when time.Time) {
 	registryLock.Lock()
 
 	state, found := states[id]
@@ -146,6 +151,7 @@ func recordRun(id string, status int, success bool, when time.Time) {
 	state.LastRun = when
 	state.LastStatus = status
 	state.Success = success
+	state.FailedTest = failedTest
 	state.RunCount++
 
 	registryLock.Unlock()

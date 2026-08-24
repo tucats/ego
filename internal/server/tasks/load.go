@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tucats/ego/internal/cli/settings"
@@ -190,6 +191,28 @@ func validateTask(task *Task) error {
 	if task.Timeout != "" {
 		if _, err := util.ParseDuration(task.Timeout); err != nil {
 			return errors.New(errors.ErrTasksInvalidField).Context("timeout: " + task.Timeout)
+		}
+	}
+
+	for i, check := range task.Tests {
+		prefix := "tests[" + strconv.Itoa(i) + "]"
+
+		if check.Name == "" {
+			return errors.New(errors.ErrTasksMissingField).Context(prefix + ".name")
+		}
+
+		if check.Query == "" {
+			return errors.New(errors.ErrTasksMissingField).Context(prefix + ".query")
+		}
+
+		if !validCheckOperators[check.Operator] {
+			return errors.New(errors.ErrTasksInvalidField).Context(prefix + ".op: " + check.Operator)
+		}
+
+		if check.Operator == "len" {
+			if _, err := strconv.Atoi(check.Value); err != nil {
+				return errors.New(errors.ErrTasksInvalidField).Context(prefix + ".value: " + check.Value)
+			}
 		}
 	}
 

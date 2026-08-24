@@ -104,11 +104,11 @@ func TestRunTaskHandlerStartsAsyncAndReturnsAccepted(t *testing.T) {
 
 	var started int32
 
-	useFakeDispatcher(t, func(*Task) (int, bool) {
+	useFakeDispatcher(t, func(*Task) (int, bool, string) {
 		started++
 		<-release
 
-		return 200, true
+		return 200, true, ""
 	})
 
 	rec := doAdminRequest(t, http.MethodPost, defs.AdminTasksPath+"t1")

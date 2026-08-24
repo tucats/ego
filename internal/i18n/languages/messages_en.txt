@@ -2007,6 +2007,7 @@ tasks.run.token.error=Error creating auth token for task {{id}}: {{error}}
 tasks.save.error=Task {{id}} could not save {{name}} from {{path}}: {{error}}
 tasks.state.load.error=Error parsing task state file {{path}}: {{error}}; all tasks start as never-run
 tasks.state.save.error=Error saving task state: {{error}}
+tasks.test.failed=Task {{id}} failed test {{test}}
 tasks.timeout.clamped=Task {{id}} requested timeout {{requested}} exceeds the maximum; clamped to {{max}}
 test.test1=Test message1 {{path}}
 test.test2=Test message2

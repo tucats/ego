@@ -113,7 +113,7 @@ func TestDispatchEndToEndSuccessAppliesSave(t *testing.T) {
 		Save:       map[string]string{"GREETING": "echoed.body.greeting", "CALLER": "echoed.user"},
 	}
 
-	status, success := dispatch(task)
+	status, success, _ := dispatch(task)
 
 	if status != http.StatusCreated {
 		t.Errorf("status = %d, want %d", status, http.StatusCreated)
@@ -132,6 +132,99 @@ func TestDispatchEndToEndSuccessAppliesSave(t *testing.T) {
 	}
 }
 
+func TestDispatchPassingTestsKeepSuccess(t *testing.T) {
+	resetSaved(t)
+
+	r := useTestRouter(t)
+	r.New("/test/echo", testEchoHandler, "POST")
+
+	task := &Task{
+		ID:       "t1a",
+		User:     defs.DefaultAdminUsername,
+		Method:   "POST",
+		Endpoint: "/test/echo",
+		Status:   http.StatusCreated,
+		Tests: []Check{
+			{Name: "caller is admin", Query: "echoed.user", Value: defs.DefaultAdminUsername},
+		},
+	}
+
+	status, success, failedTest := dispatch(task)
+
+	if status != http.StatusCreated || !success || failedTest != "" {
+		t.Errorf("dispatch() = (%d, %v, %q), want (%d, true, \"\")", status, success, failedTest, http.StatusCreated)
+	}
+}
+
+func TestDispatchFailingTestOverridesSuccessButSaveStillRuns(t *testing.T) {
+	resetSaved(t)
+
+	r := useTestRouter(t)
+	r.New("/test/echo", testEchoHandler, "POST")
+
+	task := &Task{
+		ID:       "t1b",
+		User:     defs.DefaultAdminUsername,
+		Method:   "POST",
+		Endpoint: "/test/echo",
+		Status:   http.StatusCreated,
+		Save:     map[string]string{"CALLER": "echoed.user"},
+		Tests: []Check{
+			{Name: "caller is somebody else", Query: "echoed.user", Value: "not-the-real-user"},
+		},
+	}
+
+	status, success, failedTest := dispatch(task)
+
+	if status != http.StatusCreated {
+		t.Errorf("status = %d, want %d (the HTTP status itself still matched)", status, http.StatusCreated)
+	}
+
+	if success {
+		t.Error("expected success to be false: the status matched, but the test should have failed")
+	}
+
+	if failedTest != "caller is somebody else" {
+		t.Errorf("failedTest = %q, want %q", failedTest, "caller is somebody else")
+	}
+
+	if got := substitute("{{CALLER}}"); got != defs.DefaultAdminUsername {
+		t.Errorf("save = %q, want %q (save should still run even though a test later failed)", got, defs.DefaultAdminUsername)
+	}
+}
+
+func TestDispatchStatusMismatchSkipsTests(t *testing.T) {
+	resetSaved(t)
+
+	r := useTestRouter(t)
+	r.New("/test/echo", testEchoHandler, "POST")
+
+	task := &Task{
+		ID:       "t1c",
+		User:     defs.DefaultAdminUsername,
+		Method:   "POST",
+		Endpoint: "/test/echo",
+		Status:   http.StatusTeapot, // handler always returns 201, never this
+		Tests: []Check{
+			{Name: "would fail if ever evaluated", Query: "no.such.field", Operator: "exists"},
+		},
+	}
+
+	status, success, failedTest := dispatch(task)
+
+	if status != http.StatusCreated {
+		t.Errorf("status = %d, want the handler's actual %d", status, http.StatusCreated)
+	}
+
+	if success {
+		t.Error("expected success to be false due to the status mismatch")
+	}
+
+	if failedTest != "" {
+		t.Errorf("failedTest = %q, want \"\" (a status mismatch is the failure reason, not a test)", failedTest)
+	}
+}
+
 func TestDispatchStatusMismatchSkipsSave(t *testing.T) {
 	resetSaved(t)
 
@@ -147,7 +240,7 @@ func TestDispatchStatusMismatchSkipsSave(t *testing.T) {
 		Save:     map[string]string{"SHOULD_NOT_EXIST": "echoed.user"},
 	}
 
-	status, success := dispatch(task)
+	status, success, _ := dispatch(task)
 
 	if status != http.StatusCreated {
 		t.Errorf("status = %d, want the handler's actual %d", status, http.StatusCreated)
@@ -179,7 +272,7 @@ func TestDispatchQueryParametersAreSubstitutedAndSent(t *testing.T) {
 		Save:       map[string]string{"GOT_QUERY": "echoed.query"},
 	}
 
-	if _, success := dispatch(task); !success {
+	if _, success, _ := dispatch(task); !success {
 		t.Fatal("expected dispatch to succeed")
 	}
 
@@ -213,7 +306,7 @@ func TestDispatchTimeoutIsReportedAsFailure(t *testing.T) {
 	}
 
 	start := time.Now()
-	status, success := dispatch(task)
+	status, success, _ := dispatch(task)
 	elapsed := time.Since(start)
 
 	if status != 0 || success {
@@ -250,7 +343,7 @@ func TestDispatchUnknownUserFailsGracefully(t *testing.T) {
 	// handler's real response or a 403 depends on the target route's own
 	// permission requirements; this route requires none, so the call still
 	// goes through and this should not panic or hang.
-	status, _ := dispatch(task)
+	status, _, _ := dispatch(task)
 
 	if status == 0 {
 		t.Error("expected a real HTTP status even for an unknown user, not a token-mint failure")

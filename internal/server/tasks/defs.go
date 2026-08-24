@@ -81,10 +81,41 @@ type Task struct {
 	// first run; it is not reapplied to later recurrences.
 	After string `json:"after,omitempty"`
 
+	// Tests are optional response validations run after a status match
+	// (see dispatch.go), patterned after tools/apitest's own response
+	// "tests" block. A task whose status matched but whose Tests did not
+	// all pass is still recorded as unsuccessful, with the first failing
+	// test's Name recorded in State.FailedTest.
+	Tests []Check `json:"tests,omitempty"`
+
 	// Path is the absolute path of the file this task was loaded from. Not
 	// part of the JSON payload -- needed so DELETE /admin/tasks/{id} can
 	// patch the file's "active" field in place.
 	Path string `json:"-"`
+}
+
+// Check is one entry in a task's "tests" block: a dot-notation query
+// (internal/cli/parser) against the response body, compared to an
+// (optionally {{name}}-substituted) expected value using Operator. See
+// tests.go for the supported operators and evaluation semantics.
+type Check struct {
+	// Name identifies this check for diagnostics; it's what gets recorded
+	// in State.FailedTest when this check is the one that fails.
+	Name string `json:"name"`
+
+	// Query is a dot-notation path (internal/cli/parser.GetItems) into the
+	// JSON response body.
+	Query string `json:"query"`
+
+	// Value is the expected value to compare against, after {{name}}
+	// substitution. Ignored by the "exists"/"not-exists" operators; must
+	// parse as an integer for "len".
+	Value string `json:"value,omitempty"`
+
+	// Operator selects the comparison: "eq" (default), "ne", "lt", "le",
+	// "gt", "ge", "contains", "not-contains", "len", "exists", or
+	// "not-exists".
+	Operator string `json:"op,omitempty"`
 }
 
 // State is the execution history for one task. It is never written into
@@ -101,6 +132,14 @@ type State struct {
 	// restarts), regardless of outcome. Compared against Task.Count to
 	// decide whether a recurring task has used up its lifetime run budget.
 	RunCount int
+
+	// FailedTest is the Name of the first failing entry in Task.Tests from
+	// the last run, if that's why Success is false (the HTTP status still
+	// matched; a test after that was what failed). Empty when the last run
+	// had no failing test -- including when it failed for a different
+	// reason (status mismatch) or succeeded outright. Persisted, so it
+	// survives a restart the same way LastStatus/Success do.
+	FailedTest string
 
 	// LoadedAt is when this task was first registered in this server
 	// process (set once, by register or upsert's new-task branch, and

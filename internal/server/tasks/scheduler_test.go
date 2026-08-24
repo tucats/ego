@@ -10,7 +10,7 @@ import (
 
 // useFakeDispatcher substitutes dispatchFunc for the duration of the test
 // and restores the original (dispatch-unavailable) stub afterward.
-func useFakeDispatcher(t *testing.T, fake func(task *Task) (int, bool)) {
+func useFakeDispatcher(t *testing.T, fake func(task *Task) (int, bool, string)) {
 	t.Helper()
 
 	original := dispatchFunc
@@ -250,7 +250,7 @@ func TestRunOneRecordsSuccessAndClearsRunning(t *testing.T) {
 
 	tryClaim(task.ID)
 
-	useFakeDispatcher(t, func(*Task) (int, bool) { return 200, true })
+	useFakeDispatcher(t, func(*Task) (int, bool, string) { return 200, true, "" })
 
 	runOne(task)
 
@@ -278,7 +278,7 @@ func TestRunOneRecoversFromPanicAndClearsRunning(t *testing.T) {
 
 	tryClaim(task.ID)
 
-	useFakeDispatcher(t, func(*Task) (int, bool) { panic("boom") })
+	useFakeDispatcher(t, func(*Task) (int, bool, string) { panic("boom") })
 
 	runOne(task) // must not crash the test process
 
@@ -305,11 +305,11 @@ func TestStartDueTasksRespectsConcurrencyLimit(t *testing.T) {
 
 	var started int32
 
-	useFakeDispatcher(t, func(*Task) (int, bool) {
+	useFakeDispatcher(t, func(*Task) (int, bool, string) {
 		atomic.AddInt32(&started, 1)
 		<-release
 
-		return 200, true
+		return 200, true, ""
 	})
 
 	for i := 0; i < taskCount; i++ {

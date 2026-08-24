@@ -122,8 +122,8 @@ func TestSaveStateRoundTrips(t *testing.T) {
 
 	when := time.Now().UTC().Truncate(time.Second)
 
-	recordRun("11111111-1111-1111-1111-111111111111", 200, true, when.Add(-time.Minute))
-	recordRun("11111111-1111-1111-1111-111111111111", 200, true, when)
+	recordRun("11111111-1111-1111-1111-111111111111", 200, true, "", when.Add(-time.Minute))
+	recordRun("11111111-1111-1111-1111-111111111111", 200, true, "", when)
 
 	if state, found := Status("11111111-1111-1111-1111-111111111111"); !found || state.RunCount != 2 {
 		t.Fatalf("RunCount before restart = %+v, want 2", state)

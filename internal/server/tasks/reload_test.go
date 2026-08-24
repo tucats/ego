@@ -61,7 +61,7 @@ func TestReloadUpdatesDefinitionButPreservesState(t *testing.T) {
 	}
 
 	when := time.Now().Add(-time.Hour).UTC().Truncate(time.Second)
-	recordRun(id, 200, true, when)
+	recordRun(id, 200, true, "", when)
 
 	// Edit the file: change the description and endpoint, keep the id.
 	edited := `{
