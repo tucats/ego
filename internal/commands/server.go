@@ -184,6 +184,14 @@ func RunServer(c *cli.Context) error {
 		return err
 	}
 
+	// If enabled, and the DSN store itself is database-backed, ensure the
+	// "ego-system" catalog DSN exists, pointing at that same database.
+	if settings.GetBool(defs.DSNCatalogSetting) {
+		if err := dsns.EnsureSystemDSN(); err != nil {
+			ui.Log(ui.ServerLogger, "server.dsn.system.failed", ui.A{"error": err.Error()})
+		}
+	}
+
 	// If a --cluster flag was provided, register this node in the shared cluster
 	// membership table. This is a no-op in standalone mode (no --cluster flag).
 	if err := cluster.Initialize(c); err != nil {

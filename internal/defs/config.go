@@ -435,6 +435,17 @@ const (
 	// tick. Defaults to 3.
 	TasksMaxConcurrentSetting = TasksKeyPrefix + "max.concurrent"
 
+	// DSN CONFIGURATION KEYS
+	// The prefix for all DSN subsystem configuration keys.
+	DSNKeyPrefix = ServerKeyPrefix + "dsn."
+
+	// If true, and the DSN store itself is database-backed (Postgres or
+	// SQLite, not the in-memory or JSON file store), the server
+	// automatically creates a restricted "ego-system" DSN that points at
+	// that same database when the DSN subsystem is initialized. Defaults
+	// to false.
+	DSNCatalogSetting = DSNKeyPrefix + "catalog"
+
 	// The URL path for the tables database functionality.
 	ServerDatabaseKeyPrefix = ServerKeyPrefix + "database."
 
@@ -864,6 +875,7 @@ var ValidSettings map[string]bool = map[string]bool{
 	TasksDefaultTimeoutSetting:  true,
 	TasksMaxTimeoutSetting:      true,
 	TasksMaxConcurrentSetting:   true,
+	DSNCatalogSetting:           true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the
