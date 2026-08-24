@@ -17,6 +17,7 @@ const (
 	PermissionsPseudoTable     = "@permissions"
 	SQLPseudoTable             = "@sql"
 	GeneratePseudoTable        = "@generate"
+	TaskReloadPseudoID         = "@reload"
 	ExpiresParameterName       = "expires"
 	TransactionIDParameterName = "transaction"
 )

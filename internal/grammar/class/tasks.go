@@ -30,4 +30,10 @@ var TaskGrammar = []cli.Option{
 		Action:      commands.TaskList,
 		DefaultVerb: true,
 	},
+	{
+		LongName:    "reload",
+		Description: "ego.task.reload",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TaskReload,
+	},
 }

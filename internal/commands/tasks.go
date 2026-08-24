@@ -74,6 +74,39 @@ func TaskDelete(c *cli.Context) error {
 	return err
 }
 
+// TaskReload tells the server to re-scan its tasks directory and merge
+// what it finds into the running registry, by calling POST
+// /admin/tasks/@reload. This lets an admin add, edit, or reactivate a task
+// by editing its file, without restarting the server. You must be an admin
+// user to perform this command.
+//
+// Invoked by:
+//
+//	Traditional: ego task reload
+//	Verb:        ego reload tasks
+func TaskReload(c *cli.Context) error {
+	url := rest.URLBuilder(defs.AdminTasksIDPath, defs.TaskReloadPseudoID)
+	resp := defs.TasksResponse{}
+
+	err := rest.Exchange(url.String(), http.MethodPost, nil, &resp, defs.AdminAgent, defs.TasksMediaType)
+	if err == nil {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = c.Output(resp)
+		} else {
+			msg := i18n.M("task.reloaded", map[string]any{"count": resp.Count})
+			ui.Say(msg)
+		}
+	} else {
+		if ui.OutputFormat != ui.TextFormat {
+			_ = c.Output(resp)
+		} else {
+			ui.Say(resp.Message)
+		}
+	}
+
+	return err
+}
+
 // TaskList retrieves and displays every scheduled task known to the
 // server, along with its active/running state and the outcome of its
 // last run. You must be an admin user to perform this command.

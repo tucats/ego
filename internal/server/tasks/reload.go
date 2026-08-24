@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/defs"
 )
 
 // ReloadTaskID is the reserved task id that triggers a directory rescan
@@ -11,7 +12,7 @@ import (
 // task may use this id -- validateTask rejects it at load time, the same
 // way other "@name" pseudo-identifiers are reserved elsewhere (@sql,
 // @permissions, @metadata, ...).
-const ReloadTaskID = "@reload"
+const ReloadTaskID = defs.TaskReloadPseudoID
 
 // ReloadResult summarizes what one directory rescan changed.
 type ReloadResult struct {

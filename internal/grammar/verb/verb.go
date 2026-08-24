@@ -161,6 +161,12 @@ var MainGrammar = []cli.Option{
 		Description: "ego.verb.read",
 	},
 	{
+		LongName:    "reload",
+		OptionType:  cli.Subcommand,
+		Value:       ReloadVerbGrammar,
+		Description: "ego.verb.reload",
+	},
+	{
 		LongName:    "restart",
 		OptionType:  cli.Subcommand,
 		Value:       RestartVerbGrammar,
