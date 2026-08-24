@@ -1019,7 +1019,8 @@ body.dark .user-id { color: #666; }
 
 #new-user-sheet label,
 #edit-user-sheet label,
-#new-dsn-sheet label {
+#new-dsn-sheet label,
+#task-detail-sheet label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
@@ -1036,7 +1037,9 @@ body.dark .user-id { color: #666; }
 #new-user-sheet input[type="password"],
 #edit-user-sheet input[type="text"],
 #edit-user-sheet input[type="password"],
-#new-dsn-sheet input[type="text"] {
+#new-dsn-sheet input[type="text"],
+#task-detail-sheet input[type="text"],
+#task-detail-sheet input[type="number"] {
     padding: 0.45rem 0.7rem;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -1085,7 +1088,8 @@ body.dark .user-id { color: #666; }
 #new-user-sheet input:focus,
 #edit-user-sheet input:focus,
 #new-dsn-sheet input:focus,
-#new-dsn-sheet select:focus {
+#new-dsn-sheet select:focus,
+#task-detail-sheet input:focus {
     border-color: #4a90e2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
@@ -1131,7 +1135,8 @@ body.dark .user-id { color: #666; }
 
 #new-user-save-btn,
 #edit-user-save-btn,
-#new-dsn-save-btn {
+#new-dsn-save-btn,
+#task-detail-save-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -1144,10 +1149,12 @@ body.dark .user-id { color: #666; }
 
 #new-user-save-btn:hover,
 #edit-user-save-btn:hover,
-#new-dsn-save-btn:hover    { background: #357abd; }
+#new-dsn-save-btn:hover,
+#task-detail-save-btn:hover    { background: #357abd; }
 #new-user-save-btn:disabled,
 #edit-user-save-btn:disabled,
-#new-dsn-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+#new-dsn-save-btn:disabled,
+#task-detail-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ==========================================================================
    Tables tab — flex column so the toolbar stays fixed and the table list
@@ -3444,7 +3451,8 @@ body.dark #dsn-perm-add-sheet label,
 body.dark #table-perm-edit-sheet label,
 body.dark #table-perm-add-sheet label,
 body.dark #logger-config-sheet label,
-body.dark #log-filter-sheet label { color: #cdd6f4; }
+body.dark #log-filter-sheet label,
+body.dark #task-detail-sheet label { color: #cdd6f4; }
 
 body.dark .checkbox-label { color: #cdd6f4; }
 
@@ -3457,6 +3465,8 @@ body.dark #dsn-perm-edit-sheet input[type="text"],
 body.dark #dsn-perm-add-sheet input[type="text"],
 body.dark #table-perm-edit-sheet input[type="text"],
 body.dark #table-perm-add-sheet input[type="text"],
+body.dark #task-detail-sheet input[type="text"],
+body.dark #task-detail-sheet input[type="number"],
 body.dark #logger-keep,
 body.dark #log-filter-tail,
 body.dark #log-filter-session,

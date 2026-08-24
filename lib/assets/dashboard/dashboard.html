@@ -438,16 +438,35 @@
     <div id="tasks-content"></div>
 </div>
 
-<!-- Task detail sheet — slides in from the right when a task row is clicked -->
+<!-- Task detail sheet — slides in from the right when a task row is clicked.
+     Active/Interval/Count/After are the only fields PATCH /admin/tasks/{id}
+     accepts, so those four are real editable inputs; everything else is
+     rendered read-only into #task-detail-content by populateTaskDetailFields()
+     in dashboard-admin.js. captureBaseline()/isSheetModified() (dashboard-core.js)
+     pick these inputs up automatically to drive the Save button and the
+     close-with-unsaved-changes confirmation -- see hideTaskDetail(). -->
 <div id="task-detail-overlay" onclick="overlayBackdropClick(event)">
     <div id="task-detail-sheet">
         <h2 id="task-detail-title">Task</h2>
         <p id="task-detail-error"></p>
         <p id="task-detail-message"></p>
+
+        <div class="sheet-checkbox-row">
+            <input type="checkbox" id="task-detail-active">
+            <label for="task-detail-active" class="checkbox-label">Active</label>
+        </div>
+        <label for="task-detail-interval">Interval <span class="field-hint">(Go duration, e.g. 5m, 1h &mdash; blank means one-shot)</span></label>
+        <input type="text" id="task-detail-interval" autocomplete="off" placeholder="e.g. 5m">
+        <label for="task-detail-count">Count <span class="field-hint">(lifetime run cap; 0 means unlimited)</span></label>
+        <input type="number" id="task-detail-count" min="0" step="1" autocomplete="off">
+        <label for="task-detail-after">After <span class="field-hint">(delay before first eligible run, e.g. 30s, 10m)</span></label>
+        <input type="text" id="task-detail-after" autocomplete="off" placeholder="e.g. 30s">
+
         <div id="task-detail-content"></div>
         <div class="sheet-buttons">
             <button id="task-detail-disable-btn" onclick="submitDisableTask()" class="sheet-delete-btn">Disable</button>
             <button id="task-detail-run-btn" onclick="submitRunTask()">Run</button>
+            <button id="task-detail-save-btn" onclick="submitTaskPatch()" disabled>Save</button>
             <button id="task-detail-close-btn" onclick="hideTaskDetail()">Close</button>
         </div>
     </div>
