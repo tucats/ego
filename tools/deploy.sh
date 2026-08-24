@@ -20,7 +20,7 @@ EGO_GRAMMAR=class ego server stop
 cp ego ~/bin/
 
 # restart the server
-EGO_GRAMMAR=class ego server start -k -port=8080
+EGO_GRAMMAR=class ego server start -k -p=8080
 
 # back to where we came from
 popd
