@@ -1,8 +1,10 @@
 package tasks
 
 import (
+	"strings"
 	"time"
 
+	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/resources"
 )
 
@@ -15,14 +17,26 @@ const taskStateTable = "task_state"
 // time.Time because internal/resources.describe has no case for time.Time
 // (it would silently produce an untyped column) -- every other SQL-backed
 // struct in this codebase follows the same string-timestamp convention,
-// e.g. defs.User.LastTokenAt and auth's StartLogEntry.Time.
+// e.g. defs.User.LastTokenAt and auth's StartLogEntry.Time. Description is
+// a write-only convenience copy of the task's own description, kept in
+// step with the row's ID purely so a `SELECT * FROM task_state` shows which
+// task each row belongs to -- see persistedState's doc comment in state.go.
+//
+// A task_state table created by a server build from before this field
+// existed is migrated to add it automatically -- see
+// addDescriptionColumnIfMissing, called from newDatabaseStateStore -- and
+// LoadState backfills the column's value for any row a currently-loaded
+// task's live description doesn't already match, so a long-lived
+// deployment's existing rows pick up real values at the next startup
+// rather than staying blank until each task's next run.
 type taskStateRow struct {
-	ID         string
-	LastRun    string
-	LastStatus int
-	Success    bool
-	RunCount   int
-	FailedTest string
+	ID          string
+	Description string
+	LastRun     string
+	LastStatus  int
+	Success     bool
+	RunCount    int
+	FailedTest  string
 }
 
 // databaseStateStore persists task run-state as rows in the shared system
@@ -34,7 +48,9 @@ type databaseStateStore struct {
 }
 
 // newDatabaseStateStore opens (creating if necessary) the task_state table
-// in the database identified by connStr.
+// in the database identified by connStr, then migrates it (see
+// addDescriptionColumnIfMissing) so a table created by a server build from
+// before the Description field existed gains it too.
 func newDatabaseStateStore(connStr string) (*databaseStateStore, error) {
 	handle, err := resources.Open(taskStateRow{}, taskStateTable, connStr)
 	if err != nil {
@@ -49,7 +65,38 @@ func newDatabaseStateStore(connStr string) (*databaseStateStore, error) {
 		return nil, err
 	}
 
+	if err := addDescriptionColumnIfMissing(handle); err != nil {
+		handle.Close()
+
+		return nil, err
+	}
+
 	return &databaseStateStore{handle: handle}, nil
+}
+
+// addDescriptionColumnIfMissing migrates a task_state table created before
+// the Description field existed: CreateIf only creates a table that is
+// missing entirely, it never alters one that already exists, so a
+// long-lived deployment's table would otherwise be stuck without this
+// column forever. ALTER TABLE ADD COLUMN fails if the column is already
+// there, so that specific failure -- SQLite says "duplicate column name",
+// PostgreSQL says "column ... already exists" -- is treated as success and
+// silently ignored; this exact same detect-and-ignore approach is already
+// used for the "credentials" table's own after-the-fact "lasttokenat"
+// column in internal/server/auth/users_sqldb.go. Any other failure is
+// real and is returned.
+func addDescriptionColumnIfMissing(handle *resources.ResHandle) error {
+	_, err := handle.Database.Exec(`ALTER TABLE "task_state" ADD COLUMN "description" TEXT`)
+	if err == nil {
+		return nil
+	}
+
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "duplicate column") || strings.Contains(msg, "already exists") {
+		return nil
+	}
+
+	return errors.New(err)
 }
 
 func (s *databaseStateStore) load() (map[string]persistedState, error) {
@@ -69,11 +116,12 @@ func (s *databaseStateStore) load() (map[string]persistedState, error) {
 		lastRun, _ := time.Parse(time.RFC3339, r.LastRun)
 
 		result[r.ID] = persistedState{
-			LastRun:    lastRun,
-			LastStatus: r.LastStatus,
-			Success:    r.Success,
-			RunCount:   r.RunCount,
-			FailedTest: r.FailedTest,
+			Description: r.Description,
+			LastRun:     lastRun,
+			LastStatus:  r.LastStatus,
+			Success:     r.Success,
+			RunCount:    r.RunCount,
+			FailedTest:  r.FailedTest,
 		}
 	}
 
@@ -99,12 +147,13 @@ func (s *databaseStateStore) save(persisted map[string]persistedState) error {
 
 	for id, state := range persisted {
 		row := taskStateRow{
-			ID:         id,
-			LastRun:    state.LastRun.UTC().Format(time.RFC3339),
-			LastStatus: state.LastStatus,
-			Success:    state.Success,
-			RunCount:   state.RunCount,
-			FailedTest: state.FailedTest,
+			ID:          id,
+			Description: state.Description,
+			LastRun:     state.LastRun.UTC().Format(time.RFC3339),
+			LastStatus:  state.LastStatus,
+			Success:     state.Success,
+			RunCount:    state.RunCount,
+			FailedTest:  state.FailedTest,
 		}
 
 		if existing[id] {

@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -51,6 +52,121 @@ func TestLoadStateAppliesPersistedEntries(t *testing.T) {
 
 	if state.LastStatus != 200 || !state.Success || state.RunCount != 4 {
 		t.Errorf("state = %+v, want status 200, success true, runCount 4", state)
+	}
+}
+
+// TestLoadStateBackfillsMissingDescriptionInFileStore covers the backpatch
+// path for a sidecar state file persisted before the Description field
+// existed: LoadState must notice the mismatch between the (missing, so
+// empty) persisted Description and the live task's real one, and write it
+// back -- without waiting for the task's next run -- while leaving the
+// rest of that entry's run history untouched.
+func TestLoadStateBackfillsMissingDescriptionInFileStore(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	writeTaskFile(t, dir, "example.json", validTaskJSON)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// No "description" key at all -- exactly what a pre-existing file from
+	// before this field was added looks like.
+	stateJSON := `{
+		"11111111-1111-1111-1111-111111111111": {
+			"lastRun": "2020-01-01T00:00:00Z",
+			"lastStatus": 200,
+			"success": true,
+			"runCount": 3
+		}
+	}`
+
+	if err := os.WriteFile(StateFile(), []byte(stateJSON), requiredFileMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	if err := LoadState(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	raw, err := os.ReadFile(StateFile())
+	if err != nil {
+		t.Fatalf("read back state file: %v", err)
+	}
+
+	var onDisk map[string]persistedState
+	if err := json.Unmarshal(raw, &onDisk); err != nil {
+		t.Fatalf("state file did not parse as JSON: %v", err)
+	}
+
+	entry := onDisk["11111111-1111-1111-1111-111111111111"]
+
+	if entry.Description != "example task" {
+		t.Errorf("backfilled Description = %q, want %q", entry.Description, "example task")
+	}
+
+	if entry.RunCount != 3 || entry.LastStatus != 200 || !entry.Success {
+		t.Errorf("backfill save corrupted the rest of the entry's run history: %+v", entry)
+	}
+}
+
+// TestLoadStateDoesNotRewriteFileWhenDescriptionAlreadyMatches pins down
+// the other half of the backfill logic: when nothing actually needs
+// correcting, LoadState must not trigger a save at all.
+func TestLoadStateDoesNotRewriteFileWhenDescriptionAlreadyMatches(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	writeTaskFile(t, dir, "example.json", validTaskJSON)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	stateJSON := `{
+		"11111111-1111-1111-1111-111111111111": {
+			"description": "example task",
+			"lastRun": "2020-01-01T00:00:00Z",
+			"lastStatus": 200,
+			"success": true,
+			"runCount": 3
+		}
+	}`
+
+	if err := os.WriteFile(StateFile(), []byte(stateJSON), requiredFileMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	before, err := os.Stat(StateFile())
+	if err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	// Give the filesystem's mtime clock a chance to actually move, so an
+	// unwanted rewrite can't hide behind timestamp-resolution coincidence.
+	time.Sleep(10 * time.Millisecond)
+
+	if err := LoadState(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	after, err := os.Stat(StateFile())
+	if err != nil {
+		t.Fatalf("read back: %v", err)
+	}
+
+	if !after.ModTime().Equal(before.ModTime()) {
+		t.Errorf("state file was rewritten even though the persisted description already matched: mtime %v -> %v",
+			before.ModTime(), after.ModTime())
 	}
 }
 
@@ -136,6 +252,23 @@ func TestSaveStateRoundTrips(t *testing.T) {
 
 	if info.Mode().Perm() != requiredFileMode {
 		t.Errorf("state file mode = %04o, want %04o", info.Mode().Perm(), requiredFileMode)
+	}
+
+	// The persisted file must carry the task's description alongside its
+	// id, purely so a human reading the raw file can tell which task an id
+	// belongs to -- see persistedState's doc comment.
+	raw, err := os.ReadFile(StateFile())
+	if err != nil {
+		t.Fatalf("read back state file: %v", err)
+	}
+
+	var onDisk map[string]persistedState
+	if err := json.Unmarshal(raw, &onDisk); err != nil {
+		t.Fatalf("state file did not parse as JSON: %v", err)
+	}
+
+	if got := onDisk["11111111-1111-1111-1111-111111111111"].Description; got != "example task" {
+		t.Errorf("persisted Description = %q, want %q (from validTaskJSON's \"task\" field)", got, "example task")
 	}
 
 	// Simulate a restart: clear in-memory state (as a fresh register()

@@ -26,12 +26,24 @@ const stateFileName = ".state.json"
 // Running and LoadedAt are deliberately not part of it: "in progress"
 // never survives a restart, and LoadedAt is meant to be re-anchored to
 // each new process's own startup (see State.LoadedAt), not persisted.
+//
+// Description is a write-only convenience copy of the owning task's own
+// Description ("task" field in the task's JSON file) -- keyed alongside it
+// by id in both stores (the map key here, the primary key in
+// state_sqldb.go), purely so a human reading the raw sidecar file or
+// task_state table directly can tell which task an id belongs to without
+// cross-referencing it against lib/tasks/*.json. Nothing in this package
+// ever reads it back out of a persistedState; SaveState always writes the
+// live registry's current Description, and LoadState never touches this
+// field at all -- the in-memory Task.Description it would otherwise
+// overwrite already came from the task's own file, which is authoritative.
 type persistedState struct {
-	LastRun    time.Time `json:"lastRun"`
-	LastStatus int       `json:"lastStatus"`
-	Success    bool      `json:"success"`
-	RunCount   int       `json:"runCount"`
-	FailedTest string    `json:"failedTest,omitempty"`
+	Description string    `json:"description,omitempty"`
+	LastRun     time.Time `json:"lastRun"`
+	LastStatus  int       `json:"lastStatus"`
+	Success     bool      `json:"success"`
+	RunCount    int       `json:"runCount"`
+	FailedTest  string    `json:"failedTest,omitempty"`
 }
 
 // StateFile returns the path to the sidecar state file. Meaningless when
@@ -172,6 +184,16 @@ func (fileStateStore) close() error {
 // replacing it, specifically so it does not clobber LoadedAt -- LoadAll's
 // register call already stamped that with this process's own start time,
 // and persistedState has nothing to say about it (see State.LoadedAt).
+//
+// While matching each persisted entry to its task by id, this also
+// backpatches the store's Description for any entry whose stored value
+// doesn't match that task's current, live Description -- covering both a
+// record persisted before the Description field existed at all (an empty
+// stored value) and one whose task file's description has since changed.
+// A single SaveState call at the end writes every such correction back (it
+// always writes the live registry's current Description for every entry
+// regardless, so one call fixes all of them at once); nothing is written
+// if every entry already matched.
 func LoadState() error {
 	persisted, err := activeStore.load()
 	if err != nil {
@@ -179,10 +201,12 @@ func LoadState() error {
 	}
 
 	registryLock.Lock()
-	defer registryLock.Unlock()
+
+	needsBackfill := false
 
 	for id, entry := range persisted {
-		if _, found := registry[id]; !found {
+		task, found := registry[id]
+		if !found {
 			// Stale entry for a task that was removed or renamed; drop it
 			// silently -- the next SaveState call won't write it back.
 			continue
@@ -199,6 +223,18 @@ func LoadState() error {
 		state.Success = entry.Success
 		state.RunCount = entry.RunCount
 		state.FailedTest = entry.FailedTest
+
+		if entry.Description != task.Description {
+			needsBackfill = true
+		}
+	}
+
+	registryLock.Unlock()
+
+	if needsBackfill {
+		if err := SaveState(); err != nil {
+			ui.Log(tasksLogger, "tasks.state.save.error", ui.A{"error": err.Error()})
+		}
 	}
 
 	return nil
@@ -209,18 +245,34 @@ func LoadState() error {
 // feature targets (a handful of tasks, not thousands) rewriting the whole
 // small snapshot each time is simpler than an incremental update and cheap
 // enough not to matter, for either backend.
+//
+// Each entry's Description is read from the live registry, not from
+// whatever was persisted last time, so it always reflects the task's
+// current definition -- if the task's file is edited and reloaded, the
+// next SaveState call (its next run) picks up the new description
+// automatically. A state entry with no corresponding registry entry
+// (should not normally happen; see removeMissing's doc comment on why a
+// removed task's state is deliberately left behind) is persisted with an
+// empty Description rather than skipped, so it doesn't vanish from the
+// snapshot.
 func SaveState() error {
 	registryLock.RLock()
 
 	persisted := make(map[string]persistedState, len(states))
 
 	for id, state := range states {
+		description := ""
+		if task, found := registry[id]; found {
+			description = task.Description
+		}
+
 		persisted[id] = persistedState{
-			LastRun:    state.LastRun,
-			LastStatus: state.LastStatus,
-			Success:    state.Success,
-			RunCount:   state.RunCount,
-			FailedTest: state.FailedTest,
+			Description: description,
+			LastRun:     state.LastRun,
+			LastStatus:  state.LastStatus,
+			Success:     state.Success,
+			RunCount:    state.RunCount,
+			FailedTest:  state.FailedTest,
 		}
 	}
 

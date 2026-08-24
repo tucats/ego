@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/dsns"
+	"github.com/tucats/ego/internal/resources"
 )
 
 // useDatabaseStore points the task-state store at a fresh temp SQLite
@@ -101,6 +102,25 @@ func TestDatabaseStore_SaveAndLoadRoundTrip(t *testing.T) {
 		t.Fatalf("RunCount before restart = %+v, want 2", state)
 	}
 
+	// The task_state row must carry the task's description alongside its
+	// id, purely so a "SELECT * FROM task_state" shows which task each row
+	// belongs to -- see persistedState's doc comment. Checked directly
+	// against the store (State itself deliberately has no Description
+	// field -- see SaveState's doc comment), not through Status/LoadState.
+	store, ok := activeStore.(*databaseStateStore)
+	if !ok {
+		t.Fatalf("activeStore = %T, want *databaseStateStore", activeStore)
+	}
+
+	persisted, err := store.load()
+	if err != nil {
+		t.Fatalf("store.load(): %v", err)
+	}
+
+	if got := persisted["11111111-1111-1111-1111-111111111111"].Description; got != "example task" {
+		t.Errorf("persisted Description = %q, want %q (from validTaskJSON's \"task\" field)", got, "example task")
+	}
+
 	// Simulate a restart: clear in-memory state, then reload from the
 	// database rather than the JSON file.
 	loadedAt := time.Now()
@@ -171,5 +191,178 @@ func TestDatabaseStore_EmptyTableIsNotAnError(t *testing.T) {
 
 	if err := LoadState(); err != nil {
 		t.Fatalf("unexpected error for an empty task_state table: %v", err)
+	}
+}
+
+// oldTaskStateRowFixture mimics the task_state row shape from before the
+// Description column existed, so TestDatabaseStoreMigratesPreExistingTable
+// below can build a table matching what a real pre-existing deployment's
+// database would actually have -- through the same internal/resources
+// machinery the real table is built with, not a hand-written CREATE TABLE
+// that could quietly drift from it.
+type oldTaskStateRowFixture struct {
+	ID         string
+	LastRun    string
+	LastStatus int
+	Success    bool
+	RunCount   int
+	FailedTest string
+}
+
+// TestDatabaseStoreMigratesPreExistingTable covers addDescriptionColumnIfMissing:
+// opening the store against a task_state table that predates the
+// Description column must add it (not error, and not silently leave the
+// column missing), preserve every pre-existing row, and leave the store
+// fully able to both read and write the new column afterward.
+func TestDatabaseStoreMigratesPreExistingTable(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "premigration.db")
+	connStr := "sqlite://" + path
+
+	oldHandle, err := resources.Open(oldTaskStateRowFixture{}, taskStateTable, connStr)
+	if err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	oldHandle.SetPrimaryKey("ID")
+
+	if err := oldHandle.Create(); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	if err := oldHandle.Begin().Insert(oldTaskStateRowFixture{
+		ID:         "11111111-1111-1111-1111-111111111111",
+		LastRun:    "2020-01-01T00:00:00Z",
+		LastStatus: 200,
+		Success:    true,
+		RunCount:   3,
+	}); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	oldHandle.Close()
+
+	// Opening it the normal way must migrate the table rather than failing
+	// or silently leaving the new column unusable.
+	store, err := newDatabaseStateStore(connStr)
+	if err != nil {
+		t.Fatalf("newDatabaseStateStore did not migrate the pre-existing table: %v", err)
+	}
+
+	t.Cleanup(func() { _ = store.close() })
+
+	persisted, err := store.load()
+	if err != nil {
+		t.Fatalf("load() after migration: %v", err)
+	}
+
+	entry, found := persisted["11111111-1111-1111-1111-111111111111"]
+	if !found {
+		t.Fatal("expected the pre-existing row to survive the migration")
+	}
+
+	if entry.RunCount != 3 || entry.LastStatus != 200 || !entry.Success {
+		t.Errorf("migration lost or corrupted pre-existing data: %+v", entry)
+	}
+
+	if entry.Description != "" {
+		t.Errorf("Description = %q, want \"\" (column was just added; nothing has backfilled it yet)", entry.Description)
+	}
+
+	// The new column must be writable too, not just present.
+	if err := store.save(map[string]persistedState{
+		"11111111-1111-1111-1111-111111111111": {
+			Description: "backfilled", LastStatus: 200, Success: true, RunCount: 3,
+		},
+	}); err != nil {
+		t.Fatalf("save() after migration: %v", err)
+	}
+
+	persisted, err = store.load()
+	if err != nil {
+		t.Fatalf("load() after save: %v", err)
+	}
+
+	if got := persisted["11111111-1111-1111-1111-111111111111"].Description; got != "backfilled" {
+		t.Errorf("Description after save = %q, want %q", got, "backfilled")
+	}
+}
+
+// TestDatabaseStoreMigrationIsIdempotent confirms opening the store a
+// second time against a table that already has the Description column
+// (the common case for every startup after the first one following an
+// upgrade) doesn't error -- addDescriptionColumnIfMissing must correctly
+// recognize and ignore SQLite's "duplicate column" failure.
+func TestDatabaseStoreMigrationIsIdempotent(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "already-migrated.db")
+	connStr := "sqlite://" + path
+
+	first, err := newDatabaseStateStore(connStr)
+	if err != nil {
+		t.Fatalf("first open: %v", err)
+	}
+
+	first.close()
+
+	second, err := newDatabaseStateStore(connStr)
+	if err != nil {
+		t.Fatalf("second open (column already present) unexpectedly failed: %v", err)
+	}
+
+	second.close()
+}
+
+// TestLoadStateBackfillsDescriptionInDatabaseStore is the database-backed
+// counterpart of TestLoadStateBackfillsMissingDescriptionInFileStore:
+// LoadState must backpatch a task_state row's description to match its
+// task's live one, whether the row predates the column (migrated to an
+// empty string, as here) or simply has a stale value from before the task
+// file's description last changed.
+func TestLoadStateBackfillsDescriptionInDatabaseStore(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	writeTaskFile(t, dir, "example.json", validTaskJSON)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	useDatabaseStore(t)
+
+	store, ok := activeStore.(*databaseStateStore)
+	if !ok {
+		t.Fatalf("activeStore = %T, want *databaseStateStore", activeStore)
+	}
+
+	// Persist an entry with no description, as a migrated pre-existing row
+	// (or one saved by an old build in the narrow window before this
+	// feature landed) would have.
+	if err := store.save(map[string]persistedState{
+		"11111111-1111-1111-1111-111111111111": {LastStatus: 200, Success: true, RunCount: 3},
+	}); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	if err := LoadState(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	persisted, err := store.load()
+	if err != nil {
+		t.Fatalf("load() after backfill: %v", err)
+	}
+
+	entry := persisted["11111111-1111-1111-1111-111111111111"]
+
+	if entry.Description != "example task" {
+		t.Errorf("backfilled Description = %q, want %q", entry.Description, "example task")
+	}
+
+	if entry.RunCount != 3 || entry.LastStatus != 200 || !entry.Success {
+		t.Errorf("backfill save corrupted the rest of the entry's run history: %+v", entry)
 	}
 }

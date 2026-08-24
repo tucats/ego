@@ -86,6 +86,42 @@ it in place rather than leaving stale sections once code diverges from the plan 
       top-level field of the same name), missing-field insertion with indentation matching,
       unusual colon spacing, comment preservation, and the same load-time validation rules
       (`validateTask`) rejecting an invalid or ambiguous patch before any file is written.
+- [x] `persistedState` (`state.go`) gained a `Description` field, persisted alongside each
+      task's id in both backends (the sidecar file's map key, `task_state.description` in the
+      database store) purely so a human reading the raw sidecar file or querying the table
+      directly can tell which task an id belongs to without cross-referencing
+      `lib/tasks/*.json`. Write-only: `SaveState` always writes the *live* registry's current
+      `Task.Description` (so an edited-and-reloaded task's description stays current in the
+      next save), and `LoadState` never reads it back into anything -- the in-memory
+      `Task.Description` it would otherwise overwrite already came from the task's own file,
+      which remains authoritative. `state.State` itself (the in-memory struct) does not gain
+      a Description field; only the two on-disk/in-database shapes do.
+- [x] Backpatch support for deployments with an already-existing `task_state` table: since
+      `CreateIf` only creates a table that is missing entirely and never alters one that
+      already exists, `newDatabaseStateStore` now also calls the new
+      `addDescriptionColumnIfMissing` (`state_sqldb.go`), which runs
+      `ALTER TABLE task_state ADD COLUMN "description" TEXT` and treats the "column already
+      exists" failure (both the SQLite and PostgreSQL error text) as success, not an error --
+      the same detect-and-ignore approach already used for the `credentials` table's own
+      after-the-fact `lasttokenat` column in `internal/server/auth/users_sqldb.go`. Once the
+      column exists (freshly migrated, or already added by an earlier startup), `LoadState`
+      backpatches its *value* too: while matching each persisted entry to its task by id (the
+      loop it already runs), any entry whose stored Description doesn't match that task's
+      current live one -- an old entry from before this field existed at all, or one whose
+      task file's description has since changed -- triggers one `SaveState` call at the end
+      that corrects every such entry at once (SaveState already always writes the live
+      Description for every entry regardless of who called it). Nothing is written if every
+      entry already matches. Covers both backends identically, since both round-trip through
+      the same `persistedState` shape.
+- [x] Unit tests for both backpatch paths:
+      `TestLoadStateBackfillsMissingDescriptionInFileStore` /
+      `TestLoadStateDoesNotRewriteFileWhenDescriptionAlreadyMatches` (file store, including
+      pinning down that a no-op case does *not* trigger a rewrite, checked via mtime),
+      `TestDatabaseStoreMigratesPreExistingTable` (builds an old-shape table through
+      `internal/resources` itself, not a hand-written `CREATE TABLE`, so it can't drift from
+      what a real pre-existing deployment's table actually looks like),
+      `TestDatabaseStoreMigrationIsIdempotent` (a second open against an already-migrated
+      table doesn't error), and `TestLoadStateBackfillsDescriptionInDatabaseStore`.
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
@@ -579,7 +615,9 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
 - **`state.go`** — defines the `stateStore` interface (`load`/`save`/`close`) plus the
   file-backed implementation, `fileStateStore`: a sidecar state file (e.g.
   `lib/tasks/.state.json`, itself kept at `0600`) recording
-  `{id: {lastRun, lastStatus, success, runCount}}`. `InitializeStateStore` (see Phase 9
+  `{id: {description, lastRun, lastStatus, success, runCount}}` -- `description` is a
+  write-only copy of the task's own description, present purely so the raw file is
+  self-documenting; see the Progress entry above. `InitializeStateStore` (see Phase 9
   notes) picks between `fileStateStore` and the database-backed `databaseStateStore`
   (`state_sqldb.go`) once at startup, based on `dsns.DSNDatabaseURL`; `activeStore` defaults
   to `fileStateStore{}` so code that never calls `InitializeStateStore` -- including every
