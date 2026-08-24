@@ -284,6 +284,41 @@ type TaskSummary struct {
 	State
 }
 
+// Detail is a lock-safe combined snapshot of one task's full definition (as
+// loaded from its JSON file) together with its current execution state --
+// everything GET /admin/tasks/{id} needs to report. In contrast,
+// TaskSummary (used by Snapshot for the list endpoint) carries only
+// Description/ID/Active plus State, not the rest of Task's definition
+// fields (Method, Endpoint, Parameters, Body, and so on).
+type Detail struct {
+	Task
+	State
+}
+
+// LookupDetail returns a lock-safe combined snapshot of one task's full
+// definition and current state, by id. The Task and State are copied out
+// under the registry lock rather than handing back the live *Task/*State
+// pointers, so the caller never races a concurrent setActive (DELETE
+// /admin/tasks/{id}) or recordRun -- the same discipline Snapshot already
+// uses for the list endpoint.
+func LookupDetail(id string) (Detail, bool) {
+	registryLock.RLock()
+	defer registryLock.RUnlock()
+
+	task, found := registry[id]
+	if !found {
+		return Detail{}, false
+	}
+
+	detail := Detail{Task: *task}
+
+	if state, ok := states[id]; ok {
+		detail.State = *state
+	}
+
+	return detail, true
+}
+
 // Snapshot returns a lock-safe summary of every registered task, sorted by
 // ID.
 func Snapshot() []TaskSummary {

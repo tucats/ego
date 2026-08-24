@@ -208,6 +208,7 @@ const (
 	TokensMediaType               = EgoMediaType + "tokens.list+json"
 	TransactionResponseMediaType  = EgoMediaType + "transaction.response+json"
 	TasksMediaType                = EgoMediaType + "tasks+json"
+	TaskMediaType                 = EgoMediaType + "task+json"
 )
 
 const (

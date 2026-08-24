@@ -24,6 +24,14 @@ var TaskGrammar = []cli.Option{
 		ExpectedParms: 1,
 	},
 	{
+		LongName:      "show",
+		Description:   "ego.task.show",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TaskShow,
+		ParmDesc:      "task-id",
+		ExpectedParms: 1,
+	},
+	{
 		LongName:    "list",
 		Description: "ego.tasks.list",
 		OptionType:  cli.Subcommand,

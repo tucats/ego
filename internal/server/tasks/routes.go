@@ -23,6 +23,14 @@ func AddStaticRoutes(r *router.Router) {
 		Class(router.AdminRequestCounter).
 		AcceptMedia(defs.TasksMediaType)
 
+	// Report everything known about one task -- its full definition plus
+	// its current execution state -- in contrast to GetTasksHandler's
+	// abbreviated per-task summary above.
+	r.New(defs.AdminTasksIDPath, GetTaskHandler, http.MethodGet).
+		Permissions(defs.RootPermission).
+		Class(router.AdminRequestCounter).
+		AcceptMedia(defs.TaskMediaType)
+
 	// Start a task immediately, outside its normal schedule. The reserved
 	// id "@reload" (ReloadTaskID) is special-cased inside RunTaskHandler to
 	// re-scan the tasks directory instead of running a task by that name.
@@ -65,6 +73,65 @@ func GetTasksHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.TasksMediaType)
+	util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+	return http.StatusOK
+}
+
+// GetTaskHandler is the HTTP handler for GET /admin/tasks/{id}. It reports
+// everything known about one task -- its full definition (as loaded from
+// its JSON file) together with its current execution state -- in contrast
+// to GetTasksHandler's abbreviated per-task summary used by the list
+// endpoint. Used by "ego show task {id}" (internal/commands/tasks.go).
+func GetTaskHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	id := data.String(session.URLParts["id"])
+
+	detail, found := LookupDetail(id)
+	if !found {
+		return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrNotFound.Clone().Context(id), session.Language), http.StatusNotFound)
+	}
+
+	checks := make([]defs.TaskCheck, 0, len(detail.Tests))
+	for _, check := range detail.Tests {
+		checks = append(checks, defs.TaskCheck{
+			Name:     check.Name,
+			Query:    check.Query,
+			Value:    check.Value,
+			Operator: check.Operator,
+		})
+	}
+
+	response := defs.TaskDetailResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		Status:     http.StatusOK,
+
+		Task:           detail.Description,
+		ID:             detail.ID,
+		Active:         detail.Active,
+		User:           detail.User,
+		Method:         detail.Method,
+		Endpoint:       detail.Endpoint,
+		Parameters:     detail.Parameters,
+		Body:           detail.Body,
+		ExpectedStatus: detail.Task.Status,
+		Save:           detail.Save,
+		Tests:          checks,
+		Timeout:        detail.Timeout,
+		Interval:       detail.Interval,
+		Count:          detail.Count,
+		After:          detail.After,
+		Path:           detail.Path,
+
+		Running:    detail.Running,
+		LastRun:    detail.LastRun,
+		LastStatus: detail.LastStatus,
+		Success:    detail.Success,
+		RunCount:   detail.RunCount,
+		FailedTest: detail.FailedTest,
+		LoadedAt:   detail.LoadedAt,
+	}
+
+	w.Header().Add(defs.ContentTypeHeader, defs.TaskMediaType)
 	util.WriteJSON(w, session.Response(), http.StatusOK, response)
 
 	return http.StatusOK

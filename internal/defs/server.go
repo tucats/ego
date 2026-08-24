@@ -1,6 +1,7 @@
 package defs
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -430,6 +431,121 @@ type TasksResponse struct {
 	Message    string       `json:"msg,omitempty"`
 	Count      int          `json:"count"`
 	Items      []TaskStatus `json:"items"`
+}
+
+// TaskCheck mirrors one entry of a task's "tests" block (see
+// internal/server/tasks.Check) -- a single response validation performed
+// after a run's status matched the task's expected status.
+type TaskCheck struct {
+	// Name identifies this check for diagnostics.
+	Name string `json:"name"`
+
+	// Query is a dot-notation path into the JSON response body.
+	Query string `json:"query"`
+
+	// Value is the expected value to compare against. Ignored by the
+	// "exists"/"not-exists" operators.
+	Value string `json:"value,omitempty"`
+
+	// Operator selects the comparison ("eq", "ne", "lt", "le", "gt", "ge",
+	// "contains", "not-contains", "len", "exists", "not-exists").
+	Operator string `json:"op,omitempty"`
+}
+
+// TaskDetailResponse describes the response object returned from
+// GET /admin/tasks/{id} -- everything known about one task, combining its
+// full definition (as loaded from its JSON file) with its current
+// execution state. In contrast, TaskStatus (used by the list endpoint,
+// GET /admin/tasks) reports only an abbreviated summary of each task.
+type TaskDetailResponse struct {
+	ServerInfo `json:"server"`
+	Status     int    `json:"status,omitempty"`
+	Message    string `json:"msg,omitempty"`
+
+	// -- Definition fields, mirroring internal/server/tasks.Task --
+
+	// Task is the free-text description from the task's "task" field.
+	Task string `json:"task"`
+
+	// ID is the task's unique identifier.
+	ID string `json:"id"`
+
+	// Active is whether the scheduler is allowed to run this task.
+	Active bool `json:"active"`
+
+	// User is the identity the task runs as.
+	User string `json:"user"`
+
+	// Method is the HTTP method used for the task's endpoint call.
+	Method string `json:"method"`
+
+	// Endpoint is the server path the task calls.
+	Endpoint string `json:"endpoint"`
+
+	// Parameters are URL query parameters sent with the request.
+	Parameters map[string]string `json:"parameters,omitempty"`
+
+	// Body is the raw JSON request body sent with the request.
+	Body json.RawMessage `json:"body,omitempty"`
+
+	// ExpectedStatus is the HTTP status the task's endpoint call must
+	// return for the run to be considered successful. Named distinctly
+	// from the envelope's own Status field above, which reports this
+	// response's own HTTP status.
+	ExpectedStatus int `json:"expectedStatus,omitempty"`
+
+	// Save maps a name to a dot-notation JSON path queried against the
+	// response body, extracting a value into the cross-task substitution
+	// dictionary.
+	Save map[string]string `json:"save,omitempty"`
+
+	// Tests are the response validations run after a status match.
+	Tests []TaskCheck `json:"tests,omitempty"`
+
+	// Timeout is a Go duration string bounding the endpoint call.
+	Timeout string `json:"timeout,omitempty"`
+
+	// Interval is a Go duration string for recurring execution. Empty
+	// means the task is one-shot.
+	Interval string `json:"interval,omitempty"`
+
+	// Count caps the total number of times the task will ever run.
+	Count int `json:"count,omitempty"`
+
+	// After is a Go duration string delaying first-run eligibility.
+	After string `json:"after,omitempty"`
+
+	// Path is the absolute path of the file this task was loaded from.
+	Path string `json:"path,omitempty"`
+
+	// -- Execution state fields, mirroring internal/server/tasks.State --
+
+	// Running is true while a run of this task is currently in progress.
+	Running bool `json:"running,omitempty"`
+
+	// LastRun is when this task last finished running. The zero value
+	// means it has never run.
+	LastRun time.Time `json:"lastRun,omitempty"`
+
+	// LastStatus is the HTTP status returned by the last run's endpoint call.
+	LastStatus int `json:"lastStatus,omitempty"`
+
+	// Success is whether the last run's actual status matched
+	// ExpectedStatus AND every one of the task's Tests (if any) passed.
+	Success bool `json:"success,omitempty"`
+
+	// RunCount is the number of times this task has ever run (across
+	// restarts), regardless of outcome.
+	RunCount int `json:"runCount,omitempty"`
+
+	// FailedTest is the name of the first failing entry in Tests from the
+	// last run, if that -- rather than a status mismatch -- is why Success
+	// is false. Empty otherwise.
+	FailedTest string `json:"failedTest,omitempty"`
+
+	// LoadedAt is when this task was first registered in the server
+	// process currently running (not persisted across restarts).
+	LoadedAt time.Time `json:"loadedAt,omitempty"`
 }
 
 // ServerInfoResponse describes the response object returned from the

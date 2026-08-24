@@ -303,4 +303,12 @@ var ShowVerbGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		Value:       TableVerbGrammar,
 	},
+	{
+		LongName:      "task",
+		Description:   "ego.verb.show.task",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TaskShow,
+		ParmDesc:      "task-id",
+		ExpectedParms: 1,
+	},
 }
