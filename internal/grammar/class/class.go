@@ -48,6 +48,13 @@ var MainGrammar = []cli.Option{
 		Value:       DSNSGrammar,
 	},
 	{
+		LongName:    "task",
+		Aliases:     []string{"tasks"},
+		Description: "ego.task",
+		OptionType:  cli.Subcommand,
+		Value:       TaskGrammar,
+	},
+	{
 		LongName:      "sql",
 		Description:   "ego.sql",
 		OptionType:    cli.Subcommand,

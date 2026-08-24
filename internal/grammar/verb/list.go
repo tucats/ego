@@ -53,6 +53,12 @@ var ListVerbGrammar = []cli.Option{
 		},
 	},
 	{
+		LongName:    "tasks",
+		Description: "ego.tasks.list",
+		OptionType:  cli.Subcommand,
+		Action:      commands.TaskList,
+	},
+	{
 		LongName:      "tables",
 		Aliases:       []string{"table"},
 		Description:   "ego.table.list",

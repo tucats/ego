@@ -67,6 +67,14 @@ var DeleteVerbGrammar = []cli.Option{
 		},
 	},
 	{
+		LongName:      "task",
+		Description:   "ego.verb.delete.task",
+		OptionType:    cli.Subcommand,
+		Action:        commands.TaskDelete,
+		ParmDesc:      "task-id",
+		ExpectedParms: 1,
+	},
+	{
 		LongName:      "token",
 		Description:   "ego.verb.delete.token",
 		OptionType:    cli.Subcommand,

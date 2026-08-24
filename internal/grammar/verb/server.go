@@ -27,6 +27,14 @@ var StartVerbGrammar = []cli.Option{
 		Unsupported:   []string{"windows"},
 		Value:         common.ClusterStartGrammar,
 	},
+	{
+		LongName:      "task",
+		Description:   "ego.verb.start.task",
+		Action:        commands.TaskStart,
+		OptionType:    cli.Subcommand,
+		ParmDesc:      "task-id",
+		ExpectedParms: 1,
+	},
 }
 
 var StopVerbGrammar = []cli.Option{

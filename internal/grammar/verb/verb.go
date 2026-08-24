@@ -66,6 +66,7 @@ var MainGrammar = []cli.Option{
 	{
 		LongName:    "rest",
 		Description: "ego.verb.rest",
+		OptionType:  cli.Subcommand,
 		Value:       common.RestGrammar,
 	},
 	{
