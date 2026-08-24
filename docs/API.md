@@ -776,6 +776,49 @@ Flushes the entire token revocation list.
 &nbsp;
 &nbsp;
 
+### Scheduled Tasks <a name="tasks"></a>
+
+The _Ego_ server can run scheduled tasks: JSON files under `lib/tasks/`, each
+describing a call to make to a server endpoint on a recurring schedule, with
+optional response validation. See [internals/TASKS.md](internals/TASKS.md)
+for the task file format and the full design; this section only covers the
+administrative endpoints for managing tasks while the server is running. All
+task endpoints require the `ego.root` permission.
+
+#### GET /admin/tasks/
+
+Returns the current status of every loaded task: its description, id,
+whether it's active, whether it's currently running, when it last ran, the
+HTTP status and success/failure of that run, how many times it has run in
+total, and — if the last run failed one of the task's response checks
+rather than the HTTP call itself — the name of the check that failed.
+
+#### POST /admin/tasks/_id_
+
+Starts the named task immediately, outside its normal schedule. The task
+runs asynchronously; a `202 Accepted` response confirms the request was
+accepted, not that the task has finished. Its next scheduled run is
+recalculated from when this run completes, the same as any other run.
+
+#### POST /admin/tasks/@reload
+
+A reserved task id that, instead of naming a task, tells the server to
+re-scan the tasks directory: new task files are loaded, edited files are
+updated in place without losing their execution history, and files that
+have been removed are forgotten. This lets an admin add, edit, or reactivate
+a task by editing its file, without restarting the server.
+
+#### DELETE /admin/tasks/_id_
+
+Deactivates a task: its file's `active` field is set to `false` on disk
+(any comments in the file are preserved) and the task stops being
+scheduled. The task remains loaded and still appears in `GET /admin/tasks/`,
+just inactive, so it can be reactivated later by editing the file back and
+reloading.
+
+&nbsp;
+&nbsp;
+
 ### Server Shutdown <a name="down"></a>
 
 #### POST /services/admin/down/
