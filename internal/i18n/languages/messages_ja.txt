@@ -1962,8 +1962,13 @@ tasks.load.skipped=タスクファイル {{path}} をスキップします: {{er
 tasks.loaded=タスク {{id}} ({{description}}) を {{path}} から読み込みました
 tasks.permissions.fixed=タスク{{kind}} {{path}} の権限を {{mode}} に修正しました
 tasks.permissions.fixing=タスク{{kind}} {{path}} の権限は {{have}} です。{{want}} に修正します
+tasks.run.complete=タスク{{id}}はステータス{{status}}で終了しました(期待値{{expected}});success={{success}}
+tasks.run.timeout=タスク{{id}}はタイムアウト{{timeout}}を超過したため、呼び出しを中断し失敗として記録しました
+tasks.run.token.error=タスク{{id}}の認証トークン作成エラー: {{error}}
+tasks.save.error=タスク{{id}}は{{path}}から{{name}}を保存できませんでした: {{error}}
 tasks.state.load.error=タスク状態ファイル {{path}} の解析エラー: {{error}}; すべてのタスクは未実行として開始します
 tasks.state.save.error=タスク状態の保存エラー: {{error}}
+tasks.timeout.clamped=タスク{{id}}が要求したタイムアウト{{requested}}は上限を超えているため、{{max}}に制限しました
 test.test1=テストメッセージ1 {{path}}
 test.test2=テストメッセージ2
 test.test3=[{{session}}] テストセッション {{path}}

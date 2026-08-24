@@ -1993,8 +1993,13 @@ tasks.load.skipped=Skipping task file {{path}}: {{error}}
 tasks.loaded=Loaded task {{id}} ({{description}}) from {{path}}
 tasks.permissions.fixed=Task {{kind}} {{path}} permissions corrected to {{mode}}
 tasks.permissions.fixing=Task {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
+tasks.run.complete=Task {{id}} finished with status {{status}} (expected {{expected}}); success={{success}}
+tasks.run.timeout=Task {{id}} exceeded its {{timeout}} timeout; call abandoned and recorded as failed
+tasks.run.token.error=Error creating auth token for task {{id}}: {{error}}
+tasks.save.error=Task {{id}} could not save {{name}} from {{path}}: {{error}}
 tasks.state.load.error=Error parsing task state file {{path}}: {{error}}; all tasks start as never-run
 tasks.state.save.error=Error saving task state: {{error}}
+tasks.timeout.clamped=Task {{id}} requested timeout {{requested}} exceeds the maximum; clamped to {{max}}
 test.test1=Test message1 {{path}}
 test.test2=Test message2
 test.test3=[{{session}}] test session {{path}}

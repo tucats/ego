@@ -1968,8 +1968,13 @@ tasks.load.skipped=Omitiendo archivo de tarea {{path}}: {{error}}
 tasks.loaded=Tarea {{id}} ({{description}}) cargada desde {{path}}
 tasks.permissions.fixed=Permisos de {{kind}} de tarea {{path}} corregidos a {{mode}}
 tasks.permissions.fixing=El {{kind}} de tarea {{path}} tiene permisos {{have}}; corrigiendo a {{want}}
+tasks.run.complete=La tarea {{id}} finalizó con estado {{status}} (se esperaba {{expected}}); success={{success}}
+tasks.run.timeout=La tarea {{id}} superó su tiempo de espera de {{timeout}}; llamada abandonada y registrada como fallida
+tasks.run.token.error=Error al crear el token de autenticación para la tarea {{id}}: {{error}}
+tasks.save.error=La tarea {{id}} no pudo guardar {{name}} desde {{path}}: {{error}}
 tasks.state.load.error=Error al analizar el archivo de estado de tareas {{path}}: {{error}}; todas las tareas comienzan como nunca ejecutadas
 tasks.state.save.error=Error al guardar el estado de tareas: {{error}}
+tasks.timeout.clamped=El tiempo de espera solicitado {{requested}} de la tarea {{id}} supera el máximo; ajustado a {{max}}
 test.test1=Mensaje de prueba1 {{path}}
 test.test2=Mensaje de prueba2
 test.test3=[{{session}}] sesión de prueba {{path}}

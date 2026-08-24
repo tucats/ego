@@ -15,21 +15,48 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] `internal/server/tasks` package: `state.go` (sidecar `.state.json`, 0600)
 - [x] `internal/server/tasks` package: `scheduler.go` (due-task selection, concurrency cap)
 - [x] Unit tests for `state.go` and `scheduler.go` (race-clean, `-race -count=10`)
-- [ ] `internal/server/tasks` package: `dispatch.go` (incl. ported `{{key}}` substitution)
+- [x] `internal/server/tasks` package: `dispatch.go` + `save.go` ({{key}} substitution)
+- [x] Unit tests for `dispatch.go` and `save.go` (real in-process router round trip)
 - [ ] `internal/server/tasks` package: `routes.go` + `/admin/tasks` path constants
 - [ ] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
-- [ ] Unit tests (dispatch)
 - [ ] End-to-end verification (see Verification section)
 - [ ] Permission-enforcement verification (manual, see note in that section)
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
 and concurrency logic is unit-testable without a running router/auth service. Phase 3's
-`dispatch.go` will assign the real implementation. Also: `recordRun` (`state.go`)
-deliberately keeps a task's `Running` flag true until *after* `SaveState` returns, not
-just until the endpoint call finishes -- a run isn't fully done until its result is
-durably recorded, and it gives callers a single, simple signal (`runningCount() == 0`) for
-"this run, including its state write, has completely finished."
+`dispatch.go` assigns the real implementation via its own `init()`. Also: `recordRun`
+(`state.go`) deliberately keeps a task's `Running` flag true until *after* `SaveState`
+returns, not just until the endpoint call finishes -- a run isn't fully done until its
+result is durably recorded, and it gives callers a single, simple signal
+(`runningCount() == 0`) for "this run, including its state write, has completely
+finished."
+
+Phase 3 notes:
+
+- **The in-process timeout is best-effort, not preemptive.** `dispatch()` races the
+  in-process `doDispatch()` call against `time.After(timeout)` on a channel; if the
+  timeout wins, the run is recorded as a failure immediately, but the abandoned
+  `doDispatch()` goroutine is *not* killed -- Go has no cooperative-cancellation hook into
+  an arbitrary running goroutine, and the router's `HandlerFunc` signature takes no
+  `context.Context`. The goroutine finishes on its own time and its result is simply
+  discarded. This is the direct cost of the in-process dispatch decision from the design
+  phase (no real `net/http` connection to close). Accepted as-is; a slow or hung target
+  endpoint leaks one goroutine per timeout until it eventually returns, not indefinitely.
+- **`save.go`'s substitution is intentionally minimal** compared to `tools/apitest`'s
+  `dictionary` package: plain `{{name}}` replacement only, no `|format` pipe directives,
+  no `$uuid`/`$hash` dynamic values. A task only ever needs to carry one call's saved
+  value into another call's endpoint/parameters/body, not apitest's richer
+  test-authoring template language.
+- **Testing a real in-process dispatch requires a minimal live `auth.AuthService`**, since
+  `router.Authenticate()` unconditionally calls `auth.GetPermissions`, which panics on a
+  nil `AuthService`. `main_test.go` sets one up with `auth.NewFileService` against a temp
+  file, mirroring the existing pattern in `internal/router/auth_test.go`.
+- **A target route must declare every query parameter a task sends** via the route's own
+  `.Parameter(name, kind)` call, or the router rejects the request with 400 "invalid
+  option keyword" -- this is a router-wide whitelisting behavior, not specific to tasks;
+  it surfaced while writing `dispatch_test.go`'s fixture route and is worth remembering
+  when authoring real task JSON against real endpoints.
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that

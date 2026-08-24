@@ -1962,8 +1962,13 @@ tasks.load.skipped=Fichier de tâche {{path}} ignoré : {{error}}
 tasks.loaded=Tâche {{id}} ({{description}}) chargée depuis {{path}}
 tasks.permissions.fixed=Permissions du {{kind}} de tâche {{path}} corrigées à {{mode}}
 tasks.permissions.fixing=Le {{kind}} de tâche {{path}} a les permissions {{have}} ; correction vers {{want}}
+tasks.run.complete=La tâche {{id}} s'est terminée avec le statut {{status}} (attendu {{expected}}) ; success={{success}}
+tasks.run.timeout=La tâche {{id}} a dépassé son délai d'attente de {{timeout}} ; appel abandonné et enregistré comme échoué
+tasks.run.token.error=Erreur lors de la création du jeton d'authentification pour la tâche {{id}} : {{error}}
+tasks.save.error=La tâche {{id}} n'a pas pu enregistrer {{name}} depuis {{path}} : {{error}}
 tasks.state.load.error=Erreur d'analyse du fichier d'état des tâches {{path}} : {{error}} ; toutes les tâches démarrent comme jamais exécutées
 tasks.state.save.error=Erreur lors de l'enregistrement de l'état des tâches : {{error}}
+tasks.timeout.clamped=Le délai d'attente demandé {{requested}} de la tâche {{id}} dépasse le maximum ; limité à {{max}}
 test.test1=Message de test1 {{path}}
 test.test2=Message de test2
 test.test3=[{{session}}] session de test {{path}}
