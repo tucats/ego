@@ -951,7 +951,24 @@ body.dark .user-id { color: #666; }
     overflow-y: auto;
 }
 
-/* Clickable DSN rows — clicking navigates to the Tables tab for that DSN */
+/* Tasks tab — same flex-column-with-independent-scroll pattern as #dsns above. */
+#tasks {
+    display: none;          /* overridden to flex by openTab() */
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+}
+
+#tasks-content {
+    flex: 1;
+    min-height: 0;          /* allow flex child to shrink below its content size */
+    overflow-y: auto;
+}
+
+/* Clickable DSN rows — clicking navigates to the Tables tab for that DSN.
+   Reused (not DSN-specific despite the name) by every other tab's clickable
+   list rows, e.g. Tables/permissions rows and Tasks rows -- see dsn-row usage
+   in dashboard-admin.js. */
 .dsn-row {
     cursor: pointer;
 }
@@ -1701,14 +1718,16 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-detail-content table,
-#dsn-permissions-content table {
+#dsn-permissions-content table,
+#task-detail-content table {
     border-collapse: collapse;
     width: 100%;
     font-size: 0.88rem;
 }
 
 #dsn-detail-content table th,
-#dsn-permissions-content table th {
+#dsn-permissions-content table th,
+#task-detail-content table th {
     background: #1C6EA4;
     color: #fff;
     text-align: left;
@@ -1717,7 +1736,8 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-detail-content table td,
-#dsn-permissions-content table td {
+#dsn-permissions-content table td,
+#task-detail-content table td {
     padding: 0.4rem 0.75rem;
     border-bottom: 1px solid #dde3ec;
     color: #333;
@@ -1725,12 +1745,14 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-detail-content table tbody tr:nth-child(even) td,
-#dsn-permissions-content table tbody tr:nth-child(even) td {
+#dsn-permissions-content table tbody tr:nth-child(even) td,
+#task-detail-content table tbody tr:nth-child(even) td {
     background: #f0f4fa;
 }
 
 #dsn-detail-tables-btn,
-#dsn-detail-add-perm-btn {
+#dsn-detail-add-perm-btn,
+#task-detail-run-btn {
     padding: 0.45rem 1rem;
     background: #4a90e2;
     color: #fff;
@@ -1741,9 +1763,52 @@ body.dark .user-id { color: #666; }
 }
 
 #dsn-detail-tables-btn:hover,
-#dsn-detail-add-perm-btn:hover { background: #357abd; }
+#dsn-detail-add-perm-btn:hover,
+#task-detail-run-btn:hover { background: #357abd; }
 
-#dsn-detail-close-btn {
+/* Task detail sheet — same slide-in-from-the-right pattern as #dsn-detail-*. */
+#task-detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+#task-detail-sheet {
+    background: #fff;
+    width: 480px;
+    padding: 2rem;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+
+#task-detail-sheet h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    word-break: break-all;
+}
+
+#task-detail-error {
+    color: #c0392b;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#task-detail-message {
+    color: #2e7d32;
+    font-size: 0.85rem;
+    min-height: 1.1em;
+}
+
+#dsn-detail-close-btn,
+#task-detail-close-btn {
     padding: 0.45rem 1rem;
     background: #f4f4f4;
     color: #333;
@@ -1753,7 +1818,8 @@ body.dark .user-id { color: #666; }
     cursor: pointer;
 }
 
-#dsn-detail-close-btn:hover { background: #e0e0e0; }
+#dsn-detail-close-btn:hover,
+#task-detail-close-btn:hover { background: #e0e0e0; }
 
 /* ==========================================================================
    Logger configuration sheet
@@ -3353,6 +3419,7 @@ body.dark #table-perm-edit-sheet,
 body.dark #table-perm-add-sheet,
 body.dark #table-detail-sheet,
 body.dark #dsn-detail-sheet,
+body.dark #task-detail-sheet,
 body.dark #logger-config-sheet,
 body.dark #log-filter-sheet,
 body.dark #config-sheet,
@@ -3431,6 +3498,7 @@ body.dark #table-perm-add-cancel-btn,
 body.dark #logger-cancel-btn,
 body.dark #table-detail-close-btn,
 body.dark #dsn-detail-close-btn,
+body.dark #task-detail-close-btn,
 body.dark #data-edit-cancel-btn,
 body.dark #config-item-close-btn {
     background: #222244;
@@ -3447,6 +3515,7 @@ body.dark #table-perm-add-cancel-btn:hover,
 body.dark #logger-cancel-btn:hover,
 body.dark #table-detail-close-btn:hover,
 body.dark #dsn-detail-close-btn:hover,
+body.dark #task-detail-close-btn:hover,
 body.dark #data-edit-cancel-btn:hover,
 body.dark #config-item-close-btn:hover { background: #2a3a5a; }
 
@@ -3471,16 +3540,20 @@ body.dark #table-permissions-content table tbody tr:nth-child(even) td { backgro
 
 /* DSN detail sheet */
 body.dark #dsn-detail-sheet h2,
-body.dark #dsn-detail-sheet h3 { color: #cdd6f4; }
+body.dark #dsn-detail-sheet h3,
+body.dark #task-detail-sheet h2 { color: #cdd6f4; }
 body.dark #dsn-detail-content table th,
-body.dark #dsn-permissions-content table th { background: #1C5080; }
+body.dark #dsn-permissions-content table th,
+body.dark #task-detail-content table th { background: #1C5080; }
 body.dark #dsn-detail-content table td,
-body.dark #dsn-permissions-content table td {
+body.dark #dsn-permissions-content table td,
+body.dark #task-detail-content table td {
     border-bottom-color: #2a3a5a;
     color: #cdd6f4;
 }
 body.dark #dsn-detail-content table tbody tr:nth-child(even) td,
-body.dark #dsn-permissions-content table tbody tr:nth-child(even) td { background: #202040; }
+body.dark #dsn-permissions-content table tbody tr:nth-child(even) td,
+body.dark #task-detail-content table tbody tr:nth-child(even) td { background: #202040; }
 
 /* Logger config sheet */
 body.dark .logger-file-path {

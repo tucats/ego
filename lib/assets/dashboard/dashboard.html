@@ -78,6 +78,7 @@
     <div class="data" onclick="openTab('data')">Data</div>
     <div class="sql" onclick="openTab('sql')">SQL</div>
     <div class="code" onclick="openTab('code')">Code</div>
+    <div class="tasks" onclick="openTab('tasks')">Tasks</div>
     <div class="log" onclick="openTab('log')">Log</div>
 </div>
 
@@ -425,6 +426,29 @@
         <div class="sheet-buttons">
             <button id="sql-generate-cancel-btn" onclick="hideSqlGenerate()">Cancel</button>
             <button id="sql-generate-submit-btn" onclick="submitSqlGenerate()">Generate</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks tab -->
+<div id="tasks" class="tab-content">
+    <div class="tab-toolbar">
+        <button class="toolbar-add-btn" onclick="reloadTasks()" title="Re-scan the tasks directory for added, edited, or removed task files"><span class="btn-icon">&#x21BA;</span> <span class="btn-label">Reload</span></button>
+    </div>
+    <div id="tasks-content"></div>
+</div>
+
+<!-- Task detail sheet — slides in from the right when a task row is clicked -->
+<div id="task-detail-overlay" onclick="overlayBackdropClick(event)">
+    <div id="task-detail-sheet">
+        <h2 id="task-detail-title">Task</h2>
+        <p id="task-detail-error"></p>
+        <p id="task-detail-message"></p>
+        <div id="task-detail-content"></div>
+        <div class="sheet-buttons">
+            <button id="task-detail-disable-btn" onclick="submitDisableTask()" class="sheet-delete-btn">Disable</button>
+            <button id="task-detail-run-btn" onclick="submitRunTask()">Run</button>
+            <button id="task-detail-close-btn" onclick="hideTaskDetail()">Close</button>
         </div>
     </div>
 </div>
