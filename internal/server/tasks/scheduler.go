@@ -99,11 +99,18 @@ func startDueTasks(now time.Time, maxConcurrent int) {
 	}
 }
 
-// isDue reports whether task should run now: it must be active, not
-// already running, and either never run before or past the end of its
-// repeat interval. A task with repeat "once" (or no repeat at all) is due
-// exactly once -- the first time it's seen with no prior run -- and never
-// again.
+// isDue reports whether task should run now. It must be active and not
+// already running; beyond that, whether it's due depends on whether it has
+// ever run before:
+//
+//   - Never run: due once it clears its After eligibility delay (measured
+//     from when it was loaded into the registry).
+//   - Already run at least once: a task with no Interval is one-shot and
+//     is never due again. A task with an Interval is due again once that
+//     much time has passed since its last run finished, unless Count
+//     caps it and it has already used up its run budget -- validateTask
+//     guarantees Count is 0 or 1 whenever Interval is empty, so the
+//     one-shot check above and the Count check below never disagree.
 func isDue(task *Task, now time.Time) bool {
 	registryLock.RLock()
 	defer registryLock.RUnlock()
@@ -121,20 +128,38 @@ func isDue(task *Task, now time.Time) bool {
 		return false
 	}
 
-	if !found || state.LastRun.IsZero() {
-		return true
+	neverRun := !found || state.LastRun.IsZero()
+
+	if !neverRun {
+		switch {
+		case task.Interval == "":
+			// One-shot: it already had its one run.
+			return false
+		case task.Count > 0 && state.RunCount >= task.Count:
+			// Recurring, but it's used up its lifetime run budget.
+			return false
+		default:
+			interval, err := util.ParseDuration(task.Interval)
+			if err != nil {
+				return false
+			}
+
+			if now.Sub(state.LastRun) < interval {
+				return false
+			}
+		}
 	}
 
-	if task.Repeat == "" || task.Repeat == "once" {
-		return false
+	// The After delay only gates the first-ever run -- a startup stagger,
+	// measured from when the task was loaded into the registry -- not
+	// reapplied to later recurrences.
+	if neverRun && found && task.After != "" && !state.LoadedAt.IsZero() {
+		if delay, err := util.ParseDuration(task.After); err == nil && now.Before(state.LoadedAt.Add(delay)) {
+			return false
+		}
 	}
 
-	interval, err := util.ParseDuration(task.Repeat)
-	if err != nil {
-		return false
-	}
-
-	return now.Sub(state.LastRun) >= interval
+	return true
 }
 
 // runningCount returns the number of tasks currently marked as running.
@@ -162,7 +187,10 @@ func tryClaim(id string) bool {
 
 	state, found := states[id]
 	if !found {
-		state = &State{}
+		// Defensive fallback: register/upsert should always have created
+		// a state entry already. LoadedAt is still set here for
+		// consistency, in case this path is ever actually exercised.
+		state = &State{LoadedAt: time.Now()}
 		states[id] = state
 	}
 
@@ -181,8 +209,8 @@ func tryClaim(id string) bool {
 // panic. recordRun happens unconditionally, whether or not dispatchFunc
 // panicked: it clears the Running flag either way, so a panicking
 // dispatch doesn't wedge the task in "running" forever, and the time it
-// records reflects when the task finished, per the "repeat interval
-// restarts from completion" contract.
+// records reflects when the task finished, per the "interval restarts
+// from completion" contract.
 func runOne(task *Task) {
 	var status int
 

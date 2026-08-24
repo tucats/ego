@@ -57,8 +57,7 @@ const validTaskJSON = `{
 	"user": "admin",
 	"method": "post",
 	"endpoint": "/services/jiggle",
-	"status": 200,
-	"repeat": "once"
+	"status": 200
 }`
 
 func TestLoadAllCreatesMissingDirectory(t *testing.T) {
@@ -216,6 +215,124 @@ func TestLoadAllSkipsInvalidMethod(t *testing.T) {
 
 	if _, found := Lookup("33333333-3333-3333-3333-333333333333"); found {
 		t.Error("expected task with invalid method to be skipped, but it was loaded")
+	}
+}
+
+func TestLoadAllSkipsAmbiguousCountWithoutInterval(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	// No interval, but count is neither absent nor 1 -- this can never be
+	// satisfied (a one-shot task only ever gets one run), so it should be
+	// rejected as ambiguous rather than silently accepted.
+	content := `{
+		"id": "44444444-4444-4444-4444-444444444444",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"count": 5
+	}`
+
+	writeTaskFile(t, dir, "ambiguous-count.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("44444444-4444-4444-4444-444444444444"); found {
+		t.Error("expected a count > 1 with no interval to be rejected as ambiguous")
+	}
+}
+
+func TestLoadAllAcceptsExplicitCountOneWithoutInterval(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "55555555-5555-5555-5555-555555555555",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"count": 1
+	}`
+
+	writeTaskFile(t, dir, "explicit-one-shot.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("55555555-5555-5555-5555-555555555555"); !found {
+		t.Error("expected count:1 with no interval to be accepted (equivalent to omitting count)")
+	}
+}
+
+func TestLoadAllSkipsInvalidAfter(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "66666666-6666-6666-6666-666666666666",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"after": "not-a-duration"
+	}`
+
+	writeTaskFile(t, dir, "invalid-after.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, found := Lookup("66666666-6666-6666-6666-666666666666"); found {
+		t.Error("expected task with an unparseable after value to be skipped")
+	}
+}
+
+func TestLoadAllAcceptsIntervalCountAfterCombination(t *testing.T) {
+	root := useTempLibDir(t)
+	dir := filepath.Join(root, "tasks")
+
+	if err := os.MkdirAll(dir, requiredDirMode); err != nil {
+		t.Fatalf("test setup: %v", err)
+	}
+
+	content := `{
+		"id": "77777777-7777-7777-7777-777777777777",
+		"user": "admin",
+		"method": "get",
+		"endpoint": "/services/jiggle",
+		"interval": "1h",
+		"count": 3,
+		"after": "30m"
+	}`
+
+	writeTaskFile(t, dir, "full-combo.json", content)
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	task, found := Lookup("77777777-7777-7777-7777-777777777777")
+	if !found {
+		t.Fatal("expected task with a valid interval/count/after combination to load")
+	}
+
+	if task.Interval != "1h" || task.Count != 3 || task.After != "30m" {
+		t.Errorf("task = %+v, fields not parsed as expected", task)
 	}
 }
 

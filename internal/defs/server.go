@@ -411,6 +411,10 @@ type TaskStatus struct {
 	// Success is whether the last run's actual status matched the task's
 	// expected status.
 	Success bool `json:"success,omitempty"`
+
+	// RunCount is the number of times this task has ever run (across
+	// restarts), regardless of outcome.
+	RunCount int `json:"runCount,omitempty"`
 }
 
 // TasksResponse describes the response object returned from

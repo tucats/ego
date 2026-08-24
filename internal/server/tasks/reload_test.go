@@ -55,6 +55,11 @@ func TestReloadUpdatesDefinitionButPreservesState(t *testing.T) {
 
 	const id = "11111111-1111-1111-1111-111111111111"
 
+	loadedAt, found := Status(id)
+	if !found {
+		t.Fatal("test setup: expected state to exist after LoadAll")
+	}
+
 	when := time.Now().Add(-time.Hour).UTC().Truncate(time.Second)
 	recordRun(id, 200, true, when)
 
@@ -66,8 +71,7 @@ func TestReloadUpdatesDefinitionButPreservesState(t *testing.T) {
 		"user": "admin",
 		"method": "post",
 		"endpoint": "/services/jiggled",
-		"status": 200,
-		"repeat": "once"
+		"status": 200
 	}`
 
 	if err := os.WriteFile(path, []byte(edited), requiredFileMode); err != nil {
@@ -97,8 +101,12 @@ func TestReloadUpdatesDefinitionButPreservesState(t *testing.T) {
 		t.Fatal("expected state to survive the reload")
 	}
 
-	if !state.LastRun.Equal(when) || state.LastStatus != 200 || !state.Success {
-		t.Errorf("state was reset by reload: %+v, want LastRun=%v, LastStatus=200, Success=true", state, when)
+	if !state.LastRun.Equal(when) || state.LastStatus != 200 || !state.Success || state.RunCount != 1 {
+		t.Errorf("state was reset by reload: %+v, want LastRun=%v, LastStatus=200, Success=true, RunCount=1", state, when)
+	}
+
+	if !state.LoadedAt.Equal(loadedAt.LoadedAt) {
+		t.Errorf("LoadedAt = %v, want %v (an update via Reload must not re-anchor it)", state.LoadedAt, loadedAt.LoadedAt)
 	}
 }
 

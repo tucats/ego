@@ -19,12 +19,14 @@ import (
 const stateFileName = ".state.json"
 
 // persistedState is the on-disk shape of one task's execution history.
-// Running is deliberately not part of it -- "in progress" never survives a
-// restart, so there is nothing meaningful to persist for it.
+// Running and LoadedAt are deliberately not part of it: "in progress"
+// never survives a restart, and LoadedAt is meant to be re-anchored to
+// each new process's own startup (see State.LoadedAt), not persisted.
 type persistedState struct {
 	LastRun    time.Time `json:"lastRun"`
 	LastStatus int       `json:"lastStatus"`
 	Success    bool      `json:"success"`
+	RunCount   int       `json:"runCount"`
 }
 
 // StateFile returns the path to the sidecar state file.
@@ -36,9 +38,15 @@ func StateFile() string {
 // contents to the in-memory state of every currently-registered task.
 // Tasks with no entry in the file -- including every task on a brand new
 // install -- simply keep their zero-value state, meaning "never run",
-// which makes them immediately due. A missing or corrupt file is not an
-// error: it just means every task starts out looking like it has never
-// run. Call this after LoadAll has populated the registry.
+// which makes them immediately due (subject to After). A missing or
+// corrupt file is not an error: it just means every task starts out
+// looking like it has never run. Call this after LoadAll has populated
+// the registry.
+//
+// This updates fields on the existing *State in place rather than
+// replacing it, specifically so it does not clobber LoadedAt -- LoadAll's
+// register call already stamped that with this process's own start time,
+// and persistedState has nothing to say about it (see State.LoadedAt).
 func LoadState() error {
 	path := StateFile()
 
@@ -69,11 +77,16 @@ func LoadState() error {
 			continue
 		}
 
-		states[id] = &State{
-			LastRun:    entry.LastRun,
-			LastStatus: entry.LastStatus,
-			Success:    entry.Success,
+		state, found := states[id]
+		if !found {
+			state = &State{LoadedAt: time.Now()}
+			states[id] = state
 		}
+
+		state.LastRun = entry.LastRun
+		state.LastStatus = entry.LastStatus
+		state.Success = entry.Success
+		state.RunCount = entry.RunCount
 	}
 
 	return nil
@@ -94,6 +107,7 @@ func SaveState() error {
 			LastRun:    state.LastRun,
 			LastStatus: state.LastStatus,
 			Success:    state.Success,
+			RunCount:   state.RunCount,
 		}
 	}
 
@@ -112,23 +126,27 @@ func SaveState() error {
 }
 
 // recordRun updates a task's in-memory state after a run completes and
-// persists the full state file so the result survives a restart. Running
-// is deliberately left true until the state file write has been attempted:
-// the task isn't really "done" until its result is durably recorded, and
-// callers that poll runningCount() to know when a run has fully finished
-// (including its state write) depend on that ordering.
+// persists the full state file so the result survives a restart. RunCount
+// is incremented unconditionally -- it counts every attempt, successful or
+// not, since Task.Count is a lifetime cap on how many times the task runs
+// at all, not on how many times it succeeds. Running is deliberately left
+// true until the state file write has been attempted: the task isn't
+// really "done" until its result is durably recorded, and callers that
+// poll runningCount() to know when a run has fully finished (including its
+// state write) depend on that ordering.
 func recordRun(id string, status int, success bool, when time.Time) {
 	registryLock.Lock()
 
 	state, found := states[id]
 	if !found {
-		state = &State{}
+		state = &State{LoadedAt: time.Now()}
 		states[id] = state
 	}
 
 	state.LastRun = when
 	state.LastStatus = status
 	state.Success = success
+	state.RunCount++
 
 	registryLock.Unlock()
 

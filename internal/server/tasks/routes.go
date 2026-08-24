@@ -52,6 +52,7 @@ func GetTasksHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			LastRun:    s.LastRun,
 			LastStatus: s.LastStatus,
 			Success:    s.Success,
+			RunCount:   s.RunCount,
 		})
 	}
 

@@ -60,10 +60,26 @@ type Task struct {
 	// bounding the endpoint call. Empty means use the configured default.
 	Timeout string `json:"timeout,omitempty"`
 
-	// Repeat is "once" (run only at startup) or a duration string (with the
-	// Ego "d" days extension) for recurring execution. The interval is
-	// measured from when the task last finished running.
-	Repeat string `json:"repeat,omitempty"`
+	// Interval is a Go duration string (with the Ego "d" days extension)
+	// for recurring execution: the task becomes due again this long after
+	// its previous run finished. Empty means the task is one-shot -- once
+	// eligible (see After), it runs exactly once and never again, the same
+	// as specifying Count: 1.
+	Interval string `json:"interval,omitempty"`
+
+	// Count caps the total number of times the task will ever run, across
+	// restarts (the count is persisted). Zero or absent means no limit.
+	// Meaningless -- and ignored -- when Interval is empty, since a
+	// one-shot task never gets a second chance to run regardless of Count.
+	Count int `json:"count,omitempty"`
+
+	// After is a Go duration string (with the Ego "d" days extension): a
+	// delay, measured from when this task was first loaded into the
+	// registry, before it becomes eligible to run for the first time. Lets
+	// an admin stagger startup so every task doesn't fire the moment the
+	// server starts. Empty means eligible immediately. This only gates the
+	// first run; it is not reapplied to later recurrences.
+	After string `json:"after,omitempty"`
 
 	// Path is the absolute path of the file this task was loaded from. Not
 	// part of the JSON payload -- needed so DELETE /admin/tasks/{id} can
@@ -71,13 +87,30 @@ type Task struct {
 	Path string `json:"-"`
 }
 
-// State is the in-memory execution history for one task. It is never
-// written into the task's own JSON file.
+// State is the execution history for one task. It is never written into
+// the task's own JSON file; LastRun/LastStatus/Success/RunCount persist
+// across restarts via the sidecar state file (state.go), while Running
+// and LoadedAt are process-local and never persisted.
 type State struct {
 	LastRun    time.Time
 	LastStatus int
 	Success    bool
 	Running    bool
+
+	// RunCount is the number of times this task has ever run (across
+	// restarts), regardless of outcome. Compared against Task.Count to
+	// decide whether a recurring task has used up its lifetime run budget.
+	RunCount int
+
+	// LoadedAt is when this task was first registered in this server
+	// process (set once, by register or upsert's new-task branch, and
+	// never touched again -- editing a task via Reload does not reset
+	// it). Combined with Task.After to compute first-run eligibility. Not
+	// persisted: a restart re-anchors every task's "after" delay to the
+	// new process's own load time, which is the point of the feature --
+	// staggering startup, not an absolute calendar delay from first ever
+	// install.
+	LoadedAt time.Time
 }
 
 var (
@@ -98,7 +131,7 @@ func register(task *Task) (existing *Task, duplicate bool) {
 	}
 
 	registry[task.ID] = task
-	states[task.ID] = &State{}
+	states[task.ID] = &State{LoadedAt: time.Now()}
 
 	return nil, false
 }
@@ -110,8 +143,9 @@ func register(task *Task) (existing *Task, duplicate bool) {
 // the new *Task pointer (so any run already in flight, holding the old
 // pointer from before the reload, keeps running against the definition it
 // started with) but leaves the existing *State alone, so a task's
-// LastRun/LastStatus/Success/Running history survives an edit instead of
-// resetting to "never run". Returns true if this ID is new.
+// LastRun/LastStatus/Success/RunCount/Running/LoadedAt history survives an
+// edit instead of resetting to "never run". Returns true if this ID is
+// new.
 func upsert(task *Task) (isNew bool) {
 	registryLock.Lock()
 	defer registryLock.Unlock()
@@ -121,7 +155,7 @@ func upsert(task *Task) (isNew bool) {
 	registry[task.ID] = task
 
 	if !existed {
-		states[task.ID] = &State{}
+		states[task.ID] = &State{LoadedAt: time.Now()}
 	}
 
 	return !existed

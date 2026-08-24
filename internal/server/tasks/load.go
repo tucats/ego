@@ -162,9 +162,21 @@ func validateTask(task *Task) error {
 		return errors.New(errors.ErrTasksInvalidField).Context("method: " + task.Method)
 	}
 
-	if task.Repeat != "" && task.Repeat != "once" {
-		if _, err := util.ParseDuration(task.Repeat); err != nil {
-			return errors.New(errors.ErrTasksInvalidField).Context("repeat: " + task.Repeat)
+	if task.Interval != "" {
+		if _, err := util.ParseDuration(task.Interval); err != nil {
+			return errors.New(errors.ErrTasksInvalidField).Context("interval: " + task.Interval)
+		}
+	} else if task.Count != 0 && task.Count != 1 {
+		// No interval means one-shot: it only ever gets one run, so any
+		// Count other than the implied 1 (or the equivalent explicit 1)
+		// can never be satisfied. Rather than silently ignoring a
+		// confusing value, reject it as an ambiguous task definition.
+		return errors.New(errors.ErrTasksInvalidField).Context("count: requires interval when count is not 1")
+	}
+
+	if task.After != "" {
+		if _, err := util.ParseDuration(task.After); err != nil {
+			return errors.New(errors.ErrTasksInvalidField).Context("after: " + task.After)
 		}
 	}
 

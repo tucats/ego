@@ -1,6 +1,6 @@
 # Scheduled Server Tasks
 
-Status: **implemented** (Phases 1-4 landed, end-to-end verified). This doc doubles as the implementation tracker
+Status: **implemented** (Phases 1-6 landed, end-to-end verified). This doc doubles as the implementation tracker
 during development and as the internals reference for the feature once it lands — update
 it in place rather than leaving stale sections once code diverges from the plan below.
 
@@ -28,6 +28,13 @@ it in place rather than leaving stale sections once code diverges from the plan 
       task by editing its file, no restart required
 - [x] Unit tests for `reload.go` and `ReloadTasksHandler`; end-to-end verified against the
       built binary (add, edit, delete a task file while the server runs; see Phase 5 notes)
+- [x] `repeat` replaced by `interval` (no more `"once"` sentinel -- absent means one-shot);
+      added `count` (lifetime run cap, persisted as `State.RunCount`) and `after` (first-run
+      eligibility delay, measured from the non-persisted `State.LoadedAt`); `validateTask`
+      rejects an ambiguous `count != 1` with no `interval`
+- [x] Unit tests for the new `isDue` branches (count exhaustion, after-delay gating, one-shot
+      via absent interval) and the new load-time validations; end-to-end verified against the
+      built binary (see Phase 6 notes)
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -120,6 +127,43 @@ Phase 5 notes (`POST /admin/tasks/@reload`):
   showed `tasks.reload` with correct new/updated/removed counts and the calling admin's
   username at every step.
 
+Phase 6 notes (`interval`/`count`/`after`, replacing `repeat`):
+
+- **`repeat` is gone; `interval` replaces it, and drops the `"once"` sentinel.** `interval`
+  is now always either absent or a real duration -- never the string `"once"`. Absent
+  means one-shot, exactly like the old `repeat: ""` behavior, so existing "run once" tasks
+  just drop the field entirely (or keep `count: 1` if they want to say so explicitly).
+- **`count` caps total run count, `after` delays first eligibility** -- both optional, both
+  persisted/anchored differently on purpose: `count` compares against `State.RunCount`,
+  which *is* persisted (survives restarts, since the whole point is a lifetime cap); `after`
+  compares against `State.LoadedAt`, which is *deliberately not* persisted, since it's meant
+  to re-stagger startup relative to *this* process's own load time, not to some
+  long-past original install moment.
+- **Ambiguous `count` without `interval` is a load-time validation error**, not a silent
+  coercion to 1 -- see Gap #10. `isDue`'s one-shot branch (`Interval == ""`) doesn't even
+  consult `Count`; validation guarantees the two never disagree by the time `isDue` runs.
+- **`LoadedAt` needed care in three places** to avoid being silently reset/clobbered: `upsert`
+  (`defs.go`) only sets it on the *new*-task branch, never on an update, so editing a task
+  via `Reload` doesn't restart its `after` clock; `LoadState` (`state.go`) was changed from
+  replacing the whole `*State` wholesale to updating fields on the existing one in place, so
+  loading persisted run-history after `LoadAll` has already stamped `LoadedAt` doesn't wipe
+  it back to zero; every other fallback site that creates a `State{}` from scratch (`tryClaim`,
+  `recordRun`) also stamps `LoadedAt`, for the same reason, though in practice `register`/
+  `upsert` always create the entry first.
+- **`isDue`'s two concerns are sequenced, not merged**: first, whether the task is allowed to
+  run again at all (one-shot-already-ran, or recurring-but-count-exhausted, or
+  recurring-but-interval-not-elapsed) -- entirely skipped for a task that has never run;
+  second, only for a *never-run* task, whether its `after` delay has elapsed yet. Keeping
+  these as two sequential blocks (rather than one combined boolean expression) is what makes
+  "`after` only gates the first run" true by construction --
+  `TestIsDueAfterDelayOnlyGatesFirstRun` pins this down.
+- **End-to-end verified against the built binary**: a recurring task (`interval: "20s"`,
+  `count: 2`) ran at startup, ran again on the scheduler tick after its interval elapsed, then
+  stayed put (count exhausted) on a third tick; a one-shot task with `after: "20s"` correctly
+  did *not* run at startup, ran on the first tick after its delay elapsed, then never again;
+  and a task with `count: 5` and no `interval` was rejected at load with the expected
+  `"count: requires interval when count is not 1"` message, confirmed in the server's own log.
+
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
 check is deferred to first dispatch in Phase 2/3, not done at load time as originally
@@ -134,8 +178,9 @@ Ego's server currently has no way to run recurring or startup-triggered work on 
 anything periodic (cleanup, data refresh, calling another service on a timer) has to be
 driven from outside the process (cron, an external script). This feature adds a task
 subsystem: JSON files under `lib/tasks/` each describe one scheduled call to an Ego server
-endpoint (method, body, expected status, a value-extraction/substitution mechanism, and a
-repeat interval), a background scheduler dispatches them under a concurrency cap, and a new
+endpoint (method, body, expected status, a value-extraction/substitution mechanism, and an
+optional recurring interval), a background scheduler dispatches them under a concurrency
+cap, and a new
 `/admin/tasks` endpoint lets a root operator inspect, force-run, or deactivate them. Because
 task files can carry credentials or sensitive request bodies, file-permission enforcement
 (0600, owner-only) is a hard precondition for a task to be loadable at all.
@@ -165,7 +210,9 @@ line, stripped before parsing):
 		"TOKEN": "system.token"
 	},
 	"timeout": "5m",
-	"repeat": "once"
+	"interval": "1h",
+	"count": 24,
+	"after": "10m"
 }
 ```
 
@@ -173,7 +220,8 @@ Field semantics:
 
 - `task` — free-text description, used only in logging.
 - `id` — unique identifier (UUID recommended, not required). Duplicate IDs across files are
-  a load-time error (see Gaps #4).
+  a load-time error (see Gaps #4). The id `@reload` is reserved (see `POST /admin/tasks/@reload`
+  below) and rejected at load time if a task file tries to use it.
 - `active` — whether the scheduler may run this task; `false` means loaded and validated at
   startup but never dispatched.
 - `user` — identity the task runs as; the endpoint call carries this user's real, live
@@ -186,8 +234,23 @@ Field semantics:
   `endpoint`/`parameters`/`body`).
 - `timeout` — Go duration string, with an Ego extension allowing `d` for days (e.g. `"30d"`).
   Defaults to `ego.server.tasks.default.timeout`, clamped to `ego.server.tasks.max.timeout`.
-- `repeat` — `"once"` (startup only) or a duration string (Ego `d`-extended) for recurring
-  execution. The interval restarts from when the task *finishes*, not when it starts.
+- `interval` — Go duration string (Ego `d`-extended) for recurring execution: the task
+  becomes due again this long after its *previous run finished* (not from when it started).
+  **Optional.** If omitted, the task is one-shot: once eligible (see `after`), it runs
+  exactly once and never again — the same as `"count": 1`. There is no `"once"` sentinel
+  value anymore; if present, `interval` must always be a real duration.
+- `count` — caps the total number of times the task will ever run, across restarts (the
+  run count is persisted in the sidecar state file). **Optional**; zero or absent means no
+  limit. Since a one-shot task (no `interval`) only ever gets one run regardless, `count`
+  is only meaningful alongside `interval`: a `count` other than `1` with no `interval` is
+  rejected at load time as an ambiguous task definition (it can never recur to use up a
+  bigger budget, and never gets a first chance to run again after `1` — see Gaps #10). Use
+  `count: 1` (or omit both fields) for an explicit one-shot task.
+- `after` — Go duration string (Ego `d`-extended): a delay, measured from when the task
+  was first loaded into the running registry, before it becomes eligible to run for the
+  first time. **Optional**; absent means eligible immediately. Lets an admin stagger tasks
+  so they don't all fire the moment the server starts (e.g. `"after": "30m"`). This only
+  gates the *first* run — it is never reapplied to later recurrences of the same task.
 
 ## Decisions made during design
 
@@ -222,9 +285,9 @@ Field semantics:
    the second is rejected and logged as a TASKS error; the rest of the directory still loads.
 5. **`"body"` vs `"request"`**: the field is `"body"`, matching the JSON sample (the prose
    in the original request used both terms for the same thing).
-6. **Startup `"once"` tasks must not block server start** — dispatched onto the scheduler's
-   worker pool asynchronously like any other due task, not run synchronously during
-   `Initialize()`.
+6. **Startup one-shot tasks (no `interval`) must not block server start** — dispatched onto
+   the scheduler's worker pool asynchronously like any other due task, not run
+   synchronously during `Initialize()`.
 7. **Overdue recurring tasks**: if a restart happens after a task's interval has already
    elapsed (per the sidecar state), it's treated as immediately due and runs on the next
    scheduler tick rather than waiting a full fresh interval.
@@ -232,9 +295,14 @@ Field semantics:
    are never logged at normal TASKS verbosity — only task id/description, endpoint, status,
    duration, and pass/fail go to the default log line. Full bodies are never logged in the
    clear, matching how credentials are handled elsewhere in this codebase.
-9. **No live task-reload endpoint** — only per-task run (`POST`) and deactivate (`DELETE`)
-   are exposed. Adding/editing tasks requires a server restart to pick up new/changed files.
-   Accepted as a v1 limitation.
+9. ~~**No live task-reload endpoint**~~ — superseded: `POST /admin/tasks/@reload` (Phase 5)
+   re-scans the directory without a restart.
+10. **`count` without `interval` is rejected, not silently ignored.** A one-shot task (no
+    `interval`) only ever runs once no matter what, so a `count` other than `1` can never be
+    honored. Rather than quietly treating it as `1` (which could mask an author's mistaken
+    belief that the task will recur), `validateTask` rejects the file as an ambiguous
+    definition. `count: 1` alongside no `interval` is accepted (explicit, and equivalent to
+    omitting both).
 
 ## Config keys
 
@@ -257,9 +325,11 @@ patchable like other server tuning knobs.
 New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
 `internal/server/admin/`:
 
-- **`defs.go`** — `Task` struct (json tags matching the spec above), an in-memory
-  `TaskState` (last run time, last status, running bool), and the package-level registry
-  (`map[string]*Task` keyed by id, guarded by a mutex).
+- **`defs.go`** — `Task` struct (json tags matching the spec above), an in-memory `State`
+  (last run time, last status, success, run count, running flag, load time), and the
+  package-level registry (`map[string]*Task` keyed by id, guarded by a mutex). `RunCount`
+  and the run-history fields persist via `state.go`; `Running` and `LoadedAt` are
+  process-local and never persisted (see Phase 6 notes).
 - **`load.go`** — directory scan of `lib/tasks/` (path resolved the same way
   `loadAllValidations()` resolves `lib/validations/` in
   `internal/router/validations.go:67-73`: `settings.Get(defs.LibPathName)` or fall back to
@@ -273,15 +343,19 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
   process doesn't own it) is skipped and logged via `ui.Log(tasksLogger, ...)`, not fatal to
   the rest.
 - **`state.go`** — sidecar state file (e.g. `lib/tasks/.state.json`, itself kept at `0600`)
-  recording `{id: {lastRun, lastStatus, success}}`; loaded once at startup, written after
-  each task run.
+  recording `{id: {lastRun, lastStatus, success, runCount}}`; loaded once at startup
+  (`LoadState`, updating fields on the existing in-memory `*State` rather than replacing it,
+  so it never clobbers `LoadedAt` -- see Phase 6 notes), written after each task run
+  (`recordRun`, which also increments `RunCount` unconditionally, success or not).
 - **`scheduler.go`** — background goroutine following the existing idiom
   (`internal/router/ratelimit.go`'s `time.Sleep` loop / `internal/server/oauth/oauth.go`'s
   `time.Ticker`, both wrapped in `util.SafeCall` for panic isolation, per the "NILPTR-6"
-  precedent). Each tick: find due tasks (`active == true`, not currently running, and
-  `now >= lastRun + repeat`, or never run), dispatch up to
-  `ego.server.tasks.max.concurrent` at once via a buffered channel/semaphore, skip the rest
-  until the next tick if the pool is full.
+  precedent). Each tick, `isDue` decides which tasks are due: `active == true`, not
+  currently running, and then -- if it has never run, past its `after` eligibility delay
+  (measured from `LoadedAt`); if it has run before, either one-shot-already-ran (no
+  `interval`: never due again) or recurring (`now >= lastRun + interval`, additionally
+  gated by `count` if set). Due tasks are dispatched up to `ego.server.tasks.max.concurrent`
+  at once, and the rest wait for the next tick if the pool is full.
 - **`dispatch.go`** — for one task: mint a token with
   `tokens.New(task.User, "", timeoutOrTaskTTL, defs.InstanceID, sessionID)`
   (`internal/language/tokens/new.go:60`), apply the global save-dictionary substitution to
@@ -300,7 +374,7 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
   - `GET /admin/tasks` — `.Permissions(defs.RootPermission)`, returns the task list with
     description/id/last-run/status from the registry + state.
   - `POST /admin/tasks/{id}` — same permission; runs the named task immediately (still
-    counts against the concurrency cap) and resets its repeat timer from completion time.
+    counts against the concurrency cap) and resets its interval timer from completion time.
     The reserved id `@reload` (`ReloadTaskID`, `reload.go`) is special-cased instead to
     re-scan `lib/tasks/` and merge the results into the running registry (`Reload`) — new
     files are added, edited files are updated in place (execution history preserved),
@@ -336,13 +410,21 @@ All items below are done, not just planned.
   trip, not a mock), `deactivate_test.go`, `routes_test.go`. Whole-package result: clean
   under `go test ./internal/server/tasks/... -race -count=10`.
 - **End-to-end, against the real built binary**: an isolated `taskstest` CLI profile
-  pointed `ego.runtime.path` at a temp directory, `ego.server.tasks.enabled=true`, one task
-  file hitting `/admin/heartbeat` with `"repeat": "once"`. Verified via the server's own
-  JSON log and live `curl` calls: startup dispatch succeeded (`tasks.run.complete`,
-  status=200, success=true), `GET /admin/tasks` reported it, `POST /admin/tasks/{id}`
-  returned 202 and re-ran it (new `lastRun`), `DELETE /admin/tasks/{id}` flipped
-  `"active": "true"` to `"active": "false"` in place with every comment intact. See the
-  Phase 4 notes above for the full transcript summary.
+  pointed `ego.runtime.path` at a temp directory, `ego.server.tasks.enabled=true`. Multiple
+  runs across phases, all against `/admin/heartbeat` (harmless, always 200, no auth
+  requirement to complicate the picture):
+  - **Phase 4**: one one-shot task. Startup dispatch succeeded (`tasks.run.complete`,
+    status=200, success=true), `GET /admin/tasks` reported it, `POST /admin/tasks/{id}`
+    returned 202 and re-ran it (new `lastRun`), `DELETE /admin/tasks/{id}` flipped
+    `"active": "true"` to `"active": "false"` in place with every comment intact.
+  - **Phase 5**: added, edited, and deleted a task file while the server stayed running,
+    confirming `POST /admin/tasks/@reload` picked up each change (new/updated/removed
+    counts correct in both the response and the log) without a restart.
+  - **Phase 6**: a recurring task (`interval: "20s"`, `count: 2`) ran twice on schedule then
+    stopped; a delayed one-shot (`after: "20s"`) correctly withheld its first run until
+    eligible, then never ran again; a `count: 5` task with no `interval` was rejected at
+    load with the expected validation error.
+  See the Phase 4/5/6 notes above for the full transcript summaries.
 - **Permission enforcement**: covered both ways in the same end-to-end run and in unit
   tests. The real run started with the task file at `0644` and the tasks directory at
   default `0755`; the log showed both corrected to `0600`/`0700` before the task loaded.

@@ -38,17 +38,21 @@ func useSandboxedTasksDir(t *testing.T) {
 func TestIsDueNeverRun(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "1h"}
+	task := &Task{ID: "t1", Active: true, Interval: "1h"}
+
+	registryLock.Lock()
+	states[task.ID] = &State{LoadedAt: time.Now()}
+	registryLock.Unlock()
 
 	if !isDue(task, time.Now()) {
-		t.Error("a task with no prior state should be due")
+		t.Error("a task with no prior run should be due")
 	}
 }
 
 func TestIsDueInactive(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: false, Repeat: "1h"}
+	task := &Task{ID: "t1", Active: false, Interval: "1h"}
 
 	if isDue(task, time.Now()) {
 		t.Error("an inactive task should never be due")
@@ -58,7 +62,7 @@ func TestIsDueInactive(t *testing.T) {
 func TestIsDueAlreadyRunning(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "1h"}
+	task := &Task{ID: "t1", Active: true, Interval: "1h"}
 
 	registryLock.Lock()
 	states[task.ID] = &State{Running: true, LastRun: time.Now().Add(-2 * time.Hour)}
@@ -69,24 +73,24 @@ func TestIsDueAlreadyRunning(t *testing.T) {
 	}
 }
 
-func TestIsDueOnceAlreadyRan(t *testing.T) {
+func TestIsDueOneShotAlreadyRan(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "once"}
+	task := &Task{ID: "t1", Active: true} // no Interval: one-shot
 
 	registryLock.Lock()
-	states[task.ID] = &State{LastRun: time.Now().Add(-1 * time.Minute)}
+	states[task.ID] = &State{LastRun: time.Now().Add(-1 * time.Minute), RunCount: 1}
 	registryLock.Unlock()
 
 	if isDue(task, time.Now()) {
-		t.Error("a \"once\" task that already ran should not be due again")
+		t.Error("a one-shot task (no interval) that already ran should not be due again")
 	}
 }
 
 func TestIsDueRecurringNotYetElapsed(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "1h"}
+	task := &Task{ID: "t1", Active: true, Interval: "1h"}
 
 	registryLock.Lock()
 	states[task.ID] = &State{LastRun: time.Now().Add(-30 * time.Minute)}
@@ -100,7 +104,7 @@ func TestIsDueRecurringNotYetElapsed(t *testing.T) {
 func TestIsDueRecurringElapsed(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "1h"}
+	task := &Task{ID: "t1", Active: true, Interval: "1h"}
 
 	registryLock.Lock()
 	states[task.ID] = &State{LastRun: time.Now().Add(-2 * time.Hour)}
@@ -111,17 +115,94 @@ func TestIsDueRecurringElapsed(t *testing.T) {
 	}
 }
 
-func TestIsDueUnparseableRepeatIsNeverDueAgain(t *testing.T) {
+func TestIsDueUnparseableIntervalIsNeverDueAgain(t *testing.T) {
 	resetRegistry(t)
 
-	task := &Task{ID: "t1", Active: true, Repeat: "garbage"}
+	task := &Task{ID: "t1", Active: true, Interval: "garbage"}
 
 	registryLock.Lock()
 	states[task.ID] = &State{LastRun: time.Now().Add(-1 * time.Hour)}
 	registryLock.Unlock()
 
 	if isDue(task, time.Now()) {
-		t.Error("a task with an unparseable repeat value should not be treated as due")
+		t.Error("a task with an unparseable interval value should not be treated as due")
+	}
+}
+
+func TestIsDueRecurringCountExhausted(t *testing.T) {
+	resetRegistry(t)
+
+	task := &Task{ID: "t1", Active: true, Interval: "1h", Count: 3}
+
+	registryLock.Lock()
+	states[task.ID] = &State{LastRun: time.Now().Add(-2 * time.Hour), RunCount: 3}
+	registryLock.Unlock()
+
+	if isDue(task, time.Now()) {
+		t.Error("a recurring task should not be due once it has used up its Count run budget")
+	}
+}
+
+func TestIsDueRecurringCountNotYetExhausted(t *testing.T) {
+	resetRegistry(t)
+
+	task := &Task{ID: "t1", Active: true, Interval: "1h", Count: 3}
+
+	registryLock.Lock()
+	states[task.ID] = &State{LastRun: time.Now().Add(-2 * time.Hour), RunCount: 2}
+	registryLock.Unlock()
+
+	if !isDue(task, time.Now()) {
+		t.Error("a recurring task should still be due while under its Count run budget")
+	}
+}
+
+func TestIsDueAfterDelayNotYetElapsed(t *testing.T) {
+	resetRegistry(t)
+
+	task := &Task{ID: "t1", Active: true, Interval: "1h", After: "30m"}
+
+	registryLock.Lock()
+	states[task.ID] = &State{LoadedAt: time.Now().Add(-10 * time.Minute)}
+	registryLock.Unlock()
+
+	if isDue(task, time.Now()) {
+		t.Error("a task should not be due before its After delay elapses")
+	}
+}
+
+func TestIsDueAfterDelayElapsed(t *testing.T) {
+	resetRegistry(t)
+
+	task := &Task{ID: "t1", Active: true, Interval: "1h", After: "30m"}
+
+	registryLock.Lock()
+	states[task.ID] = &State{LoadedAt: time.Now().Add(-45 * time.Minute)}
+	registryLock.Unlock()
+
+	if !isDue(task, time.Now()) {
+		t.Error("a task should be due once its After delay elapses")
+	}
+}
+
+func TestIsDueAfterDelayOnlyGatesFirstRun(t *testing.T) {
+	resetRegistry(t)
+
+	// Loaded long ago (After would already be satisfied), last ran 5
+	// minutes ago on a 1h interval -- not due yet, but specifically
+	// because of the interval, not because of After. This pins down that
+	// After is not reapplied on every recurrence.
+	task := &Task{ID: "t1", Active: true, Interval: "1h", After: "30m"}
+
+	registryLock.Lock()
+	states[task.ID] = &State{
+		LoadedAt: time.Now().Add(-24 * time.Hour),
+		LastRun:  time.Now().Add(-5 * time.Minute),
+	}
+	registryLock.Unlock()
+
+	if isDue(task, time.Now()) {
+		t.Error("expected the task to not be due yet, due to its interval, not After")
 	}
 }
 
@@ -233,7 +314,7 @@ func TestStartDueTasksRespectsConcurrencyLimit(t *testing.T) {
 
 	for i := 0; i < taskCount; i++ {
 		id := string(rune('a' + i))
-		task := &Task{ID: id, Active: true, Repeat: "once"}
+		task := &Task{ID: id, Active: true} // no Interval: one-shot, due immediately
 		registry[id] = task
 		states[id] = &State{}
 	}

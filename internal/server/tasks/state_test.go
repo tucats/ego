@@ -27,7 +27,8 @@ func TestLoadStateAppliesPersistedEntries(t *testing.T) {
 		"11111111-1111-1111-1111-111111111111": {
 			"lastRun": "` + lastRun.Format(time.RFC3339) + `",
 			"lastStatus": 200,
-			"success": true
+			"success": true,
+			"runCount": 4
 		}
 	}`
 
@@ -48,8 +49,8 @@ func TestLoadStateAppliesPersistedEntries(t *testing.T) {
 		t.Errorf("LastRun = %v, want %v", state.LastRun, lastRun)
 	}
 
-	if state.LastStatus != 200 || !state.Success {
-		t.Errorf("state = %+v, want status 200 and success true", state)
+	if state.LastStatus != 200 || !state.Success || state.RunCount != 4 {
+		t.Errorf("state = %+v, want status 200, success true, runCount 4", state)
 	}
 }
 
@@ -121,7 +122,12 @@ func TestSaveStateRoundTrips(t *testing.T) {
 
 	when := time.Now().UTC().Truncate(time.Second)
 
+	recordRun("11111111-1111-1111-1111-111111111111", 200, true, when.Add(-time.Minute))
 	recordRun("11111111-1111-1111-1111-111111111111", 200, true, when)
+
+	if state, found := Status("11111111-1111-1111-1111-111111111111"); !found || state.RunCount != 2 {
+		t.Fatalf("RunCount before restart = %+v, want 2", state)
+	}
 
 	info, err := os.Stat(StateFile())
 	if err != nil {
@@ -132,9 +138,13 @@ func TestSaveStateRoundTrips(t *testing.T) {
 		t.Errorf("state file mode = %04o, want %04o", info.Mode().Perm(), requiredFileMode)
 	}
 
-	// Simulate a restart: clear in-memory state, reload from disk.
+	// Simulate a restart: clear in-memory state (as a fresh register()
+	// call would leave it -- just a LoadedAt, no run history yet), reload
+	// from disk.
+	loadedAt := time.Now()
+
 	registryLock.Lock()
-	states = map[string]*State{"11111111-1111-1111-1111-111111111111": {}}
+	states = map[string]*State{"11111111-1111-1111-1111-111111111111": {LoadedAt: loadedAt}}
 	registryLock.Unlock()
 
 	if err := LoadState(); err != nil {
@@ -146,11 +156,15 @@ func TestSaveStateRoundTrips(t *testing.T) {
 		t.Fatal("expected state to survive a reload")
 	}
 
-	if !state.LastRun.Equal(when) || state.LastStatus != 200 || !state.Success {
-		t.Errorf("reloaded state = %+v, want LastRun=%v, LastStatus=200, Success=true", state, when)
+	if !state.LastRun.Equal(when) || state.LastStatus != 200 || !state.Success || state.RunCount != 2 {
+		t.Errorf("reloaded state = %+v, want LastRun=%v, LastStatus=200, Success=true, RunCount=2", state, when)
 	}
 
 	if state.Running {
 		t.Error("expected Running to be false after recordRun")
+	}
+
+	if !state.LoadedAt.Equal(loadedAt) {
+		t.Errorf("LoadedAt = %v, want %v (LoadState must not clobber it -- it isn't persisted)", state.LoadedAt, loadedAt)
 	}
 }
