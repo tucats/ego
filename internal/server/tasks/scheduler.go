@@ -41,6 +41,11 @@ var schedulerOnce sync.Once
 // time. Safe to call more than once; only the first call has any effect.
 func StartScheduler() {
 	schedulerOnce.Do(func() {
+		ui.Log(tasksLogger, "tasks.scheduler.started", ui.A{
+			"interval": schedulerTickInterval.String(),
+			"tasks":    len(Tasks()),
+		})
+
 		go func() {
 			ticker := time.NewTicker(schedulerTickInterval)
 			defer ticker.Stop()

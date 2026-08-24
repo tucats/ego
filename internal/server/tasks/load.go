@@ -56,9 +56,13 @@ func LoadAll() error {
 		return err
 	}
 
+	ui.Log(tasksLogger, "tasks.init.start", ui.A{"path": dir, "count": len(names)})
+
 	for _, name := range names {
 		loadOne(filepath.Join(dir, name))
 	}
+
+	ui.Log(tasksLogger, "tasks.init.complete", ui.A{"loaded": len(Tasks()), "found": len(names)})
 
 	return nil
 }
