@@ -203,11 +203,15 @@ func RunServer(c *cli.Context) error {
 	// logs and continues rather than aborting server startup, the same way
 	// cluster membership registration does just above. Must come after
 	// auth.Initialize, since dispatching a task mints a token validated
-	// through the same auth.AuthService that call sets up.
+	// through the same auth.AuthService that call sets up. Must also come
+	// after dsns.Initialize, since InitializeStateStore decides between the
+	// database and file state stores based on dsns.DSNDatabaseURL.
 	if settings.GetBool(defs.TasksEnabledSetting) {
 		if err := tasks.LoadAll(); err != nil {
 			ui.Log(ui.ServerLogger, "tasks.init.failed", ui.A{"error": err.Error()})
 		} else {
+			tasks.InitializeStateStore()
+
 			if err := tasks.LoadState(); err != nil {
 				ui.Log(ui.ServerLogger, "tasks.init.failed", ui.A{"error": err.Error()})
 			}

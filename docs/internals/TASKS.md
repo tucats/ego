@@ -1,6 +1,7 @@
 # Scheduled Server Tasks
 
-Status: **implemented** (Phases 1-8 landed, end-to-end verified). This doc doubles as the implementation tracker
+Status: **implemented** (Phases 1-9 landed; Phases 1-8 end-to-end verified, Phase 9 unit-verified
+only -- see Phase 9 notes). This doc doubles as the implementation tracker
 during development and as the internals reference for the feature once it lands — update
 it in place rather than leaving stale sections once code diverges from the plan below.
 
@@ -53,6 +54,26 @@ it in place rather than leaving stale sections once code diverges from the plan 
       tests keep success, a failing test overrides it while `save` still runs, a status
       mismatch skips tests entirely) and `load.go`'s new validations; end-to-end verified
       against the built binary (see Phase 8 notes)
+- [x] Task state persistence follows the shared-database model already used for the DSN
+      catalog and user credentials: when `--users`/`ego.server.userdata` points at a database
+      (`dsns.DSNDatabaseURL` resolves to a `postgres://`/`sqlite://`/`sqlite3://` URL), task
+      run-state is stored as rows in a `task_state` table in that same database instead of the
+      `.state.json` sidecar file. `internal/server/tasks` package: `state_sqldb.go`
+      (`databaseStateStore`, `taskStateRow`); `state.go` reworked around a `stateStore`
+      interface (`InitializeStateStore`, `isDatabaseBacked`, `fileStateStore`); no new config
+      key needed. See Phase 9 notes.
+- [x] Unit tests for the database-backed store (`state_sqldb_test.go`): backend selection,
+      scheme detection, and a save/restart/reload round trip against a real temp SQLite
+      database, run interleaved with the existing file-store tests to confirm no test-order
+      leakage.
+
+Phase 1 note: task-file validation checks that `user` is present but does **not** check
+that the named user actually exists in the auth database (`internal/server/auth`) — that
+check is deferred to first dispatch in Phase 2/3, not done at load time as originally
+sketched in Gap #3 below. Reasoning: the auth subsystem is a separate, independently
+initialized service, a load-time check could only ever catch the common case anyway (a
+user can be deleted after the server starts), and keeping `load.go` free of an `auth`
+import keeps its unit tests independent of auth initialization order.
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -272,13 +293,75 @@ Phase 8 notes (`"tests"` block, patterned after `tools/apitest`):
   `success` false, `failedTest: "this check is designed to fail"` — confirmed both via the
   REST response and the server's own `tasks.test.failed` log entry.
 
-Phase 1 note: task-file validation checks that `user` is present but does **not** check
-that the named user actually exists in the auth database (`internal/server/auth`) — that
-check is deferred to first dispatch in Phase 2/3, not done at load time as originally
-sketched in Gap #3 below. Reasoning: the auth subsystem is a separate, independently
-initialized service, a load-time check could only ever catch the common case anyway (a
-user can be deleted after the server starts), and keeping `load.go` free of an `auth`
-import keeps its unit tests independent of auth initialization order.
+Phase 9 notes (database-backed task state, matching the DSN/auth shared-database model):
+
+- **Reuses `dsns.DSNDatabaseURL` rather than re-resolving `ego.server.userdata` itself.**
+  `dsns.Initialize(c)` already resolves `--users`/`ego.server.userdata` to either a database
+  URL or a file path and publishes the result in the exported `dsns.DSNDatabaseURL` (set
+  before `dsns.EnsureSystemDSN` and, per `internal/commands/server.go`'s existing ordering,
+  well before the tasks block runs). Tasks piggyback on that already-resolved value instead
+  of doing a second, independent settings lookup -- this guarantees tasks always agrees with
+  whatever DSN/auth actually connected to, with no risk of the two subsystems disagreeing
+  about what "the system database" even is. No new config key was needed as a result.
+- **`isDatabaseBacked` (`state.go`) is a small local copy of the same check**
+  `dsns.isDatabaseURL` and auth's own equivalent already do privately (a connection string's
+  scheme is `postgres`, `sqlite`, or the deprecated `sqlite3`) -- built on the shared,
+  exported `egostrings.FindScheme` rather than on a copy-pasted prefix check. There is no
+  single shared "is the system database available" helper across subsystems; each one owning
+  a few lines of this logic is the existing convention (`internal/dsns/dsn.go`'s
+  `isDatabaseURL`, `internal/server/auth/users.go`'s equivalent), not something this phase
+  introduced.
+- **Backend selection is an explicit call, not a lazy/`sync.Once` singleton**, deliberately
+  mirroring how `dsns.Initialize`/`auth.Initialize` are invoked exactly once by
+  `RunServer` rather than initialized on first use. `InitializeStateStore()` (`state.go`) is
+  called once, right after `tasks.LoadAll()` succeeds and before `tasks.LoadState()`. The
+  package-level `activeStore` variable defaults to `fileStateStore{}` at declaration, so every
+  test file that predates this phase -- and any use of this package outside a running server
+  -- keeps working unmodified, without ever calling `InitializeStateStore()` at all.
+- **A database-open failure falls back to the file store, logged but not fatal**
+  (`tasks.state.store.database.error`), matching how other optional startup features in this
+  server degrade (`dsns.EnsureSystemDSN`, cluster membership registration). Task scheduling
+  should not stop working just because the shared database had a transient problem at
+  startup.
+- **`task_state` is a new table**, one row per task keyed by `ID` (`taskStateRow` in
+  `state_sqldb.go`, opened via the same `internal/resources.Open` abstraction the DSN catalog
+  and user credentials tables use), named to match the existing `dsns`/`dsns_auth`/
+  `credentials`/`table_perms` table-naming style. `LastRun` is stored as an RFC3339 string,
+  not `time.Time` -- `internal/resources/describe.go`'s column-type mapping has no case for
+  `time.Time` and would silently produce a typeless column -- the same convention already used
+  by `defs.User.LastTokenAt` and auth's own `StartLogEntry.Time`.
+- **`save()` upserts the whole current snapshot on every call**, same call frequency and
+  "cheap enough not to matter at this scale" reasoning as the file store's full-file rewrite
+  per run (`recordRun` calls `SaveState()` once per completed task, not per field change). One
+  `Read` up front determines which task IDs already have a row, so each entry costs a single
+  `Insert` or `UpdateOne` rather than a `ReadOne`-then-write round trip per task.
+- **A task's row is never deleted**, exactly mirroring the file store's existing behavior:
+  `removeMissing` (`defs.go`) already leaves a removed task's entry in the in-memory `states`
+  map behind on purpose (see its doc comment), so the JSON sidecar file only ever grows within
+  a process's lifetime too. The database store keeps the same guarantee for free by simply
+  never issuing a `DELETE`.
+- **Not wired into either graceful-shutdown path.** `internal/router/shutdown.go`'s
+  `RequestShutdown` and `internal/commands/server.go`'s SIGINT handler both explicitly close
+  `dsns.DSNService`/`auth.AuthService` before exiting, but `internal/router` cannot import
+  `internal/server/tasks` (`tasks` already imports `router`, for `routes.go`/`dispatch.go` --
+  importing it back would cycle), and `internal/commands/server.go`'s SIGINT path could reach
+  it but doesn't: both shutdown paths call `os.Exit(0)` shortly after, and the OS reclaims the
+  connection regardless, the same way `dsns`/`auth`'s own database connections worked for the
+  whole lifetime of this codebase before their `Close()` methods were added. `stateStore.close()`
+  exists purely so tests can release a temp database's handle deterministically between runs.
+- **Test isolation relies on `InitializeStateStore()` being explicit, not on `sync.Once`
+  gating.** Because nothing calls it implicitly, every pre-existing test in this package
+  keeps running against the default `fileStateStore{}` with no changes. The new
+  `state_sqldb_test.go` tests call `InitializeStateStore()` themselves, after pointing
+  `dsns.DSNDatabaseURL` at a fresh temp-file SQLite database, and restore
+  `activeStore = fileStateStore{}` plus the original `dsns.DSNDatabaseURL` in `t.Cleanup` --
+  verified safe to interleave with the rest of the package's tests in either order.
+- **Verified at the unit level only, not end-to-end against the built binary** (unlike
+  Phases 1-8): `go build ./...`, `go vet ./...`, and the full `internal/server/tasks`,
+  `internal/dsns`, `internal/resources`, and `internal/commands` suites all pass, including a
+  save/simulate-restart/reload round trip against a real temporary SQLite database. A live
+  end-to-end run (server started against a database-backed `--users` store, confirming
+  `task_state` rows appear and survive an actual process restart) has not yet been done.
 
 ## Context
 
@@ -383,9 +466,11 @@ Field semantics:
 
 ## Decisions made during design
 
-- **Last-run persistence**: a sidecar state file (not the task JSON itself) tracks
-  last-run time/status per task, so recurring schedules survive server restarts without
-  ever rewriting — or risking comments in — the user-authored task file.
+- **Last-run persistence**: never the task JSON itself -- always a separate store, so
+  recurring schedules survive server restarts without ever rewriting, or risking comments
+  in, the user-authored task file. Originally always a sidecar `.state.json` file; as of
+  Phase 9, a `task_state` table in the shared system database when one is available (see
+  Phase 9 notes), falling back to the sidecar file otherwise.
 - **`save` dictionary scope**: one global, in-memory, cross-task key/value store (matches
   `tools/apitest`'s save/substitute model). Lost on restart; not persisted, since
   perpetuating secrets like tokens across restarts is its own can of worms.
@@ -471,11 +556,24 @@ New package `internal/server/tasks/`, mirroring `internal/server/tables/` and
   (`ensureMode`, ~line 88). A file that can't be fixed (e.g. `chmod` fails because the
   process doesn't own it) is skipped and logged via `ui.Log(tasksLogger, ...)`, not fatal to
   the rest.
-- **`state.go`** — sidecar state file (e.g. `lib/tasks/.state.json`, itself kept at `0600`)
-  recording `{id: {lastRun, lastStatus, success, runCount}}`; loaded once at startup
-  (`LoadState`, updating fields on the existing in-memory `*State` rather than replacing it,
-  so it never clobbers `LoadedAt` -- see Phase 6 notes), written after each task run
-  (`recordRun`, which also increments `RunCount` unconditionally, success or not).
+- **`state.go`** — defines the `stateStore` interface (`load`/`save`/`close`) plus the
+  file-backed implementation, `fileStateStore`: a sidecar state file (e.g.
+  `lib/tasks/.state.json`, itself kept at `0600`) recording
+  `{id: {lastRun, lastStatus, success, runCount}}`. `InitializeStateStore` (see Phase 9
+  notes) picks between `fileStateStore` and the database-backed `databaseStateStore`
+  (`state_sqldb.go`) once at startup, based on `dsns.DSNDatabaseURL`; `activeStore` defaults
+  to `fileStateStore{}` so code that never calls `InitializeStateStore` -- including every
+  test predating Phase 9 -- is unaffected. `LoadState` and `SaveState` are backend-agnostic:
+  they read/write through `activeStore` and are otherwise unchanged from their original
+  design (`LoadState` updates fields on the existing in-memory `*State` rather than replacing
+  it, so it never clobbers `LoadedAt` -- see Phase 6 notes; `SaveState` is called after each
+  task run via `recordRun`, which also increments `RunCount` unconditionally, success or
+  not).
+- **`state_sqldb.go`** (Phase 9) — `databaseStateStore`, the database-backed `stateStore`
+  implementation: one row per task in a `task_state` table, opened via
+  `internal/resources.Open` (the same mechanism the DSN catalog and user-credentials tables
+  use). See Phase 9 notes for the full design writeup (row shape, upsert strategy, why
+  `LastRun` is a string, and why it's never wired into graceful shutdown).
 - **`scheduler.go`** — background goroutine following the existing idiom
   (`internal/router/ratelimit.go`'s `time.Sleep` loop / `internal/server/oauth/oauth.go`'s
   `time.Ticker`, both wrapped in `util.SafeCall` for panic isolation, per the "NILPTR-6"
@@ -547,7 +645,9 @@ All items below are done, not just planned.
   (fake-clock due-task selection, concurrency-limit races run under `-race`),
   `save_test.go` (substitution), `dispatch_test.go` (a genuine in-process router round
   trip, not a mock), `deactivate_test.go`, `routes_test.go`, `tests_test.go` (every
-  operator, table-driven, plus first-failure-wins and `{{name}}` substitution in `value`).
+  operator, table-driven, plus first-failure-wins and `{{name}}` substitution in `value`),
+  `state_sqldb_test.go` (Phase 9: backend selection, connection-string scheme detection, and
+  a save/simulate-restart/reload round trip against a real temp SQLite database).
   Whole-package result: clean under `go test ./internal/server/tasks/... -race -count=10`.
 - **End-to-end, against the real built binary**: an isolated `taskstest` CLI profile
   pointed `ego.runtime.path` at a temp directory, `ego.server.tasks.enabled=true`. Multiple
@@ -571,6 +671,15 @@ All items below are done, not just planned.
     itself succeeded) with `success` false and `failedTest` naming the exact check, both in
     the REST response and the `tasks.test.failed` log line.
   See the Phase 4/5/6/8 notes above for the full transcript summaries.
+- **Phase 9 (database-backed task state) is unit-verified only, not end-to-end.** `go build
+  ./...`, `go vet ./...`, and the full `internal/server/tasks`, `internal/dsns`,
+  `internal/resources`, and `internal/commands` suites all pass, including a real
+  save/simulate-restart/reload round trip against a temporary SQLite database
+  (`state_sqldb_test.go`) and confirmation that interleaving those tests with the
+  pre-existing file-store tests, in either order, doesn't leak state between them. Not yet
+  done: starting the actual built binary against a database-backed `--users` store and
+  confirming `task_state` rows appear and survive a real process restart, the way Phases 4-8
+  were each verified against the live binary.
 - **Permission enforcement**: covered both ways in the same end-to-end run and in unit
   tests. The real run started with the task file at `0644` and the tasks directory at
   default `0755`; the log showed both corrected to `0600`/`0700` before the task loaded.
