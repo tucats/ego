@@ -386,6 +386,43 @@ type BlacklistedTokensResponse struct {
 	Items      []BlacklistedToken `json:"items"`
 }
 
+// TaskStatus reports one scheduled task's identity, description, and
+// current execution state, for GET /admin/tasks.
+type TaskStatus struct {
+	// Task is the free-text description from the task's "task" field.
+	Task string `json:"task"`
+
+	// ID is the task's unique identifier.
+	ID string `json:"id"`
+
+	// Active is whether the scheduler is allowed to run this task.
+	Active bool `json:"active"`
+
+	// Running is true while a run of this task is currently in progress.
+	Running bool `json:"running,omitempty"`
+
+	// LastRun is when this task last finished running. The zero value
+	// means it has never run.
+	LastRun time.Time `json:"lastRun,omitempty"`
+
+	// LastStatus is the HTTP status returned by the last run's endpoint call.
+	LastStatus int `json:"lastStatus,omitempty"`
+
+	// Success is whether the last run's actual status matched the task's
+	// expected status.
+	Success bool `json:"success,omitempty"`
+}
+
+// TasksResponse describes the response object returned from
+// GET /admin/tasks.
+type TasksResponse struct {
+	ServerInfo `json:"server"`
+	Status     int          `json:"status,omitempty"`
+	Message    string       `json:"msg,omitempty"`
+	Count      int          `json:"count"`
+	Items      []TaskStatus `json:"items"`
+}
+
 // ServerInfoResponse describes the response object returned from the
 // /admin/serverinfo endpoint: a snapshot of the host machine the server is
 // running on, as opposed to StatusResponse/MemoryResponse, which describe

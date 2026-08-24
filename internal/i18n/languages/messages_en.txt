@@ -646,6 +646,7 @@ task.insert.unsupported=field not supported for INSERT task
 task.sql.missing=query string missing from SQL task
 task.sql.unsupported=field not supported for SQL task
 task.symbols.unsupported=field not supported for SYMBOLS task
+tasks.already.running=task is already running
 tasks.dir.access=error accessing tasks directory
 tasks.dir.create=error creating tasks directory
 tasks.dir.not.dir=tasks path exists but is not a directory
@@ -1985,15 +1986,19 @@ table.updated.rows=Updated {{count}} {{count|cardinal row, rows}}; {{status}}
 table.upsert.row=Upsert {{upsert}} on columns {{upserts|list}}, data provided for {{columns|list}}
 table.values=values list = {{data|list}}
 table.write.error=Error writing/updating: {{error}}
+tasks.deactivate.field.missing=Task file {{path}} has no "active" field to patch; only the in-memory flag was cleared
+tasks.deactivated=Task {{id}} deactivated by {{user}}
 tasks.dir.created=Tasks directory created: {{path}}
 tasks.disabled=Task subsystem disabled ({{setting}} is false)
 tasks.dispatch.unavailable=No dispatcher registered; task {{id}} was not run
+tasks.init.failed=Error initializing task subsystem: {{error}}
 tasks.load.duplicate=Duplicate task id {{id}} in {{path}}; already defined in {{existing}}
 tasks.load.skipped=Skipping task file {{path}}: {{error}}
 tasks.loaded=Loaded task {{id}} ({{description}}) from {{path}}
 tasks.permissions.fixed=Task {{kind}} {{path}} permissions corrected to {{mode}}
 tasks.permissions.fixing=Task {{kind}} {{path}} has permissions {{have}}; correcting to {{want}}
 tasks.run.complete=Task {{id}} finished with status {{status}} (expected {{expected}}); success={{success}}
+tasks.run.manual=Task {{id}} started manually by {{user}}
 tasks.run.timeout=Task {{id}} exceeded its {{timeout}} timeout; call abandoned and recorded as failed
 tasks.run.token.error=Error creating auth token for task {{id}}: {{error}}
 tasks.save.error=Task {{id}} could not save {{name}} from {{path}}: {{error}}

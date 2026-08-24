@@ -638,6 +638,7 @@ task.insert.unsupported=champ non pris en charge pour la tâche INSERT
 task.sql.missing=chaîne de requête manquante dans la tâche SQL
 task.sql.unsupported=champ non pris en charge pour la tâche SQL
 task.symbols.unsupported=champ non pris en charge pour la tâche SYMBOLS
+tasks.already.running=la tâche est déjà en cours d'exécution
 tasks.dir.access=erreur d'accès au répertoire des tâches
 tasks.dir.create=erreur lors de la création du répertoire des tâches
 tasks.dir.not.dir=le chemin des tâches existe mais n'est pas un répertoire
@@ -1954,15 +1955,19 @@ table.updated.rows={{count}} {{count|cardinal ligne, lignes}} mise(s) à jour ; 
 table.upsert.row=Upsert {{upsert}} sur les colonnes {{upserts|list}}, données fournies pour {{columns|list}}
 table.values=liste de valeurs = {{data|list}}
 table.write.error=Erreur lors de l'écriture/mise à jour : {{error}}
+tasks.deactivate.field.missing=Le fichier de tâche {{path}} n'a pas de champ "active" à corriger ; seul l'indicateur en mémoire a été effacé
+tasks.deactivated=Tâche {{id}} désactivée par {{user}}
 tasks.dir.created=Répertoire des tâches créé : {{path}}
 tasks.disabled=Sous-système de tâches désactivé ({{setting}} est false)
 tasks.dispatch.unavailable=Aucun répartiteur enregistré ; la tâche {{id}} n'a pas été exécutée
+tasks.init.failed=Erreur lors de l'initialisation du sous-système de tâches : {{error}}
 tasks.load.duplicate=Identifiant de tâche en double {{id}} dans {{path}} ; déjà défini dans {{existing}}
 tasks.load.skipped=Fichier de tâche {{path}} ignoré : {{error}}
 tasks.loaded=Tâche {{id}} ({{description}}) chargée depuis {{path}}
 tasks.permissions.fixed=Permissions du {{kind}} de tâche {{path}} corrigées à {{mode}}
 tasks.permissions.fixing=Le {{kind}} de tâche {{path}} a les permissions {{have}} ; correction vers {{want}}
 tasks.run.complete=La tâche {{id}} s'est terminée avec le statut {{status}} (attendu {{expected}}) ; success={{success}}
+tasks.run.manual=Tâche {{id}} démarrée manuellement par {{user}}
 tasks.run.timeout=La tâche {{id}} a dépassé son délai d'attente de {{timeout}} ; appel abandonné et enregistré comme échoué
 tasks.run.token.error=Erreur lors de la création du jeton d'authentification pour la tâche {{id}} : {{error}}
 tasks.save.error=La tâche {{id}} n'a pas pu enregistrer {{name}} depuis {{path}} : {{error}}

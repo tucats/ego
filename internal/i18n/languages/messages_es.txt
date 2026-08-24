@@ -644,6 +644,7 @@ task.insert.unsupported=campo no soportado para la tarea INSERT
 task.sql.missing=cadena de consulta faltante en la tarea SQL
 task.sql.unsupported=campo no soportado para la tarea SQL
 task.symbols.unsupported=campo no soportado para la tarea SYMBOLS
+tasks.already.running=la tarea ya se está ejecutando
 tasks.dir.access=error al acceder al directorio de tareas
 tasks.dir.create=error al crear el directorio de tareas
 tasks.dir.not.dir=la ruta de tareas existe pero no es un directorio
@@ -1960,15 +1961,19 @@ table.updated.rows=Se actualizaron {{count}} {{count|cardinal fila, filas}}; {{s
 table.upsert.row=Upsert {{upsert}} en columnas {{upserts|list}}, datos proporcionados para {{columns|list}}
 table.values=lista de valores = {{data|list}}
 table.write.error=Error al escribir/actualizar: {{error}}
+tasks.deactivate.field.missing=El archivo de tarea {{path}} no tiene un campo "active" para modificar; solo se borró el indicador en memoria
+tasks.deactivated=Tarea {{id}} desactivada por {{user}}
 tasks.dir.created=Directorio de tareas creado: {{path}}
 tasks.disabled=Subsistema de tareas deshabilitado ({{setting}} es false)
 tasks.dispatch.unavailable=No hay despachador registrado; la tarea {{id}} no se ejecutó
+tasks.init.failed=Error al inicializar el subsistema de tareas: {{error}}
 tasks.load.duplicate=Id de tarea duplicado {{id}} en {{path}}; ya definido en {{existing}}
 tasks.load.skipped=Omitiendo archivo de tarea {{path}}: {{error}}
 tasks.loaded=Tarea {{id}} ({{description}}) cargada desde {{path}}
 tasks.permissions.fixed=Permisos de {{kind}} de tarea {{path}} corregidos a {{mode}}
 tasks.permissions.fixing=El {{kind}} de tarea {{path}} tiene permisos {{have}}; corrigiendo a {{want}}
 tasks.run.complete=La tarea {{id}} finalizó con estado {{status}} (se esperaba {{expected}}); success={{success}}
+tasks.run.manual=La tarea {{id}} fue iniciada manualmente por {{user}}
 tasks.run.timeout=La tarea {{id}} superó su tiempo de espera de {{timeout}}; llamada abandonada y registrada como fallida
 tasks.run.token.error=Error al crear el token de autenticación para la tarea {{id}}: {{error}}
 tasks.save.error=La tarea {{id}} no pudo guardar {{name}} desde {{path}}: {{error}}

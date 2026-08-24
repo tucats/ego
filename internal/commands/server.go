@@ -36,6 +36,7 @@ import (
 	"github.com/tucats/ego/internal/server/oauth/authserver"
 	"github.com/tucats/ego/internal/server/oauth/rshandlers"
 	"github.com/tucats/ego/internal/server/services"
+	"github.com/tucats/ego/internal/server/tasks"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -187,6 +188,24 @@ func RunServer(c *cli.Context) error {
 	// membership table. This is a no-op in standalone mode (no --cluster flag).
 	if err := cluster.Initialize(c); err != nil {
 		ui.Log(ui.ServerLogger, "cluster.init.failed", ui.A{"err": err})
+	}
+
+	// Load and schedule any configured tasks (lib/tasks/*.json). Off by
+	// default, and entirely optional even when enabled -- a failure here
+	// logs and continues rather than aborting server startup, the same way
+	// cluster membership registration does just above. Must come after
+	// auth.Initialize, since dispatching a task mints a token validated
+	// through the same auth.AuthService that call sets up.
+	if settings.GetBool(defs.TasksEnabledSetting) {
+		if err := tasks.LoadAll(); err != nil {
+			ui.Log(ui.ServerLogger, "tasks.init.failed", ui.A{"error": err.Error()})
+		} else {
+			if err := tasks.LoadState(); err != nil {
+				ui.Log(ui.ServerLogger, "tasks.init.failed", ui.A{"error": err.Error()})
+			}
+
+			tasks.StartScheduler()
+		}
 	}
 
 	// Create a ServerRouter and define the static routes (those not depending on scanning the file system).

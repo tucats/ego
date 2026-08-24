@@ -104,7 +104,9 @@ func register(task *Task) (existing *Task, duplicate bool) {
 }
 
 // Tasks returns every registered task, sorted by ID for deterministic
-// output (e.g. for GET /admin/tasks).
+// order. Used internally by the scheduler; reporting (GET /admin/tasks)
+// uses Snapshot instead, which reads each task's mutable fields under the
+// same lock that protects them.
 func Tasks() []*Task {
 	registryLock.RLock()
 	defer registryLock.RUnlock()
@@ -127,4 +129,55 @@ func Lookup(id string) (*Task, bool) {
 	task, found := registry[id]
 
 	return task, found
+}
+
+// setActive clears (or sets) a task's Active flag under the registry lock.
+// This is the only way Active is ever mutated after load, so every other
+// reader of it (isDue, Snapshot) takes the same lock, and none of them
+// race with a concurrent DELETE /admin/tasks/{id}.
+func setActive(id string, active bool) {
+	registryLock.Lock()
+	defer registryLock.Unlock()
+
+	if task, found := registry[id]; found {
+		task.Active = active
+	}
+}
+
+// TaskSummary is a point-in-time, lock-safe snapshot of one task's
+// identity, definition fields, and current execution state -- everything
+// GET /admin/tasks needs to report, without handing out the live *Task or
+// *State pointers themselves.
+type TaskSummary struct {
+	Description string
+	ID          string
+	Active      bool
+	State
+}
+
+// Snapshot returns a lock-safe summary of every registered task, sorted by
+// ID.
+func Snapshot() []TaskSummary {
+	registryLock.RLock()
+	defer registryLock.RUnlock()
+
+	result := make([]TaskSummary, 0, len(registry))
+
+	for id, task := range registry {
+		summary := TaskSummary{
+			Description: task.Description,
+			ID:          id,
+			Active:      task.Active,
+		}
+
+		if state, found := states[id]; found {
+			summary.State = *state
+		}
+
+		result = append(result, summary)
+	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i].ID < result[j].ID })
+
+	return result
 }

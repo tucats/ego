@@ -105,12 +105,16 @@ func startDueTasks(now time.Time, maxConcurrent int) {
 // exactly once -- the first time it's seen with no prior run -- and never
 // again.
 func isDue(task *Task, now time.Time) bool {
+	registryLock.RLock()
+	defer registryLock.RUnlock()
+
+	// Active is read inside the same critical section as the state lookup
+	// below, not before it, because DELETE /admin/tasks/{id} (setActive)
+	// flips it under this same lock -- reading it outside the lock would
+	// race with that write.
 	if !task.Active {
 		return false
 	}
-
-	registryLock.RLock()
-	defer registryLock.RUnlock()
 
 	state, found := states[task.ID]
 	if found && state.Running {

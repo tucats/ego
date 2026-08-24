@@ -3,6 +3,7 @@ package commands
 import (
 	"net/http"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/router"
@@ -12,6 +13,7 @@ import (
 	"github.com/tucats/ego/internal/server/assets"
 	"github.com/tucats/ego/internal/server/dsns"
 	"github.com/tucats/ego/internal/server/tables"
+	"github.com/tucats/ego/internal/server/tasks"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -282,6 +284,14 @@ func defineStaticRoutes() *router.Router {
 
 	// Handlers that manipulate a table are defined the in tables package.
 	tables.AddStaticRoutes(r)
+
+	// Handlers that manage scheduled tasks (lib/tasks/*.json) are defined
+	// in the tasks package. Entirely optional, so the routes only exist
+	// when the feature is turned on -- matching the loading/scheduling
+	// startup wiring in commands/server.go, which is gated the same way.
+	if settings.GetBool(defs.TasksEnabledSetting) {
+		tasks.AddStaticRoutes(r)
+	}
 
 	return r
 }

@@ -1,6 +1,6 @@
 # Scheduled Server Tasks
 
-Status: **in progress** (Phase 1 landed). This doc doubles as the implementation tracker
+Status: **implemented** (Phases 1-4 landed, end-to-end verified). This doc doubles as the implementation tracker
 during development and as the internals reference for the feature once it lands — update
 it in place rather than leaving stale sections once code diverges from the plan below.
 
@@ -17,10 +17,12 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] Unit tests for `state.go` and `scheduler.go` (race-clean, `-race -count=10`)
 - [x] `internal/server/tasks` package: `dispatch.go` + `save.go` ({{key}} substitution)
 - [x] Unit tests for `dispatch.go` and `save.go` (real in-process router round trip)
-- [ ] `internal/server/tasks` package: `routes.go` + `/admin/tasks` path constants
-- [ ] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
-- [ ] End-to-end verification (see Verification section)
-- [ ] Permission-enforcement verification (manual, see note in that section)
+- [x] `internal/server/tasks` package: `routes.go` (`GetTasksHandler`/`RunTaskHandler`/`DeleteTaskHandler`) + `/admin/tasks` path constants
+- [x] `internal/server/tasks` package: `deactivate.go` (surgical `active` field patch for DELETE)
+- [x] Unit tests for `routes.go` and `deactivate.go`
+- [x] Startup wiring (`internal/commands/server.go`, `internal/commands/routes.go`)
+- [x] End-to-end verification against the real built binary (see Verification section)
+- [x] Permission-enforcement verification (done as part of the same end-to-end run)
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -57,6 +59,33 @@ Phase 3 notes:
   option keyword" -- this is a router-wide whitelisting behavior, not specific to tasks;
   it surfaced while writing `dispatch_test.go`'s fixture route and is worth remembering
   when authoring real task JSON against real endpoints.
+
+Phase 4 notes:
+
+- **`Task.Active` is the one field mutated after load** (by `DELETE /admin/tasks/{id}`),
+  so it's the one field that needs lock discipline everywhere it's read: `isDue`
+  (`scheduler.go`) reads it inside the same `registryLock.RLock()` critical section as the
+  state lookup (not before it), and reporting goes through a new `Snapshot()` helper
+  (`defs.go`) that copies out `Description`/`ID`/`Active` plus the current `State` under a
+  single lock, rather than handing `GetTasksHandler` live `*Task` pointers to read
+  unsynchronized after the lock is released. `setActive` (`defs.go`) is the only writer.
+- **A handler's `int` return value is not what sets the HTTP status** — `router.ServeHTTP`
+  only uses it for the server-log line; the handler itself must call `w.WriteHeader(status)`
+  for anything other than the implicit-200 default. `RunTaskHandler` returning
+  `http.StatusAccepted` without also calling `w.WriteHeader(http.StatusAccepted)` shipped
+  as a real bug that `TestRunTaskHandlerStartsAsyncAndReturnsAccepted` caught (server
+  reported 200, not 202) — fixed by adding the explicit call.
+- **End-to-end verification was run against the actual built binary**, not just unit
+  tests, using an isolated `taskstest` CLI profile (`ego.runtime.path` pointed at a temp
+  dir, `ego.server.tasks.enabled=true`) with one real task file targeting
+  `/admin/heartbeat`. Confirmed from the server's own JSON log and live `curl` calls:
+  directory permissions auto-corrected 0755→0700, file permissions auto-corrected
+  0644→0600, the task loaded and dispatched at startup (`tasks.run.complete`,
+  status=200, success=true, heartbeat counter incremented), `GET /admin/tasks` reported
+  it correctly, `POST /admin/tasks/{id}` returned 202 and produced a new `lastRun`,
+  and `DELETE /admin/tasks/{id}` flipped `"active": "true"` to `"active": "false"` in the
+  file while leaving every comment and all formatting untouched. All test artifacts
+  (temp directory, CLI profile, log files) were cleaned up afterward.
 
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
@@ -260,16 +289,26 @@ hooks into `defineStaticRoutes()` in `internal/commands/routes.go` next to
 
 ## Verification
 
-- **Unit tests** per package file (`load.go`: permission-repair success/failure/skip cases
-  with `t.TempDir()`; `state.go`: round-trip persistence; `scheduler.go`: due-task selection
-  logic with a fake clock; `dispatch.go`: substitution and save-extraction against canned
-  responses) — following this repo's existing table-driven test conventions.
-- **End-to-end**: start the server with `ego.server.tasks.enabled=true` and a `lib/tasks/`
-  containing one `"repeat": "once"` task hitting a harmless existing endpoint (e.g.
-  `/admin/heartbeat`), confirm via `GET /admin/tasks` that it ran and succeeded, confirm the
-  TASKS log shows the run without leaking the task body, then `POST /admin/tasks/{id}` to
-  re-run it manually and `DELETE` it and confirm the file's `active` field flips to `false`
-  while its comments are intact.
-- **Permission enforcement**: manually `chmod 644` a task file before startup, confirm the
-  server fixes it to `600` and loads it; then put it in an unfixable state (e.g. a read-only
-  parent dir) and confirm it's skipped and logged, not loaded.
+All items below are done, not just planned.
+
+- **Unit tests** — one test file per source file, table-driven where it fits this repo's
+  conventions: `permissions_test.go`, `load_test.go`, `state_test.go`, `scheduler_test.go`
+  (fake-clock due-task selection, concurrency-limit races run under `-race`),
+  `save_test.go` (substitution), `dispatch_test.go` (a genuine in-process router round
+  trip, not a mock), `deactivate_test.go`, `routes_test.go`. Whole-package result: clean
+  under `go test ./internal/server/tasks/... -race -count=10`.
+- **End-to-end, against the real built binary**: an isolated `taskstest` CLI profile
+  pointed `ego.runtime.path` at a temp directory, `ego.server.tasks.enabled=true`, one task
+  file hitting `/admin/heartbeat` with `"repeat": "once"`. Verified via the server's own
+  JSON log and live `curl` calls: startup dispatch succeeded (`tasks.run.complete`,
+  status=200, success=true), `GET /admin/tasks` reported it, `POST /admin/tasks/{id}`
+  returned 202 and re-ran it (new `lastRun`), `DELETE /admin/tasks/{id}` flipped
+  `"active": "true"` to `"active": "false"` in place with every comment intact. See the
+  Phase 4 notes above for the full transcript summary.
+- **Permission enforcement**: covered both ways in the same end-to-end run and in unit
+  tests. The real run started with the task file at `0644` and the tasks directory at
+  default `0755`; the log showed both corrected to `0600`/`0700` before the task loaded.
+  `TestLoadAllRejectsUnfixablePermissions` covers the unfixable case (a task file made
+  unreachable via an inaccessible parent directory) at the unit level, since genuinely
+  unfixable permissions require a different file owner, not reproducible in an automated
+  same-user test run.

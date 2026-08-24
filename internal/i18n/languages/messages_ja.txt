@@ -638,6 +638,7 @@ task.insert.unsupported=INSERTタスクではサポートされていないフ�
 task.sql.missing=SQLタスクにクエリ文字列がありません
 task.sql.unsupported=SQLタスクではサポートされていないフィールド
 task.symbols.unsupported=SYMBOLSタスクではサポートされていないフィールド
+tasks.already.running=タスクは既に実行中です
 tasks.dir.access=タスクディレクトリへのアクセスエラー
 tasks.dir.create=タスクディレクトリの作成エラー
 tasks.dir.not.dir=タスクパスは存在しますがディレクトリではありません
@@ -1954,15 +1955,19 @@ table.updated.rows={{count}}行を更新しました; {{status}}
 table.upsert.row=列 {{upserts|list}} でのUpsert {{upsert}}、{{columns|list}} のデータが提供されました
 table.values=値リスト = {{data|list}}
 table.write.error=書き込み/更新エラー: {{error}}
+tasks.deactivate.field.missing=タスクファイル{{path}}に修正対象の"active"フィールドがないため、メモリ上のフラグのみをクリアしました
+tasks.deactivated=タスク{{id}}は{{user}}によって無効化されました
 tasks.dir.created=タスクディレクトリを作成しました: {{path}}
 tasks.disabled=タスクサブシステムは無効です({{setting}}がfalse)
 tasks.dispatch.unavailable=ディスパッチャが登録されていないため、タスク{{id}}は実行されませんでした
+tasks.init.failed=タスクサブシステムの初期化エラー: {{error}}
 tasks.load.duplicate=重複したタスクID {{id}} が {{path}} にあります。{{existing}} で既に定義済みです
 tasks.load.skipped=タスクファイル {{path}} をスキップします: {{error}}
 tasks.loaded=タスク {{id}} ({{description}}) を {{path}} から読み込みました
 tasks.permissions.fixed=タスク{{kind}} {{path}} の権限を {{mode}} に修正しました
 tasks.permissions.fixing=タスク{{kind}} {{path}} の権限は {{have}} です。{{want}} に修正します
 tasks.run.complete=タスク{{id}}はステータス{{status}}で終了しました(期待値{{expected}});success={{success}}
+tasks.run.manual=タスク{{id}}は{{user}}によって手動で開始されました
 tasks.run.timeout=タスク{{id}}はタイムアウト{{timeout}}を超過したため、呼び出しを中断し失敗として記録しました
 tasks.run.token.error=タスク{{id}}の認証トークン作成エラー: {{error}}
 tasks.save.error=タスク{{id}}は{{path}}から{{name}}を保存できませんでした: {{error}}

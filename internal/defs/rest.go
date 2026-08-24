@@ -39,6 +39,8 @@ const (
 
 	AdminUsersNamePath = AdminUsersPath + "%s"
 	AdminConfigPath    = AdminPath + "config"
+	AdminTasksPath     = AdminPath + "tasks/"
+	AdminTasksIDPath   = AdminTasksPath + "{{id}}"
 	AssetsPath         = "/assets/"
 	DSNPath            = "/dsns/"
 	DSNNamePath        = DSNPath + "{{dsn}}/"
@@ -204,6 +206,7 @@ const (
 	ValidationDictionaryMediaType = EgoMediaType + "validation.dictionary+json"
 	TokensMediaType               = EgoMediaType + "tokens.list+json"
 	TransactionResponseMediaType  = EgoMediaType + "transaction.response+json"
+	TasksMediaType                = EgoMediaType + "tasks+json"
 )
 
 const (
