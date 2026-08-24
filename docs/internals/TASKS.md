@@ -35,6 +35,12 @@ it in place rather than leaving stale sections once code diverges from the plan 
 - [x] Unit tests for the new `isDue` branches (count exhaustion, after-delay gating, one-shot
       via absent interval) and the new load-time validations; end-to-end verified against the
       built binary (see Phase 6 notes)
+- [x] `LoadAll` preloads the global save/substitution dictionary with `SESSIONID` (this
+      server instance's UUID, `defs.InstanceID`), available to any task as `{{SESSIONID}}`
+      with no `save` step needed to obtain it
+- [x] `lib/tasks/sample.json` checked in as a real, working example: a harmless recurring
+      `GET /services/up` no-op, used as illustration, as a manual test/demo fixture, and as
+      the fixture future dashboard task-support work can build against; see Phase 7 notes
 
 Phase 2 note: `dispatchFunc` in `scheduler.go` is a package-level function variable
 (default: log "no dispatcher registered" and report failure) so the scheduler's due-task
@@ -164,6 +170,36 @@ Phase 6 notes (`interval`/`count`/`after`, replacing `repeat`):
   and a task with `count: 5` and no `interval` was rejected at load with the expected
   `"count: requires interval when count is not 1"` message, confirmed in the server's own log.
 
+Phase 7 notes (`SESSIONID` preload, `lib/tasks/sample.json`):
+
+- **`SESSIONID` is set once, unconditionally, at the top of `LoadAll`** (`load.go`), before
+  the directory is even scanned -- so it's populated as soon as the task subsystem starts
+  trying to load, regardless of whether loading itself succeeds. It is not re-set by
+  `Reload`, since `defs.InstanceID` never changes during a process's lifetime.
+- **`lib/tasks/sample.json` is a real, checked-in file**, not a test fixture under
+  `internal/server/tasks/` -- it ships in the same `lib/` tree as `lib/services`,
+  `lib/packages`, etc. (embedded into the binary via `lib.zip`, see
+  `internal/cli/app/library.go`). Its sidecar state file, `lib/tasks/.state.json`, is
+  generated at runtime and is gitignored.
+- **The sample intentionally does nothing with its response** (no `save` block) and targets
+  `GET /services/up` (`lib/services/up.ego`) specifically because that endpoint requires no
+  auth and always returns 200 -- it exists purely to demonstrate the file format and give
+  the scheduler something harmless to actually run, for manual testing and for future
+  dashboard task-support work to build against.
+- **Timing was tuned twice**: first `after: "1m"`, `interval: "5m"`, `count: 10` (leisurely,
+  matching the "no material load" goal), then tightened to `interval: "30s"`, `count: 4`
+  (same `after: "1m"`) so a manual end-to-end check finishes in about two and a half minutes
+  instead of the better part of an hour -- still only four total requests either way.
+- **Testing caution, learned the hard way**: pointing an isolated test CLI profile's
+  `ego.runtime.path` directly at the live repo checkout (to exercise the real, checked-in
+  `sample.json`) made that test server resolve its userdata database to the *same*
+  `ego-system.db` file a separately-running real dev server already had open, since the
+  default userdata path is always `<runtime.path>/ego-system.db`. No corruption resulted
+  (one rejected login attempt, no writes), but the fix is to never point a test profile's
+  `runtime.path` at a real checkout -- copy just the needed files (e.g. `lib/tasks/*.json`,
+  `lib/services/up.ego`) into an isolated temp directory instead, the same way earlier
+  phases' end-to-end tests already did for synthetic task files.
+
 Phase 1 note: task-file validation checks that `user` is present but does **not** check
 that the named user actually exists in the auth database (`internal/server/auth`) — that
 check is deferred to first dispatch in Phase 2/3, not done at load time as originally
@@ -231,7 +267,9 @@ Field semantics:
   error is logged.
 - `save` — map of `name: jsonPath` pulled out of the response body into a global,
   in-memory, cross-task substitution dictionary (`{{name}}` usable in a later task's
-  `endpoint`/`parameters`/`body`).
+  `endpoint`/`parameters`/`body`). One entry, `{{SESSIONID}}`, is preloaded automatically at
+  startup with this server instance's UUID (`defs.InstanceID`) -- no `save` step needed to
+  obtain it.
 - `timeout` — Go duration string, with an Ego extension allowing `d` for days (e.g. `"30d"`).
   Defaults to `ego.server.tasks.default.timeout`, clamped to `ego.server.tasks.max.timeout`.
 - `interval` — Go duration string (Ego `d`-extended) for recurring execution: the task

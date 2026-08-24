@@ -60,6 +60,24 @@ const validTaskJSON = `{
 	"status": 200
 }`
 
+func TestLoadAllPreloadsSessionID(t *testing.T) {
+	useTempLibDir(t)
+	resetSaved(t)
+
+	original := defs.InstanceID
+	defs.InstanceID = "22222222-2222-2222-2222-222222222222"
+
+	t.Cleanup(func() { defs.InstanceID = original })
+
+	if err := LoadAll(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := substitute("{{SESSIONID}}"); got != defs.InstanceID {
+		t.Errorf("substitute(%q) = %q, want %q", "{{SESSIONID}}", got, defs.InstanceID)
+	}
+}
+
 func TestLoadAllCreatesMissingDirectory(t *testing.T) {
 	root := useTempLibDir(t)
 

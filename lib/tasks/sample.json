@@ -1,0 +1,24 @@
+# Sample scheduled task. This is not required for the server to run --
+# it's here as a working illustration of the task file format, and as a
+# harmless, low-load test task for exercising the scheduler (and, later,
+# any dashboard support for tasks) without needing to invent a fixture.
+#
+# All it does is call the always-available GET /services/up endpoint and
+# ignore the result -- no "save" block, nothing consumed from the response.
+# It runs four times, thirty seconds apart, starting one minute after the
+# server (or this task) loads, and then stops for good. Those intervals
+# are deliberately short so the whole run finishes in about two and a half
+# minutes, making it easy to watch end to end, while still amounting to
+# only four total requests -- no real load on the server either way.
+{
+	"task": "sample task: periodic no-op liveness check via /services/up",
+	"id": "0479ae18-4e6d-4c14-bf9b-6d55872ef32f",
+	"active": "true",
+	"user": "admin",
+	"method": "get",
+	"endpoint": "/services/up",
+	"status": 200,
+	"after": "1m",
+	"interval": "30s",
+	"count": 4
+}

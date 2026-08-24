@@ -42,7 +42,14 @@ func Directory() string {
 // directory from loading. Returns an error only for a directory-level
 // problem (missing and can't be created, or permissions that can't be
 // corrected), since that affects every task, not just one file.
+//
+// Before scanning, it preloads the global save/substitution dictionary
+// (save.go) with SESSIONID, this server instance's UUID -- available to
+// any task's endpoint/parameters/body as {{SESSIONID}} without needing a
+// "save" step of its own to obtain it.
 func LoadAll() error {
+	setSaved("SESSIONID", defs.InstanceID)
+
 	names, dir, err := listTaskFiles()
 	if err != nil {
 		return err

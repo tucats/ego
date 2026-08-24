@@ -39,3 +39,7 @@ ego-container/
 # Node modules for the dashboard startup check (tools/dashboard).
 # Installed on demand with "cd tools/dashboard && npm install".
 node_modules/
+
+# Runtime state written by the scheduled-tasks feature (see
+# docs/internals/TASKS.md) next to the checked-in lib/tasks/*.json files.
+lib/tasks/.state.json
