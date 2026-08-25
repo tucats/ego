@@ -80,6 +80,12 @@ const (
 	ServicesWebAuthnConfigPath        = ServicesPath + "admin/webauthn/config"
 	ServicesUpPath                    = ServicesPath + "up/"
 
+	// ServicesFeaturesPath reports which optional server capabilities are
+	// currently configured (e.g. AI-assisted SQL generation) — a small,
+	// credential-free probe a client can check before showing UI for a
+	// capability that may not be turned on. See router.FeaturesHandler.
+	ServicesFeaturesPath = ServicesPath + "admin/features"
+
 	// Cluster control endpoints — used for node-to-node communication within a
 	// named cluster. Authentication is via the cluster HMAC token, not normal
 	// user credentials.

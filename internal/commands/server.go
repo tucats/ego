@@ -751,6 +751,15 @@ func defineNativeAdminHandlers(r *router.Router) {
 			AcceptMedia(defs.JSONMediaType)
 	}
 
+	// Feature-probe endpoint — no credentials required, same reasoning as the
+	// WebAuthn config query above: it only reports whether a capability is
+	// turned on, not any sensitive configuration detail.
+	if _, status := r.FindRoute(http.MethodGet, defs.ServicesFeaturesPath, false); status != http.StatusOK {
+		r.New(defs.ServicesFeaturesPath, router.FeaturesHandler, http.MethodGet).
+			Class(router.ServiceRequestCounter).
+			AcceptMedia(defs.JSONMediaType)
+	}
+
 	if _, status := r.FindRoute(http.MethodPost, defs.ServicesWebAuthnLoginBeginPath, false); status != http.StatusOK {
 		r.New(defs.ServicesWebAuthnLoginBeginPath, router.WebAuthnLoginBeginHandler, http.MethodPost).
 			Class(router.ServiceRequestCounter).

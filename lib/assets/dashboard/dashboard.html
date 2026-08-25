@@ -354,8 +354,8 @@
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="showSqlBuild()" title="Build a SQL statement with a wizard"><span class="btn-icon">&#x1F528;</span> <span class="btn-label">Build</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
-        <button class="toolbar-add-btn" onclick="showSqlGenerate()" title="Generate a SQL statement from a natural-language prompt"><span class="btn-icon">&#x2728;</span> <span class="btn-label">Generate</span></button>
-        <span style="display:inline-block;width:0.75rem;"></span>
+        <button id="sql-generate-btn" class="toolbar-add-btn" style="display:none" onclick="showSqlGenerate()" title="Generate a SQL statement from a natural-language prompt"><span class="btn-icon">&#x2728;</span> <span class="btn-label">Generate</span></button>
+        <span id="sql-generate-spacer" style="display:none;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="formatSqlEditor()" title="Reformat the SQL in the editor"><span class="btn-icon">&#x2261;</span> <span class="btn-label">Format</span></button>
         <span style="display:inline-block;width:0.75rem;"></span>
         <button class="toolbar-add-btn" onclick="submitSql()" title="Execute SQL"><span class="btn-icon">&#x25B6;</span> <span class="btn-label">Submit</span></button>
