@@ -47,4 +47,3 @@ error"` was retained (its stale comment about the left-operand exception was
 removed).
 
 The unit test `"multiply strings"` was removed from `bytecode/math_test.go`.
-

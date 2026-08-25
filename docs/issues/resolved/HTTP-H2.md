@@ -44,4 +44,3 @@ configurable via server settings for environments with large response bodies
 (10 s), `ReadTimeout` (30 s), `WriteTimeout` (120 s), and `IdleTimeout` (120 s);
 all three listeners (plain HTTP, TLS, and HTTP→HTTPS redirect) use it; all four
 values are configurable via `ego.server.{read.header|read|write|idle}.timeout`.
-

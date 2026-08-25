@@ -86,4 +86,3 @@ The directive hoists symbols exported from the compilation to the current
 symbol scope at which the `@compile{}` runs. This allows the code to make
 a call to a function insice the compilation unit to extract values or
 status from the execution of the compilation unit.
-

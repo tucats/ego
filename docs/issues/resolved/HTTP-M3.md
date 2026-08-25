@@ -26,4 +26,3 @@ headers in milliseconds.
 **Resolution:**  
 Resolved as a side-effect of HTTP-H2: `redirectToHTTPS` now builds its listener
 via `makeHTTPServer()`, which applies all four timeout values.
-

@@ -85,4 +85,3 @@ Regression tests: `Test_callByteCode_ArrayFunctionZeroArgs` and
 `internal/language/bytecode/call_test.go`, plus a new `@test` case in
 `tests/reflect/reflect_structs.ego` confirming `.Members()`/`.Functions()` (called with
 parens) agree exactly with the pre-existing bare-field-access workaround.
-

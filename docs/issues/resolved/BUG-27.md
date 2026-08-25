@@ -93,4 +93,3 @@ prevented from ever happening, rather than recovered from after the fact.
 - `tests/packages/sync.ego` — `"sync: WaitGroup extra Done is catchable, not a crash"` is the
   end-to-end Ego-level regression test for the original repro above; `"sync: WaitGroup
   normal Add, Done, and Wait"` guards against a regression in ordinary usage.
-

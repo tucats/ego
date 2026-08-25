@@ -22,4 +22,3 @@ This is the correct RFC 7233 interpretation of an open-ended range.
 Clamping added in `readAssetRange` immediately after `totalSize = info.Size()`.
 `size` is now computed as `end - start + 1` (inclusive, per RFC 7233). The
 `make` call is therefore bounded by the actual file size.
-

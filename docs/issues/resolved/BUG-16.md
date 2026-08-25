@@ -57,4 +57,3 @@ main, x = 3
 defer x (should be 2): 2
 defer x (should be 1): 1
 ```
-

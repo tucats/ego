@@ -140,4 +140,3 @@ Two details worth calling out:
   without needing a manual closure workaround; multiple arguments; an
   arithmetic expression argument; a value-receiver method call; and a
   variadic spread argument.
-

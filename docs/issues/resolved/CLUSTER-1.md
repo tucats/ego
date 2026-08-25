@@ -34,7 +34,7 @@ caches.Purge(cacheID)
 `caches.Purge` is the same public function that fires `OnPurge`. So handling an
 inbound notification produced a new outbound one:
 
-```
+```text
 Node A: caches.Purge(X)
      -> OnPurge -> POST /services/cluster/flush to every peer
 Node B: FlushCacheHandler

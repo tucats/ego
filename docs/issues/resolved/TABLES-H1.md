@@ -31,4 +31,3 @@ driver handles quoting: `db.Query("... WHERE table_schema = $1 ...", schema)`.
 **Resolution:**  
 Route schema substitution in `listTables` through `parsing.QueryParameters`
 (which calls `SQLEscape`) instead of bare `strings.ReplaceAll`.
-

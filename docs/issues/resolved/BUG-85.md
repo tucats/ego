@@ -43,4 +43,3 @@ verified it fails with the original "invalid field name" error when the `init()`
 reverted. `tests/packages/uuid.ego` adds an Ego-level test asserting both
 `x.String() == "00000000-0000-0000-0000-000000000000"` and `x == uuid.Nil()` for a bare
 `var x uuid.UUID`.
-

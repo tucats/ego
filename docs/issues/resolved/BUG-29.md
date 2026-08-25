@@ -88,4 +88,3 @@ state before ever touching the native channel, rather than trying to recover aft
   end-to-end Ego-level regression test for the original repro above;
   `"defer: closing a channel returns wasOpen and no error"` guards the new two-value return
   form.
-

@@ -21,4 +21,3 @@ A startup warning is emitted via the `server.webauthn.no.rpid` SERVER log key
 in `defineNativeAdminHandlers` (`commands/server.go`) when
 `ego.server.allow.passkeys` is true and `ego.server.webauthn.rpid` is empty.
 Localized strings added to all three language files.
-

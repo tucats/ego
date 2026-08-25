@@ -118,4 +118,3 @@ values before calling `callFramePop`:
    correct values in correct order; partial deferred set; pre-panic values
    preserved.
 5. **Void functions** — unchanged behavior confirmed.
-

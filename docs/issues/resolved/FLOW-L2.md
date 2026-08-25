@@ -79,4 +79,3 @@ Three new tests added to `tests/flow/switch_advanced.ego`:
   `switch n := getValue(); n > 0 { case true: ... }` with a derived boolean.
 - `"flow: switch semicolon init var visible in case body"` — verifies that the
   init variable `code` is readable inside the matching case body.
-

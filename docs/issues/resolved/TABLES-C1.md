@@ -25,4 +25,3 @@ Change `!= 0` to `!= 1` on line 207, matching `RollbackHandler`.
 **Resolution:**  
 Change `CommitHandler` guard from `len(parameters) != 0` to `!= 1`; matches
 `RollbackHandler` and prevents panic on `parameters[0]` with empty slice.
-

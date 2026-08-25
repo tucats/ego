@@ -36,4 +36,3 @@ if len(req.Code) > maxRunCodeBytes {
 before JSON decoding. A `*http.MaxBytesError` from the decoder returns 413;
 other decode errors return 400. A post-decode `len(req.Code) > maxRunCodeBytes`
 check also returns 413 for oversized code fields.
-

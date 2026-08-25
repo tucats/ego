@@ -46,4 +46,3 @@ Regression coverage: `tests/functions/return_types.ego` — the
 named", "returns: function type with multiple parameters", "returns: function
 type with no parameters", and "returns: function type returning multiple values"
 tests, all of which run under both `--types=strict` and `--types=dynamic`.
-

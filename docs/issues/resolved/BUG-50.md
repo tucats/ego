@@ -48,4 +48,3 @@ an unmatched `{{marker}}` unchanged in the output instead of embedding its inter
 updated to match the new two-return-value signature (`text, err := subs.Substitution(...)`).
 Verified both the struct and `map[string]interface{}` reproducers now produce
 `Hello, Tom {{Missing}}!`.
-

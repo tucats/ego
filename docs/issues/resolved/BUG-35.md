@@ -117,4 +117,3 @@ neither `c.tryStack` nor the runtime execution stack are left in a corrupted sta
 - `tests/errors/optional.ego`: `"errors: BUG-35, optional operator escalates unlisted error
   to enclosing try"` and `"errors: BUG-35, optional operator nested inside a catch block"`
   (the `?:`-specific variant of the fix, combining both escalation cases in one test).
-

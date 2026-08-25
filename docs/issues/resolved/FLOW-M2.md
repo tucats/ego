@@ -27,4 +27,3 @@ matches when the switch expression equals any listed value. Works for both value
 switches and conditional switches. Tests added: `"flow: switch case with multiple
 comma-separated values"` and the existing `"flow: switch on string value"` test was
 updated to use `case "Sat", "Sun":` directly.
-

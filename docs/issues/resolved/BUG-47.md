@@ -59,4 +59,3 @@ Go-level tests were added in `internal/language/bytecode/math_test.go` (both
 directions, boundary amounts, and negative-shift errors), and Ego-level tests in
 `tests/datamodel/bitshift.ego`. `docs/LANGUAGE.md` now documents the operators'
 non-negative shift-amount requirement.
-

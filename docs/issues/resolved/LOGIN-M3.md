@@ -26,4 +26,3 @@ be performed without a full re-decryption on every request.
 Cache now stores `*tokens.Token`; cache hits check `Expires` directly (no
 re-decryption). Blacklist is already handled: `tokens.Blacklist()` purges the
 token cache at revocation time.
-

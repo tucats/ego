@@ -21,4 +21,3 @@ remove the call from `storeChallenge`.
 `storeChallenge` to `defineNativeAdminHandlers` in `commands/server.go`, where
 it is called once when the WebAuthn routes are registered. The redundant call
 has been removed from `storeChallenge`.
-

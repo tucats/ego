@@ -34,4 +34,3 @@ Regression coverage: `tests/functions/return_types.ego` — the "returns: error
 type, nil and non-nil" and "returns: multiple returns mixing compound types"
 tests (the latter returns `nil` for a `func(int) int` value on its error path),
 under both `--types=strict` and `--types=dynamic`.
-

@@ -52,4 +52,3 @@ Test in `tests/json/marshal.ego` renamed from
 `"json: Marshal - []byte produces null"` to
 `"json: Marshal - []byte produces base64 string"` and updated to assert
 `string(b)` equals the JSON string `"QUJD"` (the base64 encoding of `[65,66,67]` = `"ABC"`).
-

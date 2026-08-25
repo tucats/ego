@@ -81,4 +81,3 @@ entry to evict.
 The verify tests (`dsns-320`, `dsns-325`) are the regression anchors: they pass
 only when the schema cache has been flushed and `ReadRows` re-queries the
 database to obtain the updated column list for the recreated table.
-

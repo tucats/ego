@@ -102,4 +102,3 @@ unused `:=` local is still reported). Ego-language tests in
 `tests/types/array_index_type_check.ego`, run and passing under `ego test`, `--types
 strict`, and `--types relaxed`, alongside the full `tests/` and `go test ./...` suites in
 all three modes.
-

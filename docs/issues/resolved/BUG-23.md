@@ -57,4 +57,3 @@ The fundamental issue was that the `var` statement was using the common "zero-va
 for the type, but was using the same one for any `var` value for that type. The
 correct fix is to modify the `var` compilation to call the internal `$new()`
 function at runtime which generates a unique instance of the item.
-

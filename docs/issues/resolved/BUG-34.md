@@ -94,4 +94,3 @@ and `internal/runtime/reflect/type_test.go` (pointer-type preservation for `type
 `reflect.Type()`), new Ego tests in `tests/types/pointer_ops.ego` and
 `tests/reflect/type.ego`, and a full run of `tools/gotests.sh` plus `ego test` under all
 three typing modes (strict/relaxed/dynamic).
-

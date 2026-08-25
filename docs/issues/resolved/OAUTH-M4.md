@@ -40,4 +40,3 @@ descriptive error containing "exceeds" so the operator knows why the document wa
 rejected.  Tests in `server/oauth/medium_test.go` cover: a body one byte over the
 limit is rejected, a body exactly at the limit passes the size check (then fails
 JSON parsing, confirming no off-by-one regression).
-

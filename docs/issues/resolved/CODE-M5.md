@@ -104,4 +104,3 @@ rather than re-reading the global. No process-global state is mutated during a
 compile, so the flag can no longer leak across sessions. Library packages that
 use extension syntax (`math`'s `throw`, `http`'s `try/catch`) still compile
 because the dashboard passes `extensions = true` and imports inherit it.
-

@@ -14,4 +14,3 @@ practical exposure in the field, but the cookie hardening is incomplete.
 `challengeCookie` now accepts a `secure bool` parameter. The `isSecureRequest(r)`
 helper returns `true` when `r.TLS != nil` or `X-Forwarded-Proto: https` is set.
 All four call sites pass `isSecureRequest(r)`.
-

@@ -75,4 +75,3 @@ Two API tests added to `tools/apitest/tests/4-dsns/`:
 
 The existing `dsns-314-tx-drop.json` was renumbered to `dsns-316-tx-drop.json`
 to preserve alphabetical execution order.
-

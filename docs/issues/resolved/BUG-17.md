@@ -115,4 +115,3 @@ values) is not supported by either path and was out of scope for this fix.
 - `tests/compiler/var_inferred.ego` — new Ego-level tests covering the same
   cases using `@test`/`@assert`, plus `@compile block` regression guards for
   the two error paths that must still fail correctly
-

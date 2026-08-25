@@ -4,7 +4,7 @@
 
 **Discovered by:** manual testing while working on PERFORMANCE.md Finding 17 (`docs/internals/GLOBALS.md`), while checking that the new global-reference cache correctly handles the already-working imported-package proxy path; unrelated to that work itself.
 
-**Status: FIXED**
+**Status:** FIXED
 
 **Description:**  
 A package written as a single file (`import "foo"` finding `foo.ego`) can be found relative to

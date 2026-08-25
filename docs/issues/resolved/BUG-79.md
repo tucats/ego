@@ -28,4 +28,3 @@ Corrected the three declarations: `EqualFold` → `data.BoolType`; `Ints` → `d
 `Substitution` → `[]*data.Type{data.StringType, data.ErrorType}`. Added regression tests asserting
 `string(reflect.Type(fn))` for each in `tests/strings/search.ego`, `tests/strings/split_join.ego`,
 and `tests/strings/format.ego`.
-

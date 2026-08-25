@@ -41,4 +41,3 @@ results via a new `unwrapValue` helper; a new `TestGetPackage` asserts both the 
 and error paths of `getPackage` return a `data.List` (registering a synthetic package via
 `packages.Save` rather than depending on a real package like `math` already being
 registered in the test's process).
-

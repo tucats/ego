@@ -56,4 +56,3 @@ Added new Ego unit tests to validate this Ego-specific behavior in the strings p
 
 3. `tests/packages/strings.ego` added to contain tests for Ego-specific extensions to
    the normal Go strings functionality.
-

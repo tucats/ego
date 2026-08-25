@@ -23,4 +23,3 @@ re-hashing in place with the new algorithm.
 **Resolution:**  
 Replace SHA-256 with bcrypt (cost ≥ 12) for password storage; implement
 on-login migration for existing hashes.
-

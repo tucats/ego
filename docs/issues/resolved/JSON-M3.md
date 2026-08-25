@@ -52,4 +52,3 @@ Test in `tests/json/unmarshal.ego` renamed from
 `"json: Unmarshal - unknown fields return error"` to
 `"json: Unmarshal - unknown fields are silently ignored"` and updated to assert
 `err == nil` and `person.name == "Alice"`.
-

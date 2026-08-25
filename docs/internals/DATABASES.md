@@ -293,16 +293,16 @@ PostgreSQL requires `$1`, `$2`, … positional placeholders. PostgreSQL does not
    - `ListMembers`, `RemoveMember`, `UpdateLastSeen`: `?` replaced with `$1`/`$2` positional parameters. `modernc.org/sqlite` accepts both `?` and `$N` style, so this is backward-compatible with SQLite.
    - `upsertMember`: branches on `dbProvider`:
 
-```go
-if dbProvider == defs.PostgresProvider {
-    query = `INSERT INTO cluster (name, node_id, host, port, scheme, joined_at, last_seen, state)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             ON CONFLICT (node_id) DO UPDATE SET
-                 name=EXCLUDED.name, host=EXCLUDED.host, ...`
-} else {
-    query = `INSERT OR REPLACE INTO cluster (...) VALUES ($1, $2, ..., $8)`
-}
-```
+   ```go
+   if dbProvider == defs.PostgresProvider {
+       query = `INSERT INTO cluster (name, node_id, host, port, scheme, joined_at, last_seen, state)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (node_id) DO UPDATE SET
+                    name=EXCLUDED.name, host=EXCLUDED.host, ...`
+   } else {
+       query = `INSERT OR REPLACE INTO cluster (...) VALUES ($1, $2, ..., $8)`
+   }
+   ```
 
 3. **`server/cluster/membership_test.go`** (new): Package-internal tests cover all four membership functions against both `:memory:` SQLite and a live PostgreSQL instance (`TestMembershipSQLite` and `TestMembershipPostgres`). The PostgreSQL test is automatically skipped when no server is available.
 
@@ -673,21 +673,21 @@ SQLite has no built-in date/time column type.  The Ego server uses the following
 
 1. **DDL declaration** (`server/tables/parsing/parsing.go`, `MapColumnType`): time columns are declared with their semantic names rather than the generic `TEXT`:
 
- | Ego type | SQLite DDL |
- | ---------- | --------- |
- | `timestamp` | `TIMESTAMP` |
- | `time` | `TIME` |
- | `date` | `DATE` |
+   | Ego type | SQLite DDL |
+   | ---------- | --------- |
+   | `timestamp` | `TIMESTAMP` |
+   | `time` | `TIME` |
+   | `date` | `DATE` |
 
    SQLite's type-affinity rules treat `TIMESTAMP`, `TIME`, and `DATE` as TEXT affinity, so the engine stores a text string.  The key benefit is that the declared type name is preserved in the schema metadata and can be recovered via `PRAGMA table_info`.
 
 2. **Schema introspection** (`server/tables/tables.go`, `getColumnInfo`): when the SQLite driver reports a column type name from `DatabaseTypeName()`, the normalization block maps it to a portable lowercase name:
 
- | Driver-reported name | Normalized to |
- | -------------------- | ------------ |
- | `TIMESTAMP`, `TIMESTAMPTZ`, `DATETIME` | `"timestamp"` |
- | `TIME` | `"time"` |
- | `DATE` | `"date"` |
+   | Driver-reported name | Normalized to |
+   | -------------------- | ------------ |
+   | `TIMESTAMP`, `TIMESTAMPTZ`, `DATETIME` | `"timestamp"` |
+   | `TIME` | `"time"` |
+   | `DATE` | `"date"` |
 
    This portable name is stored in `DBColumn.Type` and returned to REST clients in the table-describe response.
 

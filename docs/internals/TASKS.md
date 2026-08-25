@@ -439,35 +439,35 @@ line, stripped before parsing):
 
 ```jsonc
 {
-	"task": "description of the task",
-	"id": "a40452b9-91d3-45fc-a374-d271e81f308f",
-	"active": "true",
-	"user": "admin",
-	"method": "post",
-	"endpoint": "/services/jiggle",
-	"parameters": {
-		"source": "true"
-	},
-	"body": {
-		"table": "mydata",
-		"operation": "purge"
-	},
-	"status": 200,
-	"save": {
-		"TOKEN": "system.token"
-	},
-	"tests": [
-		{
-			"name": "purge count is a number",
-			"query": "affected",
-			"op": "ge",
-			"value": "0"
-		}
-	],
-	"timeout": "5m",
-	"interval": "1h",
-	"count": 24,
-	"after": "10m"
+  "task": "description of the task",
+  "id": "a40452b9-91d3-45fc-a374-d271e81f308f",
+  "active": "true",
+  "user": "admin",
+  "method": "post",
+  "endpoint": "/services/jiggle",
+  "parameters": {
+    "source": "true"
+  },
+  "body": {
+    "table": "mydata",
+    "operation": "purge"
+  },
+  "status": 200,
+  "save": {
+    "TOKEN": "system.token"
+  },
+  "tests": [
+    {
+      "name": "purge count is a number",
+      "query": "affected",
+      "op": "ge",
+      "value": "0"
+    }
+  ],
+  "timeout": "5m",
+  "interval": "1h",
+  "count": 24,
+  "after": "10m"
 }
 ```
 
@@ -580,7 +580,7 @@ Added to `internal/defs/config.go`, following the existing `ServerKeyPrefix`-blo
 convention, all under `TasksKeyPrefix = ServerKeyPrefix + "tasks."`:
 
 | Key | Type | Default | Purpose |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `ego.server.tasks.enabled` | bool | `false` | Master switch; when false, no task loading, no scheduler goroutine, no `/admin/tasks` route registered. |
 | `ego.server.tasks.default.timeout` | duration | `"30s"` | Used when a task omits `"timeout"`. |
 | `ego.server.tasks.max.timeout` | duration | `"1h"` | Hard ceiling; a task requesting more is clamped and logged. |

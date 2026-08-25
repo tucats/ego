@@ -115,4 +115,3 @@ and single-target compound assignments are unaffected. Verified against `go buil
 ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types dynamic`,
 `--types strict`, and `--types relaxed` (1422 `@test` blocks, up from 1413, with no
 regressions).
-

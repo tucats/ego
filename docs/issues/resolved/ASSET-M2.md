@@ -21,4 +21,3 @@ The error branch in `AssetsHandler` now writes the literal string
 `{"err": "asset not found"}` to the response for all load failures. The
 original error (including the real path) continues to be written to the
 `AssetLogger` via the existing `asset.load.error` log key.
-

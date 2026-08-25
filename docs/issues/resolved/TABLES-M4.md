@@ -26,4 +26,3 @@ setting. Document the behavior so callers can paginate deliberately.
 **Resolution:**  
 Enforce a server-side maximum row limit in `PagingClauses`; default to 1000
 rows when no limit is specified.
-

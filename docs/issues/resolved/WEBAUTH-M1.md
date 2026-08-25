@@ -23,4 +23,3 @@ per-IP limit of 10 requests per minute and a global cap of 200 concurrent
 pending ceremonies. Both limits return HTTP 429 with an audit log entry.
 `clientIP()` honours `X-Forwarded-For` when the direct peer is a loopback
 address. Covered by `TestIPLimiter_*` and `TestWebAuthnBeginGuard_*` tests.
-

@@ -23,4 +23,3 @@ bug rather than a functional one.
 Changed the array construction to `data.NewArray(StringsTokenArrayType, len(items))`, reusing the
 already-correct type instead of building a fresh, wrongly-shaped one. Added a regression test in
 `tests/packages/tokenizer.ego` asserting `string(reflect.Type(strings.Tokenize(...)))`.
-

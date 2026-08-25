@@ -68,4 +68,3 @@ Test in `tests/json/unmarshal.ego` renamed from
 `"json: Unmarshal - type mismatch returns error"` and simplified: the `try/catch`
 wrapper was removed. The test now calls `err := json.Unmarshal(...)` directly and
 asserts `err != nil`, matching Go's `encoding/json` behavior.
-

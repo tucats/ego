@@ -22,4 +22,3 @@ ok = subtle.ConstantTimeCompare([]byte(realPass), []byte(hashPass)) == 1
 
 **Resolution:**  
 Replace `==` password comparison with `crypto/subtle.ConstantTimeCompare`.
-

@@ -48,4 +48,3 @@ with every other exported PascalCase name in the codebase) and requires **3** ar
 - Fixed parameter order to match Go, so mode is last parameter
 - Added documentation note in LANGUAGE.md about using `0o` radix prefix for octal
 - Updated Ego unit tests to use correct package and argument lists.
-

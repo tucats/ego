@@ -32,4 +32,3 @@ plaintext token key. This satisfies the "at minimum" requirement above for the
 file-backend deployment model. The `EGO_SERVER_TOKEN_KEY` env-var path remains
 a minor informational risk (see LOGIN-L1-adjacent concerns) but is not required
 for normal operation.
-

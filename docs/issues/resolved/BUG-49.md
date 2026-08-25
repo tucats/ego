@@ -54,4 +54,3 @@ single string return.
 Go-level tests updated/added in `internal/runtime/base64/encoding_test.go`, and Ego-level
 tests added in `tests/base64/base64.ego` (previously no Ego-level coverage existed for this
 package).
-

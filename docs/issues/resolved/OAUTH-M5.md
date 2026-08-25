@@ -54,4 +54,3 @@ than every 10.  Tests in `server/oauth/medium_test.go` verify: injection to
 exactly the cap causes the next `newState` to fail, the below-cap positive path
 works, and the atomicity invariant holds (cap-1 → cap-1 insert succeeds, cap →
 error returned).
-

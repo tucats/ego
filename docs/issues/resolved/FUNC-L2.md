@@ -75,4 +75,3 @@ Three new tests added to `tests/functions/named_returns.ego`:
 - `"functions: named return explicit value interacts with defer"` — verifies
   that a defErred closure observes the post-assignment value of the named
   variable (`f(5)` returns `12`, not `6`)
-

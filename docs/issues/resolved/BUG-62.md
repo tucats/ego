@@ -93,4 +93,3 @@ A separate, pre-existing bug found incidentally while double-checking this fix's
 examples is tracked as [BUG-72](#BUG-72): Ego channels do not actually support a Go-style
 element type (`chan string`) anywhere, despite `docs/LANGUAGE.md`'s own examples using that
 syntax before this fix.
-

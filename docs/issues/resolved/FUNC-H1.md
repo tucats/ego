@@ -65,4 +65,3 @@ the empty-slice case correctly — no changes were needed there.
 Tests updated in `tests/functions/variadics.ego`: the two tests that previously
 expected errors on zero-argument calls now assert the correct return values
 instead, and their names and comments reflect Go-compatible behavior.
-

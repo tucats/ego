@@ -13,4 +13,3 @@ authentication to password-only without any visible indication to those users.
 `server.webauthn.admin.cleared.passkeys` key when the actor differs from the
 target user. The SERVER log level is always shown in the dashboard Log tab,
 making the action visible without requiring elevated log settings.
-

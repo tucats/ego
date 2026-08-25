@@ -50,4 +50,3 @@ Added code to the Call bytecode handler to detect when the item being used as th
 target of the call is wrapped as a data.Interface (the Ego version of an `any` value),
 the value is unwrapped before proceeding to determine who the value is meant to be
 used (i.e. the target can be bytecode, a built-in function, a type, etc.)
-

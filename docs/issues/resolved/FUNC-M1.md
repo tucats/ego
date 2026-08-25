@@ -93,4 +93,3 @@ Tests in `tests/functions/scope_advanced.ego` cover both directions:
 parameters and globals are accessible, while `"functions: closure captures named
 func parameter"` confirms that a closure can still see an enclosing named
 function's parameters.
-

@@ -98,4 +98,3 @@ tests: `Test_Context_checkType_RelaxedMode_CoercesConstant_KeepsType`,
 `Test_Context_checkType_StrictMode_NonConstantCrossType_Error` in
 `internal/language/bytecode/context_test.go`, plus five new `@test` cases in
 `tests/types/type_enforcement.ego` exercising all three modes end-to-end.
-

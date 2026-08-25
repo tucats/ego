@@ -26,4 +26,3 @@ caller handles it uniformly as a 404.
 (4) return `filepath.Join(root, "__invalid__")` on confinement failure.
 The loop that stripped leading dots/slashes and both `strings.ReplaceAll`
 calls have been removed.
-

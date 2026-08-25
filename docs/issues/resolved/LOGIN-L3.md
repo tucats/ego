@@ -17,4 +17,3 @@ is set from `t.Expires.Format(time.UnixDate)` — the value baked into the token
 itself — and the previous independent duration re-calculation block has been
 removed. The `tokens.Unwrap` call also surfaces the `TokenID` needed for
 `response.ID`, consolidating two previously separate concerns into one call.
-

@@ -49,4 +49,3 @@ Two tests added to `server/oauth/config_test.go`:
 `loadConfig()`, and confirms (a) the returned config carries the value and (b)
 `os.Getenv` returns `""` afterward.  `TestLoadConfig_NoEnvVar` verifies that
 the absent-env-var path does not panic.
-

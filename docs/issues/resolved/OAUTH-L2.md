@@ -46,4 +46,3 @@ Accept header.  Tests in `server/oauth/authserver/low_test.go` verify that
 the handler processes form-encoded requests without an Accept header and that
 the error path (unsupported grant type) produces a grant-type error rather
 than a media-type rejection.
-

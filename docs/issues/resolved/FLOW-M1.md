@@ -28,4 +28,3 @@ Fixed in `compiler/for.go` — `IsNext(DefineToken)` changed to
 already handled both forms correctly; only the guard that rejected `=` needed removal.
 Test added: `"flow: for-loop init clause with assignment to existing variable"` in
 `tests/flow/while_loop.ego`.
-

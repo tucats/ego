@@ -113,4 +113,3 @@ New tests:
 - `tests/flow/switch_advanced.ego` — six matching `@test` blocks (suffixed `(BUG-31)`)
   covering the same scenarios at the Ego-language level, including a `@compile`/`catch`
   regression check that `continue` outside of any loop remains a compile error.
-

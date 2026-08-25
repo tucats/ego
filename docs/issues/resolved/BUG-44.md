@@ -84,4 +84,3 @@ switch ended, which could collide with an unrelated later declaration of the sam
   default body can shadow switch init variable (BUG-44)"`, `"flow: case body variable does
   not leak past the switch (BUG-44)"`, and `"flow: fallthrough does not leak variable into
   next case (BUG-44)"`.
-

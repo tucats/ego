@@ -47,4 +47,3 @@ authorization request), the exchange is rejected with 400 and a log entry under
 validates PKCE when a challenge is present. Confidential clients are unaffected.
 New error key `oauth.as.pkce.required` and log key `oauth.as.pkce.missing` added
 to all three language files. Tests in `server/oauth/authserver/token_test.go`.
-

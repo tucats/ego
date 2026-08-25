@@ -61,4 +61,3 @@ should be indistinguishable, not merely convertible. `typeof(uint8(5))` correctl
 Regression tests: `tests/types/scalar_types.ego` — `"types: uint8 zero value"` (replacing a
 stale comment that had documented the missing feature as a permanent limitation) and
 `"types: uint8 cast function is recognized (BUG-58)"`.
-

@@ -111,4 +111,3 @@ tripping over unrelated stale global settings.
 - `tests/flow/switch_advanced.ego` — new Ego-level regression tests covering the same
   scenarios end-to-end, including two `@compile`-based tests that assert the new
   `invalid.fallthrough` compile error is produced
-

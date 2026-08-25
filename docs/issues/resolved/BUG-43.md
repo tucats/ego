@@ -122,4 +122,3 @@ turned out to be the same missing piece wearing a different hat:
   BUG-43, slice argument remains aliased like a real Go slice"` (guards against
   over-copying), and `"defer: BUG-43, repeated defer inside a loop does not error"` (guards
   the `StoreAlways`-repeatability requirement that ruled out using `CreateAndStore`).
-

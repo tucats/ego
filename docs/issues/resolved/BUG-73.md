@@ -94,4 +94,3 @@ from 1348) with no regressions.
 A separate, pre-existing bug was found incidentally while writing these tests — a struct field
 named the same as an unrelated type declared elsewhere in the file corrupts type registration —
 and is tracked separately as [BUG-76](#BUG-76), not fixed here.
-

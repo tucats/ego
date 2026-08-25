@@ -71,4 +71,3 @@ documentation-only clarification — any existing Ego program that relied on
 updated to treat `ch` as an integer code point (e.g., use
 `string([]int32{ch})` or `fmt.Sprintf("%c", ch)` to get a one-character string
 back, or compare `ch` against a rune literal like `'A'` directly).
-

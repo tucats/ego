@@ -94,4 +94,3 @@ Regression tests were added at two levels:
   the bug end-to-end through the real CLI compilation/execution path used by
   `ego run`/`ego test` (confirmed to fail with "function did not return the expected
   number of values" against the pre-fix compiler, and to pass after the fix).
-

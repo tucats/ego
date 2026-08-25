@@ -43,4 +43,3 @@ negative values. Validation now also rejects capacity < size (matching Go's
   negative capacity, non-integer capacity, writable result, empty after creation;
   array with valid/equal/less-than/negative capacity)
 - `tests/types/make_map.ego` — 12 new Ego-level tests covering the same cases
-

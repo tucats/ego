@@ -49,4 +49,3 @@ func main() {
 - `len(m)`, `range m`, and `delete(m, k)` are all safe on nil maps (zero iterations / no-ops).
 - Assigning an initialized literal (`m = map[string]int{}`) escapes the nil state.
 - Tests in `tests/types/nil_map.ego` cover all 14 nil-map behavioral cases.
-

@@ -26,4 +26,3 @@ and update the error message accordingly.
 Replace `defs.AdminAgent` with `defs.TableAdminPermission` in the `DeleteTable`
 authorization check; correct the error message from "read permission" to
 "admin permission".
-

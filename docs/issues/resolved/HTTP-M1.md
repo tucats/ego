@@ -47,4 +47,3 @@ was added because dashboard was being blocked from itself.
 `addSecurityHeaders()` in `serve.go` sets `X-Content-Type-Options`,
 `X-Frame-Options`, `Referrer-Policy`, `Content-Security-Policy`, and (TLS only)
 `Strict-Transport-Security` on every response.
-

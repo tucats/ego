@@ -37,4 +37,3 @@ return 413 Request Entity Too Large.
 `http.MaxBytesReader` wraps `r.Body` before `io.ReadAll`; returns 413 on
 oversize body; limit defaults to 32 MiB, configurable via
 `ego.server.max.body.size`.
-

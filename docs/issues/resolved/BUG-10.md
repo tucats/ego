@@ -43,4 +43,3 @@ that didn't yet properly support pointers, so the Go-compliant version
 was not possible. There's no reason to retain this legacy variable, so
 the fix is to delete it from the documentation and require that the
 `Unmarshal()` function be called properly.
-

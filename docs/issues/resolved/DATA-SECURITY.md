@@ -85,7 +85,7 @@ rest of this report is the gap audit.
 Three separate, uncoordinated permission mechanisms exist today:
 
 | Layer | Storage | Checked by | Consulted where |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Identity-wide permission | `session.Permissions` (user record), strings like `ego.dsn.admin` | `Route.Permissions()` (router/serve.go:413), `session.HasAllPermissions`/`HasAnyPermission` (router/auth.go:322), ad hoc `util.InListInsensitive(...)` checks in handlers | Route registration gates (routes.go); a few handler bodies |
 | Per-DSN grant | `dsns_auth` table, `DSNAuthorization{User, DSN, Action}` bitmask (`internal/dsns/dsn.go:85`) | `dsns.DSNService.AuthDSN(session, user, dsnName, action)` (`dsn_sqldb.go:215`, `dsn_file.go:192`) | Only inside `database.Open`/`GetDatabase` (`server/tables/database/open.go:79-88`), i.e. only at DSN-open time |
 | Per-table grant | `table_perms` table, `PermissionsObject{User, DSN, Table, Admin/Read/Write/Update/Delete}` (`server/tables/security.go:24-34`) | `tables.Authorized(session, user, "dsn.table", ...)` (`security.go:537`) | Scattered call sites, inconsistently (see §3.3) |
@@ -130,6 +130,7 @@ if !dsnName.Secured {
     return true
 }
 ```
+
 (`internal/server/tables/security.go:558`)
 
 `Secured` and `Restricted` are set independently via separate CLI flags
@@ -380,6 +381,7 @@ Independent of §3.1-3.2, the plain (non-abstract) row handlers only consult
 ```go
 if !session.Admin && dsnName == "" && !Authorized(session, session.User, tableName, defs.TableDeletePermission) {
 ```
+
 (`rows.go:46`, and identically at `:169`, `:530`, `:762`; `tables.go:477`)
 
 For any request that *does* name a DSN (`/dsns/{dsn}/tables/{table}/rows`,

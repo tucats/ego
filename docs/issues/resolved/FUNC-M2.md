@@ -56,4 +56,3 @@ Test updated in `tests/functions/receivers.ego`: the test previously named
 `"functions: value receiver on pointer var errors"` is renamed to
 `"functions: value receiver called on pointer var"` and now asserts that
 `pp.Sum()` returns `10` instead of asserting that a runtime error is thrown.
-

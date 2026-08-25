@@ -112,4 +112,3 @@ each of the following started doing the right thing automatically:
   that it stops the running program, which makes it unsuitable to exercise from inside the
   shared `ego test tests/` suite (it would stop the test runner's own shared top-level context
   partway through, silently skipping every test that runs after it in file order).
-

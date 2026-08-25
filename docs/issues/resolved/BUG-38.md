@@ -51,4 +51,3 @@ the return code should have been invalid argument type, not count.
    function, including verifying it works with different integer types, works with
    a mixture of integers and strings, and throws argument type error if other types
    found.
-

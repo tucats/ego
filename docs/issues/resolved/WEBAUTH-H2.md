@@ -21,4 +21,3 @@ Clone check added immediately after the `FinishDiscoverableLogin` call in
 `WebAuthnLoginFinishHandler`. A `true` CloneWarning rejects the login with 401
 and emits `auth.webauthn.clone.warning` to the AUTH audit log. Localized strings
 added to all three language files.
-

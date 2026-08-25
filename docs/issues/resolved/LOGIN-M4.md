@@ -28,4 +28,3 @@ known passwords have been migrated, remove the special-case logic entirely.
 bcrypt migration on first successful login was already in place from
 LOGIN-C1. Remove the special-case block once no `{quoted}` entries remain in
 the user database.
-

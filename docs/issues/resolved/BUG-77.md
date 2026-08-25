@@ -94,4 +94,3 @@ names, since every `@test` block in the file now has its own independent type na
 Verified with `go build ./...`, `go vet ./...`, `go test ./...` (all clean) and `ego test tests/`
 under `--types dynamic`, `--types strict`, and `--types relaxed` (1361 tests passing in all three
 modes, matching the pre-fix count exactly — zero regressions from making type scoping stricter).
-

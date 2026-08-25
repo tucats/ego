@@ -99,4 +99,3 @@ raises a catchable `ErrTypeMismatch` on a type mismatch, and two explicit regres
 confirming the bare-assignment and comma-ok forms are unaffected. Verified against `go build
 ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types dynamic`, `--types
 strict`, and `--types relaxed` (1400 `@test` blocks, up from 1389, with no regressions).
-

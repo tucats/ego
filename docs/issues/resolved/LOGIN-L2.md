@@ -14,4 +14,3 @@ Ego-program `rest.Open({verify:false})` path in `runtime/rest/methods.go`, a
 REST-logger entry is added (the disable is deliberate user code in that context,
 not silent ambient configuration). Localized warning strings added to all three
 language files under the key `rest.tls.insecure`.
-

@@ -35,4 +35,3 @@ counter. The per-account lockout budget is now shared between the native auth
 path and the OAuth2 form login path.  New log message key
 `oauth.as.authorize.locked` added to all three language files. Tests in
 `server/oauth/authserver/authorize_test.go`.
-

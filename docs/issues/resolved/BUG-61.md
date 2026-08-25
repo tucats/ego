@@ -297,4 +297,3 @@ alongside `compileBreak`/`compileContinue`. Fixed by adding the missing `emitPop
 **Correctness verification:** `go test ./...`, `go test -race ./...`, and both
 `ego test tests/` and `ego test --types strict tests/` (1193 `@test` blocks each) pass with no
 regressions.
-

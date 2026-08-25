@@ -26,4 +26,3 @@ Add the negation: `if !db.Session.Admin && !Authorized(...)`.
 **Resolution:**  
 Add missing `!` to `Authorized` call in `getTableNames` so tables the user
 cannot read are filtered out, not those they can.
-

@@ -59,4 +59,3 @@ error is caught the same way as any other runtime error: uncaught, it aborts the
 with `Error: at Primes(line N), invalid function argument: -5`; wrapped in `try/catch`,
 `e.Is(errors.New("func.arg"))` matches. Regression tests added to
 `tests/math/aggregate.ego`.
-

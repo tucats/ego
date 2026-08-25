@@ -56,17 +56,17 @@ notes) before being written up; line numbers are current as of this commit.
 ```go
 func ErrorResponse(w http.ResponseWriter, sessionID int, msg string, status int) int {
   response := defs.RestStatusResponse{
-		ServerInfo: MakeServerInfo(sessionID),
-		Message:    msg,
-		Status:     status,   // <-- captured BEFORE the clamp below
-	}
+        ServerInfo: MakeServerInfo(sessionID),
+        Message:    msg,
+        Status:     status,   // <-- captured BEFORE the clamp below
+    }
 
-	if status < 100 || status >= 600 {
-		status = http.StatusInternalServerError
-	}
-	...
-	w.WriteHeader(status)        // clamped value
-	_, _ = w.Write(b)            // but `b` was marshaled from `response`, which still has the unclamped value
+    if status < 100 || status >= 600 {
+        status = http.StatusInternalServerError
+    }
+    ...
+    w.WriteHeader(status)        // clamped value
+    _, _ = w.Write(b)            // but `b` was marshaled from `response`, which still has the unclamped value
 ```
 
 If any caller ever passes an out-of-range status (0, a negative sentinel used
@@ -85,18 +85,18 @@ literal.
 
 ```go
 if status == http.StatusOK && (route.requiredPermissions != nil && !session.Admin) {
-	for _, permission := range route.requiredPermissions {
-		if !auth.GetPermission(session.ID, session.User, permission) {
-			...
-			sts := http.StatusForbidden
-			if session.User == "" && route.canAuthenticate {
-				sts = http.StatusUnauthorized
-				w.Header().Add(defs.AuthenticateHeader, ...)
-			}
-			status = util.ErrorResponse(w, session.ID, ..., sts)
-		}
-	}
-	...
+    for _, permission := range route.requiredPermissions {
+        if !auth.GetPermission(session.ID, session.User, permission) {
+            ...
+            sts := http.StatusForbidden
+            if session.User == "" && route.canAuthenticate {
+                sts = http.StatusUnauthorized
+                w.Header().Add(defs.AuthenticateHeader, ...)
+            }
+            status = util.ErrorResponse(w, session.ID, ..., sts)
+        }
+    }
+    ...
 }
 ```
 
@@ -156,7 +156,7 @@ field with HTTP 200, "matching the established convention already used by
 ```go
 // line 129-131
 if syntaxTree, err = parse.ParseAuto(req.Code); err != nil {
-	return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
+    return util.ErrorResponse(w, session.ID, err.Error(), http.StatusInternalServerError)
 }
 ```
 
@@ -526,12 +526,12 @@ in `service.go:295`. Verified directly, `service.go:424-432`:
 
 ```go
 if status == http.StatusServiceUnavailable {
-	serviceCacheMutex.Lock()
-	go func() {
-		time.Sleep(1 * time.Second)
-		ui.Log(ui.ServerLogger, "server.shutdown", nil)
-		os.Exit(0)
-	}()
+    serviceCacheMutex.Lock()
+    go func() {
+        time.Sleep(1 * time.Second)
+        ui.Log(ui.ServerLogger, "server.shutdown", nil)
+        os.Exit(0)
+    }()
 }
 ```
 
@@ -651,9 +651,9 @@ cross-schema table name:
 
 ```go
 if !wasFullyQualified && !hasAdminPrivileges {
-	util.ErrorResponse(w, sessionID, errors.ErrNoPrivilegeForOperation.Error(), http.StatusForbidden)
+    util.ErrorResponse(w, sessionID, errors.ErrNoPrivilegeForOperation.Error(), http.StatusForbidden)
 
-	return "", errors.ErrNoPrivilegeForOperation
+    return "", errors.ErrNoPrivilegeForOperation
 }
 ```
 
@@ -663,7 +663,7 @@ calls `util.ErrorResponse` *again*:
 ```go
 q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, sessionID, w, db.Provider, db.HasRowID)
 if err != nil {
-	return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
+    return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 }
 ```
 
@@ -689,7 +689,7 @@ let callers classify them, which is the intended shape.
 ## Summary table
 
 | # | Area | Finding | Severity | Status |
-|---|------|---------|----------|--------|
+| --- | --- | --- | --- | --- |
 | 1.1 | util | `ErrorResponse` body/header status mismatch on invalid input | LOW | Fixed |
 | 1.2 | router | Permission-check loop doesn't stop after first failure — malformed multi-write response | MEDIUM | Fixed |
 | 1.3 | assets | Two different error body shapes in one handler | LOW | Fixed |

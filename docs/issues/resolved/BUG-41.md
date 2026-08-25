@@ -124,4 +124,3 @@ New tests:
   levels of nesting, no trailing commas) and a `@compile`-block negative test confirming
   `[1 2]` (a genuinely malformed single-line array literal) still raises a `"list"` compile
   error.
-

@@ -61,4 +61,3 @@ the response, and populates `loginFormData.CSRFToken` with the new nonce. This
 is called for both the rate-limit lockout path (OAUTH-H1) and the bad-credential
 path, ensuring the form is always submittable after an error. Tests in
 `server/oauth/authserver/authorize_test.go`.
-

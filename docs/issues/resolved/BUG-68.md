@@ -153,4 +153,3 @@ ways — with the ambient (developer-machine) `ego.runtime.precision.error=true`
 again with `--set ego.runtime.precision.error=false` forced explicitly — with no regressions in
 any configuration. `tests/types/bug67_constant_narrowing.ego` was also re-verified in both modes
 (its constants are all exact-fitting, so none should be newly rejected by this stricter check).
-

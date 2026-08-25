@@ -49,4 +49,3 @@ compared to a string literal via the cheat) were updated to either use a type co
 - `tests/reflect/reflect_packages.ego` — `.BaseType == "struct"` → `string()` cast or `Index`
 - `tests/datamodel/float32.ego` — `.BaseType == "float32"` → `== float32` type constant
 - `tests/typeof/comparison.ego` — new tests verifying the corrected behavior
-

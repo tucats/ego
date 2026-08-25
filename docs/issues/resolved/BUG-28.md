@@ -89,4 +89,3 @@ design. The fix instead prevents the risky call from ever happening:
   `"sync: Mutex TryLock reports availability correctly"`, and `"sync: independent Mutex
   values track lock state separately"` guard against regressions in ordinary usage and in
   the per-instance bookkeeping.
-

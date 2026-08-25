@@ -56,4 +56,3 @@ Test in `tests/json/parse.ego` renamed from
 `"json: Parse - empty array root returns error"` to
 `"json: Parse - empty array root returns empty array string"` and updated to
 assert `err == nil` and `result == "[]"`.
-

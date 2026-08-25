@@ -20,4 +20,3 @@ Both `break label` and `continue label` find the nearest enclosing loop with
 that label and target it. Using an unknown label is a compile-time error.
 
 **Test file:** `tests/flow/labeled_break.ego`
-

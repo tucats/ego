@@ -132,4 +132,3 @@ regressions. Also manually spot-checked that a typed variadic call
 (`func f(args ...int32) ...; f(int32(1), int32(2))`) and a `try`/`catch`-caught runtime error
 still work, since `call.go`'s argument-collection loop and `requiredTypeByteCode`'s shared
 implementation were both touched.
-

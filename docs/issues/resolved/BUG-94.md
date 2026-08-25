@@ -4,7 +4,7 @@
 
 **Discovered by:** `go test -race` during work on PERFORMANCE.md Finding 17 (the global-reference cache, `docs/internals/GLOBALS.md`); confirmed present on `master` before that work began (byte-for-byte-identical stack trace), so this is a pre-existing bug, not a regression from it. Investigated and fixed at the user's request in a dedicated follow-up pass.
 
-**Status: FIXED**
+**Status:** FIXED
 
 **Description:**  
 Running the full `ego test tests/` suite under `go test -race` (or an `-race`-instrumented `ego`

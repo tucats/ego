@@ -34,4 +34,3 @@ ui.Log(ui.ServerLogger, "server.route.error", ui.A{
 **Resolution:**  
 Generic `"not found"` / `"forbidden"` returned to client; raw URL path kept
 only in the `server.route.error` log entry.
-

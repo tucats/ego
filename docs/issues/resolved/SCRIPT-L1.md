@@ -32,4 +32,3 @@ other `@transaction` responses, rather than a plain-text body with no
 `Content-Type` header. The response returns HTTP 200 with the message field set
 to `"No transactions in task"`, matching the format used by non-empty
 transaction responses.
-

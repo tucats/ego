@@ -85,4 +85,3 @@ six unsupported names, and four case-variant near-misses) and
 `TestIsKnownPermissionClaim_FallbackBehavior` (end-to-end demonstration that an
 unsupported claim silently degrades to `ego.logon`) added to
 `server/oauth/claims_test.go`.
-

@@ -119,4 +119,3 @@ buffered value (`ok == true`, correct value), draining multiple buffered values
 in order, detecting a closed channel (`ok == false`, `v == nil`), draining all
 buffered items before reporting closure, and receiving correctly when the
 sender is a separate goroutine.
-

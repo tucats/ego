@@ -125,4 +125,3 @@ rejected, and a regression check that BUG-62's channel-receive-as-expression-ato
 unaffected. Verified against `go test ./...` and `ego test tests/` / `ego test --types strict
 tests/` / `ego test --types relaxed tests/` (1348 `@test` blocks, up from 1332) with no
 regressions.
-

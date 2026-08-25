@@ -97,4 +97,3 @@ named `"functions: stored closure is invalid after loop"` is renamed to
 `"functions: stored closure survives after loop"` and now asserts that
 `captured()` returns `3` (the post-loop value of `i`) instead of asserting
 that a runtime error is thrown.
-

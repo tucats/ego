@@ -102,4 +102,3 @@ tests: `TestFormat_TimeDuration_MatchesString`, `TestFormat_TimeTime_MatchesStri
 `@test` cases across `tests/time/duration.ego`, `tests/time/time_methods.ego`, and
 `tests/time/time_create.ego` that call `fmt.Println` on each type and check the returned
 byte count matches the length of `.String()`'s output plus a trailing newline.
-

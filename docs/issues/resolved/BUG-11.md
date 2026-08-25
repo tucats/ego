@@ -55,4 +55,3 @@ example:
 
 This fix addressed Print(), Println(), and Printf() which all had variations of
 this issue.
-

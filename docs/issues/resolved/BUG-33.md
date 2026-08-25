@@ -88,4 +88,3 @@ converts to `int(42)` in dynamic/relaxed mode, and `e.Age = "42"` is rejected wi
 `internal/language/data/structs_test.go` and `internal/language/bytecode/structs_test.go`,
 new Ego tests in `tests/types/struct_ops.ego`, and a full run of `tools/gotests.sh` plus
 `ego test` under all three typing modes (strict/relaxed/dynamic).
-

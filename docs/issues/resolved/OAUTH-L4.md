@@ -84,4 +84,3 @@ Tests added:
   with 13 sub-cases directly exercises `sanitizeLogValue`, covering plain ASCII,
   newline, CR, CRLF, tab, NUL, DEL, leading/trailing whitespace trimming, non-ASCII
   Unicode passthrough, and the all-control-chars edge case.
-

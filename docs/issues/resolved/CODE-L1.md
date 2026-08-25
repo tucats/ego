@@ -41,4 +41,3 @@ capturing the full script content.
 truncates `logReq.Code` to 120 characters (appending `"..."`) before passing
 it to `json.MarshalIndent`. The original `req.Code` is unmodified and used
 for execution as before.
-

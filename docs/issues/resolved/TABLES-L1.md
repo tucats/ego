@@ -27,4 +27,3 @@ the server log where access is controlled.
 **Resolution:**  
 Log full database errors server-side and return generic messages in HTTP
 error responses from the tables package.
-

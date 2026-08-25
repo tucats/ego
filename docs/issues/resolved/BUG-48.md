@@ -42,4 +42,3 @@ Go-level regression test added in `internal/runtime/fmt/print_test.go`
 (`Test_stringPrintFormat/%%_collapses_with_format_string_only,_no_values`), and an
 Ego-level test in `tests/io/printf.ego` (`io: Sprintf collapses %% with no substitution
 arguments (BUG-48)`).
-

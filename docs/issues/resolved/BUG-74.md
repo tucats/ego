@@ -109,4 +109,3 @@ three explicit non-regression checks confirming bare `chan` return types, bare n
 parenthesized named returns for other types all continue to work unchanged. Verified against `go
 build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types dynamic`,
 `--types strict`, and `--types relaxed` (1389 `@test` blocks, up from 1383, with no regressions).
-

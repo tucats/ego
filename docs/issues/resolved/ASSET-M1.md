@@ -20,4 +20,3 @@ formatting the Content-Range header.
 A `reportEnd` local variable is computed from `end`, clamped to `totalSize - 1`
 when `end == EndOfData || end >= totalSize`, and used in the `Content-Range`
 header format string. The handler's own `end` variable is not mutated.
-

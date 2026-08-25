@@ -125,4 +125,3 @@ Regression tests were added at two levels:
 All three fixes were verified against `go test ./...`, `go test -race ./...`, and both
 `ego test tests/` and `ego test --types strict tests/` (1229 `@test` blocks each) with no
 regressions.
-

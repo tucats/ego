@@ -149,7 +149,7 @@ indexed by an integer `SymbolAttribute.register`, specifically so that
 map (`symbols map[string]*SymbolAttribute`) exists purely to translate a name to
 that integer slot** — the array-of-slots mechanism this plan wants already
 exists, one level down; what's missing is a way to skip the map and know the
-slot number *at compile time* instead of *at first use, per table instance*.
+slot number _at compile time_ instead of _at first use, per table instance_.
 
 ### 3.2 Scopes are dynamic, per-call, per-block runtime objects
 
@@ -189,7 +189,7 @@ a slot number per name, following the same "scan/decide once at compile time"
 pattern Findings 4/8/11 already established (`loopBodyNeedsFreshScopePerIteration`,
 `blockBodyNeedsOwnScope`, `loopBodyIdempotentDeclEligible`).
 
-### 3.6 Bytecode instructions that read or write a *named* local today
+### 3.6 Bytecode instructions that read or write a _named_ local today
 
 From `internal/language/bytecode/opcodes.go`, the instructions whose operand
 is (or can be) a plain variable name and that would need a slot-based
@@ -202,7 +202,7 @@ and the name-operand form of `StoreViaPointer`. `GetThis`/`SetThis` and
 reserved slot numbers rather than needing general dynamic-name support.
 
 `explodeByteCode` (`Explode` opcode) creates variables at runtime from a map's
-*runtime* keys — a genuinely dynamic-name construct. It currently has **no
+_runtime_ keys — a genuinely dynamic-name construct. It currently has **no
 compiler call site at all** (confirmed by search — dead code, or reachable
 only via hand-built `*ByteCode` outside the compiler package). This needs
 confirming, not assuming, before implementation (see
@@ -233,8 +233,8 @@ map involved and no `data.String(i)` conversion (the operand is already an
 **Everything else about the call is unchanged.** The function's boundary
 `*symbols.SymbolTable` is still pushed/popped exactly as today (so `this`,
 `FindNextScope`, package-proxy write-back, and the try/defer/panic machinery
-all keep working verbatim) — the slot bank is carried as a new field *on that
-table* (see [Section 7](#7-runtime-changes)), not as a replacement for it.
+all keep working verbatim) — the slot bank is carried as a new field _on that
+table_ (see [Section 7](#7-runtime-changes)), not as a replacement for it.
 This is the intentionally conservative shape of this plan: it is additive to
 Findings 4/8/11, not a replacement for them, and it composes cleanly with
 each. A more ambitious version that also eliminates the boundary-scope table
@@ -243,13 +243,13 @@ push itself is discussed as a later option in
 it changes the scope of this project materially and should be an explicit
 decision, not an assumption baked into the plan.
 
-**Any reference to a name that is *not* one of this function's own
+**Any reference to a name that is _not_ one of this function's own
 slotted locals** (a package-level constant, an imported package member, a
 global, `@global`, an outer function's variable reached only because
 `ego.runtime.deep.scope` disables boundary isolation) compiles to the
 existing `Load`/`Store`/etc. exactly as today. The compiler only emits a slot
 instruction when it has proven, at the point of compiling that specific
-identifier reference, that the name resolves to a slot in the *current*
+identifier reference, that the name resolves to a slot in the _current_
 function's own bank.
 
 ---
@@ -310,7 +310,7 @@ exact lexical nesting" is something the compiler already tracks in `c.scopes`
 — so the erroring-vs-idempotent decision (and Finding 11's whole
 `loopBodyIdempotentDeclEligible` analysis) collapses into a simpler,
 free-of-charge byproduct of slot assignment for any slot-eligible loop body:
-the *same* slot number is reused across iterations by construction, and no
+the _same_ slot number is reused across iterations by construction, and no
 runtime existence check is needed at all. This is a secondary, incidental
 simplification this design enables — not a required part of it, and not a
 license to remove Finding 11's existing logic, since non-eligible functions
@@ -326,13 +326,13 @@ Two options:
   (`if`/`for`/`switch`/`try` bodies) that Findings 4/8/11 haven't already
   elided still push/pop their own child `*symbols.SymbolTable` at runtime,
   exactly as today — but that child table has no slot bank of its own; slot
-  instructions inside it reference the *function's* bank via a pointer/lookup
+  instructions inside it reference the _function's_ bank via a pointer/lookup
   to the nearest ancestor table that owns one. This keeps this plan strictly
   additive and low-risk: it changes nothing about scope-push counts, only
   about the cost of each variable access within whatever scopes already exist.
 - **(B) Maximal scope:** since slot numbers alone already provide the
   uniqueness and shadowing guarantees a runtime scope boundary exists to
-  provide, a fully slot-eligible function could skip pushing *any* additional
+  provide, a fully slot-eligible function could skip pushing _any_ additional
   child table for its own nested blocks — subsuming Findings 4/8/11 for these
   functions rather than composing with them, and eliminating scope-push
   overhead entirely (not just per-access cost) for the functions this
@@ -376,7 +376,7 @@ int-operand instruction). The existing peephole optimizer
 (`internal/language/bytecode/optimizer.go`/`optimizations.go`) has patterns
 keyed on specific opcodes (e.g. merging sequential `PopScope`s) — these need a
 pass to confirm none of them assume every `Load`/`Store` in a function is
-name-based, and to consider whether any *new* slot-specific peephole patterns
+name-based, and to consider whether any _new_ slot-specific peephole patterns
 are worth adding later (not part of this plan's initial scope).
 
 ---
@@ -387,7 +387,7 @@ are worth adding later (not part of this plan's initial scope).
   wrapper struct, if debug metadata needs to travel with it — see Section 8.2)
   field to `SymbolTable`, populated by a new method (e.g. `AllocateLocals(n
   int)`), read/written by unexported helpers analogous to `getValue`/`setValue`
-  but with no bin math (`locals[index]` directly). Needs a way for a *child*
+  but with no bin math (`locals[index]` directly). Needs a way for a _child_
   table (Section 5.3, Option A) to find the nearest ancestor's bank — a new
   `LocalsBank() *SymbolTable` walk, likely cacheable the same way
   `FindNextScope` is (Finding 14, Phase 3) if profiling shows it matters,
@@ -416,7 +416,7 @@ are worth adding later (not part of this plan's initial scope).
   (debugger commands, error formatting, not the hot instruction-dispatch
   loop), so its cost is irrelevant to this project's goals. Each of the
   specific call sites listed above needs to be located and updated
-  individually during implementation — this plan identifies the *mechanism*
+  individually during implementation — this plan identifies the _mechanism_
   (name/slot debug table) but has not yet enumerated every consumer; see
   [Section 11, Q3](#11-open-questions--decisions-needed-before-implementation).
 - **`try`'s own body scope retention** (Finding 8's Resolution notes this
@@ -433,7 +433,7 @@ are worth adding later (not part of this plan's initial scope).
   solely to one call activation on one goroutine (no closures allowed in, by
   construction — Section 5.1), so none of Finding 14's shared-table/locking
   concerns apply to the bank itself. A slot-eligible function can still be
-  the *target* of a `go` statement (a named-function call, not a literal) —
+  the _target_ of a `go` statement (a named-function call, not a literal) —
   that's an ordinary fresh call with its own fresh bank, no different from
   any other call.
 - **Package proxy write-back (`updatePackageFromLocalSymbols`):** only
@@ -449,13 +449,13 @@ are worth adding later (not part of this plan's initial scope).
   are completely orthogonal to how the destination slot was addressed.
 - **Named returns and the receiver (`this`):** ordinary declared names from
   the compiler's point of view (Section 3.6) — eligible for slots like any
-  other local, *unless* disqualified by Section 5.1 (a `defer func(){...}()`
+  other local, _unless_ disqualified by Section 5.1 (a `defer func(){...}()`
   that mutates a named return is exactly the closure case that already
   disqualifies the whole function).
 - **`ego.runtime.deep.scope` setting** (disables function-scope boundary
   isolation, used by `ego test`): `pushScopeByteCode` already branches on this
   today; a slot-eligible function's `AllocateLocal`/bank mechanism is
-  independent of whether the *boundary* flag is set on its table, so this
+  independent of whether the _boundary_ flag is set on its table, so this
   setting should need no special-casing — worth a dedicated test case rather
   than an assumption (see Section 10).
 
@@ -520,7 +520,7 @@ Following the precedent set by every fix in `docs/PERFORMANCE.md`:
   given how much of the interpreter this touches: `go build ./...`,
   `go vet ./...`, `go test ./...`, `go test -race ./...` (this touches
   concurrent-adjacent code even though slot banks themselves are
-  single-goroutine-only by construction — the *decision* of whether a
+  single-goroutine-only by construction — the _decision_ of whether a
   function is eligible must not itself race), and the full `ego test tests/`
   suite (1,558+ cases as of Finding 11's Resolution).
 - Re-run `tools/apitest.sh` against a live server, since REST service bodies
@@ -545,7 +545,7 @@ deciding silently, per the brief for this document.
    (slots subsume Findings 4/8/11's scope-push elision for eligible
    functions).** This plan recommends starting with Option A because it is
    strictly smaller and composes with, rather than replaces, already-shipped
-   work — but Option B is where the *rest* of the win in Findings 4/8/11's
+   work — but Option B is where the _rest_ of the win in Findings 4/8/11's
    territory lives for slot-eligible functions (no scope allocation at all,
    not just cheaper access within whatever scopes exist). Worth a decision
    before Phase 1 starts, since it affects how the eligibility predicate and
@@ -554,8 +554,8 @@ deciding silently, per the brief for this document.
    selects option B for Q1**
 
 2. **How aggressively should Phase 1's eligibility predicate treat
-   closures?** This plan's default (Section 5.1) disqualifies the *entire
-   enclosing function* if a closure/`go`/`defer` appears anywhere in its
+   closures?** This plan's default (Section 5.1) disqualifies the _entire
+   enclosing function_ if a closure/`go`/`defer` appears anywhere in its
    body, even if the closure captures nothing from the outer function at
    all (a closure that only uses its own parameters, e.g. a `sort.Slice`
    comparator literal, still disqualifies its enclosing function under this
@@ -573,7 +573,7 @@ deciding silently, per the brief for this document.
    extension as needing the `LocalNames` debug-table treatment, based on
    what this investigation found — but this was not an exhaustive audit of
    every place in the codebase that calls `SymbolTable.Names()`/`Get()`
-   expecting to enumerate a live function's *user* locals (as opposed to
+   expecting to enumerate a live function's _user_ locals (as opposed to
    package/debug/admin uses, which are unaffected). This needs a dedicated
    `grep`-and-verify pass at the start of implementation, not an assumption
    that Section 8's list is complete. **The user would like the additional
@@ -585,7 +585,7 @@ deciding silently, per the brief for this document.
    service framework building bytecode by hand rather than through the
    compiler), the predicate needs an explicit rule for it. **The user
    has determined that this is legacy code and can be deleted**.
-   
+
 5. **Slot array sizing for pathologically large functions.** V1 gives every
    distinct name its own slot with no reuse across non-overlapping sibling
    blocks (Section 2, non-goals). This is very unlikely to matter in

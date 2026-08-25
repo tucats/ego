@@ -101,4 +101,3 @@ Two changes were needed, both in `internal/language/compiler/`:
   any `const` declaration reports `symbol.not.found` (matching Go's own
   "undefined: iota" behavior), and a `const` block whose first entry omits `=`
   still reports `equals` (`ErrMissingEqual`).
-

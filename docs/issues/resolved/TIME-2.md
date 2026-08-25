@@ -14,7 +14,7 @@ surfaces the error
 fixing TIME-1. Not observed in the field; the exposure below is reproduced by
 direct call, not by a failing test.
 
-**Status: FIXED**
+**Status:** FIXED
 
 ## Description
 

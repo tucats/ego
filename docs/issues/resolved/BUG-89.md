@@ -47,4 +47,3 @@ Regression coverage: `tests/functions/return_types.ego` — the "returns: named
 pointer, slice, and function returns" and "returns: named return may shadow a
 type name" tests, plus the named forms in the pointer/slice/map/channel/function
 tests, all under both `--types=strict` and `--types=dynamic`.
-

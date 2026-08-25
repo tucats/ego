@@ -65,4 +65,3 @@ the resolved, symlink-free prefix. When the sandbox root does not exist on
 disk there is nothing to follow, so the pure-string result is returned
 unchanged. Covered by `TestSandboxJoin_SymlinkEscape` and
 `TestSandboxJoin_SymlinkInsideAllowed` in `internal/util/sandbox_test.go`.
-

@@ -26,4 +26,3 @@ The LANGUAGE.md should be updated to use `typeof()`.
 
 **Resolution:**
 Documentation updated to use correct function name `typeof()`.
-

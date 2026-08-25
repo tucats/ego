@@ -58,4 +58,3 @@ Two changes:
 The previously-used test `"functions: dynamic mode string to int no error"` was
 replaced by `"functions: type mismatch is always catchable"` which covers both
 the success case (coercible string) and the error case.
-

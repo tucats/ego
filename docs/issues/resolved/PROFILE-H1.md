@@ -44,4 +44,3 @@ inspects the prefix: a `"v2:"` prefix routes to the SHA-256 path; the absence
 of a prefix routes to `decryptLegacy()`, which preserves the original MD5-hex
 key derivation for existing stored values. `decryptLegacy()` is clearly marked
 for future removal once all stored values have been re-encrypted.
-

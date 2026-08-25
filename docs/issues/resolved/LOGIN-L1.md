@@ -14,4 +14,3 @@ reading the password option. When the variable is set, `ui.Say("logon.password.e
 emits a visible warning to the user's console regardless of log level, and
 `os.Unsetenv` clears the variable immediately so child processes do not inherit
 the credential. Localized strings added to all three language files.
-

@@ -39,4 +39,3 @@ new message key `oauth.rs.no.audience` (with a `{{provider}}` argument) was
 added to all three language files.  The server starts normally — a hard refusal
 would be a breaking change for existing deployments that have not yet set the
 audience — but the warning makes the gap impossible to miss.
-

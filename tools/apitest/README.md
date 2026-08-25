@@ -30,13 +30,13 @@ apitest -d PASSWORD=zork tools/apitest/tests
 The command line accepts the following options:
 
 | Option | Value | Description |
-|:-------|:------|:------------|
+| :------- | :------ | :------------ |
 | --define, -x | key=value | Add an element to the substitution dictionary |
 | --dictionary, -d | file | Add this dictionary file before running tests |
 | --filter, -f | string | Only run tests whose file name contains the given string |
-| --help, -h |  | display help for the command |
-| --rest, -r |   | If present, display the REST request and response payloads |
-| --verbose, -v |   | If present, does more Verbose logging of progress |
+| --help, -h | | display help for the command |
+| --rest, -r | | If present, display the REST request and response payloads |
+| --verbose, -v | | If present, does more Verbose logging of progress |
 
 Note that you can specify an individual file instead of a directory if you wish
 to run only a single test. This won't look for default dictionary.json files so
@@ -141,7 +141,7 @@ The `request` object describes the request to be made to the server that constit
 the test to be run.  It has the following fields:
 
 | Field | Value | Description |
-|:------|:------|:------------|
+| :------ | :------ | :------------ |
 | method | string | The HTTP method to use (GET, POST, etc) |
 | endpoint | string | The URL endpoint including scheme, host, and path |
 | body | string | If present, a text representation of the body send for PUT, POST, or UPDATE |
@@ -190,7 +190,7 @@ The `tests` object is an array of objects, each one of which describes a test to
 on the body of the response. Each has the following fields:
 
 | Field | Description |
-|:------|:------------|
+| :------ | :------------ |
 | name | A descriptive string describing the test, used for logging |
 | expression | a "dot-notation" value describing the value's location in the response body |
 | value | The string value to be tested against the expression object |
@@ -213,7 +213,7 @@ located within the "server" object. You can specify a key that contains dots by 
 The operation can be one of the following:
 
 | Operation | Description |
-|:--|:--|
+| :-- | :-- |
 | equals | The value must match the expression object |
 | not equals | the value must not match the expression object |
 | contains | the expression object must contain the value string |

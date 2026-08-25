@@ -8,7 +8,7 @@ reproduces identically with no recursion, no deep call stacks, and no profiling/
 at all. Confirmed present on `master` before that work began (byte-for-byte identical repro
 output), so this is a pre-existing bug, not a regression from Finding 17's fix.
 
-**Status: FIXED**
+**Status:** FIXED
 
 **Description:**  
 A value stored in an `any`-typed variable or parameter, when passed *as an argument* into another

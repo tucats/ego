@@ -41,4 +41,3 @@ in the body continue to work without changes.  Tests in
 `server/oauth/authserver/revoke_test.go` cover: Basic Auth accepted, form
 credentials still accepted, wrong secret rejected, unknown client rejected, and
 public-client Basic Auth with empty password accepted.
-

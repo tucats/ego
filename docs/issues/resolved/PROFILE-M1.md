@@ -34,4 +34,3 @@ same storage location before the function returns:
 Both paths log `config.reencrypted` (the i18n key) on success. After this change, legacy
 MD5-encrypted values are upgraded to SHA-256 on the first read, with no
 manual migration step required.
-

@@ -9,7 +9,7 @@
 container (default timezone UTC) while passing on every developer machine
 that happened to be configured for US Eastern time.
 
-**Status: FIXED**
+**Status:** FIXED
 
 ## Description
 

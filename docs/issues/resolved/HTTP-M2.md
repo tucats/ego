@@ -36,4 +36,3 @@ response body for clients that need it.
 
 **Resolution:**  
 `X-Ego-Server` header removed entirely.
-

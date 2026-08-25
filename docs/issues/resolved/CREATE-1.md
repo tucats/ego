@@ -40,4 +40,3 @@ if err := result.Set(count-i-1, value); err != nil {
     return err
 }
 ```
-

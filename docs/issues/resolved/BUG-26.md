@@ -182,4 +182,3 @@ to the pointer form.
   `tests/3-services` (all pass, including `services-24-sample-404.json`, which required an
   `ego flush cache` after editing `sample.ego` since the REST server's `ServiceCache` holds
   compiled service bytecode indefinitely with no source-file mtime check)
-

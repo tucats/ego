@@ -38,4 +38,3 @@ and returns an error; the caller is denied. `ValidateJWT` also stores
 `JTI: claims.ID` when writing new cache entries. New log message key
 `oauth.rs.jwt.revoked` added to all three language files. Tests in
 `server/oauth/oauth_cache_test.go`.
-

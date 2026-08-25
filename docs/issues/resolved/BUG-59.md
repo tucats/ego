@@ -56,4 +56,3 @@ disabled by configuration setting" and no patches, and the setting is correctly 
 its prior value once the block finishes compiling. `defs.OptimizerOption` remains in use
 elsewhere (the `--optimize` CLI flag in `internal/grammar/traditional.go`), so it was not
 removed — only the directive's misuse of that constant was corrected.
-

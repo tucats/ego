@@ -15,4 +15,3 @@ Return the `data` and `err` captured by the first read.
 
 **Resolution (April 2026):**  
 `return os.ReadFile(fn)` at line 356 replaced with `return data, err`.
-

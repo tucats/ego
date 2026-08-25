@@ -31,4 +31,3 @@ status, so the body is never read for requests that are going to be rejected:
 `mustAuthenticate` and `mustBeAdmin` failure branches in `ServeHTTP` now
 `return` immediately after sending the error response; request body is never
 read for rejected requests.
-

@@ -68,4 +68,3 @@ pointer-receiver (`*any` indirection) code path is exercised separately from the
 Verified against `go test ./...` and `ego test tests/` / `ego test --types strict tests/`
 (1305 `@test` blocks each, up from 1299 after BUG-68) with no regressions, including the
 pre-existing BUG-33 struct field-enforcement tests.
-

@@ -18,4 +18,3 @@ support is needed for development environments, require an explicit
 HTTP fallback removed from `resolveServerName`; unqualified names only try
 HTTPS. Explicit `http://` scheme still accepted as the user's deliberate
 choice.
-

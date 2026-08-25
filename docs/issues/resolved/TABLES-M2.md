@@ -25,4 +25,3 @@ where = fmt.Sprintf("WHERE %s = $%d", defs.RowIDName, filterCount+1)
 **Resolution:**  
 Convert row ID filter in `formAbstractUpdateQuery` to a `$N` numbered
 parameter passed to `db.Exec` rather than string-embedded in the WHERE clause.
-

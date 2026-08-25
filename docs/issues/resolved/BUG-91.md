@@ -6,7 +6,7 @@
 CALL-11 fix (see the CALL area, `CALL-11`); unrelated to that fix itself —
 reproduces identically on code paths CALL-11 never touches.
 
-**Status: OPEN**
+**Status:** OPEN
 
 **Description:**  
 A pointer-receiver method (`func (r *T) Method()`) called via `defer` on a
@@ -66,4 +66,3 @@ now (`&r`, stored into `$tempName` as a pointer) rather than copying its
 value — mirroring, at defer time, exactly the auto-address Ego already
 performs at ordinary (non-deferred) call time. A value receiver keeps the
 existing `ValueCopy` behavior unchanged.
-

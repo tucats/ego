@@ -45,4 +45,3 @@ Two lines removed from `bytecode/range.go`:
 The `immutable` counting semaphore on `data.Array` and the `SetReadonly` method are
 unchanged; they continue to serve other legitimate read-only use cases (`_`-prefixed
 variables, server runtime arrays, etc.).
-

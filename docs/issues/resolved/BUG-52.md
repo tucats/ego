@@ -70,4 +70,3 @@ New i18n keys `scan.eof`, `scan.expected.integer`, and `scan.mismatch` were adde
 `internal/errors/messages.go` and all three language files. Verified against both
 documented reproducers (byte-for-byte match with real Go's error text) plus additional
 regression cases in `internal/runtime/fmt/fmt_test.go` and `tests/io/sscanf.ego`.
-

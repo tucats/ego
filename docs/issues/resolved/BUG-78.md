@@ -137,4 +137,3 @@ Non-`ego.*` keys are completely unaffected by this fix: `setKey` still calls `se
 Verified against `go build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under
 `--types dynamic`, `--types strict`, and `--types relaxed` (1383 `@test` blocks, up from 1381,
 with no regressions).
-

@@ -21,4 +21,3 @@ performing any work when passkeys are disabled. Extract the check into a shared
 `passkeyGuard()` added to `server/server/webauthn.go`; called at the top of all
 five handlers. Returns HTTP 404 with an `auth.webauthn.disabled` audit log entry
 when passkeys are disabled. Covered by `TestPasskeyGuard_*` tests.
-

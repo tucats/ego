@@ -55,4 +55,3 @@ development servers are not broken.  Tests in
 `server/oauth/authserver/secure_request_test.go` cover: HTTPS sets Secure,
 plain HTTP omits Secure, X-Forwarded-Proto sets Secure, and
 `router.IsSecureRequest` is callable from outside the router package.
-

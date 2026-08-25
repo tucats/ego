@@ -85,4 +85,3 @@ function type, the comma-ok form (both matching and non-matching), and the bonus
 type-switch form (which shares `compileUnwrap`) is unaffected. Verified against `go test ./...`
 and `ego test tests/` / `ego test --types strict tests/` / `ego test --types relaxed tests/`
 (1313 `@test` blocks, up from 1305) with no regressions.
-

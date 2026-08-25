@@ -19,7 +19,7 @@ line but explicitly left DSN resolution alone, because it happens before the
 table handlers and lives in a different package. `docs/API.md` records the gap.
 This issue is that gap, and it turned out to be larger than a wrong status code.
 
-**Status: FIXED**
+**Status:** FIXED
 
 ## Description
 

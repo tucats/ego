@@ -125,4 +125,3 @@ same scope) — manual `s := s` per-iteration-copy workaround removed.
   compile guard, and the qualified-lvalue-counter fallback path
 - `tests/flow/for_loopvar.ego` — new Ego-level regression tests covering the same scenarios
   end-to-end, plus a goroutine-in-a-loop guard
-

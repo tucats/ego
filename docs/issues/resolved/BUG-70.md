@@ -95,4 +95,3 @@ guards confirming a real function body's genuinely unused parameter is still fla
 Go's disallowed mixed named/unnamed form is still rejected. Verified against `go test ./...` and
 `ego test tests/` / `ego test --types strict tests/` / `ego test --types relaxed tests/` (1321
 `@test` blocks, up from 1313) with no regressions.
-

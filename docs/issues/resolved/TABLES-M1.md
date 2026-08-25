@@ -26,4 +26,3 @@ Use double-quote escaping consistent with the non-DSN path:
 **Resolution:**  
 Replace `"DROP TABLE " + tableName` in the DSN branch of `DeleteTable` with a
 quoted identifier; route through `parsing.QueryParameters` for consistency.
-

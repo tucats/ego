@@ -41,4 +41,3 @@ acquires the mutex, sets the logger active, and defers both the restore and the
 unlock. Non-trace requests proceed without serialization. This eliminates the
 data race while preserving global trace output for the bytecode run-loop log
 messages that check `ui.IsActive(ui.TraceLogger)` directly.
-

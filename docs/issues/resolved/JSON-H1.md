@@ -68,4 +68,3 @@ Test in `tests/json/unmarshal.ego` renamed from
 `"json: Unmarshal - nested struct field is correct type"` and updated to assert
 that `outer.pt.x == 1` and `outer.pt.y == 2` after unmarshal rather than
 asserting the buggy `interface{}` type.
-

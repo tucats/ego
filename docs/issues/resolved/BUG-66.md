@@ -81,4 +81,3 @@ Verified against `go test ./...`, `go test -race ./...`, and both `ego test test
 `ego test --types strict tests/` (1229 `@test` blocks each, including a manual check that
 compiler error messages still correctly show the offending package name and source
 line/column after the `compileError` fix) with no regressions.
-

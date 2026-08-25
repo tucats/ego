@@ -22,4 +22,3 @@ simple in-memory counter is an acceptable starting point for the file backend.
 **Resolution:**  
 Implement per-username failed-attempt counter and temporary lockout on the
 login endpoint.
-

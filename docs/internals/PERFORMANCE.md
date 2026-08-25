@@ -919,9 +919,9 @@ parameter and three locals every iteration, 200 × 50 000 iterations):
 
 | Metric (tight-loop workload) | slots off | slots on | change |
 | ---------------------------- | --------- | -------- | ------ |
-| Wall-clock (`time`, user)    | 7.86 s    | 6.04 s   | **−23%** |
+| Wall-clock (`time`, user) | 7.86 s | 6.04 s | **−23%** |
 | `runtime.mapaccess2_faststr` (cum) | 1.59 s (22.98%) | 0.16 s (3.00%) | **≈ −90%** |
-| `SymbolTable.Get` (cum)      | 1.39 s (20.09%) | — (replaced by `loadSlotByteCode` at 0.69 s / 12.95%) | **≈ −50%** |
+| `SymbolTable.Get` (cum) | 1.39 s (20.09%) | — (replaced by `loadSlotByteCode` at 0.69 s / 12.95%) | **≈ −50%** |
 
 The string-hashing map lookup this finding identified as the ceiling is very
 nearly gone on the hot path — `mapaccess2_faststr` drops from ~23% of total

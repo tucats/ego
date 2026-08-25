@@ -17,4 +17,3 @@ as `TokenCache` and `AuthCache`.
 The expiration-refresh update in `caches/find.go` has been moved outside the
 `if ui.IsActive(ui.CacheLogger)` block. It now executes on every cache hit
 regardless of log level.
-

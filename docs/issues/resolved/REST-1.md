@@ -20,7 +20,7 @@ timestamp a rejected value, and the rejection surfaced as `409 Conflict` — whi
 is the wrong code for a malformed value in a request body. Investigating why led
 to the broader pattern described here.
 
-**Status: FIXED**
+**Status:** FIXED
 
 ## Description
 

@@ -28,4 +28,3 @@ q := fmt.Sprintf("PRAGMA index_list(\"%s\")", tableName)
 **Resolution:**  
 Wrap table and index names in double-quotes in all three SQLite `PRAGMA`
 format strings in `describe.go`.
-

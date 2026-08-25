@@ -45,7 +45,7 @@ the goroutine and what it retained.
 several callers execute repeatedly:
 
 | Path | Leak rate |
-|---|---|
+| --- | --- |
 | `services/service.go`, `services/child.go`, `admin/run.go` | one per HTTP service request, forever |
 | `sort.Slice` / `sort.Stable` / `sort.Search` with an Ego comparator (`sort/slice.go`) | **one per comparison** |
 | `fmt` formatting a value with an Ego `String()` method (`fmt/print.go`) | one per formatted value |
@@ -56,7 +56,7 @@ The sort row is the worst: sorting a 300-element array with an Ego comparator do
 roughly 2500 comparisons, so a single Ego statement leaked about 2500 goroutines.
 Measured before the fix:
 
-```
+```text
 200 Run calls, fresh context each   -> 201 goroutines leaked
 2500 Run calls, one reused context  -> 2501 goroutines leaked
 ```

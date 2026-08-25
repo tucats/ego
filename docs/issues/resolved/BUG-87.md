@@ -63,4 +63,3 @@ three-part operand) with both guards reverted.
 `internal/language/compiler/for_optimizer_regression_test.go`'s
 `TestOptionalOperator_SurvivesOptimizer` exercises the same bug end-to-end through the
 compiler with `ego.compiler.optimize = 2`.
-

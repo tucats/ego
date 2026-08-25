@@ -143,4 +143,3 @@ absence (falling back to the ambient setting, `true` by default) allow shadowing
 against `go build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types
 dynamic`, `--types strict`, and `--types relaxed` (1381 `@test` blocks, up from 1366, with no
 regressions).
-

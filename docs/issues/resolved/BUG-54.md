@@ -92,4 +92,3 @@ the error correctly). Regression tests: `TestCompileBlockDirectiveUnusedFalseSup
 and `TestCompileBlockDirectiveUnusedTrueStillReportsError` in
 `internal/language/compiler/directives_test.go`, plus two new `@test` cases in
 `tests/directives/compile.ego`.
-

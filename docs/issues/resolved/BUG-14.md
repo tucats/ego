@@ -51,4 +51,3 @@ current mode checking:
 Changes where made in StoreIndex to evaluate if type coercion of the value
 or the array are possible. A function `MakeAny()` was added to *data.Array
 elements that converts the type from a specific array type to []any.
-

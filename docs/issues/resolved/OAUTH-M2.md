@@ -45,4 +45,3 @@ Both `fetchOIDCDiscovery` and `postTokenRequest` in the CLI now use
 `oauthHTTPClient`.  Tests in `server/oauth/medium_test.go` verify that
 `idpClient.Timeout` is non-zero and that the client is actually used for
 discovery requests.
-

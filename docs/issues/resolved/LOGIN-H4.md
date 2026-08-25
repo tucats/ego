@@ -21,4 +21,3 @@ credential POST requests.
 **Resolution:**  
 Redirect following disabled on logon POST; 3xx responses return an error
 telling the user to update their server URL.
-

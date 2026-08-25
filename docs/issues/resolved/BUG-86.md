@@ -61,4 +61,3 @@ Regression coverage: `internal/language/compiler/for_optimizer_regression_test.g
 a distinct value — confirmed failing (`3, 3, 3`) with the fix reverted. The full
 existing Ego-level suite, `tests/flow/for_loopvar.ego`, now also passes at `-o 1` and
 `-o 2`, not just the default `-o 0` it was previously only ever run at.
-

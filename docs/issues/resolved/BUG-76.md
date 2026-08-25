@@ -117,4 +117,3 @@ existed) was also simplified to use a field named `inner` — colliding with its
 name — in place of the `content` workaround the collision previously required. Verified against
 `go build ./...`, `go vet ./...`, `go test ./...`, and `ego test tests/` under `--types dynamic`,
 `--types strict`, and `--types relaxed` (1366 `@test` blocks, up from 1361, with no regressions).
-

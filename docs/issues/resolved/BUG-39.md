@@ -102,4 +102,3 @@ ordinary code again. Verified with new Go tests in
 against the pre-fix code and pass against the fix), two new Ego tests in
 `tests/directives/compile.ego`, and a full run of `tools/gotests.sh` plus `ego test` under
 all three typing modes (strict/relaxed/dynamic).
-

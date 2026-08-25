@@ -45,4 +45,3 @@ OWASP-recommended algorithm for password and key derivation.
   `decrypt()` recognizes `ÿEG3` (Argon2id) and the legacy no-prefix (MD5)
   format. Existing profile sidecar files transparently decrypt; they are
   re-encrypted in v2 on the next profile save.
-

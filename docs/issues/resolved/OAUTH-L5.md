@@ -71,4 +71,3 @@ and `TestIsKnownUserClaim_FallbackBehavior` (end-to-end: a token carrying a
 human-readable `email` and `preferred_username` still produces a UUID username
 when `"login"`, `"upn"`, `"nickname"`, or `"custom_claim"` is the configured
 claim name, documenting why the warning matters).
-

@@ -54,4 +54,3 @@ added to all three language files (`messages_en.txt`, `messages_fr.txt`,
 `oauth.token.*` entries.  Tests `TestExchangeCode_OversizedBody` and
 `TestExchangeCode_ExactlyAtLimit` added to `server/oauth/medium_test.go`;
 they follow the same pattern as the OAUTH-M4 boundary tests.
-

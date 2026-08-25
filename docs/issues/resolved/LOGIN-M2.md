@@ -21,4 +21,3 @@ rather than silently mangling all input going forward.
 **Resolution:**  
 Removed `strings.TrimSpace` from password handling; prompt loop now uses
 `pass == ""` so spaces-only passwords are accepted as-is.
-

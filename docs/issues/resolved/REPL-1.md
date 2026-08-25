@@ -4,7 +4,7 @@
 
 **Discovered by:** an audit of `internal/commands/run.go` requested by the user. Confirmed present on `master` before that work began. Recorded here rather than fixed at the time, at the user's request, because line-number tracking was to be investigated as a whole -- across the compiler and bytecode as well as the REPL -- rather than patched in one place.
 
-**Status: FIXED**
+**Status:** FIXED
 
 ## Description
 

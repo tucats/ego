@@ -85,4 +85,3 @@ PKCE state token).
 
 Existing tests in `server/oauth/state_test.go` and `medium_test.go` were
 updated to match the new `newState()` signature.
-

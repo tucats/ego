@@ -128,4 +128,3 @@ New tests:
 - The pre-existing `tests/defer/channel.ego` test `"defer: double close is catchable, not a
   crash"` (BUG-29) now doubles as a non-regression check that the `DropToMarker`
   abandoned-error path still works after this fix.
-

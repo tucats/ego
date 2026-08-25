@@ -40,4 +40,3 @@ every return path in `data.NewList` consistently. Updated `internal/runtime/tabl
 accordingly (it directly asserted the old `got != true` behavior for `Close()`/`Pagination()`,
 which had to be corrected to `got != nil` alongside the fix, and several tests needed a new
 `unwrapValue` helper to unwrap the now-`data.List` results of `newTable`/`lenTable`/`widthTable`/`toString`).
-
