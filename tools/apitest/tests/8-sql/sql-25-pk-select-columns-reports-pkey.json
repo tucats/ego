@@ -1,0 +1,33 @@
+{
+    "description": "an explicit, unaliased column list that includes the primary key still reports pkey/ptable, not just SELECT *",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id, name FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "pkey is the primary key column",
+            "query": "pkey",
+            "value": "id"
+        },
+        {
+            "name": "ptable is the source table",
+            "query": "ptable",
+            "value": "pk{{SQLTESTID}}"
+        }
+    ]
+}

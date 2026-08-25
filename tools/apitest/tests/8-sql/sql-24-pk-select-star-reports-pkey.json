@@ -1,0 +1,38 @@
+{
+    "description": "SELECT * FROM a single table reports pkey as the table's INTEGER PRIMARY KEY column and ptable as the table it came from -- the most common client shape",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT * FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "pkey is the primary key column",
+            "query": "pkey",
+            "value": "id"
+        },
+        {
+            "name": "ptable is the source table",
+            "query": "ptable",
+            "value": "pk{{SQLTESTID}}"
+        }
+    ]
+}

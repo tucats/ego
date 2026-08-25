@@ -1,0 +1,38 @@
+{
+    "description": "a JOIN across two tables reports neither pkey nor ptable, even though each side of the join has its own primary key -- a client cannot safely target a single row of either table from this result set",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT pk{{SQLTESTID}}.id, pk2{{SQLTESTID}}.id FROM pk{{SQLTESTID}} JOIN pk2{{SQLTESTID}} ON pk{{SQLTESTID}}.id = pk2{{SQLTESTID}}.pk_id"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "pkey is absent",
+            "query": "pkey",
+            "op": "not-exists"
+        },
+        {
+            "name": "ptable is absent",
+            "query": "ptable",
+            "op": "not-exists"
+        }
+    ]
+}

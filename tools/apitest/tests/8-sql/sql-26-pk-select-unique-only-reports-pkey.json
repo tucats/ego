@@ -1,0 +1,33 @@
+{
+    "description": "when the primary key column isn't in the SELECT list at all, a plain UNIQUE column that is present is reported as pkey instead",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT email, name FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "pkey is the unique column",
+            "query": "pkey",
+            "value": "email"
+        },
+        {
+            "name": "ptable is the source table",
+            "query": "ptable",
+            "value": "pk{{SQLTESTID}}"
+        }
+    ]
+}

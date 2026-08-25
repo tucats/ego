@@ -1,0 +1,28 @@
+{
+    "description": "when both the primary key and a plain UNIQUE column are present in the SELECT list, the primary key wins as pkey",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT email, id, name FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "pkey prefers the primary key column",
+            "query": "pkey",
+            "value": "id"
+        }
+    ]
+}

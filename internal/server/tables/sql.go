@@ -324,9 +324,13 @@ func readRowDataTx(db *database.Database, q string, startTime time.Time, w http.
 			}
 		}
 
+		pkey, ptable := analyzeSingleTableSelect(db.Session, db, q, columnNames)
+
 		response := defs.DBRowSet{
 			ServerInfo: util.MakeServerInfo(db.Session.ID),
 			Columns:    columnNames,
+			PKey:       pkey,
+			PTable:     ptable,
 			Rows:       result,
 			Count:      len(result),
 			Status:     http.StatusOK,

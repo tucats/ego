@@ -1,0 +1,33 @@
+{
+    "description": "as admin, seed one row into pk{{SQLTESTID}} for the pkey/ptable select tests below",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO pk{{SQLTESTID}} (id, email, name) VALUES (1, 'alice@example.com', 'Alice')"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "description": "as admin, create a second scratch table with a single-column INTEGER PRIMARY KEY and a plain UNIQUE column, used by the pkey/ptable RowSet analysis tests below -- t{{SQLTESTID}} (used above) has no unique columns at all, so it can't exercise this",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE pk{{SQLTESTID}} (id INTEGER PRIMARY KEY, email TEXT UNIQUE, name TEXT)"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

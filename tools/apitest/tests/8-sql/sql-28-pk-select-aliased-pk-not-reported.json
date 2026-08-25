@@ -1,0 +1,33 @@
+{
+    "description": "aliasing the primary key column out of its real name disqualifies it as pkey -- a client filtering a later UPDATE/DELETE needs the real column name, not a display alias -- but ptable is still resolved since the source table itself is unambiguous",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT id AS item_id, name FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "pkey is absent",
+            "query": "pkey",
+            "op": "not-exists"
+        },
+        {
+            "name": "ptable is still the source table",
+            "query": "ptable",
+            "value": "pk{{SQLTESTID}}"
+        }
+    ]
+}

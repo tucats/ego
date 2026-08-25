@@ -45,6 +45,24 @@ const (
 							AND    c.relname = $2
 							AND    i.indisunique = true;   `
 
+	// Get the table columns individually covered by a single-column UNIQUE
+	// index or constraint, together with whether that index is the table's
+	// PRIMARY KEY. Unlike uniqueColumnsQuery above, a column that only
+	// belongs to a multi-column (composite) unique index is deliberately
+	// excluded here -- one column of a composite key does not, on its own,
+	// identify a single row. $1 = schema name, $2 = table name (both
+	// unquoted bare names).
+	singleColumnUniqueKeysQuery = `SELECT a.attname, i.indisprimary
+									FROM   pg_index i
+									JOIN   pg_class c ON c.oid = i.indrelid
+									JOIN   pg_namespace n ON n.oid = c.relnamespace
+									JOIN   pg_attribute a
+										ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
+									WHERE  n.nspname = $1
+									AND    c.relname = $2
+									AND    i.indisunique = true
+									AND    array_length(i.indkey::int2[], 1) = 1;`
+
 	selectVerb = "SELECT"
 	deleteVerb = "DELETE"
 	updateVerb = "UPDATE"

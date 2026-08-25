@@ -1,0 +1,33 @@
+{
+    "description": "a SELECT list with no unique/primary-key column at all reports no pkey, though ptable is still resolved since the table itself is still unambiguous",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "SELECT name FROM pk{{SQLTESTID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "pkey is absent",
+            "query": "pkey",
+            "op": "not-exists"
+        },
+        {
+            "name": "ptable is still the source table",
+            "query": "ptable",
+            "value": "pk{{SQLTESTID}}"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "description": "create a second small table, used by the JOIN test below to confirm a multi-table SELECT reports neither pkey nor ptable even though each side of the join has its own primary key",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{SQLTESTID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE pk2{{SQLTESTID}} (id INTEGER PRIMARY KEY, pk_id INTEGER)",
+            "INSERT INTO pk2{{SQLTESTID}} (id, pk_id) VALUES (1, 1)"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

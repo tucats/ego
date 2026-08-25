@@ -889,12 +889,12 @@ the database, 500 if it had.
 
 This applies to the DSN in the URL path as well as to the table. Naming a DSN
 that does not exist gives 404 from every endpoint, including the DSN management
-routes (`GET`/`DELETE /dsns/{name}`). A DSN that *does* exist but that the caller
+routes (`GET`/`DELETE /dsns/{name}`). A DSN that _does_ exist but that the caller
 holds no permission on gives 403 rather than 404, so the two cases stay
 distinguishable — Ego does not hide a DSN's existence from an authenticated user
 who simply lacks access to it.
 
-A DSN named in a request *body* rather than a URL path — the item list accepted
+A DSN named in a request _body_ rather than a URL path — the item list accepted
 by the DSN permissions endpoint, for example — is validated as request content,
 so an unknown name there is a 400.
 
@@ -1151,6 +1151,67 @@ payload as an array of strings:
 All statements in the array are executed as a single transaction. If any
 statement fails, none take effect. If a `SELECT` is included it must be the
 last statement in the array.
+
+##### Row-set uniqueness hints: `pkey` and `ptable`
+
+When the last statement is a `SELECT`, the rowset response includes two
+additional fields that let a client decide whether it can safely target a
+single row of the result for a follow-up `UPDATE` or `DELETE`, without
+already knowing the DSN's schema:
+
+| Field | Description |
+| :---- | :---------- |
+| pkey | The name of a column in the result whose value uniquely identifies one row of `ptable`. Omitted when no such column can be determined. |
+| ptable | The name of the single table the result was read from (schema-qualified if the query wrote it that way). Omitted when the result did not come from a single table. |
+
+Both fields are determined by analyzing the text of the `SELECT` statement
+itself, not by inspecting the rows it returned:
+
+* `ptable` is set only when the `SELECT` reads from exactly one table — no
+  `JOIN`, no `UNION`/`INTERSECT`/`EXCEPT`, no `WITH` clause, and no subquery
+  in place of a table name. A `SELECT` that combines rows from more than one
+  table, or that reads from something other than a single real table, leaves
+  both fields blank, since there is no single table a client could safely
+  target.
+* `pkey` is set only when `ptable` is also set, and only when one of the
+  result's own, unaliased columns is that table's primary key or a
+  single-column `UNIQUE` constraint. A column that is unique only as part of
+  a multi-column (composite) key is never reported, since knowing just that
+  one column's value is not enough, on its own, to identify a single row. A
+  column renamed with `AS` is also never reported as `pkey`, since a later
+  `UPDATE`/`DELETE` needs the real column name to filter on, not a display
+  alias. When both the primary key and a plain `UNIQUE` column are present
+  in the result, the primary key is preferred.
+
+For example, given a table `users(id INTEGER PRIMARY KEY, email TEXT UNIQUE,
+name TEXT)`, this request:
+
+```json
+["SELECT id, name FROM users"]
+```
+
+returns:
+
+```json
+{
+    "server": { "...": "..." },
+    "status": 200,
+    "columns": ["id", "name"],
+    "pkey": "id",
+    "ptable": "users",
+    "rows": [
+        { "id": 1, "name": "Alice" }
+    ],
+    "count": 1
+}
+```
+
+A client can use `pkey`/`ptable` to build a safe single-row follow-up, for
+example `UPDATE users SET name = 'Bob' WHERE id = 1`.
+
+This analysis is performed only for `@sql`'s own rowset response; it does not
+apply to the [Rows API](#rows)'s `GET .../rows` endpoint, which already
+addresses a single, named table directly.
 
 **Compatabiity Note**: Prior to Ego 1.10, this was formerly a PUT operation, but was changed
 to a POST to meet REST expectations for lack of idempotency; using this

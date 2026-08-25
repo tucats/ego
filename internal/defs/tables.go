@@ -65,6 +65,21 @@ type DBRowSet struct {
 	// Column names of the result data as specified by the query
 	Columns []string `json:"columns"`
 
+	// The name of the single column in Columns whose value uniquely
+	// identifies one row of the source table, when one can be determined; ""
+	// when the RowSet did not come from a single-table SELECT, or no
+	// unaliased result column is a unique key of that table. When non-empty,
+	// a client may safely use this column's value to target exactly one row
+	// of PTable for a subsequent single-row UPDATE or DELETE.
+	PKey string `json:"pkey,omitempty"`
+
+	// The single table this RowSet was read from (schema-qualified if the
+	// query wrote it that way), when the query's last statement was a plain,
+	// single-table SELECT -- no JOIN, UNION/INTERSECT/EXCEPT, WITH clause, or
+	// subquery source. "" when the SELECT read from more than one table, or
+	// the source table could not otherwise be determined with confidence.
+	PTable string `json:"ptable,omitempty"`
+
 	// An array of maps (based on column names) of each value in each row.
 	Rows []map[string]any `json:"rows"`
 
