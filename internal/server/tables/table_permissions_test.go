@@ -151,7 +151,7 @@ func TestReadTablePermissions_NoGrants(t *testing.T) {
 
 	pValid = false
 	pHandle = nil
-	
+
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	session := &router.Session{ID: 1, User: "admin", Admin: true, URLParts: map[string]any{"dsn": "d1", "table": "empty"}}
@@ -202,7 +202,7 @@ func TestReadTablePermissions_IncludesCreatorAutoGrant(t *testing.T) {
 	}
 	defer dataHandle.Close()
 
-	svc, err := dsns.NewFileService("memory")
+	svc, err := dsns.NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatalf("create test DSN service: %v", err)
 	}
@@ -235,7 +235,7 @@ func TestReadTablePermissions_IncludesCreatorAutoGrant(t *testing.T) {
 	t.Cleanup(func() { pValid = false; pHandle = nil })
 
 	columns := []defs.DBColumn{{Name: "id", Type: "int"}}
-	
+
 	body, err := json.Marshal(columns)
 	if err != nil {
 		t.Fatalf("marshal column payload: %v", err)

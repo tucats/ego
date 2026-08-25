@@ -16,6 +16,7 @@ const (
 	PostgresProvider         = "postgres"
 	DefaultUserdataScheme    = SqliteProvider
 	DefaultUserdataFileName  = "ego-system.db"
+	MemoryProvider           = "memory"
 )
 
 // This section contains constants used by file operations.

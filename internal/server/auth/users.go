@@ -13,8 +13,8 @@ import (
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
-	"github.com/tucats/ego/internal/util/strings"
 	"github.com/tucats/ego/internal/language/tokens"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
 type userIOService interface {
@@ -93,7 +93,7 @@ func Initialize(c *cli.Context) error {
 		// token expiration arrives.
 		go ageCredentials()
 
-		displayName = "memory"
+		displayName = defs.MemoryProvider
 	}
 
 	if ui.IsActive(ui.AuthLogger) {

@@ -32,7 +32,7 @@ import (
 func setupTestDSNService(t *testing.T) {
 	t.Helper()
 
-	svc, err := egodsns.NewFileService("memory")
+	svc, err := egodsns.NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatalf("create test DSN service: %v", err)
 	}
@@ -42,8 +42,8 @@ func setupTestDSNService(t *testing.T) {
 
 func makeDSNSession(urlParts map[string]any) *router.Session {
 	return &router.Session{
-		ID:       1,
-		User:     "admin",
+		ID:   1,
+		User: "admin",
 		// Admin must be set explicitly -- it's a separate field from User,
 		// not implied by the username. These tests call handlers directly,
 		// bypassing the router's own authentication/authorization layer

@@ -34,7 +34,7 @@ const jsonHeader = `
 // is "memory" then an in-memory service is created. Otherwise, the file is read
 // and the contents are used to initialize the service.
 func NewFileService(userDatabaseFile string) (dsnService, error) {
-	if userDatabaseFile == "memory" {
+	if userDatabaseFile == defs.MemoryProvider {
 		userDatabaseFile = ""
 	}
 
@@ -182,7 +182,7 @@ func (f *fileService) revokeAllLocked(name string) bool {
 		parts := strings.SplitN(key, "|", 2)
 		if len(parts) == 2 && parts[1] == name {
 			delete(f.Auth, key)
-			
+
 			changed = true
 		}
 	}

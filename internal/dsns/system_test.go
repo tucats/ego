@@ -46,14 +46,14 @@ func newTestDatabaseService(t *testing.T) func() {
 }
 
 func TestEnsureSystemDSN_NotDatabaseBacked(t *testing.T) {
-	svc, err := defineDSNService("memory")
+	svc, err := defineDSNService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer svc.Close()
 
-	DSNDatabaseURL = "memory"
+	DSNDatabaseURL = defs.MemoryProvider
 	defer func() { DSNDatabaseURL = "" }()
 
 	if err := EnsureSystemDSN(testSystemDSNName); err != nil {

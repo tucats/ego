@@ -123,6 +123,7 @@ func TestRunTaskHandlerStartsAsyncAndReturnsAccepted(t *testing.T) {
 
 	useFakeDispatcher(t, func(*Task) (int, bool, string) {
 		started++
+		
 		<-release
 
 		return 200, true, ""

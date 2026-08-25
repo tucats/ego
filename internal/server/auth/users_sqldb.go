@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
-	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/resources"
@@ -64,8 +64,9 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 	}
 
 	type StartLogEntry struct {
-		Time string
-		ID   string
+		Time     string
+		ID       string
+		LastSeen string
 	}
 
 	// Create a resource entry that tracks when server instances start

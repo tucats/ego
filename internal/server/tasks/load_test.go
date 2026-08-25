@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -120,8 +121,8 @@ func TestLoadAllLoadsValidTask(t *testing.T) {
 		t.Fatal("expected task to be loaded")
 	}
 
-	if task.Method != "POST" {
-		t.Errorf("method = %q, want normalized %q", task.Method, "POST")
+	if task.Method != http.MethodPost {
+		t.Errorf("method = %q, want normalized %q", task.Method, http.MethodPost)
 	}
 
 	if !task.Active {

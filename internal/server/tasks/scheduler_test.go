@@ -244,6 +244,7 @@ func TestRunOneRecordsSuccessAndClearsRunning(t *testing.T) {
 	useSandboxedTasksDir(t)
 
 	task := &Task{ID: "t1", Active: true}
+
 	registryLock.Lock()
 	states[task.ID] = &State{}
 	registryLock.Unlock()
@@ -272,6 +273,7 @@ func TestRunOneRecoversFromPanicAndClearsRunning(t *testing.T) {
 	useSandboxedTasksDir(t)
 
 	task := &Task{ID: "t1", Active: true}
+
 	registryLock.Lock()
 	states[task.ID] = &State{}
 	registryLock.Unlock()

@@ -1,0 +1,13 @@
+// This is NOT a task file. This is a reserved file name that is used
+// to store dictionary defintions that are preloaded into the text
+// substitution dictionary used by task defintions. This is read once
+// during task load, and these substitutions are available to any task
+// being loaded.
+//
+// Note that in the case of the special values "$hash" and "$uuid", these
+// are created as this dictionary is loaded, and are then static. IF you
+// need multiple UUID values, for example, you must define multiple
+// substitution operators to get unique values.
+{
+    "TEMPID": "$hash"
+}

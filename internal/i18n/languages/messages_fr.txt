@@ -1999,6 +1999,9 @@ table.values=liste de valeurs = {{data|list}}
 table.write.error=Erreur lors de l'écriture/mise à jour : {{error}}
 tasks.deactivate.field.missing=Le fichier de tâche {{path}} n'a pas de champ "active" à corriger ; seul l'indicateur en mémoire a été effacé
 tasks.deactivated=Tâche {{id}} désactivée par {{user}}
+tasks.dictionary.define=Défini {{key}} = "{{value}}"
+tasks.dictionary.err=Erreur lors du chargement du dictionnaire {{name}}, {{error}}
+tasks.dictionary.load=Préchargement du dictionnaire depuis {{name}}
 tasks.dir.created=Répertoire des tâches créé : {{path}}
 tasks.disabled=Sous-système de tâches désactivé ({{setting}} est false)
 tasks.dispatch.unavailable=Aucun répartiteur enregistré ; la tâche {{id}} n'a pas été exécutée

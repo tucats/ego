@@ -197,10 +197,10 @@ func resolveTimeout(task *Task) time.Duration {
 		def = parsed
 	}
 
-	max := defaultTaskMaxTimeout
+	maxTimeout := defaultTaskMaxTimeout
 
 	if parsed, err := util.ParseDuration(settings.Get(defs.TasksMaxTimeoutSetting)); err == nil && parsed > 0 {
-		max = parsed
+		maxTimeout = parsed
 	}
 
 	timeout := def
@@ -211,10 +211,10 @@ func resolveTimeout(task *Task) time.Duration {
 		}
 	}
 
-	if timeout > max {
-		ui.Log(tasksLogger, "tasks.timeout.clamped", ui.A{"id": task.ID, "requested": task.Timeout, "max": max.String()})
+	if timeout > maxTimeout {
+		ui.Log(tasksLogger, "tasks.timeout.clamped", ui.A{"id": task.ID, "requested": task.Timeout, "max": maxTimeout.String()})
 
-		timeout = max
+		timeout = maxTimeout
 	}
 
 	return timeout

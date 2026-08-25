@@ -2030,6 +2030,9 @@ table.values=values list = {{data|list}}
 table.write.error=Error writing/updating: {{error}}
 tasks.deactivate.field.missing=Task file {{path}} has no "active" field to patch; only the in-memory flag was cleared
 tasks.deactivated=Task {{id}} deactivated by {{user}}
+tasks.dictionary.define=Defined {{key}} = "{{value}}"
+tasks.dictionary.err=Error loading dictionary {{name}}, {{error}}
+tasks.dictionary.load=Preloading dictionary from {{name}}
 tasks.dir.created=Tasks directory created: {{path}}
 tasks.disabled=Task subsystem disabled ({{setting}} is false)
 tasks.dispatch.unavailable=No dispatcher registered; task {{id}} was not run

@@ -1,0 +1,26 @@
+# Heartbeat tasks updates the system catalog once a minute
+# with a marker indicating that the server is still running,
+# using the `starts` table in the system metaddata.
+#
+# This task is currently "inactive".
+{
+	"task": "heartbeat marker",
+	"id": "da762572-f988-492e-b06f-005d6c573168",
+	"active": "false",
+	"user": "admin",
+	"method": "post",
+	"endpoint": "/dsns/ego-system/tables/@sql",
+	"status": 200,
+    "body": [
+        "update starts set lastseen=datetime('now', 'localtime') where id = '{{SESSIONID}}';"
+    ],
+	"tests": [
+		{
+			"name": "response instance id matches this server",
+			"query": "server.id",
+			"value": "{{SESSIONID}}"
+		}
+	],
+	"interval": "1m"
+}
+

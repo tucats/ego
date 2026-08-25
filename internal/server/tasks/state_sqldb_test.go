@@ -6,9 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/resources"
 )
+
+const exampleTaskName = "example task"
 
 // useDatabaseStore points the task-state store at a fresh temp SQLite
 // database for the duration of the test, and restores the file store
@@ -63,7 +66,7 @@ func TestInitializeStateStore_DefaultsToFileBackend(t *testing.T) {
 func TestIsDatabaseBacked(t *testing.T) {
 	cases := map[string]bool{
 		"":                            false,
-		"memory":                      false,
+		defs.MemoryProvider:           false,
 		"/some/plain/path.json":       false,
 		"sqlite://test.db":            true,
 		"sqlite3://test.db":           true,
@@ -117,8 +120,8 @@ func TestDatabaseStore_SaveAndLoadRoundTrip(t *testing.T) {
 		t.Fatalf("store.load(): %v", err)
 	}
 
-	if got := persisted["11111111-1111-1111-1111-111111111111"].Description; got != "example task" {
-		t.Errorf("persisted Description = %q, want %q (from validTaskJSON's \"task\" field)", got, "example task")
+	if got := persisted["11111111-1111-1111-1111-111111111111"].Description; got != exampleTaskName {
+		t.Errorf("persisted Description = %q, want %q (from validTaskJSON's \"task\" field)", got, exampleTaskName)
 	}
 
 	// Simulate a restart: clear in-memory state, then reload from the
@@ -358,8 +361,8 @@ func TestLoadStateBackfillsDescriptionInDatabaseStore(t *testing.T) {
 
 	entry := persisted["11111111-1111-1111-1111-111111111111"]
 
-	if entry.Description != "example task" {
-		t.Errorf("backfilled Description = %q, want %q", entry.Description, "example task")
+	if entry.Description != exampleTaskName {
+		t.Errorf("backfilled Description = %q, want %q", entry.Description, exampleTaskName)
 	}
 
 	if entry.RunCount != 3 || entry.LastStatus != 200 || !entry.Success {

@@ -15,7 +15,7 @@ import (
 // -- inverting the documented default that an unrestricted DSN "is not
 // gated by Ego in any way".
 func TestFileServiceAuthDSNUnrestricted(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestFileServiceAuthDSNUnrestricted(t *testing.T) {
 }
 
 func TestFileServiceAuthDSNRestricted(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestFileServiceAuthDSNRestricted(t *testing.T) {
 // create an orphaned Auth entry for a DSN name that was never created,
 // instead of reporting the same error databaseService.GrantDSN reports.
 func TestFileServiceGrantDSNNoSuchDSN(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestFileServiceGrantDSNNoSuchDSN(t *testing.T) {
 // GrantDSN must flip Restricted to true on the first grant against a
 // previously-unrestricted DSN, matching databaseService.GrantDSN.
 func TestFileServiceGrantDSNSetsRestricted(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestFileServiceGrantDSNPersists(t *testing.T) {
 // other user's grant behind. Recreating a DSN of the same name would then
 // silently reactivate those stale grants.
 func TestFileServiceDeleteDSNRemovesAllUsersGrants(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ func TestFileServiceDeleteDSNRemovesAllUsersGrants(t *testing.T) {
 // an ID on create, so every file-backed DSN had a permanently empty "id"
 // in API responses, unlike databaseService.WriteDSN's uuid.NewString().
 func TestFileServiceWriteDSNAssignsID(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +222,7 @@ func TestFileServiceWriteDSNAssignsID(t *testing.T) {
 // live map, that delete silently and permanently removed the DSN from the
 // store.
 func TestFileServiceListDSNSReturnsCopy(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestFileServiceListDSNSReturnsCopy(t *testing.T) {
 // that; this confirms it clears every user's grant but leaves the DSN
 // record itself untouched.
 func TestFileServiceRevokeAllDSN(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,7 +292,7 @@ func TestFileServiceRevokeAllDSN(t *testing.T) {
 // return DSN entries verbatim, including the stored (encrypted) password
 // value, unlike databaseService.ListDSNS which redacts it.
 func TestFileServiceListDSNSRedactsPassword(t *testing.T) {
-	svc, err := NewFileService("memory")
+	svc, err := NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatal(err)
 	}

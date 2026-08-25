@@ -55,7 +55,7 @@ func TestDeleteTable_CleansUpTablePermissions(t *testing.T) {
 		t.Fatalf("create table t1: %v", err)
 	}
 
-	svc, err := dsns.NewFileService("memory")
+	svc, err := dsns.NewFileService(defs.MemoryProvider)
 	if err != nil {
 		t.Fatalf("create test DSN service: %v", err)
 	}

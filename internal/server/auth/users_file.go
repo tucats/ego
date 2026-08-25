@@ -39,7 +39,7 @@ func NewFileService(userDatabaseFile, defaultUser, defaultPassword string) (user
 	// If the name of the store is either "memory" or an empty string, it means there is
 	// no file system backing store and the data only exists in memory as long as the
 	// server is running.
-	if userDatabaseFile == "memory" {
+	if userDatabaseFile == defs.MemoryProvider {
 		userDatabaseFile = ""
 	}
 

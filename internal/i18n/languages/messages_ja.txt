@@ -1999,6 +1999,9 @@ table.values=値リスト = {{data|list}}
 table.write.error=書き込み/更新エラー: {{error}}
 tasks.deactivate.field.missing=タスクファイル{{path}}に修正対象の"active"フィールドがないため、メモリ上のフラグのみをクリアしました
 tasks.deactivated=タスク{{id}}は{{user}}によって無効化されました
+tasks.dictionary.define=定義しました {{key}} = "{{value}}"
+tasks.dictionary.err=辞書 {{name}} の読み込みエラー、{{error}}
+tasks.dictionary.load={{name}} から辞書をプリロードしています
 tasks.dir.created=タスクディレクトリを作成しました: {{path}}
 tasks.disabled=タスクサブシステムは無効です({{setting}}がfalse)
 tasks.dispatch.unavailable=ディスパッチャが登録されていないため、タスク{{id}}は実行されませんでした

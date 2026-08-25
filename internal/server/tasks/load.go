@@ -8,12 +8,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/util"
+	egostrings "github.com/tucats/ego/internal/util/strings"
 )
+
+const dictionaryName = "dictionary.json"
 
 // validMethods is the set of HTTP methods a task may specify.
 var validMethods = map[string]bool{
@@ -51,6 +55,8 @@ func Directory() string {
 func LoadAll() error {
 	setSaved("SESSIONID", defs.InstanceID)
 
+	loadDictionary()
+
 	names, dir, err := listTaskFiles()
 	if err != nil {
 		return err
@@ -70,7 +76,10 @@ func LoadAll() error {
 // listTaskFiles enforces the tasks directory's permissions, then returns
 // the sorted, deterministic list of task filenames within it (hidden files
 // -- the sidecar state file -- and anything not ending in .json are
-// excluded). Shared by LoadAll (startup) and Reload (POST
+// excluded). This also specificcally excludes "dictionary.json" which
+// holds data to be preloaded into the substitution dictionary.
+//
+// This function is shared by LoadAll (startup) and Reload (POST
 // /admin/tasks/@reload), so both scan the directory identically.
 func listTaskFiles() (names []string, dir string, err error) {
 	dir = Directory()
@@ -90,6 +99,12 @@ func listTaskFiles() (names []string, dir string, err error) {
 		name := entry.Name()
 
 		if entry.IsDir() || strings.HasPrefix(name, ".") || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+
+		// Always skip over the reserved dictionary file, which doesn't contain a task
+		// but instead is a preload for the dictionary.
+		if name == dictionaryName {
 			continue
 		}
 
@@ -221,4 +236,63 @@ func validateTask(task *Task) error {
 	}
 
 	return nil
+}
+
+// loadDictionary loads the "dictionary.json" file in the lib directory
+// path, and preloads its contents into the global substitution dictionary
+// used by tasks. If it fails, it logs it but does not stop the rest
+// of the task manager.
+func loadDictionary() {
+	name := filepath.Join(Directory(), dictionaryName)
+
+	b, err := ui.ReadJSONFile(name)
+	if err != nil {
+		ui.Log(ui.TaskLogger, "tasks.dictionary.err", ui.A{
+			"name":  name,
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	items := map[string]string{}
+
+	err = json.Unmarshal(b, &items)
+	if err != nil {
+		ui.Log(ui.TaskLogger, "tasks.dictionary.err", ui.A{
+			"name":  name,
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	ui.Log(ui.TaskLogger, "tasks.dictionary.load", ui.A{
+		"name": name,
+	})
+
+	// Load the items from the JSON into the dictionary
+	for key, value := range items {
+		// Handle some special cases
+		switch strings.ToLower(value) {
+		// The current server instance UUID
+		case "$server":
+			value = defs.InstanceID
+
+		// Make a random unique string of characters
+		case "$hash":
+			value = egostrings.Gibberish(uuid.New())
+
+		// Make a UUID string value.
+		case "$uuid":
+			value = uuid.New().String()
+		}
+
+		ui.Log(ui.TaskLogger, "tasks.dictionary.define", ui.A{
+			"key":   key,
+			"value": value,
+		})
+
+		setSaved(key, value)
+	}
 }

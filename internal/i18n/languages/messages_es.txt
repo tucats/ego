@@ -2005,6 +2005,9 @@ table.values=lista de valores = {{data|list}}
 table.write.error=Error al escribir/actualizar: {{error}}
 tasks.deactivate.field.missing=El archivo de tarea {{path}} no tiene un campo "active" para modificar; solo se borró el indicador en memoria
 tasks.deactivated=Tarea {{id}} desactivada por {{user}}
+tasks.dictionary.define=Definido {{key}} = "{{value}}"
+tasks.dictionary.err=Error al cargar el diccionario {{name}}, {{error}}
+tasks.dictionary.load=Precargando diccionario desde {{name}}
 tasks.dir.created=Directorio de tareas creado: {{path}}
 tasks.disabled=Subsistema de tareas deshabilitado ({{setting}} es false)
 tasks.dispatch.unavailable=No hay despachador registrado; la tarea {{id}} no se ejecutó
