@@ -3271,6 +3271,14 @@ body.dark #code-debug-line-band {
     background: #f0f4fa;
 }
 
+/* Clickable rows in the SQL results table */
+#sql-results table tbody tr {
+    cursor: pointer;
+}
+#sql-results table tbody tr:hover td {
+    background: #dce8f7;
+}
+
 td.sql-null {
     color: #aaa;
     font-style: italic;
@@ -3702,6 +3710,7 @@ body.dark #sql-results table td {
     color: #cdd6f4;
 }
 body.dark #sql-results table tbody tr:nth-child(even) td { background: #202040; }
+body.dark #sql-results table tbody tr:hover td { background: #1a3a5a; }
 body.dark td.sql-null    { color: #555; }
 body.dark .sql-warning   { color: #e8a020; }
 body.dark .tab-content .stat-grid th { color: #888; background: transparent; }
