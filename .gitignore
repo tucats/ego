@@ -43,3 +43,7 @@ node_modules/
 # Runtime state written by the scheduled-tasks feature (see
 # docs/internals/TASKS.md) next to the checked-in lib/tasks/*.json files.
 lib/tasks/.state.json
+
+# Page snapshots/screenshots written by the Playwright MCP server during
+# manual UX testing; one-off session artifacts, not test fixtures.
+.playwright-mcp/
