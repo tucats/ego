@@ -16,8 +16,9 @@ import (
 )
 
 type databaseService struct {
-	constr     string
-	userHandle *resources.ResHandle
+	constr        string
+	userHandle    *resources.ResHandle
+	passkeyHandle *resources.ResHandle
 }
 
 // NewDatabaseService creates a new user service that uses a database to store user information.
@@ -125,6 +126,16 @@ func NewDatabaseService(connStr, defaultUser, defaultPassword string) (userIOSer
 		if !strings.Contains(msg, "duplicate column") && !strings.Contains(msg, "already exists") {
 			return nil, errors.New(alterErr)
 		}
+	}
+
+	// Open the normalized passkeys table and migrate any credentials still
+	// packed into the legacy "passkeys" column of pre-existing "credentials"
+	// rows into it.
+	if err = openPasskeyStore(svc, connStr); err != nil {
+		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
+			"error": err})
+
+		return nil, err
 	}
 
 	// Does the default user already exist? If not, create it.
@@ -285,6 +296,14 @@ func (pg *databaseService) DeleteUser(session int, name string) error {
 	// Make sure the item no longer exists in the short-term cache.
 	caches.Delete(caches.AuthCache, name)
 
+	// Passkeys now live in their own table, joined by user ID, so deleting
+	// the user's "credentials" row no longer implicitly deletes them --
+	// clean up any registered credentials first to avoid leaving orphaned
+	// rows behind.
+	if user, readErr := pg.ReadUser(session, name, true); readErr == nil {
+		_ = pg.DeletePasskeys(user)
+	}
+
 	count, err := pg.userHandle.Begin().Delete(pg.userHandle.Equals("name", name))
 	if err != nil {
 		ui.Log(ui.ServerLogger, "server.db.error", ui.A{
@@ -332,6 +351,10 @@ func (pg *databaseService) Flush() error {
 // nothing left over for Close to release there.
 func (pg *databaseService) Close() error {
 	if err := pg.userHandle.Close(); err != nil {
+		return errors.New(err)
+	}
+
+	if err := pg.passkeyHandle.Close(); err != nil {
 		return errors.New(err)
 	}
 

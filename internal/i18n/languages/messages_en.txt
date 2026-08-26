@@ -1449,6 +1449,7 @@ auth.webauthn.login.fail=[{{session}}] WebAuthn login verification failed: {{err
 auth.webauthn.login.ok=[{{session}}] WebAuthn login succeeded for user {{user}}
 auth.webauthn.no.permission=[{{session}}] WebAuthn login denied; user {{user}} lacks logon permission
 auth.webauthn.passkeys.cleared=[{{session}}] WebAuthn passkeys cleared for user {{user}}
+auth.webauthn.passkeys.migrated=Migrated {{count}} {{count|cardinal passkey, passkeys}} for user {{user}} to the passkeys table
 auth.webauthn.rate.limited=[{{session}}] WebAuthn ceremony begin rejected; rate limit exceeded for {{ip}}
 auth.webauthn.register.begin=[{{session}}] WebAuthn passkey registration started for user {{user}}
 auth.webauthn.register.fail=[{{session}}] WebAuthn passkey registration failed for user {{user}}: {{error}}

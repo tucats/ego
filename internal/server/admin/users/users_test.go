@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/util/strings"
@@ -105,6 +106,11 @@ type failingWriteService struct {
 		ListUsers(suppressPasswords bool) map[string]defs.User
 		Flush() error
 		Close() error
+		ListPasskeys(user defs.User) ([]webauthn.Credential, error)
+		CountPasskeys(user defs.User) (int, error)
+		AddPasskey(user defs.User, cred webauthn.Credential) error
+		UpdatePasskeySignCount(user defs.User, credentialID []byte, signCount uint32) error
+		DeletePasskeys(user defs.User) error
 	}
 	writeErr  error
 	deleteErr error
@@ -140,6 +146,26 @@ func (f failingWriteService) Flush() error {
 
 func (f failingWriteService) Close() error {
 	return f.delegate.Close()
+}
+
+func (f failingWriteService) ListPasskeys(user defs.User) ([]webauthn.Credential, error) {
+	return f.delegate.ListPasskeys(user)
+}
+
+func (f failingWriteService) CountPasskeys(user defs.User) (int, error) {
+	return f.delegate.CountPasskeys(user)
+}
+
+func (f failingWriteService) AddPasskey(user defs.User, cred webauthn.Credential) error {
+	return f.delegate.AddPasskey(user, cred)
+}
+
+func (f failingWriteService) UpdatePasskeySignCount(user defs.User, credentialID []byte, signCount uint32) error {
+	return f.delegate.UpdatePasskeySignCount(user, credentialID, signCount)
+}
+
+func (f failingWriteService) DeletePasskeys(user defs.User) error {
+	return f.delegate.DeletePasskeys(user)
 }
 
 // makeSession builds a minimal *router.Session for use in handler calls.

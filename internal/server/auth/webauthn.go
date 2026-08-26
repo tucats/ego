@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 
@@ -30,16 +29,10 @@ func (w webAuthnUser) WebAuthnName() string { return w.user.Name }
 func (w webAuthnUser) WebAuthnDisplayName() string { return w.user.Name }
 
 // WebAuthnCredentials returns the slice of passkey credentials stored for this
-// user.  The credentials are persisted as a JSON array in the defs.User.Passkeys
-// RawMessage field.
+// user, fetched from the passkeys table (or, for the file-backed service, the
+// user's own record) via AuthService.
 func (w webAuthnUser) WebAuthnCredentials() []webauthn.Credential {
-	if len(w.user.Passkeys) == 0 {
-		return nil
-	}
-
-	var creds []webauthn.Credential
-
-	_ = json.Unmarshal(w.user.Passkeys, &creds)
+	creds, _ := AuthService.ListPasskeys(w.user)
 
 	return creds
 }
@@ -116,12 +109,6 @@ func NewWebAuthnForRequest(r *http.Request) (*webauthn.WebAuthn, error) {
 // satisfies the webauthn.User interface expected by the library.
 func WebAuthnUserFrom(u defs.User) webauthn.User {
 	return webAuthnUser{user: u}
-}
-
-// MarshalCredentials encodes a slice of webauthn.Credential into the
-// json.RawMessage format stored in defs.User.Passkeys.
-func MarshalCredentials(creds []webauthn.Credential) (json.RawMessage, error) {
-	return json.Marshal(creds)
 }
 
 // FindPermission is an exported shim so the server/server package can call the

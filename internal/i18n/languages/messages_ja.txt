@@ -1418,6 +1418,7 @@ auth.webauthn.login.fail=[{{session}}] WebAuthnログイン検証に失敗しま
 auth.webauthn.login.ok=[{{session}}] ユーザー {{user}} のWebAuthnログインに成功しました
 auth.webauthn.no.permission=[{{session}}] WebAuthnログインが拒否されました。ユーザー {{user}} にログオン権限がありません
 auth.webauthn.passkeys.cleared=[{{session}}] ユーザー {{user}} のWebAuthnパスキーをクリアしました
+auth.webauthn.passkeys.migrated=ユーザー {{user}} の{{count}}件のパスキーをpasskeysテーブルに移行しました
 auth.webauthn.rate.limited=[{{session}}] WebAuthnセレモニー開始が拒否されました。{{ip}} のレート制限を超えました
 auth.webauthn.register.begin=[{{session}}] ユーザー {{user}} のWebAuthnパスキー登録を開始しました
 auth.webauthn.register.fail=[{{session}}] ユーザー {{user}} のWebAuthnパスキー登録に失敗しました: {{error}}

@@ -86,6 +86,7 @@ The system database contains the following tables:
 | Table | Owner package | Description |
 | - | - | - |
 | `credentials` | `server/auth/` via `resources/` | User accounts and permissions |
+| `passkeys` | `server/auth/` via `resources/` | WebAuthn credentials, one row per passkey, joined to `credentials` by user ID |
 | `starts` | `server/auth/` via `resources/` | Server startup log |
 | `dsns` | `dsns/` via `resources/` | Named data source definitions |
 | `permissions` | `dsns/` via `resources/` | Per-DSN access control |
@@ -94,6 +95,27 @@ The system database contains the following tables:
 | `cluster` | `server/cluster/` | Cluster membership registry |
 
 Tables owned by the `resources/` framework are created via struct reflection (see §3 below). The `config_*` and `cluster` tables are created with hand-written DDL.
+
+### 2.1 `passkeys` Table and the Legacy Column Migration
+
+Originally every WebAuthn credential registered by a user was packed into a single JSON array stored in `credentials.passkeys` (a `json.RawMessage` column). Because a user can register more than one passkey (one per device), this could not cleanly represent a many-passkeys-to-one-user relationship, and every single-credential change (register one, update one sign counter after login, clear all) had to read and rewrite the user's entire credential array.
+
+Passkeys now live in their own `passkeys` table (`internal/server/auth/passkeys_sqldb.go`), one row per credential:
+
+| Column | Type | Description |
+| - | - | - |
+| `id` | TEXT primary key | Synthetic row ID (not the credential's own opaque ID) |
+| `userid` | TEXT | Join key — `credentials.id` (the user's UUID) as a string |
+| `credentialid` | TEXT | Hex-encoded `webauthn.Credential.ID`, broken out purely so `UpdatePasskeySignCount` can filter on it in SQL instead of unmarshaling every row for the user to compare IDs in Go |
+| `credential` | TEXT (`json.RawMessage`) | The marshaled `webauthn.Credential` for this one passkey (including its ID again, inside the blob) |
+
+Every other field of a credential (attestation type, transport, AAGUID, flags, ...) stays inside the `credential` JSON blob rather than being broken out into its own column — nothing in this codebase queries on them, several don't map to a scalar SQL column at all (`Transport`, `Flags`, and `Attestation` are nested/structured), and normalizing them would turn every future `go-webauthn` field change into a DDL migration for no present benefit.
+
+`openPasskeyStore` (called from `NewDatabaseService`) creates this table if missing, then calls `migrateLegacyPasskeys`, which scans every `credentials` row for a non-empty legacy `passkeys` column, unmarshals the JSON array, inserts each credential as its own row in `passkeys`, and clears the column — the same detect-and-migrate pattern already used for the `lasttokenat` column (Issue DB-14) and the `dsns_auth` synthetic ID migration.
+
+Because the legacy column is cleared once migrated, the scan is a no-op on every subsequent startup. The file-based auth backend (`users_file.go`) has no separate table to migrate — a user's passkeys already live only inside that user's own JSON record — so `passkeys_file.go` simply implements the same storage interface directly against `defs.User.Passkeys` in memory.
+
+REST endpoint shapes are unchanged: `GET /admin/users` and `GET /admin/users/{name}` still report a passkey *count* on `defs.User.Passkeys` (now sourced from `AuthService.CountPasskeys`), and the WebAuthn ceremony endpoints under `/services/admin/webauthn/` are untouched — only the internal storage backing them moved.
 
 ---
 

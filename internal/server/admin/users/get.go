@@ -55,17 +55,12 @@ func GetUserHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 }
 
 func passkeyCount(user defs.User) string {
-	var passkey any
-
-	if err := json.Unmarshal([]byte(user.Passkeys), &passkey); err != nil {
+	count, err := auth.AuthService.CountPasskeys(user)
+	if err != nil {
 		return `0`
 	}
 
-	if array, ok := passkey.([]any); ok {
-		return strconv.Itoa(len(array))
-	}
-
-	return `0`
+	return strconv.Itoa(count)
 }
 
 // getUserFromBody is a helper used by CreateUserHandler and UpdateUserHandler

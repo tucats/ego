@@ -613,18 +613,8 @@ func WebAuthnRegisterFinishHandler(session *Session, w http.ResponseWriter, r *h
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.passkey.register.error", ui.A{"err": err.Error()}), http.StatusBadRequest)
 	}
 
-	// Append the new credential to the existing set and persist.
-	existing := auth.WebAuthnUserFrom(u).WebAuthnCredentials()
-	existing = append(existing, *credential)
-
-	raw, err := auth.MarshalCredentials(existing)
-	if err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
-	}
-
-	u.Passkeys = raw
-
-	if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
+	// Persist the new credential as its own row in the passkeys table.
+	if err := auth.AuthService.AddPasskey(u, *credential); err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
@@ -681,9 +671,7 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.user.name.not.found", ui.A{"name": name}), http.StatusNotFound)
 	}
 
-	u.Passkeys = nil
-
-	if err := auth.AuthService.WriteUser(session.ID, u); err != nil {
+	if err := auth.AuthService.DeletePasskeys(u); err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
@@ -727,26 +715,9 @@ func WebAuthnClearPasskeysHandler(session *Session, w http.ResponseWriter, r *ht
 }
 
 // updatePasskeyCounter persists the updated authenticator sign counter back into
-// the user record after a successful login. This prevents replay attacks.
+// the passkeys table after a successful login. This prevents replay attacks.
 func updatePasskeyCounter(sessionID int, u defs.User, used *webauthn.Credential) error {
-	creds := auth.WebAuthnUserFrom(u).WebAuthnCredentials()
-
-	for i, c := range creds {
-		if fmt.Sprintf("%x", c.ID) == fmt.Sprintf("%x", used.ID) {
-			creds[i].Authenticator.SignCount = used.Authenticator.SignCount
-
-			break
-		}
-	}
-
-	raw, err := auth.MarshalCredentials(creds)
-	if err != nil {
-		return err
-	}
-
-	u.Passkeys = raw
-
-	if err := auth.AuthService.WriteUser(sessionID, u); err != nil {
+	if err := auth.AuthService.UpdatePasskeySignCount(u, used.ID, used.Authenticator.SignCount); err != nil {
 		return err
 	}
 

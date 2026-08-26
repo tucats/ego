@@ -1418,6 +1418,7 @@ auth.webauthn.login.fail=[{{session}}] Échec de la vérification de connexion W
 auth.webauthn.login.ok=[{{session}}] Connexion WebAuthn réussie pour l'utilisateur {{user}}
 auth.webauthn.no.permission=[{{session}}] Connexion WebAuthn refusée ; l'utilisateur {{user}} n'a pas la permission de se connecter
 auth.webauthn.passkeys.cleared=[{{session}}] Clés d'accès WebAuthn supprimées pour l'utilisateur {{user}}
+auth.webauthn.passkeys.migrated=Migration de {{count}} {{count|cardinal clé d'accès, clés d'accès}} pour l'utilisateur {{user}} vers la table des clés d'accès
 auth.webauthn.rate.limited=[{{session}}] Début de cérémonie WebAuthn rejeté ; limite de débit dépassée pour {{ip}}
 auth.webauthn.register.begin=[{{session}}] Début de l'enregistrement de la clé d'accès WebAuthn pour l'utilisateur {{user}}
 auth.webauthn.register.fail=[{{session}}] Échec de l'enregistrement de la clé d'accès WebAuthn pour l'utilisateur {{user}} : {{error}}

@@ -1424,6 +1424,7 @@ auth.webauthn.login.fail=[{{session}}] Verificación de inicio de sesión WebAut
 auth.webauthn.login.ok=[{{session}}] Inicio de sesión WebAuthn exitoso para el usuario {{user}}
 auth.webauthn.no.permission=[{{session}}] Inicio de sesión WebAuthn denegado; el usuario {{user}} no tiene permiso de inicio de sesión
 auth.webauthn.passkeys.cleared=[{{session}}] Claves de acceso WebAuthn eliminadas para el usuario {{user}}
+auth.webauthn.passkeys.migrated=Migradas {{count}} {{count|cardinal clave de acceso, claves de acceso}} para el usuario {{user}} a la tabla de claves de acceso
 auth.webauthn.rate.limited=[{{session}}] Inicio de ceremonia WebAuthn rechazado; límite de velocidad superado para {{ip}}
 auth.webauthn.register.begin=[{{session}}] Inicio del registro de clave de acceso WebAuthn para el usuario {{user}}
 auth.webauthn.register.fail=[{{session}}] Error en el registro de clave de acceso WebAuthn para el usuario {{user}}: {{error}}

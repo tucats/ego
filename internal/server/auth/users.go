@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
@@ -32,6 +33,16 @@ type userIOService interface {
 	// same reason: nothing previously released this service's resources
 	// short of the whole process exiting.
 	Close() error
+
+	// Passkey (WebAuthn credential) storage. A user can register more than
+	// one passkey (one per device), so these are stored independently of
+	// the user record itself rather than as a field on defs.User -- see
+	// passkeys_sqldb.go and passkeys_file.go for the two backends.
+	ListPasskeys(user defs.User) ([]webauthn.Credential, error)
+	CountPasskeys(user defs.User) (int, error)
+	AddPasskey(user defs.User, cred webauthn.Credential) error
+	UpdatePasskeySignCount(user defs.User, credentialID []byte, signCount uint32) error
+	DeletePasskeys(user defs.User) error
 }
 
 // AuthService stores the specific instance of a service provider for
