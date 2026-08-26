@@ -29,6 +29,15 @@ type Database struct {
 	HasRowID    bool
 	Restricted  bool
 	Pooled      bool
+
+	// RestrictSchema is true when this DSN's own definition named an
+	// explicit Postgres schema (as opposed to Schema having been defaulted
+	// to defs.DefaultSchema below because the DSN left it blank). It tells
+	// sqlparse.RestrictToSchema's callers (sql_permissions.go and
+	// scripting/authz.go) whether raw @sql/@transaction text may reference
+	// a schema other than Schema at all, or -- for a DSN with no schema of
+	// its own -- may name any schema, matching prior behavior.
+	RestrictSchema bool
 }
 
 // Open the database that is associated with the named DSN.
@@ -133,9 +142,19 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 	// sharing the same restricted DSN reach the identical Postgres schema.
 	// SQLite has no schema concept, so savedUser there stays the Ego
 	// identity, though it goes unused by SQLite's query composition.
+	var restrictSchema bool
+
 	if dsnName.Provider == defs.PostgresProvider {
 		if dsnName.Schema == "" {
 			dsnName.Schema = defs.DefaultSchema
+		} else {
+			// The DSN named its own schema rather than falling back to
+			// the default above -- lock raw SQL to that schema too. See
+			// RestrictSchema's doc comment for why this must be decided
+			// here, before the defaulting above makes an explicitly
+			// configured schema indistinguishable from an unconfigured
+			// one that happens to also be "public".
+			restrictSchema = true
 		}
 
 		savedUser = dsnName.Schema
@@ -155,13 +174,14 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		"constr":  redactURLString(conStr)})
 
 	db = &Database{
-		User:       savedUser,
-		DSN:        name,
-		Schema:     dsnName.Schema,
-		HasRowID:   dsnName.RowId,
-		Session:    session,
-		Name:       dsnName.Name,
-		Restricted: dsnName.Restricted,
+		User:           savedUser,
+		DSN:            name,
+		Schema:         dsnName.Schema,
+		RestrictSchema: restrictSchema,
+		HasRowID:       dsnName.RowId,
+		Session:        session,
+		Name:           dsnName.Name,
+		Restricted:     dsnName.Restricted,
 	}
 
 	scheme, err := egostrings.FindScheme(conStr)

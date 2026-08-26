@@ -1,6 +1,10 @@
 package sqlparse
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/tucats/ego/internal/errors"
+)
 
 // TestQualifyTables covers every statement kind that names a table, view, or
 // index: the *ast.TableRef-based kinds (SELECT/INSERT/UPDATE/DELETE/CREATE
@@ -114,5 +118,78 @@ func TestQualifyTables_EmptySchemaIsNoOp(t *testing.T) {
 
 	if got := p.Format(); got != before {
 		t.Errorf("QualifyTables(\"\") changed the statement:\n before: %q\n after:  %q", before, got)
+	}
+}
+
+// TestRestrictToSchema covers every statement kind RestrictToSchema checks:
+// the *ast.TableRef-based kinds reached via ast.Walk, and the plain-string-
+// field DDL kinds (CREATE/DROP INDEX, CREATE/DROP VIEW). An unqualified
+// reference and one that already names the allowed schema must both pass; a
+// reference naming any other schema (including something like pg_catalog)
+// must be rejected.
+func TestRestrictToSchema(t *testing.T) {
+	cases := []struct {
+		name    string
+		sql     string
+		wantErr bool
+	}{
+		{name: "unqualified reference is allowed", sql: "SELECT * FROM names"},
+		{name: "reference to the allowed schema is allowed", sql: "SELECT * FROM foo.names"},
+		{name: "reference to another schema is rejected", sql: "SELECT * FROM other.names", wantErr: true},
+		{name: "reference to a system schema is rejected", sql: "SELECT * FROM pg_catalog.pg_tables", wantErr: true},
+		{name: "join across schemas is rejected", sql: "SELECT * FROM foo.a JOIN other.b ON a.id = b.id", wantErr: true},
+		{name: "insert into another schema is rejected", sql: "INSERT INTO other.names (id) VALUES (1)", wantErr: true},
+		{name: "update in another schema is rejected", sql: "UPDATE other.names SET id = 1", wantErr: true},
+		{name: "delete from another schema is rejected", sql: "DELETE FROM other.names", wantErr: true},
+		{name: "create table in another schema is rejected", sql: "CREATE TABLE other.names (id INT)", wantErr: true},
+		{name: "drop index in another schema is rejected", sql: "DROP INDEX other.idx1", wantErr: true},
+		{name: "create view in another schema is rejected", sql: "CREATE VIEW other.v1 AS SELECT * FROM foo.names", wantErr: true},
+		{name: "create view body referencing another schema is rejected", sql: "CREATE VIEW foo.v1 AS SELECT * FROM other.names", wantErr: true},
+		{name: "drop view in another schema is rejected", sql: "DROP VIEW other.v1", wantErr: true},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p, err := New(c.sql, PostgreSQL)
+			if err != nil {
+				t.Fatalf("parse %q: %v", c.sql, err)
+			}
+
+			err = p.RestrictToSchema("foo")
+			if c.wantErr && err == nil {
+				t.Fatalf("RestrictToSchema(%q): expected an error, got none", c.sql)
+			}
+
+			if !c.wantErr && err != nil {
+				t.Fatalf("RestrictToSchema(%q): unexpected error: %v", c.sql, err)
+			}
+
+			if err != nil {
+				ee, ok := err.(*errors.Error)
+				if !ok {
+					t.Fatalf("expected *errors.Error, got %T", err)
+				}
+
+				if !ee.Equal(errors.ErrSQLSchemaRestricted) {
+					t.Errorf("got error %v, want ErrSQLSchemaRestricted", err)
+				}
+			}
+		})
+	}
+}
+
+// TestRestrictToSchema_EmptySchemaIsNoOp confirms that calling
+// RestrictToSchema with an empty schema never rejects anything, matching a
+// DSN with no schema of its own, which allows any explicit schema.
+func TestRestrictToSchema_EmptySchemaIsNoOp(t *testing.T) {
+	const sql = "SELECT * FROM other.names"
+
+	p, err := New(sql, PostgreSQL)
+	if err != nil {
+		t.Fatalf("parse %q: %v", sql, err)
+	}
+
+	if err := p.RestrictToSchema(""); err != nil {
+		t.Errorf("RestrictToSchema(\"\") returned an error: %v", err)
 	}
 }

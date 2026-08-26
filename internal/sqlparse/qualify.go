@@ -1,6 +1,9 @@
 package sqlparse
 
-import "github.com/tucats/ego/internal/sqlparse/ast"
+import (
+	"github.com/tucats/ego/internal/errors"
+	"github.com/tucats/ego/internal/sqlparse/ast"
+)
 
 // This file lets a caller rewrite a parsed statement so that every table
 // reference it left unqualified gets an explicit schema, before formatting
@@ -12,6 +15,17 @@ import "github.com/tucats/ego/internal/sqlparse/ast"
 // database connection happens to have. See internal/server/tables/database's
 // Open, which already resolves a DSN's configured schema this way for every
 // other query-building code path in the server.
+//
+// It also lets a caller reject a parsed statement outright when it names a
+// schema other than the DSN's own -- see RestrictToSchema below. That is a
+// separate, stricter step from qualifying a bare name: a DSN with an
+// explicitly configured schema is meant to be a sandbox around that one
+// schema, so a caller should not be able to reach another schema (e.g.
+// PostgreSQL's own pg_catalog) just by spelling it out in raw SQL. A DSN
+// with no configured schema (Open defaults it to "public" only for the
+// connection itself, not for this check) has no such sandbox and permits
+// any explicit schema, matching the server's pre-existing behavior for
+// callers who never named a schema at all.
 
 // QualifyTables rewrites every table reference in p's parsed statement that
 // was NOT already schema-qualified in the source text to use schema instead.
@@ -63,4 +77,66 @@ func (p *Sqlparse) QualifyTables(schema string) {
 			s.Schema = schema
 		}
 	}
+}
+
+// RestrictToSchema reports an error if p's parsed statement explicitly names
+// any schema other than schema, for every place a schema can be named (the
+// same set of *ast.TableRef and DDL nodes QualifyTables above fills in). A
+// reference that names schema itself, or leaves the schema blank, is fine --
+// only an explicit, different schema is rejected. Calling this with
+// schema == "" is a no-op, matching QualifyTables: an empty schema means the
+// DSN has none configured, so there is nothing to restrict against.
+//
+// Call this before QualifyTables, while an explicit schema the caller wrote
+// is still distinguishable from one QualifyTables is about to fill in --
+// though in practice the two do not conflict, since QualifyTables only ever
+// touches a blank Schema field, which this function always allows.
+func (p *Sqlparse) RestrictToSchema(schema string) error {
+	if schema == "" {
+		return nil
+	}
+
+	var badSchema string
+
+	ast.Walk(p.stmt, func(n ast.Node) bool {
+		if badSchema != "" {
+			return false
+		}
+
+		if ref, ok := n.(*ast.TableRef); ok && ref.Schema != "" && ref.Schema != schema {
+			badSchema = ref.Schema
+		}
+
+		return true
+	})
+
+	if badSchema == "" {
+		switch s := p.stmt.(type) {
+		case *ast.CreateIndexStmt:
+			badSchema = disallowedSchema(s.Schema, schema)
+		case *ast.DropIndexStmt:
+			badSchema = disallowedSchema(s.Schema, schema)
+		case *ast.CreateViewStmt:
+			badSchema = disallowedSchema(s.Schema, schema)
+		case *ast.DropViewStmt:
+			badSchema = disallowedSchema(s.Schema, schema)
+		}
+	}
+
+	if badSchema != "" {
+		return errors.New(errors.ErrSQLSchemaRestricted).Context(badSchema)
+	}
+
+	return nil
+}
+
+// disallowedSchema returns found if it is non-empty and does not match
+// allowed, else "". Small helper so RestrictToSchema's DDL switch cases
+// above stay one line each, matching QualifyTables' equivalent switch.
+func disallowedSchema(found, allowed string) string {
+	if found != "" && found != allowed {
+		return found
+	}
+
+	return ""
 }

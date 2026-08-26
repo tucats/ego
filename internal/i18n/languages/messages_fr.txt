@@ -596,6 +596,7 @@ sql.parse.dialect.rewrite=impossible de traduire ce SQL pour le fournisseur de b
 sql.parse.invalid.dialect=dialecte SQL invalide
 sql.parse.invalid.number=littéral numérique invalide
 sql.parse.pragma=les instructions PRAGMA ne sont pas prises en charge
+sql.parse.schema.restricted=schéma non autorisé par cette source de données
 sql.parse.syntax=erreur de syntaxe
 sql.parse.unterminated.comment=commentaire de bloc non terminé
 sql.parse.unterminated.identifier=identifiant entre guillemets non terminé

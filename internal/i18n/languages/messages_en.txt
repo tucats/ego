@@ -604,6 +604,7 @@ sql.parse.dialect.rewrite=cannot translate SQL for the target database provider
 sql.parse.invalid.dialect=invalid SQL dialect
 sql.parse.invalid.number=invalid numeric literal
 sql.parse.pragma=PRAGMA statements are not supported
+sql.parse.schema.restricted=schema not permitted by this data source
 sql.parse.syntax=syntax error
 sql.parse.unterminated.comment=unterminated block comment
 sql.parse.unterminated.identifier=unterminated quoted identifier

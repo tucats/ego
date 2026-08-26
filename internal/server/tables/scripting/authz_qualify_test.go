@@ -1,6 +1,7 @@
 package scripting
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 
@@ -72,5 +73,40 @@ func TestAuthorizeAndClassifySQL_SQLiteIsUntouched(t *testing.T) {
 
 	if strings.Contains(formatted, "admin") {
 		t.Errorf("formatted SQL = %q, SQLite must not get a schema qualifier", formatted)
+	}
+}
+
+// TestAuthorizeAndClassifySQL_RestrictSchemaRejectsOtherSchema mirrors
+// tables/sql_permissions_qualify_test.go's identical case for the top-level
+// @sql endpoint: a DSN with an explicitly configured schema
+// (db.RestrictSchema) must reject raw SQL naming any other schema, even for
+// a noAuthCheck (nil-session) caller, since the schema boundary belongs to
+// the DSN rather than to a per-user permission.
+func TestAuthorizeAndClassifySQL_RestrictSchemaRejectsOtherSchema(t *testing.T) {
+	db := &database.Database{Provider: defs.PostgresProvider, User: "myschema", RestrictSchema: true}
+
+	_, _, _, status, err := authorizeAndClassifySQL(db, "SELECT * FROM pg_catalog.pg_tables")
+	if err == nil {
+		t.Fatalf("expected an error, got none (status %d)", status)
+	}
+
+	if status != http.StatusForbidden {
+		t.Errorf("status = %d, want %d", status, http.StatusForbidden)
+	}
+}
+
+// TestAuthorizeAndClassifySQL_RestrictSchemaAllowsOwnSchema confirms a DSN
+// with an explicitly configured schema still executes SQL naming that same
+// schema explicitly.
+func TestAuthorizeAndClassifySQL_RestrictSchemaAllowsOwnSchema(t *testing.T) {
+	db := &database.Database{Provider: defs.PostgresProvider, User: "myschema", RestrictSchema: true}
+
+	formatted, _, _, status, err := authorizeAndClassifySQL(db, "SELECT * FROM myschema.names")
+	if err != nil {
+		t.Fatalf("unexpected error: %v (status %d)", err, status)
+	}
+
+	if !strings.Contains(formatted, `"myschema"."names"`) {
+		t.Errorf("formatted SQL = %q, want it to contain %q", formatted, `"myschema"."names"`)
 	}
 }

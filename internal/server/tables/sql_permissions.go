@@ -163,7 +163,23 @@ func authorizeAndFormatStatements(session *router.Session, db *database.Database
 		// and /tables endpoint; raw @sql text previously had no equivalent
 		// and so could depend on database-side schema resolution. SQLite
 		// has no schema concept, so this is skipped there.
+		//
+		// When the DSN itself named a schema (db.RestrictSchema), that
+		// schema is the only one raw SQL may touch -- a client cannot name
+		// some other schema (e.g. PostgreSQL's own pg_catalog) just by
+		// spelling it out, since that would reach outside the sandbox the
+		// DSN's own definition draws. A DSN with no schema of its own has
+		// no such sandbox and keeps allowing any explicit schema, as
+		// before. This runs even for an admin caller (unlike
+		// authorizeStatement below, which admins bypass): the DSN's schema
+		// boundary is a property of the DSN, not a per-user permission.
 		if db.Provider == defs.PostgresProvider {
+			if db.RestrictSchema {
+				if err := p.RestrictToSchema(db.User); err != nil {
+					return nil, nil, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusForbidden)
+				}
+			}
+
 			p.QualifyTables(db.User)
 		}
 

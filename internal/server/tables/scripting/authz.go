@@ -252,7 +252,18 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (formatted s
 		})
 	}
 
+	// See sql_permissions.go's identical block (the top-level @sql
+	// endpoint's counterpart to this "sql"/"readrows" opcode path) for why
+	// RestrictToSchema runs first, gated on db.RestrictSchema, and why it
+	// runs even for noAuthCheck callers: the DSN's schema boundary is a
+	// property of the DSN itself, not a per-user permission.
 	if db.Provider == defs.PostgresProvider {
+		if db.RestrictSchema {
+			if err := p.RestrictToSchema(db.User); err != nil {
+				return sqlText, kind, cacheFlush, http.StatusForbidden, err
+			}
+		}
+
 		p.QualifyTables(db.User)
 	}
 

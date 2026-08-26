@@ -596,6 +596,7 @@ sql.parse.dialect.rewrite=このSQLを対象のデータベースプロバイダ
 sql.parse.invalid.dialect=無効なSQL方言
 sql.parse.invalid.number=無効な数値リテラル
 sql.parse.pragma=PRAGMA文はサポートされていません
+sql.parse.schema.restricted=このデータソースでは許可されていないスキーマです
 sql.parse.syntax=構文エラー
 sql.parse.unterminated.comment=終端されていないブロックコメント
 sql.parse.unterminated.identifier=終端されていない引用識別子

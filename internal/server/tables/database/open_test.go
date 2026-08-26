@@ -21,6 +21,11 @@ import (
 // name -- and a DSN that leaves Schema unset must default to "public"
 // (matching PostgreSQL's own default and defs.DSN.Schema's doc comment),
 // not to whichever identity happened to open it.
+//
+// It also covers RestrictSchema: a DSN with an explicit schema must set it
+// (so sqlparse.RestrictToSchema's callers sandbox raw SQL to that schema),
+// while a DSN that left Schema blank -- and so was defaulted to "public"
+// above -- must not, since it never opted into a schema sandbox at all.
 func TestOpen_PostgresUsesDSNSchemaNotIdentity(t *testing.T) {
 	svc, err := dsns.NewFileService(defs.MemoryProvider)
 	if err != nil {
@@ -67,10 +72,15 @@ func TestOpen_PostgresUsesDSNSchemaNotIdentity(t *testing.T) {
 		if db.Schema != "myschema" {
 			t.Errorf("Open(%q): db.Schema = %q, want %q", user, db.Schema, "myschema")
 		}
+
+		if !db.RestrictSchema {
+			t.Errorf("Open(%q): db.RestrictSchema = false, want true for a DSN with an explicit schema", user)
+		}
 	}
 
 	// A DSN with no configured schema must default to "public" -- not to
-	// the caller's Ego identity.
+	// the caller's Ego identity -- and must not restrict raw SQL to any
+	// particular schema, since it never named one of its own.
 	db, _ := Open(sessionFor("admin"), "default-schema", dsns.DSNReadAction)
 	if db == nil {
 		t.Fatal("Open(default-schema) returned a nil *Database")
@@ -78,6 +88,10 @@ func TestOpen_PostgresUsesDSNSchemaNotIdentity(t *testing.T) {
 
 	if db.User != defs.DefaultSchema {
 		t.Errorf("Open(default-schema): db.User = %q, want %q", db.User, defs.DefaultSchema)
+	}
+
+	if db.RestrictSchema {
+		t.Error("Open(default-schema): db.RestrictSchema = true, want false for a DSN with no configured schema")
 	}
 }
 
