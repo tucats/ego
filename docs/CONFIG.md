@@ -208,6 +208,14 @@ Here is a table of all currently-defined Ego configuration key values:
 | ego.server.database.empty.filter.error | If true, empty filter values are treated as errors |
 | ego.server.database.empty.rowset.error | If true, empty rowset values are treated as errors |
 | ego.server.database.partial.insert.error | If true, partial inserts are treated as errors |
+| ego.server.db.pool.enabled | If true (the default), each DSN shares one cached, reused connection pool instead of a new pool per request |
+| ego.server.db.pool.idle.evict | Seconds a DSN's cached pool may sit completely unused before it is closed and evicted (default: 600) |
+| ego.server.db.pool.maxidle | Maximum number of idle connections retained by a cached DSN pool (default: 2) |
+| ego.server.db.pool.maxidletime | Maximum seconds a pooled connection may sit idle before being closed (default: 60) |
+| ego.server.db.pool.maxlifetime | Maximum seconds a pooled connection may live before being closed (default: 300) |
+| ego.server.db.pool.maxopen | Maximum number of open connections allowed in a cached DSN pool (default: 10) |
+| ego.server.db.pool.pingtimeout | Maximum seconds to wait for the initial connectivity check when a DSN's pool is first created (default: 5) |
+| ego.server.db.pool.retry | Seconds to wait before retrying a DSN whose most recent connection attempt failed (default: 10) |
 | ego.server.default.credential | Default username:password to configure server |
 | ego.server.default.log.file | Name of default server log file |
 | ego.server.default.logging | Default logging classes to enable when starting server |
@@ -558,6 +566,30 @@ Database/table server enforcement (`ego.server.database.*`):
 | `ego.server.database.empty.filter.error` | If `true` (the default), a destructive table operation (delete/update) issued with no filter is rejected as an error, rather than silently applying to every row. |
 | `ego.server.database.empty.rowset.error` | If `true` (the default), an operation that would return/affect an empty row set is treated as an error. |
 | `ego.server.database.partial.insert.error` | If `true` (the default), a table `insert` must specify every column; a partial insert is rejected. |
+
+Database connection pooling (`ego.server.db.pool.*`, see `internal/dbpool`): every table/SQL
+request against a DSN used to open a brand-new connection pool and close it again at the end of
+the request — no reuse, and no server-wide cap on how many real backend connections a burst of
+concurrent requests against one DSN could open. These settings control a shared, cached
+`*sql.DB` pool kept per DSN name instead, created lazily on first use and reused across requests:
+
+| Setting | Description |
+| ------- | ----------- |
+| `ego.server.db.pool.enabled` | If `true` (the default), each DSN shares one cached, reused connection pool. Set `false` to fall back to the original per-request open/close behavior exactly — the escape hatch if pooling misbehaves in some deployment. |
+| `ego.server.db.pool.maxopen` | Maximum open connections a single cached DSN pool may hold (`sql.DB.SetMaxOpenConns`). Default `10`. This is now a real, meaningful per-DSN cap — under the old per-request model, N concurrent requests against one DSN could each open their own small pool, so the effective ceiling scaled with request volume rather than being bounded at all. |
+| `ego.server.db.pool.maxidle` | Maximum idle connections a cached DSN pool retains (`sql.DB.SetMaxIdleConns`). Default `2`. |
+| `ego.server.db.pool.maxlifetime` | Maximum seconds a single physical connection may live before being recycled (`sql.DB.SetConnMaxLifetime`). Default `300` (five minutes). |
+| `ego.server.db.pool.maxidletime` | Maximum seconds a physical connection may sit idle before being closed and released back to the database server (`sql.DB.SetConnMaxIdleTime`). Default `60`. |
+| `ego.server.db.pool.idle.evict` | Seconds a DSN's entire cached pool may go completely unused (no requests at all) before it is closed and evicted from the cache, so a rarely-touched DSN doesn't hold a pool open forever. Default `600` (ten minutes). |
+| `ego.server.db.pool.retry` | Seconds to back off before retrying a DSN whose most recent connection attempt failed, so a burst of concurrent requests against an unreachable database fails fast instead of each paying a full connect timeout. Default `10`. |
+| `ego.server.db.pool.pingtimeout` | Maximum seconds to wait for the one-time connectivity check performed when a DSN's pool is first created. Default `5`. |
+
+A DSN's cached pool is automatically closed and evicted whenever that DSN is written or deleted
+(so editing credentials, host, or deleting/recreating a DSN never leaves a stale pool serving the
+old definition), and on graceful server shutdown. Per-DSN open/in-use connection counts are
+visible via `GET /admin/resources` and `GET /admin/caches`, under the `dbpool` item class — useful
+for confirming `maxopen`/`maxidle` are sized correctly for a deployment's actual concurrency
+before tuning them further.
 
 ### Cluster settings
 

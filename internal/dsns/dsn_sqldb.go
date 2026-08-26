@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/resources"
@@ -142,6 +143,13 @@ func (pg *databaseService) WriteDSN(session int, user string, dataSourceName def
 
 	caches.Delete(caches.DSNCache, dataSourceName.Name)
 
+	// A cached connection pool for this DSN name -- if one exists -- was
+	// opened against whatever host/credentials/schema were in effect before
+	// this write. Evict it so the next request for this DSN name opens a
+	// fresh pool against the DSN's new definition instead of silently
+	// continuing to use the old one.
+	dbpool.Evict(dataSourceName.Name)
+
 	items, err := pg.dsnHandle.Begin().Read(pg.dsnHandle.Equals("name", dataSourceName.Name))
 	if err != nil {
 		return err
@@ -174,6 +182,11 @@ func (pg *databaseService) DeleteDSN(session int, user, name string) error {
 	var err error
 
 	caches.Delete(caches.DSNCache, name)
+
+	// See the identical Evict call in WriteDSN: a deleted DSN name must not
+	// leave a cached pool behind that could keep serving the old backend if
+	// the same name is ever recreated pointing somewhere else.
+	dbpool.Evict(name)
 
 	err = pg.dsnHandle.Begin().DeleteOne(name)
 	if err == nil {

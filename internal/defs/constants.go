@@ -169,6 +169,7 @@ const (
 const (
 	AssetCacheClass   = "asset"
 	ServiceCacheClass = "service"
+	DBPoolCacheClass  = "dbpool"
 )
 
 // Native type names we do special handling for.

@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
@@ -28,6 +28,7 @@ type Database struct {
 	Schema      string
 	HasRowID    bool
 	Restricted  bool
+	Pooled      bool
 }
 
 // Open the database that is associated with the named DSN.
@@ -185,36 +186,15 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 			return db, errors.ErrUnsupportedDatabase.Context(scheme)
 		}
 
-		db.Handle, err = sql.Open(scheme, conStr)
+		// dbpool.Get returns a shared, cached *sql.DB reused across requests
+		// for this DSN name (see that package's doc comment), applying the
+		// admin-tunable pool limits and any provider-specific post-open setup
+		// (SQLite PRAGMAs, etc.) once, when the pool is first created, rather
+		// than on every request. The returned bool records whether the handle
+		// is shared -- Close/CloseTX below must not close a shared handle out
+		// from under every other request currently using it.
 		db.Provider = scheme
-
-		// Apply post-open setup that is specific to each provider.
-		if err == nil {
-			switch scheme {
-			case defs.SqliteProvider:
-				// Enable Write-Ahead Logging for better concurrent read performance,
-				// and set a busy timeout so writers do not fail immediately when the
-				// database is locked by another writer.
-				db.Handle.Exec("PRAGMA journal_mode=WAL;")
-				db.Handle.Exec("PRAGMA busy_timeout=5000;")
-
-			case defs.PostgresProvider:
-				// Every call to Open (there is no cache of *sql.DB keyed by
-				// DSN -- see this function's own doc comment) creates a
-				// brand-new connection pool, so a caller that forgets to
-				// Close() it -- as several handlers did before this was
-				// added, each leaking one real Postgres backend connection
-				// per request until the whole server was restarted --
-				// leaks forever with no cap. These limits are a backstop,
-				// not a fix for that root cause: MaxOpenConns keeps any one
-				// request from opening an unbounded number of connections
-				// on its own, and ConnMaxLifetime forces even a
-				// never-Close()'d pool's connections to actually terminate
-				// after a few minutes rather than sitting idle permanently.
-				db.Handle.SetMaxOpenConns(5)
-				db.Handle.SetConnMaxLifetime(5 * time.Minute)
-			}
-		}
+		db.Handle, db.Pooled, err = dbpool.Get(dsnName.Name, scheme, conStr)
 	}
 
 	return db, err
@@ -248,6 +228,14 @@ func (d *Database) Close() error {
 
 	// A database that never finished opening has nothing to close.
 	if d.Handle == nil {
+		return nil
+	}
+
+	// A pooled handle is shared with every other request currently using
+	// this DSN -- closing it here would tear down the pool out from under
+	// them. Its lifecycle belongs to dbpool (idle eviction, DSN-change
+	// eviction, or server shutdown), not to any single request.
+	if d.Pooled {
 		return nil
 	}
 
@@ -285,6 +273,12 @@ func (d *Database) CloseTX(session int) error {
 	}
 
 	if d.Handle == nil {
+		return nil
+	}
+
+	// See Close's identical guard above -- a pooled handle must outlive this
+	// one request/transaction.
+	if d.Pooled {
 		return nil
 	}
 

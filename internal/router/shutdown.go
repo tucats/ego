@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/language/bytecode"
 	"github.com/tucats/ego/internal/server/auth"
@@ -101,6 +102,11 @@ func RequestShutdown(grace time.Duration) {
 				})
 			}
 		}
+
+		// Close every cached per-DSN connection pool (see internal/dbpool) so
+		// table/SQL request handling does not leave live database connections
+		// behind when the process exits.
+		dbpool.CloseAll()
 
 		ui.Log(ui.ServerLogger, "server.shutdown", nil)
 		os.Exit(0)

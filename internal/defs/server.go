@@ -190,6 +190,9 @@ type CacheResponse struct {
 	// Size of the DSN cache:
 	DSNCount int `json:"dsnCount"`
 
+	// Number of cached per-DSN database connection pools (see internal/dbpool).
+	DBPoolCount int `json:"dbPoolCount"`
+
 	// Size of the Schema cache:
 	SchemaCount int `json:"schemaCount"`
 
@@ -264,6 +267,9 @@ type StatusResponse struct {
 
 	// Size of the DSN cache:
 	DSNCount int `json:"dsnCount"`
+
+	// Number of cached per-DSN database connection pools (see internal/dbpool).
+	DBPoolCount int `json:"dbPoolCount"`
 
 	// Size of the Schema cache:
 	SchemaCount int `json:"schemaCount"`

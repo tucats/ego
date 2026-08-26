@@ -350,6 +350,50 @@ const (
 	// is 1000 entries per cache.
 	ServerMaxCacheSizeSetting = ServerKeyPrefix + "cache.maxsize"
 
+	// DB CONNECTION POOL CONFIGURATION KEYS
+	// The prefix for all server database connection pool configuration keys.
+	DBPoolKeyPrefix = ServerKeyPrefix + "db.pool."
+
+	// If true (the default), each DSN gets one shared, cached *sql.DB
+	// connection pool that is reused across requests instead of a brand-new
+	// pool being opened and closed on every request. Set to false to restore
+	// the legacy per-request open/close behavior, e.g. as a rollback if
+	// pooling misbehaves in a given deployment.
+	DBPoolEnabledSetting = DBPoolKeyPrefix + "enabled"
+
+	// Maximum number of open connections a single cached DSN pool may hold,
+	// passed to sql.DB.SetMaxOpenConns. The default is 10.
+	DBPoolMaxOpenSetting = DBPoolKeyPrefix + "maxopen"
+
+	// Maximum number of idle connections a single cached DSN pool may retain,
+	// passed to sql.DB.SetMaxIdleConns. The default is 2.
+	DBPoolMaxIdleSetting = DBPoolKeyPrefix + "maxidle"
+
+	// Maximum lifetime, in seconds, of a single physical connection within a
+	// cached DSN pool, passed to sql.DB.SetConnMaxLifetime. The default is 300
+	// (five minutes).
+	DBPoolMaxLifetimeSetting = DBPoolKeyPrefix + "maxlifetime"
+
+	// Maximum idle time, in seconds, a physical connection within a cached DSN
+	// pool may sit unused before it is closed and released back to the
+	// database server, passed to sql.DB.SetConnMaxIdleTime. The default is 60.
+	DBPoolMaxIdleTimeSetting = DBPoolKeyPrefix + "maxidletime"
+
+	// Number of seconds a DSN's entire cached pool may sit completely unused
+	// (no requests at all) before it is closed and evicted from the cache.
+	// The default is 600 (ten minutes).
+	DBPoolIdleEvictSetting = DBPoolKeyPrefix + "idle.evict"
+
+	// Number of seconds to wait before retrying a DSN whose most recent
+	// connection attempt failed, so a burst of concurrent requests against an
+	// unreachable database fails fast instead of each paying a full connect
+	// timeout. The default is 10.
+	DBPoolRetrySetting = DBPoolKeyPrefix + "retry"
+
+	// Maximum number of seconds to wait for the initial connectivity check
+	// (ping) performed when a DSN's pool is first created. The default is 5.
+	DBPoolPingTimeoutSetting = DBPoolKeyPrefix + "pingtimeout"
+
 	// The host that provides authentication services on our behalf. If not
 	// specified, the current server is also the authentication service.
 	ServerAuthoritySetting = ServerKeyPrefix + "authority"
@@ -878,6 +922,15 @@ var ValidSettings map[string]bool = map[string]bool{
 	TasksMaxTimeoutSetting:      true,
 	TasksMaxConcurrentSetting:   true,
 	DSNCatalogSetting:           true,
+	// Database connection pool settings — all user-settable.
+	DBPoolEnabledSetting:     true,
+	DBPoolMaxOpenSetting:     true,
+	DBPoolMaxIdleSetting:     true,
+	DBPoolMaxLifetimeSetting: true,
+	DBPoolMaxIdleTimeSetting: true,
+	DBPoolIdleEvictSetting:   true,
+	DBPoolRetrySetting:       true,
+	DBPoolPingTimeoutSetting: true,
 }
 
 // RestrictedSettings is a list of settings that cannot be read using the

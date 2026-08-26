@@ -7,6 +7,7 @@ import (
 
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/caches"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/router"
@@ -43,6 +44,7 @@ func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 		BlacklistCount:     caches.Size(caches.BlacklistCache),
 		SchemaCount:        caches.Size(caches.SchemaCache),
 		DSNCount:           caches.Size(caches.DSNCache),
+		DBPoolCount:        len(dbpool.Stats()),
 		DebugCount:         caches.Size(caches.DebugSessionCache),
 		RunCount:           caches.Size(caches.SymbolTableCache),
 	}
@@ -67,6 +69,17 @@ func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			Count:    v.Count,
 			Size:     v.Size,
 			Class:    defs.AssetCacheClass})
+	}
+
+	// Walk the cached per-DSN database connection pools and report each
+	// one's open/in-use connection counts, so an admin can confirm the pool
+	// limits (ego.server.db.pool.*) are sized correctly under real load.
+	for name, stats := range dbpool.Stats() {
+		response.Items = append(response.Items, defs.CachedItem{
+			Name:  name,
+			Count: stats.OpenConnections,
+			Size:  stats.InUse,
+			Class: defs.DBPoolCacheClass})
 	}
 
 	// Sort the results. By default, the array is sorted by the URL which is the path to the

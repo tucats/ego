@@ -22,6 +22,7 @@ import (
 	"github.com/tucats/ego/internal/cli/cli"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
@@ -340,6 +341,10 @@ func RunServer(c *cli.Context) error {
 					})
 				}
 			}
+
+			// Close every cached per-DSN connection pool (see internal/dbpool),
+			// same reasoning as DSNService/AuthService above.
+			dbpool.CloseAll()
 
 			// Wait one second to give any inflight connections a chance to finish.
 			time.Sleep(1 * time.Second)

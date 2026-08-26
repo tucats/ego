@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/util"
@@ -124,6 +125,11 @@ func (f *fileService) WriteDSN(session int, user string, dsn defs.DSN) error {
 	f.Data[dsn.Name] = dsn
 	f.dirty = true
 
+	// See the identical call in databaseService.WriteDSN (dsn_sqldb.go): a
+	// cached connection pool for this DSN name must not keep serving
+	// whatever host/database was in effect before this write.
+	dbpool.Evict(dsn.Name)
+
 	if found {
 		ui.Log(ui.AuthLogger, "auth.dsn.update", ui.A{
 			"session": session,
@@ -144,6 +150,9 @@ func (f *fileService) DeleteDSN(session int, user, name string) error {
 
 		delete(f.Data, u.Name)
 		f.revokeAllLocked(u.Name)
+
+		// See the identical call in databaseService.DeleteDSN (dsn_sqldb.go).
+		dbpool.Evict(u.Name)
 
 		ui.Log(ui.AuthLogger, "auth.dsn.delete", ui.A{
 			"session": session,

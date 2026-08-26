@@ -1,11 +1,16 @@
 package database
 
 import (
+	"path/filepath"
+	"sync"
 	"testing"
 
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/router"
+
+	_ "modernc.org/sqlite"
 )
 
 // TestOpen_PostgresUsesDSNSchemaNotIdentity is a regression test for the bug
@@ -73,6 +78,83 @@ func TestOpen_PostgresUsesDSNSchemaNotIdentity(t *testing.T) {
 
 	if db.User != defs.DefaultSchema {
 		t.Errorf("Open(default-schema): db.User = %q, want %q", db.User, defs.DefaultSchema)
+	}
+}
+
+// TestOpen_ConcurrentRequestsShareOnePool_NoUseAfterClose guards the risky
+// part of the per-DSN connection pool cache: Close/CloseTX must not close a
+// pooled *sql.DB, because it is shared with every other request currently
+// using the same DSN. If that guard were ever lost, this test would flake
+// with "sql: database is closed" as one goroutine's deferred Close() tears
+// the pool down out from under the others' concurrent queries.
+func TestOpen_ConcurrentRequestsShareOnePool_NoUseAfterClose(t *testing.T) {
+	svc, err := dsns.NewFileService(defs.MemoryProvider)
+	if err != nil {
+		t.Fatalf("create test DSN service: %v", err)
+	}
+
+	dsns.DSNService = svc
+
+	path := filepath.Join(t.TempDir(), "concurrent.db")
+
+	if err := dsns.DSNService.WriteDSN(1, "admin", defs.DSN{
+		Name:     "concurrent-dsn",
+		Provider: defs.SqliteProvider,
+		Database: path,
+	}); err != nil {
+		t.Fatalf("write DSN: %v", err)
+	}
+
+	session := &router.Session{ID: 1, User: "admin", Admin: true}
+
+	// Force internal/cli/settings' lazily-initialized CurrentConfiguration to
+	// exist before any concurrent access, exactly as happens in the real
+	// server (config is loaded once, single-threaded, before the HTTP
+	// listener starts accepting requests). Without this, 50 goroutines can
+	// race the very first settings.Get call's lazy init -- a pre-existing
+	// bug in that package (unsynchronized check-then-init of a package-level
+	// global), unrelated to this test's purpose, and not one this test is
+	// responsible for guarding.
+	settings.Get(defs.DBPoolEnabledSetting)
+
+	const goroutines = 50
+
+	errs := make([]error, goroutines)
+
+	var wg sync.WaitGroup
+
+	wg.Add(goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(i int) {
+			defer wg.Done()
+
+			db, err := Open(session, "concurrent-dsn", dsns.DSNReadAction)
+			if err != nil {
+				errs[i] = err
+
+				return
+			}
+
+			defer db.Close()
+
+			rows, err := db.Query("SELECT 1")
+			if err != nil {
+				errs[i] = err
+
+				return
+			}
+
+			rows.Close()
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("goroutine %d: %v", i, err)
+		}
 	}
 }
 
