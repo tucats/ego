@@ -76,10 +76,11 @@ func GetCacheHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 	// limits (ego.server.db.pool.*) are sized correctly under real load.
 	for name, stats := range dbpool.Stats() {
 		response.Items = append(response.Items, defs.CachedItem{
-			Name:  name,
-			Count: stats.OpenConnections,
-			Size:  stats.InUse,
-			Class: defs.DBPoolCacheClass})
+			Name:     name,
+			LastUsed: stats.LastUsed,
+			Count:    stats.OpenConnections,
+			Size:     stats.InUse,
+			Class:    defs.DBPoolCacheClass})
 	}
 
 	// Sort the results. By default, the array is sorted by the URL which is the path to the

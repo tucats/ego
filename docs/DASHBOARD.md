@@ -176,9 +176,12 @@ The Server tab shows two compact three-column grids: **Metrics** (Go runtime sta
 | Authorizations | Cached access-control decisions |
 | Tokens | Active bearer tokens in the token cache |
 | Blacklist Status | Tokens that have been explicitly invalidated |
+| DB Pool Count | Number of DSNs with a cached, shared database connection pool |
 
-Below the summary grids, a **Cached Endpoints** table lists each individual cached item with
-its endpoint name, class (service or asset), reuse count, size, and last-access time.
+Below the summary grids, a **Cached Items** table lists each individual cached item with its
+name, class (service, asset, or dbpool), reuse count, size, and last-access time. For a dbpool
+entry, the name is the DSN name, the reuse count is the pool's open connection count, and the
+size is its in-use connection count.
 
 **Toolbar buttons:**
 

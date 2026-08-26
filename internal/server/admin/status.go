@@ -66,10 +66,11 @@ func GetResourcesHandler(session *router.Session, w http.ResponseWriter, r *http
 	// limits (ego.server.db.pool.*) are sized correctly under real load.
 	for name, stats := range dbpool.Stats() {
 		response.Items = append(response.Items, defs.CachedItem{
-			Name:  name,
-			Count: stats.OpenConnections,
-			Size:  stats.InUse,
-			Class: defs.DBPoolCacheClass})
+			Name:     name,
+			LastUsed: stats.LastUsed,
+			Count:    stats.OpenConnections,
+			Size:     stats.InUse,
+			Class:    defs.DBPoolCacheClass})
 	}
 
 	// Walk the asset cache (static files like JS, CSS, images) and do the same.

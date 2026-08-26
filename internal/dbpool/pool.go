@@ -250,15 +250,23 @@ func CloseAll() {
 	}
 }
 
-// Stats returns a snapshot of sql.DBStats for every currently cached pool,
-// keyed by DSN name, for admin observability (see /admin/caches).
-func Stats() map[string]sql.DBStats {
+// PoolStats reports a cached pool's connection statistics together with the
+// last time it was handed out by Get, for admin observability.
+type PoolStats struct {
+	sql.DBStats
+	LastUsed time.Time
+}
+
+// Stats returns a snapshot of connection statistics for every currently
+// cached pool, keyed by DSN name, for admin observability (see
+// /admin/resources and /admin/caches).
+func Stats() map[string]PoolStats {
 	mu.Lock()
 	defer mu.Unlock()
 
-	result := make(map[string]sql.DBStats, len(entries))
+	result := make(map[string]PoolStats, len(entries))
 	for name, e := range entries {
-		result[name] = e.db.Stats()
+		result[name] = PoolStats{DBStats: e.db.Stats(), LastUsed: e.lastUsed}
 	}
 
 	return result
