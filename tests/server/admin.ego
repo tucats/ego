@@ -57,12 +57,13 @@
    @assert int(r.server.api)== 1
    @assert r.server.id == ServerID  
    @assert reflect.Members(r) == []string{"assetCount",
-                                          "assetSize", 
+                                          "assetSize",
                                           "authorizationCount",
                                           "blacklistCount",
+                                          "dbPoolCount",
                                           "debugCount",
                                           "dsnCount",
-                                          "items", 
+                                          "items",
                                           "msg",
                                           "runCount",
                                           "schemaCount",
