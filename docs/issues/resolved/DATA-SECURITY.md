@@ -3,6 +3,23 @@
 **Status:** Report only — no fixes applied. This is a planning document for
 follow-up work.
 
+**2026-08-26 caution:** §1a's "`ego.dsn.write` is an umbrella permission"
+rule, and the §3.10 finding that proposes implementing it, are **superseded**
+by a decision made later in `docs/issues/resolved/DATA-SECURITY-2.md`, finding
+#5 (fixed in `bb00c342`): insert/update/delete must each be checked against
+their own specific permission (`ego.table.write`/`ego.table.update`/
+`ego.table.delete`), never collapsed into one umbrella "write" check. An
+umbrella `ego.dsn.write` that authorizes insert/update/delete on every table
+with no per-verb distinction, as §1a describes it, reintroduces exactly the
+coarsening finding #5 was written to eliminate — just one layer up (DSN
+instead of statement kind). Do not implement §3.10 as literally written;
+see the note added there for what would need to change first. This was
+discovered the hard way: an attempt to implement §3.10 as written broke
+~30 regression tests built specifically to enforce finding #5's per-verb
+split, and had to be fully reverted (see `aeb7dc06`'s commit message and
+the note on §3.10 below for the mechanism that was used instead, which
+solves a narrower, related problem safely).
+
 **Scope:** How Ego authorizes access to DSNs (`/dsns`), the tables within
 them (`/dsns/{dsn}/tables`, `/dsns/{dsn}/@metadata`, row CRUD, `@sql`), and
 how that compares to the proposed permission hierarchy below.
@@ -76,6 +93,15 @@ should be read against these two rules, not the plan's original wording.
   implemented as parallel, symmetric fallback chains. See §3.10 for what
   this means for the current code, which does not implement this fallback
   chain at all.
+
+  **Superseded (2026-08-26):** this single-umbrella framing for writes is
+  wrong as stated -- see the caution at the top of this document and the
+  note on §3.10. `DATA-SECURITY-2.md` finding #5 (fixed after this section
+  was written) established that write/update/delete must stay
+  independently checked all the way up the hierarchy, not just at the
+  table level. Any future write-side fallback chain needs three parallel
+  umbrella permissions (`ego.dsn.write`/`ego.dsn.update`/`ego.dsn.delete`,
+  or an equivalent), not one `ego.dsn.write` that covers all three.
 
 With those two rules fixed, the model is fully implementable as stated. The
 rest of this report is the gap audit.
@@ -400,6 +426,43 @@ same way.
 
 ### 3.10 HIGH — `ego.dsn.write` umbrella-with-table-fallback isn't implemented, and the current `GetDatabase` gate architecture can't express it as-is
 
+**Superseded (2026-08-26) — do not implement as written.** See the caution
+at the top of this document. `DATA-SECURITY-2.md` finding #5 (fixed in
+`bb00c342`, after this section was written) established that
+insert/update/delete must be checked against three independent
+permissions all the way up the stack, never collapsed into one "write"
+umbrella. This finding's fallback chain, exactly as described below, would
+let a single `ego.dsn.write` grant authorize update and delete as well as
+insert on every table in the DSN — reintroducing that exact coarsening one
+layer above where finding #5 fixed it. If this work is picked up again, the
+fallback chain needs to be three parallel chains (read/write/update/delete
+each with their own identity-wide, DSN-specific, and table-level tiers, not
+one chain for read and one lumped chain for "write").
+
+A live example of the architectural trap this finding almost fell into: a
+2026-08-26 fix for JWT/OAuth sessions (`aeb7dc06`) needed `Authorized()` to
+accept a caller's already-resolved permission list as an alternative to a
+`table_perms` row, for exactly the reason this finding describes (no
+per-table grant exists to fall back to). Two attempts at that fix broke
+~30 regression tests by conflating a federated JWT session (whose
+permission list *is* its authorization, since it has no local user record
+that could ever hold a `table_perms` grant) with a native user's cached
+identity-wide permissions (which must never bypass `table_perms` — that is
+the entire point of the three-tier model this document describes). The
+working fix added a new field, `router.Session.Federated`, set only by the
+isolated JWT branch of `Session.Authenticate` (`router/auth.go`) — never by
+the generic identity-permission-cache fallback in `router/serve.go` that
+populates `session.Permissions` for every authenticated session, native or
+not. `Authorized()` (`security.go`) checks `session.Federated` explicitly
+rather than inferring "this must be a federated identity" from
+`len(session.Permissions) > 0`, which cannot tell the two apart. Any
+identity-wide-permission fallback added for this finding's DSN-write case
+should use the same kind of explicit signal — not a length check on
+`session.Permissions` — to distinguish "this permission list is genuinely
+substituting for a missing per-resource grant" from "this is just a native
+user's normal identity permissions, which must still go through the
+per-resource check."
+
 Per §1a, holding `ego.dsn.write` (identity-wide or DSN-specific) should
 authorize writes to every table in the DSN, falling back to
 `ego.table.write`/`table_perms` only when the caller has neither form of
@@ -552,4 +615,8 @@ dependency order:
    `GetDatabase` gate-architecture change it requires) — do together since
    all three are about making every table operation evaluate authorization
    through the same read/write fallback chain instead of each handler
-   family doing its own thing.
+   family doing its own thing. **§3.10 specifically needs rework before
+   implementation — see the superseded note on that section — to keep
+   write/update/delete independently checked per `DATA-SECURITY-2.md`
+   finding #5, rather than the single write-umbrella §1a originally
+   proposed.**
