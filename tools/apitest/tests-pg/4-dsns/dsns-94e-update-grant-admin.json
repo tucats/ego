@@ -1,0 +1,40 @@
+{
+    "description": "grant the test user DSN-specific ego.dsn.admin (a dsns_auth record, not an identity permission) on this one restricted DSN, so it can PATCH it",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/@permissions",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "dsn": "udsn-{{DSNUUID}}",
+            "user": "udu{{DSNUUID}}",
+            "actions": ["+ego.dsn.admin"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one item granted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

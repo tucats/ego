@@ -1,0 +1,42 @@
+{
+    "description": "REST-1 status codes: a duplicate value in a unique column is 409",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck{{SCUUID}}/rows",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "id": 1,
+            "n": 99
+        }
+    },
+    "response": {
+        "status": 409,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

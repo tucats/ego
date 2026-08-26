@@ -1,0 +1,42 @@
+{
+    "description": "create a postgres dsn used to verify that sqlite3-authored @sql DDL/DML (AUTOINCREMENT, WITHOUT ROWID, INSERT OR REPLACE/IGNORE/ABORT/FAIL/ROLLBACK) is rewritten to PostgreSQL's own idioms -- see sqlparse.Sqlparse.Rewrite",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name":     "dsn-{{DLID}}",
+            "provider": "postgres",
+            "host":     "{{PG_HOST}}",
+            "port":     {{PG_PORT}},
+            "user":     "{{PG_USER}}",
+            "password": "{{PG_PASSWORD}}",
+            "database": "{{PG_DATABASE}}",
+            "schema":   "egotest",
+            "rowid":    true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-{{DLID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

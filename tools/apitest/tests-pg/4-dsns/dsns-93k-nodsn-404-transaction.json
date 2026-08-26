@@ -1,0 +1,54 @@
+{
+    "description": "REST-2: @transaction against a DSN that does not exist is 404. This returned 200 with an empty body -- the handler had no else branch for a failed database open, so a client was told a transaction it never ran had committed",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/nosuchdsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": [
+            {
+                "operation": "insert",
+                "table": "t",
+                "data": {
+                    "id": 1,
+                    "name": "never written"
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "the response names the missing DSN",
+            "query": "msg",
+            "op": "contains",
+            "value": "nosuchdsn"
+        }
+    ]
+}

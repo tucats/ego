@@ -1,0 +1,47 @@
+{
+    "description": "REST-1 status codes: a well-formed insert is 200",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck{{SCUUID}}/rows",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "id": 1,
+            "n": 10
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": [
+                "rowcount+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "one row inserted",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}

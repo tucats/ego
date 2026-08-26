@@ -1,0 +1,39 @@
+{
+    "description": "confirm dsns-94j's PATCH actually cascaded: udu's own per-DSN ego.dsn.admin record (granted at dsns-94e) was deleted along with everyone else's. Re-restricting at dsns-94k does not restore it -- if udu could still PATCH here, the cascade would have silently missed the very grant that authorized dsns-94j's own request. GET /@permissions with the admin token (not shown here) already confirmed 'items' comes back null; this proves the same thing from the affected user's own point of view instead of by inspecting server-side storage shape",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{UPDATEDSN_TOKEN}}"]
+        },
+        "body": {
+            "secured": false
+        }
+    },
+    "response": {
+        "status": 403,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message mentions missing privilege",
+            "query": "msg",
+            "op": "contains",
+            "value": "privilege"
+        }
+    ]
+}

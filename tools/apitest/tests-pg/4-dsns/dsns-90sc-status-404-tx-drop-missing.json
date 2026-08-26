@@ -1,0 +1,44 @@
+{
+    "description": "REST-1 status codes: and through the @transaction drop opcode as well",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": [
+            {
+                "operation": "drop",
+                "table": "nosuchtable"
+            }
+        ]
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

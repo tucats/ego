@@ -1,0 +1,50 @@
+{
+    "description": "REST-1 status codes: the identical bad value is also 400 on update -- insert and update must agree",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck{{SCUUID}}/rows",
+        "parameters": {
+            "filter": "EQ(id,1)"
+        },
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "n": "not-a-number"
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "message names the bad value",
+            "query": "msg",
+            "op": "contains",
+            "value": "not-a-number"
+        }
+    ]
+}

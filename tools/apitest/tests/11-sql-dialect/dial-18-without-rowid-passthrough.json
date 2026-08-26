@@ -1,0 +1,40 @@
+{
+    "description": "WITHOUT ROWID targeting sqlite3 (its native home) is a no-op for Rewrite -- only a PostgreSQL target drops it -- so this table option must still work normally here",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tI{{DLID}} (id TEXT PRIMARY KEY, name TEXT) WITHOUT ROWID",
+            "INSERT INTO tI{{DLID}} (id, name) VALUES ('k1', 'v1')",
+            "SELECT name FROM tI{{DLID}} WHERE id = 'k1'"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "row read back from the WITHOUT ROWID table",
+            "query": "rows.0.name",
+            "value": "v1"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "description": "PATCH secured:true against a postgres DSN is allowed -- unlike sqlite3, where TLS is meaningless for a local file database (see the sqlite suite's dsns-94g), a postgres connection genuinely can be secured with TLS. UpdateDSNHandler's sqlite-only rejection block never applies here",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "secured": true
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "secured flag set",
+            "query": "secured",
+            "value": "true"
+        }
+    ]
+}

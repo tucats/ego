@@ -40,6 +40,8 @@ func ListTablesHandler(session *router.Session, w http.ResponseWriter, r *http.R
 	database, err := GetDatabase(session, data.String(session.URLParts["dsn"]), dsns.DSNReadAction)
 
 	if err == nil && database.Handle != nil {
+		defer database.Close()
+
 		err, httpStatus = listTables(database, session, r, err, includeRowCounts, w)
 		if httpStatus > http.StatusOK {
 			return httpStatus

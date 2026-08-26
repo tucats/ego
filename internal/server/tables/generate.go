@@ -106,6 +106,8 @@ func GenerateHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 			http.StatusInternalServerError)
 	}
 
+	defer db.Close()
+
 	if strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider) {
 		db.Provider = defs.SqliteProvider
 	}

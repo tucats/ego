@@ -1,0 +1,47 @@
+{
+    "description": "BIGSERIAL and SMALLSERIAL both collapse to sqlite3's plain INTEGER PRIMARY KEY AUTOINCREMENT (sqlite3 has no separate big/small integer storage class) -- a 200 rows+json response here proves both CREATE TABLE statements and both inserts succeeded, since any failing statement earlier in the transaction would have aborted before the trailing SELECT could run",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tB{{DLID}} (id BIGSERIAL PRIMARY KEY, note TEXT)",
+            "CREATE TABLE tB2{{DLID}} (id SMALLSERIAL PRIMARY KEY, note TEXT)",
+            "INSERT INTO tB{{DLID}} (note) VALUES ('big')",
+            "INSERT INTO tB2{{DLID}} (note) VALUES ('small')",
+            "SELECT id, note FROM tB{{DLID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "bigserial id auto-generated as 1",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "bigserial note",
+            "query": "rows.0.note",
+            "value": "big"
+        }
+    ]
+}

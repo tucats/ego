@@ -1,0 +1,49 @@
+{
+    "description": "REST-1 status codes: a column the table does not have is 400",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/statuscheck{{SCUUID}}/rows",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": {
+            "id": 3,
+            "n": 1,
+            "nosuchcolumn": 5
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "message names the unknown column",
+            "query": "msg",
+            "op": "contains",
+            "value": "nosuchcolumn"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+    "description": "SERIAL combined with a table-level PRIMARY KEY (id) constraint (rather than a column-level one) is still recognized, since sqlite3's AUTOINCREMENT can only be expressed as a column-level constraint -- Rewrite must move the PRIMARY KEY down to the column itself for this to be legal sqlite3 at all",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tE{{DLID}} (id SERIAL, name TEXT, PRIMARY KEY (id))",
+            "INSERT INTO tE{{DLID}} (name) VALUES ('w')",
+            "SELECT id, name FROM tE{{DLID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "id auto-generated as 1 via promoted column-level PK",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "name",
+            "query": "rows.0.name",
+            "value": "w"
+        }
+    ]
+}

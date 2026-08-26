@@ -1,0 +1,39 @@
+{
+    "description": "INSERT OR REPLACE with no explicit column list cannot be translated -- PostgreSQL's ON CONFLICT DO UPDATE needs to know which columns to overwrite, and this parser has no way to look up the target table's full column list to guess at one -- Rewrite must reject this rather than guessing",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT OR REPLACE INTO tF{{DLID}} VALUES (1, 'x')"
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message explains the dialect translation failure",
+            "query": "msg",
+            "op": "contains",
+            "value": "cannot translate"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "description": "confirm the WITHOUT-ROWID-dropped table actually works: insert without an id and read the auto-generated value back",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO tB{{DLID}} (name) VALUES ('x')",
+            "SELECT id, name FROM tB{{DLID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "id auto-generated as 1",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "name",
+            "query": "rows.0.name",
+            "value": "x"
+        }
+    ]
+}

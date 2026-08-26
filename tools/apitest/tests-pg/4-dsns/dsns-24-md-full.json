@@ -1,0 +1,149 @@
+{
+    "description": "GET @metadata for the test DSN; two tables exist (t{{TBLUUID}} and m{{MDUUID}}). Verifies response structure, provider, table names, field names, and a known column type. PostgreSQL's @metadata orders tables alphabetically by name (information_schema.tables ORDER BY table_name), unlike sqlite3's creation-order listing, so m{{MDUUID}} (starting 'm') always sorts before t{{TBLUUID}} (starting 't') here -- the reverse of the sqlite3 suite's creation-order assertion",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/@metadata",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["metadata+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "status field is 200",
+            "query": "status",
+            "value": "200"
+        },
+        {
+            "name": "provider is postgres",
+            "query": "provider",
+            "value": "postgres"
+        },
+        {
+            "name": "start defaults to 1",
+            "query": "start",
+            "value": "1"
+        },
+        {
+            "name": "count is 2 (two tables)",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "items array contains 2 tables (len via wildcard)",
+            "query": "items.*.table",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "t{{TBLUUID}} table is present (wildcard search)",
+            "query": "items.*.table",
+            "op": "equals",
+            "value": "t{{TBLUUID}}"
+        },
+        {
+            "name": "m{{MDUUID}} table is present (wildcard search)",
+            "query": "items.*.table",
+            "op": "equals",
+            "value": "m{{MDUUID}}"
+        },
+        {
+            "name": "first item (alphabetical order) is m{{MDUUID}}",
+            "query": "items.0.table",
+            "value": "m{{MDUUID}}"
+        },
+        {
+            "name": "second item (alphabetical order) is t{{TBLUUID}}",
+            "query": "items.1.table",
+            "value": "t{{TBLUUID}}"
+        },
+        {
+            "name": "t{{TBLUUID}} table has 2 fields (len via wildcard over field names)",
+            "query": "items.1.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "t{{TBLUUID}} table contains an age field (wildcard search)",
+            "query": "items.1.fields.*.name",
+            "op": "equals",
+            "value": "age"
+        },
+        {
+            "name": "t{{TBLUUID}} table contains a name field (wildcard search)",
+            "query": "items.1.fields.*.name",
+            "op": "equals",
+            "value": "name"
+        },
+        {
+            "name": "t{{TBLUUID}} first field is age (table-definition order)",
+            "query": "items.1.fields.0.name",
+            "value": "age"
+        },
+        {
+            "name": "t{{TBLUUID}}.age column type is int32 (matches dsns-22 per-table evidence)",
+            "query": "items.1.fields.0.type",
+            "value": "int32"
+        },
+        {
+            "name": "t{{TBLUUID}}.name column has a type",
+            "query": "items.1.fields.1.type",
+            "op": "exists"
+        },
+        {
+            "name": "m{{MDUUID}} table has 2 fields (len via wildcard over field names)",
+            "query": "items.0.fields.*.name",
+            "op": "len",
+            "value": "2"
+        },
+        {
+            "name": "m{{MDUUID}} table contains a label field (wildcard search)",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "label"
+        },
+        {
+            "name": "m{{MDUUID}} table contains a value field (wildcard search)",
+            "query": "items.0.fields.*.name",
+            "op": "equals",
+            "value": "value"
+        },
+        {
+            "name": "m{{MDUUID}} first field is label (table-definition order)",
+            "query": "items.0.fields.0.name",
+            "value": "label"
+        },
+        {
+            "name": "m{{MDUUID}} second field is value (table-definition order)",
+            "query": "items.0.fields.1.name",
+            "value": "value"
+        },
+        {
+            "name": "m{{MDUUID}}.label column has a type",
+            "query": "items.0.fields.0.type",
+            "op": "exists"
+        },
+        {
+            "name": "m{{MDUUID}}.value column has a type",
+            "query": "items.0.fields.1.type",
+            "op": "exists"
+        }
+    ]
+}

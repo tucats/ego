@@ -1,0 +1,39 @@
+{
+    "description": "INSERT OR ABORT has no separate PostgreSQL syntax to translate to -- aborting the statement on a constraint violation is already PostgreSQL's own default behavior -- so Rewrite just drops the OR ABORT keyword and the plain insert must still succeed normally",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT OR ABORT INTO tE{{DLID}} (id, name) VALUES (1, 'x')",
+            "SELECT name FROM tE{{DLID}} WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "row inserted normally despite the dropped OR ABORT",
+            "query": "rows.0.name",
+            "value": "x"
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "description": "sqlite3's WITHOUT ROWID table option has no PostgreSQL equivalent and would otherwise be a syntax error; Rewrite drops it entirely -- this combines it with AUTOINCREMENT to also confirm both rewrites apply to the same statement",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tB{{DLID}} (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT) WITHOUT ROWID"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

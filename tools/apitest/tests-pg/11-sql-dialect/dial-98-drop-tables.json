@@ -1,0 +1,38 @@
+{
+    "description": "drop every table this suite created, before deleting the dsn -- deleting a DSN only removes its connection record, it does not drop the tables reachable through it (see DeleteDSNHandler), so skipping this would leave permanent debris behind in the shared postgres schema for every future run to trip over",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "DROP TABLE tA{{DLID}}",
+            "DROP TABLE tB{{DLID}}",
+            "DROP TABLE tC{{DLID}}",
+            "DROP TABLE tD{{DLID}}",
+            "DROP TABLE tE{{DLID}}",
+            "DROP TABLE tF{{DLID}}"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

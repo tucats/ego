@@ -511,6 +511,8 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNReadAction)
 	if err == nil && db != nil {
+		defer db.Close()
+
 		var queryText string
 
 		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
@@ -774,6 +776,8 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 
 	db, err = GetDatabase(session, dsnName, dsns.DSNWriteAction)
 	if err == nil && db != nil {
+		defer db.Close()
+
 		if db.Restricted {
 			if !session.Admin && !Authorized(session, session.User, dsnName+"."+tableName, defs.TableUpdatePermission) {
 				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.perm.update"), http.StatusForbidden)

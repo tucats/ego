@@ -1,0 +1,61 @@
+{
+    "description": "PostgreSQL's GENERATED ALWAYS AS IDENTITY has no sqlite3 equivalent that also enforces ALWAYS (rejecting an explicit value); Rewrite documents this as a lossy translation and falls back to AUTOINCREMENT, which -- unlike ALWAYS -- still permits an explicit inserted value. This verifies both halves: an omitted id still auto-generates, and an explicit id is still honored rather than rejected",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tC{{DLID}} (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT)",
+            "INSERT INTO tC{{DLID}} (name) VALUES ('auto')",
+            "INSERT INTO tC{{DLID}} (id, name) VALUES (99, 'explicit')",
+            "SELECT id, name FROM tC{{DLID}} ORDER BY id"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "omitted id auto-generated as 1",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "auto"
+        },
+        {
+            "name": "explicit id honored as 99, not rejected",
+            "query": "rows.1.id",
+            "value": "99"
+        },
+        {
+            "name": "row 1 name",
+            "query": "rows.1.name",
+            "value": "explicit"
+        }
+    ]
+}

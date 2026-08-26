@@ -1,0 +1,39 @@
+{
+    "description": "PostgreSQL allows a GENERATED ... AS IDENTITY column that is not the table's PRIMARY KEY; sqlite3 has no way to express auto-increment independent of PRIMARY KEY, so this must be rejected rather than silently dropping the auto-increment behavior or emitting SQL sqlite3 would reject",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tF{{DLID}} (id INTEGER GENERATED ALWAYS AS IDENTITY, other_id INTEGER PRIMARY KEY)"
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message explains the dialect translation failure",
+            "query": "msg",
+            "op": "contains",
+            "value": "cannot translate"
+        }
+    ]
+}

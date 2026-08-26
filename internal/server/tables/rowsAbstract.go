@@ -54,6 +54,8 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	}
 
 	if err == nil && db != nil {
+		defer db.Close()
+
 		// Amend any table name with the provider-appropriate schema name (the
 		// DSN's configured schema, not the Ego identity).
 		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
@@ -240,6 +242,8 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
+
+	defer db.Close()
 
 	// Amend any table name with the provider-appropriate schema name (the
 	// DSN's configured schema, not the Ego identity).
@@ -428,6 +432,8 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
+
+	defer db.Close()
 
 	// Amend any table name with the provider-appropriate schema name (the
 	// DSN's configured schema, not the Ego identity).

@@ -2,6 +2,7 @@ package tables
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/tucats/ego/internal/caches"
@@ -167,6 +168,57 @@ func choosePrimaryKey(candidates []string, driverColumns []string, pk string, un
 	}
 
 	return ""
+}
+
+// uniqueKeyLookup adapts singleColumnUniqueKeys to the sqlparse.UniqueKeyLookup
+// shape Rewrite needs to translate sqlite3's "INSERT OR REPLACE" into
+// PostgreSQL's "INSERT ... ON CONFLICT (...) DO UPDATE" (see
+// authorizeAndFormatStatements in sql_permissions.go, and rewriteInsert's
+// doc comment in the sqlparse package for why ON CONFLICT needs a concrete
+// column to target). table is schema-qualified ("schema.table") exactly
+// when the client's own SQL wrote it that way -- mirroring
+// tableRefFullName's own convention -- so it's split back apart the same
+// way baseTableName does elsewhere in this file's package, before being
+// handed to singleColumnUniqueKeys as a *ast.TableRef.
+//
+// The table's own primary key is preferred when there is one; otherwise the
+// first single-column UNIQUE key is used, in a fixed (sorted) order so the
+// same table always rewrites to the same SQL rather than one that varies
+// by map iteration order. A table whose only key is composite (spans more
+// than one column) reports none here -- see singleColumnUniqueKeys' own
+// doc comment for why composite keys are outside what this lookup can
+// answer -- which rewriteInsert then reports as its own translation error
+// rather than guessing at a conflict target.
+func uniqueKeyLookup(session *router.Session, db *database.Database) sqlparse.UniqueKeyLookup {
+	return func(table string) ([]string, error) {
+		ref := &ast.TableRef{Name: table}
+		if i := strings.LastIndex(table, "."); i >= 0 {
+			ref.Schema = table[:i]
+			ref.Name = table[i+1:]
+		}
+
+		pk, unique, err := singleColumnUniqueKeys(session, db, ref)
+		if err != nil {
+			return nil, err
+		}
+
+		if pk != "" {
+			return []string{pk}, nil
+		}
+
+		cols := make([]string, 0, len(unique))
+		for c := range unique {
+			cols = append(cols, c)
+		}
+
+		sort.Strings(cols)
+
+		if len(cols) == 0 {
+			return nil, nil
+		}
+
+		return cols[:1], nil
+	}
 }
 
 // uniqueKeyInfo is the cached shape of singleColumnUniqueKeys' result --

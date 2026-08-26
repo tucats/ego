@@ -1,0 +1,61 @@
+{
+    "description": "PostgreSQL's SERIAL PRIMARY KEY rewritten as sqlite3's INTEGER PRIMARY KEY AUTOINCREMENT: create the table, insert two rows without specifying id, and verify sqlite3 actually auto-generated sequential ids",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "CREATE TABLE tA{{DLID}} (id SERIAL PRIMARY KEY, name TEXT)",
+            "INSERT INTO tA{{DLID}} (name) VALUES ('Alice')",
+            "INSERT INTO tA{{DLID}} (name) VALUES ('Bob')",
+            "SELECT id, name FROM tA{{DLID}} ORDER BY id"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "2"
+        },
+        {
+            "name": "row 0 id auto-generated as 1",
+            "query": "rows.0.id",
+            "value": "1"
+        },
+        {
+            "name": "row 0 name",
+            "query": "rows.0.name",
+            "value": "Alice"
+        },
+        {
+            "name": "row 1 id auto-generated as 2",
+            "query": "rows.1.id",
+            "value": "2"
+        },
+        {
+            "name": "row 1 name",
+            "query": "rows.1.name",
+            "value": "Bob"
+        }
+    ]
+}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
@@ -34,6 +35,16 @@ import (
 
 // AuthorizedFunc mirrors tables.Authorized's signature.
 var AuthorizedFunc func(session *router.Session, user string, table string, operations ...string) bool
+
+// UniqueKeyLookupFunc mirrors tables' own uniqueKeyLookup helper (sql_pkey.go),
+// injected the same way AuthorizedFunc is -- see this file's top-of-file
+// comment for why. authorizeAndClassifySQL uses it to give Rewrite a way to
+// find a table's key column(s) when translating sqlite3's "INSERT OR
+// REPLACE" toward PostgreSQL (see sqlparse.UniqueKeyLookup's doc comment).
+// Nil (only possible in a scripting-package unit test that never imports
+// tables) is handed to Rewrite as-is; Rewrite reports a clear error itself
+// if that combination turns out to matter.
+var UniqueKeyLookupFunc func(db *database.Database) sqlparse.UniqueKeyLookup
 
 // hasPermission mirrors tables/sql_permissions.go's function of the same
 // name: true for the server administrator, then identity-wide permissions
@@ -203,6 +214,32 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (formatted s
 
 	kind = p.StatementKind()
 	cacheFlush = isSchemaAlteringKind(kind)
+
+	// Normalize dialect-specific syntax (generated keys, WITHOUT ROWID,
+	// INSERT OR ...) to match db's own provider -- see sqlparse.Rewrite's
+	// doc comment, and sql_permissions.go's identical call for the
+	// top-level @sql endpoint, which this "sql" opcode otherwise mirrors.
+	// This runs even for noAuthCheck callers (admin, or no session): the
+	// point is SQL correctness against the actual backend, not permission
+	// enforcement.
+	var lookup sqlparse.UniqueKeyLookup
+	if UniqueKeyLookupFunc != nil {
+		lookup = UniqueKeyLookupFunc(db)
+	}
+
+	if notes, rwErr := p.Rewrite(lookup); rwErr != nil {
+		return sqlText, kind, cacheFlush, http.StatusBadRequest, errors.New(rwErr)
+	} else if len(notes) > 0 {
+		sessionID := 0
+		if db.Session != nil {
+			sessionID = db.Session.ID
+		}
+
+		ui.Log(ui.SQLLogger, "sql.dialect.rewrite", ui.A{
+			"session": sessionID,
+			"notes":   strings.Join(notes, "; "),
+		})
+	}
 
 	if db.Provider == defs.PostgresProvider {
 		p.QualifyTables(db.User)

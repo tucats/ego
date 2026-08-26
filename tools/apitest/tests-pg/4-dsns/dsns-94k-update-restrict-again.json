@@ -1,0 +1,38 @@
+{
+    "description": "re-restrict the DSN so the permissions check below actually exercises the underlying dsns_auth table -- ListDSNPermHandler's Permissions() short-circuits to an empty result for any unrestricted DSN regardless of what auth rows exist, so checking @permissions immediately after dsns-94j's unrestrict would pass even if the cascade delete had done nothing at all",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "restricted": true
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "restricted flag set again",
+            "query": "restricted",
+            "value": "true"
+        }
+    ]
+}

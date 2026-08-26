@@ -74,6 +74,7 @@ const (
 	KindColumnReferences
 	KindColumnCollate
 	KindColumnGenerated
+	KindColumnIdentity
 	KindAddColumn
 	KindDropColumn
 	KindRenameColumn
@@ -157,6 +158,7 @@ var kindNames = map[Kind]string{
 	KindColumnReferences:    "ColumnReferences",
 	KindColumnCollate:       "ColumnCollate",
 	KindColumnGenerated:     "ColumnGenerated",
+	KindColumnIdentity:      "ColumnIdentity",
 	KindAddColumn:           "AddColumn",
 	KindDropColumn:          "DropColumn",
 	KindRenameColumn:        "RenameColumn",

@@ -1,0 +1,49 @@
+{
+    "description": "a bare timezone abbreviation no zone table can resolve is rejected with 400 rather than stored with a guessed offset (TIME-2, status per REST-1)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/events{{DTUUID}}/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept":        ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            {
+                "title":      "ambiguous-zone",
+                "event_time": "December 7, 1959 10:35am QQQ",
+                "event_date": "2024-06-15T00:00:00Z"
+            }
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message identifies the ambiguity",
+            "query": "msg",
+            "op": "contains",
+            "value": "ambiguous timezone abbreviation"
+        },
+        {
+            "name": "error message names the offending column",
+            "query": "msg",
+            "op": "contains",
+            "value": "event_time"
+        }
+    ]
+}

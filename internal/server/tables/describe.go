@@ -38,6 +38,8 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 	// credentials for the database. Otherwise, the session user information is used to connect.
 	db, err := GetDatabase(session, dsn, dsns.DSNReadAction)
 	if err == nil && db != nil {
+		defer db.Close()
+
 		// normalize the deprecated "sqlite3" alias to the canonical "sqlite" name.
 		if strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider) {
 			db.Provider = defs.SqliteProvider

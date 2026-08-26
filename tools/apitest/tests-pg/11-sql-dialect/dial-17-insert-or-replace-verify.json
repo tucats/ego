@@ -1,0 +1,45 @@
+{
+    "description": "INSERT OR REPLACE against an existing primary key value must overwrite every column named in its explicit column list -- Rewrite translates it to ON CONFLICT (id) DO UPDATE SET name = excluded.name, note = excluded.note, using the table's real primary key (found via the same cached unique-key lookup sql_pkey.go already uses for pkey/ptable reporting) as the conflict target",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO tD{{DLID}} (id, name, note) VALUES (1, 'orig', 'n1')",
+            "INSERT OR REPLACE INTO tD{{DLID}} (id, name, note) VALUES (1, 'updated', 'n2')",
+            "SELECT name, note FROM tD{{DLID}} WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "name overwritten by the replace",
+            "query": "rows.0.name",
+            "value": "updated"
+        },
+        {
+            "name": "note overwritten by the replace",
+            "query": "rows.0.note",
+            "value": "n2"
+        }
+    ]
+}

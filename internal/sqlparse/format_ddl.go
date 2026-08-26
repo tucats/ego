@@ -223,6 +223,16 @@ func (pr *printer) columnConstraint(n ast.Node) {
 		} else {
 			pr.write(" VIRTUAL")
 		}
+	case *ast.ColumnIdentity:
+		pr.write("GENERATED ")
+
+		if v.Always {
+			pr.write("ALWAYS ")
+		} else {
+			pr.write("BY DEFAULT ")
+		}
+
+		pr.write("AS IDENTITY")
 	}
 }
 

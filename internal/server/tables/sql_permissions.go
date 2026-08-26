@@ -134,6 +134,25 @@ func authorizeAndFormatStatements(session *router.Session, db *database.Database
 
 		kinds[i] = p.StatementKind()
 
+		// Normalize whichever dialect's generated-key, WITHOUT ROWID, or
+		// INSERT OR ... syntax the client happened to write to match db's
+		// own dialect, so a caller never has to know or care whether this
+		// DSN is backed by sqlite3 or PostgreSQL -- see Rewrite's doc
+		// comment. This runs for an admin caller too (unlike the
+		// authorization checks below, which admins bypass): the point of
+		// rewriting is SQL correctness against the actual backend, not
+		// permission enforcement, so there's no reason to exempt admins
+		// from it. A statement Rewrite cannot translate faithfully (see its
+		// "Known limitation" notes) fails the same way a syntax error does.
+		if notes, err := p.Rewrite(uniqueKeyLookup(session, db)); err != nil {
+			return nil, nil, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
+		} else if len(notes) > 0 {
+			ui.Log(ui.SQLLogger, "sql.dialect.rewrite", ui.A{
+				"session": session.ID,
+				"notes":   strings.Join(notes, "; "),
+			})
+		}
+
 		// PostgreSQL: pin every table/view/index reference the client left
 		// unqualified to the DSN's own resolved schema (db.User -- see
 		// database.Open's doc comment) rather than letting the server

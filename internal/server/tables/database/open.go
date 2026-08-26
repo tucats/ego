@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
@@ -197,8 +198,21 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 				db.Handle.Exec("PRAGMA journal_mode=WAL;")
 				db.Handle.Exec("PRAGMA busy_timeout=5000;")
 
-				// PostgreSQL: no post-open PRAGMA-style configuration needed.
 			case defs.PostgresProvider:
+				// Every call to Open (there is no cache of *sql.DB keyed by
+				// DSN -- see this function's own doc comment) creates a
+				// brand-new connection pool, so a caller that forgets to
+				// Close() it -- as several handlers did before this was
+				// added, each leaking one real Postgres backend connection
+				// per request until the whole server was restarted --
+				// leaks forever with no cap. These limits are a backstop,
+				// not a fix for that root cause: MaxOpenConns keeps any one
+				// request from opening an unbounded number of connections
+				// on its own, and ConnMaxLifetime forces even a
+				// never-Close()'d pool's connections to actually terminate
+				// after a few minutes rather than sitting idle permanently.
+				db.Handle.SetMaxOpenConns(5)
+				db.Handle.SetConnMaxLifetime(5 * time.Minute)
 			}
 		}
 	}

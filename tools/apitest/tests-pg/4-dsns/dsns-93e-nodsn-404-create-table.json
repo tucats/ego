@@ -1,0 +1,53 @@
+{
+    "description": "REST-2: creating a table in a DSN that does not exist is 404",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/nosuchdsn-{{DSNUUID}}/tables/t",
+        "headers": {
+            "Content-Type": [
+                "application/json"
+            ],
+            "Accept": [
+                "*/*"
+            ],
+            "Authorization": [
+                "Bearer {{API_TOKEN}}"
+            ]
+        },
+        "body": [
+            {
+                "name": "id",
+                "type": "int",
+                "size": 0,
+                "nullable": {
+                    "specified": false,
+                    "value": false
+                },
+                "unique": {
+                    "specified": false,
+                    "value": false
+                }
+            }
+        ]
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Type": [
+                "error+json"
+            ]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

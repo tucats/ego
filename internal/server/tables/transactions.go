@@ -13,6 +13,7 @@ import (
 	"github.com/tucats/ego/internal/i18n"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/dberrors"
 	"github.com/tucats/ego/internal/server/tables/database"
 	"github.com/tucats/ego/internal/util"
 )
@@ -103,8 +104,27 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	dsnName := data.String(session.URLParts["dsn"])
 
 	db, err := database.Open(session, dsnName, dsns.DSNReadAction+dsns.DSNWriteAction)
-	if err == nil && db != nil {
-		db.Begin()
+	if err != nil {
+		// A DSN named in the URL that does not exist (or that this caller
+		// cannot open) is a 404/403, not a server fault -- and, just as
+		// important, falling through here would have gone on to build a
+		// Transaction wrapping a nil db and then dereference it at
+		// "t.db.TransUUID = t.id" a few lines down, panicking instead of
+		// returning a clean error.
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
+	}
+
+	if db == nil {
+		// database.Open should never return (nil, nil), but guard against
+		// it so a violation of that contract is a clear 500 rather than the
+		// same nil-dereference panic described above.
+		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.db.nil.pointer"), http.StatusInternalServerError)
+	}
+
+	if err := db.Begin(); err != nil {
+		db.Close()
+
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 	}
 
 	t := &Transaction{
@@ -220,6 +240,14 @@ func RollbackHandler(session *router.Session, w http.ResponseWriter, r *http.Req
 
 	delete(transactions, id)
 
+	// Rollback() has already cleared tx.db.Transaction, so this actually closes
+	// the underlying connection (see Close's own "active/pending transaction"
+	// guard) rather than no-oping. Without this, every successful rollback
+	// through this REST endpoint leaked its connection pool forever -- only
+	// cleanupExpiredTransactions closed one, and only for a transaction that
+	// was never resolved at all (see that function's own Rollback+Close pair).
+	tx.db.Close()
+
 	return http.StatusOK
 }
 
@@ -259,6 +287,20 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 			"error":   err.Error(),
 		})
 
+		// A failed Commit() leaves tx.db.Transaction non-nil (see Commit's own
+		// doc comment -- it only clears Transaction on success), so plain
+		// Close() would no-op on its "active/pending transaction" guard and
+		// leak this connection forever, same as the missing Close() this whole
+		// function's other branch fixes. CloseTX resolves the still-open
+		// transaction itself (committing again, or rolling back if that also
+		// fails -- see its own doc comment) before closing the handle, so the
+		// connection is reclaimed either way. This also makes the code match
+		// this function's own doc comment, which already promised a failed
+		// commit "is still deleted" -- delete(transactions, id) was missing
+		// from this path entirely before.
+		delete(transactions, id)
+		tx.db.CloseTX(session.ID)
+
 		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.db.commit"), http.StatusInternalServerError)
 	}
 
@@ -268,11 +310,14 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		"seq":     tx.db.TransID,
 	})
 
-	// Clear the transaction value so it cannot be re-used. Also,
-	// delete it from the cache of available transactions.
+	// Commit() has already cleared tx.db.Transaction on this success path, so
+	// this redundant assignment and the delete below are unchanged from
+	// before; only the Close() call is new -- see RollbackHandler's identical
+	// fix above for why it was needed.
 	tx.db.Transaction = nil
 
 	delete(transactions, id)
+	tx.db.Close()
 
 	return http.StatusOK
 }

@@ -1,0 +1,37 @@
+{
+    "description": "create dsn with a name that already exists reports 409, not 400",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name":     "dsn-{{DSNUUID}}",
+            "provider": "postgres",
+            "host":     "{{PG_HOST}}",
+            "port":     {{PG_PORT}},
+            "user":     "{{PG_USER}}",
+            "password": "{{PG_PASSWORD}}",
+            "database": "{{PG_DATABASE}}",
+            "schema":   "egotest",
+            "rowid":    true
+        }
+    },
+    "response": {
+        "status": 409,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "error text names the dsn",
+            "query": "msg",
+            "op": "contains",
+            "value": "dsn-{{DSNUUID}}"
+        }
+    ]
+}

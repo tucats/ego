@@ -364,9 +364,23 @@ func CoerceToColumnType(key string, v any, columns []defs.DBColumn) (any, error)
 				if v == nil {
 					// Produce a typed zero value rather than leaving v as untyped nil.
 					v = time.Time{}
-				} else if _, isTime := v.(time.Time); isTime {
+				} else if t, isTime := v.(time.Time); isTime {
 					// The PostgreSQL driver (lib/pq) decodes TIMESTAMP WITH TIME ZONE
-					// columns as native Go time.Time values.  Nothing to do here.
+					// columns as native Go time.Time values, but in a Location
+					// reflecting the Postgres session/server timezone (a fixed
+					// numeric offset), not time.UTC -- unlike sqlite3, whose
+					// on-disk representation is UTC RFC 3339 text, so parsing it
+					// back naturally yields time.UTC (see bindTimeValue's write-side
+					// t.UTC() call below, and TIME-2's "normalized to UTC, whatever
+					// timezone the server runs in" contract). Passing v through
+					// unchanged here used to leave that server-timezone offset on
+					// the value, so encoding/json's time.Time.MarshalJSON (used for
+					// this row's response) formatted it as e.g. "...-04:00" instead
+					// of the documented "...Z" -- a real value, just not the
+					// UTC-normalized one every other provider round-trips. .UTC()
+					// converts the *representation* only; the instant is unchanged.
+					v = t.UTC()
+
 					break
 				} else {
 					v, err = util.StrictParseTimestamp(data.String(v))

@@ -1,0 +1,39 @@
+{
+    "description": "INSERT OR ROLLBACK has no PostgreSQL equivalent either, for the same reason as OR FAIL",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT OR ROLLBACK INTO tF{{DLID}} (id, name) VALUES (2, 'y')"
+        ]
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Type": ["error+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "error message explains the dialect translation failure",
+            "query": "msg",
+            "op": "contains",
+            "value": "cannot translate"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "description": "INSERT OR IGNORE against a duplicate primary key value must be silently skipped -- exactly PostgreSQL's ON CONFLICT DO NOTHING semantics, which is what Rewrite translates it to -- so the original row's value survives untouched",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns/dsn-{{DLID}}/tables/@sql",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            "INSERT INTO tC{{DLID}} (id, name) VALUES (1, 'orig')",
+            "INSERT OR IGNORE INTO tC{{DLID}} (id, name) VALUES (1, 'dup')",
+            "SELECT name FROM tC{{DLID}} WHERE id = 1"
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "duplicate insert was silently ignored; original value survives",
+            "query": "rows.0.name",
+            "value": "orig"
+        }
+    ]
+}

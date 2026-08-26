@@ -44,6 +44,8 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 	// associated with the session is used to authenticate with the database.
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
+		defer db.Close()
+
 		// Amend any table name with the provider-appropriate schema name
 		// (the DSN's configured schema, not the Ego identity -- see db.User's
 		// doc comment in database/open.go).
@@ -483,10 +485,28 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// ZONE columns returns "Time" (the Go type name), while DatabaseTypeName()
 		// returns "TIMESTAMPTZ".  We normalize both to the portable lowercase names.
 		switch typeName {
-		case "Time", "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE",
-			"TIMESTAMP", "DATETIME":
-			// "Time" is what Go's reflect package returns for time.Time; the others
-			// are raw PostgreSQL DDL type names from DatabaseTypeName().
+		case "Time":
+			// lib/pq's ScanType() collapses every date/time-shaped Postgres OID
+			// (DATE, TIME, TIMETZ, TIMESTAMP, TIMESTAMPTZ) to this single Go
+			// reflect type name (rows.go's scanType map), so "Time" alone can't
+			// tell a DATE column from a TIMESTAMP one -- naively mapping it
+			// straight to "timestamp" (as this used to) silently misreported
+			// every DATE and TIME column's DescribeTable response as
+			// "timestamp". DatabaseTypeName() still returns the real,
+			// undisambiguated DDL name (e.g. "DATE") for these OIDs, unlike the
+			// FLOAT4/FLOAT8 case below where ScanType() itself returns nil and
+			// DatabaseTypeName() is already what populated typeName above --
+			// so it's consulted directly here instead.
+			switch typeInfo.DatabaseTypeName() {
+			case "DATE":
+				typeName = "date"
+			case "TIME", "TIMETZ":
+				typeName = "time"
+			default: // TIMESTAMP, TIMESTAMPTZ, and anything else time.Time-shaped.
+				typeName = "timestamp"
+			}
+
+		case "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP", "DATETIME":
 			typeName = "timestamp"
 
 		case "TIME", "TIME WITH TIME ZONE":
@@ -525,6 +545,8 @@ func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
+		defer db.Close()
+
 		tableName, _ := parsing.FullName(db.Provider, db.User, table)
 
 		// DATA-SECURITY-2.md findings #2 and #3: this used to have an extra

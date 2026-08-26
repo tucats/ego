@@ -70,6 +70,8 @@ func DSNMetadataHandler(session *router.Session, w http.ResponseWriter, r *http.
 			http.StatusInternalServerError)
 	}
 
+	defer db.Close()
+
 	// Normalize the deprecated "sqlite3" provider alias to the canonical
 	// "sqlite" name so the rest of the handler only compares against one string.
 	if strings.EqualFold(db.Provider, defs.DeprecatedSqliteProvider) {
