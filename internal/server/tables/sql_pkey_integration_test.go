@@ -28,6 +28,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const (
+	testKey   = "id"
+	testTable = "items"
+)
+
 // setUpSQLPkeyTest wires an unrestricted SQLite-backed DSN "d1" and returns
 // a function that posts a []string of SQL statements to SQLTransaction as
 // the admin user, decoding a successful rows+json response into a
@@ -109,12 +114,12 @@ func TestSQLTransaction_PKey_IntegerPrimaryKey(t *testing.T) {
 		t.Fatalf("expected 200, got %d", status)
 	}
 
-	if rowSet.PKey != "id" {
-		t.Errorf("PKey = %q, want %q", rowSet.PKey, "id")
+	if rowSet.PKey != testKey {
+		t.Errorf("PKey = %q, want %q", rowSet.PKey, testKey)
 	}
 
-	if rowSet.PTable != "items" {
-		t.Errorf("PTable = %q, want %q", rowSet.PTable, "items")
+	if rowSet.PTable != testTable {
+		t.Errorf("PTable = %q, want %q", rowSet.PTable, testTable)
 	}
 }
 
@@ -133,12 +138,12 @@ func TestSQLTransaction_PKey_StarSelect(t *testing.T) {
 		t.Fatalf("expected 200, got %d", status)
 	}
 
-	if rowSet.PKey != "id" {
-		t.Errorf("PKey = %q, want %q", rowSet.PKey, "id")
+	if rowSet.PKey != testKey {
+		t.Errorf("PKey = %q, want %q", rowSet.PKey, testKey)
 	}
 
-	if rowSet.PTable != "items" {
-		t.Errorf("PTable = %q, want %q", rowSet.PTable, "items")
+	if rowSet.PTable != testTable {
+		t.Errorf("PTable = %q, want %q", rowSet.PTable, testTable)
 	}
 }
 
@@ -185,8 +190,8 @@ func TestSQLTransaction_PKey_PrefersPrimaryKeyOverUnique(t *testing.T) {
 		t.Fatalf("expected 200, got %d", status)
 	}
 
-	if rowSet.PKey != "id" {
-		t.Errorf("PKey = %q, want %q", rowSet.PKey, "id")
+	if rowSet.PKey != testKey {
+		t.Errorf("PKey = %q, want %q", rowSet.PKey, testKey)
 	}
 }
 
@@ -290,8 +295,8 @@ func TestSQLTransaction_PKey_AliasedColumnNotReported(t *testing.T) {
 		t.Errorf("PKey = %q, want empty", rowSet.PKey)
 	}
 
-	if rowSet.PTable != "items" {
-		t.Errorf("PTable = %q, want %q", rowSet.PTable, "items")
+	if rowSet.PTable != testTable {
+		t.Errorf("PTable = %q, want %q", rowSet.PTable, testTable)
 	}
 }
 

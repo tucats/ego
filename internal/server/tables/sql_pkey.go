@@ -245,6 +245,8 @@ func postgresSingleColumnUniqueKeys(session *router.Session, db *database.Databa
 		schema = db.User
 	}
 
+	_ = session.ID
+
 	rows, err := db.Query(singleColumnUniqueKeysQuery, schema, ref.Name)
 	if err != nil {
 		return "", nil, err

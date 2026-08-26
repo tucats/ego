@@ -18,7 +18,10 @@ import (
 	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
-type userIOService interface {
+// Define an IO service. Not this has >10 methods, which lint can get
+// crabby about, under the aegis of "interface bloat". So the ccomment
+// below is to remind the linter to mind it's own business on this one.
+type userIOService interface { //nolint:interfacebloat
 	ReadUser(session int, name string, doNotLog bool) (defs.User, error)
 	WriteUser(session int, user defs.User) error
 	DeleteUser(session int, name string) error
