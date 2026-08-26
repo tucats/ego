@@ -110,7 +110,7 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 	}
 
 	// Now execute each statement from the array of strings.
-	err, cacheFlush, httpStatus = executeStatements(statements, sessionID, db, w, rows, err)
+	err, cacheFlush, httpStatus = executeStatements(statements, kinds, sessionID, db, w, rows, err)
 	if httpStatus > http.StatusOK {
 		_ = db.Rollback()
 
@@ -149,17 +149,24 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 // executeStatements executes each of the SQL statements in the provided array and returns the first error encountered. Note that if the array contains
 // a SELECT statement, it must be the last item in the array since there's no way to retain the result set otherwise. If there is a select statement,
 // the response payload is the result set from the SELECT statement. Otherwise, the response payload is the row count from the operations.
-func executeStatements(statements []string, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, bool, int) {
+//
+// kinds is the parsed StatementKind for each entry in statements, from authorizeAndFormatStatements
+// (sql_permissions.go) -- SQLTransaction has already paid the cost of parsing every statement there,
+// so reusing that result here to decide cacheFlush is free. kinds[n] is sqlparse.StmtUnknown for a
+// statement that failed to parse (only possible for an admin caller); isSchemaAlteringKind's default
+// case treats that the same as any other non-DDL kind, matching the pre-existing (and still correct)
+// assumption that a caller cannot alter schema with SQL not even Ego's own parser recognizes.
+func executeStatements(statements []string, kinds []sqlparse.StatementKind, sessionID int, db *database.Database, w http.ResponseWriter, rows sql.Result, err error) (error, bool, int) {
 	startTime := time.Now()
 	rowsAffected := 0
 	cacheFlush := false
 
 	for n, statement := range statements {
-		// Is this an ALTER TABLE or DROP TABLE statement? If so, set the flag saying we are a
-		// candidate for flushing the table schema cache (we might be changing or removing a
-		// table that has cached metadata, so make sure no one gets stale info -- or a future
-		// CREATE TABLE reusing the same name inherits stale info -- if the change succeeds).
-		if parsing.IsSchemaAlteringStatement(statement) {
+		// Is this a statement that can change a table's column layout,
+		// primary/unique-key structure, or its very existence? If so, set
+		// the flag saying we are a candidate for flushing the table schema
+		// cache (see isSchemaAlteringKind's doc comment in sql_permissions.go).
+		if isSchemaAlteringKind(kinds[n]) {
 			cacheFlush = true
 		}
 

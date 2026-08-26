@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/tables/database"
@@ -168,20 +169,70 @@ func choosePrimaryKey(candidates []string, driverColumns []string, pk string, un
 	return ""
 }
 
+// uniqueKeyInfo is the cached shape of singleColumnUniqueKeys' result --
+// see that function's own doc comment for what PK/Unique mean. Both fields
+// are read-only once cached (see choosePrimaryKey, the sole reader of
+// Unique): every candidate lookup only ever indexes into the map, never
+// mutates it, so the same cached map instance is safe to hand back on every
+// hit rather than copying it per call.
+type uniqueKeyInfo struct {
+	PK     string
+	Unique map[string]bool
+}
+
+// uniqueKeysCacheKey builds singleColumnUniqueKeys' cache key for ref's
+// table against db, following the same "identity/dsn/table" shape
+// getColumnInfo (tables.go) already uses for its own caches.SchemaCache
+// entries -- db.User leads the key (the DSN's resolved schema for
+// PostgreSQL, since database.Open -- not the caller's Ego identity; see
+// that function's doc comment), so entries naturally separate by schema
+// even when ref itself did not write one. The "pkey:" prefix keeps this
+// disjoint from getColumnInfo's own keys sharing the same cache class.
+func uniqueKeysCacheKey(db *database.Database, ref *ast.TableRef) string {
+	dsn := db.DSN
+	if dsn == "" {
+		dsn = "-"
+	}
+
+	return "pkey:" + db.User + "/" + dsn + "/" + tableRefFullName(ref)
+}
+
 // singleColumnUniqueKeys reports ref's table's single-column primary key
 // column name (pk, lower-cased; "" if the table has no primary key or its
 // primary key spans more than one column) and the set of columns (also
 // lower-cased) individually covered by a single-column UNIQUE index or
 // constraint -- which always includes pk, when pk is set.
+//
+// The result is cached in caches.SchemaCache, keyed by uniqueKeysCacheKey,
+// since it costs a real database round-trip per call otherwise (one
+// system-catalog query for PostgreSQL, or a PRAGMA sequence for SQLite) --
+// and analyzeSingleTableSelect runs this for every single-table @sql SELECT.
+// A statement that can invalidate the answer (CREATE/ALTER/DROP TABLE,
+// CREATE/DROP INDEX) purges the whole cache class on commit; see
+// isSchemaAlteringKind in sql_permissions.go and its callers.
 func singleColumnUniqueKeys(session *router.Session, db *database.Database, ref *ast.TableRef) (pk string, unique map[string]bool, err error) {
+	cacheKey := uniqueKeysCacheKey(db, ref)
+
+	if cached, ok := caches.Find(caches.SchemaCache, cacheKey); ok {
+		if info, ok := cached.(uniqueKeyInfo); ok {
+			return info.PK, info.Unique, nil
+		}
+	}
+
 	switch db.Provider {
 	case defs.PostgresProvider:
-		return postgresSingleColumnUniqueKeys(session, db, ref)
+		pk, unique, err = postgresSingleColumnUniqueKeys(session, db, ref)
 	case defs.SqliteProvider:
-		return sqliteSingleColumnUniqueKeys(db, ref)
+		pk, unique, err = sqliteSingleColumnUniqueKeys(db, ref)
 	default:
 		return "", map[string]bool{}, nil
 	}
+
+	if err == nil {
+		caches.Add(caches.SchemaCache, cacheKey, uniqueKeyInfo{PK: pk, Unique: unique})
+	}
+
+	return pk, unique, err
 }
 
 // postgresSingleColumnUniqueKeys implements singleColumnUniqueKeys for a

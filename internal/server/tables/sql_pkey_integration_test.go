@@ -10,6 +10,7 @@ package tables
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,9 +18,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/tucats/ego/internal/caches"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/router"
+	"github.com/tucats/ego/internal/server/tables/database"
+	"github.com/tucats/ego/internal/sqlparse/ast"
 
 	_ "modernc.org/sqlite"
 )
@@ -288,5 +292,131 @@ func TestSQLTransaction_PKey_AliasedColumnNotReported(t *testing.T) {
 
 	if rowSet.PTable != "items" {
 		t.Errorf("PTable = %q, want %q", rowSet.PTable, "items")
+	}
+}
+
+// TestSQLTransaction_PKey_CacheInvalidatedByIndexChange is a regression test
+// for singleColumnUniqueKeys' caches.SchemaCache entry (sql_pkey.go) going
+// stale after CREATE UNIQUE INDEX in a later, separate @sql request.
+//
+// Before isSchemaAlteringKind (sql_permissions.go) replaced the old
+// parsing.IsSchemaAlteringStatement text-prefix check, a CREATE INDEX/DROP
+// INDEX statement never set cacheFlush, so caches.SchemaCache was never
+// purged after one -- meaning a cached "no unique column" answer from
+// before the index existed would have kept being served after it was
+// created. This creates a table with no unique column, runs a SELECT (which
+// caches that answer), adds a unique index in a separate request, and
+// confirms a repeat of the same SELECT reports the new index rather than
+// the stale cached answer.
+func TestSQLTransaction_PKey_CacheInvalidatedByIndexChange(t *testing.T) {
+	// The schema cache is a package-level global shared by every test in
+	// this file; start from a clean slate regardless of what ran before.
+	caches.Purge(caches.SchemaCache)
+
+	post := setUpSQLPkeyTest(t)
+
+	status, rowSet := post([]string{
+		`CREATE TABLE pkey_cache_probe (id INTEGER, label TEXT)`,
+		`INSERT INTO pkey_cache_probe (id, label) VALUES (1, 'a')`,
+		`SELECT id, label FROM pkey_cache_probe`,
+	})
+
+	if status != http.StatusOK {
+		t.Fatalf("expected 200, got %d", status)
+	}
+
+	if rowSet.PKey != "" {
+		t.Fatalf("PKey = %q before any unique index exists, want empty", rowSet.PKey)
+	}
+
+	status, _ = post([]string{
+		`CREATE UNIQUE INDEX idx_pkey_cache_probe_label ON pkey_cache_probe (label)`,
+	})
+
+	if status != http.StatusOK {
+		t.Fatalf("expected 200 from CREATE UNIQUE INDEX, got %d", status)
+	}
+
+	status, rowSet = post([]string{
+		`SELECT id, label FROM pkey_cache_probe`,
+	})
+
+	if status != http.StatusOK {
+		t.Fatalf("expected 200, got %d", status)
+	}
+
+	if rowSet.PKey != "label" {
+		t.Errorf("PKey = %q after CREATE UNIQUE INDEX, want %q (cache was not invalidated)", rowSet.PKey, "label")
+	}
+}
+
+// TestSingleColumnUniqueKeys_ServesFromCache proves singleColumnUniqueKeys
+// (sql_pkey.go) actually short-circuits the database round-trip on a repeat
+// call, rather than merely never returning a wrong answer (which
+// TestSQLTransaction_PKey_CacheInvalidatedByIndexChange above already
+// covers, but would pass even with no caching at all).
+//
+// It drops the unique index directly against the database handle -- not
+// through any Ego DDL path, so none of Ego's own cache-purge machinery ever
+// runs -- and confirms a second singleColumnUniqueKeys call still reports
+// the first call's (now stale) answer. Only caches.Purge, called explicitly
+// at the end, makes the fresh answer visible.
+func TestSingleColumnUniqueKeys_ServesFromCache(t *testing.T) {
+	caches.Purge(caches.SchemaCache)
+
+	dbname := "testing-pkey-cache-hit-" + uuid.New().String() + ".db"
+
+	handle, err := sql.Open("sqlite", dbname)
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = handle.Close()
+		_ = os.Remove(dbname)
+	})
+
+	if _, err := handle.Exec(`CREATE TABLE probe (id INTEGER, label TEXT)`); err != nil {
+		t.Fatalf("create table: %v", err)
+	}
+
+	if _, err := handle.Exec(`CREATE UNIQUE INDEX idx_probe_label ON probe (label)`); err != nil {
+		t.Fatalf("create index: %v", err)
+	}
+
+	db := &database.Database{Handle: handle, Provider: defs.SqliteProvider, User: "admin", DSN: "cache-hit-test-dsn"}
+	ref := &ast.TableRef{Name: "probe"}
+
+	_, unique, err := singleColumnUniqueKeys(nil, db, ref)
+	if err != nil {
+		t.Fatalf("singleColumnUniqueKeys: %v", err)
+	}
+
+	if !unique["label"] {
+		t.Fatalf("expected label to be reported unique before the drop, got %v", unique)
+	}
+
+	if _, err := handle.Exec(`DROP INDEX idx_probe_label`); err != nil {
+		t.Fatalf("drop index: %v", err)
+	}
+
+	_, unique, err = singleColumnUniqueKeys(nil, db, ref)
+	if err != nil {
+		t.Fatalf("singleColumnUniqueKeys (should be served from cache): %v", err)
+	}
+
+	if !unique["label"] {
+		t.Errorf("cache was not used: expected the stale pre-drop answer (label still unique), got %v", unique)
+	}
+
+	caches.Purge(caches.SchemaCache)
+
+	_, unique, err = singleColumnUniqueKeys(nil, db, ref)
+	if err != nil {
+		t.Fatalf("singleColumnUniqueKeys (after purge): %v", err)
+	}
+
+	if unique["label"] {
+		t.Errorf("expected label to no longer be reported unique after the cache was purged, got %v", unique)
 	}
 }

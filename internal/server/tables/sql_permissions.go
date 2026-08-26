@@ -162,6 +162,29 @@ func authorizeAndFormatStatements(session *router.Session, db *database.Database
 	return formatted, kinds, http.StatusOK
 }
 
+// isSchemaAlteringKind reports whether kind is a DDL statement that can
+// invalidate cached table schema metadata (internal/caches, caches.SchemaCache)
+// -- CREATE/ALTER/DROP TABLE, CREATE/DROP INDEX, or CREATE/DROP VIEW. Mirrors
+// scripting/authz.go's function of the same name (see that copy's doc
+// comment for why it is a local copy rather than exported and imported: the
+// two packages cannot import each other without a cycle, tables already
+// importing scripting to register the @transaction route). Replaces this
+// file's own former use of parsing.IsSchemaAlteringStatement, a text-prefix
+// heuristic that only ever recognized ALTER TABLE and DROP TABLE -- it
+// missed CREATE INDEX/DROP INDEX (and CREATE/DROP VIEW) entirely, which
+// matters now that the schema cache also holds sql_pkey.go's unique-index
+// lookups.
+func isSchemaAlteringKind(kind sqlparse.StatementKind) bool {
+	switch kind {
+	case sqlparse.StmtCreateTable, sqlparse.StmtDropTable, sqlparse.StmtAlterTable,
+		sqlparse.StmtCreateIndex, sqlparse.StmtDropIndex,
+		sqlparse.StmtCreateView, sqlparse.StmtDropView:
+		return true
+	default:
+		return false
+	}
+}
+
 // writePermissionForKind reports which specific ego.table.* permission a
 // sqlparse.UsageWrite table reference actually requires, given the kind of
 // the statement it came from.
