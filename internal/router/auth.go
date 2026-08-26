@@ -161,6 +161,7 @@ func (s *Session) Authenticate(r *http.Request) *Session {
 			s.Token = token
 			s.Authenticated = isAuthenticated
 			s.Admin = isAuthenticated && isRoot
+			s.Federated = isAuthenticated
 			s.Expiration = expiration
 
 			return s

@@ -117,6 +117,23 @@ type Session struct {
 	// with the user who started this session.
 	Permissions []string
 
+	// True only for a session authenticated via a federated OAuth2/JWT
+	// bearer token (see the JWT branch of Session.Authenticate in auth.go).
+	// A federated identity has no local user record and so can never have
+	// a table_perms row of its own -- Permissions is populated directly
+	// from the JWT's resolved OAuth scopes instead, and this flag is what
+	// tells tables.Authorized() it's looking at that case, so it can
+	// authorize table access from Permissions directly rather than
+	// consulting table_perms (which would find no row and always refuse).
+	//
+	// This must NOT be inferred from len(Permissions) > 0: serve.go
+	// populates Permissions from the identity's own permission cache for
+	// every authenticated session by the time a handler runs, native or
+	// federated, so that condition alone cannot distinguish the two. Only
+	// the isolated JWT code path sets this field; it is false (the zero
+	// value) for every other kind of session.
+	Federated bool
+
 	// True if the user was successfully authenticated
 	Authenticated bool
 

@@ -1,5 +1,5 @@
 {
-    "description": "create a non-secured test DSN on the primary server for JWT permission tests",
+    "description": "create a restricted test DSN on the primary server for JWT permission tests -- restricted is required for Authorized() (security.go) to actually consult table_perms/session.Permissions at all; an unrestricted DSN trivially allows every operation regardless of scope (see its own 'nothing to do' early return), which is exactly the gap that let perm-02/04/05/08 below wrongly succeed before this was set",
     "request": {
         "method": "POST",
         "endpoint": "/dsns",
@@ -12,7 +12,8 @@
             "name": "oauth-{{OAUTHDSNUUID}}",
             "provider": "sqlite",
             "database": "{{ROOT}}/oauth-db-{{OAUTHDSNUUID}}.db",
-            "rowid": true
+            "rowid": true,
+            "restricted": true
         }
     },
     "response": {

@@ -75,13 +75,37 @@ func mapClaimsToPermissions(claims *jwtClaims, permissionClaim string, permissio
 	// Map tokens to Ego permissions, deduplicating as we go.
 	seen := make(map[string]bool)
 
+	add := func(perm string) {
+		lower := strings.ToLower(perm)
+		if !seen[lower] {
+			seen[lower] = true
+
+			permissions = append(permissions, lower)
+		}
+	}
+
 	for _, tok := range tokens {
 		if perm, ok := table[tok]; ok {
-			lower := strings.ToLower(perm)
-			if !seen[lower] {
-				seen[lower] = true
+			add(perm)
 
-				permissions = append(permissions, lower)
+			// A resolved table-level read/write permission also implies
+			// the matching DSN-level identity permission, so a JWT session
+			// can open a Restricted DSN's connection at all --
+			// database.Open's own DSN-level gate (dsns.IdentityAuthorizesAction)
+			// has never consulted table-level permission names, by design
+			// (DATA-SECURITY.md keeps DSN-level and table-level grants as
+			// genuinely separate tiers of its permission hierarchy; see
+			// tables.Authorized's session.Federated check in security.go
+			// for the table-level half of this same JWT-session story).
+			// Without this, a token scoped only to table-level read/write
+			// would resolve to a permission Authorized() recognizes but
+			// never even reach it, rejected earlier by Open for lacking
+			// any DSN-level standing at all.
+			switch strings.ToLower(perm) {
+			case defs.TableReadPermission:
+				add(defs.DSNReadPermission)
+			case defs.TableWritePermission:
+				add(defs.DSNWritePermission)
 			}
 		}
 	}

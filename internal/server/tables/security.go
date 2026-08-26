@@ -766,6 +766,29 @@ func Authorized(session *router.Session, user string, table string, operations .
 		return true
 	}
 
+	// A federated (OAuth2/JWT) session has no local user record and so can
+	// never have a table_perms row of its own -- there is no admin-facing
+	// workflow to create one for it. Its Permissions list, resolved from
+	// the JWT's OAuth scopes (oauth.mapClaimsToPermissions), IS its
+	// authorization for this case, so check it directly instead of falling
+	// through to the table_perms lookup below, which would find no row and
+	// always refuse.
+	//
+	// This is deliberately gated on session.Federated -- set only by the
+	// isolated JWT branch of Session.Authenticate (router/auth.go) -- and
+	// not on len(session.Permissions) > 0. That broader condition cannot
+	// tell this case apart from an ordinary native session: router/serve.go
+	// populates Permissions from the identity's own permission cache for
+	// every authenticated session by the time a handler runs, native or
+	// federated. Checking that generic condition here previously let a
+	// native user's identity-wide ego.table.* grant bypass table_perms
+	// entirely, which the DATA-SECURITY-2.md finding #5 regression suite
+	// (the scope-*/perm-* tests in this package) exists specifically to
+	// catch.
+	if session.Federated {
+		return session.HasAllPermissions(operations...)
+	}
+
 	// If we the permissions subsystem is not initialized, then allow any operation.
 	if !initPermissions() {
 		return true

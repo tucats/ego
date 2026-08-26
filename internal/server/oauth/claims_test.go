@@ -61,7 +61,13 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "openid ego:write",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"ego.logon", "ego.table.write"},
+			// ego.dsn.write is implied alongside ego.table.write: without
+			// it, a JWT scoped only to table-level write has no DSN-level
+			// standing at all, and database.Open's own gate (which knows
+			// nothing about table-level permission names) rejects it
+			// before Authorized()'s table-level check ever runs. See
+			// mapClaimsToPermissions' own doc comment.
+			expected: []string{"ego.logon", "ego.table.write", "ego.dsn.write"},
 		},
 		{
 			name:            "ego:code grants code_run",
@@ -75,7 +81,10 @@ func TestMapClaimsToPermissions(t *testing.T) {
 			scope:           "openid ego:read ego:write ego:admin ego:code",
 			permissionClaim: "scope",
 			permissionMap:   nil,
-			expected:        []string{"ego.logon", "ego.table.read", "ego.table.write", "ego.root", "ego.code"},
+			// ego.dsn.read/ego.dsn.write are implied right after the
+			// table-level permission that triggers each -- see the
+			// "ego:write grants tables" case above.
+			expected: []string{"ego.logon", "ego.table.read", "ego.dsn.read", "ego.table.write", "ego.dsn.write", "ego.root", "ego.code"},
 		},
 		{
 			name:            "unknown scope falls back to logon",
