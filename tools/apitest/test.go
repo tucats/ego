@@ -59,7 +59,10 @@ func run(test *defs.Test) (time.Duration, error) {
 
 	err = tester.ExecuteTest(test)
 	if err != nil {
-		return 0, fmt.Errorf("executing test: %v", err)
+		err = fmt.Errorf("executing test: %v", err)
+		collector.Record(test.Duration, err)
+
+		return 0, err
 	}
 
 	// Save any results from the test back in the dictionary.
@@ -68,6 +71,8 @@ func run(test *defs.Test) (time.Duration, error) {
 	if err != nil {
 		err = fmt.Errorf("updating dictionary: %v", err)
 	}
+
+	collector.Record(test.Duration, err)
 
 	return test.Duration, err
 }

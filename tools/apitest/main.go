@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/tucats/apitest/dictionary"
 	"github.com/tucats/apitest/formats"
 	"github.com/tucats/apitest/logging"
+	"github.com/tucats/apitest/stats"
 	"github.com/tucats/apitest/tester"
 	"github.com/tucats/validator"
 )
@@ -23,10 +25,22 @@ var testsExecuted = 0
 var validate *validator.Item
 var quiet = false
 
+// parallelStreams, loopDuration and loopIterations are set from the
+// --parallel/--duration/--iterations flags to drive load-exerciser mode.
+// collector is non-nil only when running in load mode (loopDuration > 0 or
+// loopIterations > 0); every method on it tolerates a nil receiver, so code
+// paths that aren't load-aware can call it unconditionally.
+var (
+	parallelStreams = 1
+	loopDuration    time.Duration
+	loopIterations  int
+	statsOutPath    string
+	collector       *stats.Collector
+)
+
 func main() {
 	var (
 		err            error
-		rootPath       string
 		pathList       []string
 		dictionaryList []string
 	)
@@ -89,6 +103,50 @@ func main() {
 		case "-r", "--rest":
 			logging.Rest = true
 
+		case "--parallel":
+			if i+1 >= len(os.Args) {
+				exit("missing argument for --parallel")
+			}
+
+			parallelStreams, err = strconv.Atoi(os.Args[i+1])
+			if err != nil || parallelStreams < 1 {
+				exit("invalid stream count for --parallel: " + os.Args[i+1])
+			}
+
+			i++
+
+		case "--duration":
+			if i+1 >= len(os.Args) {
+				exit("missing argument for --duration")
+			}
+
+			loopDuration, err = time.ParseDuration(os.Args[i+1])
+			if err != nil {
+				exit("invalid duration for --duration: " + os.Args[i+1])
+			}
+
+			i++
+
+		case "--iterations":
+			if i+1 >= len(os.Args) {
+				exit("missing argument for --iterations")
+			}
+
+			loopIterations, err = strconv.Atoi(os.Args[i+1])
+			if err != nil || loopIterations < 1 {
+				exit("invalid count for --iterations: " + os.Args[i+1])
+			}
+
+			i++
+
+		case "--stats-out":
+			if i+1 >= len(os.Args) {
+				exit("missing argument for --stats-out")
+			}
+
+			statsOutPath = os.Args[i+1]
+			i++
+
 		case "-d", "--dictionary", "--dict":
 			if i+1 >= len(os.Args) {
 				exit("missing argument for --dictionary")
@@ -135,19 +193,67 @@ func main() {
 		}
 	}
 
+	// --parallel hands off entirely to the orchestrator, which re-execs this
+	// same binary N times as independent child processes and merges their
+	// results; it never returns.
+	if parallelStreams > 1 {
+		os.Exit(runParallel(parallelStreams))
+	}
+
+	// --duration/--iterations puts this stream into load-exerciser mode:
+	// repeat the whole suite pass until the budget is exhausted, recording
+	// every test's outcome into a stats.Collector instead of printing a
+	// PASS/FAIL line per test.
+	if loopDuration > 0 || loopIterations > 0 {
+		collector = stats.New(streamIndex())
+
+		runLoop(pathList)
+
+		if statsOutPath != "" {
+			if werr := collector.WriteFile(statsOutPath); werr != nil {
+				exit("writing stats file: " + werr.Error())
+			}
+		} else {
+			fmt.Print(collector.Finish().Report())
+		}
+
+		return
+	}
+
 	// For all paths provided, run the tests.
+	err = runAllPaths(pathList)
+	if err != nil {
+		if isAbortErr(err) {
+			fmt.Printf("Server testing unavailable, %v\n", err)
+		} else {
+			fmt.Printf("Error running tests: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	duration := time.Since(now)
+	fmt.Printf("TEST: Completed %d tests in %v\n", testsExecuted, strings.TrimSpace(formats.Duration(duration, true)))
+}
+
+// runAllPaths runs every path in pathList once, in order, stopping at the
+// first error -- this is the tool's original single-pass behavior, factored
+// out so both the default (single-pass) mode and runLoop's repeated passes
+// share it.
+func runAllPaths(pathList []string) error {
+	var err error
+
 	for _, path := range pathList {
-		rootPath, err = filepath.Abs(filepath.Clean(path))
-		if err != nil {
-			exit("bad test suite path: " + err.Error())
+		rootPath, absErr := filepath.Abs(filepath.Clean(path))
+		if absErr != nil {
+			exit("bad test suite path: " + absErr.Error())
 		}
 
 		dictionary.Dictionary["ROOT"] = rootPath
 
-		// if the path isn't a dictionary, just run the single test named.
-		info, err := os.Stat(rootPath)
-		if err != nil {
-			exit("bad test suite path: " + err.Error())
+		// if the path isn't a directory, just run the single test named.
+		info, statErr := os.Stat(rootPath)
+		if statErr != nil {
+			exit("bad test suite path: " + statErr.Error())
 		}
 
 		if !info.IsDir() {
@@ -158,23 +264,60 @@ func main() {
 		}
 
 		if err != nil {
-			if strings.Contains(err.Error(), defs.AbortError) || err.Error() == defs.ErrAbort.Error() {
-				fmt.Printf("Server testing unavailable, %v\n", err)
-
-				err = nil
-			}
-
 			break
 		}
 	}
 
-	if err != nil {
-		fmt.Printf("Error running tests: %v\n", err)
-		os.Exit(1)
+	return err
+}
+
+// runLoop repeats runAllPaths until the --duration or --iterations budget
+// is exhausted. A genuine abort condition (connection refused / deadline
+// exceeded) stops the loop early -- there's no point hammering a target
+// that's unreachable for the rest of the budget -- but an ordinary
+// assertion failure inside one iteration does not; it's recorded in the
+// collector and the loop moves on to the next iteration.
+func runLoop(pathList []string) {
+	var deadline time.Time
+
+	if loopDuration > 0 {
+		deadline = time.Now().Add(loopDuration)
 	}
 
-	duration := time.Since(now)
-	fmt.Printf("TEST: Completed %d tests in %v\n", testsExecuted, strings.TrimSpace(formats.Duration(duration, true)))
+	count := 0
+
+	for {
+		if loopIterations > 0 && count >= loopIterations {
+			return
+		}
+
+		if !deadline.IsZero() && time.Now().After(deadline) {
+			return
+		}
+
+		err := runAllPaths(pathList)
+
+		collector.IterationDone()
+		count++
+
+		if isAbortErr(err) {
+			fmt.Printf("Server testing unavailable, %v\n", err)
+
+			return
+		}
+	}
+}
+
+// streamIndex reports this process's STREAM dictionary value (set by the
+// --parallel orchestrator via "-x STREAM=<i>"), or 0 when running standalone.
+func streamIndex() int {
+	if v, ok := dictionary.Dictionary["STREAM"]; ok {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+
+	return 0
 }
 
 func exit(msg string) {
@@ -192,10 +335,12 @@ func runSingleTest(file string) error {
 		pad = "  "
 	}
 
-	if err != nil {
-		fmt.Printf("%sFAIL       %-40s: %v\n", pad, file, err)
-	} else if !quiet {
-		fmt.Printf("%sPASS       %-40s %v\n", pad, file, formats.Duration(duration, true))
+	if collector == nil || logging.Verbose {
+		if err != nil {
+			fmt.Printf("%sFAIL       %-40s: %v\n", pad, file, err)
+		} else if !quiet {
+			fmt.Printf("%sPASS       %-40s %v\n", pad, file, formats.Duration(duration, true))
+		}
 	}
 
 	testsExecuted++
@@ -326,10 +471,12 @@ func runTests(path string) error {
 			pad = "  "
 		}
 
-		if err != nil {
-			fmt.Printf("%sFAIL       %-60s: %v\n", pad, file, err)
-		} else if !quiet {
-			fmt.Printf("%sPASS       %-60s %v\n", pad, file, formats.Duration(duration, true))
+		if collector == nil || logging.Verbose {
+			if err != nil {
+				fmt.Printf("%sFAIL       %-60s: %v\n", pad, file, err)
+			} else if !quiet {
+				fmt.Printf("%sPASS       %-60s %v\n", pad, file, formats.Duration(duration, true))
+			}
 		}
 
 		testsExecuted++

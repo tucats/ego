@@ -37,6 +37,41 @@ The command line accepts the following options:
 | --help, -h | | display help for the command |
 | --rest, -r | | If present, display the REST request and response payloads |
 | --verbose, -v | | If present, does more Verbose logging of progress |
+| --parallel | n | Run n copies of the test suite concurrently as independent processes (see "Load mode" below) |
+| --duration | duration | Repeat the test suite for this long instead of running it once (e.g. `30s`, `5m`) |
+| --iterations | n | Repeat the test suite this many times instead of running it once |
+
+## Load mode
+
+`apitest` can also be used as a load exerciser against the same test suites used for
+correctness testing, by adding `--duration` or `--iterations` (to repeat the suite
+instead of running it once) and, optionally, `--parallel <n>` (to run several copies
+concurrently). For example, to hammer a suite with 8 concurrent streams for 2 minutes:
+
+```sh
+apitest --parallel 8 --duration 2m tests/
+```
+
+When either `--duration` or `--iterations` is given, per-test PASS/FAIL lines are
+suppressed (pass `--verbose` to still see them) and a `LOAD SUMMARY` is printed instead,
+showing total requests, throughput, error rate, and latency percentiles. With
+`--parallel`, this summary is the aggregate across all streams.
+
+`--parallel` runs each stream as an independent OS process rather than as goroutines
+in one process, so each stream gets its own dictionary and its own `{{$seq}}` counter
+for free — there's no shared mutable state between streams to worry about. Each stream
+process is given a `STREAM` dictionary value (`0` through `n-1`), available to test
+files as `{{STREAM}}`.
+
+This does mean `{{$seq}}` **alone is not unique across streams** — every stream's
+counter starts at zero independently. Any test that needs to generate a collision-free
+identifier (a DSN name, a username, a table name, ...) when run under `--parallel` must
+combine both, e.g. `"testdb_{{STREAM}}_{{$seq}}"`.
+
+Also keep in mind that a long-running or high-iteration load run will keep creating
+whatever resources the suite creates (DSNs, users, tables, ...) unless the suite cleans
+up after itself each pass — design load-test suites to be self-cleaning (or to reuse a
+small, bounded set of names) rather than assuming a single run's worth of garbage.
 
 Note that you can specify an individual file instead of a directory if you wish
 to run only a single test. This won't look for default dictionary.json files so
