@@ -203,6 +203,25 @@ func runSingleTest(file string) error {
 	return err
 }
 
+// isAbortErr reports whether err represents a condition that should stop the
+// whole run immediately -- the server refused the connection, or a request
+// timed out waiting for one that was never coming (deadline exceeded) -- as
+// opposed to an ordinary test assertion failure, which must be recorded and
+// reported but must not prevent any other test, file, or directory from
+// still being attempted. runTests' directory-recursion loop and its own file
+// loop both need this same distinction.
+func isAbortErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if errors.Is(err, defs.ErrAbort) {
+		return true
+	}
+
+	return strings.Contains(err.Error(), defs.AbortError) || strings.Contains(err.Error(), "deadline exceeded")
+}
+
 func runTests(path string) error {
 	var (
 		duration time.Duration
@@ -237,10 +256,24 @@ func runTests(path string) error {
 		if file.IsDir() {
 			subdir := filepath.Join(path, file.Name())
 
-			// Recursively run the tests in the subdirectory.
-			err = runTests(subdir)
-			if err != nil {
-				return err
+			// Recursively run the tests in the subdirectory. A genuine
+			// abort (connection refused / deadline exceeded) propagates
+			// immediately, stopping the whole run early, same as it
+			// always has. An ordinary test failure inside subdir must
+			// NOT do the same -- before this fix, any single failing
+			// test anywhere silently skipped every sibling directory (and
+			// file) that would have sorted after it, with no indication
+			// anything was skipped at all. It's recorded in lastErr
+			// instead, so the run's final exit status still reflects it,
+			// while every other directory still gets a chance to run and
+			// report its own results.
+			subErr := runTests(subdir)
+			if isAbortErr(subErr) {
+				return subErr
+			}
+
+			if subErr != nil && lastErr == nil {
+				lastErr = subErr
 			}
 
 			continue
@@ -275,17 +308,7 @@ func runTests(path string) error {
 		name := filepath.Join(path, file)
 
 		duration, err = TestFile(name)
-		if err != nil && strings.Contains(err.Error(), defs.AbortError) {
-			if lastErr == nil {
-				lastErr = defs.ErrAbort
-			}
-
-			break
-		}
-
-		// Also handle deadline exceeded, which means nobody was really listening.
-		// Sometimes, nginx wiht no configured service will just timeout...
-		if err != nil && strings.Contains(err.Error(), "deadline exceeded") {
+		if isAbortErr(err) {
 			if lastErr == nil {
 				lastErr = defs.ErrAbort
 			}

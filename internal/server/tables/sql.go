@@ -104,6 +104,30 @@ func SQLTransaction(session *router.Session, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	// PostgreSQL requires a schema to exist before the first table is created
+	// in it. The structured /tables/{name} endpoint (TableCreate, tables.go)
+	// already handles this via createSchemaIfNeeded, but @sql's raw CREATE
+	// TABLE text bypassed it entirely -- a CREATE TABLE that was the very
+	// first operation against a DSN's schema failed with a 500 ("schema ...
+	// does not exist"), reproducible only against a genuinely fresh
+	// PostgreSQL database that no structured table-create call had already
+	// (as a side effect) created the schema for. Only db.User's own
+	// configured default schema is ensured here, matching the common
+	// unqualified-table-name case; a CREATE TABLE explicitly qualified with
+	// some other schema name is unaffected either way, the same as before
+	// this fix.
+	if db.Provider == defs.PostgresProvider {
+		for _, kind := range kinds {
+			if kind == sqlparse.StmtCreateTable {
+				if ok, status := createSchemaIfNeeded(w, sessionID, db, db.User, ""); !ok {
+					return status
+				}
+
+				break
+			}
+		}
+	}
+
 	err = db.Begin()
 	if err != nil {
 		return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusInternalServerError)

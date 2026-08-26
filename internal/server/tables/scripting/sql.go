@@ -77,6 +77,16 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 		isSelect = strings.HasPrefix(strings.TrimSpace(strings.ToLower(q)), "select ")
 	}
 
+	// PostgreSQL requires a schema to exist before the first table is
+	// created in it -- see EnsureSchemaFunc's doc comment in authz.go for
+	// why raw SQL text needs this explicit step the structured "create"
+	// opcode does not.
+	if kind == sqlparse.StmtCreateTable && EnsureSchemaFunc != nil {
+		if err := EnsureSchemaFunc(db); err != nil {
+			return count, http.StatusInternalServerError, cacheFlush, errors.New(err)
+		}
+	}
+
 	if isSelect {
 		count, status, err = readTxRowResultSet(db, q, sessionID, syms, task.EmptyError)
 

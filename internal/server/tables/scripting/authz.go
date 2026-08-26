@@ -46,6 +46,17 @@ var AuthorizedFunc func(session *router.Session, user string, table string, oper
 // if that combination turns out to matter.
 var UniqueKeyLookupFunc func(db *database.Database) sqlparse.UniqueKeyLookup
 
+// EnsureSchemaFunc mirrors tables' own ensureSchemaExists helper (tables.go),
+// injected the same way AuthorizedFunc is. doSQL (sql.go in this package)
+// uses it before running a CREATE TABLE statement through the "sql" opcode:
+// PostgreSQL requires a schema to exist before the first table is created in
+// it, which the structured "create" opcode already handles by construction,
+// but raw SQL text bypassed entirely -- a CREATE TABLE that was the very
+// first operation against a DSN's schema failed with a database error rather
+// than a clean one. The injected implementation itself checks db.Provider
+// and only acts for a PostgreSQL DSN, so callers don't need to.
+var EnsureSchemaFunc func(db *database.Database) error
+
 // hasPermission mirrors tables/sql_permissions.go's function of the same
 // name: true for the server administrator, then identity-wide permissions
 // (preferring the session's already-resolved list, falling back to a

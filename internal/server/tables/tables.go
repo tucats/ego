@@ -244,6 +244,25 @@ func getColumnPayload(r *http.Request, w http.ResponseWriter, session *router.Se
 	return columns, 0
 }
 
+// ensureSchemaExists is createSchemaIfNeeded's PostgreSQL-only "CREATE SCHEMA
+// IF NOT EXISTS <schema>" step, without the http.ResponseWriter dependency --
+// for a caller like scripting's "sql" opcode (doSQL, sql.go in that package)
+// that reports failure through a returned error instead of writing a
+// response directly, and so cannot call createSchemaIfNeeded itself. See
+// that function's own doc comment for why PostgreSQL needs this at all.
+func ensureSchemaExists(db *database.Database, schema string) error {
+	q, err := parsing.QueryParameters(createSchemaQuery, map[string]string{
+		"schema": schema,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(q)
+
+	return err
+}
+
 // createSchemaIfNeeded ensures the user's schema exists in the database before creating
 // a table.  This is only meaningful for providers that support named schemas.
 //
