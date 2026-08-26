@@ -341,6 +341,12 @@ func (pr *printer) createIndexStmt(s *ast.CreateIndexStmt) {
 
 	pr.ident(s.Name)
 	pr.write(" ON ")
+
+	if s.Schema != "" {
+		pr.ident(s.Schema)
+		pr.write(".")
+	}
+
 	pr.ident(s.Table)
 	pr.write(" (")
 	pr.indexColumnList(s.Columns)
@@ -385,6 +391,11 @@ func (pr *printer) createViewStmt(s *ast.CreateViewStmt) {
 		pr.write("IF NOT EXISTS ")
 	}
 
+	if s.Schema != "" {
+		pr.ident(s.Schema)
+		pr.write(".")
+	}
+
 	pr.ident(s.Name)
 
 	if len(s.Columns) > 0 {
@@ -411,6 +422,11 @@ func (pr *printer) dropViewStmt(s *ast.DropViewStmt) {
 
 	if s.IfExists {
 		pr.write("IF EXISTS ")
+	}
+
+	if s.Schema != "" {
+		pr.ident(s.Schema)
+		pr.write(".")
 	}
 
 	pr.ident(s.Name)

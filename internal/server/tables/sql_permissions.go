@@ -133,6 +133,21 @@ func authorizeAndFormatStatements(session *router.Session, db *database.Database
 		}
 
 		kinds[i] = p.StatementKind()
+
+		// PostgreSQL: pin every table/view/index reference the client left
+		// unqualified to the DSN's own resolved schema (db.User -- see
+		// database.Open's doc comment) rather than letting the server
+		// resolve it through whatever default schema the connection
+		// happens to have (e.g. search_path). A reference the client
+		// qualified itself (schema.table) is left untouched. This mirrors
+		// what parsing.FullName already does for every structured /rows
+		// and /tables endpoint; raw @sql text previously had no equivalent
+		// and so could depend on database-side schema resolution. SQLite
+		// has no schema concept, so this is skipped there.
+		if db.Provider == defs.PostgresProvider {
+			p.QualifyTables(db.User)
+		}
+
 		formatted[i] = p.Format()
 
 		if session.Admin {

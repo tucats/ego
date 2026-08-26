@@ -66,10 +66,16 @@ func doRows(sessionID int, user string, db *database.Database, task defs.TXOpera
 		// table it references, the same way doSQL does for the "sql"
 		// opcode; this is the other opcode that can run client-supplied
 		// SQL text. Gated at Handler's first pass on defs.SQLPermission
-		// before either handler is ever reached.
-		if _, _, status, err := authorizeAndClassifySQL(db, q); err != nil {
+		// before either handler is ever reached. The returned formatted
+		// text replaces q so that, for PostgreSQL, an unqualified table
+		// reference is pinned to the DSN's own schema (db.User) the same
+		// way doSQL's "sql" opcode is.
+		formatted, _, _, status, err := authorizeAndClassifySQL(db, q)
+		if err != nil {
 			return 0, status, err
 		}
+
+		q = formatted
 	}
 
 	count, status, err = readTxRowResultSet(db, q, sessionID, syms, task.EmptyError)

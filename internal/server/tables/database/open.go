@@ -121,9 +121,21 @@ func Open(session *router.Session, name string, action dsns.DSNAction) (db *Data
 		"dsn":     dsnName.Name,
 		"action":  dsns.ActionString(action)})
 
-	// If there is an explicit schema in this DSN, make that the
-	// "user" identity for this operation.
-	if dsnName.Schema != "" {
+	// The actual table names sent to a PostgreSQL server are determined
+	// solely by the DSN's own configured schema -- defaulting to "public"
+	// when unset -- never by the caller's Ego identity. The Ego identity
+	// checked above only gates whether this DSN/action is authorized at
+	// all; once that passes, savedUser (used as the Postgres schema by every
+	// query-composition call site in this package, via db.User below) must
+	// reflect the DSN's schema, so that e.g. "admin" and "tom" identities
+	// sharing the same restricted DSN reach the identical Postgres schema.
+	// SQLite has no schema concept, so savedUser there stays the Ego
+	// identity, though it goes unused by SQLite's query composition.
+	if dsnName.Provider == defs.PostgresProvider {
+		if dsnName.Schema == "" {
+			dsnName.Schema = defs.DefaultSchema
+		}
+
 		savedUser = dsnName.Schema
 	}
 

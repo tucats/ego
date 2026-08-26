@@ -44,8 +44,10 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 	// associated with the session is used to authenticate with the database.
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name
+		// (the DSN's configured schema, not the Ego identity -- see db.User's
+		// doc comment in database/open.go).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		// DATA-SECURITY-2.md findings #2 and #3: there used to be an extra
 		// permission check here, calling Authorized(session, user,
@@ -106,7 +108,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 		}
 
 		// Generate the SQL string that will create the table.
-		q, err := parsing.FormCreateQuery(r.URL, user, session.Admin, columns, db.Provider, db.HasRowID)
+		q, err := parsing.FormCreateQuery(r.URL, db.User, session.Admin, columns, db.Provider, db.HasRowID)
 		if err != nil {
 			// FormCreateQuery no longer writes its own response (REST-3
 			// 7.5) -- classify the returned error the same way every other
@@ -129,7 +131,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			// SQLite: all tables share one flat namespace — no schema creation needed.
 
 		case defs.PostgresProvider:
-			if ok, status := createSchemaIfNeeded(w, sessionID, db, user, tableName); !ok {
+			if ok, status := createSchemaIfNeeded(w, sessionID, db, db.User, tableName); !ok {
 				return status
 			}
 
@@ -165,7 +167,7 @@ func TableCreate(session *router.Session, w http.ResponseWriter, r *http.Request
 			// of those three handlers -- it was silently unreachable.
 			_ = createTablePermissions(session, user, dsnName, table)
 
-			tableName, _ = parsing.FullName(db.Provider, user, tableName)
+			tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 			response.Message = i18n.T("msg.server.table.created", ui.A{"name": tableName})
 
 			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
@@ -270,8 +272,8 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 		return false, status
 	}
 
-	// Default schema is the current user. However, if the table name is a two-part name, use the first part
-	// of the name as the schema.
+	// Default schema is the DSN's configured schema (db.User). However, if the
+	// table name is a two-part name, use the first part of the name as the schema.
 	schema := user
 	if dot := strings.Index(tableName, "."); dot >= 0 {
 		schema = tableName[:dot]
@@ -304,7 +306,7 @@ func createSchemaIfNeeded(w http.ResponseWriter, sessionID int, db *database.Dat
 }
 
 func getColumnInfo(db *database.Database, tableName string, showRowID bool) ([]defs.DBColumn, error) {
-	user := db.Session.User
+	user := db.User
 	columns := make([]defs.DBColumn, 0)
 	name, _ := parsing.FullName(db.Provider, user, tableName)
 
@@ -518,13 +520,12 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 // DeleteTable will delete a database table from the user's schema.
 func DeleteTable(session *router.Session, w http.ResponseWriter, r *http.Request) int {
 	sessionID := session.ID
-	user := session.User
 	table := data.String(session.URLParts["table"])
 	dsnName := data.String(session.URLParts["dsn"])
 
 	db, err := GetDatabase(session, dsnName, dsns.DSNAdminAction)
 	if err == nil && db != nil {
-		tableName, _ := parsing.FullName(db.Provider, user, table)
+		tableName, _ := parsing.FullName(db.Provider, db.User, table)
 
 		// DATA-SECURITY-2.md findings #2 and #3: this used to have an extra
 		// check here -- "if !isAdmin && dsnName == "" && ..." -- guarding an

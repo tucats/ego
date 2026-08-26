@@ -9,7 +9,7 @@
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": [
-            "SELECT c_bool, c_int, c_int32, c_int16, c_int64, c_byte, c_float32, c_float64, c_string FROM \"admin\".\"typeprobe\" ORDER BY c_int"
+            "SELECT c_bool, c_int, c_int32, c_int16, c_int64, c_byte, c_float32, c_float64, c_string FROM \"egotest\".\"typeprobe\" ORDER BY c_int"
         ]
     },
     "response": {

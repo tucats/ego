@@ -13,7 +13,9 @@ type DSN struct {
 	// Name of database on server
 	Database string `json:"database" validate:"required"`
 
-	// Name of schema on server. If not specified, "public" is assumed.
+	// Name of schema on server. If not specified, defs.DefaultSchema
+	// ("public") is assumed. This schema -- not the Ego identity making the
+	// request -- is what qualifies every table name sent to the server.
 	Schema string `json:"schema"`
 
 	// Host name of remote database server

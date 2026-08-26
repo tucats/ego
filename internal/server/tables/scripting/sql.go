@@ -60,9 +60,7 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 		return count, http.StatusBadRequest, false, errors.ErrTaskSQLUnsupported.Context("table name")
 	}
 
-	q := task.SQL
-
-	kind, cacheFlush, status, err := authorizeAndClassifySQL(db, q)
+	q, kind, cacheFlush, status, err := authorizeAndClassifySQL(db, task.SQL)
 	if err != nil {
 		return count, status, cacheFlush, err
 	}
@@ -72,7 +70,8 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 	// has an unknown kind; fall back to the original text-prefix guess so
 	// admins still get correct SELECT-vs-exec dispatch for SQL our parser
 	// doesn't cover, matching the top-level @sql endpoint's identical
-	// fallback in sql.go.
+	// fallback in sql.go. q is task.SQL unchanged in this case, since there
+	// was no parsed statement to qualify or reformat.
 	isSelect := kind == sqlparse.StmtSelect
 	if kind == sqlparse.StmtUnknown {
 		isSelect = strings.HasPrefix(strings.TrimSpace(strings.ToLower(q)), "select ")

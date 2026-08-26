@@ -185,13 +185,13 @@ func singleColumnUniqueKeys(session *router.Session, db *database.Database, ref 
 }
 
 // postgresSingleColumnUniqueKeys implements singleColumnUniqueKeys for a
-// PostgreSQL-backed DSN. When ref did not write a schema, session.User is
-// used as the default schema, matching getPostgresColumnMetadata's own
-// convention in describe.go.
+// PostgreSQL-backed DSN. When ref did not write a schema, db.User (the DSN's
+// configured schema, not the Ego identity) is used as the default schema,
+// matching getPostgresColumnMetadata's own convention in describe.go.
 func postgresSingleColumnUniqueKeys(session *router.Session, db *database.Database, ref *ast.TableRef) (string, map[string]bool, error) {
 	schema := ref.Schema
 	if schema == "" {
-		schema = session.User
+		schema = db.User
 	}
 
 	rows, err := db.Query(singleColumnUniqueKeysQuery, schema, ref.Name)

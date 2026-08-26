@@ -165,18 +165,26 @@ func writePermissionForKind(kind sqlparse.StatementKind) string {
 // whether to run it as a query (a SELECT) or an exec, and whether to flush
 // the schema cache afterward. Mirrors tables/sql_permissions.go's
 // authorizeAndFormatStatements/authorizeStatement, which do the same job
-// for the top-level @sql endpoint.
+// for the top-level @sql endpoint -- including, for PostgreSQL, rewriting
+// every table/view/index reference sqlText left unqualified to db's own
+// resolved schema (db.User) before formatting it, so this endpoint's raw
+// SQL gets the same schema pinning the structured opcodes always have (see
+// parsing.FullName) instead of depending on the database connection's own
+// default schema resolution. The caller must execute the returned formatted
+// text, not the original sqlText, for that rewrite to take effect.
 //
 // If sqlText fails to parse: a caller with no session to check against
 // (db.Session == nil, e.g. a hand-built test database.Database -- see
 // authorizedForTable) or an admin caller is let through exactly as this
 // package always has, with kind == sqlparse.StmtUnknown so the caller
-// falls back to a text-based heuristic; any other caller is rejected with
-// 400, since there is then no way to know what the statement touches.
+// falls back to a text-based heuristic, and formatted == sqlText unchanged
+// since there is no parsed statement to qualify or reformat.
+// Any other caller is rejected with 400, since there is then no way to know
+// what the statement touches.
 //
 // On any authorization failure the returned status is http.StatusForbidden
 // and err is non-nil; the caller must stop and not execute the statement.
-func authorizeAndClassifySQL(db *database.Database, sqlText string) (sqlparse.StatementKind, bool, int, error) {
+func authorizeAndClassifySQL(db *database.Database, sqlText string) (formatted string, kind sqlparse.StatementKind, cacheFlush bool, status int, err error) {
 	dialect := sqlparse.SQLite
 	if db.Provider == defs.PostgresProvider {
 		dialect = sqlparse.PostgreSQL
@@ -187,17 +195,23 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (sqlparse.St
 	p, parseErr := sqlparse.New(sqlText, dialect)
 	if parseErr != nil {
 		if noAuthCheck {
-			return sqlparse.StmtUnknown, parsing.IsSchemaAlteringStatement(sqlText), http.StatusOK, nil
+			return sqlText, sqlparse.StmtUnknown, parsing.IsSchemaAlteringStatement(sqlText), http.StatusOK, nil
 		}
 
-		return sqlparse.StmtUnknown, false, http.StatusBadRequest, errors.New(parseErr)
+		return sqlText, sqlparse.StmtUnknown, false, http.StatusBadRequest, errors.New(parseErr)
 	}
 
-	kind := p.StatementKind()
-	cacheFlush := isSchemaAlteringKind(kind)
+	kind = p.StatementKind()
+	cacheFlush = isSchemaAlteringKind(kind)
+
+	if db.Provider == defs.PostgresProvider {
+		p.QualifyTables(db.User)
+	}
+
+	formatted = p.Format()
 
 	if noAuthCheck {
-		return kind, cacheFlush, http.StatusOK, nil
+		return formatted, kind, cacheFlush, http.StatusOK, nil
 	}
 
 	for _, t := range p.Tables() {
@@ -206,7 +220,7 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (sqlparse.St
 		switch t.Usage {
 		case sqlparse.UsageRead:
 			if !authorizedForTable(db, table, defs.TableReadPermission) {
-				return kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
+				return formatted, kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
 			}
 		case sqlparse.UsageWrite:
 			// DATA-SECURITY-2.md finding #5: this used to always require
@@ -218,14 +232,14 @@ func authorizeAndClassifySQL(db *database.Database, sqlText string) (sqlparse.St
 			// update or delete rows.
 			permission := writePermissionForKind(kind)
 			if !authorizedForTable(db, table, permission) {
-				return kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
+				return formatted, kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
 			}
 		case sqlparse.UsageAdmin:
 			if !authorizedForDDL(db) {
-				return kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
+				return formatted, kind, cacheFlush, http.StatusForbidden, errors.ErrNoPrivilegeForOperation.Context(table)
 			}
 		}
 	}
 
-	return kind, cacheFlush, http.StatusOK, nil
+	return formatted, kind, cacheFlush, http.StatusOK, nil
 }

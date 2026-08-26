@@ -60,7 +60,7 @@ func DescribeTable(session *router.Session, w http.ResponseWriter, r *http.Reque
 			}
 		}
 
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		// Get the table metadata.
 		var columns []defs.DBColumn
@@ -185,7 +185,7 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 
 	// Extract the bare schema and table names from the fully-qualified tableName.
 	// TableNameParts returns unquoted parts, which are safe to pass as SQL parameters.
-	parts := parsing.TableNameParts(db.Provider, session.User, tableName)
+	parts := parsing.TableNameParts(db.Provider, db.User, tableName)
 
 	var schemaName, tableOnly string
 
@@ -193,7 +193,7 @@ func getPostgresColumnMetadata(db *database.Database, tableName string, session 
 		schemaName = parts[0]
 		tableOnly = parts[len(parts)-1]
 	} else {
-		schemaName = session.User
+		schemaName = db.User
 		tableOnly = parts[0]
 	}
 
@@ -269,7 +269,7 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 	// Extract the bare table name using TableNameParts(), which correctly handles
 	// double-quoted names and schema-qualified names. The last element is always
 	// the unquoted table name regardless of whether a schema prefix is present.
-	parts := parsing.TableNameParts(db.Provider, session.User, tableName)
+	parts := parsing.TableNameParts(db.Provider, db.User, tableName)
 	tableOnly := egostrings.SQLIdentifier(parts[len(parts)-1])
 
 	q := fmt.Sprintf("PRAGMA index_list(%s)", tableOnly)

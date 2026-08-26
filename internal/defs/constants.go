@@ -17,6 +17,10 @@ const (
 	DefaultUserdataScheme    = SqliteProvider
 	DefaultUserdataFileName  = "ego-system.db"
 	MemoryProvider           = "memory"
+
+	// DefaultSchema is the PostgreSQL schema assumed for a DSN whose Schema
+	// field was left unspecified, matching PostgreSQL's own "public" default.
+	DefaultSchema = "public"
 )
 
 // This section contains constants used by file operations.

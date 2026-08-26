@@ -16,6 +16,7 @@
             "user":     "{{PG_USER}}",
             "password": "{{PG_PASSWORD}}",
             "database": "{{PG_DATABASE}}",
+            "schema":   "egotest",
             "rowid":    true
         }
     },

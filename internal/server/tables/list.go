@@ -67,7 +67,7 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 		count      int
 	)
 
-	schema := session.User
+	schema := db.User
 
 	// Build query and parameters based on the database provider.
 	// Each provider uses a different system catalogue and parameter style.
@@ -99,7 +99,7 @@ func listTables(db *database.Database, session *router.Session, r *http.Request,
 
 	ui.Log(ui.TableLogger, "table.schema.tables", ui.A{
 		"session": session.ID,
-		"schema":  session.User})
+		"schema":  schema})
 
 	rows, err = db.Query(q, params...)
 	if err == nil {
@@ -229,7 +229,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 			}
 
 			q, err := parsing.QueryParameters(rowCountTemplate, map[string]string{
-				"schema": db.Session.User,
+				"schema": schema,
 				"table":  name,
 			})
 			if err != nil {
@@ -251,7 +251,7 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 		// Package up the info for this table to add to the list.
 		names = append(names, defs.Table{
 			Name:    name,
-			Schema:  db.Session.User,
+			Schema:  schema,
 			Columns: columnCount,
 			Rows:    rowCount,
 		})

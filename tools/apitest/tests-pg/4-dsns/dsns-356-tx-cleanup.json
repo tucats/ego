@@ -1,5 +1,5 @@
 {
-    "description": "drop the transaction-test table index and table to clean up (postgres: admin-qualified names)",
+    "description": "drop the transaction-test table index and table to clean up (postgres: DSN-schema-qualified names)",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
@@ -9,8 +9,8 @@
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": [
-            "DROP INDEX IF EXISTS admin.idx_ttx{{SQLUUID}}",
-            "DROP TABLE IF EXISTS admin.ttx{{SQLUUID}}"
+            "DROP INDEX IF EXISTS egotest.idx_ttx{{SQLUUID}}",
+            "DROP TABLE IF EXISTS egotest.ttx{{SQLUUID}}"
         ]
     },
     "response": {

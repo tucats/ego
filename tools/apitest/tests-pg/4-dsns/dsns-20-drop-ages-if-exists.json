@@ -9,7 +9,7 @@
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": [
-            "DROP TABLE IF EXISTS admin.t{{TBLUUID}}"
+            "DROP TABLE IF EXISTS egotest.t{{TBLUUID}}"
         ]
     },
     "response": {

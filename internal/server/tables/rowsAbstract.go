@@ -54,8 +54,9 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	}
 
 	if err == nil && db != nil {
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name (the
+		// DSN's configured schema, not the Ego identity).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		// Note that "update" here means add to or change the row. So we check "update"
 		// on test for insert permissions
@@ -240,8 +241,9 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
-	// Amend any table name with the provider-appropriate user schema name.
-	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+	// Amend any table name with the provider-appropriate schema name (the
+	// DSN's configured schema, not the Ego identity).
+	tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 	// Authorized() returns true when the caller IS permitted, so this
 	// condition must be negated to deny when they are NOT. The missing
@@ -259,7 +261,7 @@ func ReadAbstractRows(user string, isAdmin bool, tableName string, session *rout
 
 	var q string
 
-	q, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, user, selectVerb, db.Provider)
+	q, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), parsing.ColumnsFromURL(r.URL), tableName, db.User, selectVerb, db.Provider)
 	if err != nil {
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
@@ -427,8 +429,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 	}
 
-	// Amend any table name with the provider-appropriate user schema name.
-	tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+	// Amend any table name with the provider-appropriate schema name (the
+	// DSN's configured schema, not the Ego identity).
+	tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 	// Authorized() returns true when the caller IS permitted, so this
 	// condition must be negated to deny when they are NOT. The missing

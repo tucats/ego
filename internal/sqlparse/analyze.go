@@ -245,20 +245,20 @@ func (p Sqlparse) Tables() []TableUsage {
 	case *ast.AlterTableStmt:
 		admin(tableRefName(s.Table))
 	case *ast.CreateIndexStmt:
-		// Unlike every other *TableRef-typed Table field handled above,
-		// CreateIndexStmt.Table is a plain string (see ast/ddl.go) — there
-		// is no separate Schema field to fold in, so it is used as-is.
-		admin(s.Table)
+		// Table and Schema are plain strings, not a *ast.TableRef (see
+		// ast/ddl.go), so they are folded together the same way
+		// tableRefName does for the *TableRef-typed cases above.
+		admin(qualifiedName(s.Schema, s.Table))
 		read(s.Where)
 	case *ast.DropIndexStmt:
 		// DROP INDEX names only the index, never the table it belongs to
 		// (see ast.DropIndexStmt in ast/ddl.go), so there is no table name
 		// to report here.
 	case *ast.CreateViewStmt:
-		admin(s.Name)
+		admin(qualifiedName(s.Schema, s.Name))
 		read(s.Select)
 	case *ast.DropViewStmt:
-		admin(s.Name)
+		admin(qualifiedName(s.Schema, s.Name))
 	case *ast.BeginStmt, *ast.CommitStmt, *ast.RollbackStmt, *ast.SavepointStmt, *ast.ReleaseStmt:
 	}
 
@@ -274,9 +274,17 @@ func tableRefName(ref *ast.TableRef) string {
 		return ""
 	}
 
-	if ref.Schema != "" {
-		return ref.Schema + "." + ref.Name
+	return qualifiedName(ref.Schema, ref.Name)
+}
+
+// qualifiedName joins a schema and a name with "." when schema is set, or
+// returns name unchanged when it is not. Shared by tableRefName above and by
+// the DDL statement kinds (CreateIndexStmt, CreateViewStmt, DropViewStmt)
+// whose schema/name pair is a plain string field rather than a *ast.TableRef.
+func qualifiedName(schema, name string) string {
+	if schema != "" {
+		return schema + "." + name
 	}
 
-	return ref.Name
+	return name
 }

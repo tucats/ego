@@ -11,11 +11,11 @@
         "body": [
             {
                 "operation": "sql",
-                "sql": "DROP TABLE admin.scb{{SQLUUID}}"
+                "sql": "DROP TABLE egotest.scb{{SQLUUID}}"
             },
             {
                 "operation": "sql",
-                "sql": "CREATE TABLE admin.scb{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, extra TEXT)"
+                "sql": "CREATE TABLE egotest.scb{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, extra TEXT)"
             },
             {
                 "operation": "insert",

@@ -863,8 +863,8 @@ func (p *parser) parseDropIndexStatement(start ast.Position) (ast.Statement, err
 	return stmt, nil
 }
 
-// parseDropViewStatement parses "DROP VIEW [IF EXISTS] name [CASCADE |
-// RESTRICT]".
+// parseDropViewStatement parses "DROP VIEW [IF EXISTS] [schema.]name
+// [CASCADE | RESTRICT]".
 func (p *parser) parseDropViewStatement(start ast.Position) (ast.Statement, error) {
 	p.next() // "view"
 
@@ -873,12 +873,12 @@ func (p *parser) parseDropViewStatement(start ast.Position) (ast.Statement, erro
 		return nil, err
 	}
 
-	name, err := p.expectIdent()
+	schema, name, err := p.parseSchemaQualifiedName()
 	if err != nil {
 		return nil, err
 	}
 
-	stmt := &ast.DropViewStmt{IfExists: ifExists, Name: name}
+	stmt := &ast.DropViewStmt{IfExists: ifExists, Schema: schema, Name: name}
 
 	switch {
 	case p.acceptKeyword("cascade"):
@@ -1005,9 +1005,9 @@ func (p *parser) parseAlterTableAction() (ast.Node, error) {
 // --- CREATE INDEX / DROP INDEX ---.
 
 // parseCreateIndexStatement parses "CREATE [UNIQUE] INDEX [IF NOT EXISTS]
-// name ON table (columns...) [WHERE where]", called with "CREATE" (and any
-// OR REPLACE/TEMP modifiers — see parseCreateStatement above) already
-// consumed, so it starts by looking for the optional UNIQUE itself.
+// name ON [schema.]table (columns...) [WHERE where]", called with "CREATE"
+// (and any OR REPLACE/TEMP modifiers — see parseCreateStatement above)
+// already consumed, so it starts by looking for the optional UNIQUE itself.
 func (p *parser) parseCreateIndexStatement(start ast.Position) (ast.Statement, error) {
 	unique := p.acceptKeyword("unique")
 
@@ -1029,7 +1029,7 @@ func (p *parser) parseCreateIndexStatement(start ast.Position) (ast.Statement, e
 		return nil, err
 	}
 
-	table, err := p.expectIdent()
+	tableSchema, table, err := p.parseSchemaQualifiedName()
 	if err != nil {
 		return nil, err
 	}
@@ -1040,7 +1040,7 @@ func (p *parser) parseCreateIndexStatement(start ast.Position) (ast.Statement, e
 	}
 
 	stmt := &ast.CreateIndexStmt{
-		Unique: unique, IfNotExists: ifNotExists, Name: name, Table: table, Columns: cols,
+		Unique: unique, IfNotExists: ifNotExists, Name: name, Schema: tableSchema, Table: table, Columns: cols,
 	}
 
 	if p.acceptKeyword("where") {
@@ -1060,8 +1060,9 @@ func (p *parser) parseCreateIndexStatement(start ast.Position) (ast.Statement, e
 // --- CREATE VIEW / DROP VIEW ---.
 
 // parseCreateViewStatement parses "CREATE [OR REPLACE] [TEMP] VIEW
-// [IF NOT EXISTS] name [(columns...)] AS select", called with "VIEW" still
-// to be consumed and temp/orReplace already decided by parseCreateStatement.
+// [IF NOT EXISTS] [schema.]name [(columns...)] AS select", called with
+// "VIEW" still to be consumed and temp/orReplace already decided by
+// parseCreateStatement.
 func (p *parser) parseCreateViewStatement(start ast.Position, temp, orReplace bool) (ast.Statement, error) {
 	p.next() // "view"
 
@@ -1070,12 +1071,12 @@ func (p *parser) parseCreateViewStatement(start ast.Position, temp, orReplace bo
 		return nil, err
 	}
 
-	name, err := p.expectIdent()
+	schema, name, err := p.parseSchemaQualifiedName()
 	if err != nil {
 		return nil, err
 	}
 
-	stmt := &ast.CreateViewStmt{OrReplace: orReplace, Temp: temp, IfNotExists: ifNotExists, Name: name}
+	stmt := &ast.CreateViewStmt{OrReplace: orReplace, Temp: temp, IfNotExists: ifNotExists, Schema: schema, Name: name}
 
 	if p.cur().isOp("(") {
 		cols, err := p.parseNameList()

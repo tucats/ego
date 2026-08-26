@@ -287,16 +287,19 @@ func (n *RenameTable) Kind() Kind       { return KindRenameTable }
 func (n *RenameTable) Children() []Node { return nil }
 func (n *RenameTable) String() string   { return "RenameTable(" + n.To + ")" }
 
-// CreateIndexStmt is "CREATE [UNIQUE] INDEX [IF NOT EXISTS] Name ON Table
-// (Columns...) [WHERE Where]". Columns reuses OrderByTerm since an index
-// column has the same shape as an ORDER BY term (an expression with an
-// optional collation and sort direction) and PostgreSQL additionally allows
-// expression indexes.
+// CreateIndexStmt is "CREATE [UNIQUE] INDEX [IF NOT EXISTS] Name ON
+// [Schema.]Table (Columns...) [WHERE Where]". Columns reuses OrderByTerm
+// since an index column has the same shape as an ORDER BY term (an
+// expression with an optional collation and sort direction) and PostgreSQL
+// additionally allows expression indexes. Schema qualifies Table, not Name --
+// PostgreSQL creates the index in its table's own schema and does not accept
+// a schema prefix on the index name itself.
 type CreateIndexStmt struct {
 	BaseStmt
 	Unique      bool
 	IfNotExists bool
 	Name        string
+	Schema      string
 	Table       string
 	Columns     []*OrderByTerm
 	Where       Node
@@ -325,14 +328,15 @@ func (n *DropIndexStmt) Kind() Kind       { return KindDropIndexStmt }
 func (n *DropIndexStmt) Children() []Node { return nil }
 func (n *DropIndexStmt) String() string   { return "DropIndexStmt(" + n.Name + ")" }
 
-// CreateViewStmt is "CREATE [OR REPLACE] [TEMP] VIEW [IF NOT EXISTS] Name
-// [(Columns...)] AS Select". OrReplace is PostgreSQL-only.
+// CreateViewStmt is "CREATE [OR REPLACE] [TEMP] VIEW [IF NOT EXISTS]
+// [Schema.]Name [(Columns...)] AS Select". OrReplace is PostgreSQL-only.
 type CreateViewStmt struct {
 	BaseStmt
 	OrReplace   bool
 	Temp        bool
 	IfNotExists bool
 	Name        string
+	Schema      string
 	Columns     []string
 	Select      Node
 }
@@ -341,10 +345,11 @@ func (n *CreateViewStmt) Kind() Kind       { return KindCreateViewStmt }
 func (n *CreateViewStmt) Children() []Node { return nodes(n.Select) }
 func (n *CreateViewStmt) String() string   { return "CreateViewStmt(" + n.Name + ")" }
 
-// DropViewStmt is "DROP VIEW [IF EXISTS] Name [CASCADE | RESTRICT]".
+// DropViewStmt is "DROP VIEW [IF EXISTS] [Schema.]Name [CASCADE | RESTRICT]".
 type DropViewStmt struct {
 	BaseStmt
 	IfExists bool
+	Schema   string
 	Name     string
 	Cascade  bool
 	Restrict bool

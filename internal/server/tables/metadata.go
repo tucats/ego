@@ -196,13 +196,13 @@ func listTableNamesForMetadata(db *database.Database, session *router.Session, r
 		schema = ""
 
 	case defs.PostgresProvider:
-		// PostgreSQL: select all user tables in the schema that matches the
-		// session user. The tablesListQuery constant (defined in defs.go)
-		// returns names ordered alphabetically, which gives deterministic
-		// paging results.
+		// PostgreSQL: select all user tables in the DSN's configured schema
+		// (db.User -- not the Ego identity). The tablesListQuery constant
+		// (defined in defs.go) returns names ordered alphabetically, which
+		// gives deterministic paging results.
 		q = tablesListQuery
-		params = []any{session.User}
-		schema = session.User
+		params = []any{db.User}
+		schema = db.User
 
 	default:
 		return nil, http.StatusBadRequest,

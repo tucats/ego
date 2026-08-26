@@ -153,7 +153,7 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 
 			tableName := ""
 			if task.Table != "" {
-				tableName, _ = parsing.FullName(db.Provider, session.User, task.Table)
+				tableName, _ = parsing.FullName(db.Provider, db.User, task.Table)
 			}
 
 			// Log which operation we are about to run (if table logging is active).
@@ -203,33 +203,33 @@ func Handler(session *router.Session, w http.ResponseWriter, r *http.Request) in
 				// SELECT that reads exactly one row and stores each column as a
 				// symbol (e.g. syms["age"] = 42). Used to feed values into later
 				// operations.
-				count, httpStatus, operationErr = doSelect(session.ID, session.User, db, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doSelect(session.ID, db.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case rowsOpcode:
 				// SELECT that reads all matching rows and stores the entire result
 				// as a single symbol (resultSetSymbolName). When the transaction
 				// commits, this symbol becomes the HTTP response body.
-				count, httpStatus, operationErr = doRows(session.ID, session.User, db, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doRows(session.ID, db.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case updateOpcode:
-				count, httpStatus, operationErr = doUpdate(session.ID, session.User, db, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doUpdate(session.ID, db.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case deleteOpcode:
-				count, httpStatus, operationErr = doDelete(session.ID, session.User, db, task, n+1, &dictionary)
+				count, httpStatus, operationErr = doDelete(session.ID, db.User, db, task, n+1, &dictionary)
 				rowsAffected += count
 
 			case insertOpcode:
 				// Insert always affects exactly one row, so we increment by 1
 				// rather than using the return value.
-				httpStatus, operationErr = doInsert(session.ID, session.User, db, task, n+1, &dictionary)
+				httpStatus, operationErr = doInsert(session.ID, db.User, db, task, n+1, &dictionary)
 				count = 1
 				rowsAffected++
 
 			case dropOpCode:
-				httpStatus, operationErr = doDrop(session.ID, session.User, db, task, n+1, &dictionary)
+				httpStatus, operationErr = doDrop(session.ID, db.User, db, task, n+1, &dictionary)
 				if operationErr == nil {
 					needCacheFlush = true
 				}

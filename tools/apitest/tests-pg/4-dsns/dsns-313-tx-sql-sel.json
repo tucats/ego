@@ -11,7 +11,7 @@
         "body": [
             {
                 "operation": "sql",
-                "sql": "SELECT id, name, score FROM admin.tx{{SQLUUID}}"
+                "sql": "SELECT id, name, score FROM egotest.tx{{SQLUUID}}"
             }
         ]
     },

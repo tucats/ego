@@ -15,7 +15,7 @@
             },
             {
                 "operation": "sql",
-                "sql": "CREATE TABLE admin.sca{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, extra TEXT)"
+                "sql": "CREATE TABLE egotest.sca{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, extra TEXT)"
             },
             {
                 "operation": "insert",

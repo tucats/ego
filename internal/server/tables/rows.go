@@ -48,8 +48,9 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name (the
+		// DSN's configured schema, not the Ego identity).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		if where, err := parsing.WhereClause(parsing.FiltersFromURL(r.URL)); where == "" {
 			if settings.GetBool(defs.TablesServerEmptyFilterError) {
@@ -62,7 +63,7 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 		columns := parsing.ColumnsFromURL(r.URL)
 		filters := parsing.FiltersFromURL(r.URL)
 
-		q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, deleteVerb, db.Provider)
+		q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, db.User, deleteVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
@@ -175,8 +176,9 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name (the
+		// DSN's configured schema, not the Ego identity).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		columns, err = getColumnInfo(db, tableName, false)
 		if err != nil {
@@ -390,7 +392,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				filters = append(filters, clause)
 			}
 
-			q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, session.User, selectVerb, db.Provider)
+			q, err := parsing.FormSelectorDeleteQuery(r.URL, filters, columns, tableName, db.User, selectVerb, db.Provider)
 			if err != nil {
 				return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 			}
@@ -426,13 +428,13 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		// After all that, form the correct query and values to be used based on whether this
 		// is an update versus insert.
 		if isUpdate {
-			q, values, err = parsing.FormUpdateQuery(session.URL, session.User, db.Provider, columns, row)
+			q, values, err = parsing.FormUpdateQuery(session.URL, db.User, db.Provider, columns, row)
 		} else {
 			if db.HasRowID {
 				row[defs.RowIDName] = egostrings.Gibberish(uuid.New())
 			}
 
-			q, values, err = parsing.FormInsertQuery(tableName, session.User, db.Provider, columns, row)
+			q, values, err = parsing.FormInsertQuery(tableName, db.User, db.Provider, columns, row)
 		}
 
 		// Building the query is where the payload's values are coerced to their
@@ -540,8 +542,9 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 			}
 		}
 
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name (the
+		// DSN's configured schema, not the Ego identity).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		columns, err = getColumnInfo(db, tableName, true)
 		if err != nil {
@@ -604,7 +607,7 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 			actualQueryColumns += "," + defs.RowIDName
 		}
 
-		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), actualQueryColumns, tableName, session.User, selectVerb, db.Provider)
+		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), actualQueryColumns, tableName, db.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
@@ -777,8 +780,9 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// Amend any table name with the provider-appropriate user schema name.
-		tableName, _ = parsing.FullName(db.Provider, session.User, tableName)
+		// Amend any table name with the provider-appropriate schema name (the
+		// DSN's configured schema, not the Ego identity).
+		tableName, _ = parsing.FullName(db.Provider, db.User, tableName)
 
 		columns, err = getColumnInfo(db, tableName, false)
 
@@ -893,7 +897,7 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 			"session": session.ID,
 			"data":    rowData})
 
-		q, values, err := parsing.FormUpdateQuery(r.URL, session.User, db.Provider, columns, rowData)
+		q, values, err := parsing.FormUpdateQuery(r.URL, db.User, db.Provider, columns, rowData)
 		if err != nil {
 			ui.Log(ui.SQLLogger, "sql.query.error", ui.A{
 				"session": session.ID,

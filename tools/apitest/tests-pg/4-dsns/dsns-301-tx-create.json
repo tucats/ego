@@ -1,5 +1,5 @@
 {
-    "description": "create dedicated test table for @transaction tests via sql opcode (postgres: admin-qualified)",
+    "description": "create dedicated test table for @transaction tests via sql opcode (postgres: DSN-schema-qualified)",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@transaction",
@@ -11,7 +11,7 @@
         "body": [
             {
                 "operation": "sql",
-                "sql": "CREATE TABLE admin.tx{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score INTEGER)"
+                "sql": "CREATE TABLE egotest.tx{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score INTEGER)"
             }
         ]
     },

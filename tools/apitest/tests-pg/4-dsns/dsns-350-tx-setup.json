@@ -1,5 +1,5 @@
 {
-    "description": "create transaction-test table and insert 3 rows via @sql (postgres: admin-qualified names)",
+    "description": "create transaction-test table and insert 3 rows via @sql (postgres: DSN-schema-qualified names)",
     "request": {
         "method": "POST",
         "endpoint": "/dsns/dsn-{{DSNUUID}}/tables/@sql",
@@ -9,11 +9,11 @@
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": [
-            "CREATE TABLE admin.ttx{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score REAL)",
-            "CREATE INDEX idx_ttx{{SQLUUID}} ON admin.ttx{{SQLUUID}} (id)",
-            "INSERT INTO admin.ttx{{SQLUUID}} (id, name, score) VALUES (1, 'Alice', 95.5)",
-            "INSERT INTO admin.ttx{{SQLUUID}} (id, name, score) VALUES (2, 'Bob', 72.3)",
-            "INSERT INTO admin.ttx{{SQLUUID}} (id, name, score) VALUES (3, 'Carol', 88.5)"
+            "CREATE TABLE egotest.ttx{{SQLUUID}} (id INTEGER NOT NULL, name TEXT NOT NULL, score REAL)",
+            "CREATE INDEX idx_ttx{{SQLUUID}} ON egotest.ttx{{SQLUUID}} (id)",
+            "INSERT INTO egotest.ttx{{SQLUUID}} (id, name, score) VALUES (1, 'Alice', 95.5)",
+            "INSERT INTO egotest.ttx{{SQLUUID}} (id, name, score) VALUES (2, 'Bob', 72.3)",
+            "INSERT INTO egotest.ttx{{SQLUUID}} (id, name, score) VALUES (3, 'Carol', 88.5)"
         ]
     },
     "response": {
