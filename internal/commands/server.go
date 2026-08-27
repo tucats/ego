@@ -11,9 +11,11 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -293,70 +295,82 @@ func RunServer(c *cli.Context) error {
 	// Dump out the route table if requested.
 	ServerRouter.Dump()
 
-	// Set a SIGINT trap to stop execution if needed.
+	// Set a SIGINT trap to stop execution if needed, and a SIGQUIT trap to
+	// write a goroutine stack dump to the log without stopping the server --
+	// useful for diagnosing a hung request in place (e.g. via `kill -QUIT
+	// <pid>`) instead of Go's default SIGQUIT behavior, which dumps and then
+	// terminates the process. SIGQUIT does not exist as a real, deliverable
+	// signal on Windows, but syscall.SIGQUIT is still defined there (as an
+	// "invented" value with no OS-level delivery mechanism), so registering
+	// it is harmless on every platform this server builds for.
 	intChan := make(chan os.Signal, 1)
-	signal.Notify(intChan, os.Interrupt)
+	signal.Notify(intChan, os.Interrupt, syscall.SIGQUIT)
 
 	go func() {
-		sig := <-intChan
+		// Loop rather than a single receive: SIGQUIT must not terminate this
+		// goroutine, since further dumps (or a later SIGINT) still need to be
+		// handled for the remaining lifetime of the server.
+		for sig := range intChan {
+			switch sig {
+			case syscall.SIGQUIT:
+				dumpGoroutinesToLog()
 
-		// Should only ever be os.Interrupt, but just in case...
-		switch sig {
-		case os.Interrupt:
-			// Prevent any new connections to the server.
-			ui.Log(ui.ServerLogger, "server.interrupt", nil)
+			case os.Interrupt:
+				// Prevent any new connections to the server.
+				ui.Log(ui.ServerLogger, "server.interrupt", nil)
 
-			router.ServerShutdownLock.Lock()
+				router.ServerShutdownLock.Lock()
 
-			// GORTNS-4: tell the background statistics and cluster-health tasks to
-			// stop before we tear anything else down, so they cannot log about, or
-			// ping peers on behalf of, a server that is on its way out. Closing the
-			// channel releases all three of them at once.
-			close(serverTasksStopped)
+				// GORTNS-4: tell the background statistics and cluster-health tasks to
+				// stop before we tear anything else down, so they cannot log about, or
+				// ping peers on behalf of, a server that is on its way out. Closing the
+				// channel releases all three of them at once.
+				close(serverTasksStopped)
 
-			// Remove this node from the cluster membership table before exiting.
-			cluster.Shutdown()
+				// Remove this node from the cluster membership table before exiting.
+				cluster.Shutdown()
 
-			// Release the DSN service's own resources (open database
-			// connections, for the SQL-backed provider) before exiting. This
-			// is a second, independent shutdown path from RequestShutdown in
-			// internal/router/shutdown.go (that one runs when the server is
-			// asked to stop over REST, via "ego stop server"; this one runs
-			// on an OS interrupt signal such as Ctrl-C) so it needs the same
-			// cleanup call.
-			if dsns.DSNService != nil {
-				if err := dsns.DSNService.Close(); err != nil {
-					ui.Log(ui.ServerLogger, "server.shutdown.dsn.error", ui.A{
-						"error": err.Error(),
-					})
+				// Release the DSN service's own resources (open database
+				// connections, for the SQL-backed provider) before exiting. This
+				// is a second, independent shutdown path from RequestShutdown in
+				// internal/router/shutdown.go (that one runs when the server is
+				// asked to stop over REST, via "ego stop server"; this one runs
+				// on an OS interrupt signal such as Ctrl-C) so it needs the same
+				// cleanup call.
+				if dsns.DSNService != nil {
+					if err := dsns.DSNService.Close(); err != nil {
+						ui.Log(ui.ServerLogger, "server.shutdown.dsn.error", ui.A{
+							"error": err.Error(),
+						})
+					}
 				}
-			}
 
-			// Same reasoning as DSNService above, for the authentication
-			// service's own database connection or file handle.
-			if auth.AuthService != nil {
-				if err := auth.AuthService.Close(); err != nil {
-					ui.Log(ui.ServerLogger, "server.shutdown.auth.error", ui.A{
-						"error": err.Error(),
-					})
+				// Same reasoning as DSNService above, for the authentication
+				// service's own database connection or file handle.
+				if auth.AuthService != nil {
+					if err := auth.AuthService.Close(); err != nil {
+						ui.Log(ui.ServerLogger, "server.shutdown.auth.error", ui.A{
+							"error": err.Error(),
+						})
+					}
 				}
+
+				// Close every cached per-DSN connection pool (see internal/dbpool),
+				// same reasoning as DSNService/AuthService above.
+				dbpool.CloseAll()
+
+				// Wait one second to give any inflight connections a chance to finish.
+				time.Sleep(1 * time.Second)
+
+				// Shut 'er down.
+				ui.Log(ui.ServerLogger, "server.shutdown", nil)
+				os.Exit(0)
+
+			default:
+				ui.Log(ui.InternalLogger, "signal", ui.A{
+					"thread": 0,
+					"signal": sig.String()})
 			}
-
-			// Close every cached per-DSN connection pool (see internal/dbpool),
-			// same reasoning as DSNService/AuthService above.
-			dbpool.CloseAll()
-
-			// Wait one second to give any inflight connections a chance to finish.
-			time.Sleep(1 * time.Second)
-
-			// Shut 'er down.
-			ui.Log(ui.ServerLogger, "server.shutdown", nil)
-			os.Exit(0)
-
-		default:
-			ui.Log(ui.InternalLogger, "signal", ui.A{
-				"thread": 0,
-				"signal": sig.String()})
 		}
 	}()
 
@@ -968,6 +982,37 @@ func dumpConfigToLog() {
 			}
 		}
 	}
+}
+
+// dumpGoroutinesToLog writes a stack trace of every running goroutine to the
+// server log, in response to a SIGQUIT sent to the server process (e.g. `kill
+// -QUIT <pid>`). Unlike Go's default SIGQUIT behavior, this does not
+// terminate the process afterward -- it exists so a hung request (a stuck
+// database query, a deadlock, ...) can be diagnosed on a live server instead
+// of only being visible by killing it first.
+//
+// The dump is written with WriteLog rather than Log so it is captured
+// regardless of which log classes are currently enabled -- an operator who
+// goes to the trouble of sending SIGQUIT wants the dump unconditionally, not
+// only when they happened to already have InternalLogger active.
+func dumpGoroutinesToLog() {
+	buf := make([]byte, 1<<20)
+
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			buf = buf[:n]
+
+			break
+		}
+
+		buf = make([]byte, 2*len(buf))
+	}
+
+	ui.WriteLog(ui.InternalLogger, "server.quit.dump", ui.A{
+		"count": runtime.NumGoroutine(),
+		"stack": string(buf),
+	})
 }
 
 // makeHTTPServer returns an *http.Server configured with request/response timeouts

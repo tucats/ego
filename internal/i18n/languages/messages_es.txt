@@ -1865,6 +1865,7 @@ server.no.token=No se encontró ningún token de servidor existente para el perf
 server.panic.recovered=Recuperado de un pánico en la sesión {{session}}, {{method}} {{path}}, {{error}}
 server.panic.stack=Traza de pila del pánico para la sesión {{session}}, {{stack}}
 server.panic.task=Recuperado de un pánico en la tarea en segundo plano {{task}}, {{error}}
+server.quit.dump=Volcado de goroutines solicitado por SIGQUIT, {{count}} goroutines, {{stack}}
 server.redirect=301 {{method}} {{url}} desde {{host}}:{{port}}; redirigido a {{redirect}}
 server.redirect.disallowed=400 {{method}} {{url}} desde {{host}}:{{port}}; redirección HTTPS no permitida
 server.redirect.error=No se puede iniciar el redireccionador HTTP/HTTPS: {{error}}

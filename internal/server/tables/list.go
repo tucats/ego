@@ -195,8 +195,6 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 			continue
 		}
 
-		defer tableInfo.Close()
-
 		count++
 
 		columns, _ := tableInfo.Columns()
@@ -209,6 +207,17 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 				break
 			}
 		}
+
+		// Release this connection back to the pool now, rather than deferring
+		// to the end of the whole function -- with the shared per-DSN pool
+		// (internal/dbpool) capping concurrent connections, a deferred Close
+		// here would hold one pooled connection per table for the entire
+		// listing, and the row-count query below would open yet another. On a
+		// DSN with enough tables that adds up to more connections than the
+		// pool allows, which deadlocks: every held connection is only
+		// released when this function returns, and this function cannot
+		// return until it gets a connection the pool has none left to give.
+		tableInfo.Close()
 
 		// Let's also count the rows. This may become too expensive but let's try it.
 		rowCount := 0
@@ -243,11 +252,14 @@ func getTableNames(rows *sql.Rows, name string, db *database.Database, schema st
 				return nil, 0, e2, util.ErrorResponse(w, db.Session.ID, errors.Localize(e2, db.Session.Language), http.StatusInternalServerError)
 			}
 
-			defer result.Close()
-
 			if result.Next() {
 				_ = result.Scan(&rowCount)
 			}
+
+			// See the identical reasoning on tableInfo.Close() above -- this
+			// connection must go back to the pool per-table, not at the end
+			// of the whole listing.
+			result.Close()
 		}
 
 		// Package up the info for this table to add to the list.

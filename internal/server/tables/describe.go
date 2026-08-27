@@ -314,8 +314,6 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 			return uniqueColumns, nullableColumns, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
 		}
 
-		defer rows.Close()
-
 		// Read the rows from the result, which will be the names of the columns in the table that
 		// are defined as UNIQUE.
 		for rows.Next() {
@@ -329,6 +327,13 @@ func getSqliteColumnMetadata(db *database.Database, tableName string, session *r
 			keys = append(keys, name)
 			uniqueColumns[name] = true
 		}
+
+		// Closed per-iteration, not deferred to function exit -- a table
+		// with enough unique indexes could otherwise hold more pooled
+		// connections open at once than internal/dbpool allows, and since
+		// they are only released when this function returns, that would
+		// deadlock waiting for a connection this same function is holding.
+		rows.Close()
 	}
 
 	ui.Log(ui.TableLogger, "table.unique.columns", ui.A{

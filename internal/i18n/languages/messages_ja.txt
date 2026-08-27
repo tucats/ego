@@ -1859,6 +1859,7 @@ server.no.token=プロファイル {{profile}} の既存のサーバートーク
 server.panic.recovered=セッション {{session}} のパニックから回復しました。{{method}} {{path}}、{{error}}
 server.panic.stack=セッション {{session}} のパニックスタックトレース、{{stack}}
 server.panic.task=バックグラウンドタスク {{task}} のパニックから回復しました、{{error}}
+server.quit.dump=SIGQUIT によって要求されたゴルーチンダンプ、{{count}} 個のゴルーチン、{{stack}}
 server.redirect=301 {{method}} {{url}} ({{host}}:{{port}} から); {{redirect}} にリダイレクト
 server.redirect.disallowed=400 {{method}} {{url}} ({{host}}:{{port}} から); HTTPSリダイレクトは許可されていません
 server.redirect.error=HTTP/HTTPSリダイレクターを起動できません: {{error}}

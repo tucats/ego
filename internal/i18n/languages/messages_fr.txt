@@ -1859,6 +1859,7 @@ server.no.token=Aucun jeton de serveur existant trouvé pour le profil {{profile
 server.panic.recovered=Récupération après une panique dans la session {{session}}, {{method}} {{path}}, {{error}}
 server.panic.stack=Trace de pile de la panique pour la session {{session}}, {{stack}}
 server.panic.task=Récupération après une panique dans la tâche d'arrière-plan {{task}}, {{error}}
+server.quit.dump=Vidage des goroutines demandé par SIGQUIT, {{count}} goroutines, {{stack}}
 server.redirect=301 {{method}} {{url}} depuis {{host}}:{{port}} ; redirigé vers {{redirect}}
 server.redirect.disallowed=400 {{method}} {{url}} depuis {{host}}:{{port}} ; redirection HTTPS non autorisée
 server.redirect.error=Impossible de démarrer le redirecteur HTTP/HTTPS : {{error}}

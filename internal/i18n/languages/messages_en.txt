@@ -1890,6 +1890,7 @@ server.no.token=No existing server token found for profile {{profile}}
 server.panic.recovered=Recovered from panic in session {{session}}, {{method}} {{path}}, {{error}}
 server.panic.stack=Panic stack trace for session {{session}}, {{stack}}
 server.panic.task=Recovered from panic in background task {{task}}, {{error}}
+server.quit.dump=Goroutine dump requested by SIGQUIT, {{count}} goroutines, {{stack}}
 server.redirect=301 {{method}} {{url}} from {{host}}:{{port}}; redirected to {{redirect}}
 server.redirect.disallowed=400 {{method}} {{url}} from {{host}}:{{port}}; HTTPS redirect disallowed
 server.redirect.error=Unable to start HTTP/HTTPS redirector: {{error}}
