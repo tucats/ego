@@ -1221,6 +1221,51 @@ be consider a PUT operation.
 &nbsp;
 &nbsp;
 
+#### POST /dsns/_dsn_/tables/@format <a name="format"></a>
+
+Formats one or more SQL statements without executing them, using the same
+parser [`@sql`](#sql) uses. Each statement's text is rewritten to match the
+named DSN's own dialect (for example, sqlite3's `INSERT OR ...` shorthand and
+generated-key syntax are translated to their PostgreSQL equivalents, or vice
+versa) and to the identifier quoting the target dialect requires, and, for a
+PostgreSQL DSN, unqualified table/view/index names are qualified with the
+DSN's own schema. This endpoint requires the same `sql` permission as
+[`@sql`](#sql); unlike `@sql`, it never opens a transaction or reads/writes
+a row, so no table-level permissions are checked.
+
+The request payload uses the same conventions as `@sql`: a JSON-encoded array
+of strings, or a single JSON-encoded string (which may itself contain
+multiple `;`-separated statements).
+
+```json
+[
+    "select id,name from people where name='Jones'",
+    "insert into people(name) values ('Smith')"
+]
+```
+
+A successful response returns the formatted text of each statement, in the
+same order as the request, in the `text` field:
+
+```json
+{
+    "server": { "...": "..." },
+    "status": 200,
+    "msg": "",
+    "text": [
+        "SELECT \"id\", \"name\"\nFROM \"people\"\nWHERE \"name\" = 'Jones'",
+        "INSERT INTO \"people\" (\"name\")\nVALUES ('Smith')"
+    ]
+}
+```
+
+If any statement cannot be parsed or rewritten for the DSN's dialect, the
+request fails and the error is reported in the `msg` field of the response,
+the same way any other table operation reports an error.
+
+&nbsp;
+&nbsp;
+
 #### POST /dsns/_dsn_/tables/@generate <a name="generate"></a>
 
 Uses a server-configured AI text-generation endpoint to turn a natural-language
@@ -1842,6 +1887,7 @@ The following table lists every endpoint supported by the _Ego_ server.
 | GET | /dsns/_dsn_/tables/_table_ | Returns the column metadata (name, type, nullability) for the named table. |
 | DELETE | /dsns/_dsn_/tables/_table_ | Deletes the named table and all its data. |
 | PUT | /dsns/_dsn_/tables/@sql | Executes arbitrary SQL against the DSN (admin only). |
+| POST | /dsns/_dsn_/tables/@format | Formats SQL text for the DSN's dialect without executing it (`sql` permission). |
 | POST | /dsns/_dsn_/tables/@generate | Uses a server-configured AI endpoint to generate a SQL query from a natural-language request (DSN admin only; server must be configured with an AI model). |
 | POST | /dsns/_dsn_/tables/@transaction | Executes an atomic multi-step transaction across one or more tables. |
 | GET | /dsns/_dsn_/tables/@permissions | Returns permissions records for all tables in the DSN (admin only). |

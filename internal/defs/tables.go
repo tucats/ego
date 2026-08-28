@@ -247,6 +247,26 @@ type DSNGenerateResponse struct {
 	Message string `json:"msg"`
 }
 
+// SQLFormatResponse is the JSON body returned by POST
+// /dsns/{dsnname}/tables/@format.
+//
+// Text contains each requested statement's formatted SQL text, in the same
+// order as the request array, rewritten to match the named DSN's own
+// dialect. It is empty when Message reports an error.
+type SQLFormatResponse struct {
+	// Standard server identification and request metadata.
+	ServerInfo `json:"server"`
+
+	// The formatted SQL statement text, one entry per requested statement.
+	Text []string `json:"text"`
+
+	// HTTP status code echoed back in the body for client convenience.
+	Status int `json:"status"`
+
+	// Human-readable status message.
+	Message string `json:"msg"`
+}
+
 type PermissionObject struct {
 	// The user for whom these permissions apply.
 	User string `json:"user"`

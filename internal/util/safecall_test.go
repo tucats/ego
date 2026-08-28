@@ -12,6 +12,8 @@ import (
 
 const testValue = "value"
 
+var broken map[string]string
+
 // withRecoverySetting sets ego.server.panic.recovery for the duration of a test
 // and restores the previous state afterwards, including the case where the key
 // was not present at all -- which is a distinct state from "present but empty"
@@ -70,8 +72,6 @@ func TestSafeCallRecoversPanic_NILPTR6(t *testing.T) {
 	withRecoverySetting(t, defs.True, false)
 
 	if completed := SafeCall("nil map write", func() {
-		var broken map[string]string
-
 		broken["key"] = testValue
 	}); completed {
 		t.Error("SafeCall reported completed = true for a task that panicked")
@@ -110,8 +110,6 @@ func TestSafeCallLoopSurvivesPanic_NILPTR6(t *testing.T) {
 
 			// Panic on the odd-numbered passes only.
 			if iterations%2 == 1 {
-				var broken map[string]string
-
 				broken["key"] = testValue
 			}
 		})
@@ -133,8 +131,6 @@ func TestSafeCallPropagatesWhenDisabled_NILPTR6(t *testing.T) {
 		}()
 
 		SafeCall("nil map write", func() {
-			var broken map[string]string
-
 			broken["key"] = testValue
 		})
 

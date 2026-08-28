@@ -16,6 +16,7 @@ const (
 	UpsertParameterName        = "upsert"
 	PermissionsPseudoTable     = "@permissions"
 	SQLPseudoTable             = "@sql"
+	SQLFormatPseudoTable       = "@format"
 	GeneratePseudoTable        = "@generate"
 	TaskReloadPseudoID         = "@reload"
 	ExpiresParameterName       = "expires"
@@ -52,6 +53,13 @@ const (
 	TablesNamePath     = TablesPath + "%s"
 	TablesRowsPath     = TablesPath + "{{table}}/rows"
 	TablesSQLPath      = TablesPath + SQLPseudoTable
+	// TablesFormatPath is the endpoint that formats client-supplied SQL text
+	// (using the same parser/formatter @sql applies before executing a
+	// statement, see FormatSQL in server/tables/format.go) without executing
+	// it, converting each statement's syntax to match the named DSN's own
+	// dialect. The "@" prefix follows the same convention as @sql and
+	// @permissions pseudo-table names.
+	TablesFormatPath = TablesPath + SQLFormatPseudoTable
 	// DSNMetadataPath is the endpoint that returns compact schema metadata for
 	// every table in the named DSN (column names and types). The "@" prefix
 	// follows the same convention as @sql and @permissions pseudo-table names,
@@ -180,6 +188,7 @@ const (
 
 	EgoMediaType            = "application/vnd.ego."
 	SQLStatementsMediaType  = EgoMediaType + "sql+json"
+	SQLFormatMediaType      = EgoMediaType + "sql.format+json"
 	RowSetMediaType         = EgoMediaType + "rows+json"
 	AbstractRowSetMediaType = EgoMediaType + "rows.abstract+json"
 	TransactionMediaType    = EgoMediaType + "transaction+json"

@@ -85,7 +85,7 @@ func TestAuthorizeAndClassifySQL_SQLiteIsUntouched(t *testing.T) {
 func TestAuthorizeAndClassifySQL_RestrictSchemaRejectsOtherSchema(t *testing.T) {
 	db := &database.Database{Provider: defs.PostgresProvider, User: "myschema", RestrictSchema: true}
 
-	_, _, _, status, err := authorizeAndClassifySQL(db, "SELECT * FROM pg_catalog.pg_tables")
+	_, _, _, status, err := authorizeAndClassifySQL(db, "SELECT * FROM pg_catalog.pg_tables") //nolint:dogsled
 	if err == nil {
 		t.Fatalf("expected an error, got none (status %d)", status)
 	}

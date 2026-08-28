@@ -213,6 +213,16 @@ func AddStaticRoutes(r *router.Router) {
 		Permissions(defs.SQLPermission).
 		Class(router.TableRequestCounter)
 
+	// Format SQL text using the "@format" pseudo-table-name, without
+	// executing it. Same permission as @sql (defs.SQLPermission) since it
+	// parses client-supplied SQL the same way, but FormatSQL never opens a
+	// transaction or touches a row, so there is no additional table_perms/
+	// DSNAdminPermission check the way @sql itself enforces (see FormatSQL's
+	// doc comment in format.go).
+	r.New(defs.TablesPath+defs.SQLFormatPseudoTable, FormatSQL, http.MethodPost).
+		Permissions(defs.SQLPermission).
+		Class(router.TableRequestCounter)
+
 	// Create a new table using a DSN. Not gated by Permissions() here
 	// (DATA-SECURITY-2.md finding #3): Permissions(defs.DSNAdminPermission)
 	// only ever checks a caller's *identity-wide* permissions (see

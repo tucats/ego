@@ -126,7 +126,7 @@ func TestOpen_ConcurrentRequestsShareOnePool_NoUseAfterClose(t *testing.T) {
 	// server (config is loaded once, single-threaded, before the HTTP
 	// listener starts accepting requests). Without this, 50 goroutines can
 	// race the very first settings.Get call's lazy init -- a pre-existing
-	// bug in that package (unsynchronized check-then-init of a package-level
+	// issue in that package (unsynchronized check-then-init of a package-level
 	// global), unrelated to this test's purpose, and not one this test is
 	// responsible for guarding.
 	settings.Get(defs.DBPoolEnabledSetting)

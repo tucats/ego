@@ -168,7 +168,7 @@ func createPool(name, scheme, connStr string) (*sql.DB, error) {
 // a brand-new pool with the original hardcoded Postgres limits and no
 // connectivity check. It exists solely so DBPoolEnabledSetting=false is a
 // true rollback to prior behavior, not merely "caching off but otherwise
-// changed."
+// changed".
 func openLegacy(scheme, connStr string) (*sql.DB, error) {
 	if scheme == defs.SqliteProvider {
 		connStr = sqliteConnString(connStr)
