@@ -1,8 +1,10 @@
 package tables
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
@@ -39,10 +41,7 @@ func FormatSQL(session *router.Session, w http.ResponseWriter, r *http.Request) 
 		return util.ErrorResponse(w, sessionID, i18n.Text(session.Language, "error.sql.payload.empty"), http.StatusBadRequest)
 	}
 
-	// The payload uses the same array-of-strings-or-single-string convention
-	// as @sql (see getStatementsFromRequest in sql.go), including splitting a
-	// single string containing multiple ";"-separated statements.
-	statements, httpStatus := getStatementsFromRequest(body, w, session)
+	statements, httpStatus := getFormatStatementsFromRequest(body, w, session)
 	if httpStatus > http.StatusOK {
 		return httpStatus
 	}
@@ -61,7 +60,21 @@ func FormatSQL(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	formatted := make([]string, len(statements))
 
 	for i, stmt := range statements {
-		p, err := sqlparse.New(stmt, dialect)
+		// Pull whole "--" and "//" comment lines out before parsing -- the
+		// parser has no notion of a comment that isn't attached to real SQL
+		// (see sqlparse's own "syntax only" design goal), and these need to
+		// survive verbatim in the response rather than being silently
+		// dropped or rejected as a syntax error. See extractLineComments's
+		// own doc comment for the exact rule and its limitations.
+		code, comments := extractLineComments(stmt)
+
+		if strings.TrimSpace(code) == "" {
+			formatted[i] = strings.Join(comments, "\n")
+
+			continue
+		}
+
+		p, err := sqlparse.New(code, dialect)
 		if err != nil {
 			return util.ErrorResponse(w, sessionID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
@@ -84,7 +97,13 @@ func FormatSQL(session *router.Session, w http.ResponseWriter, r *http.Request) 
 			p.QualifyTables(db.User)
 		}
 
-		formatted[i] = p.Format()
+		formattedCode := p.Format()
+
+		if len(comments) > 0 {
+			formatted[i] = strings.Join(comments, "\n") + "\n" + formattedCode
+		} else {
+			formatted[i] = formattedCode
+		}
 	}
 
 	response := defs.SQLFormatResponse{
@@ -104,4 +123,68 @@ func FormatSQL(session *router.Session, w http.ResponseWriter, r *http.Request) 
 	}
 
 	return http.StatusOK
+}
+
+// getFormatStatementsFromRequest decodes @format's request body into an
+// array of SQL text to format, one entry per requested statement. Unlike
+// @sql's getStatementsFromRequest (sql.go), a single request-body string is
+// not further split on ";" into multiple statements, and no comment text is
+// ever stripped here -- each array entry (or the lone string) is handed
+// back exactly as the caller wrote it, including any comment lines, so
+// FormatSQL can find and preserve them itself (see extractLineComments).
+// Callers wanting several statements formatted independently should submit
+// a JSON array rather than relying on ";"-splitting of one string.
+func getFormatStatementsFromRequest(body string, w http.ResponseWriter, session *router.Session) ([]string, int) {
+	statements := []string{}
+
+	if err := json.Unmarshal([]byte(body), &statements); err != nil {
+		var statement string
+
+		if err := json.Unmarshal([]byte(body), &statement); err != nil {
+			return nil, util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.sql.payload.invalid", ui.A{"err": err.Error()}), http.StatusBadRequest)
+		}
+
+		statements = []string{statement}
+	}
+
+	return statements, http.StatusOK
+}
+
+// extractLineComments pulls every whole "--" or "//" comment line out of
+// stmt, returning the remaining SQL text (comment lines removed) plus the
+// comment lines themselves, verbatim and in their original relative order.
+// "//" is an Ego-specific extension to standard SQL comment syntax, matching
+// the same convention splitSQLStatements (sql.go) already strips as an
+// "Ego-style comment line" elsewhere.
+//
+// A line only counts as a comment here if the marker is the first
+// non-blank thing on it -- an inline "-- ..." or "// ..." trailing actual
+// SQL on the same line is left in the code text (and handled, or not, by
+// whatever sqlparse itself does with it) rather than being pulled out,
+// since chopping a code line in half at the marker would corrupt it.
+//
+// Every extracted comment is placed ahead of the statement's formatted SQL
+// in the caller's output, in the order it appeared in stmt, regardless of
+// whether it appeared before, after, or in the middle of the original code
+// -- sqlparse's Format() rebuilds a statement's text structure from its
+// parsed AST, so there is no reliable line correspondence between the
+// original code and the reformatted code to interleave a mid-statement
+// comment back into.
+func extractLineComments(stmt string) (code string, comments []string) {
+	lines := strings.Split(stmt, "\n")
+	codeLines := make([]string, 0, len(lines))
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		if strings.HasPrefix(trimmed, "--") || strings.HasPrefix(trimmed, "//") {
+			comments = append(comments, line)
+
+			continue
+		}
+
+		codeLines = append(codeLines, line)
+	}
+
+	return strings.Join(codeLines, "\n"), comments
 }
