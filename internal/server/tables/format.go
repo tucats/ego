@@ -84,7 +84,7 @@ func FormatSQL(session *router.Session, w http.ResponseWriter, r *http.Request) 
 			p.QualifyTables(db.User)
 		}
 
-		formatted[i] = p.Format() + ";"
+		formatted[i] = p.Format()
 	}
 
 	response := defs.SQLFormatResponse{
