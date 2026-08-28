@@ -40,6 +40,8 @@ func FeaturesHandler(session *Session, w http.ResponseWriter, r *http.Request) i
 		Features: map[string]bool{
 			"ai":         settings.Get(defs.ServerAIModelSetting) != "",
 			"biometrics": settings.GetBool(defs.WebAuthnAllowPasskeysSetting),
+			"sqlformat":  true,
+			"egoformat":  true,
 		},
 		Status: http.StatusOK,
 		Msg:    "",
