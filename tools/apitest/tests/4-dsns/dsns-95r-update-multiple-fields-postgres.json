@@ -1,0 +1,57 @@
+{
+    "description": "a single PATCH combining several fields at once (host, port, schema, user, database) applies all of them together -- exercises UpdateDSNHandler's \"changed\" accumulation across multiple independent if-blocks rather than one field at a time",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/pgdsn2-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "database": "otherdb",
+            "host": "pg3.example.internal",
+            "port": 7777,
+            "schema": "analytics",
+            "user": "pguser3"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "host updated",
+            "query": "host",
+            "value": "pg3.example.internal"
+        },
+        {
+            "name": "port updated",
+            "query": "port",
+            "value": "7777"
+        },
+        {
+            "name": "schema updated",
+            "query": "schema",
+            "value": "analytics"
+        },
+        {
+            "name": "user updated",
+            "query": "user",
+            "value": "pguser3"
+        }
+    ]
+}

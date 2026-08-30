@@ -1,0 +1,41 @@
+{
+    "description": "PATCH with an empty JSON object body touches no fields, so UpdateDSNHandler's \"changed\" flag stays false and WriteDSN is never called -- this must still succeed (200) and simply echo back the DSN's current, unmodified state (rowid left at false from dsns-95i)",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/udsn2-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {}
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rowid unchanged from dsns-95i",
+            "query": "rowid",
+            "value": "false"
+        },
+        {
+            "name": "provider unchanged",
+            "query": "provider",
+            "value": "sqlite"
+        }
+    ]
+}

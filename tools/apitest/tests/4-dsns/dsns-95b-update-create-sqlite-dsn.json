@@ -1,0 +1,40 @@
+{
+    "description": "create an unrestricted sqlite DSN to exercise the newly expanded UpdateDSNHandler (PATCH /dsns/{dsn}) field set -- database/host/schema/port/user must all be rejected for a local provider, while row-id must still be accepted",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "udsn2-{{DSNUUID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-udsn2-{{DSNUUID}}.db"
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rowid defaults false",
+            "query": "rowid",
+            "value": "false"
+        }
+    ]
+}

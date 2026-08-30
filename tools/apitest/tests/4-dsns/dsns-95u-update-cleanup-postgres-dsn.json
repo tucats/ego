@@ -1,0 +1,30 @@
+{
+    "description": "clean up the postgres-provider DSN created for the UpdateDSNHandler field-coverage tests -- no local db file to remove, since it was never actually connected to",
+    "request": {
+        "method": "DELETE",
+        "endpoint": "/dsns/pgdsn2-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

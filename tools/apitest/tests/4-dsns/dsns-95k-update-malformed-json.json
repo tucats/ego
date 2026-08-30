@@ -1,16 +1,14 @@
 {
-    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database. This now goes through the same generic ErrDSNNotApplicable path as database/host/schema/port/user, rather than a dedicated 'secured flag' message",
+    "description": "PATCH with a syntactically invalid JSON body fails json.Unmarshal in UpdateDSNHandler and is rejected as 400, not 500 -- the body is sent as a raw (non-JSON-object) string here specifically so apitest doesn't \"fix\" it by re-encoding",
     "request": {
         "method": "PATCH",
-        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "endpoint": "/dsns/udsn2-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
-        "body": {
-            "secured": true
-        }
+        "body": "{ this is not valid json"
     },
     "response": {
         "status": 400,
@@ -28,12 +26,6 @@
             "name": "server id",
             "query": "server.id",
             "value": "{{SERVER_ID}}"
-        },
-        {
-            "name": "error message mentions Secured field",
-            "query": "msg",
-            "op": "contains",
-            "value": "Secured"
         }
     ]
 }

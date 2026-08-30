@@ -386,7 +386,7 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		}
 
 		if update.Password != "" {
-			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNSecuredNotApplicable.Context("Password"), session.Language), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Password"), session.Language), http.StatusBadRequest)
 		}
 
 		if update.Secured != nil && *update.Secured {

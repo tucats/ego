@@ -1,15 +1,15 @@
 {
-    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database. This now goes through the same generic ErrDSNNotApplicable path as database/host/schema/port/user, rather than a dedicated 'secured flag' message",
+    "description": "PATCH with a user against a sqlite DSN must be rejected -- a local file provider has no database credential to authenticate. The field context reported is \"User\" (defs.DSNUpdateRequest's JSON tag / the CLI's --username option), not \"Username\"",
     "request": {
         "method": "PATCH",
-        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "endpoint": "/dsns/udsn2-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": {
-            "secured": true
+            "user": "someuser"
         }
     },
     "response": {
@@ -30,10 +30,10 @@
             "value": "{{SERVER_ID}}"
         },
         {
-            "name": "error message mentions Secured field",
+            "name": "error message mentions User field",
             "query": "msg",
             "op": "contains",
-            "value": "Secured"
+            "value": "User"
         }
     ]
 }

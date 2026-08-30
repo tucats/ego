@@ -1,0 +1,38 @@
+{
+    "description": "PATCH user against a postgres DSN is allowed and takes effect -- unlike the sqlite suite's dsns-95g. This is also a regression check for internal/commands/dsns.go's DSNSUpdate: the CLI's --username flag used to write into req.Password instead of req.Username (fixed alongside this test suite), so this exercises the same defs.DSNUpdateRequest.Username field the CLI now sets correctly",
+    "request": {
+        "method": "PATCH",
+        "endpoint": "/dsns/pgdsn2-{{DSNUUID}}",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "user": "pguser2"
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["application/vnd.ego.dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "user updated",
+            "query": "user",
+            "value": "pguser2"
+        }
+    ]
+}

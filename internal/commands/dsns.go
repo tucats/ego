@@ -142,7 +142,7 @@ func DSNSUpdate(c *cli.Context) error {
 			return errors.ErrDSNNotApplicable.Context("username")
 		}
 
-		req.Password = text
+		req.Username = &text
 	}
 
 	if text, found := c.String(defs.PasswordOption); found {

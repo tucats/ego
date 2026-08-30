@@ -1,15 +1,15 @@
 {
-    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database. This now goes through the same generic ErrDSNNotApplicable path as database/host/schema/port/user, rather than a dedicated 'secured flag' message",
+    "description": "PATCH with a database name against a sqlite DSN must be rejected -- a sqlite database is a local file path, not something UpdateDSNHandler lets you retarget through this endpoint for a local provider",
     "request": {
         "method": "PATCH",
-        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "endpoint": "/dsns/udsn2-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": {
-            "secured": true
+            "database": "somewhere-else.db"
         }
     },
     "response": {
@@ -30,10 +30,10 @@
             "value": "{{SERVER_ID}}"
         },
         {
-            "name": "error message mentions Secured field",
+            "name": "error message mentions Database field",
             "query": "msg",
             "op": "contains",
-            "value": "Secured"
+            "value": "Database"
         }
     ]
 }

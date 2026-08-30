@@ -1,0 +1,50 @@
+{
+    "description": "create a postgres-provider DSN (never actually connected to -- WriteDSN only persists DSN metadata, so no live postgres server is required) to exercise UpdateDSNHandler's newly-allowed fields for a network provider: database/host/schema/port/user are all rejected for sqlite (dsns-95c..95g) but must be accepted here",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "pgdsn2-{{DSNUUID}}",
+            "provider": "postgres",
+            "database": "initialdb",
+            "host": "pg.example.internal",
+            "port": 5432,
+            "schema": "public",
+            "user": "pguser1",
+            "password": "pgpass1"
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "host echoed",
+            "query": "host",
+            "value": "pg.example.internal"
+        },
+        {
+            "name": "port echoed",
+            "query": "port",
+            "value": "5432"
+        }
+    ]
+}

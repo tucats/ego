@@ -1,21 +1,21 @@
 {
-    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database. This now goes through the same generic ErrDSNNotApplicable path as database/host/schema/port/user, rather than a dedicated 'secured flag' message",
+    "description": "PATCH host against a postgres DSN is allowed and takes effect -- unlike the sqlite suite's dsns-95d, isLocalDSN's rejection block never triggers for a network provider",
     "request": {
         "method": "PATCH",
-        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "endpoint": "/dsns/pgdsn2-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": {
-            "secured": true
+            "host": "pg2.example.internal"
         }
     },
     "response": {
-        "status": 400,
+        "status": 200,
         "headers": {
-            "Content-Type": ["error+json"]
+            "Content-Type": ["application/vnd.ego.dsn+json"]
         }
     },
     "tests": [
@@ -30,10 +30,9 @@
             "value": "{{SERVER_ID}}"
         },
         {
-            "name": "error message mentions Secured field",
-            "query": "msg",
-            "op": "contains",
-            "value": "Secured"
+            "name": "host updated",
+            "query": "host",
+            "value": "pg2.example.internal"
         }
     ]
 }

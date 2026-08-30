@@ -1,19 +1,19 @@
 {
-    "description": "PATCH secured:true against a sqlite DSN must be rejected -- TLS is meaningless for a local file database. This now goes through the same generic ErrDSNNotApplicable path as database/host/schema/port/user, rather than a dedicated 'secured flag' message",
+    "description": "REST-2: PATCH /dsns/{name} for a DSN that does not exist is 404, same classifier as GET/DELETE on the same path -- there was no dedicated regression test for the PATCH case before this suite",
     "request": {
         "method": "PATCH",
-        "endpoint": "/dsns/udsn-{{DSNUUID}}",
+        "endpoint": "/dsns/nosuchdsn-{{DSNUUID}}",
         "headers": {
             "Content-Type": ["application/json"],
             "Accept": ["*/*"],
             "Authorization": ["Bearer {{API_TOKEN}}"]
         },
         "body": {
-            "secured": true
+            "secured": false
         }
     },
     "response": {
-        "status": 400,
+        "status": 404,
         "headers": {
             "Content-Type": ["error+json"]
         }
@@ -28,12 +28,6 @@
             "name": "server id",
             "query": "server.id",
             "value": "{{SERVER_ID}}"
-        },
-        {
-            "name": "error message mentions Secured field",
-            "query": "msg",
-            "op": "contains",
-            "value": "Secured"
         }
     ]
 }
