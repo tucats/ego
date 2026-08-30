@@ -7,10 +7,12 @@ import (
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/language/data"
 	"github.com/tucats/ego/internal/defs"
+	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
 	"github.com/tucats/ego/internal/router"
 	"github.com/tucats/ego/internal/server/auth"
 	"github.com/tucats/ego/internal/language/symbols"
+	"github.com/tucats/ego/internal/server/tables"
 	"github.com/tucats/ego/internal/util"
 )
 
@@ -60,6 +62,24 @@ func DeleteUserHandler(session *router.Session, w http.ResponseWriter, r *http.R
 		msg := fmt.Sprintf("No username entry for '%s'", u.Name)
 
 		return util.ErrorResponse(w, session.ID, msg, http.StatusNotFound)
+	}
+
+	// Best-effort cascading cleanup of any DSN and table permission grants for
+	// this user, so stale dsns_auth/table_perms rows don't linger (and
+	// potentially reactivate) if the username is ever reused. This does not
+	// fail the user deletion if it errors.
+	if dsns.DSNService != nil {
+		if err := dsns.DSNService.RevokeAllDSNForUser(session.ID, u.Name); err != nil {
+			ui.Log(ui.AuthLogger, "auth.dsn.error", ui.A{
+				"session": session.ID,
+				"error":   err.Error()})
+		}
+	}
+
+	if _, err := tables.DeletePermissionsByUser(session.ID, u.Name); err != nil {
+		ui.Log(ui.TableLogger, "table.delete.error", ui.A{
+			"session": session.ID,
+			"error":   err.Error()})
 	}
 
 	// Deletion succeeded — write the deleted user's record back to the caller

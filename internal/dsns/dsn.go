@@ -76,6 +76,7 @@ type dsnService interface {
 	GrantDSN(session int, user, name string, action DSNAction, grant bool) error
 	Permissions(session int, user, name string) (map[string]DSNAction, error)
 	RevokeAllDSN(session int, name string) error
+	RevokeAllDSNForUser(session int, user string) error
 	Flush() error
 
 	// Close releases any resources (open database connections, file

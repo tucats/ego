@@ -735,6 +735,43 @@ func DeletePermissionsByDSN(session int, dsnName string) (int, error) {
 	return count, nil
 }
 
+// DeletePermissionsByUser removes every table_perms entry associated with the given
+// user name, across all DSNs and tables. This is called when a user account is
+// deleted, so that stale per-table grants don't linger in the system database (and
+// potentially reactivate) if the username is ever reused.
+func DeletePermissionsByUser(session int, userName string) (int, error) {
+	if !initPermissions() {
+		return 0, nil
+	}
+
+	list, err := pHandle.Read(pHandle.Equals("user", userName))
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+
+	for _, item := range list {
+		p := item.(*PermissionsObject)
+		if p == nil {
+			continue
+		}
+
+		if _, err := pHandle.Delete(pHandle.Equals("id", p.ID)); err != nil {
+			return count, err
+		}
+
+		count++
+	}
+
+	ui.Log(ui.TableLogger, "table.perms.deleted", ui.A{
+		"session": session,
+		"user":    userName,
+		"count":   count})
+
+	return count, nil
+}
+
 // Authorized uses the system database to determine if the proposed operation is permitted
 // for the given table. This only applies for tables in a DSN that is marked as "restricted".
 // By default, DSNs are not restricted and depend on the underlying provider to handle all role

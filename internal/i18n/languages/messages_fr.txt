@@ -1376,6 +1376,7 @@ auth.default.password=*** Mot de passe {{user}} généré, {{pass}}. Changez-le 
 auth.dsn.create=DSN {{name}} créé
 auth.dsn.db=Magasin DSN de base de données {{constr}}
 auth.dsn.delete=DSN {{name}} supprimé
+auth.dsn.error=Erreur lors de la révocation des autorisations DSN, {{error}}
 auth.dsn.file=Création d'une nouvelle table DSN vide dans {{path}}
 auth.dsn.flush=DSN vidé vers le magasin de sauvegarde
 auth.dsn.found=Enregistrement DSN trouvé pour {{name}}

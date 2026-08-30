@@ -1407,6 +1407,7 @@ auth.default.password=*** Generated {{user}} password, {{pass}}. Change this now
 auth.dsn.create=Created dsn {{name}}
 auth.dsn.db=Database DSN store {{constr}}
 auth.dsn.delete=Deleted dsn {{name}}
+auth.dsn.error=Error revoking dsn authorizations, {{error}}
 auth.dsn.file=Creating new empty DSN table in {{path}}
 auth.dsn.flush=Flushed dsn to backing store
 auth.dsn.found=Found DSN record for {{name}}

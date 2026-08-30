@@ -1376,6 +1376,7 @@ auth.default.password=*** 生成された {{user}} のパスワード、{{pass}}
 auth.dsn.create=dsn {{name}} を作成しました
 auth.dsn.db=データベースDSNストア {{constr}}
 auth.dsn.delete=dsn {{name}} を削除しました
+auth.dsn.error=dsn認可の取り消しエラー、{{error}}
 auth.dsn.file={{path}} に新しい空のDSNテーブルを作成中
 auth.dsn.flush=dsnをバッキングストアにフラッシュしました
 auth.dsn.found={{name}} のDSNレコードが見つかりました

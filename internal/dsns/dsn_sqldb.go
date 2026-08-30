@@ -219,6 +219,16 @@ func (pg *databaseService) RevokeAllDSN(session int, name string) error {
 	return err
 }
 
+// RevokeAllDSNForUser removes every dsns_auth record for the named user,
+// across all DSNs. Used when a user account is deleted, so that stale
+// grants don't linger in the system database (and potentially reactivate)
+// if the username is ever reused.
+func (pg *databaseService) RevokeAllDSNForUser(session int, user string) error {
+	_, err := pg.authHandle.Begin().Delete(pg.authHandle.Equals("user", user))
+
+	return err
+}
+
 // Required interface, but does no work for the Database service. Every
 // write already goes straight to the database, so there is nothing
 // buffered to flush.

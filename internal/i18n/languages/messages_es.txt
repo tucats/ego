@@ -1382,6 +1382,7 @@ auth.default.password=*** Contraseña de {{user}} generada, {{pass}}. ¡Cámbiel
 auth.dsn.create=DSN {{name}} creado
 auth.dsn.db=Almacén DSN de base de datos {{constr}}
 auth.dsn.delete=DSN {{name}} eliminado
+auth.dsn.error=Error al revocar las autorizaciones de DSN, {{error}}
 auth.dsn.file=Creando nueva tabla DSN vacía en {{path}}
 auth.dsn.flush=DSN vaciado al almacén de respaldo
 auth.dsn.found=Registro DSN encontrado para {{name}}

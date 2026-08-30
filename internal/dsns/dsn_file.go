@@ -199,6 +199,26 @@ func (f *fileService) revokeAllLocked(name string) bool {
 	return changed
 }
 
+// RevokeAllDSNForUser removes every auth record for the named user, across
+// all DSNs. Used when a user account is deleted, so that stale grants don't
+// linger (and potentially reactivate) if the username is ever reused.
+func (f *fileService) RevokeAllDSNForUser(session int, user string) error {
+	changed := false
+
+	for key := range f.Auth {
+		parts := strings.SplitN(key, "|", 2)
+		if len(parts) == 2 && parts[0] == user {
+			delete(f.Auth, key)
+
+			changed = true
+		}
+	}
+
+	f.dirty = f.dirty || changed
+
+	return f.Flush()
+}
+
 // Flush writes the file-based data to a json file. This operation is not
 // done if there were no changes to the database, or there is not a database
 // file name given.
