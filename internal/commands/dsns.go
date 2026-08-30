@@ -71,10 +71,8 @@ func DSNSAdd(c *cli.Context) error {
 	return err
 }
 
-// DSNSUpdate applies a partial update to an existing DSN: the stored
-// password, the Secured flag, and/or the Restricted flag. Only the flags
-// actually given on the command line are changed; everything else about
-// the DSN (name, provider, host, etc.) is left as-is.
+// DSNSUpdate applies an update to an existing DSN: only values
+// explicityy specified are change; everything else is left as-is.
 //
 // DATA-SECURITY-2.md finding #7's suggested fix, expanded per an explicit
 // product decision: rather than just documenting that a grant silently
@@ -110,23 +108,63 @@ func DSNSUpdate(c *cli.Context) error {
 		return err
 	}
 
+	// Flag to indicate if this local (i.e. sqlite) provider
+	isLocal := isLocalDSN(dsnResp.Provider)
+
 	req := defs.DSNUpdateRequest{}
 
-	if password, found := c.String(defs.PasswordOption); found {
-		if dsnResp.Provider == defs.SqliteProvider {
-			return errors.ErrDSNPasswordNotApplicable.Context(name)
+	// Basic on the command options specified, add items to the request object.
+	// Note that many of these are not applicable for when the provider is not
+	// a network provider, in which case an error is returned to the user.
+
+	if text, found := c.String("database"); found {
+		req.Database = &text
+	}
+
+	if text, found := c.String("host"); found {
+		if isLocal {
+			return errors.ErrDSNNotApplicable.Context("host")
 		}
 
-		req.Password = password
+		req.Host = &text
+	}
+
+	if text, found := c.String("schema"); found {
+		if isLocal {
+			return errors.ErrDSNNotApplicable.Context("schema")
+		}
+
+		req.Schema = &text
+	}
+
+	if text, found := c.String("username"); found {
+		if isLocal {
+			return errors.ErrDSNNotApplicable.Context("username")
+		}
+
+		req.Password = text
+	}
+
+	if text, found := c.String(defs.PasswordOption); found {
+		if isLocal {
+			return errors.ErrDSNNotApplicable.Context(defs.PasswordOption)
+		}
+
+		req.Password = text
 	}
 
 	if c.WasFound("secured") {
-		secured := c.Boolean("secured")
-		if secured && dsnResp.Provider == defs.SqliteProvider {
+		if isLocal {
 			return errors.ErrDSNSecuredNotApplicable.Context(name)
 		}
 
+		secured := c.Boolean("secured")
 		req.Secured = &secured
+	}
+
+	if c.WasFound("row-id") {
+		rowid := c.Boolean("row-id")
+		req.RowID = &rowid
 	}
 
 	if c.WasFound("restricted") {
@@ -542,4 +580,21 @@ func setPermissions(c *cli.Context, grant string) error {
 	}
 
 	return err
+}
+
+// isLocalDSN is a helper function that reports if the DSN is a local
+// provider (currently, sqlite) versus some other provider. This is
+// used to qualify values that can legitimately be changed in a DSN
+// if it is local vs on a network.
+func isLocalDSN(provider string) bool {
+	if strings.ToLower(provider) == defs.SqliteProvider {
+		return true
+	}
+
+	// Check the alternate spelling
+	if strings.ToLower(provider) == defs.DeprecatedSqliteProvider {
+		return true
+	}
+
+	return false
 }

@@ -57,9 +57,7 @@ type DSNListResponse struct {
 }
 
 // DSNUpdateRequest is the body of a PATCH /dsns/{dsn} request. It carries
-// only the fields that can be changed after a DSN is created: the stored
-// password, the Secured flag, and the Restricted flag. Fields omitted from
-// the request are left unchanged.
+// only the fields that can be changed after a DSN is created.
 //
 // Password uses the same "empty string means unchanged" convention as
 // defs.User's password field (see UpdateUserHandler) since an update that
@@ -70,9 +68,15 @@ type DSNListResponse struct {
 // false", and the latter is exactly the DATA-SECURITY-2.md finding #7
 // operation this request type exists to support.
 type DSNUpdateRequest struct {
-	Password   string `json:"password,omitempty"`
-	Secured    *bool  `json:"secured,omitempty"`
-	Restricted *bool  `json:"restricted,omitempty"`
+	Password   string  `json:"password,omitempty"`
+	Host       *string `json:"host,omitempty"`
+	Port       *int    `json:"port,omitempty"`
+	Database   *string `json:"database,omitempty"`
+	Schema     *string `json:"schema,omitempty"`
+	Username   *string `json:"user,omitempty"`
+	Secured    *bool   `json:"secured,omitempty"`
+	RowID      *bool   `json:"rowid,omitempty"`
+	Restricted *bool   `json:"restricted,omitempty"`
 }
 
 type DSNPermissionItem struct {

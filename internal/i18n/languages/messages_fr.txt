@@ -271,6 +271,7 @@ directive.mode=directive invalide pour ce mode
 div.zero=division par zéro
 dsn.exists=le dsn existe déjà
 dsn.limit.invalid=Paramètre de limite invalide
+dsn.not.applicable=Attribut DSN non applicable à ce fournisseur
 dsn.not.found=nom de source de données inexistant
 dsn.password.sqlite=un mot de passe n'est pas applicable à un nom de source de données sqlite
 dsn.pool.unavailable=le pool de connexions de ce DSN est temporairement indisponible après un échec récent

@@ -271,6 +271,7 @@ directive.mode=モードに対して無効なディレクティブ
 div.zero=ゼロ除算
 dsn.exists=dsnは既に存在します
 dsn.limit.invalid=無効なlimitパラメーター
+dsn.not.applicable=このプロバイダーには適用できないDSN属性です
 dsn.not.found=そのようなデータソース名はありません
 dsn.password.sqlite=sqliteデータソース名にはパスワードを指定できません
 dsn.pool.unavailable=このデータソース名の接続プールは、直近の接続失敗のため一時的に利用できません

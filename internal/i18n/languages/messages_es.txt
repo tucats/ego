@@ -277,6 +277,7 @@ directive.mode=directiva no válida para el modo
 div.zero=división por cero
 dsn.exists=el dsn ya existe
 dsn.limit.invalid=Parámetro de límite inválido
+dsn.not.applicable=Atributo DSN no aplicable a este proveedor
 dsn.not.found=no existe tal nombre de origen de datos
 dsn.password.sqlite=no se puede especificar una contraseña para un nombre de origen de datos sqlite
 dsn.pool.unavailable=el grupo de conexiones de este DSN no está disponible temporalmente tras un fallo reciente

@@ -226,6 +226,7 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		Schema:     dataSourceName.Schema,
 		Secured:    dataSourceName.Secured,
 		Restricted: dataSourceName.Restricted,
+		RowId:      dataSourceName.RowId,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
 	}
@@ -297,6 +298,7 @@ func DeleteDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		Schema:     dataSourceName.Schema,
 		Restricted: dataSourceName.Restricted,
 		Password:   defs.ElidedPassword,
+		RowId:      dataSourceName.RowId,
 		Status:     http.StatusOK,
 	}
 
@@ -355,24 +357,70 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 	}
 
-	// DATA-SECURITY-2.md finding #7's suggested fix: sqlite has no network
-	// connection at all, so a stored password and TLS are both meaningless
+	// The sqlite provider is local, and has fewer options. For example,
+	// a stored password and TLS are both meaningless
 	// for it -- matching CreateDSNHandler's existing skip of host/port
 	// defaults and password encryption for the same provider. Per an
 	// explicit product decision, --secured false is still accepted for
 	// sqlite (already the DSN's effective state, so it's a harmless
 	// no-op); only --secured true is rejected as actually contradictory.
-	if dataSourceName.Provider == defs.SqliteProvider {
+	if isLocalDSN(dataSourceName.Provider) {
+		if update.Database != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Database"), session.Language), http.StatusBadRequest)
+		}
+
+		if update.Host != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Host"), session.Language), http.StatusBadRequest)
+		}
+
+		if update.Schema != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Schema"), session.Language), http.StatusBadRequest)
+		}
+
+		if update.Port != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Port"), session.Language), http.StatusBadRequest)
+		}
+
+		if update.Username != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("User"), session.Language), http.StatusBadRequest)
+		}
+
 		if update.Password != "" {
-			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNPasswordNotApplicable.Context(name), session.Language), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNSecuredNotApplicable.Context("Password"), session.Language), http.StatusBadRequest)
 		}
 
 		if update.Secured != nil && *update.Secured {
-			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNSecuredNotApplicable.Context(name), session.Language), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Secured"), session.Language), http.StatusBadRequest)
 		}
 	}
 
+	// Now, let's apply what was given to us.
 	changed := false
+
+	if update.Database != nil {
+		dataSourceName.Database = *update.Database
+		changed = true
+	}
+
+	if update.Host != nil {
+		dataSourceName.Host = *update.Host
+		changed = true
+	}
+
+	if update.Username != nil {
+		dataSourceName.Username = *update.Username
+		changed = true
+	}
+
+	if update.Schema != nil {
+		dataSourceName.Schema = *update.Schema
+		changed = true
+	}
+
+	if update.Port != nil {
+		dataSourceName.Port = *update.Port
+		changed = true
+	}
 
 	if update.Password != "" {
 		encoded, err := encrypt(update.Password)
@@ -386,6 +434,11 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 
 	if update.Secured != nil {
 		dataSourceName.Secured = *update.Secured
+		changed = true
+	}
+
+	if update.RowID != nil {
+		dataSourceName.RowId = *update.RowID
 		changed = true
 	}
 
@@ -434,6 +487,7 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		Schema:     dataSourceName.Schema,
 		Secured:    dataSourceName.Secured,
 		Restricted: dataSourceName.Restricted,
+		RowId:      dataSourceName.RowId,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
 	}
@@ -716,4 +770,21 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 	}
 
 	return http.StatusOK
+}
+
+// isLocalDSN is a helper function that reports if the DSN is a local
+// provider (currently, sqlite) versus some other provider. This is
+// used to qualify values that can legitimately be changed in a DSN
+// if it is local vs on a network.
+func isLocalDSN(provider string) bool {
+	if strings.ToLower(provider) == defs.SqliteProvider {
+		return true
+	}
+
+	// Check the alternate spelling
+	if strings.ToLower(provider) == defs.DeprecatedSqliteProvider {
+		return true
+	}
+
+	return false
 }
