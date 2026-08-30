@@ -206,7 +206,19 @@ func executeStatements(statements []string, kinds []sqlparse.StatementKind, sess
 			rows, err = db.Exec(statement)
 			if err == nil {
 				count, _ := rows.RowsAffected()
-				rowsAffected += int(count)
+
+				// DDL (CREATE/DROP/ALTER TABLE, CREATE/DROP INDEX, ...) never
+				// meaningfully "affects rows", and the driver's RowsAffected()
+				// for it is not trustworthy besides: SQLite's sqlite3_changes()
+				// only updates on INSERT/UPDATE/DELETE, so on a pooled
+				// connection (dbpool) that a previous request already ran DML
+				// on, a DDL statement here can report that earlier statement's
+				// leftover count instead of 0. Schema-altering statements are
+				// excluded from the total for this reason; isSchemaAlteringKind
+				// is the same predicate that decides cacheFlush just above.
+				if !isSchemaAlteringKind(kinds[n]) {
+					rowsAffected += int(count)
+				}
 
 				ui.Log(ui.TableLogger, "sql.rows", ui.A{
 					"session": sessionID,

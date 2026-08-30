@@ -95,8 +95,17 @@ func doSQL(sessionID int, db *database.Database, task defs.TXOperation, id int, 
 
 	rows, err := db.Exec(q)
 	if err == nil {
-		if affectedCount, err := rows.RowsAffected(); err == nil {
-			count = int(affectedCount)
+		// DDL (CREATE/DROP/ALTER TABLE, CREATE/DROP INDEX/VIEW, ...) never
+		// meaningfully "affects rows", and the driver's RowsAffected() for it
+		// is not trustworthy besides: SQLite's sqlite3_changes() only updates
+		// on INSERT/UPDATE/DELETE, so on a pooled connection (dbpool) that a
+		// previous request already ran DML on, a DDL statement here can
+		// report that earlier statement's leftover count instead of 0. See
+		// the identical fix and reasoning in tables/sql.go's executeStatements.
+		if !isSchemaAlteringKind(kind) {
+			if affectedCount, err := rows.RowsAffected(); err == nil {
+				count = int(affectedCount)
+			}
 		}
 
 		if count == 0 && task.EmptyError {
