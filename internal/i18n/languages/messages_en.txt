@@ -2034,6 +2034,7 @@ table.tx.payload=Transaction task {{id}} payload:\n{{body}}
 table.tx.rest.begin=Begin REST transaction {{seq}}, {{id}}, expires {{expires}}
 table.tx.rest.cleanup=Rollback REST transaction {{seq}}, {{id}} because it expired {{expires}}
 table.tx.rest.commit=Commit REST transaction {{seq}}, {{id}}
+table.tx.rest.keepalive=Keepalive REST transaction {{seq}}, {{id}}, expires {{expires}}
 table.tx.rest.not.closed=Database close deferred due to active transaction {{seq}}, {{id}}
 table.tx.rest.rollback=Rollback REST transaction {{seq}}, {{id}}
 table.tx.rollback=Transaction rolled back at task {{count}}

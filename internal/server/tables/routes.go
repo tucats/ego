@@ -80,6 +80,13 @@ func AddStaticRoutes(r *router.Router) {
 		AcceptMedia(defs.TransactionMediaType).
 		Class(router.TableRequestCounter)
 
+	// Keep a transaction for a dsn alive so it doesn't time out.
+	r.New(defs.DSNKeepAlivePath, KeepaliveHandler, http.MethodGet).
+		Authentication(true).
+		Parameter(defs.TransactionIDParameterName, util.StringParameterType).
+		AcceptMedia(defs.KeepaliveMediaType).
+		Class(router.TableRequestCounter)
+
 	// Commit a transaction for a dsn
 	r.New(defs.DSNCommitPath, CommitHandler, http.MethodGet).
 		Permissions(defs.TableReadPermission).

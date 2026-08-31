@@ -2003,6 +2003,7 @@ table.tx.payload=Charge utile de la tâche de transaction {{id}} :\n{{body}}
 table.tx.rest.begin=Début de la transaction REST {{seq}}, {{id}}, expire le {{expires}}
 table.tx.rest.cleanup=Annulation de la transaction REST {{seq}}, {{id}} car elle a expiré le {{expires}}
 table.tx.rest.commit=Validation de la transaction REST {{seq}}, {{id}}
+table.tx.rest.keepalive=Renouvellement de la transaction REST {{seq}}, {{id}}, expire le {{expires}}
 table.tx.rest.not.closed=Fermeture de la base de données différée en raison de la transaction active {{seq}}, {{id}}
 table.tx.rest.rollback=Annulation de la transaction REST {{seq}}, {{id}}
 table.tx.rollback=Transaction annulée à la tâche {{count}}

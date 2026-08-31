@@ -2003,6 +2003,7 @@ table.tx.payload=トランザクションタスク {{id}} のペイロード:\n{
 table.tx.rest.begin=REST トランザクション {{seq}}、{{id}} を開始、有効期限 {{expires}}
 table.tx.rest.cleanup=期限切れ {{expires}} のためREST トランザクション {{seq}}、{{id}} をロールバック
 table.tx.rest.commit=REST トランザクション {{seq}}、{{id}} をコミット
+table.tx.rest.keepalive=REST トランザクション {{seq}}、{{id}} を延長、有効期限 {{expires}}
 table.tx.rest.not.closed=アクティブなトランザクション {{seq}}、{{id}} のためデータベースのクローズを延期
 table.tx.rest.rollback=REST トランザクション {{seq}}、{{id}} をロールバック
 table.tx.rollback=タスク {{count}} でトランザクションがロールバックされました

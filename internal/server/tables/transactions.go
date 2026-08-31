@@ -22,6 +22,7 @@ type Transaction struct {
 	id      string
 	db      *database.Database
 	expires time.Time
+	timeout time.Duration
 }
 
 var transactions = make(map[string]*Transaction)
@@ -130,7 +131,8 @@ func BeginHandler(session *router.Session, w http.ResponseWriter, r *http.Reques
 	t := &Transaction{
 		id:      uuid.New().String(),
 		db:      db,
-		expires: expires,
+		expires: expires,             // When this transaction will expire
+		timeout: time.Until(expires), // If the user hits keepalive, re-up for the same expiration duration window.
 	}
 
 	// If we haven't started the cleanup timer, do so now. Basically, wake up once a minute and
@@ -318,6 +320,58 @@ func CommitHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 
 	delete(transactions, id)
 	tx.db.Close()
+
+	return http.StatusOK
+}
+
+// KeepaliveHandler lets callers indicate they are still interested in a transaction.
+// This is meant to block harvesting (and auto-rollback) of transactions, if the client
+// side is doing a long-running operation. For example, the egoAdmin app opens a transaction
+// when it edits a data table, keeping it alive for as long as the user has the window
+// active. It uses this call periodically to prevent harvesting of the transaction as an
+// abandoned transaction handle.
+func KeepaliveHandler(session *router.Session, w http.ResponseWriter, r *http.Request) int {
+	// Get the transaction ID parameter from the request.
+	parameters := session.Parameters[defs.TransactionIDParameterName]
+	if len(parameters) != 1 {
+		return util.ErrorResponse(w, session.ID, errors.ErrMissingTransactionID.Localize(session.Language), http.StatusBadRequest)
+	}
+
+	// Get the transaction ID from the request parameters.
+	id := data.String(parameters[0])
+
+	// Get the transaction from the map.
+	transactionsLock.Lock()
+	defer transactionsLock.Unlock()
+
+	tx, ok := transactions[id]
+	if !ok {
+		return util.ErrorResponse(w, session.ID, errors.ErrTransactionNotFound.Context(id).Localize(session.Language), http.StatusNotFound)
+	}
+
+	// Calculate the next transaction timeout timestamp, and store the (now revitalized)
+	// transaction value back in the map.
+	tx.expires = time.Now().Add(tx.timeout)
+	transactions[id] = tx
+
+	ui.Log(ui.TableLogger, "table.tx.rest.keepalive", ui.A{
+		"session": session.ID,
+		"seq":     tx.db.TransID,
+		"id":      id,
+		"expires": tx.expires.Format(time.RFC3339),
+	})
+
+	response := defs.DSNKeepaliveResponse{
+		ServerInfo: util.MakeServerInfo(session.ID),
+		ID:         tx.id,
+		Expires:    tx.expires.Format(time.RFC3339),
+	}
+
+	b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+	ui.Log(ui.RestLogger, "rest.response.payload", ui.A{
+		"body":    string(b),
+		"session": session.ID,
+	})
 
 	return http.StatusOK
 }

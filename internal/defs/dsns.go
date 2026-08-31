@@ -40,6 +40,12 @@ type DSN struct {
 	RowId bool `json:"rowid"`
 }
 
+type DSNKeepaliveResponse struct {
+	ServerInfo `json:"server"`
+	ID         string `json:"id"`
+	Expires    string `json:"expires"`
+}
+
 type DSNListResponse struct {
 	// Description of server
 	ServerInfo `json:"server"`
