@@ -21,6 +21,60 @@ import (
 	egostrings "github.com/tucats/ego/internal/util/strings"
 )
 
+// Provider-reported column type names. These are the raw strings each database
+// driver returns from schema introspection (ScanType().Name() or
+// DatabaseTypeName()); normalizeColumnType maps them to the portable canonical
+// type names declared further below.
+const (
+	// SqliteType* names are reported by the modernc SQLite driver.
+	SqliteTypeInt         = "INT"
+	SqliteTypeBool        = "BOOL"
+	SqliteTypeBoolean     = "BOOLEAN"
+	SqliteTypeInt32       = "INT32"
+	SqliteTypeInt16       = "INT16"
+	SqliteTypeByte        = "BYTE"
+	SqliteTypeFloat       = "FLOAT"
+	SqliteTypeString      = "STRING"
+	SqliteTypeNullInt64   = "NullInt64"
+	SqliteTypeNullFloat64 = "NullFloat64"
+	SqliteTypeNullString  = "NullString"
+	SqliteTypeTimestamp   = "TIMESTAMP"
+	SqliteTypeTimestampTZ = "TIMESTAMPTZ"
+	SqliteTypeDatetime    = "DATETIME"
+	SqliteTypeTime        = "TIME"
+	SqliteTypeDate        = "DATE"
+
+	// PostgresReflectTypeTime is the Go reflect type name lib/pq's ScanType()
+	// returns for every date/time-shaped column; it collapses DATE, TIME,
+	// TIMETZ, TIMESTAMP, and TIMESTAMPTZ down to this single name, so it can't
+	// by itself say which of those a column is -- see the DatabaseTypeName()
+	// switch in normalizeColumnType that disambiguates it.
+	PostgresReflectTypeTime = "Time"
+
+	// PostgresType* names are lib/pq's DatabaseTypeName() (DDL-style) names.
+	PostgresTypeDate                  = "DATE"
+	PostgresTypeTime                  = "TIME"
+	PostgresTypeTimeTZ                = "TIMETZ"
+	PostgresTypeTimeWithTimeZone      = "TIME WITH TIME ZONE"
+	PostgresTypeTimestamp             = "TIMESTAMP"
+	PostgresTypeTimestampTZ           = "TIMESTAMPTZ"
+	PostgresTypeTimestampWithTimeZone = "TIMESTAMP WITH TIME ZONE"
+	PostgresTypeDatetime              = "DATETIME"
+	PostgresTypeFloat4                = "FLOAT4"
+	PostgresTypeFloat8                = "FLOAT8"
+)
+
+// Canonical portable column type names used once a provider-specific type name
+// has been normalized. These overlap conceptually with the *TypeName constants
+// in the data package (data.IntTypeName, data.BoolTypeName, etc.), which
+// normalizeColumnType uses directly where they apply; the date/time names below
+// have no equivalent there.
+const (
+	CanonicalTimestamp = "timestamp"
+	CanonicalTime      = "time"
+	CanonicalDate      = "date"
+)
+
 // TableCreate handler creates a new table based on the JSON payload, which must be an array of
 // DBColumn objects, defining the characteristics of each column in the table.
 //
@@ -442,41 +496,41 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// SQLite also does not support nullable column metadata via the Go sql
 		// interface, so we override those fields to safe defaults.
 		switch typeName {
-		case "INT":
+		case SqliteTypeInt:
 			typeName = data.IntTypeName
 			size = 8
 
-		case "BOOL", "BOOLEAN":
+		case SqliteTypeBool, SqliteTypeBoolean:
 			typeName = data.BoolTypeName
 
-		case "INT32":
+		case SqliteTypeInt32:
 			typeName = data.Int32TypeName
 			size = 4
 
-		case "INT16":
+		case SqliteTypeInt16:
 			typeName = data.Int16TypeName
 			size = 2
 
-		case "BYTE":
+		case SqliteTypeByte:
 			typeName = data.ByteTypeName
 			size = 1
 
-		case "FLOAT":
+		case SqliteTypeFloat:
 			typeName = data.Float64TypeName
 			size = 8
 
-		case "STRING":
+		case SqliteTypeString:
 			typeName = data.StringTypeName
 
-		case "NullInt64":
+		case SqliteTypeNullInt64:
 			typeName = data.Int64TypeName
 			size = 8
 
-		case "NullFloat64":
+		case SqliteTypeNullFloat64:
 			typeName = data.Float64TypeName
 			size = 8
 
-		case "NullString":
+		case SqliteTypeNullString:
 			typeName = data.StringTypeName
 
 		// Time-related columns: MapColumnType now declares these with their semantic
@@ -484,14 +538,14 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// names back during schema introspection.  Normalize all known variants
 		// (including TIMESTAMPTZ and DATETIME which may appear in imported schemas)
 		// to lowercase portable names so that CoerceToColumnType can recognize them.
-		case "TIMESTAMP", "TIMESTAMPTZ", "DATETIME":
-			typeName = "timestamp"
+		case SqliteTypeTimestamp, SqliteTypeTimestampTZ, SqliteTypeDatetime:
+			typeName = CanonicalTimestamp
 
-		case "TIME":
-			typeName = "time"
+		case SqliteTypeTime:
+			typeName = CanonicalTime
 
-		case "DATE":
-			typeName = "date"
+		case SqliteTypeDate:
+			typeName = CanonicalDate
 		}
 
 		nullable = false
@@ -504,7 +558,7 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// ZONE columns returns "Time" (the Go type name), while DatabaseTypeName()
 		// returns "TIMESTAMPTZ".  We normalize both to the portable lowercase names.
 		switch typeName {
-		case "Time":
+		case PostgresReflectTypeTime:
 			// lib/pq's ScanType() collapses every date/time-shaped Postgres OID
 			// (DATE, TIME, TIMETZ, TIMESTAMP, TIMESTAMPTZ) to this single Go
 			// reflect type name (rows.go's scanType map), so "Time" alone can't
@@ -517,31 +571,31 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 			// DatabaseTypeName() is already what populated typeName above --
 			// so it's consulted directly here instead.
 			switch typeInfo.DatabaseTypeName() {
-			case "DATE":
-				typeName = "date"
-			case "TIME", "TIMETZ":
-				typeName = "time"
+			case PostgresTypeDate:
+				typeName = CanonicalDate
+			case PostgresTypeTime, PostgresTypeTimeTZ:
+				typeName = CanonicalTime
 			default: // TIMESTAMP, TIMESTAMPTZ, and anything else time.Time-shaped.
-				typeName = "timestamp"
+				typeName = CanonicalTimestamp
 			}
 
-		case "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP", "DATETIME":
-			typeName = "timestamp"
+		case PostgresTypeTimestampTZ, PostgresTypeTimestampWithTimeZone, PostgresTypeTimestamp, PostgresTypeDatetime:
+			typeName = CanonicalTimestamp
 
-		case "TIME", "TIME WITH TIME ZONE":
-			typeName = "time"
+		case PostgresTypeTime, PostgresTypeTimeWithTimeZone:
+			typeName = CanonicalTime
 
-		case "DATE":
-			typeName = "date"
+		case PostgresTypeDate:
+			typeName = CanonicalDate
 
 		// lib/pq's ScanType() returns nil for REAL and DOUBLE PRECISION columns
 		// (unlike BOOL, INT4, and VARCHAR, which it resolves to concrete Go
 		// types), so typeName falls back to DatabaseTypeName() above and arrives
 		// here as the raw Postgres OID type name rather than a Go reflect name.
-		case "FLOAT4":
+		case PostgresTypeFloat4:
 			typeName = data.Float32TypeName
 
-		case "FLOAT8":
+		case PostgresTypeFloat8:
 			typeName = data.Float64TypeName
 		}
 
