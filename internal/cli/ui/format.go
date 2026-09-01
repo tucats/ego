@@ -52,6 +52,22 @@ func FormatJSONLogEntryAsText(text string) string {
 		return fmt.Sprintf("Error unmarshalling JSON log entry: %v", err)
 	}
 
+	// The timestamp was stored using the fixed, code-defined JSONTimestampFormat
+	// so it carries an unambiguous instant regardless of where or when it was
+	// written. Recover that instant and re-render it in this process's local
+	// timezone using the (possibly different, possibly since-changed) display
+	// format the user has configured. Older log entries written before this
+	// format existed won't parse; fall back to the raw stored string for those
+	// rather than losing the timestamp entirely.
+	if ts, err := time.Parse(JSONTimestampFormat, entry.Timestamp); err == nil {
+		format := LogTimeStampFormat
+		if format == "" {
+			format = defs.DefaultLogTimestampFormat
+		}
+
+		entry.Timestamp = ts.Local().Format(format)
+	}
+
 	// If there is a session number, add it to the args map.
 	if entry.Session > 0 {
 		if entry.Args == nil {
@@ -142,7 +158,7 @@ func formatJSONLogEntry(class int, format string, args A) (string, error) {
 	)
 
 	entry := LogEntry{
-		Timestamp: time.Now().Format(LogTimeStampFormat),
+		Timestamp: time.Now().Format(JSONTimestampFormat),
 		Class:     strings.ToLower(loggers[class].name),
 		ID:        defs.InstanceID,
 		Sequence:  sequence,

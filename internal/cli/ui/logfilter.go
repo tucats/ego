@@ -189,9 +189,17 @@ func inTimeRange(ts time.Time, f LogFilter) bool {
 	return true
 }
 
-// parseLogTimestamp parses a timestamp using the same layout the logger used
-// to write it (LogTimeStampFormat, defaulting to "2006-01-02 15:04:05").
+// parseLogTimestamp parses a timestamp taken from a JSON log entry's Timestamp
+// field. Entries written by the current code use the fixed JSONTimestampFormat,
+// which carries its own UTC offset. Entries written before that format existed
+// were stored using whatever LogTimeStampFormat was configured at the time, so
+// that layout is tried as a fallback, interpreted in the local timezone since
+// no offset was recorded.
 func parseLogTimestamp(value string) (time.Time, bool) {
+	if ts, err := time.Parse(JSONTimestampFormat, value); err == nil {
+		return ts, true
+	}
+
 	format := LogTimeStampFormat
 	if format == "" {
 		format = defs.DefaultLogTimestampFormat

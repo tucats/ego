@@ -138,7 +138,28 @@ var loggers []*logger = []*logger{
 // LogTimeStampFormat stores the format string used to produce log messages,
 // using the Go standard format string. You can override the default by
 // creating a profile item called "ego.log.format".
+//
+// This only controls how a timestamp is displayed as text -- for text-format
+// logging, when the entry is written, and for JSON-format logging, when a
+// stored entry is later transliterated back to text by
+// FormatJSONLogEntryAsText. It never controls how a JSON log entry's
+// timestamp is stored on disk; that always uses JSONTimestampFormat, so a
+// JSON log file's timestamps do not change meaning retroactively if this
+// setting is changed later.
 var LogTimeStampFormat string
+
+// JSONTimestampFormat is the fixed, code-defined layout used to store a
+// timestamp inside a JSON log entry. It is deliberately not
+// user-configurable, unlike LogTimeStampFormat: a JSON log entry may be read
+// back and transliterated to text on a different machine, in a different
+// timezone, or with a different LogTimeStampFormat setting than the one in
+// effect when it was written, so the stored value has to be an unambiguous,
+// self-contained instant rather than a free-form display string. It keeps a
+// numeric UTC offset (not just a local wall-clock time) so that
+// FormatJSONLogEntryAsText can recover the exact instant and re-render it in
+// the reading process's local timezone using whatever LogTimeStampFormat is
+// configured there.
+const JSONTimestampFormat = "2006-01-02T15:04:05.000000-07:00"
 
 // DefineLogger creates a new logger that can be used by the program.
 // The logger name must be unique. The return value is the logger id
