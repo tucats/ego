@@ -61,7 +61,7 @@ func DSNSAdd(c *cli.Context) error {
 		// false is a meaningful explicit value, matching
 		// CreateDSNHandler's server-side check.
 		if isLocalDSN(dsn.Provider) {
-			return errors.ErrDSNSecuredNotApplicable.Context(dsn.Name)
+			return errors.ErrDSNNotApplicable.Context("secured")
 		}
 
 		f := c.Boolean("secured")
@@ -171,7 +171,7 @@ func DSNSUpdate(c *cli.Context) error {
 		// false is a meaningful explicit value, matching
 		// UpdateDSNHandler's server-side check.
 		if isLocal {
-			return errors.ErrDSNSecuredNotApplicable.Context(name)
+			return errors.ErrDSNNotApplicable.Context("secured")
 		}
 
 		secured := c.Boolean("secured")

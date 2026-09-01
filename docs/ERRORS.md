@@ -110,7 +110,6 @@ function call within an Ego program to generate an instance of this error code.
 | error.dsn.exists | dsn already exists |
 | error.dsn.limit.invalid | Invalid limit parameter |
 | error.dsn.not.found | no such data source name |
-| error.dsn.password.sqlite | a password is not applicable to a sqlite data source name |
 | error.dsn.required | A DSN name must be specified using --dsn, or set a default data source |
 | error.dsn.restricted.permissions | cannot remove restriction while permission records exist; use --force to remove them |
 | error.dsn.secured.sqlite | the secured flag cannot be set to true for a sqlite data source name |
