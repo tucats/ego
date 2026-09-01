@@ -228,6 +228,7 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 	response := defs.DSNResponse{
 		ServerInfo: util.MakeServerInfo(session.ID),
 		Name:       dataSourceName.Name,
+		Database:   dataSourceName.Database,
 		Provider:   dataSourceName.Provider,
 		Host:       dataSourceName.Host,
 		Port:       dataSourceName.Port,

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -60,7 +61,7 @@ func DSNSAdd(c *cli.Context) error {
 		// secured flag is not-specified-only for it -- neither true nor
 		// false is a meaningful explicit value, matching
 		// CreateDSNHandler's server-side check.
-		if isLocalDSN(dsn.Provider) {
+		if isLocalProvider(dsn.Provider) {
 			return errors.ErrDSNNotApplicable.Context("secured")
 		}
 
@@ -121,7 +122,7 @@ func DSNSUpdate(c *cli.Context) error {
 	}
 
 	// Flag to indicate if this local (i.e. sqlite) provider
-	isLocal := isLocalDSN(dsnResp.Provider)
+	isLocal := isLocalProvider(dsnResp.Provider)
 
 	req := defs.DSNUpdateRequest{}
 
@@ -219,14 +220,7 @@ func DSNSUpdate(c *cli.Context) error {
 	return err
 }
 
-// DSNShow shows the permissions for a named DSN as a table, indicating the user(s) and
-// permission(s). If the DSN has no permissions (i.e., it is unrestricted), a message is
-// printed indicating that anyone can use the DSN.
-//
-// When --metadata is supplied, the function delegates to dsnShowMetadata which calls the
-// @metadata endpoint instead. In that mode the output is a two-level sparse table:
-// one row per column, with the owning table name printed only on the first row for each
-// table so the grouping is visible without repeating the table name on every line.
+// DSNShow shows the detail information and permissions for a named DSN as a table.
 //
 // Invoked by:
 //
@@ -253,6 +247,33 @@ func DSNShow(c *cli.Context) error {
 		return errors.Message(dsnResp.Message)
 	}
 
+	// First, show the DSN's general information. Use a table to display the details.
+	local := isLocalProvider(dsnResp.Provider)
+
+	t, _ := tables.New([]string{i18n.L("Item"), i18n.L("Value")})
+	_ = t.AddRowItems(i18n.L("Name"), dsnResp.Name)
+	_ = t.AddRowItems(i18n.L("Provider"), dsnResp.Provider)
+	_ = t.AddRowItems(i18n.L("Database"), dsnResp.Database)
+	
+	if !local {
+		_ = t.AddRowItems(i18n.L("Host"), dsnResp.Host)
+		_ = t.AddRowItems(i18n.L("Port"), dsnResp.Port)
+		_ = t.AddRowItems(i18n.L("User"), dsnResp.User)
+		_ = t.AddRowItems(i18n.L("Schema"), dsnResp.Schema)
+
+		secured := "true"
+		if dsnResp.Secured != nil {
+			secured = fmt.Sprintf("%v", *dsnResp.Secured)
+		}
+
+		_ = t.AddRowItems(i18n.L("Secured"), secured)
+	}
+
+	_ = t.AddRowItems(i18n.L("Restricted"), dsnResp.Restricted)
+	_ = t.AddRowItems(i18n.L("Row ID"), dsnResp.RowId)
+	t.Print(ui.OutputFormat)
+
+	// Now, show the DSN's permissions.
 	if !dsnResp.Restricted {
 		msg := i18n.M("dsns.show.empty", map[string]any{
 			"name": name,
@@ -603,11 +624,11 @@ func setPermissions(c *cli.Context, grant string) error {
 	return err
 }
 
-// isLocalDSN is a helper function that reports if the DSN is a local
+// isLocalProvider is a helper function that reports if the DSN is a local
 // provider (currently, sqlite) versus some other provider. This is
 // used to qualify values that can legitimately be changed in a DSN
 // if it is local vs on a network.
-func isLocalDSN(provider string) bool {
+func isLocalProvider(provider string) bool {
 	if strings.ToLower(provider) == defs.SqliteProvider {
 		return true
 	}

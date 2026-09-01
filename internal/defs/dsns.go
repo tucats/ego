@@ -117,6 +117,9 @@ type DSNResponse struct {
 	// Database provider
 	Provider string `json:"provider"`
 
+	// Database name/designation
+	Database string `json:"database"`
+
 	// Host name of remote database server
 	Host string `json:"host"`
 
