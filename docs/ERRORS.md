@@ -65,6 +65,8 @@ function call within an Ego program to generate an instance of this error code.
 | error.channel.assignment | invalid use of assignment list for channel |
 | error.channel.element.type | channels do not have an element type; use "chan" alone, not "chan T" |
 | error.channel.not.open | channel not open |
+| error.child.pipe.auth | invalid or missing child pipe authentication token |
+| error.child.run.timeout | child process exceeded its run.timeout and was terminated |
 | error.child.timeout | no child process available to process request |
 | error.circular.import | Invalid import cycle |
 | error.cli.command.not.found | unrecognized command |
@@ -109,10 +111,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.div.zero | division by zero |
 | error.dsn.exists | dsn already exists |
 | error.dsn.limit.invalid | Invalid limit parameter |
+| error.dsn.not.applicable | DSN attribute not applicable to this provider |
 | error.dsn.not.found | no such data source name |
+| error.dsn.pool.unavailable | connection pool for this DSN is temporarily unavailable after a recent connection failure |
 | error.dsn.required | A DSN name must be specified using --dsn, or set a default data source |
 | error.dsn.restricted.permissions | cannot remove restriction while permission records exist; use --force to remove them |
-| error.dsn.secured.sqlite | the secured flag cannot be set to true for a sqlite data source name |
 | error.dsn.start.invalid | Invalid start parameter |
 | error.dup.column | duplicate column name |
 | error.dup.type | duplicate type name |
@@ -230,6 +233,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.list | invalid list |
 | error.log.date.range | invalid date range: {{value}} |
 | error.log.filter.format | log class and message filters require a JSON-format log file |
+| error.log.format.type | invalid log format type |
 | error.log.pattern | invalid log message pattern |
 | error.log.serverid.archive | the server ID filter requires the archive option to be enabled |
 | error.log.serverid.pattern | invalid server ID pattern |
@@ -238,6 +242,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.logger.name | invalid logger name |
 | error.logger.name.invalid | Invalid logger name: {{name}} |
 | error.logon.endpoint | logon endpoint not found |
+| error.logon.redirect | logon server redirected the request; update your --logon-server URL and retry |
 | error.logon.server | no --logon-server specified |
 | error.loop.control | loop control statement outside of for-loop |
 | error.loop.index | invalid loop index variable |
@@ -424,6 +429,9 @@ function call within an Ego program to generate an instance of this error code.
 | error.server.running | server already running as pid |
 | error.service.aborted | Service aborted{{msg}} |
 | error.service.error | Error: {{err}} |
+| error.settings.schema.not.initialized | settings persistence has not been initialized |
+| error.settings.scheme.invalid | invalid settings scheme |
+| error.settings.scheme.unsupported | unsupported settings scheme |
 | error.slice.index | invalid slice index |
 | error.sort.order.invalid | Invalid sort order: {{order}} |
 | error.spacing | invalid spacing value |
@@ -433,9 +441,11 @@ function call within an Ego program to generate an instance of this error code.
 | error.sql.commit.error | Error committing transaction: {{err}} |
 | error.sql.execute.error | Error in SQL execute: {{err}} |
 | error.sql.name | invalid SQL name |
+| error.sql.parse.dialect.rewrite | cannot translate SQL for the target database provider |
 | error.sql.parse.invalid.dialect | invalid SQL dialect |
 | error.sql.parse.invalid.number | invalid numeric literal |
 | error.sql.parse.pragma | PRAGMA statements are not supported |
+| error.sql.parse.schema.restricted | schema not permitted by this data source |
 | error.sql.parse.syntax | syntax error |
 | error.sql.parse.unterminated.comment | unterminated block comment |
 | error.sql.parse.unterminated.identifier | unterminated quoted identifier |
@@ -496,6 +506,14 @@ function call within an Ego program to generate an instance of this error code.
 | error.task.sql.missing | query string missing from SQL task |
 | error.task.sql.unsupported | field not supported for SQL task |
 | error.task.symbols.unsupported | field not supported for SYMBOLS task |
+| error.tasks.already.running | task is already running |
+| error.tasks.dir.access | error accessing tasks directory |
+| error.tasks.dir.create | error creating tasks directory |
+| error.tasks.dir.not.dir | tasks path exists but is not a directory |
+| error.tasks.file.access | error accessing task file |
+| error.tasks.invalid.field | task definition has an invalid field value |
+| error.tasks.missing.field | task definition missing required field |
+| error.tasks.permissions.insecure | task resource has insecure permissions and could not be corrected |
 | error.template.name | invalid template name |
 | error.terminated | terminated with errors |
 | error.test.return.value | return statement in @test block cannot return a value |
@@ -509,6 +527,7 @@ function call within an Ego program to generate an instance of this error code.
 | error.tx.commit | Database commit failed |
 | error.tx.decode | transaction request decode error; {{error}} |
 | error.tx.expiration | Invalid expiration time format |
+| error.tx.id.missing | missing transaction id |
 | error.tx.max | Too many active transactions |
 | error.tx.not.active | no transaction active |
 | error.tx.not.found | no such transaction |

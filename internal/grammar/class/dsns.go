@@ -180,6 +180,7 @@ var DSNSGrammar = []cli.Option{
 	{
 		LongName:      "update",
 		Description:   "ego.dsns.update",
+		Aliases:       []string{"set"},
 		OptionType:    cli.Subcommand,
 		Action:        commands.DSNSUpdate,
 		ParmDesc:      "dsn-name",

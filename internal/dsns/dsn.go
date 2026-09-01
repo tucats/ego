@@ -67,7 +67,7 @@ func ActionString(action DSNAction) string {
 // implemented by any DSN service provider. This is used to abstract
 // the actual storage mechanism for the DSN data (file-based versus
 // database-based, for example).
-type dsnService interface {
+type dsnService interface { //nolint: interfacebloat
 	AuthDSN(session int, user, dsn string, action DSNAction) bool
 	ReadDSN(session int, user, name string, doNotLog bool) (defs.DSN, error)
 	WriteDSN(session int, user string, dataSourceName defs.DSN) error
