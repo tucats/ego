@@ -53,8 +53,20 @@ func DSNSAdd(c *cli.Context) error {
 
 	dsn.Username, _ = c.String(defs.UsernameOption)
 	dsn.Password, _ = c.String(defs.PasswordOption)
-	dsn.Secured = c.Boolean("secured")
 	dsn.Restricted = c.Boolean("restricted")
+
+	if c.WasFound("secured") {
+		// A local (sqlite) provider has no network connection, so the
+		// secured flag is not-specified-only for it -- neither true nor
+		// false is a meaningful explicit value, matching
+		// CreateDSNHandler's server-side check.
+		if isLocalDSN(dsn.Provider) {
+			return errors.ErrDSNSecuredNotApplicable.Context(dsn.Name)
+		}
+
+		f := c.Boolean("secured")
+		dsn.Secured = &f
+	}
 
 	url := rest.URLBuilder(defs.DSNPath)
 	resp := defs.DSNResponse{}
@@ -154,6 +166,10 @@ func DSNSUpdate(c *cli.Context) error {
 	}
 
 	if c.WasFound("secured") {
+		// A local (sqlite) provider has no network connection, so the
+		// secured flag is not-specified-only for it -- neither true nor
+		// false is a meaningful explicit value, matching
+		// UpdateDSNHandler's server-side check.
 		if isLocal {
 			return errors.ErrDSNSecuredNotApplicable.Context(name)
 		}
@@ -448,6 +464,11 @@ func DSNSList(c *cli.Context) error {
 					host = "n/a"
 				}
 
+				secured := ""
+				if item.Secured != nil {
+					secured = strconv.FormatBool(*item.Secured)
+				}
+
 				_ = t.AddRow([]string{
 					item.Name,
 					item.Provider + "://" + item.Database,
@@ -455,7 +476,7 @@ func DSNSList(c *cli.Context) error {
 					host,
 					item.Username,
 					strconv.FormatBool(item.Restricted),
-					strconv.FormatBool(item.Secured),
+					secured,
 					strconv.FormatBool(item.RowId),
 				})
 			}

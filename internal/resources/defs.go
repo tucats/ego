@@ -42,6 +42,11 @@ type Column struct {
 
 	// Nullable is true if the column is allowed to have a null value.
 	Nullable bool
+
+	// IsPointer is true if the corresponding struct field is a pointer
+	// type (e.g. *bool), meaning a SQL NULL maps to a nil field value
+	// rather than the base type's zero value.
+	IsPointer bool
 }
 
 // ResHandle describes everything known about a resource object.

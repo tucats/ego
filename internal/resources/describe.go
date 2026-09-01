@@ -43,6 +43,16 @@ func describe(object any) []Column {
 
 		tt := field.Type()
 
+		// A pointer field (e.g. *bool) represents an optional/tri-state
+		// value -- the column takes its SQL type from the pointer's base
+		// type, but is nullable so that a nil field round-trips as SQL
+		// NULL rather than a base-type zero value.
+		if tt.Kind() == reflect.Pointer {
+			column.IsPointer = true
+			column.Nullable = true
+			tt = tt.Elem()
+		}
+
 		switch {
 		case tt == reflect.TypeOf(json.RawMessage{}):
 			column.SQLType = SQLStringType

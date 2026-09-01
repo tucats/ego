@@ -1,5 +1,5 @@
 {
-    "description": "PATCH secured:false against a sqlite DSN is allowed -- false is already the DSN's effective state, so it is a harmless no-op rather than a contradiction",
+    "description": "PATCH secured:false against a sqlite DSN must also be rejected -- secured is not-specified-only for a local provider, so neither true nor false is a meaningful explicit value",
     "request": {
         "method": "PATCH",
         "endpoint": "/dsns/udsn-{{DSNUUID}}",
@@ -13,9 +13,9 @@
         }
     },
     "response": {
-        "status": 200,
+        "status": 400,
         "headers": {
-            "Content-Type": ["application/vnd.ego.dsn+json"]
+            "Content-Type": ["error+json"]
         }
     },
     "tests": [
@@ -30,9 +30,10 @@
             "value": "{{SERVER_ID}}"
         },
         {
-            "name": "secured flag unchanged",
-            "query": "secured",
-            "value": "false"
+            "name": "error message mentions Secured field",
+            "query": "msg",
+            "op": "contains",
+            "value": "Secured"
         }
     ]
 }

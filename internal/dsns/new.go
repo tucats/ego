@@ -40,6 +40,15 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 		provider = defs.SqliteProvider
 	}
 
+	// Secured is not-specified-only for a local (sqlite) provider -- it
+	// never has a network connection, so neither true nor false is a
+	// meaningful explicit value -- matching the same invariant enforced
+	// by CreateDSNHandler/UpdateDSNHandler for DSNs created over the API.
+	var securedValue *bool
+	if provider != defs.SqliteProvider {
+		securedValue = &secured
+	}
+
 	return &defs.DSN{
 		Name:       name,
 		ID:         uuid.NewString(),
@@ -50,6 +59,6 @@ func NewDSN(name, provider, database, user, password string, host string, port i
 		Database:   database,
 		Host:       host,
 		Port:       port,
-		Secured:    secured,
+		Secured:    securedValue,
 	}
 }

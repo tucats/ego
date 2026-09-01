@@ -167,7 +167,16 @@ func ListDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Requ
 	items := make([]defs.DSN, len(keys))
 
 	for idx, key := range keys {
-		items[idx] = names[key]
+		d := names[key]
+		if isLocalProvider(d.Provider) {
+			d.Host = ""
+			d.Username = ""
+			d.Schema = ""
+			d.Port = 0
+			d.Secured = nil
+		}
+
+		items[idx] = d
 	}
 
 	// Craft a response object to send back.
@@ -229,6 +238,18 @@ func GetDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Reque
 		RowId:      dataSourceName.RowId,
 		Password:   defs.ElidedPassword,
 		Status:     http.StatusOK,
+	}
+
+	// Sanity check here -- if this is a local provider, some values of the
+	// DSN aren't value and must be elided. This matches the same check in CreateDSNHandler,
+	// which skips host/port defaults and password encryption for the same provider.
+	if isLocalProvider(dataSourceName.Provider) {
+		response.Host = ""
+		response.User = ""
+		response.Schema = ""
+		response.Port = 0
+		response.Secured = nil
+		response.Password = ""
 	}
 
 	w.Header().Add(defs.ContentTypeHeader, defs.DSNMediaType)
@@ -360,11 +381,11 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	// The sqlite provider is local, and has fewer options. For example,
 	// a stored password and TLS are both meaningless
 	// for it -- matching CreateDSNHandler's existing skip of host/port
-	// defaults and password encryption for the same provider. Per an
-	// explicit product decision, --secured false is still accepted for
-	// sqlite (already the DSN's effective state, so it's a harmless
-	// no-op); only --secured true is rejected as actually contradictory.
-	if isLocalDSN(dataSourceName.Provider) {
+	// defaults and password encryption for the same provider. Secured is
+	// not-specified-only for a local provider -- neither true nor false
+	// is a meaningful explicit value, so any explicit Secured is rejected
+	// here regardless of its value.
+	if isLocalProvider(dataSourceName.Provider) {
 		if update.Database != nil {
 			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Database"), session.Language), http.StatusBadRequest)
 		}
@@ -389,7 +410,7 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Password"), session.Language), http.StatusBadRequest)
 		}
 
-		if update.Secured != nil && *update.Secured {
+		if update.Secured != nil {
 			return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Secured"), session.Language), http.StatusBadRequest)
 		}
 	}
@@ -433,7 +454,7 @@ func UpdateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	}
 
 	if update.Secured != nil {
-		dataSourceName.Secured = *update.Secured
+		dataSourceName.Secured = update.Secured
 		changed = true
 	}
 
@@ -540,7 +561,15 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		dataSourceName.Provider = defs.SqliteProvider
 	}
 
-	if dataSourceName.Provider != defs.SqliteProvider {
+	// Secured is not-specified-only for a local provider -- neither true
+	// nor false is a meaningful explicit value for a connection that
+	// never goes over the network -- matching UpdateDSNHandler's
+	// rejection of an explicit Secured for the same provider.
+	if isLocalProvider(dataSourceName.Provider) && dataSourceName.Secured != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(errors.ErrDSNNotApplicable.Context("Secured"), session.Language), http.StatusBadRequest)
+	}
+
+	if !isLocalProvider(dataSourceName.Provider) {
 		if dataSourceName.Host == "" {
 			dataSourceName.Host = defs.LocalHost
 		}
@@ -556,6 +585,12 @@ func CreateDSNHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 		} else {
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
+	} else {
+		dataSourceName.Host = ""
+		dataSourceName.Username = ""
+		dataSourceName.Schema = ""
+		dataSourceName.Port = 0
+		dataSourceName.Secured = nil
 	}
 
 	// Does this DSN already exist? A duplicate name is the textbook 409
@@ -772,11 +807,11 @@ func DSNPermissionsHandler(session *router.Session, w http.ResponseWriter, r *ht
 	return http.StatusOK
 }
 
-// isLocalDSN is a helper function that reports if the DSN is a local
-// provider (currently, sqlite) versus some other provider. This is
-// used to qualify values that can legitimately be changed in a DSN
-// if it is local vs on a network.
-func isLocalDSN(provider string) bool {
+// isLocalProvider is a helper function that reports if the provider
+// is a local provider (currently, sqlite) versus some other provider.
+// This is used to qualify values that can legitimately be part of a
+// DSN if it is local vs on a network.
+func isLocalProvider(provider string) bool {
 	if strings.ToLower(provider) == defs.SqliteProvider {
 		return true
 	}

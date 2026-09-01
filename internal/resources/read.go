@@ -68,6 +68,37 @@ func (r *ResHandle) Read(filters ...*Filter) ([]any, error) {
 				count++
 
 				for i := range len(rowData) {
+					// A pointer-typed field (e.g. *bool) is a tri-state value:
+					// a SQL NULL leaves the field at its zero value (nil), and
+					// any other value is written through a freshly allocated
+					// base-type value rather than SetInt/SetBool/etc, which
+					// require the field itself to be of that base kind.
+					if r.Columns[i].IsPointer {
+						if rowData[i] == nil {
+							continue
+						}
+
+						field := reflect.ValueOf(value).Elem().Field(i)
+						base := reflect.New(field.Type().Elem())
+
+						switch r.Columns[i].SQLType {
+						case "integer":
+							base.Elem().SetInt(data.Int64OrZero(rowData[i]))
+						case "float", "double":
+							base.Elem().SetFloat(data.Float64OrZero(rowData[i]))
+						case "boolean":
+							base.Elem().SetBool(data.BoolOrFalse(rowData[i]))
+						case SQLStringType:
+							base.Elem().SetString(data.String(rowData[i]))
+						default:
+							continue
+						}
+
+						field.Set(base)
+
+						continue
+					}
+
 					switch r.Columns[i].SQLType {
 					case "integer":
 						reflect.ValueOf(value).Elem().Field(i).SetInt(data.Int64OrZero(rowData[i]))

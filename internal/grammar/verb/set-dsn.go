@@ -41,12 +41,12 @@ var SetDSNGrammar = []cli.Option{
 		LongName:    "secured",
 		Aliases:     []string{"secure"},
 		Description: "dsns.add.secured",
-		OptionType:  cli.BooleanType,
+		OptionType:  cli.BooleanValueType,
 	},
 	{
 		LongName:    "restricted",
 		Description: "dsns.add.restricted",
-		OptionType:  cli.BooleanType,
+		OptionType:  cli.BooleanValueType,
 	},
 	{
 		LongName:    "row-id",

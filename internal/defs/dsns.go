@@ -31,7 +31,7 @@ type DSN struct {
 	Password string `json:"password,omitempty"`
 
 	// True if the connection should use TLS communications
-	Secured bool `json:"secured"`
+	Secured *bool `json:"secured,omitempty"`
 
 	// True if we perform Ego database access checks for this DSN
 	Restricted bool `json:"restricted"`
@@ -133,7 +133,7 @@ type DSNResponse struct {
 	Password string `json:"password,omitempty"`
 
 	// True if the connection should use TLS communications
-	Secured bool `json:"secured"`
+	Secured *bool `json:"secured,omitempty"`
 
 	// True if the DSN requires explicitly-granted privileges to use
 	Restricted bool `json:"restricted"`

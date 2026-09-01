@@ -178,7 +178,7 @@ func TestSystemDSNFromURL_Postgres(t *testing.T) {
 		t.Errorf("expected username %q, got %q", "scott", dsn.Username)
 	}
 
-	if dsn.Secured {
+	if dsn.Secured != nil && *dsn.Secured {
 		t.Error("expected Secured to be false for sslmode=disable")
 	}
 

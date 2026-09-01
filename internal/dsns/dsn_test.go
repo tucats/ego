@@ -158,6 +158,7 @@ func TestNewDSN(t *testing.T) {
 			want:     "sqlite://test.db",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := NewDSN(tt.name, tt.provider, tt.db, tt.user, tt.password, tt.host, tt.port, tt.restricted, tt.secured)

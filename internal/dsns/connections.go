@@ -68,10 +68,11 @@ func Connection(d *defs.DSN) (string, error) {
 
 	result.WriteString(d.Database)
 
-	if !isSQLLite {
-		if !d.Secured {
-			result.WriteString("?sslmode=disable")
-		}
+	// If the secured flag is present and not true, add the sslmode=disable option to 
+	// the connection string. This is only valid for non-SQLite providers, as SQLite
+	// does not support SSL/TLS connections.
+	if !isSQLLite && d.Secured != nil && !*d.Secured {
+		result.WriteString("?sslmode=disable")
 	}
 
 	return result.String(), err
