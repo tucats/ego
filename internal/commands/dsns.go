@@ -248,88 +248,104 @@ func DSNShow(c *cli.Context) error {
 	}
 
 	// First, show the DSN's general information. Use a table to display the details.
-	local := isLocalProvider(dsnResp.Provider)
+	if ui.OutputFormat == ui.TextFormat {
+		local := isLocalProvider(dsnResp.Provider)
 
-	t, _ := tables.New([]string{i18n.L("Item"), i18n.L("Value")})
-	_ = t.AddRowItems(i18n.L("Name"), dsnResp.Name)
-	_ = t.AddRowItems(i18n.L("Provider"), dsnResp.Provider)
-	_ = t.AddRowItems(i18n.L("Database"), dsnResp.Database)
-	
-	if !local {
-		_ = t.AddRowItems(i18n.L("Host"), dsnResp.Host)
-		_ = t.AddRowItems(i18n.L("Port"), dsnResp.Port)
-		_ = t.AddRowItems(i18n.L("User"), dsnResp.User)
-		_ = t.AddRowItems(i18n.L("Schema"), dsnResp.Schema)
+		t, _ := tables.New([]string{i18n.L("Item"), i18n.L("Value")})
+		_ = t.AddRowItems(i18n.L("Name"), dsnResp.Name)
+		_ = t.AddRowItems(i18n.L("Provider"), dsnResp.Provider)
+		_ = t.AddRowItems(i18n.L("Database"), dsnResp.Database)
 
-		secured := "true"
-		if dsnResp.Secured != nil {
-			secured = fmt.Sprintf("%v", *dsnResp.Secured)
+		if !local {
+			_ = t.AddRowItems(i18n.L("Host"), dsnResp.Host)
+			_ = t.AddRowItems(i18n.L("Port"), dsnResp.Port)
+			_ = t.AddRowItems(i18n.L("User"), dsnResp.User)
+			_ = t.AddRowItems(i18n.L("Schema"), dsnResp.Schema)
+
+			secured := "true"
+			if dsnResp.Secured != nil {
+				secured = fmt.Sprintf("%v", *dsnResp.Secured)
+			}
+
+			_ = t.AddRowItems(i18n.L("Secured"), secured)
 		}
 
-		_ = t.AddRowItems(i18n.L("Secured"), secured)
+		_ = t.AddRowItems(i18n.L("Restricted"), dsnResp.Restricted)
+		_ = t.AddRowItems(i18n.L("Row ID"), dsnResp.RowId)
+		t.Print(ui.OutputFormat)
 	}
 
-	_ = t.AddRowItems(i18n.L("Restricted"), dsnResp.Restricted)
-	_ = t.AddRowItems(i18n.L("Row ID"), dsnResp.RowId)
-	t.Print(ui.OutputFormat)
-
 	// Now, show the DSN's permissions.
-	if !dsnResp.Restricted {
-		msg := i18n.M("dsns.show.empty", map[string]any{
-			"name": name,
-		})
+	permResp := defs.DSNPermissionResponse{}
+	url = rest.URLBuilder(defs.DSNNamePath+defs.PermissionsPseudoTable, name)
 
-		ui.Say(msg)
-	} else {
-		permResp := defs.DSNPermissionResponse{}
-		url = rest.URLBuilder(defs.DSNNamePath+defs.PermissionsPseudoTable, name)
+	err = rest.Exchange(url.String(), http.MethodGet, nil, &permResp, defs.TableAgent, defs.DSNListPermsMediaType)
+	if err != nil {
+		return err
+	}
 
-		err = rest.Exchange(url.String(), http.MethodGet, nil, &permResp, defs.TableAgent, defs.DSNListPermsMediaType)
-		if err != nil {
-			return err
+	if permResp.Message != "" {
+		return errors.Message(dsnResp.Message)
+	}
+
+	if ui.OutputFormat != ui.TextFormat {
+		// Construct a single JSON object with both the
+		// DSN general information and its permissions.
+		type compositeDSN struct {
+			Name       string `json:"name"`
+			Provider   string `json:"provider"`
+			Database   string `json:"database"`
+			Host       string `json:"host,omitempty"`
+			Port       int    `json:"port,omitempty"`
+			User       string `json:"user,omitempty"`
+			Schema     string `json:"schema,omitempty"`
+			Secured    *bool  `json:"secured,omitempty"`
+			Restricted bool   `json:"restricted"`
+			RowId      string `json:"row_id"`
+
+			Permissions map[string][]string `json:"permissions"`
 		}
 
-		if permResp.Message != "" {
-			return errors.Message(dsnResp.Message)
+		output := compositeDSN{
+			Name:        dsnResp.Name,
+			Provider:    dsnResp.Provider,
+			Database:    dsnResp.Database,
+			Host:        dsnResp.Host,
+			Port:        dsnResp.Port,
+			User:        dsnResp.User,
+			Schema:      dsnResp.Schema,
+			Secured:     dsnResp.Secured,
+			Restricted:  dsnResp.Restricted,
+			RowId:       fmt.Sprintf("%v", dsnResp.RowId),
+			Permissions: permResp.Items,
 		}
 
-		if len(permResp.Items) == 0 {
-			msg := i18n.M("dsns.show.empty", map[string]any{
-				"name": name,
-			})
+		return c.Output(output)
+	}
 
-			ui.Say(msg)
-		} else {
-			if ui.OutputFormat != ui.TextFormat {
-				return c.Output(permResp.Items)
-			}
+	// We're in text mode, so only put out this table if it exists.
+	if len(permResp.Items) > 0 {
+		t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Permissions")})
 
-			t, _ := tables.New([]string{i18n.L("Name"), i18n.L("Permissions")})
+		for name, permissions := range permResp.Items {
+			permissionList := strings.Builder{}
 
-			for name, permissions := range permResp.Items {
-				permissionList := strings.Builder{}
+			sort.Strings(permissions)
 
-				sort.Strings(permissions)
-
-				for index, permission := range permissions {
-					if index > 0 {
-						permissionList.WriteString(", ")
-					}
-
-					permissionList.WriteString(permission)
+			for index, permission := range permissions {
+				if index > 0 {
+					permissionList.WriteString(", ")
 				}
 
-				_ = t.AddRowItems(name, permissionList.String())
+				permissionList.WriteString(permission)
 			}
 
-			// Sort the rows by username so the output is stable between runs.
-			t.SortRows(0, true)
-
-			msg := i18n.M("dsns.permissions", map[string]any{"name": name})
-			ui.Say(msg)
-			ui.Say(" ")
-			t.Print(ui.OutputFormat)
+			_ = t.AddRowItems(name, permissionList.String())
 		}
+
+		// Sort the rows by username so the output is stable between runs.
+		t.SortRows(0, true)
+		t.Print(ui.OutputFormat)
 	}
 
 	return nil
