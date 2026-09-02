@@ -1,11 +1,14 @@
 package commands
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/cli"
+	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -73,6 +76,53 @@ func forceStop(c *cli.Context) error {
 	return err
 }
 
+// localServerURL builds the http(s)://localhost:port base URL for the locally
+// managed detached server, using the scheme and port recorded in its PID file
+// arguments (as they were passed to "server start"). Stop and Restart only ever
+// target the local machine (see the hostname check in killExistingServer), so
+// this base URL must reflect how this specific server instance was actually
+// launched -- not the CLI's ApplicationServerSetting/LogonServerSetting, which
+// point at whatever remote server the user last logged into and have no
+// relation to this server's port or (in)security.
+func localServerURL(status *defs.ServerStatus) string {
+	insecure := false
+	port := 0
+
+	if status != nil {
+		args := status.Args
+		for i, v := range args {
+			if v == "-k" || v == "--not-secure" {
+				insecure = true
+			}
+
+			if (v == "--port" || v == "-p") && i+1 < len(args) {
+				if p, err := strconv.Atoi(args[i+1]); err == nil {
+					port = p
+				}
+			}
+		}
+	}
+
+	if port == 0 {
+		port = settings.GetInt(defs.ServerDefaultPortSetting)
+	}
+
+	if port == 0 {
+		if insecure {
+			port = 80
+		} else {
+			port = 443
+		}
+	}
+
+	scheme := "https"
+	if insecure {
+		scheme = "http"
+	}
+
+	return fmt.Sprintf("%s://localhost:%d", scheme, port)
+}
+
 // politeStop uses the REST APU to attempt to request that the server stop, and polls to
 // see if it has stopped.
 func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
@@ -83,7 +133,8 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 
 	status, _ = router.ReadPidFile(c)
 
-	url := defs.ServicesDownPath
+	base := localServerURL(status)
+	url := base + defs.ServicesDownPath
 
 	// The client normally waits up to five seconds for the server to stop. If the
 	// caller asked for a longer grace period, extend the wait so we don't give up
@@ -132,7 +183,7 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 
 		// See if the server is still running. If not, it will throw an error and we can report
 		// on this and get out of dodge.
-		err = rest.Exchange(defs.AdminHeartbeatPath, http.MethodGet, nil, &resp, defs.AdminAgent, "application/json")
+		err = rest.Exchange(base+defs.AdminHeartbeatPath, http.MethodGet, nil, &resp, defs.AdminAgent, "application/json")
 		if err != nil {
 			ui.Log(ui.RestLogger, "server.admin.stopping", ui.A{
 				"error": err.Error(),
