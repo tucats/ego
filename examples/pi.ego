@@ -1,0 +1,79 @@
+package main
+
+import (
+    "fmt"
+)
+
+// piDigits returns the first n decimal digits of π as a string.
+// It uses the Rabinowitz‑Wagon spigot algorithm and only built‑in types.
+func piDigits(n int) string {
+    if n <= 0 {
+        return ""
+    }
+    // We need n fractional digits plus the leading "3" and one throwaway
+    // placeholder digit that the predigit/nines state machine emits first.
+    total := n + 1
+
+    // Length of the working array – the formula comes from the original paper.
+    arrayLen := (total * 10) / 3 + 1
+    a := make([]int, arrayLen)
+
+    for i := range a {
+        a[i] = 2
+    }
+
+    var result []byte  // collected digits
+
+    predigit, nines := 0, 0  // state variables described above
+
+    for i := 0; i < total; i++ {
+        // ---- inner loop: rescale the array and obtain the next raw digit ----
+        carry := 0
+
+        for j := arrayLen - 1; j >= 0; j-- {
+            num := a[j]*10 + carry*(j+1)
+            denom := 2 * j + 1
+            a[j] = num % denom
+            carry = num / denom
+        }
+
+        q := carry / 10  // the raw digit (0…9, or 10 when we must round)
+        a[0] = carry % 10  // the remainder that stays in the array
+        // ---- nines‑carry handling (see algorithm description) ----
+        switch {
+        case q == 9:
+            nines++
+        case q == 10:
+            // round up the previous digit
+            result = append(result, byte(predigit + 1 + '0'))
+            for k := 0; k < nines; k++ {
+                result = append(result, '0')
+            }
+            predigit, nines = 0, 0
+        default:
+            // q is 0…8
+            result = append(result, byte(predigit + '0'))
+            predigit = q
+            if nines != 0 {
+                for k := 0; k < nines; k++ {
+                    result = append(result, '9')
+                }
+
+                nines = 0
+            }
+        }
+    }
+
+    // Append the very last digit that is still waiting in predigit.
+    result = append(result, byte(predigit + '0'))
+
+    // Drop the throwaway placeholder digit and the leading "3" (the caller
+    // supplies "3." itself), leaving exactly n fractional digits.
+    return string(result[2:])
+}
+
+func main() {
+    n := 500
+    pi := piDigits(n)
+    fmt.Printf("3.%s\n", pi)
+}

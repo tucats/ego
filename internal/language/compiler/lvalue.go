@@ -80,6 +80,44 @@ func (c *Compiler) isAssignmentTarget() bool {
 	return false
 }
 
+// multiTargetIsDeclaration performs a bounded, non-consuming lookahead from
+// the current token position to decide whether an upcoming comma-separated
+// assignment target list is a declaration ("a, b := ...") or a plain
+// assignment ("a, b = ..."). It tracks "[...]" and "(...)" nesting so a
+// compound target's index/call expression (e.g. "m[f(x)], y = ...") can't be
+// mistaken for the list's own terminating operator. The scan stops -- and
+// this reports "not a declaration" -- at a block boundary, semicolon, or end
+// of input reached before any operator is found; that only happens when the
+// list turns out not to be a valid lvalue list at all, in which case the
+// caller (assignmentTargetList) errors out or falls back before this answer
+// is ever used.
+func (c *Compiler) multiTargetIsDeclaration() bool {
+	depth := 0
+
+	for i := 1; i < 200; i++ {
+		t := c.t.Peek(i)
+
+		switch {
+		case tokenizer.InList(t, tokenizer.StartOfArrayToken, tokenizer.StartOfListToken):
+			depth++
+
+		case tokenizer.InList(t, tokenizer.EndOfArrayToken, tokenizer.EndOfListToken):
+			depth--
+
+		case depth == 0 && t.Is(tokenizer.DefineToken):
+			return true
+
+		case depth == 0 && tokenizer.InList(t, tokenizer.AssignToken, tokenizer.ChannelReceiveToken):
+			return false
+
+		case depth == 0 && tokenizer.InList(t, tokenizer.BlockBeginToken, tokenizer.SemicolonToken, tokenizer.EndOfTokens):
+			return false
+		}
+	}
+
+	return false
+}
+
 // assignmentTargetList attempts to compile a comma-separated list of
 // assignment targets for a multi-value assignment such as:
 //
@@ -99,6 +137,17 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 
 	savedPosition := c.t.TokenP
 	isLvalueList := false
+
+	// A comma-separated target list is used for both "a, b := ..." (declare,
+	// creating new locals -- shadowing is intentional here, exactly like a
+	// single-target ":=") and "a, b = ..." (assign, which must find and
+	// update whatever "a" and "b" already resolve to, possibly in an outer
+	// scope). The operator that decides which of those this is comes AFTER
+	// the whole name list in the token stream, but SymbolOptCreate/Store
+	// bytecode for each name is emitted DURING the loop below, one name at a
+	// time, before that operator is seen. So the operator is found here via a
+	// bounded, non-consuming lookahead first.
+	isDeclaration := c.multiTargetIsDeclaration()
 
 	bc.Emit(bytecode.StackCheck, 1)
 
@@ -149,23 +198,61 @@ func assignmentTargetList(c *Compiler) (*bytecode.ByteCode, error) {
 		}
 
 		// Cheating here a bit; this opcode does an optional create if it's
-		// not found anywhere in the tree already. This only applies to a
-		// SIMPLE lvalue: needLoad is still true here exactly when the
-		// suffix loop above never ran, i.e. there was no ".field"/"[index]"
-		// chain. A compound target's base variable must already exist (you
-		// cannot introduce "m" via "m[\"k\"] := 5") and was already Load'ed
-		// and ReferenceSymbol'd inside that loop, so nothing further is
-		// needed for it here -- emitting SymbolOptCreate unconditionally
-		// for every target, compound or not, used to corrupt the very next
-		// patchStore call below. patchStore decides whether to convert the
-		// lvalue chain's trailing LoadIndex into StoreIndex by checking
-		// whether the LAST instruction emitted so far is exactly that
-		// LoadIndex; SymbolOptCreate landing in between made that check
-		// fail, silently falling back to an ordinary Store on the base
-		// variable name instead of storing into the map/array/struct
-		// element at all (BUG-24).
+		// not found in the CURRENT scope already (SymbolOptCreate's runtime
+		// processor, symbolCreateIfByteCode, checks GetLocal -- current table
+		// only, exactly like a plain ":=" declaration does, so a name already
+		// bound in an outer scope is correctly shadowed by a new local here,
+		// not overwritten). This only applies to a SIMPLE lvalue: needLoad is
+		// still true here exactly when the suffix loop above never ran, i.e.
+		// there was no ".field"/"[index]" chain. A compound target's base
+		// variable must already exist (you cannot introduce "m" via
+		// "m[\"k\"] := 5") and was already Load'ed and ReferenceSymbol'd
+		// inside that loop, so nothing further is needed for it here --
+		// emitting SymbolOptCreate unconditionally for every target, compound
+		// or not, used to corrupt the very next patchStore call below.
+		// patchStore decides whether to convert the lvalue chain's trailing
+		// LoadIndex into StoreIndex by checking whether the LAST instruction
+		// emitted so far is exactly that LoadIndex; SymbolOptCreate landing
+		// in between made that check fail, silently falling back to an
+		// ordinary Store on the base variable name instead of storing into
+		// the map/array/struct element at all (BUG-24).
+		//
+		// A SIMPLE target of a plain "=" list (not ":="), by contrast, must
+		// NOT go through SymbolOptCreate at all: since it is current-scope-
+		// only, emitting it here for "predigit, nines = 0, 0" inside a block
+		// nested below wherever "predigit"/"nines" were declared silently
+		// created a fresh local shadow in the current (inner) block scope
+		// instead of updating the outer variable -- the write vanished the
+		// moment that inner scope was popped, indistinguishable from the
+		// assignment having no effect at all. The single-target path
+		// (assignmentTarget, below) already gets this right: it only emits a
+		// create opcode when the operator is ":=" (see its own
+		// "tokenizer.DefineToken" check); for "=" it just emits Store, which
+		// searches the full scope chain via c.set the same way a symbol
+		// lookup does. This mirrors that here for the *opcode*, gated on
+		// isDeclaration (computed once above before this loop starts, since
+		// the operator itself appears only after the whole comma-separated
+		// name list).
+		//
+		// The ReferenceOrDefineSymbol call, though, stays unconditional even
+		// for "=": assignmentTargetList is tried speculatively for EVERY
+		// assignment, including plain single-name ones like "err = e" that
+		// turn out not to be a list at all once the whole statement is seen
+		// (no comma). Its side effect of marking "err" as used in the
+		// unused-variable tracker is, in that case, the ONLY thing that
+		// prevents an earlier "err := nil" from being flagged as unused --
+		// gating this call on isDeclaration too (an earlier version of this
+		// fix did) silently broke that for every plain "=" reassignment of a
+		// declared-but-not-yet-read variable. mustExist stays false
+		// (ReferenceOrDefineSymbol, not ReferenceSymbol) so this speculative,
+		// possibly-not-really-a-list call can never itself raise a "not
+		// found" compile error the way the real single- or multi-target
+		// path's own checks would.
 		if needLoad {
-			bc.Emit(bytecode.SymbolOptCreate, name)
+			if isDeclaration {
+				bc.Emit(bytecode.SymbolOptCreate, name)
+			}
+
 			c.ReferenceOrDefineSymbol(name.Spelling())
 		}
 

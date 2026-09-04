@@ -425,3 +425,138 @@
     arr[0] = 43
     @assert arr[0] == 43
 }
+
+// The tests below are regression tests for BUG-95: a multi-target "="
+// assignment (NOT ":="-- a re-assignment of already-declared variables)
+// silently lost its effect whenever it ran inside a block nested below
+// wherever those variables were originally declared (an "if" body, a "for"
+// body, a "switch" case, any of these nested inside each other, etc). The
+// values written were discarded the moment the enclosing block's scope was
+// popped, leaving the outer variables completely unchanged -- indistinguishable
+// from the assignment never having run at all. Found while debugging a
+// pi-digit-generator program (a "predigit, nines = 0, 0" reset inside a
+// "switch { case ...: for k := 0; k < nines; k++ { ... }; predigit, nines =
+// 0, 0 } }" state machine) whose output was always "0" instead of real
+// digits.
+//
+// Root cause: assignmentTargetList (internal/language/compiler/lvalue.go)
+// unconditionally emitted a SymbolOptCreate instruction for every simple
+// (non-compound) target in the list, for BOTH "a, b := ..." and "a, b =
+// ..." alike. SymbolOptCreate's runtime processor (symbolCreateIfByteCode,
+// internal/language/bytecode/symbols.go) decides whether to create a new
+// local by checking ONLY the current scope (GetLocal), never the full
+// enclosing chain -- correct for ":=" (Go's own shadowing rule: a
+// redeclaration in a nested block always creates a new local, even if the
+// same name exists further out), but wrong for "=", which must find and
+// update whatever the name already resolves to, however far out that is.
+// For "=", finding nothing in the immediate scope, it silently created a
+// brand-new local there instead -- shadowing, not updating, the real
+// variable -- and that shadow vanished, taking the write with it, as soon
+// as the block's scope popped.
+//
+// Fixed by giving assignmentTargetList a bounded lookahead
+// (multiTargetIsDeclaration) to tell ":=" apart from "=" before emitting
+// any of the list's bytecode (the operator itself appears only after the
+// whole comma-separated name list, but bytecode for each name is emitted
+// one at a time as the list is parsed, so the two cases can't be told apart
+// simply by looking at what's already been consumed). SymbolOptCreate is
+// now only emitted for ":="; a plain "=" target instead relies solely on
+// the Store instruction patchStore already emits, which -- like a
+// single-target "=" always did -- searches the whole scope chain at
+// runtime and correctly updates the existing outer variable.
+
+@test "datamodel: multi-target = inside a nested if-block updates the outer variables (BUG-95)"
+{
+    a, b := 1, 2
+
+    if true {
+        a, b = 10, 20
+    }
+
+    @assert a == 10
+    @assert b == 20
+}
+
+@test "datamodel: multi-target = inside a for-loop body updates variables declared outside the loop (BUG-95)"
+{
+    sum, count := 0, 0
+
+    for i := 0; i < 5; i++ {
+        sum, count = sum+i, count+1
+    }
+
+    @assert sum == 10
+    @assert count == 5
+}
+
+@test "datamodel: multi-target = two scopes deep (for nested in if) updates the outer variables (BUG-95)"
+{
+    // This mirrors the exact shape that exposed the bug: a "switch"/"if"
+    // body containing a "for" loop, with the reset assignment coming right
+    // after the loop, still inside the outer block.
+    predigit, nines := 5, 1
+
+    if true {
+        for k := 0; k < nines; k++ {
+            // loop body intentionally does nothing observable here
+        }
+
+        predigit, nines = 0, 0
+    }
+
+    @assert predigit == 0
+    @assert nines == 0
+}
+
+@test "datamodel: multi-target = inside a for-loop that never executes its body still updates the outer variables (BUG-95)"
+{
+    // The bug reproduced identically whether the loop ran zero or more
+    // iterations -- SymbolOptCreate's mis-scoped create happened on the
+    // assignment AFTER the loop, not inside it, so the loop's own iteration
+    // count was never the deciding factor.
+    predigit, nines := 5, 0
+
+    if true {
+        for k := 0; k < nines; k++ {
+        }
+
+        predigit, nines = 0, 0
+    }
+
+    @assert predigit == 0
+    @assert nines == 0
+}
+
+@test "datamodel: multi-target := inside a nested if-block still shadows correctly (BUG-95 regression)"
+{
+    // The fix must not touch ":=" at all: a genuine multi-target
+    // declaration in a nested block still creates new locals that shadow
+    // the outer names, exactly like Go and exactly like a single-target
+    // ":=" already did.
+    a, b := 1, 2
+
+    if true {
+        a, b := 10, 20
+        @assert a == 10
+        @assert b == 20
+    }
+
+    @assert a == 1
+    @assert b == 2
+}
+
+@test "datamodel: plain = reassignment of a not-yet-read variable does not trigger unused-variable detection (BUG-95 regression)"
+{
+    // An earlier version of the BUG-95 fix also stopped marking a plain
+    // "=" target as "used" for unused-variable tracking purposes, which
+    // broke this exact pattern: "err" is declared, then only ever written
+    // to (never read) before the @assert -- if the "=" below isn't counted
+    // as a use, "err" is wrongly flagged "declared but never used".
+    err := nil
+
+    if true {
+        err = "boom"
+    }
+
+    @assert err == "boom"
+}
