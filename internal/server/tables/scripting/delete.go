@@ -52,7 +52,7 @@ func doDelete(sessionID int, user string, db *database.Database, task defs.TXOpe
 
 	q, err := parsing.FormSelectorDeleteQuery(fakeURL, task.Filters, "", task.Table, user, deleteVerb, db.Provider)
 	if err != nil {
-		return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(q))
+		return 0, http.StatusBadRequest, errors.New(err)
 	}
 
 	rows, err := db.Exec(q)

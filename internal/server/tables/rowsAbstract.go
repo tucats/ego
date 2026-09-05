@@ -522,7 +522,7 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 		q, params, err := formAbstractUpdateQuery(r.URL, tableName, columns, data)
 		if err != nil {
-			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
 		counts, err := db.Exec(q, params...)
