@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/ui"
+	"github.com/tucats/ego/internal/dbpool"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/dsns"
 	"github.com/tucats/ego/internal/errors"
@@ -63,6 +64,13 @@ func GetTransactionDB(session int, id string) *database.Database {
 
 		return nil
 	}
+
+	// Reusing an existing transaction never calls dbpool.Get, which is the
+	// only other place that refreshes a pool's idle-eviction clock -- so a
+	// long-lived transaction that is otherwise perfectly alive would still
+	// have its underlying connection pool closed out from under it by
+	// dbpool's idle sweep. See dbpool.Touch's doc comment.
+	dbpool.Touch(t.db.Name)
 
 	ui.Log(ui.DBLogger, "log.db.tx.using", ui.A{
 		"session": session,
@@ -353,6 +361,12 @@ func KeepaliveHandler(session *router.Session, w http.ResponseWriter, r *http.Re
 	// transaction value back in the map.
 	tx.expires = time.Now().Add(tx.timeout)
 	transactions[id] = tx
+
+	// A keepalive is the client's explicit signal that this transaction --
+	// and the connection pool backing it -- is still in use, even if no
+	// other request has touched the DSN recently. See dbpool.Touch's doc
+	// comment for why this must be refreshed independently of dbpool.Get.
+	dbpool.Touch(tx.db.Name)
 
 	ui.Log(ui.TableLogger, "table.tx.rest.keepalive", ui.A{
 		"session": session.ID,

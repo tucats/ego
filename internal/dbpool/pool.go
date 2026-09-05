@@ -219,6 +219,23 @@ func configurePool(db *sql.DB) {
 }
 
 
+// Touch refreshes the last-used time for the cached pool for name, if one
+// exists, without opening or returning it. Callers that keep using a
+// *sql.DB they obtained from an earlier Get -- most notably a long-lived
+// REST transaction, whose requests are dispatched by transaction id and
+// never call Get again for the DSN -- must call this periodically (e.g. on
+// each request against that transaction, and on each /keepalive) so
+// sweepIdle does not mistake an actively used pool for an idle one and
+// close it out from under the transaction.
+func Touch(name string) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if e, ok := entries[name]; ok {
+		e.lastUsed = time.Now()
+	}
+}
+
 // Evict closes and removes the cached pool for name, if one exists, and
 // clears any bad-DSN backoff recorded for it. It is safe to call when there
 // is no cached entry. Callers should invoke this whenever a DSN definition
