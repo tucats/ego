@@ -161,7 +161,10 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 
 		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
 		// be just one row.
-		_ = db.Begin()
+		if err := db.Begin(); err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		}
+
 		count := 0
 
 		for _, row := range rowSet.Rows {
@@ -479,7 +482,9 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	}
 
 	// Start a transaction to ensure atomicity of the entire update
-	_ = db.Begin()
+	if err := db.Begin(); err != nil {
+		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	}
 
 	// Loop over the row set doing the updates
 	for _, data := range rowSet.Rows {

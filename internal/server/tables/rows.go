@@ -82,7 +82,9 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				"session": session.ID,
 			})
 
-			_ = db.Begin()
+			if err := db.Begin(); err != nil {
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+			}
 
 			defer func() {
 				if db.Transaction != nil {
@@ -222,7 +224,9 @@ func InsertRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				"session": session.ID,
 			})
 
-			_ = db.Begin()
+			if err := db.Begin(); err != nil {
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+			}
 
 			defer func() {
 				if db.Transaction != nil {
@@ -525,7 +529,9 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 				"session": session.ID,
 			})
 
-			_ = db.Begin()
+			if err := db.Begin(); err != nil {
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+			}
 
 			defer func() {
 				if db.Transaction != nil {
@@ -812,7 +818,9 @@ func UpdateRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 				"session": session.ID,
 			})
 
-			_ = db.Begin()
+			if err := db.Begin(); err != nil {
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+			}
 
 			defer func() {
 				if db.Transaction != nil {
