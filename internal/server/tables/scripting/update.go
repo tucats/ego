@@ -177,10 +177,6 @@ func doUpdate(sessionID int, user string, db *database.Database, task defs.TXOpe
 	// If there is a filter, then add that as well. And fail if there
 	// isn't a filter but must be
 	if filter, err := parsing.WhereClause(task.Filters); filter != "" {
-		if p := strings.Index(filter, parsing.SyntaxErrorPrefix); p >= 0 {
-			return 0, http.StatusBadRequest, errors.Message(filterErrorMessage(filter))
-		}
-
 		result.WriteString(" ")
 		result.WriteString(filter)
 	} else if err != nil {

@@ -67,8 +67,6 @@ const (
 	deleteVerb = "DELETE"
 	updateVerb = "UPDATE"
 	insertVerb = "INSERT"
-
-	syntaxErrorPrefix = "SYNTAX-ERROR:"
 )
 
 var providers = map[string]string{

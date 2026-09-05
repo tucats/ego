@@ -68,10 +68,6 @@ func DeleteRows(session *router.Session, w http.ResponseWriter, r *http.Request)
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 		}
 
-		if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-			return util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
-		}
-
 		// Is there an active transaction? IF so, do nothing. Otherwise, start a transaction, and then
 		// lets loop over the rows in the rowset. Note this might  be just one row.
 		localTx := false
@@ -401,10 +397,6 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 				return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
 			}
 
-			if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-				return 0, util.ErrorResponse(w, session.ID, filterErrorMessage(q), http.StatusBadRequest)
-			}
-
 			// Use the query to determine the count of matching rows. if the count is zero, no rows, so
 			// we fall back to doing this as an insert operation rather than an update.
 			//
@@ -618,10 +610,6 @@ func ReadRows(session *router.Session, w http.ResponseWriter, r *http.Request) i
 		queryText, err = parsing.FormSelectorDeleteQuery(r.URL, parsing.FiltersFromURL(r.URL), actualQueryColumns, tableName, db.User, selectVerb, db.Provider)
 		if err != nil {
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusBadRequest)
-		}
-
-		if p := strings.Index(queryText, syntaxErrorPrefix); p >= 0 {
-			return util.ErrorResponse(w, session.ID, filterErrorMessage(queryText), http.StatusBadRequest)
 		}
 
 		if err = readRowData(db, columns, selectedColumnsList, queryText, session, w); err == nil {
@@ -1059,16 +1047,9 @@ func getUpdateRows(r *http.Request, session *router.Session, err error, w http.R
 	return rowSet, err, http.StatusOK
 }
 
+// filterErrorMessage strips PostgreSQL's "pq: " driver prefix from a raw
+// database error string so it reads cleanly when shown to an API caller.
 func filterErrorMessage(q string) string {
-	if p := strings.Index(q, syntaxErrorPrefix); p >= 0 {
-		msg := q[p+len(syntaxErrorPrefix):]
-		if p := strings.Index(msg, defs.RowIDName); p > 0 {
-			msg = msg[:p]
-		}
-
-		return "filter error: " + msg
-	}
-
 	return strings.TrimPrefix(q, "pq: ")
 }
 

@@ -619,7 +619,7 @@ func FormCondition(condition string) (string, error) {
 	for {
 		clause, err := filterClause(tokens, egoDialect)
 		if err != nil {
-			return SyntaxErrorPrefix + err.Error(), err
+			return "", err
 		}
 
 		result.WriteString(clause)
