@@ -908,8 +908,13 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 				"sql":     q,
 				"error":   err.Error()})
 
-			_ = db.Rollback()
-
+			// Rollback is the caller's responsibility, not this function's: db may be
+			// a transaction borrowed from an active REST-level transaction (see
+			// UpdateRows' localTx flag), and rolling it back here out from under
+			// the caller silently kills a transaction the client still believes is
+			// open, leaving it in the transactions map with no live db.Transaction.
+			// UpdateRows' own localTx-scoped defer already rolls back when this
+			// request owns the transaction.
 			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.PayloadStatus(err))
 		}
 
@@ -918,8 +923,6 @@ func updateRowSet(rowSet defs.DBRowSet, excludeList map[string]bool, columns []d
 			rowsAffected, _ := counts.RowsAffected()
 			count = count + int(rowsAffected)
 		} else {
-			_ = db.Rollback()
-
 			return 0, util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 		}
 	}
