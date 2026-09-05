@@ -159,10 +159,23 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 			}
 		}
 
-		// Start a transaction, and then lets loop over the rows in the rowset. Note this might
-		// be just one row.
-		if err := db.Begin(); err != nil {
-			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		// Is there an active transaction already (borrowed from the caller's REST-level
+		// transaction)? If so, do nothing here -- committing or rolling it back is that
+		// transaction's owner's responsibility, not this one request's. Otherwise, start
+		// a local transaction to make this insert atomic, and clean it up ourselves.
+		localTx := false
+		if db.Transaction == nil {
+			localTx = true
+
+			if err := db.Begin(); err != nil {
+				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+			}
+
+			defer func() {
+				if db.Transaction != nil {
+					db.Rollback()
+				}
+			}()
 		}
 
 		count := 0
@@ -179,43 +192,38 @@ func InsertAbstractRows(user string, isAdmin bool, tableName string, session *ro
 			if err == nil {
 				count++
 			} else {
-				_ = db.Rollback()
-
 				return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 			}
 		}
 
-		if err == nil {
-			response := defs.DBRowCount{
-				ServerInfo: util.MakeServerInfo(session.ID),
-				Count:      count,
-				Status:     http.StatusOK,
-				Elapsed:    time.Since(startTime).String(),
-			}
-
-			w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
-
-			b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
-
-			if ui.IsActive(ui.RestLogger) {
-				ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
-					"session": session.ID,
-					"body":    string(b)})
-			}
-
-			err = db.Commit()
-			if err == nil {
-				ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
-					"session": session.ID,
-					"count":   count})
-
-				return http.StatusOK
+		if localTx {
+			if err := db.Commit(); err != nil {
+				return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.insert.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
 			}
 		}
 
-		_ = db.Rollback()
+		response := defs.DBRowCount{
+			ServerInfo: util.MakeServerInfo(session.ID),
+			Count:      count,
+			Status:     http.StatusOK,
+			Elapsed:    time.Since(startTime).String(),
+		}
 
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.insert.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		w.Header().Add(defs.ContentTypeHeader, defs.RowCountMediaType)
+
+		b := util.WriteJSON(w, session.Response(), http.StatusOK, response)
+
+		if ui.IsActive(ui.RestLogger) {
+			ui.WriteLog(ui.RestLogger, "rest.response.payload", ui.A{
+				"session": session.ID,
+				"body":    string(b)})
+		}
+
+		ui.Log(ui.TableLogger, "table.inserted.rows", ui.A{
+			"session": session.ID,
+			"count":   count})
+
+		return http.StatusOK
 	}
 
 	if err != nil {
@@ -481,9 +489,23 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 		}
 	}
 
-	// Start a transaction to ensure atomicity of the entire update
-	if err := db.Begin(); err != nil {
-		return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+	// Is there an active transaction already (borrowed from the caller's REST-level
+	// transaction)? If so, do nothing here -- committing or rolling it back is that
+	// transaction's owner's responsibility, not this one request's. Otherwise, start
+	// a local transaction to make this update atomic, and clean it up ourselves.
+	localTx := false
+	if db.Transaction == nil {
+		localTx = true
+
+		if err := db.Begin(); err != nil {
+			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), http.StatusInternalServerError)
+		}
+
+		defer func() {
+			if db.Transaction != nil {
+				db.Rollback()
+			}
+		}()
 	}
 
 	// Loop over the row set doing the updates
@@ -508,8 +530,6 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 			rowsAffected, _ := counts.RowsAffected()
 			count = count + int(rowsAffected)
 		} else {
-			_ = db.Rollback()
-
 			return util.ErrorResponse(w, session.ID, errors.Localize(err, session.Language), dberrors.ExecStatus(err))
 		}
 	}
@@ -518,10 +538,10 @@ func UpdateAbstractRows(user string, isAdmin bool, tableName string, session *ro
 	// means every row updated cleanly; a failed commit is the only way this
 	// can still fail (matching InsertAbstractRows's own commit handling,
 	// which likewise treats a commit failure as a plain 500).
-	if err := db.Commit(); err != nil {
-		_ = db.Rollback()
-
-		return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.update.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+	if localTx {
+		if err := db.Commit(); err != nil {
+			return util.ErrorResponse(w, session.ID, i18n.Text(session.Language, "error.table.update.error", ui.A{"err": err.Error()}), http.StatusInternalServerError)
+		}
 	}
 
 	response := defs.DBRowCount{
