@@ -424,7 +424,7 @@ func insertRowSet(rowSet defs.DBRowSet, columns []defs.DBColumn, w http.Response
 		// After all that, form the correct query and values to be used based on whether this
 		// is an update versus insert.
 		if isUpdate {
-			q, values, err = parsing.FormUpdateQuery(session.URL, db.User, db.Provider, columns, row)
+			q, values, err = parsing.FormUpdateQuery(session.URL, db.User, db.Provider, columns, row, upsertList...)
 		} else {
 			if db.HasRowID {
 				row[defs.RowIDName] = egostrings.Gibberish(uuid.New())

@@ -1,0 +1,46 @@
+{
+    "description": "read the k2 row and remember its _row_id_, so the upsert can be shown to update it in place",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{UKID}}/tables/people/rows",
+        "parameters": {
+            "filter": "EQ(id,\"k2\")"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        },
+        "save": {
+            "K2_ROW_ID": "rows.0._row_id_"
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "rows count",
+            "query": "count",
+            "value": "1"
+        },
+        {
+            "name": "k2 name",
+            "query": "rows.0.name",
+            "value": "Bob"
+        }
+    ]
+}

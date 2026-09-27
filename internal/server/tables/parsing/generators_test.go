@@ -3,6 +3,7 @@ package parsing
 import (
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -789,6 +790,48 @@ func TestFormUpdateQuery_TimeColumns(t *testing.T) {
 		t.Errorf("PostgreSQL: expected time.Time, got %T (%v)", pgValues[0], pgValues[0])
 	} else if !pgTime.UTC().Equal(expectedTime) {
 		t.Errorf("PostgreSQL: expected %v, got %v", expectedTime, pgTime)
+	}
+}
+
+// TestFormUpdateQuery_KeyColumns verifies that upsert key columns become bound
+// equality tests in the WHERE clause. Without them, an upsert keyed on a user
+// column (rather than _row_id_) produced an UPDATE with no filter at all.
+func TestFormUpdateQuery_KeyColumns(t *testing.T) {
+	columns := []defs.DBColumn{
+		{Name: "id", Type: "string"},
+		{Name: "name", Type: "string"},
+	}
+
+	items := map[string]any{
+		"id":   "k2",
+		"name": "Bobby",
+	}
+
+	query, values, err := FormUpdateQuery(mustParseURL("http://host/tables/people/rows?upsert=id"),
+		"admin", defs.SqliteProvider, columns, items, "id")
+	if err != nil {
+		t.Fatalf("FormUpdateQuery error: %v", err)
+	}
+
+	expected := `UPDATE "people" SET "id"=$1,"name"=$2 WHERE "id" = $3`
+	if query != expected {
+		t.Errorf("query:\n  got  %s\n  want %s", query, expected)
+	}
+
+	if !reflect.DeepEqual(values, []any{"k2", "Bobby", "k2"}) {
+		t.Errorf("values: got %v", values)
+	}
+
+	// A _row_id_ key column is already handled by the rowID graft, so it must
+	// not add a second clause of its own.
+	query, _, err = FormUpdateQuery(mustParseURL("http://host/tables/people/rows?upsert"),
+		"admin", defs.SqliteProvider, columns, map[string]any{"name": "x", defs.RowIDName: "abc"}, defs.RowIDName)
+	if err != nil {
+		t.Fatalf("FormUpdateQuery error: %v", err)
+	}
+
+	if strings.Count(query, defs.RowIDName) != 1 {
+		t.Errorf("expected a single rowID clause, got %s", query)
 	}
 }
 

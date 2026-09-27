@@ -1,0 +1,39 @@
+{
+    "description": "upsert keyed on \"id\" with one existing row (k3, updated) and one new row (k4, inserted)",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{UKID}}/tables/people/rows?upsert=id",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            { "id": "k3", "name": "Cathy", "age": 31 },
+            { "id": "k4", "name": "Dan", "age": 40 }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "2"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "description": "seed the table with three rows using a plain (non-upsert) insert",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{UKID}}/tables/people/rows",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            { "id": "k1", "name": "Ann", "age": 10 },
+            { "id": "k2", "name": "Bob", "age": 20 },
+            { "id": "k3", "name": "Cat", "age": 30 }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "inserted rows count",
+            "query": "count",
+            "value": "3"
+        }
+    ]
+}

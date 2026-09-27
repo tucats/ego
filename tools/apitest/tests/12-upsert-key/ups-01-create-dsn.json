@@ -1,0 +1,37 @@
+{
+    "description": "create a sqlite dsn with rowid enabled, used to verify PUT .../rows?upsert=<column> when the upsert key is a user column rather than _row_id_",
+    "request": {
+        "method": "POST",
+        "endpoint": "/dsns",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": {
+            "name": "dsn-{{UKID}}",
+            "provider": "sqlite",
+            "database": "{{ROOT}}/db-{{UKID}}.db",
+            "rowid": true
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Type": ["dsn+json"],
+            "Location": ["/dsns/dsn-{{UKID}}"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        }
+    ]
+}

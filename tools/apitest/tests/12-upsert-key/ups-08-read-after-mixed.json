@@ -1,0 +1,42 @@
+{
+    "description": "verify k3 was updated in place, k4 was inserted, and k1/k2 are untouched",
+    "request": {
+        "method": "GET",
+        "endpoint": "/dsns/dsn-{{UKID}}/tables/people/rows",
+        "parameters": {
+            "sort": "id"
+        },
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rows+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        { "name": "rows count", "query": "count", "value": "4" },
+        { "name": "row 0 name", "query": "rows.0.name", "value": "Ann" },
+        { "name": "row 1 name", "query": "rows.1.name", "value": "Bobby" },
+        { "name": "row 2 id", "query": "rows.2.id", "value": "k3" },
+        { "name": "row 2 name", "query": "rows.2.name", "value": "Cathy" },
+        { "name": "row 2 age", "query": "rows.2.age", "value": "31" },
+        { "name": "row 3 id", "query": "rows.3.id", "value": "k4" },
+        { "name": "row 3 name", "query": "rows.3.name", "value": "Dan" },
+        { "name": "row 3 age", "query": "rows.3.age", "value": "40" }
+    ]
+}

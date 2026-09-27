@@ -52,7 +52,12 @@ func FormSelectorDeleteQuery(u *url.URL, filter []string, columns string, table 
 	return result.String(), nil
 }
 
-func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn, items map[string]any) (string, []any, error) {
+// FormUpdateQuery builds a parameterized SQL UPDATE statement that sets every
+// column in items. The WHERE clause is formed from any "filter" parameters on
+// the URL, the row's _row_id_ value if it has one, and an equality test for each
+// of the optional keyColumns (the upsert key columns named by the caller), all
+// joined with AND.
+func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn, items map[string]any, keyColumns ...string) (string, []any, error) {
 	var result strings.Builder
 
 	if u == nil {
@@ -154,6 +159,34 @@ func FormUpdateQuery(u *url.URL, user, provider string, columns []defs.DBColumn,
 				// rowID clause must be joined with "AND" to form valid SQL.
 				where = where + " AND " + rowIDClause
 			}
+		}
+	}
+
+	// Each upsert key column must match the row's value for that column, or
+	// the UPDATE would have no way to find the row being upserted and would
+	// either fail for lack of a filter or, worse, update every row in the
+	// table. The rowID was already handled above. Like every other value here,
+	// the key values are bound as parameters, not concatenated into the SQL.
+	for _, key := range keyColumns {
+		if key == defs.RowIDName {
+			continue
+		}
+
+		v, err := CoerceToColumnType(key, items[key], columns)
+		if err != nil {
+			return "", nil, errors.ErrSQLBuild.Clone().Chain(errors.New(err))
+		}
+
+		filterCount++
+
+		values = append(values, bindTimeValue(v, provider))
+
+		keyClause := fmt.Sprintf("%s = $%d", egostrings.SQLIdentifier(key), filterCount)
+
+		if where == "" {
+			where = "WHERE " + keyClause
+		} else {
+			where = where + " AND " + keyClause
 		}
 	}
 

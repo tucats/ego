@@ -1,0 +1,38 @@
+{
+    "description": "upsert keyed on the user column \"id\" (not _row_id_) for a row that already exists; this must become an UPDATE of that row only, and used to fail building an UPDATE with no filter",
+    "request": {
+        "method": "PUT",
+        "endpoint": "/dsns/dsn-{{UKID}}/tables/people/rows?upsert=id",
+        "headers": {
+            "Content-Type": ["application/json"],
+            "Accept": ["*/*"],
+            "Authorization": ["Bearer {{API_TOKEN}}"]
+        },
+        "body": [
+            { "id": "k2", "name": "Bobby", "age": 21 }
+        ]
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Type": ["rowcount+json"]
+        }
+    },
+    "tests": [
+        {
+            "name": "api version",
+            "query": "server.api",
+            "value": "1"
+        },
+        {
+            "name": "server id",
+            "query": "server.id",
+            "value": "{{SERVER_ID}}"
+        },
+        {
+            "name": "affected rows count",
+            "query": "count",
+            "value": "1"
+        }
+    ]
+}
