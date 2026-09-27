@@ -69,6 +69,14 @@ var ServerListUsersGrammar = []cli.Option{
 }
 
 // ServerRunGrammar handles command line options for the server subcommand.
+// ServerStartDefaultOption is the "server start" option that makes the new
+// server the default, by pointing the logon server setting at it.
+var ServerStartDefaultOption = cli.Option{
+	LongName:    "default",
+	OptionType:  cli.BooleanType,
+	Description: "server.start.default",
+}
+
 var ServerRunGrammar = []cli.Option{
 	{
 		LongName:    "child-services",

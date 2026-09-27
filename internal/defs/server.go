@@ -338,6 +338,10 @@ type ServerStatus struct {
 	// The list of command line arguments that are passed to the
 	// server.
 	Args []string `json:"args"`
+
+	// The port the server listens on. The pid file for the server is named
+	// for this port.
+	Port int `json:"port,omitempty"`
 }
 
 // When requesting a list of configuration settings, provide an array of strings.

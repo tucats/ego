@@ -150,6 +150,7 @@ var ServerGrammar = []cli.Option{
 				Description: "new.token",
 				OptionType:  cli.BooleanType,
 			},
+			common.ServerStartDefaultOption,
 		}...),
 		Unsupported: []string{"windows"},
 	},

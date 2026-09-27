@@ -49,9 +49,10 @@ func Status(c *cli.Context) error {
 	}
 
 	// Otherwise, it's the local pid file, based on the port number.
-	msg := i18n.M("server.not.running")
+	port := managedServerPort(c)
+	msg := i18n.M("server.not.running", ui.A{"port": port})
 
-	status, err := router.ReadPidFile(c)
+	status, err := router.ReadPidFile(port)
 	if err == nil {
 		if router.IsRunning(status.PID) {
 			since := "(" + util.FormatDuration(time.Since(status.Started), true) + ")"
@@ -66,7 +67,7 @@ func Status(c *cli.Context) error {
 				i18n.L("since"),
 				status.Started.Format(time.UnixDate), since)
 		} else {
-			_ = router.RemovePidFile(c)
+			_ = router.RemovePidFile(port)
 		}
 	}
 

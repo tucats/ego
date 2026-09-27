@@ -14,7 +14,7 @@ var StartVerbGrammar = []cli.Option{
 		OptionType:  cli.Subcommand,
 		//DefaultVerb: true,
 		Unsupported: []string{"windows"},
-		Value:       common.ServerRunGrammar,
+		Value:       append(append([]cli.Option{}, common.ServerRunGrammar...), common.ServerStartDefaultOption),
 	},
 	{
 		LongName:      "cluster",

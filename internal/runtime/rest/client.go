@@ -155,10 +155,25 @@ func GetTLSConfiguration() (*tls.Config, error) {
 	// should just use the native certs.
 	tlsConfigurationMutex.Lock()
 
+	// Deferred rather than called at the end, because the certificate parse
+	// failure below returns early. That return used to leave the mutex locked,
+	// so every later REST call in the process would block forever.
+	defer tlsConfigurationMutex.Unlock()
+
 	kind := "default system trust store"
 
 	if tlsConfiguration == nil {
-		if mode := settings.Get(defs.RestClientServerCert); mode == "" {
+		// If insecure is specified (the global --insecure/-k option, or the
+		// EGO_INSECURE_CLIENT environment variable), then skip verification for
+		// TLS. This must be tested first: it used to be checked only when a
+		// server certificate file was configured, so without that setting the
+		// -k option was silently ignored and the server was still verified.
+		if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
+			tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
+			kind = "skipping server verification"
+
+			ui.Say("rest.tls.insecure")
+		} else if mode := settings.Get(defs.RestClientServerCert); mode == "" {
 			tlsConfiguration = &tls.Config{}
 		} else {
 			kind = "using certificate file"
@@ -170,48 +185,40 @@ func GetTLSConfiguration() (*tls.Config, error) {
 				filename = mode
 			}
 
-			// If insecure is specified, then skip verification for TLS
-			if os.Getenv(defs.EgoInsecureClientEnv) == defs.True {
-				tlsConfiguration = &tls.Config{InsecureSkipVerify: true}
-				kind = "skipping server verification"
-
-				ui.Say("rest.tls.insecure")
-			} else {
-				// Is there a server cert file we can/should be using?
-				b, err = os.ReadFile(filename)
-				if err != nil {
-					path := ""
-					if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
-						path = libpath
-					} else {
-						path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
-					}
-
-					filename = filepath.Join(path, ServerCertificateFile)
-					b, err = os.ReadFile(filename)
-				}
-
-				if err == nil {
-					kind = kind + " " + filename
-					roots := x509.NewCertPool()
-
-					ok := roots.AppendCertsFromPEM(b)
-					if !ok {
-						ui.Log(ui.RestLogger, "rest.cert.parse.error", nil)
-
-						return nil, errors.ErrCertificateParseError.Context(filename)
-					} else {
-						tlsConfiguration = &tls.Config{RootCAs: roots}
-					}
+			// Is there a server cert file we can/should be using?
+			b, err = os.ReadFile(filename)
+			if err != nil {
+				path := ""
+				if libpath := settings.Get(defs.EgoLibPathSetting); libpath != "" {
+					path = libpath
 				} else {
-					if ui.IsActive(ui.RestLogger) {
-						ui.Log(ui.RestLogger, "rest.cert.read.error", ui.A{
-							"error": err})
-					}
-
-					tlsConfiguration = &tls.Config{}
-					kind = "using system default config"
+					path = filepath.Join(settings.Get(defs.EgoPathSetting), defs.LibPathName)
 				}
+
+				filename = filepath.Join(path, ServerCertificateFile)
+				b, err = os.ReadFile(filename)
+			}
+
+			if err == nil {
+				kind = kind + " " + filename
+				roots := x509.NewCertPool()
+
+				ok := roots.AppendCertsFromPEM(b)
+				if !ok {
+					ui.Log(ui.RestLogger, "rest.cert.parse.error", nil)
+
+					return nil, errors.ErrCertificateParseError.Context(filename)
+				} else {
+					tlsConfiguration = &tls.Config{RootCAs: roots}
+				}
+			} else {
+				if ui.IsActive(ui.RestLogger) {
+					ui.Log(ui.RestLogger, "rest.cert.read.error", ui.A{
+						"error": err})
+				}
+
+				tlsConfiguration = &tls.Config{}
+				kind = "using system default config"
 			}
 		}
 
@@ -220,8 +227,6 @@ func GetTLSConfiguration() (*tls.Config, error) {
 				"status": kind})
 		}
 	}
-
-	tlsConfigurationMutex.Unlock()
 
 	return tlsConfiguration, nil
 }

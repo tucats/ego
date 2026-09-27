@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,8 +49,13 @@ func Start(c *cli.Context) error {
 		return err
 	}
 
+	// The server is identified by its port, which names its pid file. This is
+	// the same port processServerArguments puts on the server's command line.
+	insecure := c.Boolean("not-secure") || settings.GetBool(defs.InsecureServerSetting)
+	port := startPort(c, insecure)
+
 	// Is there already a server running? If so, we can't do any more.
-	status, err := resetPIDFile(c)
+	status, err := resetPIDFile(c, port)
 	if err != nil {
 		return err
 	}
@@ -70,6 +76,12 @@ func Start(c *cli.Context) error {
 		}
 
 		if v == "server" {
+			continue
+		}
+
+		// --default is acted on here, after the server starts; the server
+		// itself has no such option and would reject it.
+		if v == "--default" || strings.HasPrefix(v, "--default=") {
 			continue
 		}
 
@@ -124,11 +136,15 @@ func Start(c *cli.Context) error {
 		// Also, update the server status with the new arguments.
 		status.Args = args
 
-		e2 = writePidInfo(c, status, pid)
+		e2 = writePidInfo(c, port, status, pid)
+
+		if e2 == nil && c.Boolean("default") {
+			e2 = makeDefaultServer(port, insecure)
+		}
 	} else {
 		// If things did not go well starting the process, make sure the
 		// pid file is erased.
-		_ = router.RemovePidFile(c)
+		_ = router.RemovePidFile(port)
 	}
 
 	if e2 != nil {
@@ -210,21 +226,12 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 		}
 	}
 
-	// If no port was explicitly specified, add the default port to the arguments
+	// If no port was explicitly specified, add it to the arguments. This is the
+	// same port Start uses to name the pid file, so it also honors a port given
+	// by the EGO_PORT environment variable rather than on the command line.
 	if !hasPort {
-		defaultPort := settings.GetInt(defs.ServerDefaultPortSetting)
-		if defaultPort == 0 {
-			if insecure {
-				defaultPort = 80
-			} else {
-				defaultPort = 443
-			}
-		}
-
-		if defaultPort > 0 {
-			args = append(args, "--port")
-			args = append(args, strconv.Itoa(defaultPort))
-		}
+		args = append(args, "--port")
+		args = append(args, strconv.Itoa(startPort(c, insecure)))
 	}
 
 	// If no explicit session ID was specified, use the one we
@@ -343,11 +350,11 @@ func processServerArguments(c *cli.Context, args []string) (uuid.UUID, []string,
 	return logID, args, nil
 }
 
-// resetPIDFile checks if a server is already running, returns an error if it is
-// already running. If it is not running, it also removes any existing PID file
-// in the event that the previous server terminated unexpectedly.
-func resetPIDFile(c *cli.Context) (*defs.ServerStatus, error) {
-	status, err := router.ReadPidFile(c)
+// resetPIDFile checks if a server is already running on the given port, returns an
+// error if it is already running. If it is not running, it also removes any existing
+// PID file in the event that the previous server terminated unexpectedly.
+func resetPIDFile(c *cli.Context, port int) (*defs.ServerStatus, error) {
+	status, err := router.ReadPidFile(port)
 	if err == nil && status != nil {
 		if p, err := os.FindProcess(status.PID); err == nil {
 			// Signal of 0 does error checking, and will detect if the PID actually
@@ -360,23 +367,60 @@ func resetPIDFile(c *cli.Context) (*defs.ServerStatus, error) {
 		}
 	}
 
-	_ = router.RemovePidFile(c)
+	_ = router.RemovePidFile(port)
 
 	return status, nil
 }
 
-func writePidInfo(c *cli.Context, status *defs.ServerStatus, pid int) error {
-	if err := router.WritePidFile(c, *status); err != nil {
+func writePidInfo(c *cli.Context, port int, status *defs.ServerStatus, pid int) error {
+	if err := router.WritePidFile(c, port, *status); err != nil {
 		return err
 	}
 
 	if ui.OutputFormat == ui.TextFormat {
 		ui.Say("msg.server.started", map[string]any{
-			"pid": pid,
+			"pid":  pid,
+			"port": port,
 		})
 	} else {
-		serverState, _ := router.ReadPidFile(c)
+		serverState, _ := router.ReadPidFile(port)
 		_ = c.Output(serverState)
+	}
+
+	return nil
+}
+
+// makeDefaultServer makes the newly started server on the given port the
+// default server for this profile, by pointing the logon server setting at it
+// and saving the profile. The host name is the one already in the application
+// or logon server setting if that names this machine, since that is presumably
+// the name the server's certificate was issued for; otherwise it is this
+// machine's host name.
+func makeDefaultServer(port int, insecure bool) error {
+	host := ""
+	if u := configuredLocalServer(); u != nil {
+		host = u.Hostname()
+	} else if hostname, err := os.Hostname(); err == nil && hostname != "" {
+		host = hostname
+	} else {
+		host = "localhost"
+	}
+
+	scheme := "https"
+	if insecure {
+		scheme = "http"
+	}
+
+	url := scheme + "://" + net.JoinHostPort(host, strconv.Itoa(port))
+
+	settings.Set(defs.LogonServerSetting, url)
+
+	if err := settings.Save(); err != nil {
+		return errors.New(err)
+	}
+
+	if ui.OutputFormat == ui.TextFormat {
+		ui.Say("msg.server.default", ui.A{"url": url})
 	}
 
 	return nil

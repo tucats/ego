@@ -112,13 +112,37 @@ detaching it as a separate process) using the `ego server run` command option.
 This accepts the same options as `ego server start` and runs the code directly
 in the current shell, sending logging to stdout.
 
-When a server is started, a file is created (by default in ~/.ego) that
-describes the server status and command-line options. This information is re-read
-when issuing a `ego server status` command to display server information. It is also
-read by the `ego server restart`  command to determine the command-line options
-to use with the restarted server.
+A local server is identified by the port it listens on. When a server is started,
+a file named for its port (for example, `ego-server-443.pid`) is created (by default
+in ~/.ego) that describes the server status and command-line options. This
+information is re-read when issuing a `ego server status --local` command to display
+server information. It is also read by the `ego server restart` command to determine
+the command-line options to use with the restarted server. Because each port has its
+own file, several servers on different ports can run on the same machine, and a
+listing of the directory shows which file belongs to which server.
 
-When a server is stopped via `ego server stop`, the server status file is deleted.
+The start, stop, and restart commands report the port of the server they act on.
+The `ego server stop`, `ego server restart`, and `ego server status --local` commands
+act on the server on the port given by the `--port` option. Without `--port`, they
+use the port of the application server (or, if there is none, the logon server) in
+the configuration when that server is on this machine, so after logging into a local
+server, `ego server restart` restarts the server you are using. Failing that, they use
+the configured default port (`ego.server.default.port`), and then 443.
+
+When a server is stopped via `ego server stop`, its server status file is deleted.
+A restart is refused, and the server is left running, if there is no server status
+file for its port, since the command-line options to restart it with are not known.
+
+The `--default` option on `ego server start` makes the new server the default, by
+setting the logon server (`ego.logon.server`) in the current profile to the new
+server's scheme, host, and port. The host name is kept from the existing application
+or logon server setting if that names this machine, and is otherwise this machine's
+host name. For example, to start a second server on port 8443 and make it the one
+subsequent commands use:
+
+```sh
+ego server start --port 8443 --default
+```
 
 Below is additional information about the options that can be used for the `start`
 and `run` commands.

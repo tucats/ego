@@ -1,14 +1,11 @@
 package commands
 
 import (
-	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/tucats/ego/internal/cli/cli"
-	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -20,7 +17,7 @@ import (
 // Stop shuts down a running detached ego server. By default it sends a polite REST
 // shutdown request and waits up to five seconds for the server to stop, extended by
 // --grace if given. With --force it kills the process directly using the PID stored
-// in the PID file.
+// in the PID file. The server is identified by its port; see managedServerPort.
 //
 // Not supported on Windows (detached processes use Unix-style process management).
 //
@@ -38,7 +35,7 @@ func Stop(c *cli.Context) error {
 		return forceStop(c)
 	}
 
-	_, err := politeStop(c)
+	_, err := politeStop(c, managedServerPort(c))
 
 	return err
 }
@@ -48,7 +45,9 @@ func Stop(c *cli.Context) error {
 func forceStop(c *cli.Context) error {
 	var proc *os.Process
 
-	status, err := router.ReadPidFile(c)
+	port := managedServerPort(c)
+
+	status, err := router.ReadPidFile(port)
 	if err == nil {
 		var e2 error
 
@@ -58,7 +57,8 @@ func forceStop(c *cli.Context) error {
 			if e2 == nil {
 				if ui.OutputFormat == ui.TextFormat {
 					ui.Say("msg.server.stopped", map[string]any{
-						"pid": status.PID,
+						"pid":  status.PID,
+						"port": port,
 					})
 				} else {
 					_ = c.Output(status)
@@ -67,7 +67,7 @@ func forceStop(c *cli.Context) error {
 		}
 	}
 
-	_ = router.RemovePidFile(c)
+	_ = router.RemovePidFile(port)
 
 	if err != nil {
 		err = errors.New(err)
@@ -76,64 +76,18 @@ func forceStop(c *cli.Context) error {
 	return err
 }
 
-// localServerURL builds the http(s)://localhost:port base URL for the locally
-// managed detached server, using the scheme and port recorded in its PID file
-// arguments (as they were passed to "server start"). Stop and Restart only ever
-// target the local machine (see the hostname check in killExistingServer), so
-// this base URL must reflect how this specific server instance was actually
-// launched -- not the CLI's ApplicationServerSetting/LogonServerSetting, which
-// point at whatever remote server the user last logged into and have no
-// relation to this server's port or (in)security.
-func localServerURL(status *defs.ServerStatus) string {
-	insecure := false
-	port := 0
+// politeStop uses the REST API to attempt to request that the server on the given
+// port stop, and polls to see if it has stopped. The result is the server's status
+// from its pid file, or nil if there is no pid file for that port.
+func politeStop(c *cli.Context, port int) (*defs.ServerStatus, error) {
+	var err error
 
-	if status != nil {
-		args := status.Args
-		for i, v := range args {
-			if v == "-k" || v == "--not-secure" {
-				insecure = true
-			}
-
-			if (v == "--port" || v == "-p") && i+1 < len(args) {
-				if p, err := strconv.Atoi(args[i+1]); err == nil {
-					port = p
-				}
-			}
-		}
+	status, e2 := router.ReadPidFile(port)
+	if e2 != nil {
+		status = nil
 	}
 
-	if port == 0 {
-		port = settings.GetInt(defs.ServerDefaultPortSetting)
-	}
-
-	if port == 0 {
-		if insecure {
-			port = 80
-		} else {
-			port = 443
-		}
-	}
-
-	scheme := "https"
-	if insecure {
-		scheme = "http"
-	}
-
-	return fmt.Sprintf("%s://localhost:%d", scheme, port)
-}
-
-// politeStop uses the REST APU to attempt to request that the server stop, and polls to
-// see if it has stopped.
-func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
-	var (
-		err    error
-		status *defs.ServerStatus
-	)
-
-	status, _ = router.ReadPidFile(c)
-
-	base := localServerURL(status)
+	base := localServerURL(status, port)
 	url := base + defs.ServicesDownPath
 
 	// The client normally waits up to five seconds for the server to stop. If the
@@ -167,6 +121,7 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		}
 
 		ui.Say("msg.server.stopping", ui.A{
+			"port":   port,
 			"status": resp.Status})
 	}
 
@@ -191,10 +146,12 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 
 			if ui.OutputFormat == ui.TextFormat {
 				if status == nil || status.PID == 0 {
-					ui.Say("msg.server.stopped.rest")
+					ui.Say("msg.server.stopped.rest", ui.A{
+						"port": port})
 				} else {
 					ui.Say("msg.server.stopped", ui.A{
-						"pid": status.PID})
+						"pid":  status.PID,
+						"port": port})
 				}
 			}
 
@@ -205,5 +162,5 @@ func politeStop(c *cli.Context) (*defs.ServerStatus, error) {
 		ui.Log(ui.InternalLogger, "server.admin.waiting", nil)
 	}
 
-	return status, router.RemovePidFile(c)
+	return status, router.RemovePidFile(port)
 }

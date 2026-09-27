@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tucats/ego/internal/cli/cli"
-	"github.com/tucats/ego/internal/cli/settings"
 	"github.com/tucats/ego/internal/cli/ui"
 	"github.com/tucats/ego/internal/defs"
 	"github.com/tucats/ego/internal/errors"
@@ -32,7 +31,19 @@ func Restart(c *cli.Context) error {
 		return err
 	}
 
-	serverStatus, err := killExistingServer(c)
+	// The server is identified by its port, and restarting it depends on the
+	// command line arguments saved in its pid file. Check for them before
+	// stopping anything, so a server that could not be started again is left
+	// running rather than stopped. (A missing pid file used to be found only
+	// after the server was stopped, and then crashed the restart by indexing an
+	// empty argument list.)
+	port := managedServerPort(c)
+
+	if status, err := router.ReadPidFile(port); err != nil || len(status.Args) == 0 {
+		return errors.ErrNoServerPidFile.Clone().Context(port)
+	}
+
+	serverStatus, err := killExistingServer(c, port)
 	if !errors.Nil(err) {
 		msg := err.Error()
 		if strings.Contains(msg, "connection refused") || strings.Contains(msg, "dial tcp") {
@@ -40,6 +51,10 @@ func Restart(c *cli.Context) error {
 		}
 
 		return err
+	}
+
+	if serverStatus == nil || len(serverStatus.Args) == 0 {
+		return errors.ErrNoServerPidFile.Clone().Context(port)
 	}
 
 	args := serverStatus.Args
@@ -117,18 +132,19 @@ func Restart(c *cli.Context) error {
 		// We need to write it again, because the log file name might have changed.
 		// Note that the log file name is not included in the status.Args slice.
 		serverStatus.Args = args
-		err = router.WritePidFile(c, *serverStatus)
+		err = router.WritePidFile(c, port, *serverStatus)
 
 		if ui.OutputFormat == ui.TextFormat {
 			ui.Say("msg.server.started", map[string]any{
-				"pid": pid,
+				"pid":  pid,
+				"port": port,
 			})
 		} else {
-			serverState, _ := router.ReadPidFile(c)
+			serverState, _ := router.ReadPidFile(port)
 			_ = c.Output(serverState)
 		}
 	} else {
-		_ = router.RemovePidFile(c)
+		_ = router.RemovePidFile(port)
 	}
 
 	if err != nil {
@@ -138,12 +154,12 @@ func Restart(c *cli.Context) error {
 	return err
 }
 
-// Kill off any existing instance of the server, if any. Returns the server status
-// of the server if it was running, and an error code indicating if the server
-// was killed. If the server was not running, returns nil and no error.
-func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
+// Kill off any existing instance of the server on the given port, if any. Returns
+// the server status of the server if it was running, and an error code indicating
+// if the server was killed. If the server was not running, returns nil and no error.
+func killExistingServer(c *cli.Context, port int) (*defs.ServerStatus, error) {
 	if c.Boolean("force") {
-		status, err := router.ReadPidFile(c)
+		status, err := router.ReadPidFile(port)
 		if err == nil {
 			proc, e2 := os.FindProcess(status.PID)
 			if e2 == nil {
@@ -151,7 +167,8 @@ func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
 				// If successful, and in text mode, report the stop to the console.
 				if e2 == nil && ui.OutputFormat == ui.TextFormat {
 					ui.Say("msg.server.stopped", map[string]any{
-						"pid": status.PID,
+						"pid":  status.PID,
+						"port": port,
 					})
 				}
 			}
@@ -161,35 +178,20 @@ func killExistingServer(c *cli.Context) (*defs.ServerStatus, error) {
 			}
 		}
 
-		_ = router.RemovePidFile(c)
+		_ = router.RemovePidFile(port)
 
 		return status, err
 	}
 
-	// Not a force, let's try it the polite way. The current server (app.server
-	// or logon.server) must be the current server or this operation is invalid
-	// (cannot do a restart on another server)
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	server := settings.Get(defs.ApplicationServerSetting)
-	if server == "" {
-		server = settings.Get(defs.LogonServerSetting)
-	}
-
-	server = strings.TrimPrefix(server, "http://")
-	server = strings.TrimPrefix(server, "https://")
-
-	server, _, _ = strings.Cut(server, ":")
-	if strings.EqualFold(server, hostname) {
-		return nil, errors.ErrNotLocalServer.Context(server)
-	}
-
-	// All good, let's try to send a REST stop command to the local server.
-	status, err := politeStop(c)
+	// Not a force, so ask the server to stop politely via its REST API. The
+	// request always goes to this machine: politeStop uses the configured
+	// application (or logon) server's host name only when it names this machine.
+	//
+	// This used to compare the configured server's host name with os.Hostname()
+	// and report ErrNotLocalServer when they were EQUAL -- the test was inverted,
+	// so it refused exactly the case it meant to allow, and it never matched a
+	// name like "myhost.local" against a host name of "MyHost" anyway.
+	status, err := politeStop(c, port)
 
 	return status, err
 }

@@ -254,7 +254,8 @@ ego server stop
 ego server restart
 ```
 
-The server writes its PID to `~/.ego/ego-server.pid` and its log to
+The server writes its PID to `~/.ego/ego-server-<port>.pid` (for example
+`ego-server-443.pid`) and its log to
 `ego-server.log` in the project directory (configurable via
 `ego.server.default.log.file`). Use `ego show config` to inspect all active
 settings, including `ego.logon.server` (the URL apitest will connect to) and
