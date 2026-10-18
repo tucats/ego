@@ -282,3 +282,50 @@ func TestRewriteInsertOnConflictUnchangedOnBothDialects(t *testing.T) {
 		}
 	}
 }
+
+func TestRewriteNowFunction(t *testing.T) {
+	tests := []struct {
+		name    string
+		sql     string
+		dialect int
+		want    string
+		notes   int
+	}{
+		{"now to sqlite select", `SELECT now()`, SQLite, "datetime('now')", 1},
+		{"now to sqlite upper case", `SELECT NOW() AS ts`, SQLite, "datetime('now')", 1},
+		{"now to sqlite where", `SELECT * FROM t WHERE created < now()`, SQLite, "datetime('now')", 1},
+		{"now to sqlite update", `UPDATE t SET ts = now() WHERE id = 1`, SQLite, "datetime('now')", 1},
+		{"now to sqlite insert", `INSERT INTO t (id, ts) VALUES (1, now())`, SQLite, "datetime('now')", 1},
+		{"now to sqlite default", `CREATE TABLE t (id INTEGER, ts TEXT DEFAULT now())`, SQLite, "DEFAULT (datetime('now'))", 1},
+		{"now to sqlite paren default", `CREATE TABLE t (id INTEGER, ts TEXT DEFAULT (now()))`, SQLite, "DEFAULT (datetime('now'))", 1},
+		{"datetime to postgres select", `SELECT datetime('now')`, PostgreSQL, "now()", 1},
+		{"datetime to postgres upper case", `SELECT DATETIME('NOW')`, PostgreSQL, "now()", 1},
+		{"datetime to postgres delete", `DELETE FROM t WHERE ts < datetime('now')`, PostgreSQL, "now()", 1},
+		{"datetime to postgres default", `CREATE TABLE t (id INTEGER, ts TEXT DEFAULT (datetime('now')))`, PostgreSQL, "DEFAULT (now())", 1},
+		{"datetime with modifier untouched", `SELECT datetime('now', '+1 day')`, PostgreSQL, "datetime('now', '+1 day')", 0},
+		{"datetime of column untouched", `SELECT datetime(ts) FROM t`, PostgreSQL, "datetime(", 0},
+		{"now already sqlite untouched", `SELECT datetime('now')`, SQLite, "datetime('now')", 0},
+		{"now already postgres untouched", `SELECT now()`, PostgreSQL, "now()", 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, notes := mustRewrite(t, tt.sql, tt.dialect, nil)
+
+			if !strings.Contains(got, tt.want) {
+				t.Errorf("expected %q in output, got:\n%s", tt.want, got)
+			}
+
+			if len(notes) != tt.notes {
+				t.Errorf("expected %d notes, got %d: %v", tt.notes, len(notes), notes)
+			}
+
+			// The rewritten text must parse in the target dialect and be
+			// left unchanged by a second pass.
+			got2, notes2 := mustRewrite(t, got, tt.dialect, nil)
+			if got2 != got || len(notes2) != 0 {
+				t.Errorf("second Rewrite pass not a no-op:\n--- first ---\n%s\n--- second ---\n%s\nnotes: %v", got, got2, notes2)
+			}
+		})
+	}
+}
