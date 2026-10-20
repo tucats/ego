@@ -495,6 +495,20 @@ func normalizeColumnType(provider string, typeInfo *sql.ColumnType) (typeName st
 		// several non-standard names.  Map every known variant to the portable form.
 		// SQLite also does not support nullable column metadata via the Go sql
 		// interface, so we override those fields to safe defaults.
+		//
+		// SQLite stores date/time values as TEXT, and the driver derives ScanType()
+		// from the storage class of the *current row's* value -- so a TIMESTAMP
+		// column reports "string" when introspected on a live result set (as @sql
+		// does), but nil (falling back to "TIMESTAMP") on an empty one (as the
+		// table metadata query does). Prefer the declared type for date/time
+		// columns so both paths agree; otherwise @sql coerces the driver's
+		// time.Time value to a string column and formats it as RFC 822 rather
+		// than marshaling it as RFC 3339.
+		switch declared := typeInfo.DatabaseTypeName(); declared {
+		case SqliteTypeTimestamp, SqliteTypeTimestampTZ, SqliteTypeDatetime, SqliteTypeTime, SqliteTypeDate:
+			typeName = declared
+		}
+
 		switch typeName {
 		case SqliteTypeInt:
 			typeName = data.IntTypeName
